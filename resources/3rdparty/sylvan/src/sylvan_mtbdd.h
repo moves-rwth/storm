@@ -316,7 +316,7 @@ size_t mtbdd_set_count(MTBDD set);
 /**
  * Remove variables in <set2> from <set1>
  */
-#define mtbdd_set_minus(set1, set2) CALL(mtbdd_set_minus, set1, set2)
+#define mtbdd_set_minus(set1, set2) RUN(mtbdd_set_minus, set1, set2)
 TASK_DECL_2(MTBDD, mtbdd_set_minus, MTBDD, MTBDD);
 
 /**
@@ -363,14 +363,14 @@ MTBDD mtbdd_cube(MTBDD variables, uint8_t *cube, MTBDD terminal);
  * If <mtbdd> already assigns a value to the cube, the new value <terminal> is taken.
  * Does not support cube[idx]==3.
  */
-#define mtbdd_union_cube(mtbdd, variables, cube, terminal) CALL(mtbdd_union_cube, mtbdd, variables, cube, terminal)
+#define mtbdd_union_cube(mtbdd, variables, cube, terminal) RUN(mtbdd_union_cube, mtbdd, variables, cube, terminal)
 TASK_DECL_4(BDD, mtbdd_union_cube, MTBDD, MTBDD, uint8_t*, MTBDD);
 
 /**
  * Count the number of satisfying assignments (minterms) leading to a non-false leaf
  */
 TASK_DECL_2(double, mtbdd_satcount, MTBDD, size_t);
-#define mtbdd_satcount(dd, nvars) CALL(mtbdd_satcount, dd, nvars)
+#define mtbdd_satcount(dd, nvars) RUN(mtbdd_satcount, dd, nvars)
 
 /**
  * Count the number of MTBDD leaves (excluding mtbdd_false and mtbdd_true) in the given <count> MTBDDs
@@ -404,29 +404,21 @@ LACE_TYPEDEF_CB(MTBDD, mtbdd_uapply_op, MTBDD, size_t);
  * Callback <op> is consulted before the cache, thus the application to terminals is not cached.
  */
 TASK_DECL_3(MTBDD, mtbdd_apply, MTBDD, MTBDD, mtbdd_apply_op);
-#define mtbdd_apply(a, b, op) CALL(mtbdd_apply, a, b, op)
+#define mtbdd_apply(a, b, op) RUN(mtbdd_apply, a, b, op)
 
 /**
  * Apply a binary operation <op> with id <opid> to <a> and <b> with parameter <p>
  * Callback <op> is consulted before the cache, thus the application to terminals is not cached.
  */
 TASK_DECL_5(MTBDD, mtbdd_applyp, MTBDD, MTBDD, size_t, mtbdd_applyp_op, uint64_t);
-#define mtbdd_applyp(a, b, p, op, opid) CALL(mtbdd_applyp, a, b, p, op, opid)
+#define mtbdd_applyp(a, b, p, op, opid) RUN(mtbdd_applyp, a, b, p, op, opid)
 
 /**
  * Apply a unary operation <op> to <dd>.
  * Callback <op> is consulted after the cache, thus the application to a terminal is cached.
  */
 TASK_DECL_3(MTBDD, mtbdd_uapply, MTBDD, mtbdd_uapply_op, size_t);
-#define mtbdd_uapply(dd, op, param) CALL(mtbdd_uapply, dd, op, param)
-
-/**
- * Apply a unary operation <op> to <dd> and fail if one of the subresults is mtbdd_false, where failing means returning
- * mtbdd_false.
- * Callback <op> is consulted after the cache, thus the application to a terminal is cached.
- */
-TASK_DECL_3(MTBDD, mtbdd_uapply_fail_false, MTBDD, mtbdd_uapply_op, size_t);
-#define mtbdd_uapply_fail_false(dd, op, param) CALL(mtbdd_uapply_fail_false, dd, op, param)
+#define mtbdd_uapply(dd, op, param) RUN(mtbdd_uapply, dd, op, param)
 
 /**
  * Callback function types for abstraction.
@@ -441,7 +433,7 @@ LACE_TYPEDEF_CB(MTBDD, mtbdd_abstract_op, MTBDD, MTBDD, int);
  * Abstract the variables in <v> from <a> using the binary operation <op>.
  */
 TASK_DECL_3(MTBDD, mtbdd_abstract, MTBDD, MTBDD, mtbdd_abstract_op);
-#define mtbdd_abstract(a, v, op) CALL(mtbdd_abstract, a, v, op)
+#define mtbdd_abstract(a, v, op) RUN(mtbdd_abstract, a, v, op)
 
 /**
  * Unary operation Negate.
@@ -560,21 +552,21 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
  * <f> must be a Boolean MTBDD (or standard BDD).
  */
 TASK_DECL_3(MTBDD, mtbdd_ite, MTBDD, MTBDD, MTBDD);
-#define mtbdd_ite(f, g, h) CALL(mtbdd_ite, f, g, h);
+#define mtbdd_ite(f, g, h) RUN(mtbdd_ite, f, g, h);
 
 /**
  * Multiply <a> and <b>, and abstract variables <vars> using summation.
  * This is similar to the "and_exists" operation in BDDs.
  */
 TASK_DECL_3(MTBDD, mtbdd_and_abstract_plus, MTBDD, MTBDD, MTBDD);
-#define mtbdd_and_abstract_plus(a, b, vars) CALL(mtbdd_and_abstract_plus, a, b, vars)
+#define mtbdd_and_abstract_plus(a, b, vars) RUN(mtbdd_and_abstract_plus, a, b, vars)
 #define mtbdd_and_exists mtbdd_and_abstract_plus
 
 /**
  * Multiply <a> and <b>, and abstract variables <vars> by taking the maximum.
  */
 TASK_DECL_3(MTBDD, mtbdd_and_abstract_max, MTBDD, MTBDD, MTBDD);
-#define mtbdd_and_abstract_max(a, b, vars) CALL(mtbdd_and_abstract_max, a, b, vars)
+#define mtbdd_and_abstract_max(a, b, vars) RUN(mtbdd_and_abstract_max, a, b, vars)
 
 /**
  * Monad that converts double to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
@@ -590,20 +582,20 @@ TASK_DECL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, size_t)
  * Convert double to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
  */
 TASK_DECL_2(MTBDD, mtbdd_threshold_double, MTBDD, double);
-#define mtbdd_threshold_double(dd, value) CALL(mtbdd_threshold_double, dd, value)
+#define mtbdd_threshold_double(dd, value) RUN(mtbdd_threshold_double, dd, value)
 
 /**
  * Convert double to a Boolean MTBDD, translate terminals > value to 1 and to 0 otherwise;
  */
 TASK_DECL_2(MTBDD, mtbdd_strict_threshold_double, MTBDD, double);
-#define mtbdd_strict_threshold_double(dd, value) CALL(mtbdd_strict_threshold_double, dd, value)
+#define mtbdd_strict_threshold_double(dd, value) RUN(mtbdd_strict_threshold_double, dd, value)
 
 /**
  * For two Double MTBDDs, calculate whether they are equal module some value epsilon
  * i.e. abs(a-b) < e
  */
 TASK_DECL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, MTBDD, double);
-#define mtbdd_equal_norm_d(a, b, epsilon) CALL(mtbdd_equal_norm_d, a, b, epsilon)
+#define mtbdd_equal_norm_d(a, b, epsilon) RUN(mtbdd_equal_norm_d, a, b, epsilon)
 
 /**
  * For two Double MTBDDs, calculate whether they are equal modulo some value epsilon
@@ -611,41 +603,41 @@ TASK_DECL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, MTBDD, double);
  * i.e. abs((a-b)/a) < e
  */
 TASK_DECL_3(MTBDD, mtbdd_equal_norm_rel_d, MTBDD, MTBDD, double);
-#define mtbdd_equal_norm_rel_d(a, b, epsilon) CALL(mtbdd_equal_norm_rel_d, a, b, epsilon)
+#define mtbdd_equal_norm_rel_d(a, b, epsilon) RUN(mtbdd_equal_norm_rel_d, a, b, epsilon)
 
 /**
  * For two MTBDDs a, b, return mtbdd_true if all common assignments a(s) <= b(s), mtbdd_false otherwise.
  * For domains not in a / b, assume True.
  */
 TASK_DECL_2(MTBDD, mtbdd_leq, MTBDD, MTBDD);
-#define mtbdd_leq(a, b) CALL(mtbdd_leq, a, b)
+#define mtbdd_leq(a, b) RUN(mtbdd_leq, a, b)
 
 /**
  * For two MTBDDs a, b, return mtbdd_true if all common assignments a(s) < b(s), mtbdd_false otherwise.
  * For domains not in a / b, assume True.
  */
 TASK_DECL_2(MTBDD, mtbdd_less, MTBDD, MTBDD);
-#define mtbdd_less(a, b) CALL(mtbdd_less, a, b)
+#define mtbdd_less(a, b) RUN(mtbdd_less, a, b)
 
 /**
  * For two MTBDDs a, b, return mtbdd_true if all common assignments a(s) >= b(s), mtbdd_false otherwise.
  * For domains not in a / b, assume True.
  */
 TASK_DECL_2(MTBDD, mtbdd_geq, MTBDD, MTBDD);
-#define mtbdd_geq(a, b) CALL(mtbdd_geq, a, b)
+#define mtbdd_geq(a, b) RUN(mtbdd_geq, a, b)
 
 /**
  * For two MTBDDs a, b, return mtbdd_true if all common assignments a(s) > b(s), mtbdd_false otherwise.
  * For domains not in a / b, assume True.
  */
 TASK_DECL_2(MTBDD, mtbdd_greater, MTBDD, MTBDD);
-#define mtbdd_greater(a, b) CALL(mtbdd_greater, a, b)
+#define mtbdd_greater(a, b) RUN(mtbdd_greater, a, b)
 
 /**
  * Calculate the support of a MTBDD, i.e. the cube of all variables that appear in the MTBDD nodes.
  */
 TASK_DECL_1(MTBDD, mtbdd_support, MTBDD);
-#define mtbdd_support(dd) CALL(mtbdd_support, dd)
+#define mtbdd_support(dd) RUN(mtbdd_support, dd)
 
 /**
  * Function composition, for each node with variable <key> which has a <key,value> pair in <map>,
@@ -653,19 +645,19 @@ TASK_DECL_1(MTBDD, mtbdd_support, MTBDD);
  * Each <value> in <map> must be a Boolean MTBDD.
  */
 TASK_DECL_2(MTBDD, mtbdd_compose, MTBDD, MTBDDMAP);
-#define mtbdd_compose(dd, map) CALL(mtbdd_compose, dd, map)
+#define mtbdd_compose(dd, map) RUN(mtbdd_compose, dd, map)
 
 /**
  * Compute minimal leaf in the MTBDD (for Integer, Double, Rational MTBDDs)
  */
 TASK_DECL_1(MTBDD, mtbdd_minimum, MTBDD);
-#define mtbdd_minimum(dd) CALL(mtbdd_minimum, dd)
+#define mtbdd_minimum(dd) RUN(mtbdd_minimum, dd)
 
 /**
  * Compute maximal leaf in the MTBDD (for Integer, Double, Rational MTBDDs)
  */
 TASK_DECL_1(MTBDD, mtbdd_maximum, MTBDD);
-#define mtbdd_maximum(dd) CALL(mtbdd_maximum, dd)
+#define mtbdd_maximum(dd) RUN(mtbdd_maximum, dd)
 
 /**
  * Given a MTBDD <dd> and a cube of variables <variables> expected in <dd>,
@@ -726,7 +718,7 @@ typedef struct mtbdd_enum_trace {
 
 LACE_TYPEDEF_CB(void, mtbdd_enum_cb, mtbdd_enum_trace_t, MTBDD, void*)
 VOID_TASK_DECL_3(mtbdd_enum_par, MTBDD, mtbdd_enum_cb, void*);
-#define mtbdd_enum_par(dd, cb, context) CALL(mtbdd_enum_par, dd, cb, context)
+#define mtbdd_enum_par(dd, cb, context) RUN(mtbdd_enum_par, dd, cb, context)
 
 /**
  * Function composition after partial evaluation.
@@ -741,7 +733,7 @@ VOID_TASK_DECL_3(mtbdd_enum_par, MTBDD, mtbdd_enum_cb, void*);
  */
 LACE_TYPEDEF_CB(MTBDD, mtbdd_eval_compose_cb, MTBDD);
 TASK_DECL_3(MTBDD, mtbdd_eval_compose, MTBDD, MTBDD, mtbdd_eval_compose_cb);
-#define mtbdd_eval_compose(dd, vars, cb) CALL(mtbdd_eval_compose, dd, vars, cb)
+#define mtbdd_eval_compose(dd, vars, cb) RUN(mtbdd_eval_compose, dd, vars, cb)
 
 /**
  * For debugging.
@@ -751,7 +743,7 @@ TASK_DECL_3(MTBDD, mtbdd_eval_compose, MTBDD, MTBDD, mtbdd_eval_compose_cb);
  * Returns 1 if all is fine, or 0 otherwise.
  */
 TASK_DECL_1(int, mtbdd_test_isvalid, MTBDD);
-#define mtbdd_test_isvalid(mtbdd) CALL(mtbdd_test_isvalid, mtbdd)
+#define mtbdd_test_isvalid(mtbdd) RUN(mtbdd_test_isvalid, mtbdd)
 
 /**
  * Write a .dot representation of a given MTBDD
@@ -821,13 +813,13 @@ LACE_TYPEDEF_CB(void, mtbdd_visit_post_cb, MTBDD, void*);
  * Sequential visit operation
  */
 VOID_TASK_DECL_4(mtbdd_visit_seq, MTBDD, mtbdd_visit_pre_cb, mtbdd_visit_post_cb, void*);
-#define mtbdd_visit_seq(...) CALL(mtbdd_visit_seq, __VA_ARGS__)
+#define mtbdd_visit_seq(...) RUN(mtbdd_visit_seq, __VA_ARGS__)
 
 /**
  * Parallel visit operation
  */
 VOID_TASK_DECL_4(mtbdd_visit_par, MTBDD, mtbdd_visit_pre_cb, mtbdd_visit_post_cb, void*);
-#define mtbdd_visit_par(...) CALL(mtbdd_visit_par, __VA_ARGS__)
+#define mtbdd_visit_par(...) RUN(mtbdd_visit_par, __VA_ARGS__)
 
 /**
  * Writing MTBDDs to file.
@@ -859,7 +851,7 @@ VOID_TASK_DECL_4(mtbdd_visit_par, MTBDD, mtbdd_visit_pre_cb, mtbdd_visit_post_cb
  * <count> times uint64_t: each stored decision diagram
  */
 VOID_TASK_DECL_3(mtbdd_writer_tobinary, FILE *, MTBDD *, int);
-#define mtbdd_writer_tobinary(file, dds, count) CALL(mtbdd_writer_tobinary, file, dds, count)
+#define mtbdd_writer_tobinary(file, dds, count) RUN(mtbdd_writer_tobinary, file, dds, count)
 
 /**
  * Write <count> decision diagrams given in <dds> in ASCII form to <file>.
@@ -874,7 +866,7 @@ VOID_TASK_DECL_3(mtbdd_writer_tobinary, FILE *, MTBDD *, int);
  */
 
 VOID_TASK_DECL_3(mtbdd_writer_totext, FILE *, MTBDD *, int);
-#define mtbdd_writer_totext(file, dds, count) CALL(mtbdd_writer_totext, file, dds, count)
+#define mtbdd_writer_totext(file, dds, count) RUN(mtbdd_writer_totext, file, dds, count)
 
 /**
  * Skeleton typedef for the skiplist
@@ -890,7 +882,7 @@ sylvan_skiplist_t mtbdd_writer_start(void);
  * Add the given MTBDD to the skiplist.
  */
 VOID_TASK_DECL_2(mtbdd_writer_add, sylvan_skiplist_t, MTBDD);
-#define mtbdd_writer_add(sl, dd) CALL(mtbdd_writer_add, sl, dd)
+#define mtbdd_writer_add(sl, dd) RUN(mtbdd_writer_add, sl, dd)
 
 /**
  * Write all assigned MTBDD nodes in binary format to the file.
@@ -925,7 +917,7 @@ void mtbdd_writer_end(sylvan_skiplist_t sl);
  * Read <count> decision diagrams to <dds> from <file> in internal binary form.
  */
 TASK_DECL_3(int, mtbdd_reader_frombinary, FILE*, MTBDD*, int);
-#define mtbdd_reader_frombinary(file, dds, count) CALL(mtbdd_reader_frombinary, file, dds, count)
+#define mtbdd_reader_frombinary(file, dds, count) RUN(mtbdd_reader_frombinary, file, dds, count)
 
 /**
  * Reading a file earlier written with mtbdd_writer_writebinary
@@ -935,7 +927,7 @@ TASK_DECL_3(int, mtbdd_reader_frombinary, FILE*, MTBDD*, int);
  */
 
 TASK_DECL_1(uint64_t*, mtbdd_reader_readbinary, FILE*);
-#define mtbdd_reader_readbinary(file) CALL(mtbdd_reader_readbinary, file)
+#define mtbdd_reader_readbinary(file) RUN(mtbdd_reader_readbinary, file)
 
 /**
  * Retrieve the MTBDD of the given stored identifier.
@@ -1024,7 +1016,7 @@ MTBDDMAP mtbdd_map_removeall(MTBDDMAP map, MTBDD variables);
  * Call mtbdd_gc_mark_rec for every mtbdd you want to keep in your custom mark functions.
  */
 VOID_TASK_DECL_1(mtbdd_gc_mark_rec, MTBDD);
-#define mtbdd_gc_mark_rec(mtbdd) CALL(mtbdd_gc_mark_rec, mtbdd)
+#define mtbdd_gc_mark_rec(mtbdd) RUN(mtbdd_gc_mark_rec, mtbdd)
 
 /**
  * Infrastructure for external references using a hash table.

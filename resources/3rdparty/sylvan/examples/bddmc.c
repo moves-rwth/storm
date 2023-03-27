@@ -6,10 +6,6 @@
 #include <string.h>
 #include <sys/time.h>
 
-#ifdef HAVE_PROFILER
-#include <gperftools/profiler.h>
-#endif
-
 #include <getrss.h>
 
 #include <sylvan.h>
@@ -25,18 +21,12 @@ static int merge_relations = 0; // merge relations to 1 relation
 static int print_transition_matrix = 0; // print transition relation matrix
 static int workers = 0; // autodetect
 static char* model_filename = NULL; // filename of model
-#ifdef HAVE_PROFILER
-static char* profile_filename = NULL; // filename for profiling
-#endif
 
 /* argp configuration */
 static struct argp_option options[] =
 {
     {"workers", 'w', "<workers>", 0, "Number of workers (default=0: autodetect)", 0},
     {"strategy", 's', "<bfs|par|sat|chaining>", 0, "Strategy for reachability (default=sat)", 0},
-#ifdef HAVE_PROFILER
-    {"profiler", 'p', "<filename>", 0, "Filename for profiling", 0},
-#endif
     {"deadlocks", 3, 0, 0, "Check for deadlocks", 1},
     {"count-nodes", 5, 0, 0, "Report #nodes for BDDs", 1},
     {"count-states", 1, 0, 0, "Report #states at each level", 1},
@@ -77,11 +67,6 @@ parse_opt(int key, char *arg, struct argp_state *state)
     case 6:
         merge_relations = 1;
         break;
-#ifdef HAVE_PROFILER
-    case 'p':
-        profile_filename = arg;
-        break;
-#endif
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1) argp_usage(state);
         model_filename = arg;
@@ -159,7 +144,7 @@ print_memory_usage(void)
  * - int[k] proj : k integers specifying the variables of the projection
  * - MTBDD[1] BDD (mtbdd binary format)
  */
-#define set_load(f) CALL(set_load, f)
+#define set_load(f) RUN(set_load, f)
 TASK_1(set_t, set_load, FILE*, f)
 {
     // allocate set
@@ -207,7 +192,7 @@ TASK_1(set_t, set_load, FILE*, f)
  * Load a relation from file
  * This part just reads the r_k, w_k, r_proj and w_proj variables.
  */
-#define rel_load_proj(f) CALL(rel_load_proj, f)
+#define rel_load_proj(f) RUN(rel_load_proj, f)
 TASK_1(rel_t, rel_load_proj, FILE*, f)
 {
     rel_t rel = (rel_t)malloc(sizeof(struct relation));
@@ -273,7 +258,7 @@ TASK_1(rel_t, rel_load_proj, FILE*, f)
  * Load a relation from file
  * This part just reads the bdd of the relation
  */
-#define rel_load(rel, f) CALL(rel_load, rel, f)
+#define rel_load(rel, f) RUN(rel_load, rel, f)
 VOID_TASK_2(rel_load, rel_t, rel, FILE*, f)
 {
     if (mtbdd_reader_frombinary(f, &rel->bdd, 1) != 0) Abort("Invalid file format!\n");
@@ -283,7 +268,7 @@ VOID_TASK_2(rel_load, rel_t, rel, FILE*, f)
  * Print a single example of a set to stdout
  * Assumption: the example is a full vector and variables contains all state variables...
  */
-#define print_example(example, variables) CALL(print_example, example, variables)
+#define print_example(example, variables) RUN(print_example, example, variables)
 VOID_TASK_2(print_example, BDD, example, BDDSET, variables)
 {
     uint8_t str[totalbits];
@@ -664,7 +649,7 @@ VOID_TASK_1(chaining, set_t, set)
 /**
  * Extend a transition relation to a larger domain (using s=s')
  */
-#define extend_relation(rel, vars) CALL(extend_relation, rel, vars)
+#define extend_relation(rel, vars) RUN(extend_relation, rel, vars)
 TASK_2(BDD, extend_relation, MTBDD, relation, MTBDD, variables)
 {
     /* first determine which state BDD variables are in rel */
@@ -699,7 +684,7 @@ TASK_2(BDD, extend_relation, MTBDD, relation, MTBDD, variables)
 /**
  * Compute \BigUnion ( sets[i] )
  */
-#define big_union(first, count) CALL(big_union, first, count)
+#define big_union(first, count) RUN(big_union, first, count)
 TASK_2(BDD, big_union, int, first, int, count)
 {
     if (count == 1) return next[first]->bdd;
@@ -750,6 +735,15 @@ VOID_TASK_0(gc_end)
     INFO("(GC) Garbage collection done.       (rss: %s)\n", buf);
 }
 
+void
+print_h(double size)
+{
+    const char* units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    int i = 0;
+    for (;size>1024;size/=1024) i++;
+    printf("%.*f %s", i, size, units[i]);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -767,9 +761,7 @@ main(int argc, char **argv)
      * Second: start all worker threads with default settings.
      * Third: setup local variables using the LACE_ME macro.
      */
-    lace_init(workers, 1000000);
-    lace_startup(0, NULL, NULL);
-    LACE_ME;
+    lace_start(workers, 1000000);
 
     /**
      * Initialize Sylvan.
@@ -780,7 +772,13 @@ main(int argc, char **argv)
      * Second: initialize package and subpackages
      * Third: add hooks to report garbage collection
      */
-    sylvan_set_limits(2LL<<30, 1, 6);
+    size_t max = 16LL<<30;
+    if (max > getMaxMemory()) max = getMaxMemory()/10*9;
+    printf("Setting Sylvan main tables memory to ");
+    print_h(max);
+    printf(" max.\n");
+
+    sylvan_set_limits(max, 1, 6);
     sylvan_init_package();
     sylvan_init_bdd();
     sylvan_gc_hook_pregc(TASK(gc_start));
@@ -887,37 +885,29 @@ main(int argc, char **argv)
 
     print_memory_usage();
 
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStart(profile_filename);
-#endif
-
     if (strategy == 0) {
         double t1 = wctime();
-        CALL(bfs, states);
+        RUN(bfs, states);
         double t2 = wctime();
         INFO("BFS Time: %f\n", t2-t1);
     } else if (strategy == 1) {
         double t1 = wctime();
-        CALL(par, states);
+        RUN(par, states);
         double t2 = wctime();
         INFO("PAR Time: %f\n", t2-t1);
     } else if (strategy == 2) {
         double t1 = wctime();
-        CALL(sat, states);
+        RUN(sat, states);
         double t2 = wctime();
         INFO("SAT Time: %f\n", t2-t1);
     } else if (strategy == 3) {
         double t1 = wctime();
-        CALL(chaining, states);
+        RUN(chaining, states);
         double t2 = wctime();
         INFO("CHAINING Time: %f\n", t2-t1);
     } else {
         Abort("Invalid strategy set?!\n");
     }
-
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStop();
-#endif
 
     // Now we just have states
     INFO("Final states: %'0.0f states\n", sylvan_satcount(states->bdd, states->variables));
@@ -928,6 +918,8 @@ main(int argc, char **argv)
     print_memory_usage();
 
     sylvan_stats_report(stdout);
+
+    lace_stop();
 
     return 0;
 }

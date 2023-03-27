@@ -18,13 +18,13 @@
 namespace storm {
 namespace dd {
 
-#ifndef NDEBUG
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wc99-extensions"
 #endif
 
+#ifndef NDEBUG
 VOID_TASK_0(gc_start) {
     STORM_LOG_TRACE("Starting sylvan garbage collection...");
 }
@@ -32,14 +32,22 @@ VOID_TASK_0(gc_start) {
 VOID_TASK_0(gc_end) {
     STORM_LOG_TRACE("Sylvan garbage collection done.");
 }
+#endif
+
+VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*, e) {
+    try {
+        (*f)();
+    } catch (std::exception& exception) {
+        *e = std::current_exception();
+    }
+}
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
 
-#endif
-
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
+bool InternalDdManager<DdType::Sylvan>::suspended = false;
 
 // It is important that the variable pairs start at an even offset, because sylvan assumes this to be true for
 // some operations.
@@ -57,48 +65,20 @@ uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
 InternalDdManager<DdType::Sylvan>::InternalDdManager() {
     if (numberOfInstances == 0) {
         storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
+        size_t const task_deque_size = 1024 * 1024;
+
+        lace_set_stacksize(1024 * 1024 * 16);  // 16 MiB
+        uint64_t numThreads = std::max(1u, lace_get_pu_count());
         if (settings.isNumberOfThreadsSet()) {
-            lace_init(settings.getNumberOfThreads(), 1024 * 1024 * 16);
-        } else {
-            lace_init(0, 1024 * 1024 * 16);
+            STORM_LOG_WARN_COND(settings.getNumberOfThreads() <= numThreads,
+                                "Setting the number of sylvan threads to " << settings.getNumberOfThreads()
+                                                                           << " which exceeds the recommended number for your system (" << numThreads << ").");
+            numThreads = settings.getNumberOfThreads();
         }
-        lace_startup(0, 0, 0);
+        lace_start(numThreads, task_deque_size);
 
-        // Table/cache size computation taken from newer version of sylvan.
-        uint64_t memorycap = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024;
-
-        uint64_t table_ratio = 0;
-        uint64_t initial_ratio = 0;
-
-        uint64_t max_t = 1;
-        uint64_t max_c = 1;
-        if (table_ratio > 0) {
-            max_t <<= table_ratio;
-        } else {
-            max_c <<= -table_ratio;
-        }
-
-        uint64_t cur = max_t * 24 + max_c * 36;
-        STORM_LOG_THROW(cur <= memorycap, storm::exceptions::InvalidSettingsException, "Memory cap incompatible with default table ratio.");
-        STORM_LOG_WARN_COND(memorycap < 60 * 0x0000040000000000, "Sylvan only supports tablesizes <= 42 bits. Memory limit is changed accordingly.");
-
-        while (2 * cur < memorycap && max_t < 0x0000040000000000) {
-            max_t *= 2;
-            max_c *= 2;
-            cur *= 2;
-        }
-
-        uint64_t min_t = max_t, min_c = max_c;
-        while (initial_ratio > 0 && min_t > 0x1000 && min_c > 0x1000) {
-            min_t >>= 1;
-            min_c >>= 1;
-            initial_ratio--;
-        }
-        // End of copied code.
-
-        STORM_LOG_DEBUG("Initializing sylvan library. Initial/max table size: " << min_t << "/" << max_t << ", initial/max cache size: " << min_c << "/"
-                                                                                << max_c << ".");
-        sylvan::Sylvan::initPackage(min_t, max_t, min_c, max_c);
+        sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
+        sylvan_init_package();
 
         sylvan::Sylvan::initBdd();
         sylvan::Sylvan::initMtbdd();
@@ -108,6 +88,9 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
         sylvan_gc_hook_pregc(TASK(gc_start));
         sylvan_gc_hook_postgc(TASK(gc_end));
 #endif
+        // TODO: uncomment these to disable lace threads whenever they are not used. This requires that *all* DD code is run through execute
+        // lace_suspend();
+        // suspended = true;
     }
     ++numberOfInstances;
 }
@@ -121,7 +104,7 @@ InternalDdManager<DdType::Sylvan>::~InternalDdManager() {
         //                fclose(filePointer);
 
         sylvan::Sylvan::quitPackage();
-        lace_exit();
+        lace_stop();
     }
 }
 
@@ -265,6 +248,24 @@ void InternalDdManager<DdType::Sylvan>::triggerReordering() {
 
 void InternalDdManager<DdType::Sylvan>::debugCheck() const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+}
+
+void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) const {
+    // Only wake up the sylvan (i.e. lace) threads when they are suspended.
+    std::exception_ptr e = nullptr;  // propagate exception
+    if (suspended) {
+        lace_resume();
+        suspended = false;
+        RUN(execute_sylvan, &f, &e);
+        lace_suspend();
+        suspended = true;
+    } else {
+        // The sylvan threads are already running, don't suspend afterwards.
+        RUN(execute_sylvan, &f, &e);
+    }
+    if (e) {
+        std::rethrow_exception(e);
+    }
 }
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {

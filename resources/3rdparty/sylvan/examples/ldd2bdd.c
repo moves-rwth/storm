@@ -7,6 +7,7 @@
 #include <sys/time.h>
 
 #include <sylvan_int.h>
+#include <getrss.h>
 
 /* Configuration */
 static int workers = 0; // autodetect
@@ -82,7 +83,7 @@ static int has_actions = 0;
 #define Abort(...) { fprintf(stderr, __VA_ARGS__); fprintf(stderr, "Abort at line %d!\n", __LINE__); exit(-1); }
 
 /* Load a set from file */
-#define set_load(f) CALL(set_load, f)
+#define set_load(f) RUN(set_load, f)
 TASK_1(set_t, set_load, FILE*, f)
 {
     set_t set = (set_t)malloc(sizeof(struct set));
@@ -101,7 +102,7 @@ TASK_1(set_t, set_load, FILE*, f)
 }
 
 /* Load a relation from file */
-#define rel_load_proj(f) CALL(rel_load_proj, f)
+#define rel_load_proj(f) RUN(rel_load_proj, f)
 TASK_1(rel_t, rel_load_proj, FILE*, f)
 {
     int r_k, w_k;
@@ -155,7 +156,7 @@ TASK_1(rel_t, rel_load_proj, FILE*, f)
     return rel;
 }
 
-#define rel_load(f, rel) CALL(rel_load, f, rel)
+#define rel_load(f, rel) RUN(rel_load, f, rel)
 VOID_TASK_2(rel_load, FILE*, f, rel_t, rel)
 {
     lddmc_serialize_fromfile(f);
@@ -169,7 +170,7 @@ VOID_TASK_2(rel_load, FILE*, f, rel_t, rel)
  * This method is called for the set of reachable states.
  */
 static uint64_t compute_highest_id;
-#define compute_highest(dd, arr) CALL(compute_highest, dd, arr)
+#define compute_highest(dd, arr) RUN(compute_highest, dd, arr)
 VOID_TASK_2(compute_highest, MDD, dd, uint32_t*, arr)
 {
     if (dd == lddmc_true || dd == lddmc_false) return;
@@ -199,7 +200,7 @@ VOID_TASK_2(compute_highest, MDD, dd, uint32_t*, arr)
  * This method is called for each transition relation.
  */
 static uint64_t compute_highest_action_id;
-#define compute_highest_action(dd, meta, arr) CALL(compute_highest_action, dd, meta, arr)
+#define compute_highest_action(dd, meta, arr) RUN(compute_highest_action, dd, meta, arr)
 VOID_TASK_3(compute_highest_action, MDD, dd, MDD, meta, uint32_t*, target)
 {
     if (dd == lddmc_true || dd == lddmc_false) return;
@@ -243,7 +244,7 @@ VOID_TASK_3(compute_highest_action, MDD, dd, MDD, meta, uint32_t*, target)
  * Compute the BDD equivalent of the LDD of a set of states.
  */
 static uint64_t bdd_from_ldd_id;
-#define bdd_from_ldd(dd, bits, firstvar) CALL(bdd_from_ldd, dd, bits, firstvar)
+#define bdd_from_ldd(dd, bits, firstvar) RUN(bdd_from_ldd, dd, bits, firstvar)
 TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_dd, uint32_t, firstvar)
 {
     /* simple for leaves */
@@ -293,7 +294,7 @@ TASK_3(MTBDD, bdd_from_ldd, MDD, dd, MDD, bits_dd, uint32_t, firstvar)
  * Compute the BDD equivalent of an LDD transition relation.
  */
 static uint64_t bdd_from_ldd_rel_id;
-#define bdd_from_ldd_rel(dd, bits, firstvar, meta) CALL(bdd_from_ldd_rel, dd, bits, firstvar, meta)
+#define bdd_from_ldd_rel(dd, bits, firstvar, meta) RUN(bdd_from_ldd_rel, dd, bits, firstvar, meta)
 TASK_4(MTBDD, bdd_from_ldd_rel, MDD, dd, MDD, bits_dd, uint32_t, firstvar, MDD, meta)
 {
     if (dd == lddmc_false) return mtbdd_false;
@@ -505,18 +506,31 @@ VOID_TASK_0(gc_end)
     printf("Garbage collection done\n");
 }
 
+void
+print_h(double size)
+{
+    const char* units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    int i = 0;
+    for (;size>1024;size/=1024) i++;
+    printf("%.*f %s", i, size, units[i]);
+}
+
 int
 main(int argc, char **argv)
 {
     argp_parse(&argp, argc, argv, 0, 0, 0);
 
     // Init Lace
-    lace_init(workers, 1000000); // auto-detect number of workers, use a 1,000,000 size task queue
-    lace_startup(0, NULL, NULL); // auto-detect program stack, do not use a callback for startup
-    LACE_ME;
+    lace_start(workers, 1000000); // auto-detect number of workers, use a 1,000,000 size task queue
+
+    size_t max = 16LL<<30;
+    if (max > getMaxMemory()) max = getMaxMemory()/10*9;
+    printf("Setting Sylvan main tables memory to ");
+    print_h(max);
+    printf(" max.\n");
 
     // Init Sylvan
-    sylvan_set_limits(1LL<<30, 1, 10);
+    sylvan_set_limits(max, 1, 10);
     sylvan_init_package();
     sylvan_init_ldd();
     sylvan_init_mtbdd();
@@ -752,6 +766,8 @@ main(int argc, char **argv)
 
     // Report Sylvan statistics (if SYLVAN_STATS is set)
     if (verbose) sylvan_stats_report(stdout);
+
+    lace_stop();
 
     return 0;
 }

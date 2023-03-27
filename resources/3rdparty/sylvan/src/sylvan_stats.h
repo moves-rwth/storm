@@ -32,6 +32,8 @@ typedef enum {
     BDD_NODES_REUSED,
     LDD_NODES_CREATED,
     LDD_NODES_REUSED,
+    ZDD_NODES_CREATED,
+    ZDD_NODES_REUSED,
 
     /* BDD operations */
     OPCOUNTER(BDD_ITE),
@@ -85,6 +87,23 @@ typedef enum {
     OPCOUNTER(LDD_RELPROD_UNION),
     OPCOUNTER(LDD_PROJECT_MINUS),
 
+    /* ZDD operations */
+    OPCOUNTER(ZDD_FROM_MTBDD),
+    OPCOUNTER(ZDD_TO_MTBDD),
+    OPCOUNTER(ZDD_UNION_CUBE),
+    OPCOUNTER(ZDD_EXTEND_DOMAIN),
+    OPCOUNTER(ZDD_SUPPORT),
+    OPCOUNTER(ZDD_PATHCOUNT),
+    OPCOUNTER(ZDD_AND),
+    OPCOUNTER(ZDD_OR),
+    OPCOUNTER(ZDD_ITE),
+    OPCOUNTER(ZDD_NOT),
+    OPCOUNTER(ZDD_DIFF),
+    OPCOUNTER(ZDD_EXISTS),
+    OPCOUNTER(ZDD_PROJECT),
+    OPCOUNTER(ZDD_ISOP),
+    OPCOUNTER(ZDD_COVER_TO_BDD),
+
     /* Other counters */
     SYLVAN_GC_COUNT,
     LLMSSET_LOOKUP,
@@ -113,19 +132,19 @@ typedef struct
  * Initialize stats system (done by sylvan_init_package)
  */
 VOID_TASK_DECL_0(sylvan_stats_init);
-#define sylvan_stats_init() CALL(sylvan_stats_init)
+#define sylvan_stats_init() RUN(sylvan_stats_init)
 
 /**
  * Reset all counters (for statistics)
  */
 VOID_TASK_DECL_0(sylvan_stats_reset);
-#define sylvan_stats_reset() CALL(sylvan_stats_reset)
+#define sylvan_stats_reset() RUN(sylvan_stats_reset)
 
 /**
  * Obtain current counts (this stops the world during counting)
  */
 VOID_TASK_DECL_1(sylvan_stats_snapshot, sylvan_stats_t*);
-#define sylvan_stats_snapshot(target) CALL(sylvan_stats_snapshot, target)
+#define sylvan_stats_snapshot(target) RUN(sylvan_stats_snapshot, target)
 
 /**
  * Write statistic report to file (stdout, stderr, etc)

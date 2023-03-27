@@ -38,20 +38,8 @@
 #endif
 #endif
 
-/**
- * Sylvan header files outside the namespace
- */
-
 #include <lace.h>
 #include <sylvan_tls.h>
-
-#ifdef __cplusplus
-//namespace sylvan {
-#endif
-
-/**
- * Sylvan header files inside the namespace
- */
 
 #include <sylvan_common.h>
 #include <sylvan_stats.h>
@@ -59,7 +47,8 @@
 #include <sylvan_mtbdd.h>
 #include <sylvan_bdd.h>
 #include <sylvan_ldd.h>
+#include <sylvan_zdd.h>
 
-#ifdef __cplusplus
-//}
-#endif
+// ADDED BY STORM
+#include <sylvan_mtbdd_storm.h>
+#include <sylvan_bdd_storm.h>

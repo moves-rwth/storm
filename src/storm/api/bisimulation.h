@@ -83,12 +83,16 @@ performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<D
     STORM_LOG_THROW(bisimulationType == storm::storage::BisimulationType::Strong, storm::exceptions::NotSupportedException,
                     "Currently only strong bisimulation is supported.");
 
-    // Try to get rid of non state-rewards to easy bisimulation computation.
-    model->reduceToStateBasedRewards();
+    std::shared_ptr<storm::models::Model<ExportValueType>> result;
+    model->getManager().execute([&]() {
+        // Try to get rid of non state-rewards to easy bisimulation computation.
+        model->reduceToStateBasedRewards();
 
-    storm::dd::BisimulationDecomposition<DdType, ValueType, ExportValueType> decomposition(*model, formulas, bisimulationType);
-    decomposition.compute(mode);
-    return decomposition.getQuotient(quotientFormat);
+        storm::dd::BisimulationDecomposition<DdType, ValueType, ExportValueType> decomposition(*model, formulas, bisimulationType);
+        decomposition.compute(mode);
+        result = decomposition.getQuotient(quotientFormat);
+    });
+    return result;
 }
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>

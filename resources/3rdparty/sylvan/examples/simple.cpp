@@ -106,13 +106,11 @@ main (int argc, char *argv[])
 {
     int n_workers = 0; // automatically detect number of workers
     size_t deque_size = 0; // default value for the size of task deques for the workers
-    size_t program_stack_size = 0; // default value for the program stack of each pthread
 
     // Initialize the Lace framework for <n_workers> workers.
-    lace_init(n_workers, deque_size);
+    lace_start(n_workers, deque_size);
 
-    // Spawn and start all worker pthreads; suspends current thread until done.
-    lace_startup(program_stack_size, TASK(_main), NULL);
+    RUN(_main, NULL);
 
     // The lace_startup command also exits Lace after _main is completed.
 

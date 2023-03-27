@@ -6,10 +6,6 @@
 #include <string.h>
 #include <sys/time.h>
 
-#ifdef HAVE_PROFILER
-#include <gperftools/profiler.h>
-#endif
-
 #include <getrss.h>
 
 #include <sylvan_int.h>
@@ -24,18 +20,12 @@ static int print_transition_matrix = 0; // print transition relation matrix
 static int workers = 0; // autodetect
 static char* model_filename = NULL; // filename of model
 static char* out_filename = NULL; // filename of output
-#ifdef HAVE_PROFILER
-static char* profile_filename = NULL; // filename for profiling
-#endif
 
 /* argp configuration */
 static struct argp_option options[] =
 {
     {"workers", 'w', "<workers>", 0, "Number of workers (default=0: autodetect)", 0},
     {"strategy", 's', "<bfs|par|sat|chaining>", 0, "Strategy for reachability (default=par)", 0},
-#ifdef HAVE_PROFILER
-    {"profiler", 'p', "<filename>", 0, "Filename for profiling", 0},
-#endif
     {"deadlocks", 3, 0, 0, "Check for deadlocks", 1},
     {"count-nodes", 5, 0, 0, "Report #nodes for LDDs", 1},
     {"count-states", 1, 0, 0, "Report #states at each level", 1},
@@ -73,11 +63,6 @@ parse_opt(int key, char *arg, struct argp_state *state)
     case 5:
         report_nodes = 1;
         break;
-#ifdef HAVE_PROFILER
-    case 'p':
-        profile_filename = arg;
-        break;
-#endif
     case ARGP_KEY_ARG:
         if (state->arg_num == 0) model_filename = arg;
         if (state->arg_num == 1) out_filename = arg;
@@ -169,7 +154,7 @@ set_save(FILE* f, set_t set)
 /**
  * Load a relation from file
  */
-#define rel_load_proj(f) CALL(rel_load_proj, f)
+#define rel_load_proj(f) RUN(rel_load_proj, f)
 TASK_1(rel_t, rel_load_proj, FILE*, f)
 {
     int r_k, w_k;
@@ -229,7 +214,7 @@ TASK_1(rel_t, rel_load_proj, FILE*, f)
     return rel;
 }
 
-#define rel_load(f, rel) CALL(rel_load, f, rel)
+#define rel_load(f, rel) RUN(rel_load, f, rel)
 VOID_TASK_2(rel_load, FILE*, f, rel_t, rel)
 {
     lddmc_serialize_fromfile(f);
@@ -306,7 +291,6 @@ static void
 print_example(MDD example)
 {
     if (example != lddmc_false) {
-        LACE_ME;
         uint32_t vec[vector_size];
         lddmc_sat_one(example, vec, vector_size);
 
@@ -692,42 +676,17 @@ VOID_TASK_0(gc_end)
     INFO("(GC) Garbage collection done.       (rss: %s)\n", buf);
 }
 
-int
-main(int argc, char **argv)
+void
+print_h(double size)
 {
-    /**
-     * Parse command line, set locale, set startup time for INFO messages.
-     */
-    argp_parse(&argp, argc, argv, 0, 0, 0);
-    setlocale(LC_NUMERIC, "en_US.utf-8");
-    t_start = wctime();
+    const char* units[] = {"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    int i = 0;
+    for (;size>1024;size/=1024) i++;
+    printf("%.*f %s", i, size, units[i]);
+}
 
-    /**
-     * Initialize Lace.
-     *
-     * First: setup with given number of workers (0 for autodetect) and some large size task queue.
-     * Second: start all worker threads with default settings.
-     * Third: setup local variables using the LACE_ME macro.
-     */
-    lace_init(workers, 1000000);
-    lace_startup(0, NULL, NULL);
-    LACE_ME;
-
-    /**
-     * Initialize Sylvan.
-     *
-     * First: set memory limits
-     * - 2 GB memory, nodes table twice as big as cache, initial size halved 6x
-     *   (that means it takes 6 garbage collections to get to the maximum nodes&cache size)
-     * Second: initialize package and subpackages
-     * Third: add hooks to report garbage collection
-     */
-    sylvan_set_limits(2LL<<30, 1, 6);
-    sylvan_init_package();
-    sylvan_init_ldd();
-    sylvan_gc_hook_pregc(TASK(gc_start));
-    sylvan_gc_hook_postgc(TASK(gc_end));
-
+TASK_0(int, run)
+{
     /**
      * Read the model from file
      */
@@ -790,37 +749,29 @@ main(int argc, char **argv)
 
     set_t states = set_clone(initial);
 
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStart(profile_filename);
-#endif
-
     if (strategy == 0) {
         double t1 = wctime();
-        CALL(bfs, states);
+        RUN(bfs, states);
         double t2 = wctime();
         INFO("BFS Time: %f\n", t2-t1);
     } else if (strategy == 1) {
         double t1 = wctime();
-        CALL(par, states);
+        RUN(par, states);
         double t2 = wctime();
         INFO("PAR Time: %f\n", t2-t1);
     } else if (strategy == 2) {
         double t1 = wctime();
-        CALL(sat, states);
+        RUN(sat, states);
         double t2 = wctime();
         INFO("SAT Time: %f\n", t2-t1);
     } else if (strategy == 3) {
         double t1 = wctime();
-        CALL(chaining, states);
+        RUN(chaining, states);
         double t2 = wctime();
         INFO("CHAINING Time: %f\n", t2-t1);
     } else {
         Abort("Invalid strategy set?!\n");
     }
-
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStop();
-#endif
 
     // Now we just have states
     INFO("Final states: %'0.0f states\n", lddmc_satcount_cached(states->dd));
@@ -857,8 +808,56 @@ main(int argc, char **argv)
         fclose(f);
     }
 
+    return 0;
+}
+
+int
+main(int argc, char **argv)
+{
+    /**
+     * Parse command line, set locale, set startup time for INFO messages.
+     */
+    argp_parse(&argp, argc, argv, 0, 0, 0);
+    setlocale(LC_NUMERIC, "en_US.utf-8");
+    t_start = wctime();
+
+    /**
+     * Initialize Lace.
+     *
+     * First: setup with given number of workers (0 for autodetect) and some large size task queue.
+     * Second: start all worker threads with default settings.
+     * Third: setup local variables using the LACE_ME macro.
+     */
+    lace_start(workers, 1000000);
+
+    /**
+     * Initialize Sylvan.
+     *
+     * First: set memory limits
+     * - 2 GB memory, nodes table twice as big as cache, initial size halved 6x
+     *   (that means it takes 6 garbage collections to get to the maximum nodes&cache size)
+     * Second: initialize package and subpackages
+     * Third: add hooks to report garbage collection
+     */
+
+    size_t max = 16LL<<30;
+    if (max > getMaxMemory()) max = getMaxMemory()/10*9;
+    printf("Setting Sylvan main tables memory to ");
+    print_h(max);
+    printf(" max.\n");
+
+    sylvan_set_limits(max, 1, 16);
+    sylvan_init_package();
+    sylvan_init_ldd();
+    sylvan_gc_hook_pregc(TASK(gc_start));
+    sylvan_gc_hook_postgc(TASK(gc_end));
+
+    int res = RUN(run);
+
     print_memory_usage();
     sylvan_stats_report(stdout);
 
-    return 0;
+    lace_stop();
+
+    return res;
 }

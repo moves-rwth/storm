@@ -1,4 +1,4 @@
-/* */
+#include "sylvan_int.h"
 
 /**
  * Calculates \exists variables . a

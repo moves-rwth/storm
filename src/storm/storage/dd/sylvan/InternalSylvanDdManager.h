@@ -133,6 +133,16 @@ class InternalDdManager<DdType::Sylvan> {
     void debugCheck() const;
 
     /*!
+     * All code that manipulates DDs shall be called through this function.
+     * This is generally needed to set-up the correct context.
+     * Specifically for sylvan, this is required to make sure that DD-manipulating code is executed as a LACE task.
+     * Example usage: `manager->execute([&]() { bar = foo(arg1,arg2); }`
+     *
+     * @param f the function that is executed
+     */
+    void execute(std::function<void()> const& f) const;
+
+    /*!
      * Retrieves the number of DD variables managed by this manager.
      *
      * @return The number of managed variables.
@@ -147,6 +157,10 @@ class InternalDdManager<DdType::Sylvan> {
     // quit the sylvan. This is because Sylvan does not know the concept of managers but implicitly has a
     // 'global' manager.
     static uint_fast64_t numberOfInstances;
+
+    // Since the sylvan (more specifically: lace) processes do busy waiting, we suspend them as long as
+    // sylvan is not used. This flag keeps track of whether we are currently suspending.
+    static bool suspended;
 
     // The index of the next free variable index. This needs to be shared across all instances since the sylvan
     // manager is implicitly 'global'.

@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_DDMANAGER_H_
 
 #include <boost/optional.hpp>
+#include <functional>
 #include <set>
 #include <unordered_map>
 
@@ -332,6 +333,16 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
      * Performs a debug check if available.
      */
     void debugCheck() const;
+
+    /*!
+     * All code that manipulates DDs shall be called through this function.
+     * This is generally needed to set-up the correct context.
+     * Specifically for sylvan, this is required to make sure that DD-manipulating code is executed as a LACE task.
+     * Example usage: `manager->execute([&]() { bar = foo(arg1,arg2); }`
+     *
+     * @param f the function that is executed
+     */
+    void execute(std::function<void()> const& f) const;
 
    private:
     /*!

@@ -3,11 +3,70 @@
 #include "sylvan_int.h"
 
 #include "storm_wrapper.h"
-#include "sylvan_mtbdd_storm.h"
 
 // Import the types created for rational numbers and functions.
 extern uint32_t srn_type;
 extern uint32_t srf_type;
+
+// Forward declare gcd here,
+// as we don't want to mess with sylvans internal api too much
+// Implemented in sylvan_mtbdd.c
+uint32_t gcd(uint32_t, uint32_t);
+
+/**
+ * Apply a unary operation <op> to <dd>.
+ */
+TASK_IMPL_3(MTBDD, mtbdd_uapply_fail_false, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
+{
+    /* Maybe perform garbage collection */
+    sylvan_gc_test();
+
+    /* Count operation */
+    sylvan_stats_count(MTBDD_UAPPLY);
+
+    /* Check cache */
+    MTBDD result;
+    if (cache_get3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, &result)) {
+        sylvan_stats_count(MTBDD_UAPPLY_CACHED);
+        return result;
+    }
+
+    /* Check terminal case */
+    result = WRAP(op, dd, param);
+    if (result != mtbdd_invalid) {
+        /* Store in cache */
+        if (cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result)) {
+            sylvan_stats_count(MTBDD_UAPPLY_CACHEDPUT);
+        }
+
+        return result;
+    }
+
+    /* Get cofactors */
+    mtbddnode_t ndd = MTBDD_GETNODE(dd);
+    MTBDD ddlow = node_getlow(dd, ndd);
+    MTBDD ddhigh = node_gethigh(dd, ndd);
+
+    /* Recursive */
+    mtbdd_refs_spawn(SPAWN(mtbdd_uapply, ddhigh, op, param));
+    MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply, ddlow, op, param));
+    MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply));
+    mtbdd_refs_pop(1);
+
+    if (low == mtbdd_false || high == mtbdd_false) {
+        result = mtbdd_false;
+    } else {
+        result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
+    }
+
+    /* Store in cache */
+    if (cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result)) {
+        sylvan_stats_count(MTBDD_UAPPLY_CACHEDPUT);
+    }
+
+    return result;
+}
+
 
 /**
  * Binary operation Times (for MTBDDs of same type)
@@ -19,12 +78,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
     if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
-    
+
     // Do not handle Boolean MTBDDs...
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -78,7 +137,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
             return result;
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -93,10 +152,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
     MTBDD a = *pa, b = *pb;
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -121,12 +180,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
             return mtbdd_false;
         }
     }
-    
+
     if (a < b) {
         *pa = b;
         *pb = a;
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -141,10 +200,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
     MTBDD a = *pa, b = *pb;
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -168,7 +227,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
             return nom_a * denom_b < nom_b * denom_a ? mtbdd_true : mtbdd_false;
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -183,10 +242,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
     MTBDD a = *pa, b = *pb;
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -211,7 +270,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
             return nom_a <= nom_b ? mtbdd_true : mtbdd_false;
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -226,10 +285,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_greater_or_equal, MTBDD*, pa, MTBDD*, pb)
     MTBDD a = *pa, b = *pb;
     if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
     if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -254,7 +313,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_greater_or_equal, MTBDD*, pa, MTBDD*, pb)
             return nom_a >= nom_b ? mtbdd_true : mtbdd_false;
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -267,10 +326,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_greater_or_equal, MTBDD*, pa, MTBDD*, pb)
 TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -285,7 +344,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
             assert(0);
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -298,10 +357,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
 TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -316,7 +375,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
             assert(0);
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -329,10 +388,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
 TASK_IMPL_2(MTBDD, mtbdd_op_logxy, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
-    
+
     mtbddnode_t na = MTBDD_GETNODE(a);
     mtbddnode_t nb = MTBDD_GETNODE(b);
-    
+
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
@@ -347,7 +406,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_logxy, MTBDD*, pa, MTBDD*, pb)
             assert(0);
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -356,10 +415,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
     /* We only expect "double" terminals, or false */
     if (a == mtbdd_false) return mtbdd_false;
     if (a == mtbdd_true) return mtbdd_true;
-    
+
     // a != constant
     mtbddnode_t na = MTBDD_GETNODE(a);
-    
+
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
             return mtbdd_getint64(a) != 0 ? mtbdd_true : mtbdd_false;
@@ -374,12 +433,12 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
         else if (mtbddnode_gettype(na) == srf_type) {
             return storm_rational_function_is_zero((storm_rational_function_ptr)mtbdd_getvalue(a)) == 0 ? mtbdd_true : mtbdd_false;
         }
-#endif   
+#endif
     }
-    
+
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+
     return mtbdd_invalid;
 }
 
@@ -393,10 +452,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
     /* We only expect "double" terminals, or false */
     if (a == mtbdd_false) return mtbdd_false;
     if (a == mtbdd_true) return mtbdd_true;
-    
+
     // a != constant
     mtbddnode_t na = MTBDD_GETNODE(a);
-    
+
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
             return a;
@@ -408,10 +467,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
             return result;
         }
     }
-    
+
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+
     return mtbdd_invalid;
 }
 
@@ -425,10 +484,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
     /* We only expect "double" terminals, or false */
     if (a == mtbdd_false) return mtbdd_false;
     if (a == mtbdd_true) return mtbdd_true;
-    
+
     // a != constant
     mtbddnode_t na = MTBDD_GETNODE(a);
-    
+
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
             return a;
@@ -443,7 +502,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
 
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+
     return mtbdd_invalid;
 }
 
@@ -457,10 +516,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_double, MTBDD, a, size_t, v)
     /* We only expect "double" terminals, or false */
     if (a == mtbdd_false) return mtbdd_double(0);
     if (a == mtbdd_true) return mtbdd_double(1.0);
-    
+
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+
     return mtbdd_invalid;
 }
 
@@ -474,10 +533,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_int64, MTBDD, a, size_t, v)
     /* We only expect "double" terminals, or false */
     if (a == mtbdd_false) return mtbdd_int64(0);
     if (a == mtbdd_true) return mtbdd_int64(1);
-    
+
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
-    
+
     return mtbdd_invalid;
 }
 
@@ -495,7 +554,7 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     if (dd == mtbdd_false) return 0.0;
 
     mtbddnode_t na = MTBDD_GETNODE(dd);
-    
+
     if (mtbdd_isleaf(dd)) {
         if (mtbddnode_gettype(na) == 0) {
             return mtbdd_getint64(dd) != 0 ? powl(2.0L, nvars) : 0.0;
@@ -512,25 +571,25 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
         }
 #endif
     }
-    
+
     /* Perhaps execute garbage collection */
     sylvan_gc_test();
-    
+
     union {
         double d;
         uint64_t s;
     } hack;
-    
+
     /* Consult cache */
     if (cache_get3(CACHE_MTBDD_NONZERO_COUNT, dd, 0, nvars, &hack.s)) {
         sylvan_stats_count(CACHE_MTBDD_NONZERO_COUNT);
         return hack.d;
     }
-    
+
     SPAWN(mtbdd_non_zero_count, mtbdd_gethigh(dd), nvars-1);
     double low = CALL(mtbdd_non_zero_count, mtbdd_getlow(dd), nvars-1);
     hack.d = low + SYNC(mtbdd_non_zero_count);
-    
+
     cache_put3(CACHE_MTBDD_NONZERO_COUNT, dd, 0, nvars, hack.s);
     return hack.d;
 }
@@ -572,14 +631,14 @@ TASK_IMPL_2(MTBDD, mtbdd_op_complement, MTBDD, a, size_t, k)
 				return mtbdd_int64(1);
 			} else {
 				return mtbdd_int64(0);
-			}            
+			}
         } else if (mtbddnode_gettype(na) == 1) {
             double d = mtbdd_getdouble(a);
 			if (d == 0.0) {
 				return mtbdd_double(1.0);
 			} else {
 				return mtbdd_double(0.0);
-			}  
+			}
         } else if (mtbddnode_gettype(na) == 2) {
             printf("ERROR: mtbdd_op_complement type FRACTION.\n");
 			assert(0);
@@ -597,14 +656,14 @@ TASK_IMPL_2(MTBDD, mtbdd_op_sharpen, MTBDD, a, size_t, p)
     /* We only expect double or rational number terminals, or false */
     if (a == mtbdd_false) return mtbdd_false;
     if (a == mtbdd_true) return mtbdd_true;
-    
+
     // a != constant
     mtbddnode_t na = MTBDD_GETNODE(a);
-    
+
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 1) {
             storm_rational_number_ptr rnp = storm_double_sharpen(mtbdd_getdouble(a), p);
-            
+
             // If the sharpening failed, we return mtbdd_false so this can be detected at the top level.
             if (rnp == (storm_rational_number_ptr)0) {
                 return mtbdd_false;
@@ -618,7 +677,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_sharpen, MTBDD, a, size_t, p)
             assert(0);
         }
     }
-    
+
     return mtbdd_invalid;
 }
 
@@ -632,10 +691,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, a, size_t, p)
     /* We only expect double or rational number terminals, or false */
     if (a == mtbdd_false) return mtbdd_false;
     if (a == mtbdd_true) return mtbdd_true;
-    
+
     // a != constant
     mtbddnode_t na = MTBDD_GETNODE(a);
-    
+
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 1) {
             MTBDD result = mtbdd_storm_rational_number(storm_rational_number_from_double(mtbdd_getdouble(a)));
@@ -653,6 +712,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_to_rational_number, MTBDD, a, size_t, p)
 TASK_IMPL_2(MTBDD, mtbdd_to_rational_number, MTBDD, dd, size_t, p)
 {
     return mtbdd_uapply(dd, TASK(mtbdd_op_to_rational_number), 0);
+    (void)p; // unused variable
 }
 
 
@@ -681,19 +741,19 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
 		sylvan_deref(res);
 		return res1;
     }
-	
+
     /* Check cache */
     MTBDD result;
     if (cache_get3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, &result)) {
         sylvan_stats_count(MTBDD_ABSTRACT_CACHED);
         return result;
     }
-    
+
 	mtbddnode_t na = MTBDD_GETNODE(a);
 	uint32_t va = mtbddnode_getvariable(na);
 	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
-    
+
     /* Abstract a variable that does not appear in a. */
     if (va > vv) {
 		BDD _v = sylvan_set_next(v);
@@ -701,7 +761,7 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
         if (res == sylvan_invalid) {
             return sylvan_invalid;
         }
-        
+
         // Fill in the missing variables to make representative unique.
         sylvan_ref(res);
         BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
@@ -712,10 +772,10 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
         sylvan_deref(res);
        	return res1;
     }
-    
+
     MTBDD E = mtbdd_getlow(a);
     MTBDD T = mtbdd_gethigh(a);
-    
+
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
 		BDD _v = sylvan_set_next(v);
@@ -724,14 +784,14 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
             return sylvan_invalid;
         }
         sylvan_ref(res1);
-        
+
         BDD res2 = CALL(mtbdd_min_abstract_representative, T, _v, va);
         if (res2 == sylvan_invalid) {
             sylvan_deref(res1);
             return sylvan_invalid;
         }
         sylvan_ref(res2);
-        
+
         MTBDD left = mtbdd_abstract_min(E, _v);
         if (left == mtbdd_invalid) {
             sylvan_deref(res1);
@@ -739,7 +799,7 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
             return sylvan_invalid;
         }
         mtbdd_ref(left);
-		
+
         MTBDD right = mtbdd_abstract_min(T, _v);
         if (right == mtbdd_invalid) {
             sylvan_deref(res1);
@@ -748,7 +808,7 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
             return sylvan_invalid;
         }
         mtbdd_ref(right);
-        
+
         BDD tmp = mtbdd_less_or_equal_as_bdd(left, right);
         if (tmp == sylvan_invalid) {
             sylvan_deref(res1);
@@ -758,10 +818,10 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
             return sylvan_invalid;
         }
         sylvan_ref(tmp);
-        
+
         mtbdd_deref(left);
 		mtbdd_deref(right);
-        
+
         BDD res1Inf = sylvan_ite(tmp, res1, sylvan_false);
         if (res1Inf == sylvan_invalid) {
             sylvan_deref(res1);
@@ -793,12 +853,12 @@ TASK_IMPL_3(BDD, mtbdd_min_abstract_representative, MTBDD, a, BDD, v, BDDVAR, pr
         sylvan_ref(res);
         sylvan_deref(res1Inf);
         sylvan_deref(res2Inf);
-        
+
         /* Store in cache */
         if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)1, res)) {
             sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
         }
-        
+
         sylvan_deref(res);
         return res;
     }
@@ -842,7 +902,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
 
     /* Count operation */
     sylvan_stats_count(MTBDD_ABSTRACT);
-    
+
 	/* Cube is guaranteed to be a cube at this point. */
     if (mtbdd_isleaf(a)) {
         /* Compute result */
@@ -859,7 +919,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
 			return sylvan_invalid;
 		}
 		sylvan_deref(res);
-        
+
 		return res1;
     }
 
@@ -874,7 +934,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
 	uint32_t va = mtbddnode_getvariable(na);
 	bddnode_t nv = MTBDD_GETNODE(v);
 	BDDVAR vv = bddnode_getvariable(nv);
-    
+
     /* Abstract a variable that does not appear in a. */
     if (vv < va) {
 		BDD _v = sylvan_set_next(v);
@@ -882,7 +942,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         if (res == sylvan_invalid) {
             return sylvan_invalid;
         }
-        
+
         // Fill in the missing variables to make representative unique.
         sylvan_ref(res);
         BDD res1 = sylvan_ite(sylvan_ithvar(vv), sylvan_false, res);
@@ -893,10 +953,10 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         sylvan_deref(res);
        	return res1;
     }
-    
+
     MTBDD E = mtbdd_getlow(a);
     MTBDD T = mtbdd_gethigh(a);
-    
+
     /* If the two indices are the same, so are their levels. */
     if (va == vv) {
 		BDD _v = sylvan_set_next(v);
@@ -905,14 +965,14 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
             return sylvan_invalid;
         }
         sylvan_ref(res1);
-        
+
         BDD res2 = CALL(mtbdd_max_abstract_representative, T, _v, va);
         if (res2 == sylvan_invalid) {
             sylvan_deref(res1);
             return sylvan_invalid;
         }
         sylvan_ref(res2);
-        
+
         MTBDD left = mtbdd_abstract_max(E, _v);
         if (left == mtbdd_invalid) {
             sylvan_deref(res1);
@@ -920,7 +980,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
             return sylvan_invalid;
         }
         mtbdd_ref(left);
-		
+
         MTBDD right = mtbdd_abstract_max(T, _v);
         if (right == mtbdd_invalid) {
             sylvan_deref(res1);
@@ -929,7 +989,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
             return sylvan_invalid;
         }
         mtbdd_ref(right);
-        
+
         BDD tmp = mtbdd_greater_or_equal_as_bdd(left, right);
         if (tmp == sylvan_invalid) {
             sylvan_deref(res1);
@@ -939,10 +999,10 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
             return sylvan_invalid;
         }
         sylvan_ref(tmp);
-        
+
         mtbdd_deref(left);
 		mtbdd_deref(right);
-        
+
         BDD res1Inf = sylvan_ite(tmp, res1, sylvan_false);
         if (res1Inf == sylvan_invalid) {
             sylvan_deref(res1);
@@ -974,7 +1034,7 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         sylvan_ref(res);
         sylvan_deref(res1Inf);
         sylvan_deref(res2Inf);
-        
+
         /* Store in cache */
         if (cache_put3(CACHE_MTBDD_ABSTRACT_REPRESENTATIVE, a, v, (size_t)0, res)) {
             sylvan_stats_count(MTBDD_ABSTRACT_CACHEDPUT);
@@ -1011,38 +1071,38 @@ TASK_IMPL_3(BDD, mtbdd_max_abstract_representative, MTBDD, a, MTBDD, v, uint32_t
         }
 
         return res;
-    }	
+    }
 }
 
 TASK_IMPL_3(MTBDD, mtbdd_uapply_nocache, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
 {
     /* Maybe perform garbage collection */
     sylvan_gc_test();
-    
+
     /* Check cache */
     MTBDD result;
-    
+
     // Caching would be done here, but is omitted (as this is the purpose of this function).
-    
+
     /* Check terminal case */
     result = WRAP(op, dd, param);
     if (result != mtbdd_invalid) {
         // Caching would be done here, but is omitted (as this is the purpose of this function).
         return result;
     }
-    
+
     /* Get cofactors */
     mtbddnode_t ndd = MTBDD_GETNODE(dd);
     MTBDD ddlow = node_getlow(dd, ndd);
     MTBDD ddhigh = node_gethigh(dd, ndd);
-    
+
     /* Recursive */
     mtbdd_refs_spawn(SPAWN(mtbdd_uapply_nocache, ddhigh, op, param));
     MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply_nocache, ddlow, op, param));
     MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply_nocache));
     mtbdd_refs_pop(1);
     result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
-    
+
     // Caching would be done here, but is omitted (as this is the purpose of this function).
     return result;
 }

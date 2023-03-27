@@ -17,6 +17,7 @@
 
 #include <sylvan.h>
 #include <sylvan_refs.h>
+#include <sylvan_hash.h>
 
 #include <errno.h>  // for errno
 #include <string.h> // for strerror
@@ -37,16 +38,7 @@
  */
 static const uint64_t refs_ts = 0x7fffffffffffffff; // tombstone
 
-/* FNV-1a 64-bit hash */
-static inline uint64_t
-fnv_hash(uint64_t a)
-{
-    const uint64_t prime = 1099511628211;
-    uint64_t hash = 14695981039346656037LLU;
-    hash = (hash ^ a) * prime;
-    hash = (hash ^ ((a << 25) | (a >> 39))) * prime;
-    return hash ^ (hash >> 32);
-}
+#define fnvhash8(a) sylvan_fnvhash8(a, 14695981039346656037LLU)
 
 // Count number of unique entries (not number of references)
 size_t
@@ -68,7 +60,7 @@ refs_rehash(refs_table_t *tbl, uint64_t v)
     if (v == 0) return; // do not rehash empty value
     if (v == refs_ts) return; // do not rehash tombstone
 
-    volatile uint64_t *bucket = tbl->refs_table + (fnv_hash(v & 0x000000ffffffffff) % tbl->refs_size);
+    volatile uint64_t *bucket = tbl->refs_table + (fnvhash8(v & 0x000000ffffffffff) % tbl->refs_size);
     uint64_t * const end = tbl->refs_table + tbl->refs_size;
 
     int i = 128; // try 128 times linear probing
@@ -190,7 +182,7 @@ refs_modify(refs_table_t *tbl, const uint64_t a, const int dir)
     refs_enter(tbl);
 
 ref_retry:
-    bucket = tbl->refs_table + (fnv_hash(a) & (tbl->refs_size - 1));
+    bucket = tbl->refs_table + (fnvhash8(a) & (tbl->refs_size - 1));
     ts_bucket = NULL; // tombstone
     i = 128; // try 128 times linear probing
 
@@ -348,7 +340,7 @@ protect_rehash(refs_table_t *tbl, uint64_t v)
     if (v == 0) return; // do not rehash empty value
     if (v == refs_ts) return; // do not rehash tombstone
 
-    volatile uint64_t *bucket = tbl->refs_table + (fnv_hash(v) % tbl->refs_size);
+    volatile uint64_t *bucket = tbl->refs_table + (fnvhash8(v) % tbl->refs_size);
     uint64_t * const end = tbl->refs_table + tbl->refs_size;
 
     int i = 128; // try 128 times linear probing
@@ -467,7 +459,7 @@ protect_up(refs_table_t *tbl, uint64_t a)
     protect_enter(tbl);
 
 ref_retry:
-    bucket = tbl->refs_table + (fnv_hash(a) & (tbl->refs_size - 1));
+    bucket = tbl->refs_table + (fnvhash8(a) & (tbl->refs_size - 1));
     ts_bucket = NULL; // tombstone
     i = 128; // try 128 times linear probing
 
@@ -521,7 +513,7 @@ protect_down(refs_table_t *tbl, uint64_t a)
     volatile uint64_t *bucket;
     protect_enter(tbl);
 
-    bucket = tbl->refs_table + (fnv_hash(a) & (tbl->refs_size - 1));
+    bucket = tbl->refs_table + (fnvhash8(a) & (tbl->refs_size - 1));
     int i = 128; // try 128 times linear probing
 
     while (i--) {
