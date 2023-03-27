@@ -25,6 +25,15 @@
 #include <pthread.h> // for POSIX threading
 #include <stdatomic.h>
 
+#ifndef _WIN32
+#include <sys/resource.h> // for getrlimit
+#endif
+
+#ifdef _WIN32
+#include <windows.h> // to use GetSystemInfo
+#undef NEWFRAME // otherwise we can't use NEWFRAME Lace macro
+#endif
+
 #if defined(__APPLE__)
 /* Mac OS X defines sem_init but actually does not implement them */
 #include <mach/mach.h>
@@ -36,10 +45,6 @@ typedef semaphore_t sem_t;
 #define sem_destroy(sem)        semaphore_destroy(mach_task_self(), *sem)
 #else
 #include <semaphore.h> // for sem_*
-#endif
-
-#if ! __STDC_NO_THREADS__
-#include <threads.h>   // for thread_local
 #endif
 
 #include <lace.h>
@@ -117,10 +122,10 @@ static atomic_uint workers_running = 0;
 /**
  * Thread-specific mechanism to access current worker data
  */
-#if ! __STDC_NO_THREADS__
-static thread_local WorkerP *current_worker;
+#ifdef __linux__
+static __thread WorkerP *current_worker;
 #else
-static __thread WorkerP *current_worker; // fallback option
+static pthread_key_t current_worker_key;
 #endif
 
 /**
@@ -134,7 +139,7 @@ lace_newframe_t lace_newframe;
 int
 lace_is_worker()
 {
-    return current_worker != NULL ? 1 : 0;
+    return lace_get_worker() != NULL ? 1 : 0;
 }
 
 /**
@@ -143,7 +148,11 @@ lace_is_worker()
 WorkerP*
 lace_get_worker()
 {
+#ifdef __linux__
     return current_worker;
+#else
+    return (WorkerP*)pthread_getspecific(current_worker_key);
+#endif
 }
 
 /**
@@ -397,11 +406,18 @@ lace_init_worker(unsigned int worker)
 #if LACE_USE_MMAP
     workers_memory[worker] = mmap(NULL, workers_memory_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     if (workers_memory[worker] == MAP_FAILED) {
-        fprintf(stderr, "Lace error: Unable to allocate memory for the Lace worker!\n");
+        fprintf(stderr, "Lace error: Unable to allocate mmapped memory for the Lace worker!\n");
         exit(1);
     }
 #else
-    if (posix_memalign((void**)&workers_memory[worker], LINE_SIZE, workers_memory_size) != 0) {
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+    workers_memory[worker] = _aligned_malloc(workers_memory_size, LINE_SIZE);
+#elif defined(__MINGW32__)
+    workers_memory[worker] = __mingw_aligned_malloc(workers_memory_size, LINE_SIZE);
+#else
+    workers_memory[worker] = aligned_alloc(LINE_SIZE, workers_memory_size);
+#endif
+    if (workers_memory[worker] == 0) {
         fprintf(stderr, "Lace error: Unable to allocate memory for the Lace worker!\n");
         exit(1);
     }
@@ -412,7 +428,11 @@ lace_init_worker(unsigned int worker)
     Worker *wt = workers[worker] = &workers_memory[worker]->worker_public;
     WorkerP *w = workers_p[worker] = &workers_memory[worker]->worker_private;
     w->dq = workers_memory[worker]->deque;
+#ifdef __linux__
     current_worker = w;
+#else
+    pthread_setspecific(current_worker_key, w);
+#endif
 
     // Initialize public worker data
     wt->dq = w->dq;
@@ -444,21 +464,56 @@ lace_init_worker(unsigned int worker)
 #endif
 }
 
-static atomic_int must_suspend = 0; // TODO make bool?
+static atomic_int must_suspend = 0;
 static sem_t suspend_semaphore;
+static atomic_int lace_awaken_count = 0;
 
 void
 lace_suspend()
 {
-    atomic_store_explicit(&must_suspend, 1, memory_order_relaxed);
-    while (workers_running != 0) {}
-    atomic_store_explicit(&must_suspend, 0, memory_order_relaxed);
+    while (1) {
+        int state = atomic_load_explicit(&lace_awaken_count, memory_order_consume);
+        // state "should" be >= 1 !!
+        if (state <= 0) {
+            continue; // ???
+        } else if (state == 1) {
+            int next = -1; // intermediate state
+            if (atomic_compare_exchange_weak(&lace_awaken_count, &state, next) == 1) {
+                while (workers_running != n_workers) {} // they must first run, to avoid rare condition
+                atomic_thread_fence(memory_order_seq_cst);
+                atomic_store_explicit(&must_suspend, 1, memory_order_relaxed);
+                while (workers_running != 0) {}
+                atomic_thread_fence(memory_order_seq_cst);
+                atomic_store_explicit(&must_suspend, 0, memory_order_relaxed);
+                atomic_store_explicit(&lace_awaken_count, 0, memory_order_release);
+                break;
+            }
+        } else {
+            int next = state - 1;
+            if (atomic_compare_exchange_weak(&lace_awaken_count, &state, next) == 1) break;
+        }
+    }
 }
 
 void
 lace_resume()
 {
-    for (unsigned int i=0; i<n_workers; i++) sem_post(&suspend_semaphore);
+    while (1) {
+        int state = atomic_load_explicit(&lace_awaken_count, memory_order_consume);
+        if (state < 0) {
+            continue; // wait until suspending is done
+        } else if (state == 0) {
+            int next = -1; // intermediate state
+            if (atomic_compare_exchange_weak(&lace_awaken_count, &state, next) == 1) {
+                for (unsigned int i=0; i<n_workers; i++) sem_post(&suspend_semaphore);
+                atomic_store_explicit(&lace_awaken_count, 1, memory_order_release);
+                break;
+            }
+        } else {
+            int next = state + 1;
+            if (atomic_compare_exchange_weak(&lace_awaken_count, &state, next) == 1) break;
+        }
+    }
 }
 
 /**
@@ -500,6 +555,9 @@ lace_run_task(Task *task)
     if (self != 0) {
         task->f(self, lace_get_head(self), task);
     } else {
+        // if needed, wake up the workers
+        lace_resume();
+
         ExtTask et;
         et.task = task;
         atomic_store_explicit(&et.task->thief, 0, memory_order_relaxed);
@@ -510,6 +568,9 @@ lace_run_task(Task *task)
 
         sem_wait(&et.sem);
         sem_destroy(&et.sem);
+
+        // allow Lace workers to sleep again
+        lace_suspend();
     }
 }
 
@@ -630,6 +691,9 @@ lace_worker_thread(void* arg)
     // Pin CPU
     lace_pin_worker();
 
+    // Wait for the first time we are resumed
+    sem_wait(&suspend_semaphore);
+
     // Signal that we are running
     workers_running += 1;
 
@@ -668,7 +732,11 @@ lace_set_stacksize(size_t new_stacksize)
 unsigned int
 lace_get_pu_count(void)
 {
-#if defined(sched_getaffinity)
+#ifdef WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    unsigned int n_pus = sysinfo.dwNumberOfProcessors;
+#elif defined(sched_getaffinity)
     cpu_set_t cs;
     CPU_ZERO(&cs);
     sched_getaffinity(0, sizeof(cs), &cs);
@@ -712,11 +780,28 @@ lace_start(unsigned int _n_workers, size_t dqsize)
     memset(&suspend_semaphore, 0, sizeof(sem_t));
     sem_init(&suspend_semaphore, 0, 0);
 
+    must_suspend = 0;
+    lace_awaken_count = 0;
+
     // Allocate array with all workers
-    if (posix_memalign((void**)&workers, LINE_SIZE, n_workers*sizeof(Worker*)) != 0 ||
-        posix_memalign((void**)&workers_p, LINE_SIZE, n_workers*sizeof(WorkerP*)) != 0 ||
-        posix_memalign((void**)&workers_memory, LINE_SIZE, n_workers*sizeof(worker_data*)) != 0) {
-        fprintf(stderr, "Lace error: unable to allocate memory!\n");
+    // first make sure that the amount to allocate (n_workers times pointer) is a multiple of LINE_SIZE
+    size_t to_allocate = n_workers * sizeof(void*);
+    to_allocate = (to_allocate+LINE_SIZE-1) & (~(LINE_SIZE-1));
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+    workers = _aligned_malloc(to_allocate, LINE_SIZE);
+    workers_p = _aligned_malloc(to_allocate, LINE_SIZE);
+    workers_memory = _aligned_malloc(to_allocate, LINE_SIZE);
+#elif defined(__MINGW32__)
+    workers = __mingw_aligned_malloc(to_allocate, LINE_SIZE);
+    workers_p = __mingw_aligned_malloc(to_allocate, LINE_SIZE);
+    workers_memory = __mingw_aligned_malloc(to_allocate, LINE_SIZE);
+#else
+    workers = aligned_alloc(LINE_SIZE, to_allocate);
+    workers_p = aligned_alloc(LINE_SIZE, to_allocate);
+    workers_memory = aligned_alloc(LINE_SIZE, to_allocate);
+#endif
+    if (workers == 0 || workers_p == 0 || workers_memory == 0) {
+        fprintf(stderr, "Lace error: unable to allocate memory for the workers!\n");
         exit(1);
     }
 
@@ -726,13 +811,30 @@ lace_start(unsigned int _n_workers, size_t dqsize)
     // Compute memory size for each worker
     workers_memory_size = sizeof(worker_data) + sizeof(Task) * dqsize;
 
+#ifndef __linux__
+    // Create pthread key
+    pthread_key_create(&current_worker_key, NULL);
+#endif
+
     // Prepare structures for thread creation
     pthread_attr_t worker_attr;
     pthread_attr_init(&worker_attr);
 
-    // Get default stack size (current thread, or 1M default)
+    // Set the stack size
     if (stacksize != 0) {
         pthread_attr_setstacksize(&worker_attr, stacksize);
+    } else {
+	// on certain systems, the default stack size is too small (e.g. OSX)
+	// so by default, we just pick the current RLIMIT_STACK or 16M whichever is smallest
+#ifndef _WIN32
+	struct rlimit lim;
+	getrlimit(RLIMIT_STACK, &lim);
+	size_t size = lim.rlim_cur;
+	if (size > 16*1024*1024) size = 16*1024*1024;
+#else
+	size_t size = 16*1024*1024;
+#endif
+        pthread_attr_setstacksize(&worker_attr, size);
     }
 
     if (verbosity) {
@@ -762,6 +864,9 @@ lace_start(unsigned int _n_workers, size_t dqsize)
         pthread_t res;
         pthread_create(&res, &worker_attr, lace_worker_thread, (void*)(size_t)i);
     }
+
+    /* Make sure we start resumed */
+    lace_resume();
 
     pthread_attr_destroy(&worker_attr);
 }
@@ -909,6 +1014,9 @@ lace_count_report_file(FILE *file)
  */
 void lace_stop()
 {
+    // Workers need to be awake for this
+    lace_resume();
+
     // Do not stop if not all workers are running yet
     while (workers_running != n_workers) {}
 
@@ -927,18 +1035,31 @@ void lace_stop()
     for (unsigned int i=0; i<n_workers; i++) {
 #if LACE_USE_MMAP
         munmap(workers_memory[i], workers_memory_size);
+#elif defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+	_aligned_free(workers_memory[i]);
+#elif defined(__MINGW32__)
+	__mingw_aligned_free(workers_memory[i]);
 #else
         free(workers_memory[i]);
 #endif
     }
 
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR)
+    _aligned_free(workers);
+    _aligned_free(workers_p);
+    _aligned_free(workers_memory);
+#elif defined(__MINGW32__)
+    __mingw_aligned_free(workers);
+    __mingw_aligned_free(workers_p);
+    __mingw_aligned_free(workers_memory);
+#else
     free(workers);
-    workers = 0;
-
     free(workers_p);
-    workers_p = 0;
-
     free(workers_memory);
+#endif
+
+    workers = 0;
+    workers_p = 0;
     workers_memory = 0;
 }
 
