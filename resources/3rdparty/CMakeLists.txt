@@ -562,18 +562,12 @@ else()
     set(SYLVAN_BUILD_TYPE "Release")
 endif()
 
-#for Apple Silicon, build Sylvan differently
-set(Sylvan_Portable STORM_PORTABLE)
-if(APPLE_SILICON)
-    set(Sylvan_Portable ON)
-endif()
-
 ExternalProject_Add(
         sylvan
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DSYLVAN_PORTABLE=${Sylvan_Portable} -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
+        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -588,25 +582,14 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
-set(Sylvan_INCLUDE_DIR "${source_dir}/src")
-set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
+set(sylvan_INCLUDE_DIR "${source_dir}/src")
+set(sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
-add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})
+add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
 
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
-
-find_package(HWLOC QUIET REQUIRED)
-if(HWLOC_FOUND)
-    message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
-    add_imported_library(HWLOC STATIC ${HWLOC_LIBRARIES} "")
-    list(APPEND STORM_DEP_TARGETS HWLOC_STATIC)
-else()
-    if(${OPERATING_SYSTEM} MATCHES "Linux")
-        message(FATAL_ERROR "HWLOC is required on Linux but was not found.")
-    endif()
-endif()
 
 #############################################################
 ##

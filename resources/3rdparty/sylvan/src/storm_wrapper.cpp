@@ -13,10 +13,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 
-#include <sylvan_config.h>
 #include <sylvan.h>
-#include <sylvan_common.h>
-#include <sylvan_mtbdd.h>
 
 #if defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
 #define RATIONAL_NUMBER_THREAD_SAFE

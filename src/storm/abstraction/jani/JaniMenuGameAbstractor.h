@@ -54,6 +54,8 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
     JaniMenuGameAbstractor(JaniMenuGameAbstractor&&) = default;
     JaniMenuGameAbstractor& operator=(JaniMenuGameAbstractor&&) = default;
 
+    storm::dd::DdManager<DdType> const& getDdManager() const override;
+
     /*!
      * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
      *

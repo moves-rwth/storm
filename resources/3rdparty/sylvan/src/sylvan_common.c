@@ -306,7 +306,15 @@ sylvan_set_sizes(size_t min_tablesize, size_t max_tablesize, size_t min_cachesiz
 void
 sylvan_set_limits(size_t memorycap, int table_ratio, int initial_ratio)
 {
-    if (table_ratio > 10 && table_ratio < 10) {
+    /* This method ONLY limits the "unique nodes table" and the "operation cache" which are the main
+     * datastructures of Sylvan.
+     *
+     * Suggested limits:
+     * - memorycap to whatever you want at most, in bytes.
+     * - table_ratio to a number between -3 (8x bigger cache) and 3 (8x bigger nodes table)
+     * - inital_ratio to something like 10 (start with 1024x smaller tables initially)
+     */
+    if (table_ratio < -10 || table_ratio > 10) {
         fprintf(stderr, "sylvan_set_limits: table_ratio unreasonable (between -10 and 10)\n");
         exit(1);
     }
@@ -371,7 +379,6 @@ sylvan_init_package(void)
     main_hook = TASK(sylvan_gc_normal_resize);
 #endif
 
-    LACE_ME;
     sylvan_stats_init();
 }
 

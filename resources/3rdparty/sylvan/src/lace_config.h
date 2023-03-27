@@ -1,0 +1,6 @@
+#define LACE_PIE_TIMES 0
+#define LACE_COUNT_TASKS 0
+#define LACE_COUNT_STEALS 0
+#define LACE_COUNT_SPLITS 0
+#define LACE_USE_HWLOC 0
+#define LACE_USE_MMAP 1

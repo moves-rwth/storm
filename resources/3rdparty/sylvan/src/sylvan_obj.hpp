@@ -23,13 +23,29 @@
 #include <lace.h>
 #include <sylvan.h>
 
+/////////////////////
+// ADDED BY STORM
+/////////////////////
+
+// For the Mtbdd extensions
 #include "storm/adapters/RationalFunctionAdapter.h"
+
+/////////////////////
 
 namespace sylvan {
 
-class Mtbdd;
 class BddSet;
 class BddMap;
+
+/////////////////////
+// ADDED BY STORM
+/////////////////////
+
+// forward declare Mtbdd
+// used to add convert functions directly to Bdd
+class Mtbdd;
+
+/////////////////////
 
 class Bdd {
     friend class Sylvan;
@@ -82,13 +98,13 @@ public:
      */
     static Bdd bddCube(const BddSet &variables, std::vector<uint8_t> values);
 
-    int operator==(const Bdd& other) const;
-    int operator!=(const Bdd& other) const;
+    bool operator==(const Bdd& other) const;
+    bool operator!=(const Bdd& other) const;
     Bdd& operator=(const Bdd& right);
-    int operator<=(const Bdd& other) const;
-    int operator>=(const Bdd& other) const;
-    int operator<(const Bdd& other) const;
-    int operator>(const Bdd& other) const;
+    bool operator<=(const Bdd& other) const;
+    bool operator>=(const Bdd& other) const;
+    bool operator<(const Bdd& other) const;
+    bool operator>(const Bdd& other) const;
     Bdd operator!() const;
     Bdd operator~() const;
     Bdd operator*(const Bdd& other) const;
@@ -107,22 +123,22 @@ public:
     /**
      * @brief Returns non-zero if this Bdd is bddOne() or bddZero()
      */
-    int isConstant() const;
+    bool isConstant() const;
 
     /**
      * @brief Returns non-zero if this Bdd is bddOne() or bddZero()
      */
-    int isTerminal() const;
+    bool isTerminal() const;
 
     /**
      * @brief Returns non-zero if this Bdd is bddOne()
      */
-    int isOne() const;
+    bool isOne() const;
 
     /**
      * @brief Returns non-zero if this Bdd is bddZero()
      */
-    int isZero() const;
+    bool isZero() const;
 
     /**
      * @brief Returns the top variable index of this Bdd (the variable in the root node)
@@ -192,7 +208,7 @@ public:
     /**
      * @brief Returns whether all elements in f are also in g
      */
-    int Leq(const Bdd& g) const;
+    bool Leq(const Bdd& g) const;
 
     /**
      * @brief Computes the reverse application of a transition relation to this set.
@@ -327,8 +343,29 @@ public:
      */
     size_t NodeCount() const;
 
-#include "sylvan_obj_bdd_storm.hpp"
-    
+    /////////////////////
+    // ADDED BY STORM
+    /////////////////////
+
+    // Methods to convert a BDD to the canonical 0/1 MTBDD for different types.
+    Mtbdd toDoubleMtbdd() const;
+    Mtbdd toInt64Mtbdd() const;
+    Mtbdd toStormRationalNumberMtbdd() const;
+
+    void PrintText(FILE *out) const;
+    #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+    Mtbdd toStormRationalFunctionMtbdd() const;
+    #endif
+
+    // Other functions to add to sylvan's Bdd class.
+    Mtbdd Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const;
+    Bdd ExistAbstractRepresentative(const BddSet& cube) const;
+
+    Bdd Without(Bdd const& other) const;
+    Bdd Minsol() const;
+
+    /////////////////////
+
 private:
     BDD bdd;
 };
@@ -490,6 +527,7 @@ class BddMap
     BddMap(const BDD from) : bdd(from) { sylvan_protect(&bdd); }
     BddMap(const Bdd &from) : bdd(from.bdd) { sylvan_protect(&bdd); }
 public:
+    BddMap(const BddMap& from) : bdd(from.bdd) { sylvan_protect(&bdd); }
     BddMap() : bdd(sylvan_map_empty()) { sylvan_protect(&bdd); }
     ~BddMap() { sylvan_unprotect(&bdd); }
 
@@ -518,7 +556,7 @@ public:
     /**
      * @brief Returns non-zero when this map is empty
      */
-    int isEmpty() const;
+    bool isEmpty() const;
 };
 
 class MtbddMap;
@@ -596,8 +634,8 @@ public:
      */
     static Mtbdd mtbddCube(const BddSet &variables, std::vector<uint8_t> values, const Mtbdd &terminal);
 
-    int operator==(const Mtbdd& other) const;
-    int operator!=(const Mtbdd& other) const;
+    bool operator==(const Mtbdd& other) const;
+    bool operator!=(const Mtbdd& other) const;
     Mtbdd& operator=(const Mtbdd& right);
     Mtbdd operator!() const;
     Mtbdd operator~() const;
@@ -613,22 +651,22 @@ public:
     /**
      * @brief Returns non-zero if this Mtbdd is a leaf
      */
-    int isTerminal() const;
+    bool isTerminal() const;
 
     /**
      * @brief Returns non-zero if this Mtbdd is a leaf
      */
-    int isLeaf() const;
+    bool isLeaf() const;
 
     /**
      * @brief Returns non-zero if this Mtbdd is mtbddOne()
      */
-    int isOne() const;
+    bool isOne() const;
 
     /**
      * @brief Returns non-zero if this Mtbdd is mtbddZero()
      */
-    int isZero() const;
+    bool isZero() const;
 
     /**
      * @brief Returns the top variable index of this Mtbdd (the variable in the root node)
@@ -777,8 +815,121 @@ public:
      */
     size_t NodeCount() const;
 
-#include "sylvan_obj_mtbdd_storm.hpp"
-    
+    /////////////////////
+    // ADDED BY STORM
+    /////////////////////
+
+    // Functions that operate on all or standard Mtbdds.
+    Bdd NotZero() const;
+    size_t CountLeaves() const;
+    double NonZeroCount(size_t variableCount) const;
+    bool isValid() const;
+    void PrintDot(FILE *out) const;
+    std::string GetShaHash() const;
+    void PrintText(FILE *out) const;
+
+    Mtbdd Minus(const Mtbdd &other) const;
+    Mtbdd Divide(const Mtbdd &other) const;
+
+    Bdd Equals(const Mtbdd& other) const;
+    Bdd Less(const Mtbdd& other) const;
+    Bdd LessOrEqual(const Mtbdd& other) const;
+
+    Bdd AbstractMinRepresentative(const BddSet &variables) const;
+    Bdd AbstractMaxRepresentative(const BddSet &variables) const;
+
+    Mtbdd Pow(const Mtbdd& other) const;
+    Mtbdd Mod(const Mtbdd& other) const;
+    Mtbdd Logxy(const Mtbdd& other) const;
+
+    Mtbdd Floor() const;
+    Mtbdd Ceil() const;
+    Mtbdd Minimum() const;
+    Mtbdd Maximum() const;
+
+    bool EqualNorm(const Mtbdd& other, double epsilon) const;
+    bool EqualNormRel(const Mtbdd& other, double epsilon) const;
+
+    Mtbdd SharpenKwekMehlhorn(size_t precision) const;
+
+    Mtbdd ToRationalNumber() const;
+
+    // Functions that operate on Mtbdds over rational numbers.
+    static Mtbdd stormRationalNumberTerminal(storm::RationalNumber const& value);
+
+    Bdd EqualsRN(const Mtbdd& other) const;
+    Bdd LessRN(const Mtbdd& other) const;
+    Bdd LessOrEqualRN(const Mtbdd& other) const;
+
+    Mtbdd MinRN(const Mtbdd& other) const;
+    Mtbdd MaxRN(const Mtbdd& other) const;
+
+    Mtbdd PlusRN(const Mtbdd &other) const;
+    Mtbdd MinusRN(const Mtbdd &other) const;
+    Mtbdd TimesRN(const Mtbdd &other) const;
+    Mtbdd DivideRN(const Mtbdd &other) const;
+
+    Mtbdd FloorRN() const;
+    Mtbdd CeilRN() const;
+    Mtbdd PowRN(const Mtbdd& other) const;
+    Mtbdd ModRN(const Mtbdd& other) const;
+    Mtbdd MinimumRN() const;
+    Mtbdd MaximumRN() const;
+
+    Mtbdd AndExistsRN(const Mtbdd &other, const BddSet &variables) const;
+    Mtbdd AbstractPlusRN(const BddSet &variables) const;
+    Mtbdd AbstractMinRN(const BddSet &variables) const;
+    Mtbdd AbstractMaxRN(const BddSet &variables) const;
+
+    Bdd AbstractMinRepresentativeRN(const BddSet &variables) const;
+    Bdd AbstractMaxRepresentativeRN(const BddSet &variables) const;
+
+    Bdd BddThresholdRN(storm::RationalNumber const& rn) const;
+    Bdd BddStrictThresholdRN(storm::RationalNumber const& rn) const;
+
+    bool EqualNormRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const;
+    bool EqualNormRelRN(const Mtbdd& other, storm::RationalNumber const& epsilon) const;
+
+    Mtbdd ToDoubleRN() const;
+
+    // Functions that operate on Mtbdds over rational functions.
+    #if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+    static Mtbdd stormRationalFunctionTerminal(storm::RationalFunction const& value);
+
+    Bdd EqualsRF(const Mtbdd& other) const;
+    Bdd LessRF(const Mtbdd& other) const;
+    Bdd LessOrEqualRF(const Mtbdd& other) const;
+
+    Mtbdd MinRF(const Mtbdd& other) const;
+    Mtbdd MaxRF(const Mtbdd& other) const;
+
+    Mtbdd PlusRF(const Mtbdd &other) const;
+    Mtbdd MinusRF(const Mtbdd &other) const;
+    Mtbdd TimesRF(const Mtbdd &other) const;
+    Mtbdd DivideRF(const Mtbdd &other) const;
+
+    Mtbdd FloorRF() const;
+    Mtbdd CeilRF() const;
+    Mtbdd PowRF(const Mtbdd& other) const;
+    Mtbdd MinimumRF() const;
+    Mtbdd MaximumRF() const;
+
+    Mtbdd AndExistsRF(const Mtbdd &other, const BddSet &variables) const;
+    Mtbdd AbstractPlusRF(const BddSet &variables) const;
+    Mtbdd AbstractMinRF(const BddSet &variables) const;
+    Mtbdd AbstractMaxRF(const BddSet &variables) const;
+
+    Bdd BddThresholdRF(storm::RationalFunction const& rf) const;
+    Bdd BddStrictThresholdRF(storm::RationalFunction const& rf) const;
+
+    bool EqualNormRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const;
+    bool EqualNormRelRF(const Mtbdd& other, storm::RationalFunction const& epsilon) const;
+
+    Mtbdd ToDoubleRF() const;
+    #endif
+
+    /////////////////////
+
 private:
     MTBDD mtbdd;
 };
@@ -818,7 +969,7 @@ public:
     /**
      * @brief Returns non-zero when this map is empty
      */
-    int isEmpty();
+    bool isEmpty();
 };
 
 class Sylvan {
@@ -855,13 +1006,19 @@ public:
      */
     static void initMtbdd();
 
-#include "sylvan_obj_sylvan_storm.hpp"
-    
     /**
      * @brief Frees all memory in use by Sylvan.
      * Warning: if you have any Bdd objects which are not bddZero() or bddOne() after this, your program may crash!
      */
     static void quitPackage();
+
+    /////////////////////
+    // ADDED BY STORM
+    /////////////////////
+
+    static void initCustomMtbdd();
+
+    /////////////////////
 };
 
 }

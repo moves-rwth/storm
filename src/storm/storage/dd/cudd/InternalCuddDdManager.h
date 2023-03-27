@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
 
 #include <boost/optional.hpp>
+#include <functional>
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
@@ -130,6 +131,15 @@ class InternalDdManager<DdType::CUDD> {
      * Performs a debug check if available.
      */
     void debugCheck() const;
+
+    /*!
+     * All code that manipulates DDs shall be called through this function.
+     * This is generally needed to set-up the correct context.
+     * For Cudd, this just execute the given function.
+     *
+     * @param f the function that is executed
+     */
+    void execute(std::function<void()> const& f) const;
 
     /*!
      * Retrieves the number of DD variables managed by this manager.

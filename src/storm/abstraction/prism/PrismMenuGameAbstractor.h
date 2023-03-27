@@ -54,6 +54,8 @@ class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
     PrismMenuGameAbstractor(PrismMenuGameAbstractor&&) = default;
     PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor&&) = default;
 
+    storm::dd::DdManager<DdType> const& getDdManager() const override;
+
     /*!
      * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
      *

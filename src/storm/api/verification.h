@@ -107,22 +107,24 @@ typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<
     storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (model->getType() == storm::models::ModelType::Dtmc) {
-        storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(
-            *model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
-        if (modelchecker.canHandle(task)) {
-            result = modelchecker.check(env, task);
+    model->getManager().execute([&]() {
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(
+                *model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(
+                *model->template as<storm::models::symbolic::Mdp<DdType, double>>());
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "The model type " << model->getType() << " is not supported by the abstraction refinement engine.");
         }
-    } else if (model->getType() == storm::models::ModelType::Mdp) {
-        storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(
-            *model->template as<storm::models::symbolic::Mdp<DdType, double>>());
-        if (modelchecker.canHandle(task)) {
-            result = modelchecker.check(env, task);
-        }
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                        "The model type " << model->getType() << " is not supported by the abstraction refinement engine.");
-    }
+    });
     return result;
 }
 
@@ -420,10 +422,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(storm::
                                                                          std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> const& dtmc,
                                                                          storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    dtmc->getManager().execute([&]() {
+        storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 
@@ -439,10 +443,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(storm::
                                                                          std::shared_ptr<storm::models::symbolic::Ctmc<DdType, ValueType>> const& ctmc,
                                                                          storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<DdType, ValueType>> modelchecker(*ctmc);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    ctmc->getManager().execute([&]() {
+        storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<DdType, ValueType>> modelchecker(*ctmc);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 
@@ -458,10 +464,12 @@ typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value
 verifyWithHybridEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp,
                        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    mdp->getManager().execute([&]() {
+        storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 
@@ -484,10 +492,12 @@ typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value
 verifyWithHybridEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> const& ma,
                        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> modelchecker(*ma);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    ma->getManager().execute([&]() {
+        storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> modelchecker(*ma);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 
@@ -539,10 +549,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithDdEngine(storm::Envi
                                                                      std::shared_ptr<storm::models::symbolic::Dtmc<DdType, ValueType>> const& dtmc,
                                                                      storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    dtmc->getManager().execute([&]() {
+        storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(*dtmc);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 
@@ -558,10 +570,12 @@ typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value
     storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Mdp<DdType, ValueType>> const& mdp,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
-    if (modelchecker.canHandle(task)) {
-        result = modelchecker.check(env, task);
-    }
+    mdp->getManager().execute([&]() {
+        storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(*mdp);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(env, task);
+        }
+    });
     return result;
 }
 

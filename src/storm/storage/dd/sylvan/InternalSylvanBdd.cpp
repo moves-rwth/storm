@@ -77,7 +77,6 @@ BDD InternalBdd<DdType::Sylvan>::fromVectorRec(uint_fast64_t& currentOffset, uin
         BDD currentVar = sylvan_ithvar(static_cast<BDDVAR>(ddVariableIndices[currentLevel]));
         bdd_refs_push(currentVar);
 
-        LACE_ME;
         BDD result = sylvan_ite(currentVar, thenSuccessor, elseSuccessor);
 
         // Dispose of the intermediate results.

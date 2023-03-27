@@ -40,6 +40,10 @@ struct sylvan_skiplist
 #define cas(ptr, old, new) (__sync_bool_compare_and_swap((ptr),(old),(new)))
 #endif
 
+#ifndef compiler_barrier
+#define compiler_barrier() { asm volatile("" ::: "memory"); }
+#endif
+
 sylvan_skiplist_t
 sylvan_skiplist_alloc(size_t size)
 {

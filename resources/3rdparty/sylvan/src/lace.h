@@ -1,6 +1,7 @@
 /* 
  * Copyright 2013-2016 Formal Methods and Tools, University of Twente
  * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2019-2021 Tom van Dijk, Formal Methods and Tools, University of Twente
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,20 +21,22 @@
 #include <stdio.h>
 #include <pthread.h> /* for pthread_t */
 
+#ifndef __cplusplus
+  #include <stdatomic.h>
+#else
+  // Compatibility with C11
+  #include <atomic>
+  #define _Atomic(T) std::atomic<T>
+  using std::memory_order_relaxed;
+  using std::memory_order_acquire;
+  using std::memory_order_release;
+  using std::memory_order_seq_cst;
+#endif
+
+#include <lace_config.h>
+
 #ifndef __LACE_H__
 #define __LACE_H__
-
-#ifdef __has_include
-#  if __has_include("lace_config.h")
-#    include <lace_config.h>
-#  else
-#    define LACE_PIE_TIMES     0
-#    define LACE_COUNT_TASKS   0
-#    define LACE_COUNT_STEALS  0
-#    define LACE_COUNT_SPLITS  0
-#    define LACE_USE_HWLOC     0
-#  endif
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,24 +46,15 @@ extern "C" {
  * Using Lace.
  *
  * Optionally set the verbosity level with lace_set_verbosity.
- * Then call lace_init to initialize the system.
- * - lace_init(n_workers, deque_size);
+ * Optionally set the default program stack size of each worker thread with lace_set_stacksize.
+ *
+ * Then call lace_start to start Lace workers.
+ * - lace_start(n_workers, deque_size);
  *   set both parameters to 0 for reasonable defaults, using all available cores.
  *
- * You can create Worker threads yourself or let Lace create threads with lace_startup.
+ * After this, you can run tasks using the RUN(...)
  *
- * When creating threads yourself, call the following functions:
- *   - lace_init_worker to allocate and initialize the worker data structures
- *     this method returns when all workers have called lace_init_worker
- *   - lace_pin_worker (optional) to pin the thread and memory to a core
- * The main worker can now start its root task. All other workers:
- *   - lace_run_worker to perform work-stealing until the main worker calls lace_exit
- *
- * When letting Lace create threads with lace_startup
- * - Call lace_startup with a callback to create N threads.
- *   Returns after the callback has returned and all created threads are destroyed
- * - Call lace_startup without a callback to create N-1 threads.
- *   Returns control to the caller. When lace_exit is called, all created threads are terminated.
+ * Use lace_suspend and lace_resume to temporarily stop running, or lace_stop to completely stop Lace.
  */
 
 /**
@@ -78,121 +72,108 @@ typedef struct _Task Task;
 #define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
 
 /**
- * The lace_startup_cb type for a void Task with one void* parameter.
- */
-LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
-
-/**
  * Set verbosity level (0 = no startup messages, 1 = startup messages)
  * Default level: 0
  */
 void lace_set_verbosity(int level);
 
 /**
- * Initialize Lace for <n_workers> workers with a deque size of <dqsize> per worker.
+ * Set the program stack size of Lace worker threads. (Not really needed, default is OK.)
+ */
+void lace_set_stacksize(size_t stacksize);
+
+/**
+ * Get the program stack size of Lace worker threads.
+ * If this returns 0, it uses the default.
+ */
+size_t lace_get_stacksize(void);
+
+/**
+ * Get the number of available PUs (hardware threads)
+ */
+unsigned int lace_get_pu_count(void);
+
+/**
+ * Start Lace with <n_workers> workers and a a task deque size of <dqsize> per worker.
  * If <n_workers> is set to 0, automatically detects available cores.
  * If <dqsize> is est to 0, uses a reasonable default value.
  */
-void lace_init(unsigned int n_workers, size_t dqsize);
+void lace_start(unsigned int n_workers, size_t dqsize);
 
 /**
- * Let Lace create worker threads.
- * If <stacksize> is set to 0, uses a reaonable default value.
- * If cb, arg are set to 0, then the current thread is initialized as the main Worker (Worker 0).
- *
- * If cb,arg are set, then the current thread is suspended. A new thread is made for Worker 0 and
- * the task cb with paremeter arg is called; when cb returns, Lace is exited automatically.
+ * Suspend all workers.
+ * Call this method from outside Lace threads.
  */
-void lace_startup(size_t stacksize, lace_startup_cb, void* arg);
+void lace_suspend(void);
 
 /**
- * Initialize worker <worker>, allocating memory.
- * If <worker> is 0, then the current thread is the main worker.
+ * Resume all workers.
+ * Call this method from outside Lace threads.
  */
-void lace_init_worker(unsigned int worker);
+void lace_resume(void);
 
 /**
- * Use hwloc to pin the current thread to a CPU and its allocated memory in the closest domain.
- * Call this *after* lace_init_worker and *before* lace_run_worker.
+ * Stop Lace.
+ * Call this method from outside Lace threads.
  */
-void lace_pin_worker(void);
-
-/**
- * Perform work-stealing until lace_exit is called.
- */
-void lace_run_worker(void);
+void lace_stop(void);
 
 /**
  * Steal a random task.
+ * Only use this from inside a Lace task.
  */
 #define lace_steal_random() CALL(lace_steal_random)
 void lace_steal_random_CALL(WorkerP*, Task*);
 
 /**
  * Enter the Lace barrier. (all active workers must enter it before we can continue)
+ * Only run this from inside a Lace task.
  */
-void lace_barrier();
-
-/**
- * Suspend all workers except the current worker.
- * May only be used when all other workers are idle.
- */
-void lace_suspend();
-
-/**
- * Resume all workers.
- */
-void lace_resume();
-
-/**
- * When all other workers are suspended, some workers can be disabled using the following functions.
- * With set_workers, all workers 0..(N-1) are enabled and N..max are disabled.
- * You can never disable the current worker or reduce the number of workers below 1.
- * You cannot add workers.
- */
-void lace_set_workers(unsigned int workercount);
-
-/**
- * Disable a suspended worker.
- */
-void lace_disable_worker(unsigned int worker);
-
-/**
- * Enable a suspended worker.
- */
-void lace_enable_worker(unsigned int worker);
-
-/**
- * Retrieve the number of enabled/active workers.
- */
-unsigned int lace_enabled_workers();
+void lace_barrier(void);
 
 /**
  * Retrieve the number of Lace workers
  */
-unsigned int lace_workers();
+unsigned int lace_workers(void);
 
 /**
- * Retrieve the default program stack size
+ * Retrieve whether we are running in a Lace worker. Returns 1 if this is the case, 0 otherwise.
  */
-size_t lace_default_stacksize();
+int lace_is_worker(void);
 
 /**
  * Retrieve the current worker data.
+ * Only run this from inside a Lace task.
+ * (Used by LACE_VARS)
  */
-WorkerP *lace_get_worker();
+WorkerP *lace_get_worker(void);
 
 /**
- * Retrieve the current head of the deque
+ * Retrieve the current head of the deque of the worker.
+ * (Used by LACE_VARS)
  */
 Task *lace_get_head(WorkerP *);
 
 /**
- * Exit Lace.
- * This function is automatically called when lace_startup is called with a callback.
- * This function must be called to exit Lace when lace_startup is called without a callback.
+ * Helper function to call from outside Lace threads.
+ * This helper function is used by the _RUN methods for the RUN() macro.
  */
-void lace_exit();
+void lace_run_task(Task *task);
+
+/**
+ * Helper function to start a new task execution (task frame) on a given task.
+ * This helper function is used by the _NEWFRAME methods for the NEWFRAME() macro
+ * Only when the task is done, do workers continue with the previous task frame.
+ */
+void lace_run_newframe(Task *task);
+
+/**
+ * Helper function to make all run a given task together.
+ * This helper function is used by the _TOGETHER methods for the TOGETHER() macro
+ * They all start the task in a lace_barrier and complete it with a lace barrier.
+ * Meaning they all start together, and all end together.
+ */
+void lace_run_together(Task *task);
 
 /**
  * Create a pointer to a Tasks main function.
@@ -220,19 +201,24 @@ void lace_exit();
 #define SPAWN(f, ...)     ( WRAP(f##_SPAWN, ##__VA_ARGS__), __lace_dq_head++ )
 
 /**
- * Directly execute a task.
+ * Directly execute a task from inside a Lace thread.
  */
 #define CALL(f, ...)      ( WRAP(f##_CALL, ##__VA_ARGS__) )
 
 /**
+ * Directly execute a task from outside Lace threads.
+ */
+#define RUN(f, ...)    ( f##_RUN ( __VA_ARGS__ ) )
+
+/**
  * Signal all workers to interrupt their current tasks and instead perform (a personal copy of) the given task.
  */
-#define TOGETHER(f, ...)  ( WRAP(f##_TOGETHER, ##__VA_ARGS__) )
+#define TOGETHER(f, ...)  ( f##_TOGETHER ( __VA_ARGS__) )
 
 /**
  * Signal all workers to interrupt their current tasks and help the current thread with the given task.
  */
-#define NEWFRAME(f, ...)  ( WRAP(f##_NEWFRAME, ##__VA_ARGS__) )
+#define NEWFRAME(f, ...)  ( f##_NEWFRAME ( __VA_ARGS__) )
 
 /**
  * (Try to) steal a task from a random worker.
@@ -251,14 +237,15 @@ void lace_exit();
 
 /**
  * Initialize local variables __lace_worker and __lace_dq_head which are required for most Lace functionality.
+ * This only works inside a Lace thread.
  */
-#define LACE_ME WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
+#define LACE_VARS WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
 
 /**
  * Check if current tasks must be interrupted, and if so, interrupt.
  */
 void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
-#define YIELD_NEWFRAME() { if (unlikely((*(Task* volatile *)&lace_newframe.t) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
+#define YIELD_NEWFRAME() { if (unlikely(atomic_load_explicit(&lace_newframe.t, memory_order_relaxed) != NULL)) lace_yield(__lace_worker, __lace_dq_head); }
 
 /**
  * True if the given task is stolen, False otherwise.
@@ -281,10 +268,6 @@ void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
 #define LACE_TRNG (__lace_worker->rng = 2862933555777941757ULL * __lace_worker->rng + 3037000493ULL)
 
 /* Some flags that influence Lace behavior */
-
-#ifndef LACE_DEBUG_PROGRAMSTACK /* Write to stderr when 95% program stack reached */
-#define LACE_DEBUG_PROGRAMSTACK 0
-#endif
 
 #ifndef LACE_LEAP_RANDOM /* Use random leaping when leapfrogging fails */
 #define LACE_LEAP_RANDOM 1
@@ -314,15 +297,6 @@ void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
    The task size is the maximum of the size of the result or of the sum of the parameter sizes. */
 #ifndef LACE_TASKSIZE
 #define LACE_TASKSIZE (6)*P_SZ
-#endif
-
-/* Some fences */
-#ifndef compiler_barrier
-#define compiler_barrier() { asm volatile("" ::: "memory"); }
-#endif
-
-#ifndef mfence
-#define mfence() { asm volatile("mfence" ::: "memory"); }
 #endif
 
 /* Compiler specific branch prediction optimization */
@@ -414,7 +388,7 @@ typedef enum {
 
 #define TASK_COMMON_FIELDS(type)                               \
     void (*f)(struct _WorkerP *, struct _Task *, struct type *);  \
-    struct _Worker * volatile thief;
+    _Atomic(struct _Worker*) thief;
 
 struct __lace_common_fields_only { TASK_COMMON_FIELDS(_Task) };
 #define LACE_COMMON_FIELD_SIZE sizeof(struct __lace_common_fields_only)
@@ -426,13 +400,22 @@ typedef struct _Task {
     char p2[PAD(ROUND(LACE_COMMON_FIELD_SIZE, P_SZ) + LACE_TASKSIZE, LINE_SIZE)];
 } Task;
 
-typedef union __attribute__((packed)) {
+/* hopefully packed? */
+typedef union {
+    struct {
+        _Atomic(uint32_t) tail;
+        _Atomic(uint32_t) split;
+    } ts;
+    _Atomic(uint64_t) v;
+} TailSplit;
+
+typedef union {
     struct {
         uint32_t tail;
         uint32_t split;
     } ts;
     uint64_t v;
-} TailSplit;
+} TailSplitNA;
 
 typedef struct _Worker {
     Task *dq;
@@ -449,17 +432,15 @@ typedef struct _WorkerP {
     Task *split;                // same as dq+ts.ts.split
     Task *end;                  // dq+dq_size
     Worker *_public;            // pointer to public Worker struct
-    size_t stack_trigger;       // for stack overflow detection
     uint64_t rng;               // my random seed (for lace_trng)
     uint32_t seed;              // my random seed (for lace_steal_random)
     uint16_t worker;            // what is my worker id?
     uint8_t allstolen;          // my allstolen
-    volatile int8_t enabled;    // if this worker is enabled
 
 #if LACE_COUNT_EVENTS
     uint64_t ctr[CTR_MAX];      // counters
-    volatile uint64_t time;
-    volatile int level;
+    uint64_t time;
+    int level;
 #endif
 
     int16_t pu;                 // my pu (for HWLOC)
@@ -469,40 +450,15 @@ typedef struct _WorkerP {
 #define LACE_BUSY     ((Worker*)1)
 #define LACE_NOWORK   ((Worker*)2)
 
-#if LACE_DEBUG_PROGRAMSTACK
-static inline void CHECKSTACK(WorkerP *w)
-{
-    if (w->stack_trigger != 0) {
-        register size_t rsp;
-        asm volatile("movq %%rsp, %0" : "+r"(rsp) : : "cc");
-        if (rsp < w->stack_trigger) {
-            fputs("Warning: program stack 95% used!\n", stderr);
-            w->stack_trigger = 0;
-        }
-    }
-}
-#else
-#define CHECKSTACK(w) {}
-#endif
-
 void lace_abort_stack_overflow(void) __attribute__((noreturn));
 
 typedef struct
 {
-    Task *t;
-    uint8_t all;
-    char pad[64-sizeof(Task *)-sizeof(uint8_t)];
+    _Atomic(Task*) t;
+    char pad[LINE_SIZE-sizeof(Task *)];
 } lace_newframe_t;
 
 extern lace_newframe_t lace_newframe;
-
-/**
- * Internal function to start participating on a task in a new frame
- * Usually, <root> is set to NULL and the task is copied from lace_newframe.t
- * It is possible to override the start task by setting <root>.
- */
-void lace_do_together(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
-void lace_do_newframe(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
 
 /**
  * Make all tasks of the current worker shared.
@@ -611,25 +567,21 @@ static void lace_time_event( WorkerP *w, int event )
 static Worker* __attribute__((noinline))
 lace_steal(WorkerP *self, Task *__dq_head, Worker *victim)
 {
-    if (!victim->allstolen) {
-        /* Must be a volatile. In GCC 4.8, if it is not declared volatile, the
-           compiler will optimize extra memory accesses to victim->ts instead
-           of comparing the local values ts.ts.tail and ts.ts.split, causing
-           thieves to steal non existent tasks! */
-        register TailSplit ts;
-        ts.v = *(volatile uint64_t *)&victim->ts.v;
+    if (victim != NULL && !victim->allstolen) {
+        TailSplitNA ts;
+        ts.v = victim->ts.v;
         if (ts.ts.tail < ts.ts.split) {
-            register TailSplit ts_new;
+            TailSplitNA ts_new;
             ts_new.v = ts.v;
             ts_new.ts.tail++;
-            if (__sync_bool_compare_and_swap(&victim->ts.v, ts.v, ts_new.v)) {
+            if (atomic_compare_exchange_weak(&victim->ts.v, &ts.v, ts_new.v)) {
                 // Stolen
                 Task *t = &victim->dq[ts.ts.tail];
-                t->thief = self->_public;
+                atomic_store_explicit(&t->thief, self->_public, memory_order_relaxed);
                 lace_time_event(self, 1);
                 t->f(self, __dq_head, t);
                 lace_time_event(self, 2);
-                t->thief = THIEF_COMPLETED;
+                atomic_store_explicit(&t->thief, THIEF_COMPLETED, memory_order_release);
                 lace_time_event(self, 8);
                 return LACE_STOLEN;
             }
@@ -652,20 +604,20 @@ static int
 lace_shrink_shared(WorkerP *w)
 {
     Worker *wt = w->_public;
-    TailSplit ts;
+    TailSplitNA ts; /* Use non-atomic version to emit better code */
     ts.v = wt->ts.v; /* Force in 1 memory read */
     uint32_t tail = ts.ts.tail;
     uint32_t split = ts.ts.split;
 
     if (tail != split) {
         uint32_t newsplit = (tail + split)/2;
-        wt->ts.ts.split = newsplit;
-        mfence();
-        tail = *(volatile uint32_t *)&(wt->ts.ts.tail);
+        atomic_store_explicit(&wt->ts.ts.split, newsplit, memory_order_relaxed); /* emit normal write */
+        atomic_thread_fence(memory_order_seq_cst);
+        tail = wt->ts.ts.tail;
         if (tail != split) {
             if (unlikely(tail > newsplit)) {
                 newsplit = (tail + split) / 2;
-                wt->ts.ts.split = newsplit;
+                atomic_store_explicit(&wt->ts.ts.split, newsplit, memory_order_relaxed); /* emit normal write */
             }
             w->split = w->dq + newsplit;
             PR_COUNTSPLITS(w, CTR_split_shrink);
@@ -703,13 +655,14 @@ lace_leapfrog(WorkerP *__lace_worker, Task *__lace_dq_head)
             } else if (res == LACE_BUSY) {
                 PR_COUNTSTEALS(__lace_worker, CTR_leap_busy);
             }
-            compiler_barrier();
+            atomic_thread_fence(memory_order_acquire);
             thief = t->thief;
         }
 
         /* POST-LEAP: really pop the finished task */
         /*            no need to decrease __lace_dq_head, since it is a local variable */
-        compiler_barrier();
+        atomic_thread_fence(memory_order_acquire);
+        /*compiler_barrier();*/
         if (__lace_worker->allstolen == 0) {
             /* Assume: tail = split = head (pre-pop) */
             /* Now we do a real pop ergo either decrease tail,split,head or declare allstolen */
@@ -719,8 +672,9 @@ lace_leapfrog(WorkerP *__lace_worker, Task *__lace_dq_head)
         }
     }
 
-    compiler_barrier();
-    t->thief = THIEF_EMPTY;
+    /*compiler_barrier();*/
+    atomic_thread_fence(memory_order_acquire);
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);
     lace_time_event(__lace_worker, 4);
 }
 
@@ -766,24 +720,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -793,35 +748,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head )                                   \
+RTYPE NAME##_NEWFRAME()                                                               \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_TOGETHER()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN()                                                                    \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+                                                                                      \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -835,7 +800,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -844,15 +809,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -864,7 +829,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head );                                        \
         }                                                                             \
     }                                                                                 \
@@ -886,7 +851,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head );               
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head )                                       \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -916,24 +880,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -943,35 +908,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_NEWFRAME()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_TOGETHER()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
                                                                                       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN()                                                                     \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+                                                                                      \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -985,7 +960,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -994,15 +969,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -1014,7 +989,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head );                                        \
         }                                                                             \
     }                                                                                 \
@@ -1036,7 +1011,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head );                
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head )                                        \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -1069,24 +1043,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1096,35 +1071,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                    \
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1)                                                  \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_TOGETHER(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1)                                                       \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1138,7 +1123,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1147,15 +1132,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1);                               \
 }                                                                                     \
                                                                                       \
@@ -1167,7 +1152,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1);                       \
         }                                                                             \
     }                                                                                 \
@@ -1189,7 +1174,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1);      
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                        \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1);                                         \
 }                                                                                     \
                                                                                       \
@@ -1219,24 +1203,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1246,35 +1231,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_NEWFRAME(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_TOGETHER(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1)                                                        \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1288,7 +1283,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1297,15 +1292,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1);                               \
 }                                                                                     \
                                                                                       \
@@ -1317,7 +1312,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1);                       \
         }                                                                             \
     }                                                                                 \
@@ -1339,7 +1334,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1);       
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                         \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1);                                         \
 }                                                                                     \
                                                                                       \
@@ -1372,24 +1366,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1399,35 +1394,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)     \
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2)                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2)                                        \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1441,7 +1446,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1450,15 +1455,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2);              \
 }                                                                                     \
                                                                                       \
@@ -1470,7 +1475,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2);      \
         }                                                                             \
     }                                                                                 \
@@ -1492,7 +1497,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)         \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2);                                  \
 }                                                                                     \
                                                                                       \
@@ -1522,24 +1526,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1549,35 +1554,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2)                                         \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1591,7 +1606,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1600,15 +1615,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2);              \
 }                                                                                     \
                                                                                       \
@@ -1620,7 +1635,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2);      \
         }                                                                             \
     }                                                                                 \
@@ -1642,7 +1657,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)          \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2);                                  \
 }                                                                                     \
                                                                                       \
@@ -1675,24 +1689,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1702,35 +1717,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                         \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1744,7 +1769,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1753,15 +1778,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3);\
 }                                                                                     \
                                                                                       \
@@ -1773,7 +1798,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3);\
         }                                                                             \
     }                                                                                 \
@@ -1795,7 +1820,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3);                           \
 }                                                                                     \
                                                                                       \
@@ -1825,24 +1849,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -1852,35 +1877,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                          \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1894,7 +1929,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -1903,15 +1938,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3);\
 }                                                                                     \
                                                                                       \
@@ -1923,7 +1958,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3);\
         }                                                                             \
     }                                                                                 \
@@ -1945,7 +1980,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3);                           \
 }                                                                                     \
                                                                                       \
@@ -1978,24 +2012,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2005,35 +2040,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)          \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2047,7 +2092,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2056,15 +2101,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4);\
 }                                                                                     \
                                                                                       \
@@ -2076,7 +2121,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4);\
         }                                                                             \
     }                                                                                 \
@@ -2098,7 +2143,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4);                    \
 }                                                                                     \
                                                                                       \
@@ -2128,24 +2172,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2155,35 +2200,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)           \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2197,7 +2252,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2206,15 +2261,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4);\
 }                                                                                     \
                                                                                       \
@@ -2226,7 +2281,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4);\
         }                                                                             \
     }                                                                                 \
@@ -2248,7 +2303,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4);                    \
 }                                                                                     \
                                                                                       \
@@ -2281,24 +2335,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2308,35 +2363,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2350,7 +2415,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2359,15 +2424,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5);\
 }                                                                                     \
                                                                                       \
@@ -2379,7 +2444,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5);\
         }                                                                             \
     }                                                                                 \
@@ -2401,7 +2466,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5);             \
 }                                                                                     \
                                                                                       \
@@ -2431,24 +2495,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2458,35 +2523,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2500,7 +2575,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2509,15 +2584,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5);\
 }                                                                                     \
                                                                                       \
@@ -2529,7 +2604,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5);\
         }                                                                             \
     }                                                                                 \
@@ -2551,7 +2626,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5);             \
 }                                                                                     \
                                                                                       \
@@ -2584,24 +2658,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2611,35 +2686,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2653,7 +2738,7 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         return ((TD_##NAME *)t)->d.res;                                               \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2662,15 +2747,15 @@ RTYPE NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                             
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5, t->d.args.arg_6);\
 }                                                                                     \
                                                                                       \
@@ -2682,7 +2767,7 @@ RTYPE NAME##_SYNC(WorkerP *w, Task *__dq_head)                                  
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5, t->d.args.arg_6);\
         }                                                                             \
     }                                                                                 \
@@ -2704,7 +2789,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);      \
 }                                                                                     \
                                                                                       \
@@ -2734,24 +2818,25 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     PR_COUNTTASK(w);                                                                  \
                                                                                       \
     TD_##NAME *t;                                                                     \
-    TailSplit ts;                                                                     \
+    TailSplitNA ts;                                                                   \
     uint32_t head, split, newsplit;                                                   \
                                                                                       \
     if (__dq_head == w->end) lace_abort_stack_overflow();                             \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
+    atomic_thread_fence(memory_order_acquire);                                        \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts = (TailSplitNA){{head,head+1}};                                            \
         wt->ts.v = ts.v;                                                              \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->allstolen = 0;                                                            \
         w->split = __dq_head+1;                                                       \
         w->allstolen = 0;                                                             \
@@ -2761,35 +2846,45 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
         newsplit = (split + head + 2)/2;                                              \
         wt->ts.ts.split = newsplit;                                                   \
         w->split = w->dq + newsplit;                                                  \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
-    t->thief = THIEF_TASK;                                                            \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    atomic_store_explicit(&t->thief, THIEF_TASK, memory_order_relaxed);               \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2803,7 +2898,7 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         return ;                                                                      \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     Worker *wt = w->_public;                                                          \
     if (wt->movesplit) {                                                              \
@@ -2812,15 +2907,15 @@ void NAME##_SYNC_SLOW(WorkerP *w, Task *__dq_head)                              
         diff = (diff + 1) / 2;                                                        \
         w->split = t + diff;                                                          \
         wt->ts.ts.split += diff;                                                      \
-        compiler_barrier();                                                           \
+        /*compiler_barrier();*/                                                       \
         wt->movesplit = 0;                                                            \
         PR_COUNTSPLITS(w, CTR_split_grow);                                            \
     }                                                                                 \
                                                                                       \
-    compiler_barrier();                                                               \
+    /*compiler_barrier();*/                                                           \
                                                                                       \
     t = (TD_##NAME *)__dq_head;                                                       \
-    t->thief = THIEF_EMPTY;                                                           \
+    atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);              \
     return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5, t->d.args.arg_6);\
 }                                                                                     \
                                                                                       \
@@ -2832,7 +2927,7 @@ void NAME##_SYNC(WorkerP *w, Task *__dq_head)                                   
     if (likely(0 == w->_public->movesplit)) {                                         \
         if (likely(w->split <= __dq_head)) {                                          \
             TD_##NAME *t = (TD_##NAME *)__dq_head;                                    \
-            t->thief = THIEF_EMPTY;                                                   \
+            atomic_store_explicit(&t->thief, THIEF_EMPTY, memory_order_relaxed);      \
             return NAME##_CALL(w, __dq_head , t->d.args.arg_1, t->d.args.arg_2, t->d.args.arg_3, t->d.args.arg_4, t->d.args.arg_5, t->d.args.arg_6);\
         }                                                                             \
     }                                                                                 \
@@ -2854,7 +2949,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);      \
 }                                                                                     \
                                                                                       \
