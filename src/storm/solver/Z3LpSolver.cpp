@@ -95,12 +95,12 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
     if constexpr (RawMode) {
         // Generate expression from raw constraint
-        STORM_LOG_ASSERT(constraint._lhsVariableIndices.size() == constraint._lhsCoefficients.size(), "number of variables and coefficients do not match.");
+        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "number of variables and coefficients do not match.");
         std::vector<storm::expressions::Expression> lhsSummands;
-        lhsSummands.reserve(constraint._lhsVariableIndices.size());
-        auto varIt = constraint._lhsVariableIndices.cbegin();
-        auto varItEnd = constraint._lhsVariableIndices.cend();
-        auto coefIt = constraint._lhsCoefficients.cbegin();
+        lhsSummands.reserve(constraint.lhsVariableIndices.size());
+        auto varIt = constraint.lhsVariableIndices.cbegin();
+        auto varItEnd = constraint.lhsVariableIndices.cend();
+        auto coefIt = constraint.lhsCoefficients.cbegin();
         for (; varIt != varItEnd; ++varIt, ++coefIt) {
             lhsSummands.push_back(rawIndexToVariableMap[*varIt] * this->manager->rational(*coefIt));
         }
@@ -108,7 +108,7 @@ void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Cons
             lhsSummands.push_back(this->manager->rational(storm::utility::zero<ValueType>()));
         }
         storm::expressions::Expression constraintExpr = storm::expressions::makeBinaryRelationExpression(
-            storm::expressions::sum(lhsSummands), this->manager->rational(constraint._rhs), constraint._relationType);
+            storm::expressions::sum(lhsSummands), this->manager->rational(constraint.rhs), constraint.relationType);
         solver->add(expressionAdapter->translateExpression(constraintExpr));
     } else {
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");

@@ -146,7 +146,7 @@ char getGurobiType(typename GurobiLpSolver<ValueType, RawMode>::VariableType con
         case GurobiLpSolver<ValueType, RawMode>::VariableType::Binary:
             return GRB_BINARY;
     }
-    assert(false);
+    STORM_LOG_ASSERT(false, "Unexpected variable type.");
     return -1;
 }
 
@@ -191,15 +191,16 @@ struct GurobiConstraint {
 template<typename ValueType, bool RawMode>
 GurobiConstraint createConstraint(typename GurobiLpSolver<ValueType, RawMode>::Constraint const& constraint,
                                   std::map<storm::expressions::Variable, int> const& variableToIndexMap) {
-    GurobiConstraint result;
+    GurobiConstraint gurobiConstraint;
     storm::expressions::RelationType relationType;
     if constexpr (RawMode) {
-        result.rhs = storm::utility::convertNumber<double>(constraint._rhs);
-        relationType = constraint._relationType;
-        result.variableIndices.insert(result.variableIndices.end(), constraint._lhsVariableIndices.begin(), constraint._lhsVariableIndices.end());
-        result.coefficients.reserve(constraint._lhsCoefficients.size());
-        for (auto const& coef : constraint._lhsCoefficients) {
-            result.coefficients.push_back(storm::utility::convertNumber<double>(coef));
+        gurobiConstraint.rhs = storm::utility::convertNumber<double>(constraint.rhs);
+        relationType = constraint.relationType;
+        gurobiConstraint.variableIndices.insert(gurobiConstraint.variableIndices.end(), constraint.lhsVariableIndices.begin(),
+                                                constraint.lhsVariableIndices.end());
+        gurobiConstraint.coefficients.reserve(constraint.lhsCoefficients.size());
+        for (auto const& coef : constraint.lhsCoefficients) {
+            gurobiConstraint.coefficients.push_back(storm::utility::convertNumber<double>(coef));
         }
     } else {
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
@@ -208,40 +209,40 @@ GurobiConstraint createConstraint(typename GurobiLpSolver<ValueType, RawMode>::C
         storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients =
             storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
         leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
-        result.rhs = rightCoefficients.getConstantPart();
+        gurobiConstraint.rhs = rightCoefficients.getConstantPart();
         relationType = constraint.getBaseExpression().asBinaryRelationExpression().getRelationType();
         int len = std::distance(leftCoefficients.begin(), leftCoefficients.end());
-        result.variableIndices.reserve(len);
-        result.coefficients.reserve(len);
+        gurobiConstraint.variableIndices.reserve(len);
+        gurobiConstraint.coefficients.reserve(len);
         for (auto const& variableCoefficientPair : leftCoefficients) {
             auto variableIndexPair = variableToIndexMap.find(variableCoefficientPair.first);
-            result.variableIndices.push_back(variableIndexPair->second);
-            result.coefficients.push_back(variableCoefficientPair.second);
+            gurobiConstraint.variableIndices.push_back(variableIndexPair->second);
+            gurobiConstraint.coefficients.push_back(variableCoefficientPair.second);
         }
     }
     // Determine the type of the constraint and add it properly.
     switch (relationType) {
         case storm::expressions::RelationType::Less:
-            result.sense = GRB_LESS_EQUAL;
-            result.rhs -= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
+            gurobiConstraint.sense = GRB_LESS_EQUAL;
+            gurobiConstraint.rhs -= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
             break;
         case storm::expressions::RelationType::LessOrEqual:
-            result.sense = GRB_LESS_EQUAL;
+            gurobiConstraint.sense = GRB_LESS_EQUAL;
             break;
         case storm::expressions::RelationType::Greater:
-            result.sense = GRB_GREATER_EQUAL;
-            result.rhs += storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
+            gurobiConstraint.sense = GRB_GREATER_EQUAL;
+            gurobiConstraint.rhs += storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance();
             break;
         case storm::expressions::RelationType::GreaterOrEqual:
-            result.sense = GRB_GREATER_EQUAL;
+            gurobiConstraint.sense = GRB_GREATER_EQUAL;
             break;
         case storm::expressions::RelationType::Equal:
-            result.sense = GRB_EQUAL;
+            gurobiConstraint.sense = GRB_EQUAL;
             break;
         default:
             STORM_LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
     }
-    return result;
+    return gurobiConstraint;
 }
 
 template<typename ValueType, bool RawMode>
@@ -277,6 +278,7 @@ void GurobiLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string cons
     }
     int indVal = indicatorValue ? 1 : 0;
     auto grbConstr = createConstraint<ValueType, RawMode>(constraint, this->variableToIndexMap);
+    // Gurobi considers indicator constraints as a certain kind of what they call "general constraints".
     int error = GRBaddgenconstrIndicator(model, name == "" ? nullptr : name.c_str(), indVar, indVal, grbConstr.variableIndices.size(),
                                          grbConstr.variableIndices.data(), grbConstr.coefficients.data(), grbConstr.sense, grbConstr.rhs);
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
@@ -396,8 +398,7 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&
     if constexpr (RawMode) {
         varIndex = variable;
     } else {
-        STORM_LOG_THROW(variableToIndexMap.count(variable) != 0, storm::exceptions::InvalidAccessException,
-                        "Accessing value of unknown variable '" << variable.getName() << "'.");
+        STORM_LOG_ASSERT(variableToIndexMap.count(variable) != 0, "Accessing value of unknown variable '" << variable.getName() << "'.");
         varIndex = variableToIndexMap.at(variable);
     }
 
@@ -424,8 +425,7 @@ int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&
     if constexpr (RawMode) {
         varIndex = variable;
     } else {
-        STORM_LOG_THROW(variableToIndexMap.count(variable) != 0, storm::exceptions::InvalidAccessException,
-                        "Accessing value of unknown variable '" << variable.getName() << "'.");
+        STORM_LOG_ASSERT(variableToIndexMap.count(variable) != 0, "Accessing value of unknown variable '" << variable.getName() << "'.");
         varIndex = variableToIndexMap.at(variable);
     }
 
@@ -455,8 +455,7 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
     if constexpr (RawMode) {
         varIndex = variable;
     } else {
-        STORM_LOG_THROW(variableToIndexMap.count(variable) != 0, storm::exceptions::InvalidAccessException,
-                        "Accessing value of unknown variable '" << variable.getName() << "'.");
+        STORM_LOG_ASSERT(variableToIndexMap.count(variable) != 0, "Accessing value of unknown variable '" << variable.getName() << "'.");
         varIndex = variableToIndexMap.at(variable);
     }
 
@@ -692,7 +691,7 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
 }
 
 template<typename ValueType, bool RawMode>
-ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t const& solutionIndex) const {
+ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t solutionIndex) const {
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
@@ -891,7 +890,7 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&, uint64_
 }
 
 template<typename ValueType, bool RawMode>
-ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t const&) const {
+ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of storm with Gurobi support.";
 }

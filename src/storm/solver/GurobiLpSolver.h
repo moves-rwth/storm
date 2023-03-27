@@ -129,7 +129,7 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     ValueType getContinuousValue(Variable const& name, uint64_t const& solutionIndex) const;
     int_fast64_t getIntegerValue(Variable const& name, uint64_t const& solutionIndex) const;
     bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
-    ValueType getObjectiveValue(uint64_t const& solutionIndex) const;
+    ValueType getObjectiveValue(uint64_t solutionIndex) const;
 
    private:
 #ifdef STORM_HAVE_GUROBI
@@ -147,6 +147,8 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
 
     struct IncrementalLevel {
         std::vector<storm::expressions::Variable> variables;
+        // Gurobi considers a different set of indices for linear constraints and general constraints.
+        // The term "general constraints" is used by Gurobi to refer to "non-standard" constraints, e.g., indicator constraint.
         int firstConstraintIndex;
         int firstGenConstraintIndex;
     };

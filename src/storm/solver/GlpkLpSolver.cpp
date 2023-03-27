@@ -85,7 +85,7 @@ int getGlpkType(typename GlpkLpSolver<ValueType, RawMode>::VariableType const& t
         case GlpkLpSolver<ValueType, RawMode>::VariableType::Binary:
             return GLP_BV;
     }
-    assert(false);
+    STORM_LOG_ASSERT(false, "Unexpected variable type.");
     return -1;
 }
 
@@ -153,14 +153,14 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
     std::vector<int> variableIndices(1, -1);
     std::vector<double> coefficients(1, 0.0);
     if constexpr (RawMode) {
-        rhs = storm::utility::convertNumber<double>(constraint._rhs);
-        relationType = constraint._relationType;
-        variableIndices.reserve(constraint._lhsVariableIndices.size() + 1);
-        for (auto const& var : constraint._lhsVariableIndices) {
+        rhs = storm::utility::convertNumber<double>(constraint.rhs);
+        relationType = constraint.relationType;
+        variableIndices.reserve(constraint.lhsVariableIndices.size() + 1);
+        for (auto const& var : constraint.lhsVariableIndices) {
             variableIndices.push_back(this->variableToIndexMap.at(var));
         }
-        coefficients.reserve(constraint._lhsCoefficients.size() + 1);
-        for (auto const& coef : constraint._lhsCoefficients) {
+        coefficients.reserve(constraint.lhsCoefficients.size() + 1);
+        for (auto const& coef : constraint.lhsCoefficients) {
             coefficients.push_back(storm::utility::convertNumber<double>(coef));
         }
     } else {

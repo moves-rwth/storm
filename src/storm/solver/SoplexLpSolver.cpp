@@ -110,15 +110,15 @@ void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
     TypedDSVector row(0);
     if constexpr (RawMode) {
         if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-            rhs = to_soplex_rational(constraint._rhs);
+            rhs = to_soplex_rational(constraint.rhs);
         } else {
-            rhs = constraint._rhs;
+            rhs = constraint.rhs;
         }
-        relationType = constraint._relationType;
-        row = TypedDSVector(constraint._lhsVariableIndices.size());
-        auto varIt = constraint._lhsVariableIndices.cbegin();
-        auto varItEnd = constraint._lhsVariableIndices.cend();
-        auto coefIt = constraint._lhsCoefficients.cbegin();
+        relationType = constraint.relationType;
+        row = TypedDSVector(constraint.lhsVariableIndices.size());
+        auto varIt = constraint.lhsVariableIndices.cbegin();
+        auto varItEnd = constraint.lhsVariableIndices.cend();
+        auto coefIt = constraint.lhsCoefficients.cbegin();
         for (; varIt != varItEnd; ++varIt, ++coefIt) {
             if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
                 row.add(*varIt, to_soplex_rational(*coefIt));

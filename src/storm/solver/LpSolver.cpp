@@ -10,15 +10,15 @@ namespace solver {
 
 template<typename ValueType>
 RawLpConstraint<ValueType>::RawLpConstraint(storm::expressions::RelationType relationType, ValueType const& rhs, uint64_t reservedSize)
-    : _relationType(relationType), _rhs(rhs) {
-    _lhsCoefficients.reserve(reservedSize);
-    _lhsVariableIndices.reserve(reservedSize);
+    : relationType(relationType), rhs(rhs) {
+    lhsCoefficients.reserve(reservedSize);
+    lhsVariableIndices.reserve(reservedSize);
 }
 
 template<typename ValueType>
 void RawLpConstraint<ValueType>::addToLhs(VariableIndexType const& variable, ValueType const& coefficient) {
-    _lhsCoefficients.push_back(coefficient);
-    _lhsVariableIndices.push_back(variable);
+    lhsCoefficients.push_back(coefficient);
+    lhsVariableIndices.push_back(variable);
 }
 
 template<typename ValueType, bool RawMode>

@@ -37,10 +37,10 @@ struct RawLpConstraint {
      */
     void addToLhs(VariableIndexType const& variable, ValueType const& coefficient);
 
-    std::vector<VariableIndexType> _lhsVariableIndices;
-    std::vector<ValueType> _lhsCoefficients;
-    storm::expressions::RelationType _relationType;
-    ValueType _rhs;
+    std::vector<VariableIndexType> lhsVariableIndices;
+    std::vector<ValueType> lhsCoefficients;
+    storm::expressions::RelationType relationType;
+    ValueType rhs;
 };
 
 /*!
