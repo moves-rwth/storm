@@ -1,8 +1,9 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 
+#include <boost/any.hpp>
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <memory>
 #include <set>

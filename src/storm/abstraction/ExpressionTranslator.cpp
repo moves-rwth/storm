@@ -119,17 +119,17 @@ boost::any ExpressionTranslator<DdType>::visit(BinaryRelationExpression const& e
         storm::dd::Add<DdType, double> right = boost::any_cast<storm::dd::Add<DdType, double>>(expression.getSecondOperand()->accept(*this, data));
 
         switch (expression.getRelationType()) {
-            case BinaryRelationExpression::RelationType::Equal:
+            case RelationType::Equal:
                 return left.equals(right);
-            case BinaryRelationExpression::RelationType::NotEqual:
+            case RelationType::NotEqual:
                 return left.notEquals(right);
-            case BinaryRelationExpression::RelationType::Less:
+            case RelationType::Less:
                 return left.less(right);
-            case BinaryRelationExpression::RelationType::LessOrEqual:
+            case RelationType::LessOrEqual:
                 return left.lessOrEqual(right);
-            case BinaryRelationExpression::RelationType::Greater:
+            case RelationType::Greater:
                 return left.greater(right);
-            case BinaryRelationExpression::RelationType::GreaterOrEqual:
+            case RelationType::GreaterOrEqual:
                 return left.greaterOrEqual(right);
         }
     } else {

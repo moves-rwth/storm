@@ -1,19 +1,17 @@
-#ifndef MILPPERMISSIVESCHEDULERS_H
-#define MILPPERMISSIVESCHEDULERS_H
+#pragma once
 
 #include <fstream>
 #include <memory>
 #include <unordered_map>
 
-#include "PermissiveSchedulerComputation.h"
-
-#include "../models/sparse/StandardRewardModel.h"
-#include "../solver/LpSolver.h"
-#include "../storage/BitVector.h"
-#include "../storage/StateActionPair.h"
-#include "../storage/StateActionTargetTuple.h"
-#include "../storage/expressions/Variable.h"
-#include "PermissiveSchedulers.h"
+#include "storm-permissive/analysis/PermissiveSchedulerComputation.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/StateActionPair.h"
+#include "storm/storage/StateActionTargetTuple.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace ps {
@@ -226,5 +224,3 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
 };
 }  // namespace ps
 }  // namespace storm
-
-#endif /* MILPPERMISSIVESCHEDULERS_H */

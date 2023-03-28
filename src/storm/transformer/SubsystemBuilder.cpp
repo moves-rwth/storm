@@ -55,7 +55,7 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     }
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
-        if(makeRowGroupingTrivial) {
+        if (makeRowGroupingTrivial) {
             STORM_LOG_ASSERT(transitionRewardMatrix.get().getColumnCount() == transitionRewardMatrix.get().getRowCount(), "Matrix should be square");
             transitionRewardMatrix.get().makeRowGroupingTrivial();
         }
@@ -145,7 +145,8 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
     for (auto const& rewardModel : originalModel.getRewardModels()) {
-        components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions, options.makeRowGroupingTrivial)));
+        components.rewardModels.insert(
+            std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions, options.makeRowGroupingTrivial)));
     }
     if (originalModel.hasChoiceLabeling()) {
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);

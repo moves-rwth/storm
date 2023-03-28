@@ -62,7 +62,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
 
@@ -114,7 +114,7 @@ TEST(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
 TEST(AssumptionMakerTest, Casestudy1) {
@@ -158,5 +158,5 @@ TEST(AssumptionMakerTest, Casestudy1) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }

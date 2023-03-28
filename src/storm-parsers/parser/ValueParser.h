@@ -1,6 +1,7 @@
 #ifndef STORM_PARSER_VALUEPARSER_H_
 #define STORM_PARSER_VALUEPARSER_H_
 
+#include <boost/lexical_cast.hpp>
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"

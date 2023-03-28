@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ostream>
+#include <iosfwd>
 #include <set>
 #include <string>
 #include <unordered_map>

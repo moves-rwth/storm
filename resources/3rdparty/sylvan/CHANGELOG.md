@@ -1,9 +1,73 @@
 # Change Log
 All notable changes to Sylvan will be documented in this file.
 
-## [Unreleased]
+
+## [1.7.1] - 2022-09-04
+### Added
+- Now complains when certain Sylvan functions are used outside a Lace worker thread.
+
+### Changed
+- Slightly streamlined `mtbdd_makenode` to generate more optimal code.
+- Lace is now a dependency of Sylvan instead of included in the source code.
+
+
+## [1.7.0] - 2022-09-03
+### Added
+- Rudimentary support for zero-suppressed decision diagrams (ZDDs). 
+- Implemented irredundant sum-of-products `ISOP` that computes the ZDD cover of a BDD.
+
+### Changed
+- Another new version of Lace, using C11 atomics instead of the old abuse of the volatile keyword. This is a fairly major change and so far it even appears to improve performance a little bit.
+- The name of Sylvan in CMake is now `sylvan` or `sylvan::sylvan`
+- Possibly breaking change: `mtbdd_enum_first` and `mtbdd_enum_next` no longer check if `variables` covers all variables encountered in the decision diagram, allowing partial evaluation.
+- Various small changes to the CMake scripts.
+
+### Removed
+- Support for Sylvan as a shared library is removed.
+
+### Fixed
+- Fixed OSX build
+- Fixed warnings on modern gcc in `sha2.c`
+- Fixed test and example programs that use Sylvan wrongly. Sylvan functions should always be executed from a Lace worker.
+- A major performance regression introduced in version 1.6.0 has been fixed.
+
+
+## [1.6.1] - 2021-06-20
+### Changed
+- New version of Lace with slightly better support for OSX and a few minor changes.
+
+### Fixed
+- A bug with `sylvan_set_limits` has been fixed.
+
+
+## [1.6.0] - 2021-04-19
+### Changed
+- Major API change in Lace. This will break things!
+- Lace is now started with `lace_start` and stopped with `lace_stop`. The initializing thread is no longer a Lace thread. Instead, starting Lace with N workers will simply start N threads. To temporarily halt the workers (because they use 100% CPU time), use `lace_suspend` and `lace_resume`.
+- The macros `SPAWN`, `SYNC` and `CALL` only work from Lace tasks. The `LACE_ME` macro is gone. If you are not inside a Lace task, use the `RUN` macro to run a task.
+- If you use `RUN` from a Lace task, this will automatically fallback to `CALL` with a little bit of overhead.
+- CAREFUL: using `RUN` from an external thread is not safe w.r.t. garbage collection! If you invoke Sylvan operations from multiple external threads, then it may be possible that BDDs are not referenced (and put back into the table) in rare cases. The solution to this is to wrap each operation in a Lace task that stores the result in a properly referenced variable before leaving the Lace environment. The reason for this is that garbage collection will not run until all Lace workers cooperate.
+- You can now run Sylvan from any thread. This means that in the future, it is easier to support bridges to Python and Java.
+
+
+## [1.5.0] - 2019-09-05
+### Added
+- New tools `ldd2meddly` and `medmc` as part of research comparing the saturation algorithm in Sylvan to the one in Meddly.
+
+### Changed
+- Renamed the `mc` example program to `bccmc`.
+
+### Fixed
+- A bug in the GMP handling was fixed.
+
+
+## [1.4.1] - 2018-06-14
 ### Changed
 - We now implement twisted tabulation as the hash function for the nodes table. The old hash function is still available and the default behavior can be changed in `sylvan_table.h`.
+
+### Removed
+- Removed dependency on hwloc.
+
 
 ## [1.4.0] - 2017-07-12
 ### Added
@@ -21,6 +85,7 @@ All notable changes to Sylvan will be documented in this file.
 ### Removed
 - Removed support for HWLOC (pinning on NUMA machines). Planning to bring this back as an option, but in its current form it prevents multiple Sylvan programs from running simultaneously on the same machine.
 
+
 ## [1.3.3] - 2017-06-03
 ### Changed
 - Changed file format for .bdd files in the MC example.
@@ -30,6 +95,7 @@ All notable changes to Sylvan will be documented in this file.
 - A bug in the saturation algorithm in the model checking example has been fixed.
 - A major bug in the hash table rehashing implementation has been fixed.
 
+
 ## [1.3.2] - 2017-05-23
 ### Added
 - Now implements `lddmc_protect` and `lddmc_unprotect` for external pointer references.
@@ -38,9 +104,11 @@ All notable changes to Sylvan will be documented in this file.
 ### Changed
 - New version of Lace has slightly different API for manually created threads.
 
+
 ## [1.3.1] - 2017-05-22
 ### Fixed
 - A bug in `mtbdd_refs_ptrs_up` caused a segfault. This has been fixed.
+
 
 ## [1.3.0] - 2017-05-16
 ### Added
@@ -57,6 +125,7 @@ All notable changes to Sylvan will be documented in this file.
 ### Fixed
 - A bug in `llmsset_lookup` affecting custom leaves has been fixed.
 
+
 ## [1.2.0] - 2017-02-03
 ### Added
 - Added documentation in the docs directory using Sphinx. Some documentation is removed from the README.md file.
@@ -69,14 +138,17 @@ All notable changes to Sylvan will be documented in this file.
 ### Fixed
 - A bug in `mtbdd_reader_readbinary` has been fixed.
 
+
 ## [1.1.2] - 2017-01-11
 ### Fixed
 - The pkg-config file is slightly improved.
 - A critical bug in `sylvan_collect` has been fixed.
 
+
 ## [1.1.1] - 2017-01-10
 ### Fixed
 - The pkg-config file now includes hwloc as a requirement
+
 
 ## [1.1.0] - 2017-01-09
 ### Added

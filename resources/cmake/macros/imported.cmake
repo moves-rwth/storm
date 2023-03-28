@@ -17,7 +17,7 @@ macro(add_imported_library name type lib include)
 	else()
 		add_library(${name}_${type} ${type} IMPORTED)
 		set_target_properties(${name}_${type} PROPERTIES IMPORTED_LOCATION "${lib}")
-		set_target_properties(${name}_${type} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${include}")
+		set_target_properties(${name}_${type} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${include}")	
 	endif()
 endmacro(add_imported_library)
 

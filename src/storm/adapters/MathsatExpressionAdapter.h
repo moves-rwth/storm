@@ -197,25 +197,25 @@ class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
         msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
         switch (expression.getRelationType()) {
-            case storm::expressions::BinaryRelationExpression::RelationType::Equal:
+            case storm::expressions::RelationType::Equal:
                 if (expression.getFirstOperand()->getType().isBooleanType() && expression.getSecondOperand()->getType().isBooleanType()) {
                     return msat_make_iff(env, leftResult, rightResult);
                 } else {
                     return msat_make_equal(env, leftResult, rightResult);
                 }
-            case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
+            case storm::expressions::RelationType::NotEqual:
                 if (expression.getFirstOperand()->getType().isBooleanType() && expression.getSecondOperand()->getType().isBooleanType()) {
                     return msat_make_not(env, msat_make_iff(env, leftResult, rightResult));
                 } else {
                     return msat_make_not(env, msat_make_equal(env, leftResult, rightResult));
                 }
-            case storm::expressions::BinaryRelationExpression::RelationType::Less:
+            case storm::expressions::RelationType::Less:
                 return msat_make_and(env, msat_make_not(env, msat_make_equal(env, leftResult, rightResult)), msat_make_leq(env, leftResult, rightResult));
-            case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
+            case storm::expressions::RelationType::LessOrEqual:
                 return msat_make_leq(env, leftResult, rightResult);
-            case storm::expressions::BinaryRelationExpression::RelationType::Greater:
+            case storm::expressions::RelationType::Greater:
                 return msat_make_not(env, msat_make_leq(env, leftResult, rightResult));
-            case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
+            case storm::expressions::RelationType::GreaterOrEqual:
                 return msat_make_or(env, msat_make_equal(env, leftResult, rightResult), msat_make_not(env, msat_make_leq(env, leftResult, rightResult)));
             default:
                 STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,

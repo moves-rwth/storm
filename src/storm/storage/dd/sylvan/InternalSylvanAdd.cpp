@@ -1353,7 +1353,6 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
         MTBDD currentVar = mtbdd_makenode(ddVariableIndices[currentLevel], mtbdd_false, mtbdd_true);
         mtbdd_refs_push(thenSuccessor);
-        LACE_ME;
         MTBDD result = mtbdd_ite(currentVar, thenSuccessor, elseSuccessor);
 
         // Dispose of the intermediate results

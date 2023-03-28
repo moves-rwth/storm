@@ -149,13 +149,13 @@ uint64_t llmsset_lookupc(const llmsset_t dbs, const uint64_t a, const uint64_t b
  * 3) call llmsset_rehash 
  */
 VOID_TASK_DECL_1(llmsset_clear, llmsset_t);
-#define llmsset_clear(dbs) CALL(llmsset_clear, dbs)
+#define llmsset_clear(dbs) RUN(llmsset_clear, dbs)
 
 VOID_TASK_DECL_1(llmsset_clear_data, llmsset_t);
-#define llmsset_clear_data(dbs) CALL(llmsset_clear_data, dbs)
+#define llmsset_clear_data(dbs) RUN(llmsset_clear_data, dbs)
 
 VOID_TASK_DECL_1(llmsset_clear_hashes, llmsset_t);
-#define llmsset_clear_hashes(dbs) CALL(llmsset_clear_hashes, dbs)
+#define llmsset_clear_hashes(dbs) RUN(llmsset_clear_hashes, dbs)
 
 /**
  * Check if a certain data bucket is marked (in use).
@@ -174,7 +174,7 @@ int llmsset_mark(const llmsset_t dbs, uint64_t index);
  * Returns 0 if successful, or the number of buckets not rehashed if not.
  */
 TASK_DECL_1(int, llmsset_rehash, llmsset_t);
-#define llmsset_rehash(dbs) CALL(llmsset_rehash, dbs)
+#define llmsset_rehash(dbs) RUN(llmsset_rehash, dbs)
 
 /**
  * Rehash a single bucket.
@@ -186,14 +186,14 @@ int llmsset_rehash_bucket(const llmsset_t dbs, uint64_t d_idx);
  * Retrieve number of marked buckets.
  */
 TASK_DECL_1(size_t, llmsset_count_marked, llmsset_t);
-#define llmsset_count_marked(dbs) CALL(llmsset_count_marked, dbs)
+#define llmsset_count_marked(dbs) RUN(llmsset_count_marked, dbs)
 
 /**
  * During garbage collection, this method calls the destroy callback
  * for all 'custom' data that is not kept.
  */
 VOID_TASK_DECL_1(llmsset_destroy_unmarked, llmsset_t);
-#define llmsset_destroy_unmarked(dbs) CALL(llmsset_destroy_unmarked, dbs)
+#define llmsset_destroy_unmarked(dbs) RUN(llmsset_destroy_unmarked, dbs)
 
 /**
  * Set custom functions
@@ -203,21 +203,11 @@ void llmsset_set_custom(const llmsset_t dbs, llmsset_hash_cb hash_cb, llmsset_eq
 /**
  * Default hashing functions.
  */
-#define llmsset_hash llmsset_tabhash
-
-/**
- * FNV-1a hash
- */
-uint64_t llmsset_fnvhash(uint64_t a, uint64_t b, uint64_t seed);
-
-/**
- * Twisted tabulation hash
- */
-uint64_t llmsset_tabhash(uint64_t a, uint64_t b, uint64_t seed);
+#define llmsset_hash sylvan_tabhash16
+#define llmsset_fnvhash sylvan_fnvhash16
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
 
 #endif

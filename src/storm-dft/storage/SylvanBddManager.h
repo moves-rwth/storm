@@ -40,6 +40,18 @@ class SylvanBddManager {
      */
     ~SylvanBddManager() = default;
 
+    /*!
+     * All code that manipulates DDs shall be called through this function.
+     * This is generally needed to set-up the correct context.
+     * Specifically for sylvan, this is required to make sure that DD-manipulating code is executed as a LACE task.
+     * Example usage: `manager->execute([&]() { bar = foo(arg1,arg2); }`
+     *
+     * @param f the function that is executed
+     */
+    void execute(std::function<void()> const &f) const {
+        internalManager.execute(f);
+    }
+
     /**
      * Creates a variable with a unique name
      *

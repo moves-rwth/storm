@@ -49,7 +49,7 @@ gmp_hash(const uint64_t v, const uint64_t seed)
 
     // hash "numerator" limbs
     limbs = x[0]._mp_num._mp_d;
-    for (int i=0; i<x[0]._mp_num._mp_size; i++) {
+    for (int i=0; i<abs(x[0]._mp_num._mp_size); i++) {
         hash = hash ^ limbs[i];
         hash = rotl64(hash, 47);
         hash = hash * prime;
@@ -57,7 +57,7 @@ gmp_hash(const uint64_t v, const uint64_t seed)
 
     // hash "denominator" limbs
     limbs = x[0]._mp_den._mp_d;
-    for (int i=0; i<x[0]._mp_den._mp_size; i++) {
+    for (int i=0; i<abs(x[0]._mp_den._mp_size); i++) {
         hash = hash ^ limbs[i];
         hash = rotl64(hash, 31);
         hash = hash * prime;

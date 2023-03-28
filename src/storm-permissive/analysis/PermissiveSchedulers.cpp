@@ -1,15 +1,15 @@
 
 #include "PermissiveSchedulers.h"
 
-#include "../modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "../modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "../utility/graph.h"
-#include "../utility/solver.h"
-#include "MILPPermissiveSchedulers.h"
-#include "SmtBasedPermissiveSchedulers.h"
+#include "storm-permissive/analysis/MILPPermissiveSchedulers.h"
+#include "storm-permissive/analysis/SmtBasedPermissiveSchedulers.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
 namespace ps {

@@ -10,7 +10,7 @@
 
 using namespace sylvan;
 
-int runtest()
+TASK_0(int, runtest)
 {
     Bdd one = Bdd::bddOne();
     Bdd zero = Bdd::bddZero();
@@ -36,21 +36,28 @@ int runtest()
     return 0;
 }
 
+void test6()
+{
+    BddMap m1;
+    BddMap m2(m1);  // this triggers an assertion
+}
+
 int main()
 {
     // Standard Lace initialization with 1 worker
-    lace_init(1, 0);
-    lace_startup(0, NULL, NULL);
+    lace_start(1, 0);
 
     // Simple Sylvan initialization, also initialize BDD support
     sylvan_set_sizes(1LL<<16, 1LL<<16, 1LL<<16, 1LL<<16);
     sylvan_init_package();
     sylvan_init_bdd();
 
-    int res = runtest();
+    test6();
+
+    int res = RUN(runtest);
 
     sylvan_quit();
-    lace_exit();
+    lace_stop();
 
     return res;
 }

@@ -99,6 +99,22 @@ struct
     {2, LDD_RELPROD_UNION, "LDD relprod_union"},
     {2, LDD_PROJECT_MINUS, "LDD project_minus"},
 
+    {2, ZDD_FROM_MTBDD, "ZDD from_mtbdd"},
+    {2, ZDD_TO_MTBDD, "ZDD to_mtbdd"},
+    {2, ZDD_UNION_CUBE, "ZDD union_cube"},
+    {2, ZDD_EXTEND_DOMAIN, "ZDD ext_domain"},
+    {2, ZDD_SUPPORT, "ZDD support" },
+    {2, ZDD_PATHCOUNT, "ZDD pathcount" },
+    {2, ZDD_AND, "ZDD and" },
+    {2, ZDD_OR, "ZDD or" },
+    {2, ZDD_ITE, "ZDD ite" },
+    {2, ZDD_NOT, "ZDD not" },
+    {2, ZDD_DIFF, "ZDD diff" },
+    {2, ZDD_EXISTS, "ZDD exists" },
+    {2, ZDD_PROJECT, "ZDD project" },
+    {2, ZDD_ISOP, "zdd isop"},
+    {2, ZDD_COVER_TO_BDD, "zdd cover_to_bdd"},
+
     {0, 0, "Garbage collection"},
     {1, SYLVAN_GC_COUNT, "GC executions"},
     {3, SYLVAN_GC, "Total time spent"},
@@ -212,7 +228,6 @@ to_h(double size, char *buf)
 void
 sylvan_stats_report(FILE *target)
 {
-    LACE_ME;
     sylvan_stats_t totals;
     sylvan_stats_snapshot(&totals);
 

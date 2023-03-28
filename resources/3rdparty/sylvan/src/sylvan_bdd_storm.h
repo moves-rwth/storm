@@ -1,4 +1,7 @@
-#include "sylvan.h"
+/* Do not include this file directly. Instead, include sylvan.h */
+
+#ifndef SYLVAN_BDD_STORM_H
+#define SYLVAN_BDD_STORM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,7 +12,7 @@ extern "C" {
 #define bdd_isterminal(dd) (dd == sylvan_false || dd == sylvan_true)
 
 TASK_DECL_3(BDD, sylvan_existsRepresentative, BDD, BDD, BDDVAR);
-#define sylvan_existsRepresentative(a, vars) (CALL(sylvan_existsRepresentative, a, vars, 0))
+#define sylvan_existsRepresentative(a, vars) (RUN(sylvan_existsRepresentative, a, vars, 0))
 
 
 /*
@@ -23,7 +26,7 @@ TASK_DECL_3(BDD, sylvan_existsRepresentative, BDD, BDD, BDDVAR);
  * f without paths that are included in a path in g
  */
 TASK_DECL_2(BDD, sylvan_without, BDD, BDD);
-#define sylvan_without(f, g) (CALL(sylvan_without, f, g))
+#define sylvan_without(f, g) (RUN(sylvan_without, f, g))
 
 /*
  * The minsol algorithm as defined by Rauzy93
@@ -36,8 +39,10 @@ TASK_DECL_2(BDD, sylvan_without, BDD, BDD);
  * A bdd encoding the minmal solutions of f
  */
 TASK_DECL_1(BDD, sylvan_minsol, BDD);
-#define sylvan_minsol(f) (CALL(sylvan_minsol, f))
+#define sylvan_minsol(f) (RUN(sylvan_minsol, f))
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

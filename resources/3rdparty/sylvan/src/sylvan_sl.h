@@ -51,7 +51,7 @@ uint64_t sylvan_skiplist_get(sylvan_skiplist_t sl, MTBDD dd);
  * Assign the next number (starting at 1) to the given node <dd>.
  */
 VOID_TASK_DECL_2(sylvan_skiplist_assign_next, sylvan_skiplist_t, MTBDD);
-#define sylvan_skiplist_assign_next(sl, dd) CALL(sylvan_skiplist_assign_next, sl, dd)
+#define sylvan_skiplist_assign_next(sl, dd) RUN(sylvan_skiplist_assign_next, sl, dd)
 
 /**
  * Give the number of assigned nodes. (numbers 1,2,...,N)

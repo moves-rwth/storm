@@ -36,6 +36,8 @@ class MenuGameAbstractor {
     MenuGameAbstractor();
     virtual ~MenuGameAbstractor() = default;
 
+    virtual storm::dd::DdManager<DdType> const& getDdManager() const = 0;
+
     /// Retrieves the abstraction.
     virtual MenuGame<DdType, ValueType> abstract() = 0;
 
