@@ -1,5 +1,6 @@
 #include "storm/logic/BoundedUntilFormula.h"
 #include <boost/any.hpp>
+#include <ostream>
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
