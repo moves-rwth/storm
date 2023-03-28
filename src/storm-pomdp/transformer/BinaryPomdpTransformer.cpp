@@ -158,16 +158,16 @@ namespace storm {
         
         template<typename  ValueType>
         storm::models::sparse::StandardRewardModel<ValueType> BinaryPomdpTransformer<ValueType>::transformRewardModel(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel, TransformationData const& data) const {
-            boost::optional<std::vector<ValueType>> stateRewards, actionRewards;
+            std::optional<std::vector<ValueType>> stateRewards, actionRewards;
             if (rewardModel.hasStateRewards()) {
                 stateRewards = rewardModel.getStateRewardVector();
-                stateRewards.get().resize(data.simpleMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                stateRewards.value().resize(data.simpleMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
             }
             if (rewardModel.hasStateActionRewards()) {
                 actionRewards = std::vector<ValueType>(data.simpleMatrix.getRowCount(), storm::utility::zero<ValueType>());
                 for (uint64_t pomdpChoice = 0; pomdpChoice < pomdp.getNumberOfChoices(); ++pomdpChoice) {
                     STORM_LOG_ASSERT(data.originalToSimpleChoiceMap[pomdpChoice] < data.simpleMatrix.getRowCount(), "Invalid entry in map for choice " << pomdpChoice);
-                    actionRewards.get()[data.originalToSimpleChoiceMap[pomdpChoice]] = rewardModel.getStateActionReward(pomdpChoice);
+                    actionRewards.value()[data.originalToSimpleChoiceMap[pomdpChoice]] = rewardModel.getStateActionReward(pomdpChoice);
                 }
             }
             STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported.");

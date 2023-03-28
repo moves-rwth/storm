@@ -65,15 +65,15 @@ namespace storm {
                 std::unordered_map<std::string, typename ConstantSparseModelType::RewardModelType> result;
                 for(auto const& paramRewardModel : parametricRewardModel){
                     auto const& rewModel = paramRewardModel.second;
-                    boost::optional<std::vector<ConstantType>> optionalStateRewardVector;
+                    std::optional<std::vector<ConstantType>> optionalStateRewardVector;
                     if(rewModel.hasStateRewards()) {
                         optionalStateRewardVector = std::vector<ConstantType>(rewModel.getStateRewardVector().size());
                     }
-                    boost::optional<std::vector<ConstantType>> optionalStateActionRewardVector;
+                    std::optional<std::vector<ConstantType>> optionalStateActionRewardVector;
                     if(rewModel.hasStateActionRewards()) {
                         optionalStateActionRewardVector = std::vector<ConstantType>(rewModel.getStateActionRewardVector().size());
                     }
-                    boost::optional<storm::storage::SparseMatrix<ConstantType>> optionalTransitionRewardMatrix;
+                    std::optional<storm::storage::SparseMatrix<ConstantType>> optionalTransitionRewardMatrix;
                     if(rewModel.hasTransitionRewards()) {
                         optionalTransitionRewardMatrix = buildDummyMatrix(rewModel.getTransitionRewardMatrix());
                     }

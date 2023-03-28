@@ -326,16 +326,16 @@ bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
 
 template<typename ValueType, typename RewardModelType>
 storm::models::sparse::ChoiceLabeling const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
-    return choiceLabeling.get();
+    return choiceLabeling.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::models::sparse::ChoiceLabeling> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
+std::optional<storm::models::sparse::ChoiceLabeling> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
     return choiceLabeling;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::models::sparse::ChoiceLabeling>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
+std::optional<storm::models::sparse::ChoiceLabeling>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
     return choiceLabeling;
 }
 
@@ -346,16 +346,16 @@ bool Model<ValueType, RewardModelType>::hasStateValuations() const {
 
 template<typename ValueType, typename RewardModelType>
 storm::storage::sparse::StateValuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
-    return stateValuations.get();
+    return stateValuations.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
+std::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
     return stateValuations;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
+std::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
     return stateValuations;
 }
 
@@ -366,16 +366,16 @@ bool Model<ValueType, RewardModelType>::hasChoiceOrigins() const {
 
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& Model<ValueType, RewardModelType>::getChoiceOrigins() const {
-    return choiceOrigins.get();
+    return choiceOrigins.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() const {
+std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() const {
     return choiceOrigins;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() {
+std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() {
     return choiceOrigins;
 }
 
@@ -400,7 +400,7 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
         boost::hash_combine(seed, stateValuations->hash());
     }
     if (choiceOrigins) {
-        boost::hash_combine(seed, choiceOrigins.get()->hash());
+        boost::hash_combine(seed, choiceOrigins.value()->hash());
     }
     return seed;
 }

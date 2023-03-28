@@ -240,8 +240,8 @@ void ExplicitQualitativeCheckResult::filter(QualitativeCheckResult const& filter
 
 template<typename JsonRationalType>
 void insertJsonEntry(storm::json<JsonRationalType>& json, uint64_t const& id, bool value,
-                     boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none,
-                     boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) {
+                     std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+                     std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) {
     storm::json<JsonRationalType> entry;
     if (stateValuations) {
         entry["s"] = stateValuations->template toJson<JsonRationalType>(id);
@@ -257,8 +257,8 @@ void insertJsonEntry(storm::json<JsonRationalType>& json, uint64_t const& id, bo
 }
 
 template<typename JsonRationalType>
-storm::json<JsonRationalType> ExplicitQualitativeCheckResult::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations,
-                                                                     boost::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
+storm::json<JsonRationalType> ExplicitQualitativeCheckResult::toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations,
+                                                                     std::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
     storm::json<JsonRationalType> result;
     if (this->isResultForAllStates()) {
         vector_type const& valuesAsVector = boost::get<vector_type>(truthValues);
@@ -274,10 +274,10 @@ storm::json<JsonRationalType> ExplicitQualitativeCheckResult::toJson(boost::opti
     return result;
 }
 
-template storm::json<double> ExplicitQualitativeCheckResult::toJson<double>(boost::optional<storm::storage::sparse::StateValuations> const&,
-                                                                            boost::optional<storm::models::sparse::StateLabeling> const&) const;
+template storm::json<double> ExplicitQualitativeCheckResult::toJson<double>(std::optional<storm::storage::sparse::StateValuations> const&,
+                                                                            std::optional<storm::models::sparse::StateLabeling> const&) const;
 template storm::json<storm::RationalNumber> ExplicitQualitativeCheckResult::toJson<storm::RationalNumber>(
-    boost::optional<storm::storage::sparse::StateValuations> const&, boost::optional<storm::models::sparse::StateLabeling> const&) const;
+    std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const;
 
 }  // namespace modelchecker
 }  // namespace storm

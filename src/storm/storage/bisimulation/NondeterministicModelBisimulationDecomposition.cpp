@@ -126,15 +126,13 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
     }
 
     // If the model had state (action) rewards, we need to build the state rewards for the quotient as well.
-    boost::optional<std::vector<ValueType>> stateRewards;
-    boost::optional<std::vector<ValueType>> stateActionRewards;
-    boost::optional<storm::models::sparse::StandardRewardModel<ValueType> const&> rewardModel;
+    std::optional<std::vector<ValueType>> stateRewards;
+    std::optional<std::vector<ValueType>> stateActionRewards;
     if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
-        rewardModel = this->model.getUniqueRewardModel();
-        if (rewardModel.get().hasStateRewards()) {
+        if (this->model.getUniqueRewardModel().hasStateRewards()) {
             stateRewards = std::vector<ValueType>(this->blocks.size());
         }
-        if (rewardModel.get().hasStateActionRewards()) {
+        if (this->model.getUniqueRewardModel().hasStateActionRewards()) {
             stateActionRewards = std::vector<ValueType>();
         }
     }
@@ -164,8 +162,8 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
             }
 
             // Give the choice a reward of zero as we artificially introduced that the block is absorbing.
-            if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateActionRewards()) {
-                stateActionRewards.get().push_back(storm::utility::zero<ValueType>());
+            if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->model.getUniqueRewardModel().hasStateActionRewards()) {
+                stateActionRewards.value().push_back(storm::utility::zero<ValueType>());
             }
 
             // Add all of the selected atomic propositions that hold in the representative state to the state
@@ -188,8 +186,8 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
                 for (auto entry : quotientDistributions[choice]) {
                     builder.addNextValue(currentRow, entry.first, entry.second);
                 }
-                if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateActionRewards()) {
-                    stateActionRewards.get().push_back(quotientDistributions[choice].getReward());
+                if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->model.getUniqueRewardModel().hasStateActionRewards()) {
+                    stateActionRewards.value().push_back(quotientDistributions[choice].getReward());
                 }
                 ++currentRow;
             }
@@ -205,8 +203,8 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
 
         // If the model has state rewards, we simply copy the state reward of the representative state, because
         // all states in a block are guaranteed to have the same state reward.
-        if (this->options.getKeepRewards() && rewardModel && rewardModel.get().hasStateRewards()) {
-            stateRewards.get()[blockIndex] = rewardModel.get().getStateRewardVector()[representativeState];
+        if (this->options.getKeepRewards() && this->model.hasRewardModel() && this->model.getUniqueRewardModel().hasStateRewards()) {
+            stateRewards.value()[blockIndex] = this->model.getUniqueRewardModel().getStateRewardVector()[representativeState];
         }
     }
 

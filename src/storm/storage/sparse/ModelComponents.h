@@ -62,16 +62,16 @@ struct ModelComponents {
     // The reward models associated with the model.
     std::unordered_map<std::string, RewardModelType> rewardModels;
     // A vector that stores a labeling for each choice.
-    boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+    std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     // stores for each state to which variable valuation it belongs
-    boost::optional<storm::storage::sparse::StateValuations> stateValuations;
+    std::optional<storm::storage::sparse::StateValuations> stateValuations;
     // stores for each choice from which parts of the input model description it originates
-    boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+    std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 
     // POMDP specific components
     // The POMDP observations
-    boost::optional<std::vector<uint32_t>> observabilityClasses;
-    boost::optional<storm::storage::sparse::StateValuations> observationValuations;
+    std::optional<std::vector<uint32_t>> observabilityClasses;
+    std::optional<storm::storage::sparse::StateValuations> observationValuations;
 
     // Continuous time specific components (CTMCs, Markov Automata):
     // True iff the transition values (for Markovian choices) are interpreted as rates.

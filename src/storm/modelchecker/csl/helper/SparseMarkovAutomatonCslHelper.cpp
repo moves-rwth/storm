@@ -743,7 +743,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
-    RewardModelType scaledRewardModel(boost::none, std::move(totalRewardVector));
+    RewardModelType scaledRewardModel(std::nullopt, std::move(totalRewardVector));
 
     return SparseMdpPrctlHelper<ValueType>::computeTotalRewards(env, dir, transitionMatrix, backwardTransitions, scaledRewardModel, false, produceScheduler);
 }
@@ -759,7 +759,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
-    RewardModelType scaledRewardModel(boost::none, std::move(totalRewardVector));
+    RewardModelType scaledRewardModel(std::nullopt, std::move(totalRewardVector));
 
     return SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(env, dir, transitionMatrix, backwardTransitions, scaledRewardModel, psiStates, false,
                                                                        produceScheduler);
@@ -775,7 +775,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
     for (auto const markovianState : markovianStates) {
         rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
-    storm::models::sparse::StandardRewardModel<ValueType> rewardModel(boost::none, std::move(rewardValues));
+    storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::nullopt, std::move(rewardValues));
 
     return SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(env, dir, transitionMatrix, backwardTransitions, rewardModel, psiStates, false,
                                                                        produceScheduler);

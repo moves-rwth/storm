@@ -1,7 +1,6 @@
 #ifndef STORM_MODELS_SYMBOLIC_MODEL_H_
 #define STORM_MODELS_SYMBOLIC_MODEL_H_
 
-#include <boost/optional.hpp>
 #include <memory>
 #include <set>
 #include <unordered_map>
