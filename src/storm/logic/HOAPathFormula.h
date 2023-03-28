@@ -1,10 +1,10 @@
 #pragma once
 
-#include "storm/logic/FormulaContext.h"
-#include "storm/logic/PathFormula.h"
-
 #include <map>
 #include <memory>
+#include <string>
+#include "storm/logic/FormulaContext.h"
+#include "storm/logic/PathFormula.h"
 
 namespace storm {
 namespace automata {

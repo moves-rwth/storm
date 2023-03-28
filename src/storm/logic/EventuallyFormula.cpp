@@ -1,4 +1,5 @@
 #include "storm/logic/EventuallyFormula.h"
+#include <boost/any.hpp>
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"

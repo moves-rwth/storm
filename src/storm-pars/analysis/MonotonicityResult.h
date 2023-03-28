@@ -5,7 +5,8 @@
 #include <set>
 
 #include <memory>
-#include <storm/storage/BitVector.h>
+#include "storm/storage/BitVector.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace analysis {

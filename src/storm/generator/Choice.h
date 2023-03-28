@@ -108,7 +108,7 @@ struct Choice {
      *
      * @param The player index associated with this choice.
      */
-    void setPlayerIndex(storm::storage::PlayerIndex playerIndex);
+    void setPlayerIndex(storm::storage::PlayerIndex const& playerIndex);
 
     /*!
      * Returns whether there is an index for the player defined for this choice.

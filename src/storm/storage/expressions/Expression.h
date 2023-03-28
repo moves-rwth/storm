@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <unordered_map>

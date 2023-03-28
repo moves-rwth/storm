@@ -1,8 +1,10 @@
 #include "AutomaticAction.h"
+
 #include <boost/graph/strong_components.hpp>
 #include "EliminateAutomaticallyAction.h"
 #include "RebuildWithoutUnreachableAction.h"
 #include "UnfoldAction.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {

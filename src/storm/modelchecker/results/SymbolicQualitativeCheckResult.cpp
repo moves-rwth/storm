@@ -3,6 +3,8 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
 
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {

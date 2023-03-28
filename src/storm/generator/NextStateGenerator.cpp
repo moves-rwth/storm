@@ -2,10 +2,12 @@
 #include <storm/exceptions/NotImplementedException.h>
 #include <storm/exceptions/WrongFormatException.h>
 
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/logic/Formulas.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 

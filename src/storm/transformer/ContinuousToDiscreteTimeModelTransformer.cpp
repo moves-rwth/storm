@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/ExpectedTimeToExpectedRewardVisitor.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"

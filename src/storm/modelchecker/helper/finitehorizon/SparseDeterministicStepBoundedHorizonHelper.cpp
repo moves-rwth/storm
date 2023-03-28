@@ -2,6 +2,7 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/utility/graph.h"

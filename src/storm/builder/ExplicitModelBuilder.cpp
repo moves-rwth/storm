@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
 

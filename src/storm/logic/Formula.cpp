@@ -1,3 +1,4 @@
+#include <boost/any.hpp>
 #include <sstream>
 #include "storm/logic/Formulas.h"
 
@@ -12,6 +13,10 @@
 
 namespace storm {
 namespace logic {
+boost::any Formula::accept(FormulaVisitor const& visitor) const {
+    return accept(visitor, boost::any());
+}
+
 bool Formula::isPathFormula() const {
     return false;
 }

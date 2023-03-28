@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_FORMULACONTEXT_H_
 #define STORM_LOGIC_FORMULACONTEXT_H_
 
-#include <ostream>
+#include <iosfwd>
 
 namespace storm {
 namespace logic {

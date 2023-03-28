@@ -4,6 +4,8 @@
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 

@@ -1,4 +1,5 @@
 #include "storm/builder/ParallelCompositionBuilder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
 

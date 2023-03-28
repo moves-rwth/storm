@@ -1,4 +1,5 @@
 #include "storm/logic/QuantileFormula.h"
+#include <boost/any.hpp>
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/FormulaVisitor.h"

@@ -1,5 +1,6 @@
 #include "storm/builder/TerminalStatesGetter.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/storage/expressions/Expression.h"
 

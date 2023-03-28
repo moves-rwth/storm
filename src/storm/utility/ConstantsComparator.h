@@ -1,13 +1,14 @@
 #pragma once
 
 #include <type_traits>
-#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/utility/ConstantsComparatorForward.h"
 
 namespace storm {
 namespace utility {
 
 // A class that can be used for comparing constants.
-template<typename ValueType, typename Enable = void>
+template<typename ValueType, typename Enable>
 class ConstantsComparator {
    public:
     ConstantsComparator() = default;

@@ -12,6 +12,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace builder {

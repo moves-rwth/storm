@@ -3,7 +3,7 @@
 #include <boost/optional.hpp>
 #include <memory>
 
-#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
 #include "storm/solver/SolverSelectionOptions.h"

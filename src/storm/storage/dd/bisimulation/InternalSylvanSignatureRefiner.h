@@ -6,6 +6,7 @@
 
 #include "storm/storage/expressions/Variable.h"
 
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/utility.h"
 
 #include <parallel_hashmap/phmap.h>

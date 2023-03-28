@@ -1,3 +1,4 @@
+
 #include "storm/logic/BinaryPathFormula.h"
 
 namespace storm {

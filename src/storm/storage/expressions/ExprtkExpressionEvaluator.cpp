@@ -1,5 +1,7 @@
 #include <string>
 
+#include "storm/adapters/ExprttkAdapter.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
 

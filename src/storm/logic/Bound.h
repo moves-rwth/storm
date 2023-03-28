@@ -6,6 +6,8 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+/// TODO this inclusion is actually unpleasant, but cannot be avoided right now.
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace logic {

@@ -14,10 +14,8 @@
 #include "storm/storage/BitVector.h"
 
 #include "storm/adapters/IntelTbbAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
 
 // Forward declaration for adapter classes.
 namespace storm {
@@ -1242,10 +1240,6 @@ class SparseMatrix {
     // A vector indicating the row groups of the matrix. This needs to be mutible in case we create it on-the-fly.
     mutable boost::optional<std::vector<index_type>> rowGroupIndices;
 };
-
-#ifdef STORM_HAVE_CARL
-std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
-#endif
 
 }  // namespace storage
 }  // namespace storm

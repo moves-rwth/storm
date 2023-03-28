@@ -1,4 +1,5 @@
 #include "storm/logic/AtomicLabelFormula.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/FormulaVisitor.h"

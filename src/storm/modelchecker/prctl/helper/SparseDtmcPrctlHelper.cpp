@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
 #include "storm/utility/graph.h"

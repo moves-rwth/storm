@@ -1,4 +1,5 @@
 #include "storm/logic/ExpectedTimeToExpectedRewardVisitor.h"
+#include <boost/any.hpp>
 #include "storm/logic/Formulas.h"
 
 #include "storm/utility/macros.h"

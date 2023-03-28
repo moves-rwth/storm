@@ -1,4 +1,5 @@
 #include "storm/logic/HOAPathFormula.h"
+#include <boost/any.hpp>
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/automata/DeterministicAutomaton.h"

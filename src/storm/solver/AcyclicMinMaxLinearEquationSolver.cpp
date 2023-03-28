@@ -1,6 +1,6 @@
 #include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 
-#include "storm/solver/helper/AcyclicSolverHelper.cpp"
+#include "storm/solver/helper/AcyclicSolverHelper.h"
 
 #include "storm/utility/vector.h"
 

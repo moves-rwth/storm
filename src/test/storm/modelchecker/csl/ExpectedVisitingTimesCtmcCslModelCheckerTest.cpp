@@ -10,6 +10,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/vector.h"
 
 namespace {
 

@@ -1,4 +1,5 @@
 #include "storm/logic/GloballyFormula.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/FormulaVisitor.h"
 

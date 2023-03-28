@@ -1,4 +1,5 @@
 #include "storm/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace abstraction {

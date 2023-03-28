@@ -1,4 +1,5 @@
 #include "storm/logic/FormulaContext.h"
+#include <ostream>
 
 namespace storm {
 namespace logic {

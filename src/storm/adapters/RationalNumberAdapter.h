@@ -10,7 +10,6 @@
 #endif
 
 #if defined(STORM_HAVE_GMP)
-#include <gmp.h>
 #include <gmpxx.h>
 #endif
 

@@ -31,6 +31,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 #include "storm/solver/SmtSolver.h"
 

@@ -2,6 +2,7 @@
 
 #include "ExpressionVisitor.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

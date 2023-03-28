@@ -6,6 +6,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/io/file.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
     namespace parser {

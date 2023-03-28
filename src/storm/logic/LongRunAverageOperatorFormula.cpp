@@ -1,4 +1,5 @@
 #include "storm/logic/LongRunAverageOperatorFormula.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/FormulaVisitor.h"
 

@@ -3,6 +3,7 @@
 #include "storm/abstraction/AbstractionInformation.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 #include "storm/utility/macros.h"
 

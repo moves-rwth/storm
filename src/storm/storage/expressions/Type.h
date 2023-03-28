@@ -5,8 +5,6 @@
 #include <iosfwd>
 #include <memory>
 
-#include "storm/storage/expressions/OperatorType.h"
-
 namespace storm {
 namespace expressions {
 class ExpressionManager;

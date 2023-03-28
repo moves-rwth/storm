@@ -10,6 +10,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RestrictSyntaxVisitor.h"
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"

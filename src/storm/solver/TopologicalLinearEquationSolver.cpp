@@ -2,6 +2,7 @@
 
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnexpectedException.h"

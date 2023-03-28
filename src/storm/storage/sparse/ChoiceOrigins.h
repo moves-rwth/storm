@@ -5,7 +5,8 @@
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/BitVector.h"
 
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace storage {

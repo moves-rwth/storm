@@ -8,8 +8,6 @@
 
 #include "storm/storage/PlayerIndex.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/storage/sparse/StateValuations.h"
@@ -24,6 +22,11 @@
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
+namespace expressions {
+template<typename V>
+class ExpressionEvaluator;
+class SimpleValuation;
+}  // namespace expressions
 namespace generator {
 typedef storm::builder::BuilderOptions NextStateGeneratorOptions;
 

@@ -21,6 +21,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/IfThenElseExpression.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"

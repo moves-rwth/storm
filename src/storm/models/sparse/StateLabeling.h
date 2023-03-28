@@ -8,7 +8,6 @@
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/storage/BitVector.h"
-#include "storm/utility/macros.h"
 
 namespace storm {
 namespace models {

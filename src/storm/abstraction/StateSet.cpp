@@ -1,5 +1,6 @@
 #include "storm/abstraction/StateSet.h"
 #include "storm/abstraction/SymbolicStateSet.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace abstraction {

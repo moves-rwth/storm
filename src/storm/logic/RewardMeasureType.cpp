@@ -1,4 +1,5 @@
 #include "storm/logic/RewardMeasureType.h"
+#include <ostream>
 
 namespace storm {
 namespace logic {
