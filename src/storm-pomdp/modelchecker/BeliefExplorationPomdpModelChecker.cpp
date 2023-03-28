@@ -536,6 +536,12 @@ namespace storm {
                         storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
                         auto inducedMC = newMDP.applyScheduler(*(underApproximation->getSchedulerForExploredMdp()), true);
                         scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                        STORM_PRINT_AND_LOG("Nr States before: " << scheduledModel->getNumberOfStates() << "\n");
+                        STORM_PRINT_AND_LOG("Nr Transitions before: " << scheduledModel->getNumberOfTransitions() << "\n");
+                        scheduledModel =
+                            storm::api::performBisimulationMinimization(scheduledModel, std::vector<std::shared_ptr<storm::logic::Formula const>>{});
+                        STORM_PRINT_AND_LOG("Nr States after: " << scheduledModel->getNumberOfStates() << "\n");
+                        STORM_PRINT_AND_LOG("Nr Transitions after: " << scheduledModel->getNumberOfTransitions() << "\n");
                         result.schedulerAsMarkovChain = scheduledModel;
                         if (min) {
                             result.cutoffSchedulers = underApproximation->getUpperValueBoundSchedulers();
