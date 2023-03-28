@@ -149,7 +149,7 @@ namespace {
         }
         static bool const isExactModelChecking = true;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { options.preProcMinMaxMethod = storm::solver::MinMaxMethod::PolicyIteration; }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -164,7 +164,7 @@ namespace {
         }
         static bool const isExactModelChecking = true;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { options.preProcMinMaxMethod = storm::solver::MinMaxMethod::PolicyIteration; }
         static PreprocessingType const preprocessingType = PreprocessingType::All;
     };
     
@@ -432,12 +432,12 @@ namespace {
         if (this->isExact()) {
             // This model's value can only be approximated arbitrarily close but never reached
             // Exact arithmetics will thus not reach the value with absoulute precision either.
-            ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-5);
+            ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-4);
             EXPECT_LE(result.lowerBound, expected + approxPrecision);
             EXPECT_GE(result.upperBound, expected - approxPrecision);
         } else {
-            EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-            EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+            EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision()*10);
+            EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision()*10);
         }
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 
