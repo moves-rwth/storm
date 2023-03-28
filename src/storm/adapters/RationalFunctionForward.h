@@ -5,6 +5,10 @@
 #ifdef STORM_CARL_HAVE_FWD_DECL
 #include "carl/core/MultivariatePolynomialForward.h"
 #else
+// This must be included first
+// (for old version. Once STORM_CARL_HAVE_FWD_DECL is true, this is no longer relevant).
+#include <carl/numbers/numbers.h>
+// These must be included later...
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
