@@ -105,7 +105,7 @@ namespace storm {
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if(options.useGridClipping && formula.isRewardOperatorFormula()){
+                if(options.useClipping && formula.isRewardOperatorFormula()){
                     pomdpValueBounds.extremePomdpValueBound =
                         PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getExtremeValueBound(formula, formulaInfo);
                 }
@@ -330,7 +330,7 @@ namespace storm {
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
-                        if (!options.refine && options.explorationTimeLimit) {
+                        if (!options.refine && options.explorationTimeLimit != 0) {
                             underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
                             underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
@@ -339,7 +339,8 @@ namespace storm {
                         }
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
-                    if (options.useGridClipping && rewardModelName.is_initialized()) {
+
+                    if(options.useClipping && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
                     if (!valueBounds.fmSchedulerValueList.empty()) {
@@ -380,11 +381,11 @@ namespace storm {
                 // Start refinement
                 if (options.refine) {
                     STORM_LOG_WARN_COND(
-                        options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision),
+                        options.refineStepLimit != 0 || !storm::utility::isZero(options.refinePrecision),
                         "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
                     STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize),
                                         "Refinement goal precision is given, but only one bound is going to be refined.");
-                    while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) &&
+                    while ((options.refineStepLimit == 0 || statistics.refinementSteps.get() < options.refineStepLimit) &&
                            result.diff() > options.refinePrecision) {
                         bool overApproxFixPoint = true;
                         bool underApproxFixPoint = true;
@@ -581,7 +582,7 @@ namespace storm {
                 underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>().max()-1;  // we don't set a size threshold
 
-                if (options.useGridClipping && rewardModelName.is_initialized()) {
+                if (options.useClipping && rewardModelName.is_initialized()) {
                     interactiveUnderApproximationExplorer->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                 }
 
@@ -753,7 +754,6 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
-
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
 
@@ -797,14 +797,14 @@ namespace storm {
 
                 // Start exploration
                 storm::utility::Stopwatch explorationTime;
-                if (options.explorationTimeLimit) {
+                if (options.explorationTimeLimit != 0) {
                     explorationTime.start();
                 }
                 bool timeLimitExceeded = false;
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 uint64_t numRewiredOrExploredStates = 0;
                 while (overApproximation->hasUnexploredState()) {
-                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit != 0 && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
                         STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because the exploration time limit is exceeded.");
@@ -997,8 +997,9 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation, bool firstIteration) {
                 statistics.underApproximationBuildTime.start();
+
                 unfoldingStatus = Status::Exploring;
-                if(options.useGridClipping){
+                if(options.useClipping){
                     STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
                     statistics.nrClippingAttempts = 0;
                     statistics.nrClippedStates = 0;
@@ -1014,7 +1015,7 @@ namespace storm {
                     if (options.interactiveUnfolding && !firstIteration) {
                         underApproximation->restoreExplorationState();
                     } else if (computeRewards) {  // Build a new under approximation
-                        if (options.useGridClipping) {
+                        if (options.useClipping) {
                             // If we clip, use the sink state for infinite correction values
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                         } else {
@@ -1032,20 +1033,20 @@ namespace storm {
                 storm::utility::Stopwatch explorationTime;
                 storm::utility::Stopwatch printUpdateStopwatch;
                 printUpdateStopwatch.start();
-                if (options.explorationTimeLimit) {
+                if (options.explorationTimeLimit != 0) {
                     explorationTime.start();
                 }
                 bool timeLimitExceeded = false;
                 bool stateStored = false;
                 while (underApproximation->hasUnexploredState()) {
-                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit != 0 && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
                     }
                     if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
                         printUpdateStopwatch.restart();
                         STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
-                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useGridClipping){
+                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping){
                             STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << "\n");
                         }
                     }
@@ -1068,10 +1069,10 @@ namespace storm {
                         bool stopExploration = false;
                         bool clipBelief = false;
                         if (timeLimitExceeded) {
-                            clipBelief = options.useGridClipping;
+                            clipBelief = options.useClipping;
                             stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                         } else if(options.interactiveUnfolding && unfoldingControl != UnfoldingControl::Run) {
-                            clipBelief = options.useGridClipping;
+                            clipBelief = options.useClipping;
                             stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
@@ -1081,7 +1082,7 @@ namespace storm {
                                 stopExploration = true;
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >=
                                        heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
-                                clipBelief = options.useGridClipping;
+                                clipBelief = options.useClipping;
                                 stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                             }
                         }
@@ -1107,7 +1108,11 @@ namespace storm {
                         }
                         if(options.useStateEliminationCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
-                            for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                            uint64_t numActions = beliefManager->getBeliefNumberOfChoices(currId);
+                            if (underApproximation->needsActionAdjustment(numActions)) {
+                                underApproximation->adjustActions(numActions);
+                            }
+                            for (uint64_t action = 0; action < numActions; ++action) {
                                 // Always restore old behavior if available
                                 if(pomdp().hasChoiceLabeling()){
                                     auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];

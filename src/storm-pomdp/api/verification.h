@@ -8,7 +8,7 @@ namespace api {
     underapproximateWithCutoffs(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
                               storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues = std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>>()){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
-        options.useGridClipping = false;
+        options.useClipping = false;
         options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
@@ -21,7 +21,7 @@ namespace api {
                                 storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.skipHeuristicSchedulers = true;
-        options.useGridClipping = false;
+        options.useClipping = false;
         options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
@@ -33,7 +33,7 @@ namespace api {
     createInteractiveUnfoldingModelChecker(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp, bool useClipping){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.skipHeuristicSchedulers = false;
-        options.useGridClipping = useClipping;
+        options.useClipping = useClipping;
         options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = storm::utility::infinity<ValueType>();
         options.interactiveUnfolding = true;

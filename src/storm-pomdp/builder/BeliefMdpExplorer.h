@@ -155,6 +155,12 @@ namespace storm {
 
             MdpStateType getStartOfCurrentRowGroup() const;
 
+            uint64_t getSizeOfCurrentRowGroup() const;
+
+            uint64_t getRowGroupSizeOfState(uint64_t state) const;
+
+            bool needsActionAdjustment(uint64_t numActionsNeeded);
+
             ValueType getLowerValueBoundAtCurrentState() const;
 
             ValueType getUpperValueBoundAtCurrentState() const;
@@ -251,6 +257,8 @@ namespace storm {
             void storeExplorationState();
 
             void restoreExplorationState();
+
+            void adjustActions(uint64_t totalNumberOfActions);
 
             std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
 

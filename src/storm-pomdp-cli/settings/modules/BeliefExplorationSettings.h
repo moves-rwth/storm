@@ -35,10 +35,8 @@ namespace storm {
                 bool isCutZeroGapSet() const;
                 bool isRefineSet() const;
                 double getRefinePrecision() const;
-                bool isRefineStepLimitSet() const;
                 uint64_t getRefineStepLimit() const;
-                
-                bool isExplorationTimeLimitSet() const;
+
                 uint64_t getExplorationTimeLimit() const;
 
                 bool isAlphaVectorProcessingSet() const;
