@@ -65,6 +65,10 @@ double LinearCoefficientVisitor::VariableCoefficients::getCoefficient(storm::exp
     return variableToCoefficientMapping[variable];
 }
 
+size_t LinearCoefficientVisitor::VariableCoefficients::size() const {
+    return variableToCoefficientMapping.size();
+}
+
 double LinearCoefficientVisitor::VariableCoefficients::getConstantPart() const {
     return this->constantPart;
 }
