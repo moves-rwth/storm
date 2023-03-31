@@ -51,6 +51,9 @@
 // Whether MathSAT is available and to be used (define/undef)
 #cmakedefine STORM_HAVE_MSAT
 
+// Whether SoPlex is available and to be used
+#cmakedefine STORM_HAVE_SOPLEX
+
 // Whether benchmarks from QVBS can be used as input
 #cmakedefine STORM_HAVE_QVBS
 

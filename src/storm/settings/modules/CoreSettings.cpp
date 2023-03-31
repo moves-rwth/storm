@@ -64,7 +64,7 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
                                          .build())
                         .build());
 
-    std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3"};
+    std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3", "soplex"};
     this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers))
@@ -124,6 +124,8 @@ storm::solver::LpSolverType CoreSettings::getLpSolver() const {
         return storm::solver::LpSolverType::Glpk;
     } else if (lpSolverName == "z3") {
         return storm::solver::LpSolverType::Z3;
+    } else if (lpSolverName == "soplex") {
+        return storm::solver::LpSolverType::Soplex;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
 }
