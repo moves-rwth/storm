@@ -385,7 +385,7 @@ if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.22")
     # This version is too old for forward declarations and updating requires moving the git,
     # so we warn users but start warning them now.
     set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at ")
+    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
 elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.23")
     # This version is too old for forward declarations, but we keep supporting it for the moment.
     set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
