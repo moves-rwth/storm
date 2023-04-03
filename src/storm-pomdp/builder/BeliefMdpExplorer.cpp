@@ -634,11 +634,12 @@ namespace storm {
                         }
                     }
                     auto transitionRewardMatrix = rewardBuilder.build();
-                    mdpRewardModels.emplace("default",
-                                            storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards), std::move(transitionRewardMatrix)));
+                    mdpRewardModels.emplace(
+                        "default", storm::models::sparse::StandardRewardModel<ValueType>(std::optional<std::vector<ValueType>>(), std::move(mdpActionRewards),
+                                                                                         std::move(transitionRewardMatrix)));
                 } else {
-                    mdpRewardModels.emplace("default",
-                                            storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards)));
+                    mdpRewardModels.emplace(
+                        "default", storm::models::sparse::StandardRewardModel<ValueType>(std::optional<std::vector<ValueType>>(), std::move(mdpActionRewards)));
                 }
             }
 
