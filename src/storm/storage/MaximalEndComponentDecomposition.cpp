@@ -4,6 +4,7 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 

@@ -3,6 +3,8 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/ConstantsComparator.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 
 namespace storm {

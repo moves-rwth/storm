@@ -3,7 +3,7 @@
 #include <boost/optional.hpp>
 #include <vector>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"

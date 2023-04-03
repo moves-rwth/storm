@@ -1,8 +1,12 @@
 #include "storm/logic/BoundedUntilFormula.h"
+#include <boost/any.hpp>
+#include <ostream>
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+
+#include "storm/adapters/RationalNumberAdapter.h"
 
 #include "storm/logic/FormulaVisitor.h"
 

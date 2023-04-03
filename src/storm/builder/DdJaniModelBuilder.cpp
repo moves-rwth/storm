@@ -5,6 +5,9 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/logic/Formulas.h"
+
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #include "storm/storage/expressions/Variable.h"
 
 #include "storm/storage/jani/Automaton.h"

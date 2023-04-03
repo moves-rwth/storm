@@ -98,7 +98,7 @@ std::set<std::string> const& Choice<ValueType, StateType>::getLabels() const {
 }
 
 template<typename ValueType, typename StateType>
-void Choice<ValueType, StateType>::setPlayerIndex(storm::storage::PlayerIndex playerIndex) {
+void Choice<ValueType, StateType>::setPlayerIndex(storm::storage::PlayerIndex const& playerIndex) {
     this->playerIndex = playerIndex;
 }
 

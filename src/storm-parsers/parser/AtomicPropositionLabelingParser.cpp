@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include "storm/utility/macros.h"
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"

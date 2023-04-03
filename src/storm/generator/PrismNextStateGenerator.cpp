@@ -3,6 +3,8 @@
 #include <boost/any.hpp>
 #include <boost/container/flat_map.hpp>
 
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -15,9 +17,12 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace generator {

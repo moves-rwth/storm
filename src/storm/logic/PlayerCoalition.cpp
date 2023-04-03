@@ -1,6 +1,5 @@
 #include "storm/logic/PlayerCoalition.h"
-
-#include <iostream>
+#include <ostream>
 
 namespace storm {
 namespace logic {

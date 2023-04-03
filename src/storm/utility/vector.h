@@ -6,7 +6,7 @@
 #include <iosfwd>
 #include <numeric>
 #include "storm/adapters/IntelTbbAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 #include <boost/optional.hpp>
 
@@ -1224,14 +1224,6 @@ bool hasZeroEntry(std::vector<T> const& v) {
 template<typename T>
 bool hasInfinityEntry(std::vector<T> const& v) {
     return std::any_of(v.begin(), v.end(), [](T value) { return storm::utility::isInfinity(value); });
-}
-
-inline std::set<storm::RationalFunctionVariable> getVariables(std::vector<storm::RationalFunction> const& vector) {
-    std::set<storm::RationalFunctionVariable> result;
-    for (auto const& entry : vector) {
-        entry.gatherVariables(result);
-    }
-    return result;
 }
 
 template<typename T>

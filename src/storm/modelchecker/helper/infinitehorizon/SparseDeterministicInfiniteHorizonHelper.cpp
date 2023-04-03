@@ -1,5 +1,6 @@
 #include "SparseDeterministicInfiniteHorizonHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"

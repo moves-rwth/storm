@@ -10,7 +10,7 @@
 
 #include <boost/optional.hpp>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/OsDetection.h"

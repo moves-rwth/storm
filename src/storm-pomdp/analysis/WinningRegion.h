@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "storm/storage/BitVector.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 namespace storm {
     namespace pomdp {

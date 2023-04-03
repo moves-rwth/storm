@@ -3,6 +3,7 @@
 #include <numeric>
 
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/storage/expressions/OperatorType.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/DebugSettings.h"

@@ -5,6 +5,7 @@
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 
 #include "storm/exceptions/InvalidStateException.h"

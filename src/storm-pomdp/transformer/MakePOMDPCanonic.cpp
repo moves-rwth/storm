@@ -1,5 +1,6 @@
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/storage/sparse/ModelComponents.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/AmbiguousModelException.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"

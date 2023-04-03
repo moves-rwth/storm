@@ -1,5 +1,5 @@
 #include "storm/storage/jani/types/JaniType.h"
-
+#include <ostream>
 #include "storm/storage/jani/types/AllJaniTypes.h"
 
 namespace storm {

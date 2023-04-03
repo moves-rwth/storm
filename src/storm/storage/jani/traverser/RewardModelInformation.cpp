@@ -4,6 +4,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace jani {

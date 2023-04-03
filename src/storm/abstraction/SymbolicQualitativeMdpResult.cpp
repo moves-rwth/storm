@@ -1,4 +1,5 @@
 #include "storm/abstraction/SymbolicQualitativeMdpResult.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace abstraction {

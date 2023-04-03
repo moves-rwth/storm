@@ -1,4 +1,5 @@
 #include "storm/logic/ToExpressionVisitor.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"
 

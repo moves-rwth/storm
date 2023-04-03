@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
 #include "storm/storage/expressions/BaseExpression.h"
 
 namespace storm {

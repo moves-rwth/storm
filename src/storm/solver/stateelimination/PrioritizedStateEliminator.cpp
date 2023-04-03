@@ -1,7 +1,7 @@
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

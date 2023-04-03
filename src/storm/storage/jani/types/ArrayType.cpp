@@ -1,4 +1,5 @@
 #include "storm/storage/jani/types/ArrayType.h"
+#include <string>
 
 namespace storm {
 namespace jani {

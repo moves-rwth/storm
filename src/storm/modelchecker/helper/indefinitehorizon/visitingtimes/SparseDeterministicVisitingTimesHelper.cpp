@@ -1,6 +1,7 @@
 #include "SparseDeterministicVisitingTimesHelper.h"
 
 #include <algorithm>
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"

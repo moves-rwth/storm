@@ -1,4 +1,5 @@
 #include "storm/storage/jani/types/ContinuousType.h"
+#include <string>
 
 namespace storm {
 namespace jani {

@@ -1,5 +1,9 @@
-#include "storm/logic/CumulativeRewardFormula.h"
 
+#include "storm/logic/CumulativeRewardFormula.h"
+#include <boost/any.hpp>
+#include <ostream>
+
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/exceptions/InvalidOperationException.h"

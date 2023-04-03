@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/algorithm/string.hpp>
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/Formula.h"

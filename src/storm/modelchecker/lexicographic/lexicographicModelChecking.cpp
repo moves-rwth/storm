@@ -3,6 +3,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/storage/SchedulerChoice.h"
 #include "storm/utility/macros.h"
 
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"

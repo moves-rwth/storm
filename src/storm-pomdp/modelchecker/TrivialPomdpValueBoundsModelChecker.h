@@ -12,6 +12,8 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm/utility/vector.h"
+
 namespace storm {
     namespace pomdp {
         namespace modelchecker {

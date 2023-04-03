@@ -11,7 +11,9 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/NotImplementedException.h"

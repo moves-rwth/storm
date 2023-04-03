@@ -2,6 +2,7 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"

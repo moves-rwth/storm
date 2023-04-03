@@ -1,5 +1,5 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
