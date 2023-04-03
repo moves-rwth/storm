@@ -213,19 +213,19 @@ std::unordered_map<std::string, typename SparseModelType::RewardModelType> GoalS
     for (auto rewardModelName : selectedRewardModels) {
         auto origRewardModel = originalModel.getRewardModel(rewardModelName);
 
-        boost::optional<std::vector<RewardValueType>> stateRewards;
+        std::optional<std::vector<RewardValueType>> stateRewards;
         if (origRewardModel.hasStateRewards()) {
             stateRewards = storm::utility::vector::filterVector(origRewardModel.getStateRewardVector(), maybeStates);
             stateRewards->resize(stateCount, storm::utility::zero<RewardValueType>());
         }
 
-        boost::optional<std::vector<RewardValueType>> stateActionRewards;
+        std::optional<std::vector<RewardValueType>> stateActionRewards;
         if (origRewardModel.hasStateActionRewards()) {
             stateActionRewards = storm::utility::vector::filterVector(origRewardModel.getStateActionRewardVector(), resultData.keptChoices);
             stateActionRewards->resize(choiceCount, storm::utility::zero<RewardValueType>());
         }
 
-        boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+        std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
         if (origRewardModel.hasTransitionRewards()) {
             storm::storage::SparseMatrixBuilder<RewardValueType> builder(choiceCount, stateCount, 0, true);
             for (auto row : resultData.keptChoices) {

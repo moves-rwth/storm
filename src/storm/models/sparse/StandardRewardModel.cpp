@@ -10,9 +10,9 @@ namespace storm {
 namespace models {
 namespace sparse {
 template<typename ValueType>
-StandardRewardModel<ValueType>::StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                                    boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector,
-                                                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix)
+StandardRewardModel<ValueType>::StandardRewardModel(std::optional<std::vector<ValueType>> const& optionalStateRewardVector,
+                                                    std::optional<std::vector<ValueType>> const& optionalStateActionRewardVector,
+                                                    std::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix)
     : optionalStateRewardVector(optionalStateRewardVector),
       optionalStateActionRewardVector(optionalStateActionRewardVector),
       optionalTransitionRewardMatrix(optionalTransitionRewardMatrix) {
@@ -20,9 +20,9 @@ StandardRewardModel<ValueType>::StandardRewardModel(boost::optional<std::vector<
 }
 
 template<typename ValueType>
-StandardRewardModel<ValueType>::StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                                    boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector,
-                                                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix)
+StandardRewardModel<ValueType>::StandardRewardModel(std::optional<std::vector<ValueType>>&& optionalStateRewardVector,
+                                                    std::optional<std::vector<ValueType>>&& optionalStateActionRewardVector,
+                                                    std::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix)
     : optionalStateRewardVector(std::move(optionalStateRewardVector)),
       optionalStateActionRewardVector(std::move(optionalStateActionRewardVector)),
       optionalTransitionRewardMatrix(std::move(optionalTransitionRewardMatrix)) {
@@ -43,33 +43,33 @@ bool StandardRewardModel<ValueType>::hasOnlyStateRewards() const {
 template<typename ValueType>
 std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateRewardVector() const {
     STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
-    return this->optionalStateRewardVector.get();
+    return this->optionalStateRewardVector.value();
 }
 
 template<typename ValueType>
 std::vector<ValueType>& StandardRewardModel<ValueType>::getStateRewardVector() {
     STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
-    return this->optionalStateRewardVector.get();
+    return this->optionalStateRewardVector.value();
 }
 
 template<typename ValueType>
-boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateRewardVector() const {
+std::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateRewardVector() const {
     return this->optionalStateRewardVector;
 }
 
 template<typename ValueType>
 ValueType const& StandardRewardModel<ValueType>::getStateReward(uint_fast64_t state) const {
     STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
-    STORM_LOG_ASSERT(state < this->optionalStateRewardVector.get().size(), "Invalid state.");
-    return this->optionalStateRewardVector.get()[state];
+    STORM_LOG_ASSERT(state < this->optionalStateRewardVector.value().size(), "Invalid state.");
+    return this->optionalStateRewardVector.value()[state];
 }
 
 template<typename ValueType>
 template<typename T>
 void StandardRewardModel<ValueType>::setStateReward(uint_fast64_t state, T const& newReward) {
     STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
-    STORM_LOG_ASSERT(state < this->optionalStateRewardVector.get().size(), "Invalid state.");
-    this->optionalStateRewardVector.get()[state] = newReward;
+    STORM_LOG_ASSERT(state < this->optionalStateRewardVector.value().size(), "Invalid state.");
+    this->optionalStateRewardVector.value()[state] = newReward;
 }
 
 template<typename ValueType>
@@ -80,32 +80,32 @@ bool StandardRewardModel<ValueType>::hasStateActionRewards() const {
 template<typename ValueType>
 std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateActionRewardVector() const {
     STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
-    return this->optionalStateActionRewardVector.get();
+    return this->optionalStateActionRewardVector.value();
 }
 
 template<typename ValueType>
 std::vector<ValueType>& StandardRewardModel<ValueType>::getStateActionRewardVector() {
     STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
-    return this->optionalStateActionRewardVector.get();
+    return this->optionalStateActionRewardVector.value();
 }
 
 template<typename ValueType>
 ValueType const& StandardRewardModel<ValueType>::getStateActionReward(uint_fast64_t choiceIndex) const {
     STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
-    STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.get().size(), "Invalid choiceIndex.");
-    return this->optionalStateActionRewardVector.get()[choiceIndex];
+    STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.value().size(), "Invalid choiceIndex.");
+    return this->optionalStateActionRewardVector.value()[choiceIndex];
 }
 
 template<typename ValueType>
 template<typename T>
 void StandardRewardModel<ValueType>::setStateActionReward(uint_fast64_t choiceIndex, T const& newValue) {
     STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
-    STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.get().size(), "Invalid choiceIndex.");
-    this->optionalStateActionRewardVector.get()[choiceIndex] = newValue;
+    STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.value().size(), "Invalid choiceIndex.");
+    this->optionalStateActionRewardVector.value()[choiceIndex] = newValue;
 }
 
 template<typename ValueType>
-boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateActionRewardVector() const {
+std::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateActionRewardVector() const {
     return this->optionalStateActionRewardVector;
 }
 
@@ -116,28 +116,28 @@ bool StandardRewardModel<ValueType>::hasTransitionRewards() const {
 
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> const& StandardRewardModel<ValueType>::getTransitionRewardMatrix() const {
-    return this->optionalTransitionRewardMatrix.get();
+    return this->optionalTransitionRewardMatrix.value();
 }
 
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType>& StandardRewardModel<ValueType>::getTransitionRewardMatrix() {
-    return this->optionalTransitionRewardMatrix.get();
+    return this->optionalTransitionRewardMatrix.value();
 }
 
 template<typename ValueType>
-boost::optional<storm::storage::SparseMatrix<ValueType>> const& StandardRewardModel<ValueType>::getOptionalTransitionRewardMatrix() const {
+std::optional<storm::storage::SparseMatrix<ValueType>> const& StandardRewardModel<ValueType>::getOptionalTransitionRewardMatrix() const {
     return this->optionalTransitionRewardMatrix;
 }
 
 template<typename ValueType>
 StandardRewardModel<ValueType> StandardRewardModel<ValueType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
-    boost::optional<std::vector<ValueType>> newStateRewardVector(this->getOptionalStateRewardVector());
-    boost::optional<std::vector<ValueType>> newStateActionRewardVector;
+    std::optional<std::vector<ValueType>> newStateRewardVector(this->getOptionalStateRewardVector());
+    std::optional<std::vector<ValueType>> newStateActionRewardVector;
     if (this->hasStateActionRewards()) {
         newStateActionRewardVector = std::vector<ValueType>(enabledActions.getNumberOfSetBits());
-        storm::utility::vector::selectVectorValues(newStateActionRewardVector.get(), enabledActions, this->getStateActionRewardVector());
+        storm::utility::vector::selectVectorValues(newStateActionRewardVector.value(), enabledActions, this->getStateActionRewardVector());
     }
-    boost::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
+    std::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
     if (this->hasTransitionRewards()) {
         newTransitionRewardMatrix = this->getTransitionRewardMatrix().restrictRows(enabledActions);
     }
@@ -146,12 +146,12 @@ StandardRewardModel<ValueType> StandardRewardModel<ValueType>::restrictActions(s
 
 template<typename ValueType>
 StandardRewardModel<ValueType> StandardRewardModel<ValueType>::permuteActions(std::vector<uint64_t> const& inversePermutation) const {
-    boost::optional<std::vector<ValueType>> newStateRewardVector(this->getOptionalStateRewardVector());
-    boost::optional<std::vector<ValueType>> newStateActionRewardVector;
+    std::optional<std::vector<ValueType>> newStateRewardVector(this->getOptionalStateRewardVector());
+    std::optional<std::vector<ValueType>> newStateActionRewardVector;
     if (this->hasStateActionRewards()) {
         newStateActionRewardVector = storm::utility::vector::applyInversePermutation(inversePermutation, this->getStateActionRewardVector());
     }
-    boost::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
+    std::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
     if (this->hasTransitionRewards()) {
         newTransitionRewardMatrix = this->getTransitionRewardMatrix().permuteRows(inversePermutation);
     }
@@ -190,7 +190,7 @@ void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::S
             storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(),
                                                           transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()),
                                                           this->getStateActionRewardVector());
-            this->optionalTransitionRewardMatrix = boost::none;
+            this->optionalTransitionRewardMatrix = std::nullopt;
         } else {
             this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
         }
@@ -207,7 +207,7 @@ void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::S
             } else {
                 this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
                 storm::utility::vector::applyPointwise<ValueType, MatrixValueType, ValueType, std::multiplies<>>(
-                    this->optionalStateRewardVector.get(), *weights, this->optionalStateRewardVector.get());
+                    this->optionalStateRewardVector.value(), *weights, this->optionalStateRewardVector.value());
             }
         } else {
             if (this->hasStateRewards()) {
@@ -216,7 +216,7 @@ void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::S
                 this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
             }
         }
-        this->optionalStateActionRewardVector = boost::none;
+        this->optionalStateActionRewardVector = std::nullopt;
     }
 }
 
@@ -419,11 +419,11 @@ bool StandardRewardModel<ValueType>::isAllZero() const {
 template<typename ValueType>
 bool StandardRewardModel<ValueType>::isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const {
     if (hasStateRewards()) {
-        if (optionalStateRewardVector.get().size() != nrStates)
+        if (optionalStateRewardVector.value().size() != nrStates)
             return false;
     }
     if (hasStateActionRewards()) {
-        if (optionalStateActionRewardVector.get().size() != nrChoices)
+        if (optionalStateActionRewardVector.value().size() != nrChoices)
             return false;
     }
     return true;

@@ -42,9 +42,14 @@ class GurobiEnvironment {
 /*!
  * A class that implements the LpSolver interface using Gurobi.
  */
-template<typename ValueType>
-class GurobiLpSolver : public LpSolver<ValueType> {
+template<typename ValueType, bool RawMode = false>
+class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
    public:
+    using VariableType = typename LpSolver<ValueType, RawMode>::VariableType;
+    using Variable = typename LpSolver<ValueType, RawMode>::Variable;
+    using Constant = typename LpSolver<ValueType, RawMode>::Constant;
+    using Constraint = typename LpSolver<ValueType, RawMode>::Constraint;
+
     /*!
      * Constructs a solver with the given name and model sense.
      *
@@ -87,32 +92,16 @@ class GurobiLpSolver : public LpSolver<ValueType> {
      */
     virtual ~GurobiLpSolver();
 
-    // Methods to add continuous variables.
-    virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                      ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound,
-                                                                           ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound,
-                                                                           ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
-
-    // Methods to add integer variables.
-    virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                   ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound,
-                                                                        ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound,
-                                                                        ValueType objectiveFunctionCoefficient = 0) override;
-    virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
-
-    // Methods to add binary variables.
-    virtual storm::expressions::Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) override;
+    // Methods to add variables.
+    virtual Variable addVariable(std::string const& name, VariableType const& type, std::optional<ValueType> const& lowerBound = std::nullopt,
+                                 std::optional<ValueType> const& upperBound = std::nullopt, ValueType objectiveFunctionCoefficient = 0) override;
 
     // Methods to incorporate recent changes.
     virtual void update() const override;
 
     // Methods to add constraints
-    virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override;
+    virtual void addConstraint(std::string const& name, Constraint const& constraint) override;
+    virtual void addIndicatorConstraint(std::string const& name, Variable indicatorVariable, bool indicatorValue, Constraint const& constraint) override;
 
     // Methods to optimize and retrieve optimality status.
     virtual void optimize() const override;
@@ -121,9 +110,9 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     virtual bool isOptimal() const override;
 
     // Methods to retrieve values of variables and the objective function in the optimal solutions.
-    virtual ValueType getContinuousValue(storm::expressions::Variable const& name) const override;
-    virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& name) const override;
-    virtual bool getBinaryValue(storm::expressions::Variable const& name) const override;
+    virtual ValueType getContinuousValue(Variable const& name) const override;
+    virtual int_fast64_t getIntegerValue(Variable const& name) const override;
+    virtual bool getBinaryValue(Variable const& name) const override;
     virtual ValueType getObjectiveValue() const override;
     // Methods to print the LP problem to a file.
     virtual void writeModelToFile(std::string const& filename) const override;
@@ -137,23 +126,12 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     // Methods to retrieve values of sub-optimal solutions found along the way.
     void setMaximalSolutionCount(uint64_t value);  // How many solutions will be stored (at max)
     uint64_t getSolutionCount() const;             // How many solutions have been found
-    ValueType getContinuousValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
-    int_fast64_t getIntegerValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
-    bool getBinaryValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
-    ValueType getObjectiveValue(uint64_t const& solutionIndex) const;
+    ValueType getContinuousValue(Variable const& name, uint64_t const& solutionIndex) const;
+    int_fast64_t getIntegerValue(Variable const& name, uint64_t const& solutionIndex) const;
+    bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
+    ValueType getObjectiveValue(uint64_t solutionIndex) const;
 
    private:
-    /*!
-     * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
-     *
-     * @param variable The variable to add.
-     * @param variableType The type of the variable in terms of Gurobi's constants.
-     * @param lowerBound The lower bound of the range of the variable.
-     * @param upperBound The upper bound of the range of the variable.
-     * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
-     */
-    void addVariable(storm::expressions::Variable const& variable, char variableType, double lowerBound, double upperBound,
-                     ValueType objectiveFunctionCoefficient);
 #ifdef STORM_HAVE_GUROBI
     // The Gurobi model.
     GRBmodel* model;
@@ -164,15 +142,15 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     // The index of the next variable.
     int nextVariableIndex;
 
-    // The index of the next constraint.
-    int nextConstraintIndex;
-
     // A mapping from variables to their indices.
     std::map<storm::expressions::Variable, int> variableToIndexMap;
 
     struct IncrementalLevel {
         std::vector<storm::expressions::Variable> variables;
+        // Gurobi considers a different set of indices for linear constraints and general constraints.
+        // The term "general constraints" is used by Gurobi to refer to "non-standard" constraints, e.g., indicator constraint.
         int firstConstraintIndex;
+        int firstGenConstraintIndex;
     };
     std::vector<IncrementalLevel> incrementalData;
 };

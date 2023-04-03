@@ -87,6 +87,9 @@ set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
+option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
+MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+
 
 if (STORM_COMPILE_WITH_ALL_SANITIZERS)
     set(STORM_COMPILE_WITH_ADDRESS_SANITIZER ON)
@@ -346,6 +349,15 @@ endif()
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
 if (NOT STORM_PORTABLE AND (NOT APPLE_SILICON OR (STORM_COMPILER_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0)))
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+endif()
+
+if (STORM_COMPILE_WITH_COMPILATION_PROFILING)
+	if (CLANG)
+		# Allow profiling of compilation times,
+		# outputs json with chromium-tracing information along every object file (open in chrome://tracing/).
+		# overhead is very limited
+		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftime-trace")
+	endif()
 endif()
 
 if (STORM_DEVELOPER)

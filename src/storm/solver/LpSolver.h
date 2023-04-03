@@ -1,9 +1,9 @@
 #ifndef STORM_SOLVER_LPSOLVER
 #define STORM_SOLVER_LPSOLVER
 
-#include <boost/optional.hpp>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "OptimizationDirection.h"
@@ -13,16 +13,51 @@ namespace expressions {
 class ExpressionManager;
 class Variable;
 class Expression;
+enum class RelationType;
 }  // namespace expressions
 
 namespace solver {
+
+template<typename ValueType>
+struct RawLpConstraint {
+    using VariableIndexType = uint64_t;
+
+    /*!
+     * Creates a RawLpConstraint which represents a linear (in)equality of the form a_1*x_1 + ... + a_n*x_n ~ b
+     * @param relationType The relation ~ in the (in)equality
+     * @param rhs The right-hand side b of the inequality
+     * @param reservedSize An estimate of the number of terms n in the left hand side. Doesn't need to be accurate but helps reserving appropriate memory
+     */
+    RawLpConstraint(storm::expressions::RelationType relationType, ValueType const& rhs = {}, uint64_t reservedSize = 0);
+
+    /*!
+     * Adds the summand 'coefficient * variable' to the left hand side
+     * @param variable
+     * @param coefficient
+     */
+    void addToLhs(VariableIndexType const& variable, ValueType const& coefficient);
+
+    std::vector<VariableIndexType> lhsVariableIndices;
+    std::vector<ValueType> lhsCoefficients;
+    storm::expressions::RelationType relationType;
+    ValueType rhs;
+};
+
 /*!
  * An interface that captures the functionality of an LP solver.
+ * @tparam RawMode: If set, variables are given as indices and constraints as RawConstraints. This avoids overhead introduced by storm::expression's
  */
-template<typename ValueType>
+template<typename ValueType, bool RawMode = false>
 class LpSolver {
    public:
-    // An enumeration to represent whether the objective function is to be minimized or maximized.
+    using Variable = std::conditional_t<RawMode, typename RawLpConstraint<ValueType>::VariableIndexType, storm::expressions::Variable>;
+    using Constant = std::conditional_t<RawMode, ValueType, storm::expressions::Expression>;
+    using Constraint = std::conditional_t<RawMode, RawLpConstraint<ValueType>, storm::expressions::Expression>;
+
+    /*!
+     * Enumerates the different types of variables
+     */
+    enum class VariableType { Continuous, Integer, Binary };
 
     /*!
      * Creates an empty LP solver. By default the objective function is assumed to be minimized.
@@ -42,50 +77,57 @@ class LpSolver {
      * Registers an upper- and lower-bounded continuous variable, i.e. a variable that may take all real values
      * within its bounds.
      *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable.
      * @param upperBound The upper bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                      ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers a lower-bounded continuous variable, i.e. a variable that may take all real values up to its
      * lower bound.
      *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound,
-                                                                           ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers an upper-bounded continuous variable, i.e. a variable that may take all real values up to its
      * upper bound.
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param upperBound The upper bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound,
-                                                                           ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers a unbounded continuous variable, i.e. a variable that may take all real values.
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers a continuous variable, i.e. a variable that may take all real values within its bounds (if given).
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable (unbounded if not given).
@@ -93,57 +135,64 @@ class LpSolver {
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    storm::expressions::Variable addContinuousVariable(std::string const& name, boost::optional<ValueType> const& lowerBound = boost::none,
-                                                       boost::optional<ValueType> const& upperBound = boost::none, ValueType objectiveFunctionCoefficient = 0);
+    Variable addContinuousVariable(std::string const& name, std::optional<ValueType> const& lowerBound = std::nullopt,
+                                   std::optional<ValueType> const& upperBound = std::nullopt, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers an upper- and lower-bounded integer variable, i.e. a variable that may take all integer values
      * within its bounds.
      *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable.
      * @param upperBound The upper bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                   ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers a lower-bounded integer variable, i.e. a variable that may take all integer values up to its
      * lower bound.
      *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound,
-                                                                        ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers an upper-bounded integer variable, i.e. a variable that may take all integer values up to its
      * lower bound.
      *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
      * @param name The name of the variable.
      * @param upperBound The upper bound of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound,
-                                                                        ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers an unbounded integer variable, i.e. a variable that may take all integer values.
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers an integer variable, i.e. a variable that may take all integer values within its bounds (if given).
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param lowerBound The lower bound of the variable.
@@ -151,26 +200,43 @@ class LpSolver {
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addIntegerVariable(std::string const& name, boost::optional<ValueType> const& lowerBound = boost::none,
-                                                            boost::optional<ValueType> const& upperBound = boost::none,
-                                                            ValueType objectiveFunctionCoefficient = 0);
+    Variable addIntegerVariable(std::string const& name, std::optional<ValueType> const& lowerBound = std::nullopt,
+                                std::optional<ValueType> const& upperBound = std::nullopt, ValueType objectiveFunctionCoefficient = 0);
 
     /*!
      * Registers a boolean variable, i.e. a variable that may be either 0 or 1.
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
      *
      * @param name The name of the variable.
      * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
      * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
      */
-    virtual storm::expressions::Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0) = 0;
+    Variable addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient = 0);
+
+    /*!
+     * Registers a variable of the given type
+     *
+     * @note In RawMode this returns a variable index. Variable indices are assigned consecutively starting at 0, i.e. the n'th variable has index (n-1).
+     *
+     * @param name The name of the variable.
+     * @param type The type of the variable
+     * @param lowerBound The optional lower bound
+     * @param upperBound The optional upper bound
+     * @param objectiveFunctionCoefficient The coefficient with which the variable appears in the objective
+     * function. If omitted (or set to zero), the variable is irrelevant for the objective value.
+     */
+    virtual Variable addVariable(std::string const& name, VariableType const& type, std::optional<ValueType> const& lowerBound = std::nullopt,
+                                 std::optional<ValueType> const& upperBound = std::nullopt, ValueType objectiveFunctionCoefficient = 0) = 0;
 
     /*!
      * Retrieves an expression that characterizes the given constant value.
+     * In RawMode, this just returns the given value
      *
      * @param value The value of the constant.
      * @return The resulting expression.
      */
-    storm::expressions::Expression getConstant(ValueType value) const;
+    Constant getConstant(ValueType value) const;
 
     /*!
      * Updates the model to make the variables that have been declared since the last call to <code>update</code>
@@ -185,7 +251,19 @@ class LpSolver {
      * @param constraint An expression that represents the constraint. The given constraint must be a linear
      * (in)equality over the registered variables.
      */
-    virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) = 0;
+    virtual void addConstraint(std::string const& name, Constraint const& constraint) = 0;
+
+    /*!
+     * Adds the given indicator constraint to the LP problem:
+     * "If indicatorVariable == indicatorValue, then constraint"
+     *
+     * @param name The name of the constraint. If empty, the constraint has no name.
+     * @param indicatorVariable must be a registered binary
+     * @param indicatorValue
+     * @param constraint An expression that represents the constraint. The given constraint must be a linear
+     * (in)equality over the registered variables.
+     */
+    virtual void addIndicatorConstraint(std::string const& name, Variable indicatorVariable, bool indicatorValue, Constraint const& constraint) = 0;
 
     /*!
      * Optimizes the LP problem previously constructed. Afterwards, the methods isInfeasible, isUnbounded and
@@ -225,7 +303,7 @@ class LpSolver {
      * @param variable The variable whose integer value (in the optimal solution) to retrieve.
      * @return The value of the integer variable in the optimal solution.
      */
-    virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const = 0;
+    virtual int_fast64_t getIntegerValue(Variable const& variable) const = 0;
 
     /*!
      * Retrieves the value of the binary variable with the given name. Note that this may only be called, if
@@ -234,7 +312,7 @@ class LpSolver {
      * @param variable The variable whose integer value (in the optimal solution) to retrieve.
      * @return The value of the binary variable in the optimal solution.
      */
-    virtual bool getBinaryValue(storm::expressions::Variable const& variable) const = 0;
+    virtual bool getBinaryValue(Variable const& variable) const = 0;
 
     /*!
      * Retrieves the value of the continuous variable with the given name. Note that this may only be called,
@@ -243,7 +321,7 @@ class LpSolver {
      * @param variable The variable whose integer value (in the optimal solution) to retrieve.
      * @return The value of the continuous variable in the optimal solution.
      */
-    virtual ValueType getContinuousValue(storm::expressions::Variable const& variable) const = 0;
+    virtual ValueType getContinuousValue(Variable const& variable) const = 0;
 
     /*!
      * Retrieves the value of the objective function. Note that this may only be called, if the model was found
@@ -265,30 +343,21 @@ class LpSolver {
      *
      * @param modelSense The model sense to use.
      */
-    void setOptimizationDirection(OptimizationDirection const& optimizationDirection) {
-        if (optimizationDirection != this->optimizationDirection) {
-            currentModelHasBeenOptimized = false;
-        }
-        this->optimizationDirection = optimizationDirection;
-    }
+    void setOptimizationDirection(OptimizationDirection const& optimizationDirection);
 
     /*!
      * Retrieves whether the objective function of this model is to be minimized or maximized.
      *
      * @return A value indicating whether the objective function of this model is to be minimized or maximized.
      */
-    OptimizationDirection getOptimizationDirection() const {
-        return optimizationDirection;
-    }
+    OptimizationDirection getOptimizationDirection() const;
 
     /*!
      * Retrieves the manager for the variables created for this solver.
      *
      * @return The manager for the variables created for this solver.
      */
-    storm::expressions::ExpressionManager const& getManager() const {
-        return *manager;
-    }
+    storm::expressions::ExpressionManager const& getManager() const;
 
     /*!
      * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those
@@ -316,6 +385,8 @@ class LpSolver {
     virtual ValueType getMILPGap(bool relative) const = 0;
 
    protected:
+    storm::expressions::Variable declareOrGetExpressionVariable(std::string const& name, VariableType const& type);
+
     // The manager responsible for the variables.
     std::shared_ptr<storm::expressions::ExpressionManager> manager;
 

@@ -259,7 +259,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     size_t posEndObservation = line.find("}");
                     std::string observation = line.substr(1, posEndObservation - 1);
                     STORM_LOG_TRACE("State observation " << observation);
-                    modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
+                    modelComponents->observabilityClasses.value()[state] = std::stoi(observation);
                     line = line.substr(posEndObservation + 1);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
@@ -322,10 +322,10 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             // curString contains action name.
             if (options.buildChoiceLabeling) {
                 if (curString != "__NOLABEL__") {
-                    if (!modelComponents->choiceLabeling.get().containsLabel(curString)) {
-                        modelComponents->choiceLabeling.get().addLabel(curString);
+                    if (!modelComponents->choiceLabeling.value().containsLabel(curString)) {
+                        modelComponents->choiceLabeling.value().addLabel(curString);
                     }
-                    modelComponents->choiceLabeling.get().addLabelToChoice(curString, row);
+                    modelComponents->choiceLabeling.value().addLabelToChoice(curString, row);
                 }
             }
             // Check for rewards
@@ -396,7 +396,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
         } else {
             rewardModelName = rewardModelNames[i];
         }
-        boost::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
+        std::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
         if (i < stateRewards.size() && !stateRewards[i].empty()) {
             stateRewardVector = std::move(stateRewards[i]);
         }

@@ -45,6 +45,8 @@ class LinearCoefficientVisitor : public ExpressionVisitor {
         std::map<storm::expressions::Variable, double>::const_iterator begin() const;
         std::map<storm::expressions::Variable, double>::const_iterator end() const;
 
+        size_t size() const;
+
        private:
         std::map<storm::expressions::Variable, double> variableToCoefficientMapping;
         double constantPart;

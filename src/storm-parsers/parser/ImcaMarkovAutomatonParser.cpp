@@ -155,14 +155,14 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
     storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(numChoices, numStates, numTransitions, true, true, numStates);
     std::vector<ValueType> exitRates;
     exitRates.reserve(numStates);
-    boost::optional<std::vector<ValueType>> stateRewards, actionRewards;
+    std::optional<std::vector<ValueType>> stateRewards, actionRewards;
     if (hasStateReward) {
         stateRewards = std::vector<ValueType>(numStates, storm::utility::zero<ValueType>());
     }
     if (hasActionReward) {
         actionRewards = std::vector<ValueType>(numChoices, storm::utility::zero<ValueType>());
     }
-    boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+    std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     if (buildChoiceLabels) {
         choiceLabeling = storm::models::sparse::ChoiceLabeling(numChoices);
     }
@@ -172,7 +172,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
         matrixBuilder.newRowGroup(row);
         if (!behavior.getStateRewards().empty()) {
             assert(behavior.getStateRewards().size() == 1);
-            stateRewards.get()[state] = behavior.getStateRewards().front();
+            stateRewards.value()[state] = behavior.getStateRewards().front();
         }
         if (markovianStates.get(state)) {
             // For Markovian states, the Markovian choice has to be the first one in the resulting transition matrix.
@@ -184,7 +184,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
                     markovianChoiceFound = true;
                     if (!choice.getRewards().empty()) {
                         assert(choice.getRewards().size() == 1);
-                        actionRewards.get()[row] = choice.getRewards().front();
+                        actionRewards.value()[row] = choice.getRewards().front();
                     }
                     if (buildChoiceLabels && choice.hasLabels()) {
                         assert(choice.getLabels().size() == 1);
@@ -209,7 +209,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
             if (!choice.isMarkovian()) {
                 if (!choice.getRewards().empty()) {
                     assert(choice.getRewards().size() == 1);
-                    actionRewards.get()[row] = choice.getRewards().front();
+                    actionRewards.value()[row] = choice.getRewards().front();
                 }
                 if (buildChoiceLabels && choice.hasLabels()) {
                     assert(choice.getLabels().size() == 1);
