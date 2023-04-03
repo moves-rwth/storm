@@ -39,6 +39,8 @@ SOFTWARE.
 #include "basic_json_forward.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+
 
 #include <algorithm> // all_of, for_each, transform
 #include <array> // array

@@ -1,6 +1,6 @@
 #include "storm/adapters/RationalFunctionAdapter_Private.h"
 
-#ifdef STORM_CARL_HAVE_FWD_DECL
+#ifdef STORM_CARL_SUPPORTS_FWD_DECL
 // See RationalFunctionAdapter.h
 template class carl::MultivariatePolynomial<storm::RationalFunctionCoefficient>;
 template class carl::FactorizedPolynomial<storm::RawPolynomial>;
