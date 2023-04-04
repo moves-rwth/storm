@@ -38,9 +38,9 @@ namespace storm {
 typedef carl::Variable RationalFunctionVariable;
 
 #if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_RF)
-typedef cln::cl_RA RationalFunctionCoefficient;
+typedef ClnRationalNumber RationalFunctionCoefficient;
 #elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_RF)
-typedef mpq_class RationalFunctionCoefficient;
+typedef GmpRationalNumber RationalFunctionCoefficient;
 #elif defined(STORM_USE_CLN_RF)
 #error CLN is to be used, but is not available.
 #else

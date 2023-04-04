@@ -4,6 +4,7 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <map>
+#include <optional>
 #include <vector>
 
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
