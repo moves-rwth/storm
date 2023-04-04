@@ -131,7 +131,7 @@ namespace storm {
                 Result result(pomdpValueBounds.trivialPomdpValueBounds.getHighestLowerBound(initialPomdpState), pomdpValueBounds.trivialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
 
-                boost::optional<std::string> rewardModelName;
+                std::optional<std::string> rewardModelName;
                 std::set<uint32_t> targetObservations;
                 if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
                     if (formulaInfo.getTargetStates().observationClosed) {
@@ -207,7 +207,7 @@ namespace storm {
                 stream << "# Total check time: " << statistics.totalTime << '\n';
                 // Refinement information:
                 if (statistics.refinementSteps) {
-                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << '\n';
+                    stream << "# Number of refinement steps: " << statistics.refinementSteps.value() << '\n';
                 }
                 if (statistics.refinementFixpointDetected) {
                     stream << "# Detected a refinement fixpoint.\n";
@@ -223,8 +223,8 @@ namespace storm {
                     if (statistics.overApproximationBuildAborted) {
                         stream << ">=";
                     }
-                    stream << statistics.overApproximationStates.get() << '\n';
-                    stream << "# Maximal resolution for over-approximation: " << statistics.overApproximationMaxResolution.get() << '\n';
+                    stream << statistics.overApproximationStates.value() << '\n';
+                    stream << "# Maximal resolution for over-approximation: " << statistics.overApproximationMaxResolution.value() << '\n';
                     stream << "# Time spend for building the over-approx grid MDP(s): " << statistics.overApproximationBuildTime << '\n';
                     stream << "# Time spend for checking the over-approx grid MDP(s): " << statistics.overApproximationCheckTime << '\n';
                 }
@@ -239,13 +239,13 @@ namespace storm {
                     if (statistics.underApproximationBuildAborted) {
                         stream << ">=";
                     }
-                    stream << statistics.underApproximationStates.get() << '\n';
+                    stream << statistics.underApproximationStates.value() << '\n';
                     if(statistics.nrClippingAttempts) {
                         stream << "# Clipping attempts (clipped states) for the under-approximation: ";
                         if (statistics.underApproximationBuildAborted) {
                             stream << ">=";
                         }
-                        stream << statistics.nrClippingAttempts.get() << " (" << statistics.nrClippedStates.get() << ")\n";
+                        stream << statistics.nrClippingAttempts.value() << " (" << statistics.nrClippedStates.value() << ")\n";
                         stream << "# Total clipping preprocessing time: " << statistics.clippingPreTime << "\n";
                         stream << "# Total clipping time: " << statistics.clipWatch << "\n";
                     } else if (statistics.nrTruncatedStates){
@@ -253,10 +253,10 @@ namespace storm {
                         if (statistics.underApproximationBuildAborted) {
                             stream << ">=";
                         }
-                        stream << statistics.nrTruncatedStates.get() << "\n";
+                        stream << statistics.nrTruncatedStates.value() << "\n";
                     }
                     if (statistics.underApproximationStateLimit) {
-                        stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << '\n';
+                        stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.value() << '\n';
                     }
                     stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << '\n';
                     stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << '\n';
@@ -278,7 +278,9 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(
+                std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result) {
                 statistics.refinementSteps = 0;
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
@@ -302,8 +304,8 @@ namespace storm {
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
 
-                    buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, overApproxHeuristicPar,
-                                           observationResolutionVector, overApproxBeliefManager, overApproximation);
+                    buildOverApproximation(targetObservations, min, rewardModelName.has_value(), false, overApproxHeuristicPar, observationResolutionVector,
+                                           overApproxBeliefManager, overApproximation);
                     if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
                     }
@@ -340,13 +342,13 @@ namespace storm {
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
 
-                    if(options.useClipping && rewardModelName.is_initialized()) {
+                    if (options.useClipping && rewardModelName.has_value()) {
                         underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
                     if (!valueBounds.fmSchedulerValueList.empty()) {
                         underApproximation->setFMSchedValueList(valueBounds.fmSchedulerValueList);
                     }
-                    buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager,
+                    buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar, underApproxBeliefManager,
                                             underApproximation, false);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
@@ -385,7 +387,7 @@ namespace storm {
                         "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
                     STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize),
                                         "Refinement goal precision is given, but only one bound is going to be refined.");
-                    while ((options.refineStepLimit == 0 || statistics.refinementSteps.get() < options.refineStepLimit) &&
+                    while ((options.refineStepLimit == 0 || statistics.refinementSteps.value() < options.refineStepLimit) &&
                            result.diff() > options.refinePrecision) {
                         bool overApproxFixPoint = true;
                         bool underApproxFixPoint = true;
@@ -403,14 +405,14 @@ namespace storm {
                             overApproxHeuristicPar.observationThreshold +=
                                 options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
                             overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                            overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar,
+                            overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.has_value(), true, overApproxHeuristicPar,
                                                                         observationResolutionVector, overApproxBeliefManager, overApproximation);
                             if (overApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                                 ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                                 bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                                 if (betterBound) {
                                     STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #"
-                                                                                                       << (statistics.refinementSteps.get() + 1)
+                                                                                                       << (statistics.refinementSteps.value() + 1)
                                                                                                        << ". New value is '" << newValue << "'.");
                                 }
                             } else {
@@ -425,14 +427,14 @@ namespace storm {
                                 storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) *
                                 options.sizeThresholdFactor);
                             underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                            underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true,
-                                                                          underApproxHeuristicPar, underApproxBeliefManager, underApproximation, true);
+                            underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), true, underApproxHeuristicPar,
+                                                                          underApproxBeliefManager, underApproximation, true);
                             if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                                 ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                                 bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                                 if (betterBound) {
                                     STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #"
-                                                                                                        << (statistics.refinementSteps.get() + 1)
+                                                                                                        << (statistics.refinementSteps.value() + 1)
                                                                                                         << ". New value is '" << newValue << "'.");
                                 }
                             } else {
@@ -443,11 +445,11 @@ namespace storm {
                         if (storm::utility::resources::isTerminate()) {
                             break;
                         } else {
-                            ++statistics.refinementSteps.get();
+                            ++statistics.refinementSteps.value();
                             // Don't make too many outputs (to avoid logfile clutter)
-                            if (statistics.refinementSteps.get() <= 1000) {
-                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime
-                                                                       << ".");
+                            if (statistics.refinementSteps.value() <= 1000) {
+                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.value() << ". Current checktime is "
+                                                                       << statistics.totalTime << ".");
                                 bool computingLowerBound = false;
                                 bool computingUpperBound = false;
                                 if (options.discretize) {
@@ -465,11 +467,11 @@ namespace storm {
                                 } else if (computingUpperBound) {
                                     STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
                                 }
-                                STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
+                                STORM_LOG_WARN_COND(statistics.refinementSteps.value() < 1000, "Refinement requires  more than 1000 iterations.");
                             }
                         }
                         if (overApproxFixPoint && underApproxFixPoint) {
-                            STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
+                            STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.value() << " iterations.\n");
                             statistics.refinementFixpointDetected = true;
                             break;
                         }
@@ -558,7 +560,9 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::unfoldInteractively(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::unfoldInteractively(
+                std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result) {
                 statistics.refinementSteps = 0;
                 interactiveResult = result;
                 unfoldingStatus = Status::Uninitialized;
@@ -582,7 +586,7 @@ namespace storm {
                 underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>().max()-1;  // we don't set a size threshold
 
-                if (options.useClipping && rewardModelName.is_initialized()) {
+                if (options.useClipping && rewardModelName.has_value()) {
                     interactiveUnderApproximationExplorer->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                 }
 
@@ -597,14 +601,14 @@ namespace storm {
                     bool hasTruncatedStates = false;
                     if(unfoldingStatus != Status::Converged) {
                         // Continue unfolding underapproximation
-                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar,
+                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar,
                                                                       underApproxBeliefManager, interactiveUnderApproximationExplorer, firstIteration);
                         if (interactiveUnderApproximationExplorer->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                             ValueType const& newValue = interactiveUnderApproximationExplorer->getComputedValueAtInitialState();
                             bool betterBound = min ? interactiveResult.updateUpperBound(newValue) : interactiveResult.updateLowerBound(newValue);
                             if (betterBound) {
                                 STORM_LOG_INFO("Under-approximation result improved after " << statistics.totalTime << " in step #"
-                                                                                            << (statistics.refinementSteps.get() + 1) << ". New value is '"
+                                                                                            << (statistics.refinementSteps.value() + 1) << ". New value is '"
                                                                                             << newValue << "'.");
                             }
                             std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = interactiveUnderApproximationExplorer->getExploredMdp();
@@ -671,11 +675,11 @@ namespace storm {
                         if (storm::utility::resources::isTerminate()) {
                             break;
                         } else {
-                            ++statistics.refinementSteps.get();
+                            ++statistics.refinementSteps.value();
                             // Don't make too many outputs (to avoid logfile clutter)
-                            if (statistics.refinementSteps.get() <= 1000) {
-                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime
-                                                                       << ".");
+                            if (statistics.refinementSteps.value() <= 1000) {
+                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.value() << ". Current checktime is "
+                                                                       << statistics.totalTime << ".");
                                 bool computingLowerBound = false;
                                 bool computingUpperBound = false;
                                 if (options.unfold) {
@@ -693,7 +697,7 @@ namespace storm {
                             }
                         }
                         if (underApproxFixPoint) {
-                            STORM_LOG_INFO("Fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
+                            STORM_LOG_INFO("Fixpoint reached after " << statistics.refinementSteps.value() << " iterations.\n");
                             statistics.refinementFixpointDetected = true;
                             unfoldingStatus = Status::Converged;
                             unfoldingControl = UnfoldingControl::Pause;
@@ -1046,8 +1050,9 @@ namespace storm {
                     if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
                         printUpdateStopwatch.restart();
                         STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
-                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping){
-                            STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << "\n");
+                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
+                            STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
+                                                                            << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
                         }
                     }
                     if(unfoldingControl == UnfoldingControl::Pause && !stateStored){
@@ -1250,12 +1255,12 @@ namespace storm {
                         bool added = beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, true);
                         if(!added){
                             // The successor is not in the explored space. Clip it
-                            statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                            statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
                             auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes,
                                                                             beliefExplorer->getStateExtremeBoundIsInfinite());
                             if (clipping.isClippable) {
                                 // The belief is not on the grid and there is a candidate with finite reward
-                                statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                                statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
                                 // Transition probability to candidate is (probability to successor) * (clipping transition probability)
                                 BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta) * utility::convertNumber<BeliefValueType>(successor.second);
                                 beliefExplorer->addTransitionToBelief(action, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
@@ -1306,12 +1311,12 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
-                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
                 auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
                                                                 beliefExplorer->getStateExtremeBoundIsInfinite());
                 if (clipping.isClippable) {
                     // The belief is not on the grid and there is a candidate with finite reward
-                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                    statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
                     // Transition probability to candidate is clipping value
                     BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta);
                     bool addedCandidate = beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);

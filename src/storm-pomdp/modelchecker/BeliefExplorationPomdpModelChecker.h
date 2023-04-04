@@ -67,7 +67,8 @@ namespace storm {
 
                 void precomputeValueBounds(const logic::Formula& formula, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
 
-                void unfoldInteractively(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result);
+                void unfoldInteractively(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                                         storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
 
                 void pauseUnfolding();
 
@@ -99,26 +100,26 @@ namespace storm {
                 // TODO add minimal doc
                 struct Statistics {
                     Statistics();
-                    boost::optional<uint64_t> refinementSteps;
+                    std::optional<uint64_t> refinementSteps;
                     storm::utility::Stopwatch totalTime;
 
                     bool beliefMdpDetectedToBeFinite;
                     bool refinementFixpointDetected;
 
-                    boost::optional<uint64_t> overApproximationStates;
+                    std::optional<uint64_t> overApproximationStates;
                     bool overApproximationBuildAborted;
                     storm::utility::Stopwatch overApproximationBuildTime;
                     storm::utility::Stopwatch overApproximationCheckTime;
-                    boost::optional<BeliefValueType> overApproximationMaxResolution;
+                    std::optional<BeliefValueType> overApproximationMaxResolution;
 
-                    boost::optional<uint64_t> underApproximationStates;
+                    std::optional<uint64_t> underApproximationStates;
                     bool underApproximationBuildAborted;
                     storm::utility::Stopwatch underApproximationBuildTime;
                     storm::utility::Stopwatch underApproximationCheckTime;
-                    boost::optional<uint64_t> underApproximationStateLimit;
-                    boost::optional<uint64_t> nrClippingAttempts;
-                    boost::optional<uint64_t> nrClippedStates;
-                    boost::optional<uint64_t> nrTruncatedStates;
+                    std::optional<uint64_t> underApproximationStateLimit;
+                    std::optional<uint64_t> nrClippingAttempts;
+                    std::optional<uint64_t> nrClippedStates;
+                    std::optional<uint64_t> nrTruncatedStates;
                     storm::utility::Stopwatch clipWatch;
                     storm::utility::Stopwatch clippingPreTime;
 
@@ -141,15 +142,16 @@ namespace storm {
                  */
                 PomdpModelType const& pomdp() const;
 
-
                 /**
                  * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
                  *
                  * @param targetObservations the set of observations to be reached
                  * @param min true if minimum probability is to be computed
-                 * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values TODO this is a void function?
+                 * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values TODO this is a
+                 * void function?
                  */
-                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
+                void refineReachability(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                                        storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
 
                 /**
                  * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties

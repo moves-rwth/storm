@@ -31,7 +31,7 @@ namespace storm {
 
             BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision, TriangulationMode const &triangulationMode);
 
-            void setRewardModel(boost::optional<std::string> rewardModelName = boost::none);
+            void setRewardModel(std::optional<std::string> rewardModelName = std::nullopt);
 
             void unsetRewardModel();
 
@@ -152,9 +152,10 @@ namespace storm {
 
             Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
 
-            std::vector<std::pair<BeliefId, ValueType>>
-            expandInternal(BeliefId const &beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = boost::none,
-                           boost::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = boost::none);
+            std::vector<std::pair<BeliefId, ValueType>> expandInternal(
+                BeliefId const &beliefId, uint64_t actionIndex,
+                std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = std::nullopt,
+                std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = std::nullopt);
 
             BeliefId computeInitialBelief();
 

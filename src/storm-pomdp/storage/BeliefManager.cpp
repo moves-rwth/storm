@@ -85,9 +85,9 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        void BeliefManager<PomdpType, BeliefValueType, StateType>::setRewardModel(boost::optional<std::string> rewardModelName) {
+        void BeliefManager<PomdpType, BeliefValueType, StateType>::setRewardModel(std::optional<std::string> rewardModelName) {
             if (rewardModelName) {
-                auto const &rewardModel = pomdp.getRewardModel(rewardModelName.get());
+                auto const &rewardModel = pomdp.getRewardModel(rewardModelName.value());
                 pomdpActionRewardVector = rewardModel.getTotalRewardVector(pomdp.getTransitionMatrix());
             } else {
                 setRewardModel(pomdp.getUniqueRewardModelName());
@@ -232,7 +232,7 @@ namespace storm {
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
         BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
                                                                             std::vector<uint64_t> const &observationResolutions) {
-            return expandInternal(beliefId, actionIndex, boost::none, observationResolutions);
+            return expandInternal(beliefId, actionIndex, std::nullopt, observationResolutions);
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -295,7 +295,7 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         bool BeliefManager<PomdpType, BeliefValueType, StateType>::assertBelief(BeliefType const &belief) const {
             auto sum = storm::utility::zero<BeliefValueType>();
-            boost::optional<uint32_t> observation;
+            std::optional<uint32_t> observation;
             for (auto const &entry : belief) {
                 if (entry.first >= pomdp.getNumberOfStates()) {
                     STORM_LOG_ERROR("Belief does refer to non-existing pomdp state " << entry.first << ".");
@@ -303,7 +303,7 @@ namespace storm {
                 }
                 uint64_t entryObservation = pomdp.getObservation(entry.first);
                 if (observation) {
-                    if (observation.get() != entryObservation) {
+                    if (observation.value() != entryObservation) {
                         STORM_LOG_ERROR("Beliefsupport contains different observations.");
                         return false;
                     }
@@ -505,16 +505,17 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-        BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId const &beliefId, uint64_t actionIndex,
-                                                                             boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
-                                                                             boost::optional<std::vector<uint64_t>> const &observationGridClippingResolutions) {
+        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
+                              typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(
+            BeliefId const &beliefId, uint64_t actionIndex, std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
+            std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions) {
             std::vector<std::pair<BeliefId, ValueType>> destinations;
 
             BeliefType belief = getBelief(beliefId);
 
             // Find the probability we go to each observation
-            BeliefType successorObs; // This is actually not a belief but has the same type
+            BeliefType successorObs;  // This is actually not a belief but has the same type
             for (auto const &pointEntry : belief) {
                 uint64_t state = pointEntry.first;
                 for (auto const &pomdpTransition : pomdp.getTransitionMatrix().getRow(state, actionIndex)) {
@@ -543,14 +544,15 @@ namespace storm {
 
                 // Insert the destination. We know that destinations have to be disjoint since they have different observations
                 if (observationTriangulationResolutions) {
-                    Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.get()[successor.first]);
+                    Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.value()[successor.first]);
                     for (size_t j = 0; j < triangulation.size(); ++j) {
                         // Here we additionally assume that triangulation.gridPoints does not contain the same point multiple times
                         BeliefValueType a = triangulation.weights[j] * successor.second;
                         destinations.emplace_back(triangulation.gridPoints[j], storm::utility::convertNumber<ValueType>(a));
                     }
                 } else if(observationGridClippingResolutions){
-                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.get()[successor.first], storm::storage::BitVector(pomdp.getNumberOfStates()));
+                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.value()[successor.first],
+                                                               storm::storage::BitVector(pomdp.getNumberOfStates()));
                     if(clipping.isClippable) {
                         BeliefValueType a = (storm::utility::one<BeliefValueType>() - clipping.delta) * successor.second;
                         destinations.emplace_back(clipping.targetBelief, storm::utility::convertNumber<ValueType>(a));

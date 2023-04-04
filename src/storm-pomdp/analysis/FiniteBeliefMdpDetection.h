@@ -8,29 +8,29 @@
 
 namespace storm {
     namespace pomdp {
-    
-        /*!
-         * This method tries to detect that the beliefmdp is finite.
-         * If this returns true, the beliefmdp is certainly finite.
-         * However, if this returns false, the beliefmdp might still be finite
-         * It is assumed that the belief MDP is not further explored when reaching a targetstate
-         */
-        template<typename ValueType>
-        bool detectFiniteBeliefMdp(storm::models::sparse::Pomdp<ValueType> const& pomdp, boost::optional<storm::storage::BitVector> const& targetStates) {
-            // All infinite paths of the POMDP (including the ones with prob. 0 ) either
-            //  - reach a target state after finitely many steps or
-            //  - after finitely many steps enter an SCC and do not leave it
-            // Hence, any path of the belief MDP will at some point either reach a target state or stay in a set of POMDP SCCs.
-            // Only in the latter case we can get infinitely many different belief states.
-            // Below, we check whether all SCCs only consist of Dirac distributions.
-            // If this is the case, no new belief states will be found at some point.
-            
-            // Get the SCC decomposition
-            storm::storage::StronglyConnectedComponentDecompositionOptions options;
-            options.dropNaiveSccs();
+
+    /*!
+     * This method tries to detect that the beliefmdp is finite.
+     * If this returns true, the beliefmdp is certainly finite.
+     * However, if this returns false, the beliefmdp might still be finite
+     * It is assumed that the belief MDP is not further explored when reaching a targetstate
+     */
+    template<typename ValueType>
+    bool detectFiniteBeliefMdp(storm::models::sparse::Pomdp<ValueType> const& pomdp, std::optional<storm::storage::BitVector> const& targetStates) {
+        // All infinite paths of the POMDP (including the ones with prob. 0 ) either
+        //  - reach a target state after finitely many steps or
+        //  - after finitely many steps enter an SCC and do not leave it
+        // Hence, any path of the belief MDP will at some point either reach a target state or stay in a set of POMDP SCCs.
+        // Only in the latter case we can get infinitely many different belief states.
+        // Below, we check whether all SCCs only consist of Dirac distributions.
+        // If this is the case, no new belief states will be found at some point.
+
+        // Get the SCC decomposition
+        storm::storage::StronglyConnectedComponentDecompositionOptions options;
+        options.dropNaiveSccs();
             storm::storage::BitVector relevantStates;
             if (targetStates) {
-                relevantStates = ~targetStates.get();
+                relevantStates = ~targetStates.value();
                 options.subsystem(&relevantStates);
             }
             storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccs(pomdp.getTransitionMatrix(), options);

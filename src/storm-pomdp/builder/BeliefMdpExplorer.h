@@ -52,7 +52,8 @@ namespace storm {
 
             BeliefManagerType const &getBeliefManager() const;
 
-            void startNewExploration(boost::optional<ValueType> extraTargetStateValue = boost::none, boost::optional<ValueType> extraBottomStateValue = boost::none);
+            void startNewExploration(std::optional<ValueType> extraTargetStateValue = boost::none,
+                                     std::optional<ValueType> extraBottomStateValue = std::nullopt);
 
             /*!
              * Restarts the exploration to allow re-exploring each state.
@@ -301,10 +302,10 @@ namespace storm {
             std::map<MdpStateType, MdpStateType> stateRemapping;
             uint64_t nextId;
             ValueType prio;
-            
+
             // Special states and choices during exploration
-            boost::optional<MdpStateType> extraTargetState;
-            boost::optional<MdpStateType> extraBottomState;
+            std::optional<MdpStateType> extraTargetState;
+            std::optional<MdpStateType> extraBottomState;
             storm::storage::BitVector targetStates;
             storm::storage::BitVector truncatedStates;
             storm::storage::BitVector clippedStates;
@@ -314,23 +315,23 @@ namespace storm {
 
             // Final Mdp
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
-            
+
             // Value and scheduler related information
             storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
             storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
-            std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> fmSchedulerValueList;
+            std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> fmSchedulerValueList;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
-            std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
-            boost::optional<storm::storage::BitVector> optimalChoices;
-            boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
+            std::vector<ValueType> values;  // Contains an estimate during building and the actual result after a check has performed
+            std::optional<storm::storage::BitVector> optimalChoices;
+            std::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
             std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler;
-            
+
             // The current status of this explorer
             ExplorationHeuristic explHeuristic;
             Status status;
 
-            struct ExplorationStorage{
+            struct ExplorationStorage {
                 std::vector<BeliefId> storedMdpStateToBeliefIdMap;
                 std::map<BeliefId, MdpStateType> storedBeliefIdToMdpStateMap;
                 storm::storage::BitVector storedExploredBeliefIds;

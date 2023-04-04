@@ -24,7 +24,7 @@ namespace modelchecker {
     void AlphaVectorModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(const storm::logic::Formula &formula){
         STORM_PRINT_AND_LOG("Start checking the MC induced by the alpha vector policy...\n")
         auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
-        boost::optional<std::string> rewardModelName;
+        std::optional<std::string> rewardModelName;
         std::set<uint32_t> targetObservations;
         if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
             if (formulaInfo.getTargetStates().observationClosed) {
@@ -99,7 +99,7 @@ namespace modelchecker {
         }
 
         auto explorer = std::make_shared<ExplorerType>(manager, bounds);
-        buildMarkovChain(targetObservations, formulaInfo.minimize(), rewardModelName.is_initialized(),  manager, explorer, cutoffVec);
+        buildMarkovChain(targetObservations, formulaInfo.minimize(), rewardModelName.has_value(), manager, explorer, cutoffVec);
 
         if (explorer->hasComputedValues()) {
             auto printInfo = [&explorer]() {
