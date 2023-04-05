@@ -2,11 +2,11 @@
 #include "storm-config.h"
 
 #include "storm/adapters/RationalNumberForward.h"
-#ifdef STORM_CARL_HAVE_FWD_DECL
+#ifdef STORM_CARL_SUPPORTS_FWD_DECL
 #include "carl/core/MultivariatePolynomialForward.h"
 #else
 // This must be included first
-// (for old version. Once STORM_CARL_HAVE_FWD_DECL is true, this is no longer relevant).
+// (for old version. Once STORM_CARL_SUPPORTS_FWD_DECL is true, this is no longer relevant).
 #include <carl/numbers/numbers.h>
 // These must be included later...
 #include <carl/core/FactorizedPolynomial.h>
@@ -38,9 +38,9 @@ namespace storm {
 typedef carl::Variable RationalFunctionVariable;
 
 #if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_RF)
-typedef cln::cl_RA RationalFunctionCoefficient;
+typedef ClnRationalNumber RationalFunctionCoefficient;
 #elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_RF)
-typedef mpq_class RationalFunctionCoefficient;
+typedef GmpRationalNumber RationalFunctionCoefficient;
 #elif defined(STORM_USE_CLN_RF)
 #error CLN is to be used, but is not available.
 #else

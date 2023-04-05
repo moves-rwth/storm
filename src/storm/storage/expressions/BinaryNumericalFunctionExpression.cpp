@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"

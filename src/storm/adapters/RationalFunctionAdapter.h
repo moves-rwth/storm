@@ -8,7 +8,7 @@ RationalFunctionVariable createRFVariable(std::string const& name);
 
 }  // namespace storm
 
-#ifdef STORM_CARL_HAVE_FWD_DECL
+#ifdef STORM_CARL_SUPPORTS_FWD_DECL
 // The version of carl that supported forward declarations
 // includes a bugfix also required for instantiating these templates once
 extern template class carl::MultivariatePolynomial<storm::RationalFunctionCoefficient>;

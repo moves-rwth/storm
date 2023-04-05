@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/optional.hpp>
+#include <set>
 #include <vector>
 
 #include "storm/adapters/RationalFunctionForward.h"
