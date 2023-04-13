@@ -309,7 +309,7 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
         message(STATUS "Storm - Found carl-storm version")
         # empty on purpose. Maybe put a warning here?
         if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
-            message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}")
+            message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
         endif()
     else()
         message(FATAL_ERROR "We only support a diverged fork of carl -- Version 14.")
