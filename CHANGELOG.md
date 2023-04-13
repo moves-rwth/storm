@@ -9,6 +9,7 @@ Version 1.7.x
 -------------
 
 ## Version 1.7.1
+- Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
 - Upgraded shipped version of sylvan
 - Upgraded repo / version for carl (for polynomials)
