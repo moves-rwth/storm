@@ -33,8 +33,8 @@ std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> BinaryDtmcTransfo
 }
 
 struct StateWithRow {
-    uint_fast64_t state;
-    std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> row;
+    uint64_t state;
+    std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> row;
 };
 
 typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transformTransitions(
@@ -44,7 +44,7 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
     // Initialize a FIFO Queue that stores the start and the end of each row
     std::queue<StateWithRow> queue;
     for (uint64_t state = 0; state < matrix.getRowCount(); ++state) {
-        std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> diyRow;
+        std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> diyRow;
         for (auto const& entry : matrix.getRow(state)) {
             diyRow.push_back(entry);
         }
@@ -79,11 +79,11 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
             auto parameterPol = RawPolynomial(parameter);
             auto oneMinusParameter = RawPolynomial(1) - parameterPol;
 
-            std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> outgoing;
+            std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> outgoing;
             // p * .. state
-            std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> newStateLeft;
+            std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> newStateLeft;
             // (1-p) * .. state
-            std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> newStateRight;
+            std::vector<storage::MatrixEntry<uint64_t, RationalFunction>> newStateRight;
 
             RationalFunction sumOfLeftBranch;
             RationalFunction sumOfRightBranch;
@@ -97,14 +97,14 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
                 auto byP = RawPolynomial(nominator).divideBy(parameterPol);
                 if (byP.remainder.isZero()) {
                     auto probability = RationalFunction(carl::makePolynomial<Polynomial>(byP.quotient), denominator);
-                    newStateLeft.push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(entry.getColumn(), probability));
+                    newStateLeft.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(entry.getColumn(), probability));
                     sumOfLeftBranch += probability;
                     continue;
                 }
                 auto byOneMinusP = RawPolynomial(nominator).divideBy(oneMinusParameter);
                 if (byOneMinusP.remainder.isZero()) {
                     auto probability = RationalFunction(carl::makePolynomial<Polynomial>(byOneMinusP.quotient), denominator);
-                    newStateRight.push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(entry.getColumn(), probability));
+                    newStateRight.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(entry.getColumn(), probability));
                     sumOfRightBranch += probability;
                     continue;
                 }
@@ -120,11 +120,11 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
             }
 
             queue.push(StateWithRow{currAuxState, newStateLeft});
-            outgoing.push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(
+            outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
                 currAuxState, (sumOfLeftBranch)*RationalFunction(carl::makePolynomial<Polynomial>(parameter))));
             ++currAuxState;
             queue.push(StateWithRow{currAuxState, newStateRight});
-            outgoing.push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(
+            outgoing.push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
                 currAuxState, (sumOfRightBranch) * (utility::one<RationalFunction>() - RationalFunction(carl::makePolynomial<Polynomial>(parameter)))));
             ++currAuxState;
 

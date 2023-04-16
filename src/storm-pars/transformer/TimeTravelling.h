@@ -43,8 +43,8 @@ class TimeTravelling {
      * @param stateLabelling The state labelling of the pMC.
      * @param labelsInFormula The labels that occur in the property.
      */
-    void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint_fast64_t, std::set<uint_fast64_t>>>& treeStates,
-                          std::map<RationalFunctionVariable, std::set<uint_fast64_t>>& workingSets,
+    void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+                          std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                           storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, const std::set<carl::Variable>& allParameters,
                           const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling,
                           const std::set<std::string> labelsInFormula);
@@ -59,16 +59,16 @@ class TimeTravelling {
      * @param labelsInFormula The labels that occur in the property.
      * @return models::sparse::StateLabeling 
      */
-    models::sparse::StateLabeling extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint_fast64_t oldSize, uint_fast64_t newSize,
-                                                      uint_fast64_t stateWithLabels, const std::set<std::string> labelsInFormula);
+    models::sparse::StateLabeling extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
+                                                      uint64_t stateWithLabels, const std::set<std::string> labelsInFormula);
     /**
      * Sums duplicate transitions in a vector of MatrixEntries into one MatrixEntry.
      * 
      * @param entries 
-     * @return std::vector<storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>> 
+     * @return std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> 
      */
-    std::vector<storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>> joinDuplicateTransitions(
-        std::vector<storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>> const& entries);
+    std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> joinDuplicateTransitions(
+        std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries);
     /**
      * A preprocessing for time-travelling. It collapses the constant
      * transitions from a state into a single number that directly goes to the
@@ -84,11 +84,10 @@ class TimeTravelling {
      * @param labelsInFormula The labels in the formula.
      * @return false (returns true in recursive cases)
      */
-    bool collapseConstantTransitions(uint_fast64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint_fast64_t, bool>& alreadyVisited,
-                    const std::map<RationalFunctionVariable, std::map<uint_fast64_t, std::set<uint_fast64_t>>>& treeStates,
+    bool collapseConstantTransitions(uint64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint64_t, bool>& alreadyVisited,
+                    const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                     const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                     const models::sparse::StateLabeling stateLabelling, const std::set<std::string> labelsInFormula);
-    bool labelsIntersectedEqual(const std::set<std::string>& labels1, const std::set<std::string>& labels2, const std::set<std::string>& intersection);
 };
 
 }  // namespace transformer
