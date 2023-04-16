@@ -65,7 +65,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     for (auto const& instantiation : testInstantiations) {
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
         auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        STORM_LOG_ASSERT(storm::utility::isAlmostZero(result - resultTT), "Results " << result << " and " << resultTT << " are not the same but should be.");
+        ASSERT_TRUE(storm::utility::isAlmostZero(result - resultTT)) << "Results " << result << " and " << resultTT << " are not the same but should be.";
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
@@ -77,9 +77,9 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaTT;
     auto sharedDtmc = std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(timeTravelledDtmc);
     plaTT.specify(env, sharedDtmc, checkTask);
-    auto resultPLATT = plaTT.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Maximize);
+    auto resultPLATT = plaTT.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    STORM_LOG_ASSERT(resultPLA < resultPLATT, "Time-Travelling did not make bound better");
+    ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
 
 TEST(TimeTravelling, Crowds) {
