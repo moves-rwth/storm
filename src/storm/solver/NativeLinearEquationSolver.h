@@ -7,8 +7,7 @@
 
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/SolverStatus.h"
-#include "storm/solver/helper/OptimisticValueIterationHelper.h"
-#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/solver/multiplier/NativeMultiplier.h"
 
 #include "storm/utility/NumberTraits.h"
@@ -74,24 +73,7 @@ class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
     virtual bool solveEquationsIntervalIteration(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
     virtual bool solveEquationsRationalSearch(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
-    template<typename RationalType, typename ImpreciseType>
-    bool solveEquationsRationalSearchHelper(storm::Environment const& env, NativeLinearEquationSolver<ImpreciseType> const& impreciseSolver,
-                                            storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX,
-                                            std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A,
-                                            std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(
-        storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(
-        storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type solveEquationsRationalSearchHelper(
-        storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename RationalType, typename ImpreciseType>
-    static bool sharpen(uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A, std::vector<ImpreciseType> const& x,
-                        std::vector<RationalType> const& b, std::vector<RationalType>& tmp);
-    static bool isSolution(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& values, std::vector<ValueType> const& b);
+    void setUpViOperator() const;
 
     // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
     // when the solver is destructed.
@@ -101,13 +83,10 @@ class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
     // the pointer refers to localA.
     storm::storage::SparseMatrix<ValueType> const* A;
 
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, true>> viOperator;
+
     // An object to dispatch all multiplication operations.
     mutable std::unique_ptr<Multiplier<ValueType>> multiplier;
-
-    // cached auxiliary data
-    mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector2;  // A.getRowCount() rows
-    mutable std::unique_ptr<storm::solver::helper::SoundValueIterationHelper<ValueType>> soundValueIterationHelper;
-    mutable std::unique_ptr<storm::solver::helper::OptimisticValueIterationHelper<ValueType>> optimisticValueIterationHelper;
 
     struct JacobiDecomposition {
         JacobiDecomposition(Environment const& env, storm::storage::SparseMatrix<ValueType> const& A);

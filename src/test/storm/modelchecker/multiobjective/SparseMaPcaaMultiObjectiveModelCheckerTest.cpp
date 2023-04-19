@@ -87,9 +87,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
     auto expectedAchievableValues =
         storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>(
             {storm::utility::vector::convertNumericVector<storm::RationalNumber>(p), storm::utility::vector::convertNumericVector<storm::RationalNumber>(q)}));
-    // due to precision issues, we enlarge one of the polytopes before checking containement
+    // due to precision issues, we enlarge one of the polytopes before checking containment
     storm::RationalNumber eps =
         storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    eps += eps;
     std::vector<storm::RationalNumber> lb(2, -eps), ub(2, eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
 
@@ -97,7 +98,6 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
         // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
-
     EXPECT_TRUE(
         expectedAchievableValues->minkowskiSum(bloatingBox)
             ->contains(result->asExplicitParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
@@ -105,7 +105,9 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
                     .getOverApproximation()
                     ->convertNumberRepresentation<storm::RationalNumber>()
                     ->minkowskiSum(bloatingBox)
-                    ->contains(expectedAchievableValues));
+                    ->contains(expectedAchievableValues))
+        << "Result over-approximation is \n"
+        << result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->toString(true);
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {

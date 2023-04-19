@@ -42,7 +42,7 @@ std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTrait
 template<typename RationalType>
 std::pair<typename NumberTraits<RationalType>::IntegerType, typename NumberTraits<RationalType>::IntegerType> truncateToRational(double const& value,
                                                                                                                                  uint64_t precision) {
-    if (precision >= 18) {
+    if (precision > std::numeric_limits<double>::max_digits10) {
         throw storm::exceptions::PrecisionExceededException() << "Exceeded precision of double, consider switching to rational numbers.";
     }
 

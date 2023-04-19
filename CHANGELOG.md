@@ -9,6 +9,7 @@ Version 1.7.x
 -------------
 
 ## Version 1.7.1
+- Revised implementation of value iteration and its variants
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
 - Upgraded shipped version of sylvan

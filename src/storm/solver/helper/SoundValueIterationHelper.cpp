@@ -1,514 +1,429 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-#include "storm/utility/NumberTraits.h"
+#include <type_traits>
+
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/solver/helper/ValueIterationOperator.h"
+#include "storm/utility/Extremum.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/NotSupportedException.h"
+namespace storm::solver::helper {
 
-namespace storm {
-namespace solver {
-namespace helper {
-
-template<typename ValueType>
-SoundValueIterationHelper<ValueType>::SoundValueIterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType>& x,
-                                                                std::vector<ValueType>& y, bool relative, ValueType const& precision)
-    : x(x),
-      y(y),
-      hasLowerBound(false),
-      hasUpperBound(false),
-      hasDecisionValue(false),
-      convergencePhase1(true),
-      decisionValueBlocks(false),
-      firstIndexViolatingConvergence(0),
-      minIndex(0),
-      maxIndex(0),
-      relative(relative),
-      precision(precision),
-      rowGroupIndices(nullptr) {
-    STORM_LOG_THROW(matrix.getEntryCount() < std::numeric_limits<IndexType>::max(), storm::exceptions::NotSupportedException,
-                    "The number of matrix entries is too large for the selected index type.");
-    if (!matrix.hasTrivialRowGrouping()) {
-        rowGroupIndices = &matrix.getRowGroupIndices();
-        uint64_t sizeOfLargestRowGroup = matrix.getSizeOfLargestRowGroup();
-        xTmp.resize(sizeOfLargestRowGroup);
-        yTmp.resize(sizeOfLargestRowGroup);
-    }
-    x.assign(x.size(), storm::utility::zero<ValueType>());
-    y.assign(x.size(), storm::utility::one<ValueType>());
-
-    numRows = matrix.getRowCount();
-    matrixValues.clear();
-    matrixColumns.clear();
-    rowIndications.clear();
-    matrixValues.reserve(matrix.getNonzeroEntryCount());
-    matrixColumns.reserve(matrix.getColumnCount());
-    rowIndications.reserve(numRows + 1);
-    rowIndications.push_back(0);
-    for (IndexType r = 0; r < numRows; ++r) {
-        for (auto const& entry : matrix.getRow(r)) {
-            matrixValues.push_back(entry.getValue());
-            matrixColumns.push_back(entry.getColumn());
+template<typename ValueType, bool TrivialRowGrouping>
+SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SoundValueIterationHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator)
+    : viOperator(viOperator) {
+    sizeOfLargestRowGroup = 1;
+    if constexpr (!TrivialRowGrouping) {
+        auto it = viOperator->getRowGroupIndices().cbegin();
+        auto itEnd = viOperator->getRowGroupIndices().cend() - 1;
+        while (it != itEnd) {
+            auto const curr = *it;
+            sizeOfLargestRowGroup = std::max(sizeOfLargestRowGroup, *(++it) - curr);
         }
-        rowIndications.push_back(matrixValues.size());
     }
 }
 
-template<typename ValueType>
-SoundValueIterationHelper<ValueType>::SoundValueIterationHelper(SoundValueIterationHelper<ValueType>&& oldHelper, std::vector<ValueType>& x,
-                                                                std::vector<ValueType>& y, bool relative, ValueType const& precision)
-    : x(x),
-      y(y),
-      xTmp(std::move(oldHelper.xTmp)),
-      yTmp(std::move(oldHelper.yTmp)),
-      hasLowerBound(false),
-      hasUpperBound(false),
-      hasDecisionValue(false),
-      convergencePhase1(true),
-      decisionValueBlocks(false),
-      firstIndexViolatingConvergence(0),
-      minIndex(0),
-      maxIndex(0),
-      relative(relative),
-      precision(precision),
-      numRows(std::move(oldHelper.numRows)),
-      matrixValues(std::move(oldHelper.matrixValues)),
-      matrixColumns(std::move(oldHelper.matrixColumns)),
-      rowIndications(std::move(oldHelper.rowIndications)),
-      rowGroupIndices(oldHelper.rowGroupIndices) {
-    // If x0 is the obtained result, we want x0-eps <= x <= x0+eps for the actual solution x. Hence, the difference between the lower and upper bounds can be
-    // 2*eps.
-    this->precision *= storm::utility::convertNumber<ValueType>(2.0);
-    x.assign(x.size(), storm::utility::zero<ValueType>());
-    y.assign(x.size(), storm::utility::one<ValueType>());
-}
+enum class SVIStage { Initial, y_less_1, b_eq_d };
 
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::setLowerBound(ValueType const& value) {
-    STORM_LOG_TRACE("Set lower bound to " << value << ".");
-    hasLowerBound = true;
-    lowerBound = value;
-}
+template<typename ValueType, OptimizationDirection Dir, SVIStage Stage, bool TrivialRowGrouping>
+class SVIBackend {
+   public:
+    static const SVIStage CurrentStage = Stage;
+    using RowValueStorageType = std::vector<std::pair<ValueType, ValueType>>;
 
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::setUpperBound(ValueType const& value) {
-    STORM_LOG_TRACE("Set upper bound to " << value << ".");
-    hasUpperBound = true;
-    upperBound = value;
-}
-
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::multiplyRow(IndexType const& rowIndex, ValueType const& bi, ValueType& xi, ValueType& yi) {
-    assert(rowIndex < numRows);
-    ValueType xRes = bi;
-    ValueType yRes = storm::utility::zero<ValueType>();
-
-    auto entryIt = matrixValues.begin() + rowIndications[rowIndex];
-    auto entryItE = matrixValues.begin() + rowIndications[rowIndex + 1];
-    auto colIt = matrixColumns.begin() + rowIndications[rowIndex];
-    for (; entryIt != entryItE; ++entryIt, ++colIt) {
-        xRes += *entryIt * x[*colIt];
-        yRes += *entryIt * y[*colIt];
+    SVIBackend(RowValueStorageType& rowValueStorage, std::optional<ValueType> const& a, std::optional<ValueType> const& b,
+               std::optional<ValueType> const& d = {})
+        : currRowValues(rowValueStorage) {
+        if (a.has_value()) {
+            aValue &= *a;
+        }
+        if (b.has_value()) {
+            bValue &= *b;
+        }
+        if (d.has_value()) {
+            dValue &= *d;
+        }
     }
-    xi = std::move(xRes);
-    yi = std::move(yRes);
-}
 
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::performIterationStep(OptimizationDirection const& dir, std::vector<ValueType> const& b,
-                                                                boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                                boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler),
-                     "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
-    if (rowGroupIndices) {
-        if (minimize(dir)) {
-            performIterationStep<InternalOptimizationDirection::Minimize>(b, schedulerFixedForRowgroup, scheduler);
+    void startNewIteration() {
+        allYLessOne = true;
+        curr_a.reset();
+        curr_b.reset();
+    }
+
+    void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        assert(currRowValuesIndex == 0);
+        if constexpr (!TrivialRowGrouping) {
+            bestValue.reset();
+        }
+        best = std::move(value);
+    }
+
+    void nextRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        assert(!TrivialRowGrouping);
+        assert(currRowValuesIndex < currRowValues.size());
+        if (Stage == SVIStage::Initial && bValue.empty()) {
+            if (value.second > best.second || (value.second == best.second && better(value.first, best.first))) {
+                std::swap(value, best);
+            }
+            currRowValues[currRowValuesIndex++] = std::move(value);
         } else {
-            performIterationStep<InternalOptimizationDirection::Maximize>(b, schedulerFixedForRowgroup, scheduler);
-        }
-    } else {
-        performIterationStep(b);
-    }
-}
-
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::performIterationStep(std::vector<ValueType> const& b) {
-    auto xIt = x.rbegin();
-    auto yIt = y.rbegin();
-    IndexType row = numRows;
-    while (row > 0) {
-        --row;
-        multiplyRow(row, b[row], *xIt, *yIt);
-        ++xIt;
-        ++yIt;
-    }
-}
-
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-void SoundValueIterationHelper<ValueType>::performIterationStep(std::vector<ValueType> const& b,
-                                                                boost::optional<storm::storage::BitVector> const& schedulerFixedForRowgroup,
-                                                                boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler),
-                     "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
-
-    if (!decisionValueBlocks) {
-        performIterationStepUpdateDecisionValue<dir>(b, schedulerFixedForRowgroup, scheduler);
-    } else {
-        assert(decisionValue == getPrimaryBound<dir>());
-        auto xIt = x.rbegin();
-        auto yIt = y.rbegin();
-        auto groupStartIt = rowGroupIndices->rbegin();
-        uint64_t groupEnd = *groupStartIt;
-        ++groupStartIt;
-        auto rowGroupIndex = rowGroupIndices->size();
-
-        for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
-            rowGroupIndex--;
-
-            if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
-                // The scheduler is fixed for this rowgroup so we perform iteration only on this row.
-                IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
-                multiplyRow(row, b[row], *xIt, *yIt);
-            } else {
-                // Perform the iteration for the first row in the group
-                IndexType row = *groupStartIt;
-                ValueType xBest, yBest;
-                multiplyRow(row, b[row], xBest, yBest);
-                ++row;
-                // Only do more work if there are still rows in this row group
-                if (row != groupEnd) {
-                    ValueType xi, yi;
-                    ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
-                    for (; row < groupEnd; ++row) {
-                        // Get the multiplication results
-                        multiplyRow(row, b[row], xi, yi);
-                        ValueType currentValue = xi + yi * getPrimaryBound<dir>();
-                        // Check if the current row is better then the previously found one
-                        if (better<dir>(currentValue, bestValue)) {
-                            xBest = std::move(xi);
-                            yBest = std::move(yi);
-                            bestValue = std::move(currentValue);
-                        } else if (currentValue == bestValue && yBest > yi) {
-                            // If the value for this row is not strictly better, it might still be equal and have a better y value
-                            xBest = std::move(xi);
-                            yBest = std::move(yi);
-                        }
-                    }
+            assert(!bValue.empty());
+            auto const& b = Stage == SVIStage::b_eq_d ? *dValue : *bValue;
+            if (bestValue.empty()) {
+                bestValue = best.first + b * best.second;
+            }
+            if (ValueType currentValue = value.first + b * value.second; bestValue &= currentValue) {
+                std::swap(value, best);
+                if (Stage != SVIStage::b_eq_d && value.second < best.second) {
+                    // We need to store the 'old' best values as they might be relevant for the decision value.
+                    currRowValues[currRowValuesIndex++] = std::move(value);
                 }
-                *xIt = std::move(xBest);
-                *yIt = std::move(yBest);
+            } else if (best.second > value.second) {
+                if (*bestValue == currentValue) {
+                    // In this case we have the same value, but the current row is to be preferred as it has a smaller y value
+                    std::swap(value, best);
+                } else if (Stage != SVIStage::b_eq_d) {
+                    // In this case we have a worse weighted value
+                    // However, this could be relevant for the decision value
+                    currRowValues[currRowValuesIndex++] = std::move(value);
+                }
             }
         }
     }
-}
 
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-void SoundValueIterationHelper<ValueType>::performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b,
-                                                                                   boost::optional<storm::storage::BitVector> const& schedulerFixedForRowgroup,
-                                                                                   boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler),
-                     "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
-    auto xIt = x.rbegin();
-    auto yIt = y.rbegin();
-    auto groupStartIt = rowGroupIndices->rbegin();
-
-    uint64_t groupEnd = *groupStartIt;
-    ++groupStartIt;
-    auto rowGroupIndex = x.size() - 1;
-
-    for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt, --rowGroupIndex) {
-        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
-            // The scheduler is fixed for this rowgroup so we perform iteration only on this entry.
-            IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
-            ValueType xBest, yBest;
-            multiplyRow(row, b[row], *xIt, *yIt);
+    void applyUpdate(ValueType& xCurr, ValueType& yCurr, [[maybe_unused]] uint64_t rowGroup) {
+        std::swap(xCurr, best.first);
+        std::swap(yCurr, best.second);
+        if constexpr (Stage != SVIStage::b_eq_d && !TrivialRowGrouping) {
+            // Update decision value
+            while (currRowValuesIndex) {
+                if (auto const& rowVal = currRowValues[--currRowValuesIndex]; yCurr > rowVal.second) {
+                    dValue &= (rowVal.first - xCurr) / (yCurr - rowVal.second);
+                }
+            }
         } else {
-            // Perform the iteration for the first row in the group
-            uint64_t row = *groupStartIt;
-            ValueType xBest, yBest;
-            multiplyRow(row, b[row], xBest, yBest);
-            ++row;
-            // Only do more work if there are still rows in this row group
-            if (row != groupEnd) {
-                ValueType xi, yi;
-                uint64_t xyTmpIndex = 0;
-                if (hasPrimaryBound<dir>()) {
-                    ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
-                    for (; row < groupEnd; ++row) {
-                        // Get the multiplication results
-                        multiplyRow(row, b[row], xi, yi);
-                        ValueType currentValue = xi + yi * getPrimaryBound<dir>();
-                        // Check if the current row is better then the previously found one
-                        if (better<dir>(currentValue, bestValue)) {
-                            if (yBest < yi) {
-                                // We need to store the 'old' best value as it might be relevant for the decision value
-                                xTmp[xyTmpIndex] = std::move(xBest);
-                                yTmp[xyTmpIndex] = std::move(yBest);
-                                ++xyTmpIndex;
-                            }
-                            xBest = std::move(xi);
-                            yBest = std::move(yi);
-                            bestValue = std::move(currentValue);
-                        } else if (yBest > yi) {
-                            // If the value for this row is not strictly better, it might still be equal and have a better y value
-                            if (currentValue == bestValue) {
-                                xBest = std::move(xi);
-                                yBest = std::move(yi);
-                            } else {
-                                xTmp[xyTmpIndex] = std::move(xi);
-                                yTmp[xyTmpIndex] = std::move(yi);
-                                ++xyTmpIndex;
-                            }
-                        }
-                    }
+            assert(currRowValuesIndex == 0);
+        }
+
+        // keep track of bounds a,b
+        if constexpr (Stage == SVIStage::Initial) {
+            if (allYLessOne) {
+                if (yCurr < storm::utility::one<ValueType>()) {
+                    ValueType val = xCurr / (storm::utility::one<ValueType>() - yCurr);
+                    curr_a &= val;
+                    curr_b &= val;
                 } else {
-                    for (; row < groupEnd; ++row) {
-                        multiplyRow(row, b[row], xi, yi);
-                        // Update the best choice
-                        if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
-                            xTmp[xyTmpIndex] = std::move(xBest);
-                            yTmp[xyTmpIndex] = std::move(yBest);
-                            ++xyTmpIndex;
-                            xBest = std::move(xi);
-                            yBest = std::move(yi);
-                        } else {
-                            xTmp[xyTmpIndex] = std::move(xi);
-                            yTmp[xyTmpIndex] = std::move(yi);
-                            ++xyTmpIndex;
-                        }
-                    }
-                }
-
-                // Update the decision value
-                for (uint64_t i = 0; i < xyTmpIndex; ++i) {
-                    ValueType deltaY = yBest - yTmp[i];
-                    if (deltaY > storm::utility::zero<ValueType>()) {
-                        ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
-                        if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
-                            decisionValue = std::move(newDecisionValue);
-                            STORM_LOG_TRACE("Update decision value to " << decisionValue);
-                            hasDecisionValue = true;
-                        }
-                    }
+                    allYLessOne = false;
                 }
             }
-            *xIt = std::move(xBest);
-            *yIt = std::move(yBest);
-        }
-    }
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::checkConvergenceUpdateBounds(OptimizationDirection const& dir, storm::storage::BitVector const* relevantValues) {
-    if (rowGroupIndices) {
-        if (minimize(dir)) {
-            return checkConvergenceUpdateBounds<InternalOptimizationDirection::Minimize>(relevantValues);
         } else {
-            return checkConvergenceUpdateBounds<InternalOptimizationDirection::Maximize>(relevantValues);
-        }
-    } else {
-        return checkConvergenceUpdateBounds(relevantValues);
-    }
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::checkConvergenceUpdateBounds(storm::storage::BitVector const* relevantValues) {
-    return checkConvergenceUpdateBounds<InternalOptimizationDirection::None>(relevantValues);
-}
-
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-bool SoundValueIterationHelper<ValueType>::checkConvergenceUpdateBounds(storm::storage::BitVector const* relevantValues) {
-    if (convergencePhase1) {
-        if (checkConvergencePhase1()) {
-            firstIndexViolatingConvergence = 0;
-            if (relevantValues != nullptr) {
-                firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
-            }
-        } else {
-            return false;
+            STORM_LOG_ASSERT(yCurr < storm::utility::one<ValueType>(), "Unexpected y value for this stage.");
+            ValueType val = xCurr / (storm::utility::one<ValueType>() - yCurr);
+            curr_a &= val;
+            curr_b &= val;
         }
     }
-    STORM_LOG_ASSERT(!std::any_of(y.begin(), y.end(), [](ValueType value) { return storm::utility::isOne(value); }),
-                     "Did not expect staying-probability 1 at this point.");
 
-    // Reaching this point means that we are in Phase 2:
-    // The difference between lower and upper bound has to be < precision at every (relevant) value
-
-    // For efficiency reasons we first check whether it is worth to compute the actual bounds. We do so by considering possibly too tight bounds
-    ValueType lowerBoundCandidate, upperBoundCandidate;
-    if (preliminaryConvergenceCheck<dir>(lowerBoundCandidate, upperBoundCandidate)) {
-        updateLowerUpperBound<dir>(lowerBoundCandidate, upperBoundCandidate);
-        if (dir != InternalOptimizationDirection::None) {
-            checkIfDecisionValueBlocks<dir>();
+    void endOfIteration() {
+        nextStage = Stage;
+        if (nextStage == SVIStage::Initial && allYLessOne) {
+            nextStage = SVIStage::y_less_1;
         }
-        return checkConvergencePhase2(relevantValues);
-    }
-    return false;
-}
-
-template<typename ValueType>
-void SoundValueIterationHelper<ValueType>::setSolutionVector() {
-    // Due to a custom termination criterion it might be the case that one of the bounds was not yet established.
-    ValueType meanBound;
-    if (!hasLowerBound) {
-        STORM_LOG_WARN("No lower result bound was computed during sound value iteration.");
-        if (hasUpperBound) {
-            meanBound = upperBound;
-        } else {
-            STORM_LOG_WARN("No upper result bound was computed during sound value iteration.");
-            meanBound = storm::utility::zero<ValueType>();
-        }
-    } else if (!hasUpperBound) {
-        STORM_LOG_WARN("No upper result bound was computed during sound value iteration.");
-        meanBound = lowerBound;
-    } else {
-        meanBound = (upperBound + lowerBound) / storm::utility::convertNumber<ValueType>(2.0);
-    }
-
-    storm::utility::vector::applyPointwise(x, y, x, [&meanBound](ValueType const& xi, ValueType const& yi) -> ValueType { return xi + yi * meanBound; });
-
-    STORM_LOG_INFO("Sound Value Iteration terminated with lower bound (over all states) "
-                   << (hasLowerBound ? lowerBound : storm::utility::zero<ValueType>()) << (hasLowerBound ? "" : "(none)")
-                   << " and upper bound (over all states) " << (hasUpperBound ? upperBound : storm::utility::infinity<ValueType>())
-                   << (hasUpperBound ? "" : "(none)") << ". Decision value is " << (hasDecisionValue ? decisionValue : -storm::utility::infinity<ValueType>())
-                   << (hasDecisionValue ? "" : "(none)") << ".");
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::checkCustomTerminationCondition(storm::solver::TerminationCondition<ValueType> const& condition) {
-    if (condition.requiresGuarantee(storm::solver::SolverGuarantee::GreaterOrEqual)) {
-        if (hasUpperBound &&
-            condition.terminateNow([&](uint64_t const& i) { return x[i] + y[i] * upperBound; }, storm::solver::SolverGuarantee::GreaterOrEqual)) {
-            return true;
-        }
-    } else if (condition.requiresGuarantee(storm::solver::SolverGuarantee::LessOrEqual)) {
-        if (hasLowerBound && condition.terminateNow([&](uint64_t const& i) { return x[i] + y[i] * lowerBound; }, storm::solver::SolverGuarantee::LessOrEqual)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::checkConvergencePhase1() {
-    // Return true if y ('the probability to stay within the matrix') is  < 1 at every entry
-    for (; firstIndexViolatingConvergence != y.size(); ++firstIndexViolatingConvergence) {
-        static_assert(NumberTraits<ValueType>::IsExact || std::is_same<ValueType, double>::value, "Considered ValueType not handled.");
-        if (NumberTraits<ValueType>::IsExact) {
-            if (storm::utility::isOne(y[firstIndexViolatingConvergence])) {
-                return false;
-            }
-        } else {
-            if (storm::utility::isAlmostOne(storm::utility::convertNumber<double>(y[firstIndexViolatingConvergence]))) {
-                return false;
-            }
-        }
-    }
-    STORM_LOG_TRACE("Phase 1 converged: all y values are < 1.");
-    convergencePhase1 = false;
-    return true;
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::isPreciseEnough(ValueType const& xi, ValueType const& yi, ValueType const& lb, ValueType const& ub) {
-    return yi * (ub - lb) <= storm::utility::abs<ValueType>((relative ? (precision * xi) : (precision)));
-}
-
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-bool SoundValueIterationHelper<ValueType>::preliminaryConvergenceCheck(ValueType& lowerBoundCandidate, ValueType& upperBoundCandidate) {
-    lowerBoundCandidate = x[minIndex] / (storm::utility::one<ValueType>() - y[minIndex]);
-    upperBoundCandidate = x[maxIndex] / (storm::utility::one<ValueType>() - y[maxIndex]);
-    // Make sure that these candidates are at least as tight as the already known bounds
-    if (hasLowerBound && lowerBoundCandidate < lowerBound) {
-        lowerBoundCandidate = lowerBound;
-    }
-    if (hasUpperBound && upperBoundCandidate > upperBound) {
-        upperBoundCandidate = upperBound;
-    }
-    if (isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBoundCandidate, upperBoundCandidate)) {
-        return true;
-    }
-    if (dir != InternalOptimizationDirection::None && !decisionValueBlocks) {
-        return hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>());
-    }
-    return false;
-}
-
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-void SoundValueIterationHelper<ValueType>::updateLowerUpperBound(ValueType& lowerBoundCandidate, ValueType& upperBoundCandidate) {
-    auto xIt = x.begin();
-    auto xIte = x.end();
-    auto yIt = y.begin();
-    for (uint64_t index = 0; xIt != xIte; ++xIt, ++yIt, ++index) {
-        ValueType currentBound = *xIt / (storm::utility::one<ValueType>() - *yIt);
-        if (dir != InternalOptimizationDirection::None && decisionValueBlocks) {
-            if (better<dir>(getSecondaryBound<dir>(), currentBound)) {
-                getSecondaryIndex<dir>() = index;
-                getSecondaryBound<dir>() = std::move(currentBound);
-            }
-        } else {
-            if (currentBound < lowerBoundCandidate) {
-                minIndex = index;
-                lowerBoundCandidate = std::move(currentBound);
-            } else if (currentBound > upperBoundCandidate) {
-                maxIndex = index;
-                upperBoundCandidate = std::move(currentBound);
-            }
-        }
-    }
-    if ((dir != InternalOptimizationDirection::Minimize || !decisionValueBlocks) && (!hasLowerBound || lowerBoundCandidate > lowerBound)) {
-        setLowerBound(lowerBoundCandidate);
-    }
-    if ((dir != InternalOptimizationDirection::Maximize || !decisionValueBlocks) && (!hasUpperBound || upperBoundCandidate < upperBound)) {
-        setUpperBound(upperBoundCandidate);
-    }
-}
-
-template<typename ValueType>
-template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-void SoundValueIterationHelper<ValueType>::checkIfDecisionValueBlocks() {
-    // Check whether the decision value blocks now (i.e. further improvement of the primary bound would lead to a non-optimal scheduler).
-    if (!decisionValueBlocks && hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>())) {
-        getPrimaryBound<dir>() = decisionValue;
-        decisionValueBlocks = true;
-        STORM_LOG_TRACE("Decision value blocks primary bound to " << decisionValue << ".");
-    }
-}
-
-template<typename ValueType>
-bool SoundValueIterationHelper<ValueType>::checkConvergencePhase2(storm::storage::BitVector const* relevantValues) {
-    // Check whether the desired precision is reached
-    if (isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
-        // The current index satisfies the desired bound. We now move to the next index that violates it
-        while (true) {
-            ++firstIndexViolatingConvergence;
-            if (relevantValues != nullptr) {
-                firstIndexViolatingConvergence = relevantValues->getNextSetIndex(firstIndexViolatingConvergence);
-            }
-            if (firstIndexViolatingConvergence == x.size()) {
-                // Converged!
-                return true;
+        if (nextStage == SVIStage::y_less_1 || nextStage == SVIStage::b_eq_d) {
+            aValue &= std::move(*curr_a);
+            if (nextStage == SVIStage::y_less_1) {
+                curr_b &= dValue;
+                bValue &= std::move(*curr_b);
+                if (!dValue.empty() && *bValue == *dValue) {
+                    nextStage = SVIStage::b_eq_d;
+                }
             } else {
-                if (!isPreciseEnough(x[firstIndexViolatingConvergence], y[firstIndexViolatingConvergence], lowerBound, upperBound)) {
-                    // not converged yet
+                // in the b_eq_d stage, we slightly repurpose _b and _d:
+                // _b is now used to track an upper bound (which can pass _d)
+                // _d is now used for the weighting when selecting the best row
+                bValue &= std::move(*curr_b);
+            }
+        }
+    }
+
+    bool constexpr converged() const {
+        return false;
+    }
+
+    bool constexpr abort() const {
+        return false;
+    }
+
+    std::optional<ValueType> a() const {
+        return aValue.getOptionalValue();
+    }
+
+    std::optional<ValueType> b() const {
+        return bValue.getOptionalValue();
+    }
+
+    std::optional<ValueType> d() const {
+        return dValue.getOptionalValue();
+    }
+
+    bool moveToNextStage() const {
+        return nextStage != Stage;
+    }
+
+    template<SVIStage NewStage>
+    auto createBackendForNextStage() const {
+        std::optional<ValueType> d;
+        if (NewStage == SVIStage::b_eq_d && !bValue.empty())
+            d = *bValue;
+        else if (NewStage != SVIStage::Initial && !dValue.empty())
+            d = *dValue;
+        return SVIBackend<ValueType, Dir, NewStage, TrivialRowGrouping>(currRowValues, a(), b(), d);
+    }
+
+    SVIStage const& getNextStage() const {
+        return nextStage;
+    }
+
+   private:
+    static bool better(ValueType const& lhs, ValueType const& rhs) {
+        if constexpr (minimize(Dir)) {
+            return lhs < rhs;
+        } else {
+            return lhs > rhs;
+        }
+    }
+
+    using ExtremumDir = storm::utility::Extremum<Dir, ValueType>;
+    using ExtremumInvDir = storm::utility::Extremum<invert(Dir), ValueType>;
+
+    ExtremumDir aValue, dValue;
+    ExtremumInvDir bValue;
+
+    SVIStage nextStage{Stage};
+
+    ExtremumDir curr_b;
+    ExtremumInvDir curr_a;
+    bool allYLessOne;
+
+    std::pair<ValueType, ValueType> best;
+    ExtremumDir bestValue;
+    RowValueStorageType& currRowValues;
+    uint64_t currRowValuesIndex{0};
+};
+
+template<typename ValueType, bool TrivialRowGrouping>
+void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetAverage(std::vector<ValueType>& out) const {
+    if (a.has_value() && b.has_value()) {
+        ValueType abAvg = (*a + *b) / storm::utility::convertNumber<ValueType, uint64_t>(2);
+        storm::utility::vector::applyPointwise(xy.first, xy.second, out,
+                                               [&abAvg](ValueType const& xVal, ValueType const& yVal) -> ValueType { return xVal + abAvg * yVal; });
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetLowerUpper(std::vector<ValueType>& lowerOut,
+                                                                                         std::vector<ValueType>& upperOut) const {
+    auto [min, max] = std::minmax(*a, *b);
+    uint64_t const size = xy.first.size();
+    for (uint64_t i = 0; i < size; ++i) {
+        // We allow setting both vectors "in-place", e.g. we might have &lowerOut == &xy.first.
+        // This requires to use temporary values.
+        ValueType xi = xy.first[i];
+        ValueType yi = xy.second[i];
+        lowerOut[i] = xi + min * yi;
+        upperOut[i] = xi + max * yi;
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCustomTerminationCondition(
+    storm::solver::TerminationCondition<ValueType> const& condition) const {
+    if (a.has_value() && b.has_value()) {
+        if (condition.requiresGuarantee(storm::solver::SolverGuarantee::GreaterOrEqual)) {
+            auto max = std::max(*a, *b);
+            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * max; }, storm::solver::SolverGuarantee::GreaterOrEqual);
+        } else if (condition.requiresGuarantee(storm::solver::SolverGuarantee::LessOrEqual)) {
+            auto min = std::min(*a, *b);
+            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * min; }, storm::solver::SolverGuarantee::GreaterOrEqual);
+        }
+    }
+    return false;
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkConvergence(uint64_t& convergenceCheckState,
+                                                                                         std::function<void()> const& getNextConvergenceCheckState,
+                                                                                         bool relative, ValueType const& precision) const {
+    if (!a.has_value() || !b.has_value())
+        return false;
+    if (*a == *b)
+        return true;
+    if (relative) {
+        auto [min, max] = std::minmax(*a, *b);
+        if (min >= storm::utility::zero<ValueType>()) {
+            ValueType const val = (max - min) / precision - min;
+            for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
+                if (!storm::utility::isZero(xy.second[convergenceCheckState]) && val > xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
                     return false;
                 }
             }
+        } else if (max <= storm::utility::zero<ValueType>()) {
+            ValueType const val = (min - max) / precision - max;
+            for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
+                if (!storm::utility::isZero(xy.second[convergenceCheckState]) && val < xy.first[convergenceCheckState] / xy.second[convergenceCheckState]) {
+                    return false;
+                }
+            }
+        } else {
+            for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
+                ValueType l = xy.first[convergenceCheckState] + min * xy.second[convergenceCheckState];
+                ValueType u = xy.first[convergenceCheckState] + max * xy.second[convergenceCheckState];
+                assert(u >= l);
+                if (l > storm::utility::zero<ValueType>()) {
+                    if ((u - l) > l * precision) {
+                        return false;
+                    }
+                } else if (u < storm::utility::zero<ValueType>()) {
+                    if ((l - u) < u * precision) {
+                        return false;
+                    }
+                } else {  //  l <= 0 <= u
+                    if (l != u) {
+                        return false;
+                    }
+                }
+            }
+        }
+    } else {
+        ValueType val = precision / storm::utility::abs<ValueType>(*b - *a);
+        for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
+            if (xy.second[convergenceCheckState] > val) {
+                return false;
+            }
         }
     }
-    return false;
+    return true;
 }
 
-template class SoundValueIterationHelper<double>;
-template class SoundValueIterationHelper<storm::RationalNumber>;
-}  // namespace helper
+template<typename ValueType, bool TrivialRowGrouping>
+template<typename BackendType>
+typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
+    std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy, std::pair<std::vector<ValueType> const*, ValueType> const& offsets, uint64_t& numIterations,
+    bool relative, ValueType const& precision, BackendType&& backend, std::function<SolverStatus(SVIData const&)> const& iterationCallback,
+    std::optional<storm::storage::BitVector> const& relevantValues, uint64_t convergenceCheckState) const {
+    if constexpr (BackendType::CurrentStage == SVIStage::Initial) {
+        xy.first.assign(xy.first.size(), storm::utility::zero<ValueType>());
+        xy.second.assign(xy.first.size(), storm::utility::one<ValueType>());
+        convergenceCheckState = relevantValues.has_value() ? relevantValues->getNextSetIndex(0ull) : 0ull;
+    }
+    std::function<void()> getNextConvergenceCheckState;
+    if (relevantValues) {
+        getNextConvergenceCheckState = [&convergenceCheckState, &relevantValues]() {
+            convergenceCheckState = relevantValues->getNextSetIndex(++convergenceCheckState);
+        };
+    } else {
+        getNextConvergenceCheckState = [&convergenceCheckState]() { ++convergenceCheckState; };
+    }
 
-}  // namespace solver
-}  // namespace storm
+    while (true) {
+        ++numIterations;
+        viOperator->template applyInPlace(xy, offsets, backend);
+        SVIData data{SolverStatus::InProgress, xy, backend.a(), backend.b()};
+        if (data.checkConvergence(convergenceCheckState, getNextConvergenceCheckState, relative, precision)) {
+            return SVIData{SolverStatus::Converged, xy, backend.a(), backend.b()};
+        } else {
+            if (iterationCallback) {
+                SVIData data{SolverStatus::InProgress, xy, backend.a(), backend.b()};
+                data.status = iterationCallback(data);
+                if (data.status != SolverStatus::InProgress) {
+                    return data;
+                }
+            }
+            if (backend.moveToNextStage()) {
+                switch (backend.getNextStage()) {
+                    case SVIStage::y_less_1:
+                        return SVI(xy, offsets, numIterations, relative, precision, backend.template createBackendForNextStage<SVIStage::y_less_1>(),
+                                   iterationCallback, relevantValues, convergenceCheckState);
+                    case SVIStage::b_eq_d:
+                        return SVI(xy, offsets, numIterations, relative, precision, backend.template createBackendForNextStage<SVIStage::b_eq_d>(),
+                                   iterationCallback, relevantValues, convergenceCheckState);
+                    default:
+                        STORM_LOG_ASSERT(false, "Unexpected next stage");
+                }
+            }
+        }
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+template<storm::OptimizationDirection Dir>
+typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
+    std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy, std::pair<std::vector<ValueType> const*, ValueType> const& offsets, uint64_t& numIterations,
+    bool relative, ValueType const& precision, std::optional<ValueType> const& a, std::optional<ValueType> const& b,
+    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues) const {
+    typename SVIBackend<ValueType, Dir, SVIStage::Initial, TrivialRowGrouping>::RowValueStorageType rowValueStorage;
+    rowValueStorage.resize(sizeOfLargestRowGroup - 1);
+    return SVI(xy, offsets, numIterations, relative, precision, SVIBackend<ValueType, Dir, SVIStage::Initial, TrivialRowGrouping>(rowValueStorage, a, b),
+               iterationCallback, relevantValues);
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
+    std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
+    ValueType const& precision, std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound,
+    std::optional<ValueType> const& upperBound, std::function<SolverStatus(SVIData const&)> const& iterationCallback,
+    std::optional<storm::storage::BitVector> const& relevantValues) const {
+    std::pair<std::vector<ValueType> const*, ValueType> offsetsPair{&offsets, storm::utility::zero<ValueType>()};
+    if (!dir.has_value() || maximize(*dir)) {
+        // When we maximize, a is the lower bound and b is the upper bound
+        return SVI<storm::OptimizationDirection::Maximize>(xy, offsetsPair, numIterations, relative, precision, lowerBound, upperBound, iterationCallback,
+                                                           relevantValues);
+    } else {
+        // When we minimize, b is the lower bound and a is the upper bound
+        return SVI<storm::OptimizationDirection::Minimize>(xy, offsetsPair, numIterations, relative, precision, upperBound, lowerBound, iterationCallback,
+                                                           relevantValues);
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues) const {
+    // Create two vectors x and y using the given operand plus an auxiliary vector.
+    std::pair<std::vector<ValueType>, std::vector<ValueType>> xy;
+    auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
+    xy.first.swap(operand);
+    xy.second.swap(auxVector);
+    auto doublePrec = precision + precision;
+    if constexpr (std::is_same_v<ValueType, double>) {
+        doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
+    }
+    auto res = SVI(xy, offsets, numIterations, relative, doublePrec, dir, lowerBound, upperBound, iterationCallback, relevantValues);
+    res.trySetAverage(xy.first);
+    // Swap operand and aux vector back to original positions.
+    xy.first.swap(operand);
+    xy.second.swap(auxVector);
+    viOperator->freeAuxiliaryVector();
+    return res.status;
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues) const {
+    uint64_t numIterations = 0;
+    return SVI(operand, offsets, numIterations, relative, precision, dir, lowerBound, upperBound, iterationCallback, relevantValues);
+}
+
+template class SoundValueIterationHelper<double, true>;
+template class SoundValueIterationHelper<double, false>;
+template class SoundValueIterationHelper<storm::RationalNumber, true>;
+template class SoundValueIterationHelper<storm::RationalNumber, false>;
+
+}  // namespace storm::solver::helper

@@ -24,7 +24,7 @@ MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
                          minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute,
                      "Unknown convergence criterion");
     multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
-    symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
+    forceRequireUnique = minMaxSettings.isForceUniqueSolutionRequirementSet();
 }
 
 MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
@@ -76,12 +76,12 @@ void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::Multiplicati
     multiplicationStyle = value;
 }
 
-bool MinMaxSolverEnvironment::isSymmetricUpdatesSet() const {
-    return symmetricUpdates;
+bool MinMaxSolverEnvironment::isForceRequireUnique() const {
+    return forceRequireUnique;
 }
 
-void MinMaxSolverEnvironment::setSymmetricUpdates(bool value) {
-    symmetricUpdates = value;
+void MinMaxSolverEnvironment::setForceRequireUnique(bool value) {
+    forceRequireUnique = value;
 }
 
 }  // namespace storm
