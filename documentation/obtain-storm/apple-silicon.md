@@ -5,11 +5,23 @@ layout: default
 
 <h1>Building for ARM-based Apple Silicon Systems </h1>
 
-{:.alert .alert-info}
-_Native_ code compilation on ARM-based Apple Silicon systems is not yet supported. However, compilation with x86 emulation (Rosetta 2) does work just fine. We provide detailed installation steps for that below.
-Native ARM compilation is work in progress.
+## Native Compilation to an ARM binary (recommended)
 
-##  Installing Dependencies
+Storm compiles natively on ARM-based Apple Silicon processors. 
+However, there are a few points to consider for troubleshooting.
+
+* Make sure you have the latest version of Storm (Version 1.8.0 or later)
+* Make sure that you use an ARM compiled `cmake` binary (check with `where cmake` and `file path/to/cmake`)
+* Dependencies need to be installed using the *ARM* version of homebrew. Skip `cln` and `ginac` since (at the time of writing) they do not have an ARM version supported by homebrew
+* Carl also needs to be build without `cln` and `ginac`.
+* If you previously had an x86 version installed, you need to re-build Storm (and carl, if installed manually) from scratch. For this, remove the corresponding `build` folders and invoke the building steps again.
+* Examine the `cmake` output. It might have found an `x86` version of carl or another dependency. Homebrew dependencies should normally be found in `/opt/homebrew`, *not* in `/usr/local/`.
+* Contact us at [support@stormchecker.org](mailto:support@stormchecker.org) or on [GitHub](https://github.com/moves-rwth/storm) in case of issues.
+
+
+##  Compiling with x86 Emulation
+
+In some cases, e.g. when an older Storm version needs to be used, it might be necessary to compile an x86 version of Storm that can be run on Apple Silicon systems using Emulation via Rosetta 2.
 
 ### x86 Emulation and Development Tools
 Install Rosetta 2 and either the command line tools (CLT) or Xcode. Installing Rosetta 2 and the CLT can be done using the terminal by executing
@@ -18,8 +30,16 @@ $ softwareupdate --install-rosetta
 $ xcode-select --install
 ```
 
-{:.alert .alert-danger}
-Older versions of the CLT are known to cause issues during the installation. The following steps have successfully been tested using the CLT in version ```12.4.0.0.1.1610135815```. More recent versions should work as well.
+The following steps should be performed inside a x86 shell so that universal binaries are invoked correctly.
+If you are using `zsh` (which is the default shell on macOS), this can be done by executing `arch -x86_64 zsh`.
+To easily see that your shell runs in x86 mode, you can add the following lines to your `~/.zshrc` file:
+
+```console
+# modify the prompt if in x86 mode
+if [[ $(uname -m) == 'x86_64' ]]; then
+	expot PROMPT="%F{cyan}x86%f:$PROMPT"
+fi
+```
 
 ### Homebrew
 
@@ -59,20 +79,10 @@ Rosetta 2: true
 you are ready to continue.
 
 ### General Dependencies
-Install the x86 version of the [general dependencies](dependencies.html#general-dependencies) of Storm using homebrew. You need to enable x86 emulation (through Rosetta 2) by prefixing the brew command with `arch -x86_64`, e.g. by using the `brew86` alias:
-
-- Required:
-``` console
-$ brew86 install cln ginac automake cmake boost gmp glpk hwloc
-```
-
-- Recommended:
-``` console
-$ brew86 install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
-```
+Install the x86 version of the [general dependencies](dependencies.html#general-dependencies) of Storm using homebrew. You need to enable x86 emulation (through Rosetta 2) by prefixing the `brew` command with `arch -x86_64`, e.g. by using the `brew86` alias that we set above.
  
 {:.alert .alert-info}
-If the wrong homebrew installation is specified, the installations are done to paths used for ARM binaries which will not work with Storm.
+If the wrong homebrew installation is specified, the installations are done to paths used for ARM binaries which will not work for x86 emulation.
 
 ### CMake
 ARM versions of CMake do often not play nicely with the compilation of dependencies Storm is using, which is why we recommend to use a x86 version of cmake. Check which architecture your cmake executable is targeting by executing:
@@ -93,15 +103,6 @@ where ```$X86_BREW``` is as explained [above](apple-silicon.html#homebrew).
 There are known issues when compiling Storm using older versions of CMake.
 These issues seem to have been fixed with cmake version ```3.19.5```. Make sure to use the latest version of CMake.
 
-## Building Storm from Source.
+### Building Storm from Source.
 
 You can now obtain, configure, and build Storm as outlined [here](build.html#obtaining-the-source-code).
-However, you need to ensure that you invoke universal binaries, in particular `cmake` and `make`, using ```arch -x86_64``` as a prefix.
-
-An easy way to ensure this is to start a new terminal session in x86 mode via
-```console
-arch -x86_64 zsh
-```
-
-{:.alert .alert-info}
-The prefix ```arch -x86_64``` is not necessary for non-universal x86 binaries. However, if you are not sure, you can just apply the prefix to all commands.
