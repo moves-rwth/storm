@@ -31,7 +31,7 @@
                 <div class="item">
                     <div class="jumbotron bg-front">
                         <h1>Efficient.</h1>
-                        <p>Its C++14 core focuses on time and memory efficiency.</p>
+                        <p>Its C++17 core focuses on time and memory efficiency.</p>
                         <div>
                             <a href="about.html" class="btn btn-default btn-md active" role="button" aria-pressed="true">Read more</a>
                         </div>
@@ -99,10 +99,12 @@
                             <div class="panel-body">
                                 Storm is built around discrete- and continuous-time Markov models:
                                 <ul>
-                                    <li>Discrete Time Markov Chains</li>
+                                    <li>Discrete-time Markov Chains</li>
                                     <li>Markov Decision Processes</li>
-                                    <li>Continuous Time Markov Chains</li>
+                                    <li>Continuous-time Markov Chains</li>
                                     <li>Markov Automata</li>
+                                    <li>Parametric Markov Models</li>
+                                    <li>Partially Observable Markov Models</li>
                                 </ul>
                                 <div class="pull-right">
                                     <a href="{{ '/documentation/background/models.html' | relative_url }}" class="btn btn-sm btn-default">Read more</a>
@@ -141,13 +143,14 @@
                                 <h3 class="panel-title">Properties</h3>
                             </div>
                             <div class="panel-body">
-                                Storm focuses on reachability queries and its support includes
+                                Supported model checking queries include
                                 <ul>
-                                    <li>PCTL and CSL</li>
-                                    <li>Expected Rewards</li>
+                                    <li>Reachability and Reach-Avoid Probabilities
+                                    <li>PCTL, CSL, and LTL Specifications</li>
+                                    <li>Expected Accumulated Rewards</li>
                                     <li>Long-run Average Rewards</li>
                                     <li>Conditional Probabilities</li>
-                                    <li>Multi-objective Model Checking</li>
+                                    <li>Multi-objective Analysis</li>
                                 </ul>
                                 <div class="pull-right">
                                     <a href="{{ '/documentation/background/properties.html' | relative_url }}" class="btn btn-sm btn-default">Read more</a>
