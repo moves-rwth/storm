@@ -27,6 +27,62 @@ Other (non-standard) fields are
 More custom fields can be added by editing the corresponding bib layout (_layouts/bib.html)
 
 
+@inproceedings{ABCJKM23,
+   category  = {using},
+   author = {Roman Andriushchenko and
+             Alexander Bork and
+             Milan Ceska and
+             Sebastian Junges and
+             Joost-Pieter Katoen and
+             Filip Macak},
+    title = {Search and Explore: Symbiotic Policy Synthesis in {POMDP}s},
+    booktitle = {{CAV}},
+    year = {2023},
+    note = {to appear}
+}
+
+@inproceedings{CJJT23,
+  category     = {using},
+  author    = {Steven Carr and
+               Nils Jansen and
+               Sebastian Junges and
+               Ufuk Topcu},
+  title     = {Safe Reinforcement Learning via Shielding for POMDPs},
+  booktitle   = {{AAAI}},
+  arxiv-id    = {2204.00755},
+  year      = {2023},
+  note = {to appear}
+}
+
+
+@inproceedings{HJQW23,
+  category     = {using},
+  author       = {Arnd Hartmanns and
+                  Sebastian Junges and
+                  Tim Quatmann and
+                  Maximilian Weininger},
+  title        = {A Practitioner's Guide to {MDP} Model Checking Algorithms},
+  booktitle    = {{TACAS}},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {13993},
+  pages        = {469--488},
+  publisher    = {Springer},
+  doi          = {10.1007/978-3-031-30823-9\_24},
+  year         = {2023},
+  arxiv-id     = {2301.10197},
+  material     = {https://doi.org/10.5281/zenodo.7509474}
+}
+
+@inproceedings{VJJ23,
+     category  = {using},
+     title = {Robust Almost-Sure Reachability in Multi-Environment MDPs},
+     author = {Marck van der Vegt and Nils Jansen and Sebastian Junges},
+     booktitle = {{TACAS}},
+     publisher = {{Springer}},
+     series = {{LNCS}},
+     note ={{to appear}},
+     year = {2023}
+}
 
 @inproceedings{BJJSV22,
   category  = {using},
@@ -45,6 +101,23 @@ More custom fields can be added by editing the corresponding bib layout (_layout
   doi       = {10.1007/978-3-031-13188-2\_2},
   arxiv-id  = {2205.08300},
   material  = {https://doi.org/10.5281/zenodo.6523863},
+}
+
+
+@article{BCJJKT22,
+    category  = {using},
+    author = {Thom Badings and
+              Murat Cubuktepe and
+              Nils Jansen and
+              Sebastian Junges and
+              Joost{-}Pieter Katoen and
+              Ufuk Topcu},
+    title = {Scenario-Based Verification of Uncertain Parametric  MDPs},
+    journal = {{STTT}},
+    material = {https://doi.org/10.5281/zenodo.6674060},
+    year = {2022},
+    arxiv-id = {2112.13020},
+    doi = {10.1007/s10009-022-00673-z}
 }
 
 @inproceedings{BKQ22,
@@ -84,6 +157,22 @@ More custom fields can be added by editing the corresponding bib layout (_layout
   material  = {https://doi.org/10.5281/zenodo.5834212},
 }
 
+
+
+@article{CJJKT22,
+  author    = {Murat Cubuktepe and
+               Nils Jansen and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Ufuk Topcu},
+  title     = {Convex Optimization for Parameter Synthesis in MDPs},
+  journal   = {{IEEE} Trans. Autom. Control.},
+  arxiv-id    = {2107.00108},
+  material = {https://doi.org/10.5281/zenodo.5745850},
+  year      = {2022},
+  doi = {10.1109/TAC.2021.3133265}
+}
+
 @article{HJKQV22,
   category  = {tool},
   author    = {Christian Hensel and
@@ -119,6 +208,23 @@ More custom fields can be added by editing the corresponding bib layout (_layout
   doi          = {10.1007/978-3-030-94583-1\_7},
   year         = {2022},
   arxiv-id     = {2111.04407}
+}
+
+
+@inproceedings{JS22,
+  category     = {using},
+  author = {Sebastian Junges and Matthijs T. J. Spaan},
+  title = {Abstraction-Refinement for Hierarchical Probabilistic Models},
+  booktitle = {{CAV}},
+  material = {https://doi.org/10.5281/zenodo.6524788},
+  year = {2022},
+  pages = {102--123},
+  series = {{LNCS}},
+  volume = {13371},
+  publisher = {Springer},
+  doi = {10.1007/978-3-031-13185-1_6},
+  arxiv-id = {2206.02653},
+  repo = {https://github.com/sjunges/level-up}
 }
 
 @article{QJK22,
@@ -183,6 +289,20 @@ More custom fields can be added by editing the corresponding bib layout (_layout
   year      = {2022},
   doi       = {10.1007/s10009-022-00652-4},
   website   = {https://www.stormchecker.org/publications/dfts-for-railway-stations},
+}
+
+
+@article{CHJK21,
+  category  = {using},
+  author    = {Milan Češka  and
+               Christian Hensel and
+               Sebastian Junges and
+               Joost-Pieter Katoen},
+  title     = {Counterexample-guided Inductive Synthesis for Probabilistic Systems},
+  journal = {{Formal Asp. Comput.}},
+    year = {2021},
+   doi = {10.1007/s00165-021-00547-2},
+   repo = {https://github.com/randriu/synthesis}
 }
 
 @inproceedings{CJJMST21,
@@ -261,7 +381,13 @@ category  = {using},
                Sanjit A.\ Seshia},
   title     = {Runtime Monitors for {M}arkov Decision Processes},
   booktitle = {{CAV}},
-  year      = {2021}
+  series    = {{LNCS}},
+  volume    = {12760},
+  publisher = {Springer},
+  year      = {2021},
+  repo      = {https://github.com/monitoring-MDPs/premise},
+  material  = {https://zenodo.org/record/4724623#.YUo4Vy0RqgQ},
+  doi       = {10.1007/978-3-030-81688-9\_26},
 }
 
 @inproceedings{KKVB21,
