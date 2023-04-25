@@ -29,7 +29,7 @@ plugins:
 # Publications
 scholar:
   bibliography_template: bib
-  style: _bibliography/customstyle
+  style: _bibliography/ieee
   repository: files
   group_order: descending
   bibliography_group_tag: b
