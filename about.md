@@ -37,7 +37,7 @@ For more details, also see the corresponding [webpage](https://github.com/moves-
 
 ## Characteristics
 
-There are several [related tools](related-tools.html#related-tools) addressing the analysis of probabilistic systems. However, these tools differ substantially regarding (among other things)
+There are several related tools addressing the analysis of probabilistic systems. However, these tools differ substantially regarding (among other things)
 
 - the supported modeling formalisms,
 - the input languages,
@@ -47,7 +47,7 @@ and have been developed with different target objectives. We believe the charact
 
 ### <i class="fa fa-tachometer" aria-hidden="true"></i> Efficient Core
 
-Model checking is both a data- and compute-intense task. In the worst case, the state space of the system has to be searched exhaustively. Probabilistic model checking is even harder in the sense that most techniques require an in-memory representation of the full system to be available and that it relies on solving gigantic equation systems. A crucial aspect of a probabilistic model checker therefore is it's efficiency in terms of time and memory. One of Storm's development goals is to provide a good space-time tradeoff and be faster than other competing tools. As the properties of the systems to analyze vary drastically, Storm has --- similar to [PRISM](related-tools.html) --- several [engines]({{ '/documentation/background/engines.html' | relative_url }}) that determine which data structures are used to build and analyze a model.
+Model checking is both a data- and compute-intense task. In the worst case, the state space of the system has to be searched exhaustively. Probabilistic model checking is even harder in the sense that most techniques require an in-memory representation of the full system to be available and that it relies on solving gigantic equation systems. A crucial aspect of a probabilistic model checker therefore is it's efficiency in terms of time and memory. One of Storm's development goals is to provide a good space-time tradeoff and be faster than other competing tools. As the properties of the systems to analyze vary drastically, Storm has several [engines]({{ '/documentation/background/engines.html' | relative_url }}) that determine which data structures are used to build and analyze a model.
 
 ### <i class="fa fa-cogs" aria-hidden="true"></i> Modularity
 
@@ -77,6 +77,17 @@ While Storm tries to make it easy to include new functionality, a developer stil
 - libraries from the area of artificial intelligence and machine learning,
 - rational function manipulation (via [pycarl](https://github.com/moves-rwth/pycarl){:target="_blank"}).
 
+## Miscellaneous
+
+Storm
+
+- has roughly ~220k lines of C++ code (as of April 2023)
+- is under development since 2012
+- went open source in 2017
+- has over 15 [contributors](https://github.com/moves-rwth/storm/#Authors)
+- supported on most Unix platforms
+- would have been impossible without all the [cool libraries around](documentation/dependencies)
+
 ## People
 
 The developers can be reached via
@@ -86,34 +97,26 @@ If you have general feedback or questions on how to use Storm, please send us a 
 
 For feature request or bug reports, please open a [new issue on GitHub](https://github.com/moves-rwth/storm/issues/new){:target="_blank"}.
 
-Storm has been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de){:target="_blank"} at RWTH Aachen University by
+Storm has initially been developed at the [Chair for Software Modeling and Verification](http://moves.rwth-aachen.de){:target="_blank"} at RWTH Aachen University.
+The core developers are
 
-- [Christian Hensel](https://moves.rwth-aachen.de/people/hensel/){:target="_blank"}
-- [Sebastian Junges](https://moves.rwth-aachen.de/people/sebastian-junges/){:target="_blank"}
-- [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/){:target="_blank"}
-- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/){:target="_blank"}
-- [Matthias Volk](https://moves.rwth-aachen.de/people/volk/){:target="_blank"}
-
-and received significant contributions from
-
-- [Philipp Berger](https://moves.rwth-aachen.de/people/berger/){:target="_blank"}
-
-Furthermore, we are grateful for the feedback and/or patches we received by:
-
-- Joachim Klein, TU Dresden, Germany
-
-## Miscellaneous
-
-Storm
-
-- has roughly ~110k lines of C++ code (as of January 2017)
-- is under development since 2012
-- went open source in 2017
-- has over 15 contributors
-- supported on most Unix platforms
-- would have been impossible without all the [cool libraries around](related-tools.html#dependencies)
+- [Christian Hensel](https://moves.rwth-aachen.de/people/hensel/){:target="_blank"} RWTH Aachen University (until 2018)
+- [Sebastian Junges](https://sjunges.github.io){:target="_blank"} Radboud University
+- [Joost-Pieter Katoen](https://moves.rwth-aachen.de/people/katoen/){:target="_blank"} RWTH Aachen University
+- [Tim Quatman](https://moves.rwth-aachen.de/people/quatmann/){:target="_blank"} RWTH Aachen University
+- [Matthias Volk](https://people.utwente.nl/m.volk){:target="_blank"} University of Twente
 
 ## Website
+
+This website is developed with
+[Bootstrap](https://getbootstrap.com/){:target="_blank"},
+[BootstrapCDN](https://www.bootstrapcdn.com/){:target="_blank"},
+[DataTables](https://datatables.net){:target="_blank"},
+[Flatly Theme](https://bootswatch.com/flatly/){:target="_blank"},
+[Font awesome](https://fontawesome.com){:target="_blank"},
+[Font mfizz](http://fizzed.com/oss/font-mfizz){:target="_blank"},
+[Jekyll](https://jekyllrb.com){:target="_blank"},
+[Sphinx Doc](http://www.sphinx-doc.org/en/stable/){:target="_blank"}.
 
 Responsible for this website is
 
@@ -121,5 +124,5 @@ Responsible for this website is
 Software Modeling and Verification Group (MOVES)
 RWTH Aachen University, Aachen, Germany
 E-mail: support [at] stormchecker [dot] org
-Phone: +49 241 8021203
+Phone: +49 241 8021201
 ```
