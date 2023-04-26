@@ -1,5 +1,6 @@
 #pragma once
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm{
