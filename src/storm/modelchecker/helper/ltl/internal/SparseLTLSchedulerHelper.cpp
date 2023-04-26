@@ -1,8 +1,9 @@
 #include "SparseLTLSchedulerHelper.h"
+#include "storm/storage/SchedulerChoice.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/transformer/DAProductBuilder.h"
-
 #include "storm/utility/graph.h"
 
 namespace storm {

@@ -12,6 +12,7 @@
 
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"

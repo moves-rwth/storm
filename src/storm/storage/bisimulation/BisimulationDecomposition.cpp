@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidOptionException.h"

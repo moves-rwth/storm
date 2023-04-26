@@ -19,7 +19,7 @@ ARG no_threads=1
 WORKDIR /opt/
 
 # Obtain Carl from public repository
-RUN git clone -b master14 https://github.com/ths-rwth/carl.git
+RUN git clone https://github.com/moves-rwth/carl-storm.git carl
 
 # Switch to build directory
 RUN mkdir -p /opt/carl/build

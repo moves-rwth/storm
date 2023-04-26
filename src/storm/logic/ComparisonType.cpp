@@ -1,5 +1,7 @@
 #include "storm/logic/ComparisonType.h"
 
+#include <ostream>
+
 namespace storm {
 namespace logic {
 std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType) {

@@ -1,4 +1,5 @@
 #include "storm/abstraction/SymbolicQualitativeResultMinMax.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 #include "storm/abstraction/QualitativeResult.h"
 

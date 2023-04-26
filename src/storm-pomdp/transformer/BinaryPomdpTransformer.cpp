@@ -2,7 +2,7 @@
 #include <queue>
 
 #include "storm/storage/sparse/ModelComponents.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 

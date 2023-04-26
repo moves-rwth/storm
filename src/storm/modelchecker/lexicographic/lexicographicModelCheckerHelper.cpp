@@ -9,6 +9,7 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/storage/SchedulerChoice.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/SubsystemBuilder.h"
 

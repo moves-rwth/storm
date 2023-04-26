@@ -5,6 +5,7 @@
 
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/SparseMatrix.h"
 
 #include "storm/solver/LpSolver.h"

@@ -2,6 +2,10 @@
 
 #include "storm/storage/dd/DdManager.h"
 
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
 

@@ -1,6 +1,8 @@
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 
 #include <limits>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/graph.h"
 

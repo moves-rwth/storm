@@ -43,6 +43,8 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/prism.h"
 
+#include "storm/utility/vector.h"
+
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"

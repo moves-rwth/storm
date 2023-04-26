@@ -1,6 +1,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include <storm/exceptions/InvalidEnvironmentException.h>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
 #include "storm/solver/AcyclicLinearEquationSolver.h"

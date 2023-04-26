@@ -71,7 +71,10 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
             std::string name = parseName(data.at("name"));
             // TODO: use contains() if modernjson is updated
             if (data.count("relevant") > 0) {
-                relevantEvents.insert(name);
+                bool isRelevant = data.at("relevant");
+                if (isRelevant) {
+                    relevantEvents.insert(name);
+                }
             }
             // Create list of children
             std::vector<std::string> childNames;

@@ -36,8 +36,11 @@ SOFTWARE.
 #ifndef NLOHMANN_JSON_HPP
 #define NLOHMANN_JSON_HPP
 
+#include "basic_json_forward.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+
 
 #include <algorithm> // all_of, for_each, transform
 #include <array> // array
@@ -268,14 +271,14 @@ Format](http://rfc7159.net/rfc7159)
 @nosubgrouping
 */
     template <
-            template<typename U, typename V, typename... Args> class ObjectType = std::map,
-            template<typename U, typename... Args> class ArrayType = std::vector,
-            class StringType = std::string,
-            class BooleanType = bool,
-            class NumberIntegerType = std::int64_t,
-            class NumberUnsignedType = std::uint64_t,
-            class NumberFloatType = double,
-            template<typename U> class AllocatorType = std::allocator
+            template<typename U, typename V, typename... Args> class ObjectType,
+            template<typename U, typename... Args> class ArrayType,
+            class StringType,
+            class BooleanType,
+            class NumberIntegerType,
+            class NumberUnsignedType,
+            class NumberFloatType,
+            template<typename U> class AllocatorType
     >
     class basic_json
     {

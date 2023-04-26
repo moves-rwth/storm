@@ -7,6 +7,8 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 
+#include "storm/exceptions/NotImplementedException.h"
+
 namespace storm {
 namespace jani {
 

@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_REWARDMEASURETYPE_H_
 #define STORM_LOGIC_REWARDMEASURETYPE_H_
 
-#include <iostream>
+#include <iosfwd>
 
 namespace storm {
 namespace logic {

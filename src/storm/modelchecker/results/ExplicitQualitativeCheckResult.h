@@ -4,6 +4,7 @@
 #include <boost/variant.hpp>
 #include <functional>
 #include <map>
+#include <optional>
 
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"

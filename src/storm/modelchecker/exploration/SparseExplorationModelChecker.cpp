@@ -5,6 +5,8 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+
 #include "storm/generator/CompressedState.h"
 
 #include "storm/storage/MaximalEndComponentDecomposition.h"

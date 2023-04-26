@@ -3,6 +3,7 @@
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/abstraction/QualitativeResult.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace dd {

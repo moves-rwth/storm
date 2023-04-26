@@ -1,6 +1,7 @@
 #pragma once
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 namespace storm {
 template<typename ValueType>
@@ -23,7 +24,7 @@ struct NumberTraits<storm::ClnRationalNumber> {
     static const bool SupportsExponential = false;
     static const bool IsExact = true;
 
-    typedef cln::cl_I IntegerType;
+    typedef ClnIntegerNumber IntegerType;
 };
 #endif
 
@@ -33,7 +34,7 @@ struct NumberTraits<storm::GmpRationalNumber> {
     static const bool SupportsExponential = false;
     static const bool IsExact = true;
 
-    typedef mpz_class IntegerType;
+    typedef GmpIntegerNumber IntegerType;
 };
 #endif
 

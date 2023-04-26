@@ -1,4 +1,7 @@
 #include "storm/logic/TimeOperatorFormula.h"
+#include <boost/any.hpp>
+
+#include <ostream>
 #include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/FormulaVisitor.h"
 

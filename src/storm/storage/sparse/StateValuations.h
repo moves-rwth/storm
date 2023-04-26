@@ -1,11 +1,11 @@
 #pragma once
 
 #include <boost/optional.hpp>
-#include <boost/variant.hpp>
 #include <cstdint>
 #include <string>
 
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/StateAnnotation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/expressions/Variable.h"

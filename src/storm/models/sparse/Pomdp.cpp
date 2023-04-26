@@ -1,5 +1,7 @@
 #include "storm/models/sparse/Pomdp.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace models {
 namespace sparse {

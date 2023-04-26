@@ -6,14 +6,13 @@
 
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 
-#include "storm/adapters/ExprttkAdapter.h"
-
 #include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
 #include "storm/storage/expressions/ExprtkCompiledExpression.h"
 
 namespace storm {
 namespace expressions {
+
 template<typename RationalType>
 class ExprtkExpressionEvaluatorBase : public ExpressionEvaluatorBase<RationalType> {
    public:

@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "storm/models/ModelType.h"
-#include "storm/utility/macros.h"
 
 namespace storm {
 namespace models {

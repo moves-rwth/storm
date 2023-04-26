@@ -1,5 +1,9 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 
+#include "storm/adapters/JsonAdapter.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/solver/SmtSolver.h"
@@ -17,6 +21,8 @@
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
 #include "storm/generator/Distribution.h"
@@ -29,6 +35,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace generator {

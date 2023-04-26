@@ -1,4 +1,6 @@
 #include "storm/logic/BinaryBooleanStateFormula.h"
+#include <boost/any.hpp>
+#include <ostream>
 
 #include "storm/logic/FormulaVisitor.h"
 

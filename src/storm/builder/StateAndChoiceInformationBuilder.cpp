@@ -1,5 +1,7 @@
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 namespace storm {
 namespace builder {
 

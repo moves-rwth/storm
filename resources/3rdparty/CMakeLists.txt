@@ -46,22 +46,42 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-# Checkout Eigen version 3.3.9
-message (STATUS "Storm - Including Eigen 3.3.9.")
-ExternalProject_Add(
-        eigen_src
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-		GIT_SHALLOW 1
-        GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
-        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
-        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.9
-		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        LOG_INSTALL ON
-)
+# Checkout Eigen 
+# Version 3.3.9 has a known issue when compiled on Apple Silicon (FullPivLU segfaults, relevant for multi-obj model checking).
+# Version 3.4.0 has issues with gcc https://github.com/moves-rwth/storm/issues/162
+# We use this as a workaround:
+if (APPLE_SILICON)
+	message (STATUS "Storm - Including Eigen 3.4.0 commit b0eded878d5d162d61583a286c0d8a45406ad1bc.")
+	ExternalProject_Add(
+	        eigen_src
+	        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+	        GIT_TAG b0eded878d5d162d61583a286c0d8a45406ad1bc
+	        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
+	        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.0
+			PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen340.patch
+	        UPDATE_COMMAND ""
+	        CONFIGURE_COMMAND ""
+	        BUILD_COMMAND ""
+	        INSTALL_COMMAND ""
+	        LOG_INSTALL ON
+	)
+else()
+	message (STATUS "Storm - Including Eigen 3.3.9.")
+	ExternalProject_Add(
+	        eigen_src
+	        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+			GIT_SHALLOW 1
+	        GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
+	        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
+	        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.9
+			PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen339.patch
+	        UPDATE_COMMAND ""
+	        CONFIGURE_COMMAND ""
+	        BUILD_COMMAND ""
+	        INSTALL_COMMAND ""
+	        LOG_INSTALL ON
+	)
+endif()
 add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen")
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
@@ -274,7 +294,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "17.12")
+set(CARL_MINVERSION "14.22")
 set(CARL_C14VERSION "14")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
@@ -306,10 +326,13 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
         endif()
     endif()
     if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
-        message(STATUS "Storm - Found carl using master14 branch.")
+        message(STATUS "Storm - Found carl-storm version")
         # empty on purpose. Maybe put a warning here?
-    elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
-        message(FATAL_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
+        if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
+            message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
+        endif()
+    else()
+        message(FATAL_ERROR "We only support a diverged fork of carl -- Version 14.")
     endif()
 
     set(STORM_HAVE_CARL ON)
@@ -376,6 +399,18 @@ if (STORM_SHIPPED_CARL)
     else()
         install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}.${carl_VERSION} DESTINATION lib)
     endif()
+endif()
+
+if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.22")
+    # This version is too old for forward declarations and updating requires moving the git,
+    # so we warn users but start warning them now.
+    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
+    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
+elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.23")
+    # This version is too old for forward declarations, but we keep supporting it for the moment.
+    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
+else()
+    set(STORM_CARL_SUPPORTS_FWD_DECL ON)
 endif()
 
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)

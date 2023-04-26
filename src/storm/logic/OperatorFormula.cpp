@@ -1,6 +1,7 @@
 #include "storm/logic/OperatorFormula.h"
-
+#include <ostream>
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/logic/Bound.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 

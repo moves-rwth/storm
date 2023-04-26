@@ -5,7 +5,8 @@
 #include <set>
 #include <vector>
 
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/Valuation.h"
 
 namespace storm {
@@ -18,7 +19,6 @@ class SimpleValuation : public Valuation {
    public:
     friend class SimpleValuationPointerHash;
     friend class SimpleValuationPointerLess;
-    typedef storm::json<storm::RationalNumber> Json;
 
     /*!
      * Creates an empty simple valuation that is associated to no manager and has no variables.
@@ -65,7 +65,7 @@ class SimpleValuation : public Valuation {
     virtual std::string toPrettyString(std::set<storm::expressions::Variable> const& selectedVariables) const;
 
     virtual std::string toString(bool pretty = true) const;
-    Json toJson() const;
+    storm::json<storm::RationalNumber> toJson() const;
 
     friend std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation);
 

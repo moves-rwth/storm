@@ -1,5 +1,6 @@
 #include "storm/utility/ConstantsComparator.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/settings/SettingsManager.h"

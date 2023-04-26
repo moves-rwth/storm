@@ -7,6 +7,8 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm-pomdp/analysis/WinningRegion.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 namespace storm {
 namespace pomdp {
     WinningRegion::WinningRegion(std::vector<uint64_t> const& observationSizes) : observationSizes(observationSizes)

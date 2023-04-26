@@ -1,4 +1,5 @@
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"

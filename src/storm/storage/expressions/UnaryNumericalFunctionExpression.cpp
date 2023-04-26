@@ -1,12 +1,12 @@
 #include <cmath>
 
-#include <boost/variant.hpp>
-
 #include "ExpressionVisitor.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/utility/constants.h"

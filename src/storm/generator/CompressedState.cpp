@@ -2,6 +2,8 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/JsonAdapter.h"
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
 

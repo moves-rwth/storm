@@ -4,7 +4,7 @@
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/utility/OsDetection.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace expressions {

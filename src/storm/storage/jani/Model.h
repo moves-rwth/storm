@@ -16,7 +16,6 @@
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
 
 namespace storm {
 namespace expressions {
