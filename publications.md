@@ -4,6 +4,8 @@ navigation_weight: 5
 layout: default
 ---
 
+{% include includes/toc.html %}
+
 
 ## Storm tool papers
 
