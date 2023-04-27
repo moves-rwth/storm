@@ -218,6 +218,8 @@ class Formula : public std::enable_shared_from_this<Formula> {
     std::shared_ptr<Formula const> asSharedPointer();
     std::shared_ptr<Formula const> asSharedPointer() const;
 
+    std::shared_ptr<Formula> clone() const;
+
     std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
     std::shared_ptr<Formula> substitute(
         std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const;
