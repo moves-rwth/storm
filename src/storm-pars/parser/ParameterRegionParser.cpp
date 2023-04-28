@@ -44,7 +44,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables) {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::vector<std::string> parameterBoundaries;
@@ -61,14 +61,12 @@ namespace storm {
                 STORM_LOG_ASSERT(upperBoundaries.count(v) > 0, "Variable " << v << " has a lower but not an upper bound.");
             }
             auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
-            if (splittingThreshold) {
-                res.setSplitThreshold(splittingThreshold.get());
-            }
+
             return res;
         }
 
         template<typename ParametricType>
-        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables) {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::vector<std::string> parameterBoundaries;
@@ -79,27 +77,25 @@ namespace storm {
                 upperBoundaries.emplace(std::make_pair(v, 1-bound));
             }
             auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
-            if (splittingThreshold) {
-                res.setSplitThreshold(splittingThreshold.get());
-            }
+
             return res;
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables) {
             std::vector<storm::storage::ParameterRegion<ParametricType>> result;
             std::vector<std::string> regionsStrVec;
             boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
             for (auto const& regionStr : regionsStrVec){
                 if (!std::all_of(regionStr.begin(),regionStr.end(), ::isspace)){ //skip this string if it only consists of space
-                    result.emplace_back(parseRegion(regionStr, consideredVariables, splittingThreshold));
+                    result.emplace_back(parseRegion(regionStr, consideredVariables));
                 }
             }
             return result;
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables) {
      
             // Open file and initialize result.
             std::ifstream inputFileStream;
@@ -110,7 +106,7 @@ namespace storm {
             // Now try to parse the contents of the file.
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-                result = parseMultipleRegions(fileContent, consideredVariables, splittingThreshold);
+                result = parseMultipleRegions(fileContent, consideredVariables);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
                 storm::utility::closeFile(inputFileStream);

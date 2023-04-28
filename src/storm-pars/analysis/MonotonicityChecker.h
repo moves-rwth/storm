@@ -45,46 +45,50 @@ namespace storm {
              * @param reg The region of the parameters.
              * @return Pair of bools, >= 0 and <= 0.
              */
-            static std::pair<bool, bool> checkDerivative(ValueType derivative, storage::ParameterRegion<ValueType> reg) {
+            static std::pair<bool, bool> checkDerivative(ValueType const& derivative, storage::ParameterRegion<ValueType> const& reg) {
                 bool monIncr = false;
                 bool monDecr = false;
 
                 if (derivative.isZero()) {
                     monIncr = true;
                     monDecr = true;
-                } else if (derivative.isConstant()) {
+                    return std::pair<bool, bool>(true, true);
+                }
+                if (derivative.isConstant()) {
                     monIncr = derivative.constantPart() >= 0;
                     monDecr = derivative.constantPart() <= 0;
-                } else {
-                    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
-                    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-                    solver::Z3SmtSolver s(*manager);
-                    std::set<VariableType> variables = derivative.gatherVariables();
-
-                    expressions::Expression exprBounds = manager->boolean(true);
-                    for (auto variable : variables) {
-                        auto managerVariable = manager->declareRationalVariable(variable.name());
-                        auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
-                        auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
-                        exprBounds = exprBounds && manager->rational(lb) < managerVariable && managerVariable < manager->rational(ub);
-                    }
-
-                    auto converter = expressions::RationalFunctionToExpression<ValueType>(manager);
-
-                    // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
-                    expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
-                    s.add(exprBounds);
-                    s.add(exprToCheck);
-                    monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
-
-                    // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
-                    exprToCheck = converter.toExpression(derivative) > manager->rational(0);
-                    s.reset();
-                    s.add(exprBounds);
-                    s.add(exprToCheck);
-                    monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+                    return std::pair<bool, bool>(monIncr, monDecr);
                 }
-                assert (!(monIncr && monDecr) || derivative.isZero());
+
+                std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
+                std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+                solver::Z3SmtSolver s(*manager);
+                std::set<VariableType> variables = derivative.gatherVariables();
+
+                expressions::Expression exprBounds = manager->boolean(true);
+                for (auto variable : variables) {
+                    auto managerVariable = manager->declareRationalVariable(variable.name());
+                    auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
+                    auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
+                    exprBounds = exprBounds && manager->rational(lb) <= managerVariable && managerVariable <= manager->rational(ub);
+                }
+
+                auto converter = expressions::RationalFunctionToExpression<ValueType>(manager);
+
+                // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
+                expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
+                s.add(exprBounds);
+                s.add(exprToCheck);
+                monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+
+                // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
+                exprToCheck = converter.toExpression(derivative) > manager->rational(0);
+                s.reset();
+                s.add(exprBounds);
+                s.add(exprToCheck);
+                monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+
+                STORM_LOG_ASSERT(!(monIncr && monDecr), "Error analyzing " << derivative);
 
                 return std::pair<bool, bool>(monIncr, monDecr);
             }

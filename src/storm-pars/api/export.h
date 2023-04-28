@@ -7,7 +7,7 @@ namespace storm {
     namespace api {
 
         template <typename ValueType>
-        void exportParametricResultToFile(boost::optional<ValueType> , storm::analysis::ConstraintCollector<ValueType> const& constraintCollector, std::string const& path) {
+        void exportParametricResultToFile(boost::optional<ValueType> , storm::analysis::ConstraintCollector<ValueType> const&, std::string const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot export non-parametric result.");
         }
 

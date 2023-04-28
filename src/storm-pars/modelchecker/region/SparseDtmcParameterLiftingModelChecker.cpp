@@ -53,9 +53,6 @@ namespace storm {
             auto dtmc = parametricModel->template as<SparseModelType>();
             monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<ValueType>>(dtmc->getTransitionMatrix());
             specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
-            if (checkTask.isBoundSet()) {
-                thresholdTask = storm::utility::convertNumber<ConstantType>(checkTask.getBoundThreshold());
-            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -632,7 +629,7 @@ namespace storm {
                             sortedOnValues.insert({-(entry.second ), entry.first});
                     }
 
-                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < maxSplitDimensions; ++itr) {
                         consideredVariables.insert(itr->second);
                     }
                     assert (consideredVariables.size() > 0);
@@ -641,7 +638,7 @@ namespace storm {
                     STORM_LOG_INFO("Splitting based on sorting");
 
                     auto &sortedOnDifference = region.getVariablesSorted();
-                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < maxSplitDimensions; ++itr) {
                         if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                             consideredVariables.insert(itr->second);
                         }
@@ -660,19 +657,29 @@ namespace storm {
                         }
                     }
 
-                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < maxSplitDimensions; ++itr) {
                         consideredVariables.insert(itr->second);
                     }
                 }
                 if (consideredVariables.size() == 0) {
                     auto &sortedOnDifference = region.getVariablesSorted();
-                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < maxSplitDimensions; ++itr) {
                         consideredVariables.insert(itr->second);
                     }
                 }
                 assert (consideredVariables.size() > 0);
                 region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
             }
+        }
+
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setMaxSplitDimensions(uint64_t newValue) {
+            maxSplitDimensions = newValue;
+        }
+
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::resetMaxSplitDimensions() {
+            maxSplitDimensions = std::numeric_limits<uint64_t>::max();
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

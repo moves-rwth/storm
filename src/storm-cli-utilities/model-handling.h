@@ -64,7 +64,7 @@ struct SymbolicInput {
     boost::optional<std::vector<storm::jani::Property>> preprocessedProperties;
 };
 
-void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
+inline void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     if (ioSettings.isPrismOrJaniInputSet()) {
         storm::utility::Stopwatch modelParsingWatch(true);
@@ -93,8 +93,8 @@ void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& i
     }
 }
 
-void parseProperties(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input,
-                     boost::optional<std::set<std::string>> const& propertyFilter) {
+inline void parseProperties(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input,
+                            boost::optional<std::set<std::string>> const& propertyFilter) {
     if (ioSettings.isPropertySet()) {
         std::vector<storm::jani::Property> newProperties;
         if (input.model) {
@@ -107,7 +107,7 @@ void parseProperties(storm::settings::modules::IOSettings const& ioSettings, Sym
     }
 }
 
-SymbolicInput parseSymbolicInputQvbs(storm::settings::modules::IOSettings const& ioSettings) {
+inline SymbolicInput parseSymbolicInputQvbs(storm::settings::modules::IOSettings const& ioSettings) {
     // Parse the model input
     SymbolicInput input;
     storm::storage::QvbsBenchmark benchmark(ioSettings.getQvbsModelName());
@@ -133,7 +133,7 @@ SymbolicInput parseSymbolicInputQvbs(storm::settings::modules::IOSettings const&
     return input;
 }
 
-SymbolicInput parseSymbolicInput() {
+inline SymbolicInput parseSymbolicInput() {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     if (ioSettings.isQvbsInputSet()) {
         return parseSymbolicInputQvbs(ioSettings);
@@ -174,7 +174,7 @@ struct ModelProcessingInformation {
     bool isCompatible;
 };
 
-void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelProcessingInformation& mpi) {
+inline void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelProcessingInformation& mpi) {
     auto hints = storm::settings::getModule<storm::settings::modules::HintSettings>();
 
     STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a JANI input model.");
@@ -209,7 +209,8 @@ void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelPro
  * Finding the right model processing information might require a conversion to jani.
  * In this case, the jani conversion is stored in the transformedJaniInput pointer (unless it is null)
  */
-ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input, std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
+inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input,
+                                                                std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
     ModelProcessingInformation mpi;
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -331,7 +332,7 @@ ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& in
     return mpi;
 }
 
-void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const& properties) {
+inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const& properties) {
     // Make sure there are no undefined constants remaining in any property.
     for (auto const& property : properties) {
         std::set<storm::expressions::Variable> usedUndefinedConstants = property.getUndefinedConstants();
@@ -347,7 +348,7 @@ void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const
     }
 }
 
-std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
+inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     SymbolicInput output = input;
@@ -408,7 +409,7 @@ std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(Sym
     return {output, mpi};
 }
 
-void exportSymbolicInput(SymbolicInput const& input) {
+inline void exportSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     if (input.model && input.model.get().isJaniModel()) {
         storm::storage::SymbolicModelDescription const& model = input.model.get();
@@ -418,7 +419,7 @@ void exportSymbolicInput(SymbolicInput const& input) {
     }
 }
 
-std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasToRespect(std::vector<storm::jani::Property> const& properties) {
+inline std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasToRespect(std::vector<storm::jani::Property> const& properties) {
     std::vector<std::shared_ptr<storm::logic::Formula const>> result = storm::api::extractFormulasFromProperties(properties);
 
     for (auto const& property : properties) {
@@ -780,11 +781,11 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
     return result;
 }
 
-void printComputingCounterexample(storm::jani::Property const& property) {
+inline void printComputingCounterexample(storm::jani::Property const& property) {
     STORM_PRINT("Computing counterexample for property " << *property.getRawFormula() << " ...\n");
 }
 
-void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample> const& counterexample, storm::utility::Stopwatch* watch = nullptr) {
+inline void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample> const& counterexample, storm::utility::Stopwatch* watch = nullptr) {
     if (counterexample) {
         STORM_PRINT(*counterexample << '\n');
         if (watch) {
@@ -801,7 +802,7 @@ void generateCounterexamples(std::shared_ptr<storm::models::ModelBase> const& mo
 }
 
 template<>
-void generateCounterexamples<double>(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+inline void generateCounterexamples<double>(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
     typedef double ValueType;
 
     STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException,
@@ -922,7 +923,7 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
     STORM_PRINT('\n');
 }
 
-void printModelCheckingProperty(storm::jani::Property const& property) {
+inline void printModelCheckingProperty(storm::jani::Property const& property) {
     STORM_PRINT("\nModel checking property \"" << property.getName() << "\": " << *property.getRawFormula() << " ...\n");
 }
 
@@ -989,8 +990,8 @@ void verifyProperties(
     }
 }
 
-std::vector<storm::expressions::Expression> parseConstraints(storm::expressions::ExpressionManager const& expressionManager,
-                                                             std::string const& constraintsString) {
+inline std::vector<storm::expressions::Expression> parseConstraints(storm::expressions::ExpressionManager const& expressionManager,
+                                                                    std::string const& constraintsString) {
     std::vector<storm::expressions::Expression> constraints;
 
     std::vector<std::string> constraintsAsStrings;
@@ -1016,8 +1017,8 @@ std::vector<storm::expressions::Expression> parseConstraints(storm::expressions:
     return constraints;
 }
 
-std::vector<std::vector<storm::expressions::Expression>> parseInjectedRefinementPredicates(storm::expressions::ExpressionManager const& expressionManager,
-                                                                                           std::string const& refinementPredicatesString) {
+inline std::vector<std::vector<storm::expressions::Expression>> parseInjectedRefinementPredicates(
+    storm::expressions::ExpressionManager const& expressionManager, std::string const& refinementPredicatesString) {
     std::vector<std::vector<storm::expressions::Expression>> injectedRefinementPredicates;
 
     storm::parser::ExpressionParser expressionParser(expressionManager);

@@ -4,6 +4,11 @@
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
+#include "storm-pars/settings/modules/SamplingSettings.h"
+#include "storm-pars/settings/modules/PartitionSettings.h"
+#include "storm-pars/settings/modules/FeasibilitySettings.h"
+
+#include "storm-pars/settings/modules/RegionVerificationSettings.h"
 
 
 #include "storm/settings/SettingsManager.h"
@@ -44,6 +49,10 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::MonotonicitySettings>();
             storm::settings::addModule<storm::settings::modules::DerivativeSettings>();
+            storm::settings::addModule<storm::settings::modules::FeasibilitySettings>();
+            storm::settings::addModule<storm::settings::modules::PartitionSettings>();
+            storm::settings::addModule<storm::settings::modules::RegionVerificationSettings>();
+            storm::settings::addModule<storm::settings::modules::SamplingSettings>();
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();

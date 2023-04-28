@@ -18,11 +18,6 @@ namespace storm {
                  */
                 MonotonicitySettings();
 
-                /*!
-                 * Retrieves whether monotonicity analysis should be applied.
-                 */
-                bool isMonotonicityAnalysisSet() const;
-
                 bool isUsePLABoundsSet() const;
 
                 /*!
@@ -70,8 +65,6 @@ namespace storm {
                 const static std::string moduleName;
 
             private:
-                const static std::string monotonicityAnalysis;
-                const static std::string monotonicityAnalysisShortName;
                 const static std::string usePLABounds;
                 const static std::string sccElimination;
                 const static std::string samplesMonotonicityAnalysis;

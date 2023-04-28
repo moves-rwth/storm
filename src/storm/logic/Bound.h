@@ -35,6 +35,10 @@ struct Bound {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
     }
 
+    bool isLowerBound() const {
+        return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
+    }
+
     friend std::ostream& operator<<(std::ostream& out, Bound const& bound);
 };
 

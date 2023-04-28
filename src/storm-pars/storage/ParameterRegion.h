@@ -4,7 +4,6 @@
 
 #include "storm-pars/utility/parametric.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
-#include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
@@ -56,9 +55,6 @@ namespace storm {
              * Returns the center point of this region
              */
             Valuation getCenterPoint() const;
-
-            void setSplitThreshold(uint_fast64_t splitThreshold);
-            uint_fast64_t getSplitThreshold() const;
 
             /*!
              * Returns the area of this region

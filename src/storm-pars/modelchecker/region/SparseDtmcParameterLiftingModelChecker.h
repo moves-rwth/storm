@@ -43,6 +43,8 @@ namespace storm {
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) override;
 
+            void setMaxSplitDimensions(uint64_t) override;
+            void resetMaxSplitDimensions() override;
         protected:
                 
             virtual void specifyBoundedUntilFormula(const CheckTask <storm::logic::BoundedUntilFormula, ConstantType> &checkTask) override;
@@ -68,8 +70,6 @@ namespace storm {
             std::vector<ConstantType> resultsForNonMaybeStates;
             boost::optional<uint_fast64_t> stepBound;
 
-            boost::optional<ConstantType> thresholdTask;
-            
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerVIO;
@@ -85,6 +85,7 @@ namespace storm {
             
             bool regionSplitEstimationsEnabled;
             std::map<VariableType, double> regionSplitEstimates;
+            uint64_t maxSplitDimensions;
 
             // Used for monotonicity
             bool useRegionSplitEstimates;
