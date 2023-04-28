@@ -191,7 +191,7 @@ set(SHIPPED_CARL_USE_GINAC ON)
 # Detect Apple Silicon and adjust settings
 if(APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
 	message(STATUS "Storm - Detected that target system uses Apple Silicon.")
-	message(WARNING "Compiling natively on Apple Silicon is experimental. Pleare report issues to support@stormchecker.org. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
+	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report issues to support@stormchecker.org. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
 	set(APPLE_SILICON 1)
 	if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
 		message(WARNING "CLN and GiNaC are currently not supported on Apple Silicon-based architectures. Disabling Storm and carl usage of the libraries.")
