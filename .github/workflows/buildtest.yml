@@ -11,7 +11,6 @@ on:
   pull_request:
 
 env:
-  CARL_BRANCH: "master"
   CARL_GIT_URL: "https://github.com/moves-rwth/carl-storm.git"
   STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
   STORM_BRANCH: "${{ github.ref }}"
@@ -22,8 +21,8 @@ env:
   CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
   CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
 
-  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
-  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
+  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug"
+  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release"
 
 jobs:
   indepthTests:
@@ -60,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-10", "debian-11", "ubuntu-20.04"]
+        distro: ["debian-10", "debian-11", "ubuntu-20.04", "ubuntu-22.04"]
         debugOrRelease: ["release"]
     steps:
       - name: Setup cmake arguments
@@ -100,7 +99,7 @@ jobs:
     name: Build, Test and Deploy
     runs-on: ubuntu-latest
     env:
-      DISTRO: "ubuntu-22.04"
+      DISTRO: "latest"
     strategy:
       matrix:
         debugOrRelease: ["debug", "release"]
@@ -133,7 +132,7 @@ jobs:
       - name: install dependencies
         run: sudo docker exec storm apt-get install -qq -y uuid-dev pkg-config
       - name: Git clone carl
-        run: sudo docker exec storm git clone --depth 1 --branch $CARL_BRANCH $CARL_GIT_URL /opt/carl
+        run: sudo docker exec storm git clone --depth 1 $CARL_GIT_URL /opt/carl
       - name: Run cmake for carl
         run: sudo docker exec storm bash -c "mkdir /opt/carl/build; cd /opt/carl/build; cmake .. ${CARL_CMAKE_ARGS}"
       - name: Build carl
