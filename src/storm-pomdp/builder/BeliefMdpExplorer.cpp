@@ -903,13 +903,6 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
-        BeliefMdpExplorer<PomdpType, BeliefValueType>::computeParametricBoundAtBelief(BeliefId const &beliefId) const {
-            STORM_LOG_ASSERT(!pomdpValueBounds.parametric.empty(), "Parametric bounds not available.");
-            return beliefManager->getWeightedSum(beliefId, pomdpValueBounds.parametric);
-        }
-
-        template<typename PomdpType, typename BeliefValueType>
         void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir) {
             STORM_LOG_ASSERT(status == Status::ModelFinished, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(exploredMdp, "Tried to compute values but the MDP is not explored");

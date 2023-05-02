@@ -184,8 +184,6 @@ namespace storm {
 
             std::vector<storm::storage::Scheduler<ValueType>> getLowerValueBoundSchedulers() const;
 
-            ValueType computeParametricBoundAtBelief(BeliefId const &beliefId) const;
-
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
