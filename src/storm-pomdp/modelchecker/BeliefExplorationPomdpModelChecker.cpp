@@ -14,7 +14,6 @@
 #include "storm/logic/Formulas.h"
 
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
-#include "storm-pomdp/modelchecker/PomdpParametricTransformationModelChecker.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm/api/export.h"
 #include "storm/api/properties.h"
@@ -96,12 +95,6 @@ namespace storm {
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
                 auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getValueBounds(formula, formulaInfo);
-
-                std::vector<ValueType> pMCValueBound;
-                if(options.useParametricPreprocessing && options.unfold){
-                    STORM_LOG_WARN("Using the transformation to a pMC is currently not supported. The preprocessing step is skipped.");
-                    //initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
-                }
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms

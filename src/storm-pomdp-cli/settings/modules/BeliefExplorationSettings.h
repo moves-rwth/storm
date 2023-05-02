@@ -76,11 +76,6 @@ namespace storm {
                 /// Controls if (grid) clipping is to be used
                 bool isUseClippingSet() const;
 
-                bool isParametricPreprocessingSet() const;
-                double getParametricGDEpsilon() const;
-                uint64_t getParametricGDMaxInstantiations() const;
-                uint64_t getParametricPreprocessingMemoryBound() const;
-
                 bool isStateEliminationCutoffSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;

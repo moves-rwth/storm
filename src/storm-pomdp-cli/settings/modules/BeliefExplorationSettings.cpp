@@ -15,9 +15,9 @@
 
 namespace storm {
     namespace settings {
-        namespace modules {
-            
-            const std::string BeliefExplorationSettings::moduleName = "belexpl";
+    namespace modules {
+
+    const std::string BeliefExplorationSettings::moduleName = "beliefExploration";
 
             const std::string beliefTypeOption = "belieftype";
             const std::string refineOption = "refine";
@@ -223,22 +223,6 @@ namespace storm {
                 return this->getOption(cutZeroGapOption).getHasOptionBeenSet();
             }
 
-            bool BeliefExplorationSettings::isParametricPreprocessingSet() const {
-                return this->getOption(parametricPreprocessingOption).getArgumentByName("memoryBound").getValueAsUnsignedInteger() > 0;
-            }
-
-            uint64_t BeliefExplorationSettings::getParametricPreprocessingMemoryBound() const {
-                return this->getOption(parametricPreprocessingOption).getArgumentByName("memoryBound").getValueAsUnsignedInteger();
-            }
-
-            uint64_t BeliefExplorationSettings::getParametricGDMaxInstantiations() const {
-                return this->getOption(parametricPreprocessingOption).getArgumentByName("maxInstantiations").getValueAsUnsignedInteger();
-            }
-
-            double BeliefExplorationSettings::getParametricGDEpsilon() const {
-                return this->getOption(parametricPreprocessingOption).getArgumentByName("gd-eps").getValueAsDouble();
-            }
-
             storm::solver::MinMaxMethod BeliefExplorationSettings::getPreProcMinMaxMethod() const {
                 if(this->getOption(preProcMinMaxMethodOption).getArgumentByName("method").getValueAsString() == "svi") {
                     return storm::solver::MinMaxMethod::SoundValueIteration;
@@ -268,11 +252,6 @@ namespace storm {
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
                 options.useClipping = isUseClippingSet();
                 options.useStateEliminationCutoff = isStateEliminationCutoffSet();
-
-                options.useParametricPreprocessing = isParametricPreprocessingSet();
-                options.paramMemBound = getParametricPreprocessingMemoryBound();
-                options.paramGDEps = getParametricGDEpsilon();
-                options.paramGDMaxInstantiations = getParametricGDMaxInstantiations();
                 
                 options.numericPrecision = storm::utility::convertNumber<ValueType>(getNumericPrecision());
                 if (storm::NumberTraits<ValueType>::IsExact) {
