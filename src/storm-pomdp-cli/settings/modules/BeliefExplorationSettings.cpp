@@ -33,9 +33,7 @@ namespace storm {
             const std::string explHeuristicOption = "expl-heuristic";
             const std::string clippingOption = "use-clipping";
             const std::string cutZeroGapOption = "cut-zero-gap";
-            const std::string parametricPreprocessingOption = "par-preprocessing";
             const std::string stateEliminationCutoffOption = "state-elimination-cutoff";
-            const std::string alphaVectorOption = "import-alphavec";
             const std::string preProcMinMaxMethodOption = "preproc-minmax";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
@@ -54,24 +52,68 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, gapThresholdOption, false,"Sets how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means less precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the gap in each refinement step (higher means less precise).").setDefaultValueDouble(0.25).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, optimalChoiceValueThresholdOption, false,"Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(1e-3).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the threshold in each refinement step (higher means more precise).").setDefaultValueDouble(1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,"Sets the precision used to determine whether two belief-states are equal.").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createDoubleArgument("value","the precision").setDefaultValueDouble(1e-9).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0, 1)).build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, clippingOption, false, "If this is set, unfolding will use  (grid) clipping instead of cut-offs only.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default", "float", "rational"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false,"Cut beliefs where the gap between over- and underapproximation is 0.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
+                this->addOption(
+                    storm::settings::OptionBuilder(moduleName, optimalChoiceValueThresholdOption, false,
+                                                   "Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init", "initial threshold (higher means more precise")
+                                         .setDefaultValueDouble(1e-3)
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0))
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(
+                                         "factor", "Multiplied to the threshold in each refinement step (higher means more precise).")
+                                         .setDefaultValueDouble(1)
+                                         .makeOptional()
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1))
+                                         .build())
+                        .build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, stateEliminationCutoffOption, false, "If this is set, an additional unfolding step for cut-off beliefs is performed.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, alphaVectorOption, false, "Loads a set of alpha vectors that is used for preprocessing.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file containing the alpha vectors").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,"Sets the method to be used for model checking during pre-processing.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("method","the method to use").setDefaultValueString("svi").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,
+                                                               "Sets the precision used to determine whether two belief-states are equal.")
+                                    .setIsAdvanced()
+                                    .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "the precision")
+                                                     .setDefaultValueDouble(1e-9)
+                                                     .makeOptional()
+                                                     .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0, 1))
+                                                     .build())
+                                    .build());
+
+                this->addOption(
+                    storm::settings::OptionBuilder(moduleName, triangulationModeOption, false, "Sets how to triangulate beliefs when discretizing.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("value", "the triangulation mode")
+                                         .setDefaultValueString("dynamic")
+                                         .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"}))
+                                         .build())
+                        .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clippingOption, false,
+                                                               "If this is set, unfolding will use  (grid) clipping instead of cut-offs only.")
+                                    .build());
+                // this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration
+                // queue.").setIsAdvanced().addArgument(
+                //         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration
+                //         heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs",
+                //         "lowerBound", "upperBound", "gap", "prob"})).build()).build());
+                // this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in
+                // beliefs").setIsAdvanced().addArgument(
+                //         storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP
+                //         datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default",
+                //         "float", "rational"})).build()).build());
+                this->addOption(
+                    storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false, "Cut beliefs where the gap between over- and underapproximation is 0.")
+                        .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, stateEliminationCutoffOption, false,
+                                                               "If this is set, an additional unfolding step for cut-off beliefs is performed.")
+                                    .build());
+                this->addOption(
+                    storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,
+                                                   "Sets the method to be used for model checking during pre-processing.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "the method to use")
+                                         .setDefaultValueString("svi")
+                                         .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"}))
+                                         .build())
+                        .build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -266,13 +308,6 @@ namespace storm {
                 }
                 STORM_LOG_WARN("Number Type for belief unknown, use default.");
                 return storm::pomdp::Default;
-            }
-
-            bool BeliefExplorationSettings::isAlphaVectorProcessingSet() const {
-                return this->getOption(alphaVectorOption).getHasOptionBeenSet();
-            }
-            std::string BeliefExplorationSettings::getAlphaVectorFileName() const {
-                return this->getOption(alphaVectorOption).getArgumentByName("filename").getValueAsString();
             }
 
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;

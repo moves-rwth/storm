@@ -23,9 +23,6 @@ namespace storm {
                 
                 bool isExportToParametricSet() const;
                 std::string getExportToParametricFilename() const;
-
-                bool isExportToJuliaSet() const;
-                std::string getExportToJuliaFilename() const;
                 
                 bool isQualitativeReductionSet() const;
 
