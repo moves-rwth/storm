@@ -3,15 +3,15 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelchecker/hints/ExplicitModelCheckerHint.cpp"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/SignalHandler.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -470,7 +470,6 @@ namespace storm {
                     if (!exploredBeliefIds.get(beliefId)) {
                         // This belief needs exploration
                         exploredBeliefIds.set(beliefId, true);
-                        // TODO set priority correctly
                         ValueType currentPrio;
                         switch (explHeuristic) {
                             case ExplorationHeuristic::BreadthFirst :
@@ -496,7 +495,6 @@ namespace storm {
                             default :
                                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                         }
-                        //mdpStatesToExplore.push(std::make_pair(currentPrio, transition.getColumn()));
                         mdpStatesToExploreStatePrio[transition.getColumn()] = currentPrio;
                         mdpStatesToExplorePrioState.emplace(currentPrio, transition.getColumn());
                     }

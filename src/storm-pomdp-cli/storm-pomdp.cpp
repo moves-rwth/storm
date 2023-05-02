@@ -28,7 +28,6 @@
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 #include "storm/api/storm.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
@@ -323,9 +322,9 @@ namespace storm {
                     transformationPerformed = true;
                     memoryUnfolded = true;
                 }
-        
-                // From now on the pomdp is considered memoryless
-        
+
+                // From now on the POMDP is considered memoryless
+
                 if (transformSettings.isMecReductionSet()) {
                     STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                     // Note: Elimination of mec choices only preserves memoryless schedulers.
@@ -412,8 +411,6 @@ namespace storm {
                     pomdp = makeCanonic.transform();
                 }
 
-                auto const& beliefExplSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
-            
                 if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
                     STORM_PRINT_AND_LOG("Analyzing states with unique observation ...\n");
                     storm::analysis::UniqueObservationStates<ValueType> uniqueAnalysis(*pomdp);
@@ -439,7 +436,6 @@ namespace storm {
                     }
 
                     sw.restart();
-                    auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
                         STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");

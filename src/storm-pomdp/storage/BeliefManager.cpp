@@ -45,7 +45,7 @@ namespace storm {
             auto rhIt = rhBelief.begin();
             while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
                 // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
-                if(lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > 1e-15/*std::numeric_limits<double>::epsilon()*/){
+                if (lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > 1e-15) {
                     return false;
                 }
                 ++lhIt;
@@ -344,7 +344,7 @@ namespace storm {
                 return false;
             }
             BeliefType triangulatedBelief;
-            BeliefValueType weightSum = storm::utility::zero<BeliefValueType>();
+            auto weightSum = storm::utility::zero<BeliefValueType>();
             for (uint64_t i = 0; i < triangulation.weights.size(); ++i) {
                 if (cc.isZero(triangulation.weights[i])) {
                     STORM_LOG_ERROR("Zero weight in triangulation.");
@@ -601,7 +601,6 @@ namespace storm {
             uint64_t i = 0;
             for (auto const &state : belief) {
                 // This is a quite dirty fix to enable GLPK for the TACAS22 implementation without substantially changing the implementation for Gurobi.
-                // TODO introduce a function in lpSolver to get the used LP solver
                 if(typeid(*lpSolver) == typeid(storm::solver::GlpkLpSolver<ValueType>) && isInfinite[state.first]){
                     auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
                                                                              storm::utility::zero<BeliefValueType>(), state.second);
@@ -631,11 +630,9 @@ namespace storm {
                     candidate[belIter->first] = helper[belief.size() - 1] / storm::utility::convertNumber<BeliefValueType>(resolution);
                 }
                 if(isEqual(candidate, belief)){
-                    // TODO Do something for successors which are already on the grid
-                    //STORM_PRINT("Belief on grid" << std::endl)
+                    // TODO Improve handling of successors which are already on the grid
                     return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, true};
                 } else {
-                    //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
                     gridCandidates.push_back(candidate);
 
                     // Add variables a_j
@@ -741,15 +738,7 @@ namespace storm {
                     }
                     optDelta = deltaSum;
                 }
-                //STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            /*if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
-                // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
-                // For a sound result, we consider the state to be not be clippable
-                STORM_LOG_WARN("LP solver returned a value of 0!");
-                STORM_LOG_WARN("Origin" << toString(belief));
-                //return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
-            }*/
             return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues, false};
         }
 
@@ -789,8 +778,6 @@ namespace storm {
             if(pomdp.hasObservationValuations()){
                 return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
             } else {
-                // TODO PAYNT
-                // STORM_LOG_WARN("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
                 STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
                 return "";
             }

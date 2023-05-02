@@ -26,7 +26,6 @@
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/settings/modules/GurobiSettings.h"

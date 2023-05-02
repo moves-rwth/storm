@@ -34,8 +34,7 @@ namespace storm {
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
                 typedef BeliefExplorationPomdpModelCheckerOptions<ValueType> Options;
 
-
-                /*** Struct Definition(s) ***/
+                /* Struct Definition(s) */
                 enum class Status {
                     Uninitialized,
                     Exploring,
@@ -56,8 +55,7 @@ namespace storm {
                     std::vector<storm::storage::Scheduler<ValueType>> cutoffSchedulers;
                 };
 
-
-                /*** Functions ***/
+                /* Functions */
 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
@@ -89,9 +87,9 @@ namespace storm {
                 int getStatus();
 
             private:
-                /*** Struct Definition(s) ***/
+             /* Struct Definition(s) */
 
-                 enum class UnfoldingControl {
+             enum class UnfoldingControl {
                      Run,
                      Pause,
                      Terminate
@@ -134,8 +132,7 @@ namespace storm {
                     ValueType optimalChoiceValueEpsilon;
                 };
 
-
-                /*** Functions ***/
+                /* Functions */
 
                 /**
                  * Returns the pomdp that is to be analyzed
@@ -216,8 +213,7 @@ namespace storm {
 
                 void setUnfoldingControl(UnfoldingControl newUnfoldingControl);
 
-
-                /*** Variables ***/
+                /* Variables */
 
                 Statistics statistics;
                 Options options;

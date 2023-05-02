@@ -6,7 +6,6 @@
 
 #include "storm/api/export.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
 
@@ -109,7 +108,7 @@ namespace storm {
                         // A high score shall mean that the choice is "good"
                         if (storm::utility::isInfinity(stateValue)) {
                             // For infinity states, we simply distribute uniformly.
-                            // FIXME: This case could be handled a bit more sensible
+                            // This case could be handled a bit more sensible
                             choiceDistribution.addProbability(choice - choiceIndices[state], scoreThreshold);
                         } else {
                             ValueType choiceScore = info.minimize() ? (choiceValue - stateValue) : (stateValue - choiceValue);
