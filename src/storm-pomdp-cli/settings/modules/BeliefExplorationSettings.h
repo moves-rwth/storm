@@ -69,19 +69,11 @@ namespace storm {
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
 
-                /// Used to determine whether two beliefs are equal
-                bool isBeliefTypeSetFromDefault() const;
-                storm::pomdp::BeliefNumberType getBeliefType() const;
-
                 /// Controls if (grid) clipping is to be used
                 bool isUseClippingSet() const;
 
                 bool isStateEliminationCutoffSet() const;
 
-                storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
-
-                storm::solver::MinMaxMethod getPreProcMinMaxMethod() const;
-    
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;
                 

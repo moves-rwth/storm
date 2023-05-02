@@ -440,31 +440,10 @@ namespace storm {
 
                     sw.restart();
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
-                    switch(beliefExplorationSettings.getBeliefType()){
-
-                        case Default:
-                            if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
-                                sw.stop();
-                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
-                            }
-                            break;
-                        case Float:
-                            STORM_PRINT_AND_LOG("Use floating point numbers for belief probabilties.\n");
-                            if (performAnalysis<ValueType, DdType, double>(pomdp, formulaInfo, *formula)) {
-                                sw.stop();
-                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
-                            }
-                            break;
-                        case Rational:
-                            STORM_PRINT_AND_LOG("Use exact numbers for belief probabilties.\n");
-                            if (performAnalysis<ValueType, DdType, storm::RationalNumber>(pomdp, formulaInfo, *formula)) {
-                                sw.stop();
-                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
-                            }
-                            break;
+                    if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
+                        sw.stop();
+                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
                     }
-                    
-
                 } else {
                     STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
                 }
