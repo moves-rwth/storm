@@ -187,19 +187,6 @@ namespace storm {
                 bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex);
 
                 /**
-                 * Clips the belief with the given state ID using already explored beliefs as candidates ("classic clipping")
-                 * A clipping threshold can be given and a reduction of the candidate set to a given size using the belief difference 1-norm is applied if it is not disabled
-                 * @param clippingStateId the state ID of the clipping belief
-                 * @param threshold clipping threshold
-                 * @param computeRewards true, if rewards are computed
-                 * @param reducedCandidateSetSize target candidate set size of the differnce 1-norm reduction
-                 * @param beliefManager the belief manager used
-                 * @param beliefExplorer the belief MDP explorer used
-                 * @return true, if clipping using an adequate candidate is succcessful. Otherwise, false.
-                 */
-                bool clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
-
-                /**
                  * Heuristically rates the quality of the approximation described by the given successor observation info.
                  * Here, 0 means a bad approximation and 1 means a good approximation.
                  */

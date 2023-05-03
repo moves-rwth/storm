@@ -95,8 +95,6 @@ namespace storm {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
-
             BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
 
             std::string getObservationLabel(BeliefId const & beliefId);
@@ -113,8 +111,6 @@ namespace storm {
 
             template<typename DistributionType>
             void adjustDistribution(DistributionType &distr);
-
-            BeliefValueType computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2);
 
             struct BeliefHash {
                 std::size_t operator()(const BeliefType &belief) const;
