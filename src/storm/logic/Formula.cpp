@@ -498,6 +498,11 @@ std::set<std::string> Formula::getReferencedRewardModels() const {
     return referencedRewardModels;
 }
 
+std::shared_ptr<Formula> Formula::clone() const {
+    CloneVisitor cv;
+    return cv.clone(*this);
+}
+
 std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
     storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution);
     return substitute([&v](storm::expressions::Expression const& exp) { return v.substitute(exp); });

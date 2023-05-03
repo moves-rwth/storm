@@ -21,6 +21,8 @@ struct product_state_hash {
     size_t operator()(product_state s) const noexcept {
 #ifdef STORM_HAVE_SPOT
         return spot::wang32_hash(s.first ^ spot::wang32_hash(s.second));
+#else
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
 #endif
     }
 };
