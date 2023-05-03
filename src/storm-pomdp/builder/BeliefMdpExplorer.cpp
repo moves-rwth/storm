@@ -224,6 +224,7 @@ namespace storm {
         std::vector<uint64_t> BeliefMdpExplorer<PomdpType, BeliefValueType>::getUnexploredStates() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             std::vector<uint64_t> res;
+            res.reserve(mdpStatesToExploreStatePrio.size());
             for(auto const &entry : mdpStatesToExploreStatePrio){
                 res.push_back(entry.first);
             }
@@ -734,7 +735,7 @@ namespace storm {
             { // exploredMdpTransitions
                 storm::utility::vector::filterVectorInPlace(exploredMdpTransitions, relevantMdpChoices);
                 // Adjust column indices. Unfortunately, the fastest way seems to be to "rebuild" the map
-                // It might payoff to do this when building the matrix.
+                // It might pay off to do this when building the matrix.
                 for (auto &transitions : exploredMdpTransitions) {
                     std::map<MdpStateType, ValueType> newTransitions;
                     for (auto const &entry : transitions) {
@@ -975,7 +976,7 @@ namespace storm {
                     SuccessorObservationInformation info(entry.getValue(), entry.getValue(), 1);
                     auto obsInsertion = gatheredSuccessorObservations.emplace(obs, info);
                     if (!obsInsertion.second) {
-                        // There already is an entry for this observation, so join the two informations
+                        // There already is an entry for this observation, so join the two information constructs
                         obsInsertion.first->second.join(info);
                     }
                     beliefManager->joinSupport(beliefId, obsInsertion.first->second.support);
@@ -1019,9 +1020,9 @@ namespace storm {
             optimalChoices = storm::storage::BitVector(exploredMdp->getNumberOfChoices(), false);
             auto const &choiceIndices = exploredMdp->getNondeterministicChoiceIndices();
             auto const &transitions = exploredMdp->getTransitionMatrix();
-            auto const &targetStates = exploredMdp->getStates("target");
+            auto const &targetStatesExploredMDP = exploredMdp->getStates("target");
             for (uint64_t mdpState = 0; mdpState < exploredMdp->getNumberOfStates(); ++mdpState) {
-                if (targetStates.get(mdpState)) {
+                if (targetStatesExploredMDP.get(mdpState)) {
                     // Target states can be skipped.
                     continue;
                 } else {
@@ -1031,8 +1032,9 @@ namespace storm {
                         if (exploredMdp->hasRewardModel()) {
                             choiceValue += exploredMdp->getUniqueRewardModel().getStateActionReward(globalChoice);
                         }
-                        ValueType absDiff = storm::utility::abs<ValueType>((choiceValue - stateValue));
-                        if ((relativeDifference && absDiff <= ancillaryChoicesEpsilon * stateValue) || (!relativeDifference && absDiff <= ancillaryChoicesEpsilon)) {
+                        auto absDiff = storm::utility::abs<ValueType>((choiceValue - stateValue));
+                        if ((relativeDifference && absDiff <= ancillaryChoicesEpsilon * stateValue) ||
+                            (!relativeDifference && absDiff <= ancillaryChoicesEpsilon)) {
                             optimalChoices->set(globalChoice, true);
                         }
                     }
@@ -1041,8 +1043,8 @@ namespace storm {
             }
 
             // Then, find the states that are reachable via these choices
-            optimalChoicesReachableMdpStates = storm::utility::graph::getReachableStates(transitions, exploredMdp->getInitialStates(), ~targetStates,
-                                                                                         targetStates, false, 0, optimalChoices.value());
+            optimalChoicesReachableMdpStates = storm::utility::graph::getReachableStates(transitions, exploredMdp->getInitialStates(), ~targetStatesExploredMDP,
+                                                                                         targetStatesExploredMDP, false, 0, optimalChoices.value());
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -1236,7 +1238,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string label) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string const &label) {
             mdpStateToChoiceLabelsMap[currentMdpState][localActionIndex] = label;
         }
 

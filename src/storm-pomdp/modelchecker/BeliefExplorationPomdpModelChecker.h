@@ -48,7 +48,7 @@ namespace storm {
                     Result(ValueType lower, ValueType upper);
                     ValueType lowerBound;
                     ValueType upperBound;
-                    ValueType diff (bool relative = false) const;
+                    ValueType diff(bool relative = false) const;
                     bool updateLowerBound(ValueType const& value);
                     bool updateUpperBound(ValueType const& value);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> schedulerAsMarkovChain;
@@ -57,13 +57,16 @@ namespace storm {
 
                 /* Functions */
 
-                BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
-                
-                Result check(storm::logic::Formula const& formula, std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> const& additionalUnderApproximationBounds = std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>>());
+                explicit BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
+
+                Result check(storm::logic::Formula const& formula,
+                             std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
+                                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
 
                 void printStatisticsToStream(std::ostream& stream) const;
 
-                void precomputeValueBounds(const logic::Formula& formula, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
+                void precomputeValueBounds(const logic::Formula& formula,
+                                           storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
 
                 void unfoldInteractively(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                                          storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);

@@ -76,7 +76,7 @@ namespace storm {
              * @param beliefId
              * @return
              */
-            uint64_t getRepresentativeState(BeliefId const beliefId);
+            uint64_t getRepresentativeState(BeliefId const &beliefId);
 
             Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution);
 

@@ -1,11 +1,11 @@
 #include "storm-pomdp/storage/BeliefManager.h"
 
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "solver/GlpkLpSolver.h"
+
 namespace storm {
     namespace storage {
 
@@ -128,7 +128,7 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType
         BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands) {
-            ValueType result = storm::utility::zero<ValueType>();
+            auto result = storm::utility::zero<ValueType>();
             for (auto const &entry : getBelief(beliefId)) {
                 result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
             }
@@ -393,17 +393,17 @@ namespace storm {
             // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
             // Probabilities will be triangulated to values in 0/N, 1/N, 2/N, ..., N/N
             // Variable names are mostly based on the paper
-            // However, we speed this up a little by exploiting that belief states usually have sparse support (i.e. numEntries is much smaller than pomdp.getNumberOfStates()).
-            // Initialize diffs and the first row of the 'qs' matrix (aka v)
-            std::set<FreudenthalDiff, std::greater<FreudenthalDiff>> sorted_diffs; // d (and p?) in the paper
-            std::vector<BeliefValueType> qsRow; // Row of the 'qs' matrix from the paper (initially corresponds to v
+            // However, we speed this up a little by exploiting that belief states usually have sparse support (i.e. numEntries is much smaller than
+            // pomdp.getNumberOfStates()). Initialize diffs and the first row of the 'qs' matrix (aka v)
+            std::set<FreudenthalDiff, std::greater<>> sorted_diffs;  // d (and p?) in the paper
+            std::vector<BeliefValueType> qsRow;                      // Row of the 'qs' matrix from the paper (initially corresponds to v
             qsRow.reserve(numEntries);
-            std::vector<StateType> toOriginalIndicesMap; // Maps 'local' indices to the original pomdp state indices
+            std::vector<StateType> toOriginalIndicesMap;             // Maps 'local' indices to the original pomdp state indices
             toOriginalIndicesMap.reserve(numEntries);
             BeliefValueType x = resolution;
             for (auto const &entry : belief) {
-                qsRow.push_back(storm::utility::floor(x)); // v
-                sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back()); // x-v
+                qsRow.push_back(storm::utility::floor(x));                            // v
+                sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back());  // x-v
                 toOriginalIndicesMap.push_back(entry.first);
                 x -= entry.second * resolution;
             }
@@ -600,7 +600,7 @@ namespace storm {
             std::vector<storm::expressions::Expression> deltas;
             uint64_t i = 0;
             for (auto const &state : belief) {
-                // This is a quite dirty fix to enable GLPK for the TACAS22 implementation without substantially changing the implementation for Gurobi.
+                // This is a quite dirty fix to enable GLPK for the TACAS '22 implementation without substantially changing the implementation for Gurobi.
                 if(typeid(*lpSolver) == typeid(storm::solver::GlpkLpSolver<ValueType>) && isInfinite[state.first]){
                     auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
                                                                              storm::utility::zero<BeliefValueType>(), state.second);
@@ -620,16 +620,16 @@ namespace storm {
             while (!done) {
                 BeliefType candidate;
                 auto belIter = belief.begin();
-                for (size_t i = 0; i < belief.size() - 1; ++i) {
-                    if(!cc.isEqual(helper[i] - helper[i + 1], storm::utility::zero<BeliefValueType>())) {
-                        candidate[belIter->first] = (helper[i] - helper[i + 1]) / storm::utility::convertNumber<BeliefValueType>(resolution);
+                for (uint64_t j = 0; j < belief.size() - 1; ++j) {
+                    if (!cc.isEqual(helper[j] - helper[j + 1], storm::utility::zero<BeliefValueType>())) {
+                        candidate[belIter->first] = (helper[j] - helper[j + 1]) / storm::utility::convertNumber<BeliefValueType>(resolution);
                     }
                     belIter++;
                 }
-                if(!cc.isEqual(helper[belief.size() - 1], storm::utility::zero<BeliefValueType>())){
+                if (!cc.isEqual(helper[belief.size() - 1], storm::utility::zero<BeliefValueType>())) {
                     candidate[belIter->first] = helper[belief.size() - 1] / storm::utility::convertNumber<BeliefValueType>(resolution);
                 }
-                if(isEqual(candidate, belief)){
+                if (isEqual(candidate, belief)) {
                     // TODO Improve handling of successors which are already on the grid
                     return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, true};
                 } else {
@@ -719,7 +719,7 @@ namespace storm {
 
                 if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
-                    // For a sound result, we consider the state to be not be clippable
+                    // For a sound result, we consider the state to not be clippable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
                     STORM_LOG_WARN("Origin" << toString(belief));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
@@ -769,7 +769,7 @@ namespace storm {
             return insertioRes.first->second;
         }
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentativeState(BeliefId const beliefId) {
+        uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentativeState(BeliefId const &beliefId) {
             return getBelief(beliefId).begin()->first;
         }
 

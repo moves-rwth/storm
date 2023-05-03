@@ -12,7 +12,6 @@
 #include "storm/storage/BitVector.h"
 
 namespace storm {
-    
     namespace builder {
         enum class ExplorationHeuristic {
             BreadthFirst,
@@ -69,7 +68,7 @@ namespace storm {
 
             BeliefId exploreNextState();
 
-            void addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string label);
+            void addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string const &label);
 
             void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::utility::zero<ValueType>(),
                                              ValueType const &bottomStateValue = storm::utility::zero<ValueType>());

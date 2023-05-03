@@ -70,11 +70,14 @@ namespace storm {
             /* Constructor */
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::BeliefExplorationPomdpModelChecker(
+                std::shared_ptr<PomdpModelType> pomdp, Options options)
+                : options(options), inputPomdp(pomdp) {
                 STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
                 STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
 
-                beliefTypeCC = storm::utility::ConstantsComparator<BeliefValueType>(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false);
+                beliefTypeCC =
+                    storm::utility::ConstantsComparator<BeliefValueType>(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false);
                 valueTypeCC = storm::utility::ConstantsComparator<ValueType>(this->options.numericPrecision, false);
             }
 
@@ -271,7 +274,7 @@ namespace storm {
                 std::vector<BeliefValueType> observationResolutionVector;
                 std::shared_ptr<BeliefManagerType> overApproxBeliefManager;
                 std::shared_ptr<ExplorerType> overApproximation;
-                HeuristicParameters overApproxHeuristicPar;
+                HeuristicParameters overApproxHeuristicPar{};
                 if (options.discretize) {  // Setup and build first OverApproximation
                     observationResolutionVector =
                         std::vector<BeliefValueType>(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
@@ -302,7 +305,7 @@ namespace storm {
 
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
                 std::shared_ptr<ExplorerType> underApproximation;
-                HeuristicParameters underApproxHeuristicPar;
+                HeuristicParameters underApproxHeuristicPar{};
                 if (options.unfold) {  // Setup and build first UnderApproximation
                     underApproxBeliefManager = std::make_shared<BeliefManagerType>(
                         pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision),
@@ -546,7 +549,7 @@ namespace storm {
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
-                HeuristicParameters underApproxHeuristicPar;
+                HeuristicParameters underApproxHeuristicPar{};
                 bool firstIteration = true;
                 // Set up belief manager
                 underApproxBeliefManager = std::make_shared<BeliefManagerType>(
@@ -557,16 +560,17 @@ namespace storm {
                 }
 
                 // set up belief MDP explorer
-                interactiveUnderApproximationExplorer = std::make_shared<ExplorerType>(underApproxBeliefManager, trivialPOMDPBounds, options.explorationHeuristic);
+                interactiveUnderApproximationExplorer =
+                    std::make_shared<ExplorerType>(underApproxBeliefManager, trivialPOMDPBounds, options.explorationHeuristic);
                 underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                 underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>().max()-1;  // we don't set a size threshold
+                underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max() - 1;  // we don't set a size threshold
 
                 if (options.useClipping && rewardModelName.has_value()) {
                     interactiveUnderApproximationExplorer->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                 }
 
-                if(!valueBounds.fmSchedulerValueList.empty()){
+                if (!valueBounds.fmSchedulerValueList.empty()) {
                     interactiveUnderApproximationExplorer->setFMSchedValueList(valueBounds.fmSchedulerValueList);
                 }
 
@@ -1114,7 +1118,10 @@ namespace storm {
                                             STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
                                             // We did not explore this successor state. Get a bound on the "missing" value
                                             truncationProbability += successor.second;
-                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other under-approximation values. In general, this does not yield a sound underapproximation anymore. However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
+                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of
+                                            // other under-approximation values. In general, this does not yield a sound underapproximation anymore as the
+                                            // values might be achieved by different schedulers. However, in our case this is still the case as the
+                                            // under-approximation values are based on a single memory-less scheduler.
                                             truncationValueBound +=
                                                 successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
                                                                         : underApproximation->computeLowerValueBoundAtBelief(successor.first));
@@ -1200,10 +1207,11 @@ namespace storm {
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
                 printUpdateStopwatch.stop();
-                STORM_PRINT_AND_LOG("Finished exploring Underapproximation MDP.\n Start analysis...\n");
+                STORM_PRINT_AND_LOG("Finished exploring Underapproximation MDP.\nStart analysis...\n");
                 unfoldingStatus = Status::ModelExplorationFinished;
                 statistics.underApproximationCheckTime.start();
-                underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
+                underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize
+                                                                   : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
                 if (underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0) {
                     statistics.nrTruncatedStates = underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits();
@@ -1380,7 +1388,7 @@ namespace storm {
                     // Create the rating for this observation at this choice from the given info
                     auto obsChoiceRating =
                         storm::utility::convertNumber<BeliefValueType, ValueType>(info.maxProbabilityToSuccessorWithObs / info.observationProbability);
-                    // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1
+                    // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1)
                     // Normalize the rating so that it ranges from 0 to 1, where
                     // 0 means that the actual belief lies in the middle of the triangulating simplex (i.e. a "bad" approximation) and 1 means that the belief is precisely approximated.
                     obsChoiceRating = (obsChoiceRating * n - one) / (n - one);
