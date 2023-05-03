@@ -1,18 +1,24 @@
-#include "storm/api/storm.h"
-#include "storm/models/sparse/Pomdp.h"
+// #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 #include "storm/storage/jani/Property.h"
+#include "utility/Stopwatch.h"
 
 namespace storm {
-    namespace logic {
-        class Formula;
-    }
-    
-    namespace pomdp {
+namespace models {
+namespace sparse {
+template<class ValueType, typename RewardModelType>
+class Pomdp;
+}
+}  // namespace models
+namespace logic {
+class Formula;
+}
+
+namespace pomdp {
         namespace modelchecker {
             
             template<typename ValueType>

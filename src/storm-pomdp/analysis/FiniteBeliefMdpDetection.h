@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/optional.hpp>
-
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"

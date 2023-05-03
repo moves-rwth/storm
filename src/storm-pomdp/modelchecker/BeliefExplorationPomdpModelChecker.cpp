@@ -6,31 +6,35 @@
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
 
+#include "storm/logic/Formulas.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
-#include "storm/logic/Formulas.h"
 
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/vector.h"
 
-#include "storm/utility/macros.h"
-#include "storm/utility/SignalHandler.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/utility/SignalHandler.h"
+#include "storm/utility/macros.h"
+#include "utility/graph.h"
 
 namespace storm {
-    namespace pomdp {
-        namespace modelchecker {
+namespace api {}
+namespace pomdp {
+namespace modelchecker {
 
-        /* Struct Functions */
+/* Struct Functions */
 
-        template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
-                // Intentionally left empty
-            }
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::Result(ValueType lower, ValueType upper)
+    : lowerBound(lower), upperBound(upper) {
+    // Intentionally left empty
+}
 
-            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::ValueType
             BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::diff(bool relative) const {
                 ValueType diff = upperBound - lowerBound;

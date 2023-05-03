@@ -2,11 +2,9 @@
 
 #include <vector>
 #include <unordered_map>
-#include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "storage/SparseMatrix.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/ConstantsComparator.h"
@@ -14,18 +12,20 @@
 #include "storm/utility/solver.h"
 
 namespace storm {
-    namespace storage {
-        
-        template <typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType, typename StateType = uint64_t>
-        class BeliefManager {
-        public:
-            typedef typename PomdpType::ValueType ValueType;
-            typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType; // iterating over this shall be ordered (for correct hash computation)
-            typedef boost::container::flat_set<StateType> BeliefSupportType;
-            typedef uint64_t BeliefId;
+namespace storage {
+// Forward declaration
+template<typename ValueType>
+class SparseMatrix;
 
-            enum class TriangulationMode {
-                Static,
+template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType, typename StateType = uint64_t>
+class BeliefManager {
+   public:
+    typedef typename PomdpType::ValueType ValueType;
+    typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType;  // iterating over this shall be ordered (for correct hash computation)
+    typedef boost::container::flat_set<StateType> BeliefSupportType;
+    typedef uint64_t BeliefId;
+
+    enum class TriangulationMode { Static,
                 Dynamic
             };
 

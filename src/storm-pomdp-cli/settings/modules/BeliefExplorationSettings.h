@@ -2,21 +2,22 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 namespace storm {
-    namespace pomdp {
-        namespace modelchecker {
-            template<typename ValueType>
-            struct BeliefExplorationPomdpModelCheckerOptions;
-        }
+namespace builder {
+template<typename PomdpType, typename BeliefValueType>
+class BeliefMdpExplorer;
+}
+namespace pomdp {
+namespace modelchecker {
+template<typename ValueType>
+struct BeliefExplorationPomdpModelCheckerOptions;
+}
 
-        enum BeliefNumberType {
-            Default, Float, Rational
-        };
-    }
-    
-    namespace settings {
+enum BeliefNumberType { Default, Float, Rational };
+}  // namespace pomdp
+
+namespace settings {
         namespace modules {
 
             /*!

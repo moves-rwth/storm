@@ -5,24 +5,22 @@
 #include <deque>
 #include <map>
 #include <queue>
-#include <boost/optional.hpp>
 
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm {
-    namespace builder {
-        enum class ExplorationHeuristic {
-            BreadthFirst,
-            LowerBoundPrio,
-            UpperBoundPrio,
-            GapPrio,
-            ProbabilityPrio
-        };
+namespace modelchecker {
+template<typename FormulaType, typename ValueType>
+class CheckTask;
+class CheckResult;
+}  // namespace modelchecker
+namespace builder {
+enum class ExplorationHeuristic { BreadthFirst, LowerBoundPrio, UpperBoundPrio, GapPrio, ProbabilityPrio };
 
-        template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
-        class BeliefMdpExplorer {
+template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
+class BeliefMdpExplorer {
         public:
             typedef typename PomdpType::ValueType ValueType;
             typedef storm::storage::BeliefManager<PomdpType, BeliefValueType> BeliefManagerType;

@@ -1,22 +1,25 @@
 #pragma once
 
-#include <boost/optional.hpp>
 #include "storm/utility/constants.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 namespace storm {
-    namespace pomdp {
-        namespace modelchecker {
-            template<typename ValueType>
-            struct BeliefExplorationPomdpModelCheckerOptions {
-                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
-                    // Intentionally left empty
-                }
+namespace builder {
+template<typename PomdpType, typename BeliefValueType>
+class BeliefMdpExplorer;
+}
+namespace pomdp {
+namespace modelchecker {
+template<typename ValueType>
+struct BeliefExplorationPomdpModelCheckerOptions {
+    BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
+        // Intentionally left empty
+    }
 
-                // TODO documentation?
-                bool discretize;
-                bool unfold;
+    // TODO documentation?
+    bool discretize;
+    bool unfold;
 
                 bool useClipping = false;
                 bool interactiveUnfolding = false;

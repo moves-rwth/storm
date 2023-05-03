@@ -1,21 +1,37 @@
 #pragma once
 
+#include "environment/Environment.h"
+#include "solver/SolverSelectionOptions.h"
+#include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm/api/verification.h"
 #include "storm/models/sparse/Pomdp.h"
-#include "storm-pomdp/analysis/FormulaInformation.h"
 
 namespace storm {
-    namespace pomdp {
-        namespace modelchecker {
+namespace models {
+namespace sparse {
+template<class ValueType, typename RewardModelType>
+class Pomdp;
+}
+}  // namespace models
+namespace modelchecker {
+template<typename FormulaType, typename ValueType>
+class CheckTask;
+class CheckResult;
+}  // namespace modelchecker
+namespace logic {
+class Formula;
+}
+namespace pomdp {
+namespace modelchecker {
 
-            /**
-             * Struct for storing precomputed values bounding the actual values on the POMDP
-             */
-            template<typename ValueType>
-            struct PreprocessingPomdpValueBounds {
-                // Vectors containing upper and lower bound values for the POMDP states
-                std::vector<std::vector<ValueType>> lower;
-                std::vector<std::vector<ValueType>> upper;
+/**
+ * Struct for storing precomputed values bounding the actual values on the POMDP
+ */
+template<typename ValueType>
+struct PreprocessingPomdpValueBounds {
+    // Vectors containing upper and lower bound values for the POMDP states
+    std::vector<std::vector<ValueType>> lower;
+    std::vector<std::vector<ValueType>> upper;
                 std::vector<ValueType> parametric;
                 std::vector<storm::storage::Scheduler<ValueType>> lowerSchedulers;
                 std::vector<storm::storage::Scheduler<ValueType>> upperSchedulers;

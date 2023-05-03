@@ -2,8 +2,6 @@
 
 #include <set>
 #include <string>
-#include <boost/optional.hpp>
-
 #include "storm/storage/BitVector.h"
 #include "storm/solver/OptimizationDirection.h"
 
