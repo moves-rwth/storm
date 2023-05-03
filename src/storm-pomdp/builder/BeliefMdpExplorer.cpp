@@ -989,13 +989,10 @@ namespace storm {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
             uint64_t mdpChoice = previousChoiceIndices.at(getCurrentMdpState()) + localActionIndex;
-            for(auto const &entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
-                auto const &beliefId = getBeliefId(entry.getColumn());
-                if (observationSet.get(beliefManager->getBeliefObservation(beliefId))) {
-                    return true;
-                }
-            }
-            return false;
+            return std::any_of(exploredMdp->getTransitionMatrix().getRow(mdpChoice).begin(), exploredMdp->getTransitionMatrix().getRow(mdpChoice).end(),
+                               [this, &observationSet](typename storm::storage::MatrixEntry<uint_fast64_t, ValueType> i) {
+                                   return observationSet.get(beliefManager->getBeliefObservation(getBeliefId(i.getColumn())));
+                               });
         }
 
         template<typename PomdpType, typename BeliefValueType>
