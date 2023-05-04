@@ -3,16 +3,11 @@
 #include "environment/Environment.h"
 #include "solver/SolverSelectionOptions.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
+#include "storm-pomdp/storage/BeliefExplorationBounds.h"
 #include "storm/api/verification.h"
 #include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
-namespace models {
-namespace sparse {
-template<class ValueType, typename RewardModelType>
-class Pomdp;
-}
-}  // namespace models
 namespace modelchecker {
 template<typename FormulaType, typename ValueType>
 class CheckTask;
@@ -35,20 +30,26 @@ class PreprocessingPomdpValueBoundsModelChecker {
 
     ValueBounds getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
 
-                ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
+    ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
 
-            private:
-                storm::models::sparse::Pomdp<ValueType> const& pomdp;
+   private:
+    storm::models::sparse::Pomdp<ValueType> const& pomdp;
 
-                storm::Environment mcEnvironment;
+    storm::Environment mcEnvironment;
 
-                std::vector<ValueType> getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards);
+    std::vector<ValueType> getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards);
 
-                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore);
+    std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForGuessedScheduler(
+        std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula,
+        storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp,
+        ValueType const& scoreThreshold, bool relativeScore);
 
-                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
+    std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomFMPolicy(
+        storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
 
-                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
+    std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomMemorylessPolicy(
+        storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
+        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
             };
         }
     }

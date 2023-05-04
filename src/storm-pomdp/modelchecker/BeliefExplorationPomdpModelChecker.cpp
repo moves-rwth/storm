@@ -22,7 +22,6 @@
 #include "utility/graph.h"
 
 namespace storm {
-namespace api {}
 namespace pomdp {
 namespace modelchecker {
 
@@ -93,13 +92,13 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getValueBounds(formula, formulaInfo);
+                auto preProcessingMC = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod);
+                auto initialPomdpValueBounds = preProcessingMC.getValueBounds(formula, formulaInfo);
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if(options.useClipping && formula.isRewardOperatorFormula()){
-                    pomdpValueBounds.extremePomdpValueBound =
-                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getExtremeValueBound(formula, formulaInfo);
+                if (options.useClipping && formula.isRewardOperatorFormula()) {
+                    pomdpValueBounds.extremePomdpValueBound = preProcessingMC.getExtremeValueBound(formula, formulaInfo);
                 }
             }
 

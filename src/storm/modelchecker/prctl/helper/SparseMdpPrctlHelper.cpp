@@ -379,8 +379,7 @@ SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType c
     if (!result.eliminateEndComponents) {
         extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, result.uniqueSolution);
     } else {
-        //STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
-        if(hint.isEmpty()){
+        if (hint.isEmpty()) {
             STORM_LOG_TRACE("Warn A non-empty hint was provided, but its information will be disregarded.");
         }
     }
