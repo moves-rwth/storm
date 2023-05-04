@@ -6,8 +6,9 @@
 #include <map>
 #include <queue>
 
-#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
+#include "storm-pomdp/storage/BeliefExplorationBounds.h"
 #include "storm-pomdp/storage/BeliefManager.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm {
@@ -43,7 +44,9 @@ class BeliefMdpExplorer {
                 ModelChecked
             };
 
-            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds, ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
+            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,
+                              storm::pomdp::storage::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds,
+                              ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
 
             BeliefMdpExplorer(BeliefMdpExplorer &&other) = default;
 
@@ -226,7 +229,7 @@ class BeliefMdpExplorer {
 
             bool hasParametricBounds();
 
-            void setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound);
+            void setExtremeValueBound(storm::pomdp::storage::ExtremePOMDPValueBound<ValueType> valueBound);
 
             ValueType getExtremeValueBoundAtPOMDPState(uint64_t const &pomdpState);
 
@@ -312,8 +315,8 @@ class BeliefMdpExplorer {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
 
             // Value and scheduler related information
-            storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
-            storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
+            storm::pomdp::storage::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
+            storm::pomdp::storage::ExtremePOMDPValueBound<ValueType> extremeValueBound;
             std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> fmSchedulerValueList;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;

@@ -1,4 +1,3 @@
-// #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
@@ -20,16 +19,13 @@ class Formula;
 
 namespace pomdp {
         namespace modelchecker {
-            
-            template<typename ValueType>
-            struct PreprocessingPomdpValueBounds;
 
             template<typename ValueType>
-            struct POMDPValueBounds{
-                storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> trivialPomdpValueBounds;
-                storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
-                std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> fmSchedulerValueList;
-            };
+        struct POMDPValueBounds {
+            storm::pomdp::storage::PreprocessingPomdpValueBounds<ValueType> trivialPomdpValueBounds;
+            storm::pomdp::storage::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
+            std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> fmSchedulerValueList;
+        };
             
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType, typename BeliefMDPType = typename PomdpModelType::ValueType>
             class BeliefExplorationPomdpModelChecker {

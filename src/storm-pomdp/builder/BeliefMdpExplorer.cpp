@@ -30,9 +30,10 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,
-                                                                         storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds,
-                                                                         ExplorationHeuristic explorationHeuristic) : beliefManager(beliefManager),
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(
+            std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::storage::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds,
+            ExplorationHeuristic explorationHeuristic)
+            : beliefManager(beliefManager),
                                                                                                                       pomdpValueBounds(pomdpValueBounds),
                                                                                                                       explHeuristic(explorationHeuristic),
                                                                                                                       status(Status::Uninitialized) {
@@ -1282,7 +1283,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound){
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setExtremeValueBound(storm::pomdp::storage::ExtremePOMDPValueBound<ValueType> valueBound) {
             extremeValueBound = valueBound;
         }
 

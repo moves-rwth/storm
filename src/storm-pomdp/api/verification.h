@@ -1,4 +1,6 @@
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
+#include "storm/environment/Environment.h"
+
 namespace storm {
 namespace pomdp {
 namespace api {

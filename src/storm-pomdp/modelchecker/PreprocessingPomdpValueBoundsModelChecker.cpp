@@ -17,53 +17,6 @@
 namespace storm {
     namespace pomdp {
         namespace modelchecker {
-
-            template<typename ValueType>
-            ValueType PreprocessingPomdpValueBounds<ValueType>::getLowerBound(uint64_t scheduler_id, uint64_t const& state) {
-                STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
-                return lower[scheduler_id][state];
-            }
-
-            template<typename ValueType>
-            ValueType PreprocessingPomdpValueBounds<ValueType>::getUpperBound(uint64_t scheduler_id, uint64_t const& state) {
-                STORM_LOG_ASSERT(!upper.empty(), "requested an upper bound but none were available");
-                return upper[scheduler_id][state];
-            }
-
-            template<typename ValueType>
-            ValueType PreprocessingPomdpValueBounds<ValueType>::getHighestLowerBound(uint64_t const& state) {
-                STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
-                auto it = lower.begin();
-                ValueType result = (*it)[state];
-                for (++it; it != lower.end(); ++it) {
-                    result = std::max(result, (*it)[state]);
-                }
-                return result;
-            }
-
-            template<typename ValueType>
-            ValueType PreprocessingPomdpValueBounds<ValueType>::getSmallestUpperBound(uint64_t const& state) {
-                STORM_LOG_ASSERT(!upper.empty(), "requested an upper bound but none were available");
-                auto it = upper.begin();
-                ValueType result = (*it)[state];
-                for (++it; it != upper.end(); ++it) {
-                    result = std::min(result, (*it)[state]);
-                }
-                return result;
-            }
-
-            template<typename ValueType>
-            ValueType PreprocessingPomdpValueBounds<ValueType>::getParametricBound(uint64_t const& state) {
-                STORM_LOG_ASSERT(!parametric.empty(), "requested a parametric bound but none was available");
-                return parametric[state];
-            }
-
-            template<typename ValueType>
-            ValueType ExtremePOMDPValueBound<ValueType>::getValueForState(uint64_t const& state) {
-                STORM_LOG_ASSERT(!values.empty(), "requested an extreme bound but none were available");
-                return values[state];
-            }
-
             template <typename ValueType>
             PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::solver::MinMaxMethod minMaxMethod) : pomdp(pomdp) {
                 // Setup checker environment
@@ -363,12 +316,6 @@ namespace storm {
 
             template
             class PreprocessingPomdpValueBoundsModelChecker<storm::RationalNumber>;
-
-            template struct PreprocessingPomdpValueBounds<double>;
-            template struct PreprocessingPomdpValueBounds<storm::RationalNumber>;
-
-            template struct ExtremePOMDPValueBound<double>;
-            template struct ExtremePOMDPValueBound<storm::RationalNumber>;
         }
     }
 }
