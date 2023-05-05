@@ -1,9 +1,10 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <optional>
+#include <unordered_map>
+#include <vector>
 
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"

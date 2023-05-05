@@ -1,9 +1,10 @@
 #pragma once
 
+#include <optional>
 #include <set>
 #include <string>
-#include "storm/storage/BitVector.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     

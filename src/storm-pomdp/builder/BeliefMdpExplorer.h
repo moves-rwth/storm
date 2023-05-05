@@ -1,10 +1,11 @@
 #pragma once
 
-#include <memory>
-#include <vector>
 #include <deque>
 #include <map>
+#include <memory>
+#include <optional>
 #include <queue>
+#include <vector>
 
 #include "storm-pomdp/storage/BeliefExplorationBounds.h"
 #include "storm-pomdp/storage/BeliefManager.h"

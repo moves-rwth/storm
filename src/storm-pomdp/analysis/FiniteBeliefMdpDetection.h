@@ -1,18 +1,20 @@
 #pragma once
 
+#include <optional>
+
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
-    namespace pomdp {
+namespace pomdp {
 
-    /*!
-     * This method tries to detect that the beliefmdp is finite.
-     * If this returns true, the beliefmdp is certainly finite.
-     * However, if this returns false, the beliefmdp might still be finite
-     * It is assumed that the belief MDP is not further explored when reaching a targetstate
-     */
+/*!
+ * This method tries to detect that the beliefmdp is finite.
+ * If this returns true, the beliefmdp is certainly finite.
+ * However, if this returns false, the beliefmdp might still be finite
+ * It is assumed that the belief MDP is not further explored when reaching a targetstate
+ */
     template<typename ValueType>
     bool detectFiniteBeliefMdp(storm::models::sparse::Pomdp<ValueType> const& pomdp, std::optional<storm::storage::BitVector> const& targetStates) {
         // All infinite paths of the POMDP (including the ones with prob. 0 ) either
