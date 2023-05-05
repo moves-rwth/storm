@@ -1258,7 +1258,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                     for (auto const &deltaValue : clipping.deltaValues) {
                                         localRew += deltaValue.second * utility::convertNumber<BeliefValueType>((beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
                                     }
-                                    if(localRew == utility::infinity<ValueType>()){
+                                    if (localRew == utility::infinity<BeliefValueType>()) {
                                         STORM_LOG_WARN("Infinite reward in clipping!");
                                     }
                                     rewardBound += localRew * utility::convertNumber<BeliefValueType>(successor.second);
@@ -1313,10 +1313,11 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                         for (auto const &deltaValue : clipping.deltaValues) {
                             reward += deltaValue.second * utility::convertNumber<BeliefValueType>((beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
                         }
-                        if(reward == utility::infinity<ValueType>()){
+                        if (reward == utility::infinity<BeliefValueType>()) {
                             STORM_LOG_WARN("Infinite reward in clipping!");
                             // If the reward is infinite, add a transition to the sink state to collect infinite reward in our semantics
-                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
+                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(),
+                                                                        utility::convertNumber<BeliefMDPType>(clipping.delta));
                         } else {
                             beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::convertNumber<BeliefMDPType>(clipping.delta));
                             BeliefValueType totalRewardVal = reward / clipping.delta;
