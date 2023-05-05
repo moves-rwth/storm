@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <string>
 
 namespace storm::pars::utility {
 enum class ParametricMode { Feasibility, Verification, Monotonicity, SolutionFunction, Sampling, Partitioning };
