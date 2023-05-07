@@ -287,16 +287,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Pmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
@@ -326,16 +332,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Pmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax) {
@@ -365,16 +377,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin) {
@@ -470,16 +488,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Rmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("29/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Rmin) {
@@ -509,16 +533,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_Rmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("19/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
@@ -548,16 +578,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("29/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin) {
@@ -587,16 +623,22 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("19/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+        EXPECT_LE(result.diff(), this->precision())
+            << "Result [" << result.lowerBound << ", " << result.upperBound
+            << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
 
     TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
@@ -628,10 +670,14 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, maze2_Rmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("74/91");
@@ -664,16 +710,20 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, maze2_Rmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
     }
-    
+
     TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -703,10 +753,14 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("80/91");
@@ -739,16 +793,20 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
     }
-    
+
     TYPED_TEST(BeliefExplorationTest, refuel_Pmax) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -778,10 +836,14 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, refuel_Pmax_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("38/155");
@@ -820,10 +882,14 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, refuel_Pmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("0");
