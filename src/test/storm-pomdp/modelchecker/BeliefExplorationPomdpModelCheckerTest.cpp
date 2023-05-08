@@ -440,10 +440,14 @@ namespace {
     }
 
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_Clip) {
+        if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
+            GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+        }
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("3/10");
