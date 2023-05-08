@@ -1242,8 +1242,9 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                         if(!added){
                             // The successor is not in the explored space. Clip it
                             statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes,
-                                                                            beliefExplorer->getStateExtremeBoundIsInfinite());
+                            auto clipping = beliefManager->clipBeliefToGrid(
+                                successor.first, options.clippingGridRes,
+                                computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
                             if (clipping.isClippable) {
                                 // The belief is not on the grid and there is a candidate with finite reward
                                 statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
@@ -1298,8 +1299,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.value() + 1;
-                auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
-                                                                beliefExplorer->getStateExtremeBoundIsInfinite());
+                auto clipping = beliefManager->clipBeliefToGrid(
+                    clippingStateId, options.clippingGridRes, computeRewards ? beliefExplorer->getStateExtremeBoundIsInfinite() : storm::storage::BitVector());
                 if (clipping.isClippable) {
                     // The belief is not on the grid and there is a candidate with finite reward
                     statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;

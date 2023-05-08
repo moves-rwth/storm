@@ -96,7 +96,7 @@ class BeliefManager {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
+            BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite = storm::storage::BitVector());
 
             std::string getObservationLabel(BeliefId const & beliefId);
 

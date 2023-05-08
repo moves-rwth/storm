@@ -601,16 +601,21 @@ namespace storm {
             uint64_t i = 0;
             for (auto const &state : belief) {
                 // This is a quite dirty fix to enable GLPK for the TACAS '22 implementation without substantially changing the implementation for Gurobi.
-                if(typeid(*lpSolver) == typeid(storm::solver::GlpkLpSolver<ValueType>) && isInfinite[state.first]){
-                    auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
-                                                                             storm::utility::zero<BeliefValueType>(), state.second);
-                    auto deltaExpr = storm::expressions::Expression(localDelta);
-                    deltas.push_back(deltaExpr);
-                    lpSolver->addConstraint("state_val_inf_" + std::to_string(i) , deltaExpr == lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+                if (typeid(*lpSolver) == typeid(storm::solver::GlpkLpSolver<ValueType>) && !isInfinite.empty()) {
+                    if (isInfinite[state.first]) {
+                        auto localDelta =
+                            lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i), storm::utility::zero<BeliefValueType>(), state.second);
+                        auto deltaExpr = storm::expressions::Expression(localDelta);
+                        deltas.push_back(deltaExpr);
+                        lpSolver->addConstraint("state_val_inf_" + std::to_string(i),
+                                                deltaExpr == lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+                    }
                 } else {
-                    auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
-                                                                         storm::utility::zero<BeliefValueType>(),
-                                                                         isInfinite[state.first] ? storm::utility::zero<BeliefValueType>() : state.second);
+                    BeliefValueType bound = state.second;
+                    if (!isInfinite.empty()) {
+                        bound = isInfinite[state.first] ? storm::utility::zero<BeliefValueType>() : state.second;
+                    }
+                    auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i), storm::utility::zero<BeliefValueType>(), bound);
                     deltas.push_back(storm::expressions::Expression(localDelta));
                 }
                 ++i;
