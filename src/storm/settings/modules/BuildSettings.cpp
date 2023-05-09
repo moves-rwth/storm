@@ -64,7 +64,10 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
             .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, buildObservationValuationsOptionName, false, "If set, also build the observation valuations (only relevant for POMDPs)").setIsAdvanced().build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, buildObservationValuationsOptionName, false,
+                                                   "If set, also build the observation valuations (only relevant for POMDPs)")
+                        .setIsAdvanced()
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, buildAllLabelsOptionName, false, "If set, build all labels").setIsAdvanced().build());
     this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
