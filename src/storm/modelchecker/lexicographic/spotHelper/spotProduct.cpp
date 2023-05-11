@@ -1,4 +1,7 @@
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
+
+#include <deque>
+
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
