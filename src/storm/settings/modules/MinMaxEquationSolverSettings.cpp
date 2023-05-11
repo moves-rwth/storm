@@ -65,7 +65,8 @@ MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(mo
                         .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, forceUniqueSolutionRequirementOptionName, false,
-                                                   "If set, a MinMax solver always requires a unique solution for its input.")
+                                                   "Enforces end component collapsing for MinMax equation systems so that their solution becomes unique. May "
+                                                   "simplify solving but causes some overhead.")
                         .setIsAdvanced()
                         .build());
 }
