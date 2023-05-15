@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <set>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 namespace storm {
 namespace modelchecker {

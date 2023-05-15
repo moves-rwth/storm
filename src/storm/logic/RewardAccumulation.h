@@ -1,6 +1,6 @@
 #pragma once
-#include <iostream>
 #include <cstdint>
+#include <iostream>
 
 namespace storm {
 namespace logic {
