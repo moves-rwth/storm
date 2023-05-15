@@ -12,6 +12,7 @@
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/sparse/StateType.h"
 
 #include "storm/adapters/IntelTbbAdapter.h"
 #include "storm/utility/OsDetection.h"
@@ -38,7 +39,7 @@ namespace storage {
 template<typename T>
 class SparseMatrix;
 
-typedef uint64_t SparseMatrixIndexType;
+typedef storm::storage::sparse::state_type SparseMatrixIndexType;
 
 template<typename IndexType, typename ValueType>
 class MatrixEntry {

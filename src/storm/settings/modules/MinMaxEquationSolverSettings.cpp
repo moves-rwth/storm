@@ -12,13 +12,13 @@ namespace settings {
 namespace modules {
 
 const std::string MinMaxEquationSolverSettings::moduleName = "minmax";
-const std::string MinMaxEquationSolverSettings::solvingMethodOptionName = "method";
-const std::string MinMaxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
-const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
-const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
-const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
-const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
-const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
+const std::string solvingMethodOptionName = "method";
+const std::string maximalIterationsOptionName = "maxiter";
+const std::string maximalIterationsOptionShortName = "i";
+const std::string precisionOptionName = "precision";
+const std::string absoluteOptionName = "absolute";
+const std::string valueIterationMultiplicationStyleOptionName = "vimult";
+const std::string forceUniqueSolutionRequirementOptionName = "force-require-unique";
 
 MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> minMaxSolvingTechniques = {
@@ -64,8 +64,9 @@ MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(mo
                                          .build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false,
-                                                   "If set, interval iteration performs an update on both, lower and upper bound in each iteration")
+    this->addOption(storm::settings::OptionBuilder(moduleName, forceUniqueSolutionRequirementOptionName, false,
+                                                   "Enforces end component collapsing for MinMax equation systems so that their solution becomes unique. May "
+                                                   "simplify solving but causes some overhead.")
                         .setIsAdvanced()
                         .build());
 }
@@ -142,8 +143,8 @@ storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterati
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
-bool MinMaxEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
-    return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
+bool MinMaxEquationSolverSettings::isForceUniqueSolutionRequirementSet() const {
+    return this->getOption(forceUniqueSolutionRequirementOptionName).getHasOptionBeenSet();
 }
 
 }  // namespace modules

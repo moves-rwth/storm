@@ -80,7 +80,15 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(En
     bool returnValue = true;
     if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
         // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
-        returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
+        if (auto const& scc = *this->sortedSccDecomposition->begin(); scc.size() == 1) {
+            // Catch the trivial case where the whole system is just a single state.
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices = std::vector<uint64_t>(1);
+            }
+            returnValue = solveTrivialScc(*scc.begin(), dir, x, b);
+        } else {
+            returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
+        }
     } else {
         // Solve each SCC individually
         if (this->isTrackSchedulerSet()) {

@@ -6,21 +6,25 @@
 namespace storm {
 namespace solver {
 enum class OptimizationDirection { Minimize = 0, Maximize = 1 };
+
+bool constexpr minimize(OptimizationDirection d) {
+    return d == OptimizationDirection::Minimize;
+}
+
+bool constexpr maximize(OptimizationDirection d) {
+    return d == OptimizationDirection::Maximize;
+}
+
+OptimizationDirection constexpr invert(OptimizationDirection d) {
+    return d == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
+}
+std::ostream& operator<<(std::ostream& out, OptimizationDirection d);
+
 enum class OptimizationDirectionSetting { Minimize = 0, Maximize = 1, Unset };
-
 bool isSet(OptimizationDirectionSetting s);
-
-bool minimize(OptimizationDirection d);
-
-bool maximize(OptimizationDirection d);
-
 OptimizationDirection convert(OptimizationDirectionSetting s);
-
 OptimizationDirectionSetting convert(OptimizationDirection d);
 
-OptimizationDirection invert(OptimizationDirection d);
-
-std::ostream& operator<<(std::ostream& out, OptimizationDirection d);
 }  // namespace solver
 
 using OptimizationDirection = solver::OptimizationDirection;

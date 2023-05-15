@@ -332,7 +332,8 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
             message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
         endif()
     else()
-        message(FATAL_ERROR "We only support a diverged fork of carl -- Version 14.")
+        message(FATAL_ERROR "We only support a diverged version of carl, indicated by Carl version 14.x. These versions can be found at https://github.com/moves-rwth/carl-storm. 
+			      On this system, we found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
     endif()
 
     set(STORM_HAVE_CARL ON)

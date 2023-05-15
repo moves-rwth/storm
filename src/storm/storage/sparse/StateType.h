@@ -6,7 +6,7 @@
 namespace storm {
 namespace storage {
 namespace sparse {
-typedef uint_fast64_t state_type;
+typedef uint64_t state_type;
 }
 }  // namespace storage
 }  // namespace storm

@@ -1,439 +1,310 @@
-#include "OptimisticValueIterationHelper.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
-#include "storm/environment/solver/OviSolverEnvironment.h"
-#include "storm/utility/ProgressMeasurement.h"
-#include "storm/utility/SignalHandler.h"
+#include <type_traits>
+
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/solver/helper/ValueIterationOperator.h"
+#include "storm/utility/Extremum.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/NotSupportedException.h"
+namespace storm::solver::helper {
 
-#include "storm/utility/macros.h"
-
-namespace storm {
-
-namespace solver {
-namespace helper {
-namespace oviinternal {
-
-template<typename ValueType>
-ValueType updateIterationPrecision(storm::Environment const& env, ValueType const& diff) {
-    auto factor = storm::utility::convertNumber<ValueType>(env.solver().ovi().getPrecisionUpdateFactor());
-    return factor * diff;
-}
-
-template<typename ValueType>
-void guessUpperBoundRelative(std::vector<ValueType> const& x, std::vector<ValueType>& target, ValueType const& relativeBoundGuessingScaler) {
-    storm::utility::vector::applyPointwise<ValueType, ValueType>(
-        x, target, [&relativeBoundGuessingScaler](ValueType const& argument) -> ValueType { return argument * relativeBoundGuessingScaler; });
-}
-
-template<typename ValueType>
-void guessUpperBoundAbsolute(std::vector<ValueType> const& x, std::vector<ValueType>& target, ValueType const& precision) {
-    storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target,
-                                                                 [&precision](ValueType const& argument) -> ValueType { return argument + precision; });
-}
-
-template<typename ValueType>
-IterationHelper<ValueType>::IterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix) {
-    STORM_LOG_THROW(static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) > matrix.getRowCount() + 1, storm::exceptions::NotSupportedException,
-                    "Matrix dimensions too large.");
-    STORM_LOG_THROW(static_cast<uint64_t>(std::numeric_limits<uint32_t>::max()) > matrix.getEntryCount(), storm::exceptions::NotSupportedException,
-                    "Matrix dimensions too large.");
-    matrixValues.reserve(matrix.getNonzeroEntryCount());
-    matrixColumns.reserve(matrix.getColumnCount());
-    rowIndications.reserve(matrix.getRowCount() + 1);
-    rowIndications.push_back(0);
-    for (IndexType r = 0; r < static_cast<IndexType>(matrix.getRowCount()); ++r) {
-        for (auto const& entry : matrix.getRow(r)) {
-            matrixValues.push_back(entry.getValue());
-            matrixColumns.push_back(entry.getColumn());
-        }
-        rowIndications.push_back(matrixValues.size());
-    }
-    if (!matrix.hasTrivialRowGrouping()) {
-        rowGroupIndices = &matrix.getRowGroupIndices();
-    }
-}
-
-template<typename ValueType>
-ValueType IterationHelper<ValueType>::singleIterationWithDiff(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff,
-                                                              boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                              boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    return singleIterationWithDiffInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup,
-                                                                                                  scheduler);
-}
-
-template<typename ValueType>
-ValueType IterationHelper<ValueType>::singleIterationWithDiff(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x,
-                                                              std::vector<ValueType> const& b, bool computeRelativeDiff,
-                                                              boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                              boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    if (minimize(dir)) {
-        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup,
-                                                                                                     scheduler);
+template<bool Relative, typename ValueType>
+static ValueType diff(ValueType const& oldValue, ValueType const& newValue) {
+    if constexpr (Relative) {
+        return storm::utility::abs<ValueType>((newValue - oldValue) / newValue);
     } else {
-        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup,
-                                                                                                     scheduler);
+        return storm::utility::abs<ValueType>(newValue - oldValue);
     }
 }
 
-template<typename ValueType>
-template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-ValueType IterationHelper<ValueType>::singleIterationWithDiffInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff,
-                                                                      boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                                      boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    STORM_LOG_ASSERT(x.size() > 0, "Empty equation system not expected.");
-    ValueType diff = storm::utility::zero<ValueType>();
+template<typename ValueType, storm::OptimizationDirection Dir, bool Relative>
+class GSVIBackend {
+   public:
+    GSVIBackend(ValueType const& precision) : precision{precision} {
+        // intentionally empty
+    }
 
-    IndexType i = x.size();
-    while (i > 0) {
-        --i;
+    void startNewIteration() {
+        isConverged = true;
+    }
 
-        ValueType newXi;
-        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-            auto row = i + scheduler.get().at(i);
-            newXi = multiplyRow(row, b[row], x);
+    void firstRow(ValueType&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        best = std::move(value);
+    }
+
+    void nextRow(ValueType&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        best &= value;
+    }
+
+    void applyUpdate(ValueType& currValue, [[maybe_unused]] uint64_t rowGroup) {
+        if (isConverged) {
+            isConverged = storm::utility::isZero(*best) || diff<Relative>(currValue, *best) <= precision;
+        }
+        currValue = std::move(*best);
+    }
+
+    void endOfIteration() const {
+        // intentionally left empty.
+    }
+
+    bool converged() const {
+        return isConverged;
+    }
+
+    bool constexpr abort() const {
+        return false;
+    }
+
+   private:
+    storm::utility::Extremum<Dir, ValueType> best;
+    ValueType const precision;
+    bool isConverged{true};
+};
+
+template<typename ValueType, bool TrivialRowGrouping>
+template<storm::OptimizationDirection Dir, bool Relative>
+SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::GSVI(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, ValueType const& precision,
+    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    GSVIBackend<ValueType, Dir, Relative> backend{precision};
+    SolverStatus status{SolverStatus::InProgress};
+    while (status == SolverStatus::InProgress) {
+        ++numIterations;
+        if (viOperator->template applyInPlace(operand, offsets, backend)) {
+            status = SolverStatus::Converged;
+        } else if (iterationCallback) {
+            status = iterationCallback(status, operand);
+        }
+    }
+    return status;
+}
+
+template<bool Relative, typename ValueType>
+void guessCandidate(std::pair<std::vector<ValueType>, std::vector<ValueType>>& vu, ValueType const& guessValue, std::optional<ValueType> const& lowerBound,
+                    std::optional<ValueType> const& upperBound) {
+    std::function<ValueType(ValueType const&)> guess;
+    [[maybe_unused]] ValueType factor = storm::utility::one<ValueType>() + guessValue;
+    if constexpr (Relative) {
+        // the guess is given by value + |value * guessValue|. If all values are positive, this can be simplified a bit
+        if (lowerBound && *lowerBound < storm::utility::zero<ValueType>()) {
+            guess = [&guessValue](ValueType const& val) { return val + storm::utility::abs<ValueType>(val * guessValue); };
         } else {
-            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
-        }
-        ValueType& oldXi = x[i];
-        if (computeRelativeDiff) {
-            if (storm::utility::isZero(newXi)) {
-                if (storm::utility::isZero(oldXi)) {
-                    // this operation has no effect:
-                    // diff = std::max(diff, storm::utility::zero<ValueType>());
-                } else {
-                    diff = std::max(diff, storm::utility::one<ValueType>());
-                }
-            } else {
-                diff = std::max(diff, storm::utility::abs<ValueType>((newXi - oldXi) / newXi));
-            }
-        } else {
-            diff = std::max(diff, storm::utility::abs<ValueType>(newXi - oldXi));
-        }
-        oldXi = std::move(newXi);
-    }
-    return diff;
-}
-
-template<typename ValueType>
-uint64_t IterationHelper<ValueType>::repeatedIterate(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x,
-                                                     std::vector<ValueType> const& b, ValueType precision, bool relative,
-                                                     boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                     boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    if (minimize(dir)) {
-        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative, schedulerFixedForRowgroup, scheduler);
-    } else {
-        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, precision, relative, schedulerFixedForRowgroup, scheduler);
-    }
-}
-
-template<typename ValueType>
-uint64_t IterationHelper<ValueType>::repeatedIterate(std::vector<ValueType>& x, const std::vector<ValueType>& b, ValueType precision, bool relative,
-                                                     boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                     boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    return repeatedIterateInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative);
-}
-
-template<typename ValueType>
-template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-uint64_t IterationHelper<ValueType>::repeatedIterateInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType precision, bool relative,
-                                                             boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-                                                             boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    // Do a backwards gauss-seidel style iteration
-    bool convergence = true;
-    IndexType i = x.size();
-    while (i > 0) {
-        --i;
-        ValueType newXi;
-        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-            auto row = i + scheduler.get().at(i);
-            newXi = multiplyRow(row, b[row], x);
-        } else {
-            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
-        }
-        ValueType& oldXi = x[i];
-        // Check if we converged
-        if (relative) {
-            if (storm::utility::isZero(oldXi)) {
-                if (!storm::utility::isZero(newXi)) {
-                    convergence = false;
-                    break;
-                }
-            } else if (storm::utility::abs<ValueType>((newXi - oldXi) / oldXi) > precision) {
-                convergence = false;
-                break;
-            }
-        } else {
-            if (storm::utility::abs<ValueType>((newXi - oldXi)) > precision) {
-                convergence = false;
-                break;
-            }
-        }
-    }
-    if (!convergence) {
-        // we now know that we did not converge. We still need to set the remaining values
-        while (i > 0) {
-            --i;
-            if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                auto row = i + scheduler.get().at(i);
-                x[i] = multiplyRow(row, b[row], x);
-            } else {
-                x[i] = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
-            }
-        }
-    }
-    return convergence;
-}
-
-template<typename ValueType>
-typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(
-    storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew,
-    boost::optional<storage::BitVector> const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    if (minimize(dir)) {
-        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
-    } else {
-        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, takeMinOfOldAndNew);
-    }
-}
-
-template<typename ValueType>
-typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(
-    std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-    boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    return iterateUpperInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
-}
-
-template<typename ValueType>
-template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpperInternal(
-    std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
-    boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    // For each row compare the new upper bound candidate with the old one
-    bool newUpperBoundAlwaysHigherEqual = true;
-    bool newUpperBoundAlwaysLowerEqual = true;
-    // Do a backwards gauss-seidel style iteration
-    for (IndexType i = x.size(); i > 0;) {
-        --i;
-        ValueType newXi;
-        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-            auto row = i + scheduler.get().at(i);
-            newXi = multiplyRow(row, b[row], x);
-        } else {
-            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
-        }
-        ValueType& oldXi = x[i];
-        if (newXi > oldXi) {
-            newUpperBoundAlwaysLowerEqual = false;
-            if (!takeMinOfOldAndNew) {
-                oldXi = newXi;
-            }
-        } else if (newXi != oldXi) {
-            assert(newXi < oldXi);
-            newUpperBoundAlwaysHigherEqual = false;
-            oldXi = newXi;
-        }
-    }
-    // Return appropriate result
-    if (newUpperBoundAlwaysLowerEqual) {
-        if (newUpperBoundAlwaysHigherEqual) {
-            return IterateResult::Equal;
-        } else {
-            return IterateResult::AlwaysLowerOrEqual;
+            guess = [&factor](ValueType const& val) { return val * factor; };
         }
     } else {
-        if (newUpperBoundAlwaysHigherEqual) {
-            return IterateResult::AlwaysHigherOrEqual;
+        guess = [&guessValue](ValueType const& val) { return storm::utility::isZero(val) ? storm::utility::zero<ValueType>() : val + guessValue; };
+    }
+    if (lowerBound || upperBound) {
+        std::function<ValueType(ValueType const&)> guessAndClamp;
+        if (!lowerBound) {
+            guessAndClamp = [&guess, &upperBound](ValueType const& val) { return std::min(guess(val), *upperBound); };
+        } else if (!upperBound) {
+            guessAndClamp = [&guess, &lowerBound](ValueType const& val) { return std::max(guess(val), *lowerBound); };
         } else {
-            return IterateResult::Incomparable;
+            guessAndClamp = [&guess, &lowerBound, &upperBound](ValueType const& val) { return std::clamp(guess(val), *lowerBound, *upperBound); };
+        }
+        storm::utility::vector::applyPointwise(vu.first, vu.second, guessAndClamp);
+    } else {
+        storm::utility::vector::applyPointwise(vu.first, vu.second, guess);
+    }
+}
+
+template<typename ValueType, OptimizationDirection Dir, bool Relative>
+class OVIBackend {
+   public:
+    void startNewIteration() {
+        isAllUp = true;
+        isAllDown = true;
+        crossed = false;
+        errorValue = storm::utility::zero<ValueType>();
+    }
+
+    void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        vBest = std::move(value.first);
+        uBest = std::move(value.second);
+    }
+
+    void nextRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        vBest &= std::move(value.first);
+        uBest &= std::move(value.second);
+    }
+
+    void applyUpdate(ValueType& vCurr, ValueType& uCurr, [[maybe_unused]] uint64_t rowGroup) {
+        if (*vBest != storm::utility::zero<ValueType>()) {
+            errorValue &= diff<Relative>(vCurr, *vBest);
+        }
+        if (*uBest < uCurr) {
+            uCurr = *uBest;
+            isAllUp = false;
+        } else if (*uBest > uCurr) {
+            isAllDown = false;
+        }
+        vCurr = *vBest;
+        if (vCurr > uCurr) {
+            crossed = true;
         }
     }
-}
 
-template<typename ValueType>
-ValueType IterationHelper<ValueType>::multiplyRow(IndexType const& rowIndex, ValueType const& bi, std::vector<ValueType> const& x) {
-    assert(rowIndex < rowIndications.size());
-    ValueType xRes = bi;
-
-    auto entryIt = matrixValues.begin() + rowIndications[rowIndex];
-    auto entryItE = matrixValues.begin() + rowIndications[rowIndex + 1];
-    auto colIt = matrixColumns.begin() + rowIndications[rowIndex];
-    for (; entryIt != entryItE; ++entryIt, ++colIt) {
-        xRes += *entryIt * x[*colIt];
+    void endOfIteration() const {
+        // intentionally left empty.
     }
-    return xRes;
-}
 
-template<typename ValueType>
-template<storm::solver::OptimizationDirection Dir>
-ValueType IterationHelper<ValueType>::multiplyRowGroup(IndexType const& rowGroupIndex, std::vector<ValueType> const& b, std::vector<ValueType> const& x) {
-    STORM_LOG_ASSERT(rowGroupIndices != nullptr, "No row group indices available.");
-    auto row = (*rowGroupIndices)[rowGroupIndex];
-    auto const& groupEnd = (*rowGroupIndices)[rowGroupIndex + 1];
-    STORM_LOG_ASSERT(row < groupEnd, "Empty row group not expected.");
-    ValueType xRes = multiplyRow(row, b[row], x);
-    for (++row; row < groupEnd; ++row) {
-        ValueType xCur = multiplyRow(row, b[row], x);
-        xRes = minimize(Dir) ? std::min(xRes, xCur) : std::max(xRes, xCur);
+    bool converged() const {
+        return isAllDown || isAllUp;
     }
-    return xRes;
-}
-}  // namespace oviinternal
 
-template<typename ValueType>
-OptimisticValueIterationHelper<ValueType>::OptimisticValueIterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix) : iterationHelper(matrix) {
+    bool allUp() const {
+        return isAllUp;
+    }
+
+    bool allDown() const {
+        return isAllDown;
+    }
+
+    bool abort() const {
+        return crossed;
+    }
+
+    ValueType error() {
+        return *errorValue;
+    }
+
+   private:
+    bool isAllUp{true};
+    bool isAllDown{true};
+    bool crossed{false};
+    storm::utility::Extremum<Dir, ValueType> vBest, uBest;
+    storm::utility::Extremum<OptimizationDirection::Maximize, ValueType> errorValue;
+};
+
+template<typename ValueType, bool TrivialRowGrouping>
+OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OptimisticValueIterationHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator)
+    : viOperator(viOperator) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-std::pair<SolverStatus, uint64_t> OptimisticValueIterationHelper<ValueType>::solveEquations(
-    Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType> const& b, bool relative, ValueType precision,
-    uint64_t maxOverallIterations, boost::optional<storm::solver::OptimizationDirection> dir, boost::optional<storm::storage::BitVector> const& relevantValues,
-    boost::optional<storage::BitVector> const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    STORM_LOG_ASSERT(lowerX->size() == upperX->size(), "Dimension missmatch.");
-
-    // As we will shuffle pointers around, let's store the original positions here.
-    std::vector<ValueType>* initLowerX = lowerX;
-    std::vector<ValueType>* initUpperX = upperX;
-
-    uint64_t overallIterations = 0;
-    uint64_t lastValueIterationIterations = 0;
-    uint64_t currentVerificationIterations = 0;
-
-    // Get some parameters for the algorithm
-    // 2
-    ValueType two = storm::utility::convertNumber<ValueType>(2.0);
-    // Use no termination guaranteed upper bound iteration method
-    bool noTerminationGuarantee = env.solver().ovi().useNoTerminationGuaranteeMinimumMethod();
-    // Desired max difference between upperX and lowerX
-    ValueType doublePrecision = precision * two;
-    // Upper bound only iterations
-    uint64_t upperBoundOnlyIterations = env.solver().ovi().getUpperBoundOnlyIterations();
-    ValueType relativeBoundGuessingScaler =
-        (storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(env.solver().ovi().getUpperBoundGuessingFactor()) * precision);
-    // Initial precision for the value iteration calls
-    ValueType iterationPrecision = precision;
-
-    SolverStatus status = SolverStatus::InProgress;
-
-    storm::utility::ProgressMeasurement progress("iterations.");
-    progress.startNewMeasurement(0);
-    while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
-        // Perform value iteration until convergence
-        lastValueIterationIterations =
-            dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, iterationPrecision, relative, schedulerFixedForRowgroup, scheduler)
-                : iterationHelper.repeatedIterate(*lowerX, b, iterationPrecision, relative, schedulerFixedForRowgroup, scheduler);
-        overallIterations += lastValueIterationIterations;
-
-        bool intervalIterationNeeded = false;
-        currentVerificationIterations = 0;
-
-        if (relative) {
-            oviinternal::guessUpperBoundRelative(*lowerX, *upperX, relativeBoundGuessingScaler);
+template<typename ValueType, bool TrivialRowGrouping>
+template<OptimizationDirection Dir, bool Relative>
+SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
+    std::pair<std::vector<ValueType>, std::vector<ValueType>>& vu, std::vector<ValueType> const& offsets, uint64_t& numIterations, ValueType const& precision,
+    ValueType const& guessValue, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    ValueType currentGuessValue = guessValue;
+    for (uint64_t numTries = 1; true; ++numTries) {
+        if (SolverStatus status = GSVI<Dir, Relative>(vu.first, offsets, numIterations, currentGuessValue, iterationCallback);
+            status != SolverStatus::Converged) {
+            return status;
+        }
+        guessCandidate<Relative>(vu, precision, lowerBound, upperBound);
+        OVIBackend<ValueType, Dir, Relative> backend;
+        uint64_t maxIters;
+        if (storm::utility::isZero(currentGuessValue)) {
+            maxIters = std::numeric_limits<uint64_t>::max();
         } else {
-            oviinternal::guessUpperBoundAbsolute(*lowerX, *upperX, precision);
+            maxIters = numIterations + storm::utility::convertNumber<uint64_t, ValueType>(
+                                           storm::utility::ceil<ValueType>(storm::utility::one<ValueType>() / currentGuessValue));
         }
-
-        bool cancelGuess = false;
-        while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
-            if (storm::utility::resources::isTerminate()) {
-                status = SolverStatus::Aborted;
+        while (numIterations < maxIters) {
+            ++numIterations;
+            if (viOperator->template applyInPlace(vu, offsets, backend)) {
+                if (backend.allDown()) {
+                    return SolverStatus::Converged;
+                } else {
+                    assert(backend.allUp());
+                    break;
+                }
             }
-            ++overallIterations;
-            ++currentVerificationIterations;
-            // Perform value iteration stepwise for lower bound and guessed upper bound
-
-            // Upper bound iteration
-            auto upperBoundIterResult = dir ? iterationHelper.iterateUpper(dir.get(), *upperX, b, !noTerminationGuarantee)
-                                            : iterationHelper.iterateUpper(*upperX, b, !noTerminationGuarantee);
-
-            if (upperBoundIterResult == oviinternal::IterationHelper<ValueType>::IterateResult::AlwaysHigherOrEqual) {
-                // All values moved up (and did not stay the same)
-                // That means the guess for an upper bound is actually a lower bound
-                auto diff = dir ? iterationHelper.singleIterationWithDiff(dir.get(), *upperX, b, relative)
-                                : iterationHelper.singleIterationWithDiff(*upperX, b, relative);
-                iterationPrecision = oviinternal::updateIterationPrecision(env, diff);
-                // We assume to have a single fixed point. We can thus safely set the new lower bound, to the wrongly guessed upper bound
-                // Set lowerX to the upper bound candidate
-                std::swap(lowerX, upperX);
+            if (backend.abort()) {
                 break;
-            } else if (upperBoundIterResult == oviinternal::IterationHelper<ValueType>::IterateResult::AlwaysLowerOrEqual) {
-                // All values moved down (and stayed not the same)
-                // This is a valid upper bound. We still need to check the precision.
-                // We can safely use twice the requested precision, as we calculate the center of both vectors
-                bool reachedPrecision;
-                if (relevantValues) {
-                    reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, relevantValues.get(), doublePrecision, relative);
-                } else {
-                    reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, doublePrecision, relative);
-                }
-                if (reachedPrecision) {
-                    status = SolverStatus::Converged;
-                    break;
-                } else {
-                    // From now on, we keep updating both bounds
-                    intervalIterationNeeded = true;
-                }
-                // The following case below covers that both vectors (old and new) are equal.
-                // Theoretically, this means that the precise fixpoint has been reached. However, numerical instabilities can be tricky and this detection might
-                // be incorrect (see the haddad-monmege model). We therefore disable it. It is very unlikely that we guessed the right fixpoint anyway.
-                //} else if (upperBoundIterResult == oviinternal::IterationHelper<ValueType>::IterateResult::Equal) {
-                // In this case, the guessed upper bound is the precise fixpoint
-                //    status = SolverStatus::Converged;
-                //    break;
             }
-
-            // Check whether we tried this guess for too long
-            ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) *
-                                             storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
-            if (!intervalIterationNeeded && scaledIterationCount * iterationPrecision >= storm::utility::one<ValueType>()) {
-                cancelGuess = true;
-                // In this case we will make one more iteration on the lower bound (mainly to obtain a new iterationPrecision)
-            }
-
-            // Lower bound iteration (only if needed)
-            if (cancelGuess || intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
-                auto diff = dir ? iterationHelper.singleIterationWithDiff(dir.get(), *lowerX, b, relative)
-                                : iterationHelper.singleIterationWithDiff(*lowerX, b, relative);
-
-                // Check whether the upper and lower bounds have crossed, i.e., the upper bound is smaller than the lower bound.
-                bool valuesCrossed = false;
-                for (uint64_t i = 0; i < lowerX->size(); ++i) {
-                    if ((*upperX)[i] < (*lowerX)[i]) {
-                        valuesCrossed = true;
-                        break;
-                    }
-                }
-
-                if (cancelGuess || valuesCrossed) {
-                    // A new guess is needed.
-                    iterationPrecision = oviinternal::updateIterationPrecision(env, diff);
-                    break;
+            if (iterationCallback) {
+                if (auto status = iterationCallback(SolverStatus::InProgress, vu.first); status != SolverStatus::InProgress) {
+                    return status;
                 }
             }
         }
-        if (storm::utility::resources::isTerminate()) {
-            status = SolverStatus::Aborted;
-        }
-        progress.updateProgress(overallIterations);
-    }  // end while
-    // Swap the results into the output vectors (if necessary).
-    assert(initLowerX != lowerX || (initLowerX == lowerX && initUpperX == upperX));
-    if (initLowerX != lowerX) {
-        assert(initUpperX == lowerX);
-        assert(initLowerX == upperX);
-        lowerX->swap(*upperX);
+        STORM_LOG_WARN_COND(numTries != 20, "Optimistic Value Iteration did not terminate after 20 refinements. It might be stuck.");
+        currentGuessValue = backend.error() / storm::utility::convertNumber<ValueType, uint64_t>(2u);
     }
-
-    if (overallIterations > maxOverallIterations) {
-        status = SolverStatus::MaximalIterationsExceeded;
-    }
-
-    return {status, overallIterations};
 }
 
-template class OptimisticValueIterationHelper<double>;
-template class OptimisticValueIterationHelper<storm::RationalNumber>;
-}  // namespace helper
-}  // namespace solver
-}  // namespace storm
+template<typename ValueType, bool TrivialRowGrouping>
+SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
+    std::pair<std::vector<ValueType>, std::vector<ValueType>>& vu, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
+    ValueType const& precision, std::optional<storm::OptimizationDirection> const& dir, ValueType const& guessValue, std::optional<ValueType> const& lowerBound,
+    std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    // Catch the case where lower- and upper bound are already close enough. (when guessing candidates, OVI handles this case not very well, in particular
+    // when lowerBound==upperBound)
+    if (lowerBound && upperBound) {
+        ValueType diff = *upperBound - *lowerBound;
+        if ((relative && diff <= precision * std::min(storm::utility::abs(*lowerBound), storm::utility::abs(*upperBound))) ||
+            (!relative && diff <= precision)) {
+            vu.first.assign(vu.first.size(), *lowerBound);
+            vu.second.assign(vu.second.size(), *upperBound);
+            return SolverStatus::Converged;
+        }
+    }
+
+    if (!dir.has_value() || maximize(*dir)) {
+        if (relative) {
+            return OVI<OptimizationDirection::Maximize, true>(vu, offsets, numIterations, precision, guessValue, lowerBound, upperBound, iterationCallback);
+        } else {
+            return OVI<OptimizationDirection::Maximize, false>(vu, offsets, numIterations, precision, guessValue, lowerBound, upperBound, iterationCallback);
+        }
+    } else {
+        if (relative) {
+            return OVI<OptimizationDirection::Minimize, true>(vu, offsets, numIterations, precision, guessValue, lowerBound, upperBound, iterationCallback);
+        } else {
+            return OVI<OptimizationDirection::Minimize, false>(vu, offsets, numIterations, precision, guessValue, lowerBound, upperBound, iterationCallback);
+        }
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& guessValue, std::optional<ValueType> const& lowerBound,
+    std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    // Create two vectors v and u using the given operand plus an auxiliary vector.
+    std::pair<std::vector<ValueType>, std::vector<ValueType>> vu;
+    auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
+    vu.first.swap(operand);
+    vu.second.swap(auxVector);
+    auto doublePrec = precision + precision;
+    if constexpr (std::is_same_v<ValueType, double>) {
+        doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
+    }
+    auto status = OVI(vu, offsets, numIterations, relative, doublePrec, dir, guessValue ? *guessValue : doublePrec, lowerBound, upperBound, iterationCallback);
+    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    // get the average of lower- and upper result
+    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+        vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    // Swap operand and aux vector back to original positions.
+    vu.first.swap(operand);
+    vu.second.swap(auxVector);
+    viOperator->freeAuxiliaryVector();
+    return status;
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
+    std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& guessValue, std::optional<ValueType> const& lowerBound,
+    std::optional<ValueType> const& upperBound,
+    std::function<SolverStatus(SolverStatus const&, std::vector<ValueType> const&)> const& iterationCallback) const {
+    uint64_t numIterations = 0;
+    return OVI(operand, offsets, numIterations, relative, precision, dir, guessValue, lowerBound, upperBound, iterationCallback);
+}
+
+template class OptimisticValueIterationHelper<double, true>;
+template class OptimisticValueIterationHelper<double, false>;
+template class OptimisticValueIterationHelper<storm::RationalNumber, true>;
+template class OptimisticValueIterationHelper<storm::RationalNumber, false>;
+
+}  // namespace storm::solver::helper
