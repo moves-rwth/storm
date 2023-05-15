@@ -2,6 +2,7 @@
 #define STORM_UTILITY_CLI_H_
 
 #include <string>
+#include <cstdint>
 
 namespace storm {
 namespace cli {

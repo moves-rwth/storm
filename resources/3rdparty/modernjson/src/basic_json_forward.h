@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace nlohmann {
 template<template<typename U, typename V, typename... Args> class ObjectType = std::map, template<typename U, typename... Args> class ArrayType = std::vector,
