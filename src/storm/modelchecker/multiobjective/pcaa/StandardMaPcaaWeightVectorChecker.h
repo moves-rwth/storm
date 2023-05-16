@@ -45,8 +45,8 @@ class StandardMaPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecker
      * Stores the ingredients of a sub model
      */
     struct SubModel {
-        storm::storage::BitVector states;   // The states that are part of this sub model
-        storm::storage::BitVector choices;  // The choices that are part of this sub model
+        storm::storage::BitVector states;              // The states that are part of this sub model
+        storm::storage::BitVector choices;             // The choices that are part of this sub model
 
         storm::storage::SparseMatrix<ValueType> toMS;  // Transitions to Markovian states
         storm::storage::SparseMatrix<ValueType> toPS;  // Transitions to probabilistic states
