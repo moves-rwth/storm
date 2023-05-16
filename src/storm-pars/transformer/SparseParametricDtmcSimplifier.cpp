@@ -25,21 +25,29 @@ namespace storm {
         bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) {
             // Get the prob0, prob1 and the maybeStates
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->originalModel);
-            if(!propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getLeftSubformula()) || !propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getRightSubformula())) {
+            if (!propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getLeftSubformula()) ||
+                !propositionalChecker.canHandle(formula.getSubformula().asUntilFormula().getRightSubformula())) {
                 STORM_LOG_DEBUG("Can not simplify when Until-formula has non-propositional subformula(s). Formula: " << formula);
                 return false;
             }
-            storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->originalModel, phiStates, psiStates);
+            storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())
+                                                                ->asExplicitQualitativeCheckResult()
+                                                                .getTruthValuesVector());
+            storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())
+                                                                ->asExplicitQualitativeCheckResult()
+                                                                .getTruthValuesVector());
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+                storm::utility::graph::performProb01(this->originalModel, phiStates, psiStates);
             // Only consider the maybestates that are reachable from one initial state without hopping over a target (i.e., prob1) state
-            storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & ~statesWithProbability01.first, ~statesWithProbability01.first, statesWithProbability01.second);
-            //storm::storage::BitVector maybeStates = reachableGreater0States & ~statesWithProbability01.second;
-            storm::storage::BitVector maybeStates = ~(statesWithProbability01.second | statesWithProbability01.first);
+            storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(
+                this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & ~statesWithProbability01.first,
+                ~statesWithProbability01.first, statesWithProbability01.second);
+            storm::storage::BitVector maybeStates = reachableGreater0States & ~statesWithProbability01.second;
 
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =
+                goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
             this->simplifiedModel = mergerResult.model;
             statesWithProbability01.second = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
@@ -128,20 +136,27 @@ namespace storm {
                 STORM_LOG_DEBUG("Can not simplify when reachability reward formula has non-propositional subformula(s). Formula: " << formula);
                 return false;
             }
-            storm::storage::BitVector targetStates = std::move(propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+            storm::storage::BitVector targetStates = std::move(propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())
+                                                                   ->asExplicitQualitativeCheckResult()
+                                                                   .getTruthValuesVector());
             // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
-            targetStates = storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(), originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates);
-            storm::storage::BitVector statesWithProb1 = storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), targetStates);
+            targetStates =
+                storm::utility::graph::performProb1(this->originalModel.getBackwardTransitions(),
+                                                    originalRewardModel.getStatesWithZeroReward(this->originalModel.getTransitionMatrix()), targetStates);
+            storm::storage::BitVector statesWithProb1 = storm::utility::graph::performProb1(
+                this->originalModel.getBackwardTransitions(), storm::storage::BitVector(this->originalModel.getNumberOfStates(), true), targetStates);
             storm::storage::BitVector infinityStates = ~statesWithProb1;
             // Only consider the states that are reachable from an initial state without hopping over a target state
-            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & statesWithProb1, statesWithProb1, targetStates);
-            //storm::storage::BitVector maybeStates = reachableStates & ~targetStates;
-            storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
+            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(
+                this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & statesWithProb1, statesWithProb1, targetStates);
+            storm::storage::BitVector maybeStates = reachableStates & ~targetStates;
 
             // obtain the resulting subsystem
-            std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
+            std::vector<std::string> rewardModelNameAsVector(
+                1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
-            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
+            typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =
+                goalStateMerger.mergeTargetAndSinkStates(maybeStates, targetStates, infinityStates, rewardModelNameAsVector);
             this->simplifiedModel = mergerResult.model;
             targetStates = storm::storage::BitVector(this->simplifiedModel->getNumberOfStates(), false);
             if (mergerResult.targetState) {
