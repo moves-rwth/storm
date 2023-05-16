@@ -67,8 +67,7 @@ namespace pomdp {
 
                 void printStatisticsToStream(std::ostream& stream) const;
 
-                void precomputeValueBounds(const logic::Formula& formula,
-                                           storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
+                void precomputeValueBounds(const logic::Formula& formula, std::optional<storm::solver::MinMaxMethod> minMaxMethod = std::nullopt);
 
                 void unfoldInteractively(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                                          storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);

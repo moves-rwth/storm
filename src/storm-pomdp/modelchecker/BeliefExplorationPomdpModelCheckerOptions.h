@@ -56,6 +56,7 @@ struct BeliefExplorationPomdpModelCheckerOptions {
 
                 storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
 
+                // currently unused
                 storm::solver::MinMaxMethod preProcMinMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration;
 
             };

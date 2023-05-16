@@ -21,6 +21,8 @@
 #include "storm/utility/macros.h"
 #include "utility/graph.h"
 
+#include "storm/environment/solver/AllSolverEnvironments.h"
+
 namespace storm {
 namespace pomdp {
 namespace modelchecker {
@@ -87,18 +89,26 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             /* Public Functions */
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula, storm::solver::MinMaxMethod minMaxMethod) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(
+                storm::logic::Formula const& formula, std::optional<storm::solver::MinMaxMethod> minMaxMethod) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
+
+                // Set-Up environment for the pre-processing
+                storm::Environment env;
+                if (minMaxMethod.has_value()) {
+                    env = Environment();
+                    env.solver().minMax().setMethod(minMaxMethod.value());
+                }
 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto preProcessingMC = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod);
-                auto initialPomdpValueBounds = preProcessingMC.getValueBounds(formula, formulaInfo);
+                auto preProcessingMC = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp());
+                auto initialPomdpValueBounds = preProcessingMC.getValueBounds(env, formula);
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if (options.useClipping && formula.isRewardOperatorFormula()) {
-                    pomdpValueBounds.extremePomdpValueBound = preProcessingMC.getExtremeValueBound(formula, formulaInfo);
+                    pomdpValueBounds.extremePomdpValueBound = preProcessingMC.getExtremeValueBound(env, formula);
                 }
             }
 
@@ -114,7 +124,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
-                precomputeValueBounds(formula, options.preProcMinMaxMethod);
+                precomputeValueBounds(formula);
                 if(!additionalUnderApproximationBounds.empty()){
                         pomdpValueBounds.fmSchedulerValueList = additionalUnderApproximationBounds;
                 }

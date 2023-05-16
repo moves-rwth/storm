@@ -16,32 +16,45 @@
 
 namespace storm {
     namespace pomdp {
-        namespace modelchecker {
-            template <typename ValueType>
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::solver::MinMaxMethod minMaxMethod) : pomdp(pomdp) {
-                // Setup checker environment
-                mcEnvironment = storm::Environment();
-                mcEnvironment.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological, true);
-                mcEnvironment.solver().minMax().setMethod(minMaxMethod);
-                mcEnvironment.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
-                mcEnvironment.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
-            }
+    namespace modelchecker {
+    template<typename ValueType>
+    PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp)
+        : pomdp(pomdp) {
+        // Setup checker environment
+        /*mcEnvironment = storm::Environment();
+        mcEnvironment.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological, true);
+        mcEnvironment.solver().minMax().setMethod(minMaxMethod);
+        mcEnvironment.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
+        mcEnvironment.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);*/
+    }
 
-            template <typename ValueType>
-            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula) {
-                return getValueBounds(formula, storm::pomdp::analysis::getFormulaInformation(pomdp, formula));
-            }
+    template<typename ValueType>
+    typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(
+        storm::Environment const& env, storm::logic::Formula const& formula) {
+        return getValueBounds(env, formula, storm::pomdp::analysis::getFormulaInformation(pomdp, formula));
+    }
 
-            template <typename ValueType>
-            std::vector<ValueType> PreprocessingPomdpValueBoundsModelChecker<ValueType>::getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards) {
-                std::vector<ValueType> choiceValues((pomdp.getNumberOfChoices()));
+    template<typename ValueType>
+    typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(
+        storm::logic::Formula const& formula) {
+        storm::Environment env;
+        return getValueBounds(env, formula, storm::pomdp::analysis::getFormulaInformation(pomdp, formula));
+    }
+
+    template<typename ValueType>
+    std::vector<ValueType> PreprocessingPomdpValueBoundsModelChecker<ValueType>::getChoiceValues(std::vector<ValueType> const& stateValues,
+                                                                                                 std::vector<ValueType>* actionBasedRewards) {
+        std::vector<ValueType> choiceValues((pomdp.getNumberOfChoices()));
                 pomdp.getTransitionMatrix().multiplyWithVector(stateValues, choiceValues, actionBasedRewards);
                 return choiceValues;
             }
 
-            template <typename ValueType>
+            template<typename ValueType>
             std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(
+                storm::Environment const& env, std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards,
+                storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
+                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
                 // Create some positional scheduler for the POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 // For each state, we heuristically find a good distribution over output actions.
@@ -95,16 +108,20 @@ namespace storm {
                 STORM_LOG_ASSERT(!pomdpScheduler.isPartialScheduler(), "Expected a fully defined scheduler.");
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
 
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr =
+                    storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                 return std::make_pair(pomdpSchedulerResult, pomdpScheduler);
             }
 
-            template <typename ValueType>
+            template<typename ValueType>
             std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::Environment const& env,
+                                                                                                 storm::logic::Formula const& formula,
+                                                                                                 storm::pomdp::analysis::FormulaInformation const& info,
+                                                                                                 uint64_t memoryBound) {
                 // Consider memoryless policy on memory-unfolded POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates() * memoryBound);
 
@@ -130,7 +147,8 @@ namespace storm {
                 // Model check the DTMC resulting from the policy
                 auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(memPomdp->getTransitionMatrix(), memPomdp->getStateLabeling(), memPomdp->getRewardModels());
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr =
+                    storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -146,15 +164,17 @@ namespace storm {
                 return std::make_pair(res, pomdpScheduler);
             }
 
-            template <typename ValueType>
+            template<typename ValueType>
             std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(
+                storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
+                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp) {
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 std::vector<uint64_t> obsChoiceVector(pomdp.getNrObservations());
 
                 std::random_device rd;
                 auto engine = std::mt19937(rd());
-                for(uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
+                for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                     uint64_t nrChoices = pomdp.getNumberOfChoices(pomdp.getStatesWithObservation(obs).front());
                     std::uniform_int_distribution<uint64_t> uniform_dist(0, nrChoices - 1);
                     obsChoiceVector[obs] = uniform_dist(engine);
@@ -167,7 +187,8 @@ namespace storm {
 
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
 
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr =
+                    storm::api::verifyWithSparseEngine<ValueType>(env, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -177,15 +198,19 @@ namespace storm {
                 return std::make_pair(pomdpSchedulerResult, pomdpScheduler);
             }
 
-            template <typename ValueType>
-            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
-                STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
+            template<typename ValueType>
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(
+                storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+                STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException,
+                                "The property type is not supported for this analysis.");
 
                 // Compute the values on the fully observable MDP
                 // We need an actual MDP so that we can apply schedulers below.
                 // Also, the api call in the next line will require a copy anyway.
-                auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, underlyingMdp, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto underlyingMdp =
+                    std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
+                auto resultPtr =
+                    storm::api::verifyWithSparseEngine<ValueType>(env, underlyingMdp, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> fullyObservableResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -201,7 +226,9 @@ namespace storm {
                 std::shared_ptr<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>> guessedSchedulerPair;
                 std::vector<std::pair<double, bool>> guessParameters({{0.875,false},{0.875,true},{0.75,false},{0.75,true}});
                 for (auto const& pars : guessParameters) {
-                    guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(fullyObservableResult, actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(pars.first), pars.second));
+                    guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(
+                        computeValuesForGuessedScheduler(env, fullyObservableResult, actionBasedRewardsPtr, formula, info, underlyingMdp,
+                                                         storm::utility::convertNumber<ValueType>(pars.first), pars.second));
                     guessedSchedulerValues.push_back(guessedSchedulerPair->first);
                     guessedSchedulers.push_back(guessedSchedulerPair->second);
                 }
@@ -216,13 +243,22 @@ namespace storm {
                         bestGuessSum = guessSum;
                     }
                 }
-                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues[bestGuess], actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerPair =
+                    std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(
+                        env, guessedSchedulerValues[bestGuess], actionBasedRewardsPtr, formula, info, underlyingMdp,
+                        storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
                 guessedSchedulerValues.push_back(guessedSchedulerPair->first);
                 guessedSchedulers.push_back(guessedSchedulerPair->second);
-                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerPair =
+                    std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(
+                        env, guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp,
+                        storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
                 guessedSchedulerValues.push_back(guessedSchedulerPair->first);
                 guessedSchedulers.push_back(guessedSchedulerPair->second);
-                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerPair =
+                    std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(
+                        env, guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp,
+                        storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
                 guessedSchedulerValues.push_back(guessedSchedulerPair->first);
                 guessedSchedulers.push_back(guessedSchedulerPair->second);
 
@@ -276,27 +312,44 @@ namespace storm {
                     result.upper.push_back(std::move(fullyObservableResult));
                     result.lowerSchedulers = filteredSchedulers;
                 }
-                STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(result.lower.front(), result.upper.front(), std::less_equal<ValueType>()), "Lower bound is larger than upper bound");
+                STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(result.lower.front(), result.upper.front(), std::less_equal<ValueType>()),
+                                          "Lower bound is larger than upper bound");
                 return result;
             }
 
-            template <typename ValueType>
+            template<typename ValueType>
             typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
-                STORM_LOG_THROW(info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::logic::Formula const& formula) {
+                storm::Environment env;
+                return getExtremeValueBound(env, formula);
+            }
+
+            template<typename ValueType>
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::Environment const& env, storm::logic::Formula const& formula) {
+                return getExtremeValueBound(env, formula, storm::pomdp::analysis::getFormulaInformation(pomdp, formula));
+            }
+
+            template<typename ValueType>
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::Environment const& env, storm::logic::Formula const& formula,
+                                                                                       storm::pomdp::analysis::FormulaInformation const& info) {
+                STORM_LOG_THROW(info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException,
+                                "The property type is not supported for this analysis.");
 
                 // Compute the values for the opposite direction on the fully observable MDP
                 // We need an actual MDP so that we can apply schedulers below.
                 // Also, the api call in the next line will require a copy anyway.
                 storm::logic::RewardOperatorFormula newFormula(formula.asRewardOperatorFormula());
-                if(formula.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize){
+                if (formula.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
                     newFormula.setOptimalityType(storm::solver::OptimizationDirection::Minimize);
                 } else {
                     newFormula.setOptimalityType(storm::solver::OptimizationDirection::Maximize);
                 }
                 auto formulaPtr = std::make_shared<storm::logic::RewardOperatorFormula>(newFormula);
-                auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
+                auto underlyingMdp =
+                    std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> resultVec = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());

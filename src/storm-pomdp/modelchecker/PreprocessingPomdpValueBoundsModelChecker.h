@@ -23,32 +23,37 @@ class PreprocessingPomdpValueBoundsModelChecker {
    public:
     typedef pomdp::storage::PreprocessingPomdpValueBounds<ValueType> ValueBounds;
     typedef pomdp::storage::ExtremePOMDPValueBound<ValueType> ExtremeValueBound;
-    PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                              storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
+
+    PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
 
     ValueBounds getValueBounds(storm::logic::Formula const& formula);
 
-    ValueBounds getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
+    ValueBounds getValueBounds(storm::Environment const& env, storm::logic::Formula const& formula);
 
-    ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
+    ValueBounds getValueBounds(storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
+
+    ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula);
+
+    ExtremeValueBound getExtremeValueBound(storm::Environment const& env, storm::logic::Formula const& formula);
+
+    ExtremeValueBound getExtremeValueBound(storm::Environment const& env, storm::logic::Formula const& formula,
+                                           storm::pomdp::analysis::FormulaInformation const& info);
 
    private:
     storm::models::sparse::Pomdp<ValueType> const& pomdp;
 
-    storm::Environment mcEnvironment;
-
     std::vector<ValueType> getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards);
 
     std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForGuessedScheduler(
-        std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula,
-        storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp,
-        ValueType const& scoreThreshold, bool relativeScore);
+        storm::Environment const& env, std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards,
+        storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
+        std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore);
 
     std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomFMPolicy(
-        storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
+        storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
 
     std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomMemorylessPolicy(
-        storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
+        storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
         std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
             };
         }
