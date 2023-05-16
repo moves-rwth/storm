@@ -226,10 +226,6 @@ class BeliefMdpExplorer {
 
             ValueType getTrivialLowerBoundAtPOMDPState(uint64_t const &pomdpState);
 
-            ValueType getParametricBoundAtPOMDPState(uint64_t const &pomdpState);
-
-            bool hasParametricBounds();
-
             void setExtremeValueBound(storm::pomdp::storage::ExtremePOMDPValueBound<ValueType> valueBound);
 
             ValueType getExtremeValueBoundAtPOMDPState(uint64_t const &pomdpState);

@@ -1263,16 +1263,6 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::hasParametricBounds(){
-            return !pomdpValueBounds.parametric.empty();
-        }
-
-        template<typename PomdpType, typename BeliefValueType>
-        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getParametricBoundAtPOMDPState(uint64_t const &pomdpState){
-            return pomdpValueBounds.getParametricBound(pomdpState);
-        }
-
-        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState){
             return pomdpValueBounds.getSmallestUpperBound(pomdpState);
         }
