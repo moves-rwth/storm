@@ -410,13 +410,13 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_reward_bounded.nm";
     std::string constantsDef = "";
-    std::string formulasAsString = "multi(Pmax=? [ F{\"a\"}<=3 x=4 ]) ";                                       // 0.2
-    formulasAsString += "; \n multi(Pmin=? [ F{\"a\"}<=3 x=4 ]) ";                                             // 0.0
-    formulasAsString += "; \n multi(Pmin=? [ F{\"a\"}<1 x=1 ]) ";                                              // 0.0
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) ";                    // 0.02
-    formulasAsString += "; \n multi(Pmin=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) ";                    // 0.0
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<13 x=5, F{\"c\"}<2/5 x=3 )]) ";   // 0.02
-    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"b\"}<=17 x=4, F{\"c\"}<4/5 x=5 )]) ";  // 0.02
+    std::string formulasAsString = "multi(Pmax=? [ F{\"a\"}<=3 x=4 ]) ";                                                           // 0.2
+    formulasAsString += "; \n multi(Pmin=? [ F{\"a\"}<=3 x=4 ]) ";                                                                 // 0.0
+    formulasAsString += "; \n multi(Pmin=? [ F{\"a\"}<1 x=1 ]) ";                                                                  // 0.0
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) ";                                        // 0.02
+    formulasAsString += "; \n multi(Pmin=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<=12 x=5 )]) ";                                        // 0.0
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=4 x=4, F{\"b\"}<13 x=5, F{\"c\"}<2/5 x=3 )]) ";                       // 0.02
+    formulasAsString += "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"b\"}<=17 x=4, F{\"c\"}<4/5 x=5 )]) ";                      // 0.02
     formulasAsString +=
         "; \n multi(Pmax=? [multi( F{\"a\"}<=0 x=3, F{\"c\"}<1/2 x=5 )], Pmax=? [multi( F{\"b\"}<=0 x=3, F{\"c\"}<=4/5 x=5 )]) ";  // (0.1, 0) , (0, 0.19)
 
