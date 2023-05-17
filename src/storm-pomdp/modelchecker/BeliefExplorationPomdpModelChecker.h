@@ -175,7 +175,7 @@ class BeliefExplorationPomdpModelChecker {
      * Get the current status of the interactive unfolding
      * @return the interactive unfolding
      */
-    Status getStatus();
+    int64_t getStatus();
 
    private:
     /* Struct Definition(s) */

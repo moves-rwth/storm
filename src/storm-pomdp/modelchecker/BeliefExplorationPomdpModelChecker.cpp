@@ -715,7 +715,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            int BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
+            int64_t BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
                 if (unfoldingStatus == Status::Uninitialized)
                     return 0;
                 if (unfoldingStatus == Status::Exploring)
