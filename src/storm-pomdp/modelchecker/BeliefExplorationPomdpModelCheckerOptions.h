@@ -55,10 +55,6 @@ struct BeliefExplorationPomdpModelCheckerOptions {
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
 
                 storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
-
-                // currently unused
-                storm::solver::MinMaxMethod preProcMinMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration;
-
             };
         }
     }

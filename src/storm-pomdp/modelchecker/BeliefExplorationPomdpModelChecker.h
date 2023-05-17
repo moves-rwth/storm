@@ -3,6 +3,7 @@
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
+#include "environment/Environment.h"
 #include "storm/storage/jani/Property.h"
 #include "utility/Stopwatch.h"
 
@@ -92,10 +93,14 @@ class BeliefExplorationPomdpModelChecker {
     /**
      * Performs model checking of the given POMDP with regards to a formula using the previously specified options
      * @param formula the formula to check
+     * @param preProcEnv environment used for solving the pre-processisng
      * @param additionalUnderApproximationBounds additional bounds that can be used for cut-offs in the under-approximation. Each element of the outer vector
      * represents a scheduler. Each scheduler is represented by a vector of maps representing (memory node x state) -> value
      * @return result of the model checking
      */
+    Result check(storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
+                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
+                     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
     Result check(storm::logic::Formula const& formula,
                  std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
                      std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
@@ -109,14 +114,15 @@ class BeliefExplorationPomdpModelChecker {
     /**
      * Uses model checking on the underlying MDP to generate values used for cut-offs and for clipping compensation if necessary
      * @param formula the formula to check
-     * @param minMaxMethod (optional) the method to use for checking
+     * @param preProcEnv environment used for solving the pre-processisng
      */
-    void precomputeValueBounds(const logic::Formula& formula, std::optional<storm::solver::MinMaxMethod> minMaxMethod = std::nullopt);
+    void precomputeValueBounds(const logic::Formula& formula, storm::Environment const& preProcEnv);
 
     /**
-     * Allows to generate an under-approximation using a controllable unfolding. The unfolding runs until a pausing command is issued.
-     * If the unfolding is paused, cut-offs and optionally clipping are applied to obtain an abstraction MDP. This MDP is then checked and the result is saved.
-     * The unfolding can then be continued from the state before cut-offs were applied.
+     * Allows to generate an under-approximation using a controllable unfolding. This provides a method for outside tools to control the unfolding for an
+     * under-approximation themselves. The unfolding runs until a pausing command is issued. If the unfolding is paused, cut-offs and optionally clipping are
+     * applied to obtain an abstraction MDP. This MDP is then checked and the result is saved. The unfolding can then be continued from the state before
+     * cut-offs were applied.
      * @param targetObservations the target observations of the objective
      * @param min true if the objective is to minimise the value
      * @param rewardModelName name of the reward model to be used if one is specified
@@ -238,7 +244,7 @@ class BeliefExplorationPomdpModelChecker {
      *
      * @param targetObservations the set of observations to be reached
      * @param min true if minimum probability is to be computed
-     * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
+     * @return A struct containing the final over-approximation (overApproxValue) and under-approximation (underApproxValue) values
      */
     void refineReachability(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                             storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);

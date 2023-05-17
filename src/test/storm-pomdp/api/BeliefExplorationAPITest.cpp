@@ -183,10 +183,10 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmax) {
     ValueType expected = this->parseNumber("29/30");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
 
-    EXPECT_EQ(5, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
+    EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,5), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 5), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmin) {
@@ -199,10 +199,10 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmin) {
     ValueType expected = this->parseNumber("19/30");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
 
-    EXPECT_EQ(5, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
+    EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,5), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 5), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, maze2_Rmin) {
@@ -280,18 +280,15 @@ TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
     ValueType expected = this->parseNumber("59040588757/103747000000");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
 
-    EXPECT_EQ(4, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
+    EXPECT_EQ(2, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,2));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,3));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,4), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 2), std::out_of_range);
 
-
-    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0,0},{1,0}},{{0,0.7}},{{0,1},{1,1}}};
-    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2,1}},{{2,1}}};
-    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals,obs1vals};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0, 0}, {1, 0}}, {{0, 0.7}}, {{0, 1}, {1, 1}}};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2, 1}}, {{2, 1}}};
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals, obs1vals};
 
     result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 10, additionalVals);
 

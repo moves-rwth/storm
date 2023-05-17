@@ -21,7 +21,6 @@
 #include "storm/utility/macros.h"
 #include "utility/graph.h"
 
-#include "storm/environment/solver/AllSolverEnvironments.h"
 
 namespace storm {
 namespace pomdp {
@@ -90,31 +89,37 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(
-                storm::logic::Formula const& formula, std::optional<storm::solver::MinMaxMethod> minMaxMethod) {
+                storm::logic::Formula const& formula, storm::Environment const& preProcEnv) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
-
-                // Set-Up environment for the pre-processing
-                storm::Environment env;
-                if (minMaxMethod.has_value()) {
-                    env = Environment();
-                    env.solver().minMax().setMethod(minMaxMethod.value());
-                }
 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
                 auto preProcessingMC = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp());
-                auto initialPomdpValueBounds = preProcessingMC.getValueBounds(env, formula);
+                auto initialPomdpValueBounds = preProcessingMC.getValueBounds(preProcEnv, formula);
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if (options.useClipping && formula.isRewardOperatorFormula()) {
-                    pomdpValueBounds.extremePomdpValueBound = preProcessingMC.getExtremeValueBound(env, formula);
+                    pomdpValueBounds.extremePomdpValueBound = preProcessingMC.getExtremeValueBound(preProcEnv, formula);
                 }
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula, std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> const& additionalUnderApproximationBounds) {
-                STORM_LOG_ASSERT(options.unfold || options.discretize || options.interactiveUnfolding, "Invoked belief exploration but no task (unfold or discretize) given.");
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
+                storm::logic::Formula const& formula,
+                std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
+                storm::Environment env;
+                return check(formula, env, additionalUnderApproximationBounds);
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
+                storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
+                std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
+                STORM_LOG_ASSERT(options.unfold || options.discretize || options.interactiveUnfolding,
+                                 "Invoked belief exploration but no task (unfold or discretize) given.");
                 // Potentially reset preprocessed model from previous call
                 preprocessedPomdp.reset();
 
@@ -124,7 +129,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
-                precomputeValueBounds(formula);
+                precomputeValueBounds(formula, preProcEnv);
                 if(!additionalUnderApproximationBounds.empty()){
                         pomdpValueBounds.fmSchedulerValueList = additionalUnderApproximationBounds;
                 }
