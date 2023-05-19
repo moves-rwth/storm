@@ -4,8 +4,8 @@
 #if defined __linux__ || defined __linux
 #define LINUX
 #define NOEXCEPT noexcept
-#include <cxxabi.h>        // Required by ErrorHandling.h
-#include <execinfo.h>      // Required by ErrorHandling.h
+#include <cxxabi.h>    // Required by ErrorHandling.h
+#include <execinfo.h>  // Required by ErrorHandling.h
 #include <sys/mman.h>
 #include <sys/resource.h>  // Required by storm.cpp, Memory Usage
 #include <sys/time.h>      // Required by storm.cpp, Memory Usage
@@ -16,8 +16,8 @@
 #define MACOS
 #define NOEXCEPT noexcept
 #define _DARWIN_USE_64_BIT_INODE
-#include <cxxabi.h>        // Required by ErrorHandling.h
-#include <execinfo.h>      // Required by ErrorHandling.h
+#include <cxxabi.h>    // Required by ErrorHandling.h
+#include <execinfo.h>  // Required by ErrorHandling.h
 #include <sys/mman.h>
 #include <sys/resource.h>  // Required by storm.cpp, Memory Usage
 #include <sys/time.h>      // Required by storm.cpp, Memory Usage

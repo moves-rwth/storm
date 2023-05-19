@@ -82,7 +82,7 @@ boost::any ToPrefixStringVisitor::visit(BoundedUntilFormula const& f, boost::any
 
     uint64_t lowerBound = f.hasLowerBound() ? f.getNonStrictLowerBound<uint64_t>() : 0ull;
     if (lTrue) {
-        repeat(lowerBound, "X ");                 // X [..]
+        repeat(lowerBound, "X ");  // X [..]
     } else {
         repeat(lowerBound, "& " + left + " X ");  // ( left & X [..] )
     }

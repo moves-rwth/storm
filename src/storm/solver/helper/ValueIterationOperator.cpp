@@ -30,7 +30,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrix(storm::sto
     matrixValues.reserve(matrix.getNonzeroEntryCount());
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
     if constexpr (!TrivialRowGrouping) {
-        matrixColumns.push_back(StartOfRowGroupIndicator);               // indicate start of first row(group)
+        matrixColumns.push_back(StartOfRowGroupIndicator);  // indicate start of first row(group)
         for (auto groupIndex : indexRange<Backward>(0, this->rowGroupIndices->size() - 1)) {
             STORM_LOG_ASSERT(this->rowGroupIndices->at(groupIndex) != this->rowGroupIndices->at(groupIndex + 1),
                              "There is an empty row group. This is not expected.");
@@ -41,7 +41,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrix(storm::sto
                 }
                 matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
             }
-            matrixColumns.back() = StartOfRowGroupIndicator;   // This is the start of the next row group
+            matrixColumns.back() = StartOfRowGroupIndicator;  // This is the start of the next row group
         }
     } else {
         matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
@@ -89,7 +89,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setIgnoredRows(bool 
                                                       : indexRange<false>((*this->rowGroupIndices)[groupIndex], (*this->rowGroupIndices)[groupIndex + 1]);
         for (auto const rowIndex : rowIndexRange) {
             if (!ignore(groupIndex, rowIndex)) {
-                *colIt &= StartOfRowGroupIndicator;           // Clear number of skipped entries
+                *colIt &= StartOfRowGroupIndicator;  // Clear number of skipped entries
                 moveToEndOfRow(colIt);
             } else if ((*colIt & SkipNumEntriesMask) == 0) {  // i.e. should ignore but is not already ignored
                 auto currColIt = colIt;

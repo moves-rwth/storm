@@ -43,4 +43,4 @@ storm::storage::geometry::Halfspace<T> fromHypro(hypro::Halfspace<T> const& h) {
 }  // namespace storm
 #endif  // STORM_HAVE_HYPRO
 
-#endif  /* STORM_ADAPTERS_HYPROADAPTER_H_ */
+#endif /* STORM_ADAPTERS_HYPROADAPTER_H_ */
