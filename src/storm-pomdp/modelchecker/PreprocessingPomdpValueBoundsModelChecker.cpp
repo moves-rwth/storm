@@ -18,13 +18,7 @@ namespace storm {
     namespace modelchecker {
     template<typename ValueType>
     PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp)
-        : pomdp(pomdp) {
-        // Setup checker environment
-        /*mcEnvironment = storm::Environment();
-        mcEnvironment.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological, true);
-        mcEnvironment.solver().minMax().setMethod(minMaxMethod);
-        mcEnvironment.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
-        mcEnvironment.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);*/
+        : pomdp(pomdp) { /* Intentionally left empty */
     }
 
     template<typename ValueType>
