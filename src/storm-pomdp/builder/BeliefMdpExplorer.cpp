@@ -906,13 +906,14 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeValuesOfExploredMdp(storm::Environment const &env,
+                                                                                       storm::solver::OptimizationDirection const &dir) {
             STORM_LOG_ASSERT(status == Status::ModelFinished, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(exploredMdp, "Tried to compute values but the MDP is not explored");
             auto property = createStandardProperty(dir, exploredMdp->hasRewardModel());
             auto task = createStandardCheckTask(property);
 
-            std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(exploredMdp, task));
+            std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(env, exploredMdp, task));
             if (res) {
                 values = std::move(res->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                 scheduler = std::make_shared<storm::storage::Scheduler<ValueType>>(res->asExplicitQuantitativeCheckResult<ValueType>().getScheduler());

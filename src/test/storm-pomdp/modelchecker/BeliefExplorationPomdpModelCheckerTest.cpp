@@ -178,17 +178,20 @@ namespace {
         storm::Environment const& env() const { return _environment; }
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options() const {
             storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
+            opt.gapThresholdInit = 0;
             TestType::adaptOptions(opt);
             return opt;
         }
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> optionsWithStateElimination() const {
             storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
+            opt.gapThresholdInit = 0;
             TestType::adaptOptions(opt);
             opt.useStateEliminationCutoff = true;
             return opt;
         }
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> optionsWithClipping() const {
             storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
+            opt.gapThresholdInit = 0;
             TestType::adaptOptions(opt);
             opt.useClipping = true;
             return opt;
@@ -267,8 +270,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -279,8 +282,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -297,7 +301,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -312,8 +316,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -324,8 +328,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -342,7 +347,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -357,8 +362,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -369,8 +374,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -387,7 +393,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -402,7 +408,7 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         if (this->isExact()) {
@@ -423,8 +429,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         if (this->isExact()) {
@@ -450,7 +457,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("3/10");
         if (this->isExact()) {
@@ -472,8 +479,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("29/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -484,8 +491,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("29/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -502,7 +510,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("29/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -517,8 +525,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("19/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -529,8 +537,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("19/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -547,7 +556,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("19/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -562,8 +571,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("29/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -574,8 +583,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("29/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -592,7 +602,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("29/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -607,8 +617,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("19/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -619,8 +629,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("19/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -637,7 +648,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("19/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -652,8 +663,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("74/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -665,8 +676,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("74/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -684,7 +696,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("74/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -698,8 +710,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
     }
@@ -708,8 +720,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
@@ -724,7 +737,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
@@ -735,8 +748,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("80/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -748,8 +761,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("80/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -767,7 +781,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("80/91");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -781,8 +795,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
     }
@@ -791,8 +805,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
@@ -807,7 +822,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
@@ -818,8 +833,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("38/155");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -831,8 +846,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("38/155");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -850,7 +866,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("38/155");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -864,8 +880,8 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
-        auto result = checker.check(*data.formula);
-        
+        auto result = checker.check(this->env(), *data.formula);
+
         ValueType expected = this->parseNumber("0");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -877,8 +893,9 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
-        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
-        auto result = checker.check(*data.formula);
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
+                                                                                                                        this->optionsWithStateElimination());
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("0");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -896,7 +913,7 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                         this->optionsWithClipping());
-        auto result = checker.check(*data.formula);
+        auto result = checker.check(this->env(), *data.formula);
 
         ValueType expected = this->parseNumber("0");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());

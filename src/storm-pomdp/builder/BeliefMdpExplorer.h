@@ -13,6 +13,8 @@
 #include "storm/storage/BitVector.h"
 
 namespace storm {
+class Environment;
+
 namespace modelchecker {
 template<typename FormulaType, typename ValueType>
 class CheckTask;
@@ -185,7 +187,7 @@ class BeliefMdpExplorer {
 
             std::vector<storm::storage::Scheduler<ValueType>> getLowerValueBoundSchedulers() const;
 
-            void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
+            void computeValuesOfExploredMdp(storm::Environment const &env, storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
 

@@ -99,10 +99,16 @@ class BeliefExplorationPomdpModelChecker {
      * represents a scheduler. Each scheduler is represented by a vector of maps representing (memory node x state) -> value
      * @return result of the model checking
      */
+    Result check(storm::Environment const& env, storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
+                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
+                     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
     Result check(storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
                  std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
                      std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
     Result check(storm::logic::Formula const& formula,
+                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
+                     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
+    Result check(storm::Environment const& env, storm::logic::Formula const& formula,
                  std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds =
                      std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>());
 
@@ -130,6 +136,8 @@ class BeliefExplorationPomdpModelChecker {
      * @param valueBounds values used for cut-offs and clipping
      * @param result the struct to store results
      */
+    void unfoldInteractively(storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                             storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
     void unfoldInteractively(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                              storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
 
@@ -247,40 +255,44 @@ class BeliefExplorationPomdpModelChecker {
      * @param min true if minimum probability is to be computed
      * @return A struct containing the final over-approximation (overApproxValue) and under-approximation (underApproxValue) values
      */
-    void refineReachability(std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+    void refineReachability(storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                             storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
 
-                 /**
-                  * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties
-                  * @param targetObservations targetObservations the target observations of the objective
-                  * @param min true if the objective is to minimise the value
-                  * @param computeRewards true if the objective is to compute a reward value
-                  * @param refine true if the method is called as part of the abstraction-refinement process
-                  * @param heuristicParameters parameters used for guiding the exploration
-                  * @param observationResolutionVector vector of resolutions for each observation used to discretise beliefs
-                  * @param beliefManager the belief manager to be used
-                  * @param overApproximation the belief explorer to be used
-                  * @return True if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the MDP)
-                  */
-                bool buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
+    /**
+     * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing
+     * properties
+     * @param targetObservations targetObservations the target observations of the objective
+     * @param min true if the objective is to minimise the value
+     * @param computeRewards true if the objective is to compute a reward value
+     * @param refine true if the method is called as part of the abstraction-refinement process
+     * @param heuristicParameters parameters used for guiding the exploration
+     * @param observationResolutionVector vector of resolutions for each observation used to discretise beliefs
+     * @param beliefManager the belief manager to be used
+     * @param overApproximation the belief explorer to be used
+     * @return True if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the MDP)
+     */
+    bool buildOverApproximation(storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
+                                HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector,
+                                std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
 
-                /**
-                 *
-                 * @param targetObservations targetObservations the target observations of the objective
-                 * @param min true if the objective is to minimise the value
-                 * @param computeRewards true if the objective is to compute a reward value
-                 * @param refine true if the method is called as part of the abstraction-refinement process
-                 * @param heuristicParameters parameters used for guiding the exploration
-                 * @param beliefManager the belief manager to be used
-                 * @param underApproximation the belief explorer to be used
-                 * @param interactive true if the underapproximation is built as part of an interactive unfolding
-                 * @return True if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the MDP)
-                 */
-                bool buildUnderApproximation(std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
-                                             HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager,
-                                             std::shared_ptr<ExplorerType>& underApproximation, bool interactive);
+    /**
+     * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing
+     * properties
+     * @param targetObservations targetObservations the target observations of the objective
+     * @param min true if the objective is to minimise the value
+     * @param computeRewards true if the objective is to compute a reward value
+     * @param refine true if the method is called as part of the abstraction-refinement process
+     * @param heuristicParameters parameters used for guiding the exploration
+     * @param beliefManager the belief manager to be used
+     * @param underApproximation the belief explorer to be used
+     * @param interactive true if the underapproximation is built as part of an interactive unfolding
+     * @return True if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the MDP)
+     */
+    bool buildUnderApproximation(storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
+                                 HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager,
+                                 std::shared_ptr<ExplorerType>& underApproximation, bool interactive);
 
-                /**
+    /**
                  * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
                  * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
                  * @param clippingStateId the state ID of the clipping belief

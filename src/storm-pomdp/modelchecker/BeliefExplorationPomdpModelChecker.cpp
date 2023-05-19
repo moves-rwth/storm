@@ -108,16 +108,33 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
             BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
+                storm::Environment const& env, storm::logic::Formula const& formula,
+                std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
+                return check(env, formula, env, additionalUnderApproximationBounds);
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
                 storm::logic::Formula const& formula,
                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
                 storm::Environment env;
-                return check(formula, env, additionalUnderApproximationBounds);
+                return check(env, formula, env, additionalUnderApproximationBounds);
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
             BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
                 storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
+                std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
+                storm::Environment env;
+                return check(env, formula, preProcEnv, additionalUnderApproximationBounds);
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(
+                storm::Environment const& env, storm::logic::Formula const& formula, storm::Environment const& preProcEnv,
                 std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> const& additionalUnderApproximationBounds) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize || options.interactiveUnfolding,
                                  "Invoked belief exploration but no task (unfold or discretize) given.");
@@ -179,9 +196,9 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     statistics.beliefMdpDetectedToBeFinite = true;
                 }
                 if(options.interactiveUnfolding){
-                    unfoldInteractively(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
+                    unfoldInteractively(env, targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 } else {
-                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
+                    refineReachability(env, targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -285,7 +302,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(
-                std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result) {
                 statistics.refinementSteps = 0;
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
@@ -310,8 +327,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
 
-                    buildOverApproximation(targetObservations, min, rewardModelName.has_value(), false, overApproxHeuristicPar, observationResolutionVector,
-                                           overApproxBeliefManager, overApproximation);
+                    buildOverApproximation(env, targetObservations, min, rewardModelName.has_value(), false, overApproxHeuristicPar,
+                                           observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
                     }
@@ -353,7 +370,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     if (!valueBounds.fmSchedulerValueList.empty()) {
                         underApproximation->setFMSchedValueList(valueBounds.fmSchedulerValueList);
                     }
-                    buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar, underApproxBeliefManager,
+                    buildUnderApproximation(env, targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar, underApproxBeliefManager,
                                             underApproximation, false);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
@@ -410,7 +427,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                             overApproxHeuristicPar.observationThreshold +=
                                 options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
                             overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                            overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.has_value(), true, overApproxHeuristicPar,
+                            overApproxFixPoint = buildOverApproximation(env, targetObservations, min, rewardModelName.has_value(), true, overApproxHeuristicPar,
                                                                         observationResolutionVector, overApproxBeliefManager, overApproximation);
                             if (overApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                                 ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
@@ -432,8 +449,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                 storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) *
                                 options.sizeThresholdFactor);
                             underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                            underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), true, underApproxHeuristicPar,
-                                                                          underApproxBeliefManager, underApproximation, true);
+                            underApproxFixPoint = buildUnderApproximation(env, targetObservations, min, rewardModelName.has_value(), true,
+                                                                          underApproxHeuristicPar, underApproxBeliefManager, underApproximation, true);
                             if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                                 ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                                 bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
@@ -559,7 +576,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::unfoldInteractively(
-                std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result) {
                 statistics.refinementSteps = 0;
                 interactiveResult = result;
@@ -600,7 +617,7 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     bool hasTruncatedStates = false;
                     if(unfoldingStatus != Status::Converged) {
                         // Continue unfolding underapproximation
-                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar,
+                        underApproxFixPoint = buildUnderApproximation(env, targetObservations, min, rewardModelName.has_value(), false, underApproxHeuristicPar,
                                                                       underApproxBeliefManager, interactiveUnderApproximationExplorer, firstIteration);
                         if (interactiveUnderApproximationExplorer->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                             ValueType const& newValue = interactiveUnderApproximationExplorer->getComputedValueAtInitialState();
@@ -710,13 +727,23 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     // While we tell the procedure to be paused, idle
                     while (unfoldingControl == storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType,
                                                                                                               BeliefMDPType>::UnfoldingControl::Pause &&
-                           !storm::utility::resources::isTerminate());
+                           !storm::utility::resources::isTerminate())
+                        ;
                 }
                 STORM_LOG_INFO("\tInteractive Unfolding terminated.\n");
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveResult() {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::unfoldInteractively(
+                std::set<uint32_t> const& targetObservations, bool min, std::optional<std::string> rewardModelName,
+                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result) {
+                storm::Environment env;
+                unfoldInteractively(env, targetObservations, min, rewardModelName, valueBounds, result);
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveResult() {
                 return interactiveResult;
             }
 
@@ -756,7 +783,10 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildOverApproximation(
+                storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
+                HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector,
+                std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
 
@@ -990,7 +1020,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                 statistics.overApproximationBuildTime.stop();
 
                 statistics.overApproximationCheckTime.start();
-                overApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
+                overApproximation->computeValuesOfExploredMdp(
+                    env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.overApproximationCheckTime.stop();
 
                 // don't overwrite statistics of a previous, successful computation
@@ -1001,11 +1032,14 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation, bool firstIteration) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(
+                storm::Environment const& env, std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
+                HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager,
+                std::shared_ptr<ExplorerType>& underApproximation, bool firstIteration) {
                 statistics.underApproximationBuildTime.start();
 
                 unfoldingStatus = Status::Exploring;
-                if(options.useClipping){
+                if (options.useClipping) {
                     STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
                     statistics.nrClippingAttempts = 0;
                     statistics.nrClippedStates = 0;
@@ -1243,8 +1277,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                 STORM_PRINT_AND_LOG("Finished exploring Underapproximation MDP.\nStart analysis...\n");
                 unfoldingStatus = Status::ModelExplorationFinished;
                 statistics.underApproximationCheckTime.start();
-                underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize
-                                                                   : storm::solver::OptimizationDirection::Maximize);
+                underApproximation->computeValuesOfExploredMdp(
+                    env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
                 if (underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0) {
                     statistics.nrTruncatedStates = underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits();
