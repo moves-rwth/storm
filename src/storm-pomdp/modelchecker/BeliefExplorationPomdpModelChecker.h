@@ -3,11 +3,12 @@
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
-#include "environment/Environment.h"
 #include "storm/storage/jani/Property.h"
 #include "utility/Stopwatch.h"
 
 namespace storm {
+class Environment;
+
 namespace models {
 namespace sparse {
 template<class ValueType, typename RewardModelType>

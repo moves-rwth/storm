@@ -15,6 +15,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/vector.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"

@@ -7,8 +7,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
 
-#include "environment/solver/MinMaxSolverEnvironment.h"
-#include "environment/solver/TopologicalSolverEnvironment.h"
+#include "environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"

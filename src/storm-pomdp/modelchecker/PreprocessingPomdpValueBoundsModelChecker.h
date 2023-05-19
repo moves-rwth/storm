@@ -1,6 +1,5 @@
 #pragma once
 
-#include "environment/Environment.h"
 #include "solver/SolverSelectionOptions.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/storage/BeliefExplorationBounds.h"
@@ -8,6 +7,7 @@
 #include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
+class Environment;
 namespace modelchecker {
 template<typename FormulaType, typename ValueType>
 class CheckTask;
