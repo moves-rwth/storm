@@ -848,8 +848,9 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                         if (!hasOldBehavior) {
                             // Case 1
                             // If we explore this state and if it has no old behavior, it is clear that an "old" optimal scheduler can be extended to a scheduler that reaches this state
-                            if (!timeLimitExceeded && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
-                                exploreAllActions = true; // Case 1.1
+                            if (!timeLimitExceeded && gap >= heuristicParameters.gapThreshold &&
+                                numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                                exploreAllActions = true;   // Case 1.1
                             } else {
                                 truncateAllActions = true; // Case 1.2
                                 overApproximation->setCurrentStateIsTruncated();
@@ -1020,12 +1021,8 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                     if (options.interactiveUnfolding && !firstIteration) {
                         underApproximation->restoreExplorationState();
                     } else if (computeRewards) {  // Build a new under approximation
-                        if (options.useClipping) {
-                            // If we clip, use the sink state for infinite correction values
-                            underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
-                        } else {
-                            underApproximation->startNewExploration(storm::utility::zero<ValueType>());
-                        }
+                        // We use the sink state for infinite cut-off/clipping values
+                        underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                     } else {
                         underApproximation->startNewExploration(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
                     }
@@ -1148,7 +1145,12 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                     }
                                     if (stopExploration) {
                                         if (computeRewards) {
-                                            underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
+                                            if (truncationValueBound == storm::utility::infinity<ValueType>()) {
+                                                underApproximation->addTransitionsToExtraStates(addedActions + action, storm::utility::zero<ValueType>(),
+                                                                                                truncationProbability);
+                                            } else {
+                                                underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
+                                            }
                                         } else {
                                             underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound,
                                                                                             truncationProbability - truncationValueBound);
@@ -1156,11 +1158,13 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                     }
                                     if (computeRewards) {
                                         // The truncationValueBound will be added on top of the reward introduced by the current belief state.
-                                        if (!clipBelief) {
-                                            underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
-                                        } else {
-                                            underApproximation->addRewardToCurrentState(
-                                                addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
+                                        if (truncationValueBound != storm::utility::infinity<ValueType>()) {
+                                            if (!clipBelief) {
+                                                underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
+                                            } else {
+                                                underApproximation->addRewardToCurrentState(
+                                                    addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
+                                            }
                                         }
                                     }
                                 }
@@ -1170,8 +1174,13 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                 auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i)
                                                        : underApproximation->computeLowerValueBoundForScheduler(currId, i);
                                 if (computeRewards) {
-                                    underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::one<ValueType>());
-                                    underApproximation->addRewardToCurrentState(addedActions, cutOffValue);
+                                    if (cutOffValue != storm::utility::infinity<ValueType>()) {
+                                        underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::one<ValueType>());
+                                        underApproximation->addRewardToCurrentState(addedActions, cutOffValue);
+                                    } else {
+                                        underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::zero<ValueType>(),
+                                                                                        storm::utility::one<ValueType>());
+                                    }
                                 } else {
                                     underApproximation->addTransitionsToExtraStates(addedActions, cutOffValue,
                                                                                     storm::utility::one<ValueType>() - cutOffValue);
@@ -1194,8 +1203,13 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
                                         continue;
                                     }
                                     if (computeRewards) {
-                                        underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, storm::utility::one<ValueType>());
-                                        underApproximation->addRewardToCurrentState(addedActions + transitionNr, cutOffValue);
+                                        if (cutOffValue != storm::utility::infinity<ValueType>()) {
+                                            underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, storm::utility::one<ValueType>());
+                                            underApproximation->addRewardToCurrentState(addedActions + transitionNr, cutOffValue);
+                                        } else {
+                                            underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, storm::utility::zero<ValueType>(),
+                                                                                            storm::utility::one<ValueType>());
+                                        }
                                     } else {
                                         underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, cutOffValue,
                                                                                         storm::utility::one<ValueType>() - cutOffValue);
