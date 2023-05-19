@@ -36,7 +36,7 @@ class SparseMultiObjectiveRewardAnalysis {
         storm::storage::BitVector totalReward0EStates;  // ... there is a scheduler such that all expected total reward objectives have value zero
         storm::storage::BitVector reward0AStates;       // ... all schedulers induce value 0 for all reward-based objectives
         boost::optional<storm::storage::BitVector>
-            totalRewardLessInfinityEStates;             // ... there is a scheduler yielding finite reward for all expected total reward objectives
+            totalRewardLessInfinityEStates;  // ... there is a scheduler yielding finite reward for all expected total reward objectives
     };
 
     /*!

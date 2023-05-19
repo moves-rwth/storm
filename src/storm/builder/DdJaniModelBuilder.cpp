@@ -65,7 +65,7 @@ template<storm::dd::DdType Type, typename ValueType>
 bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties) {
     // Check jani features
     auto features = model.getModelFeatures();
-    features.remove(storm::jani::ModelFeature::Arrays);     // can be substituted
+    features.remove(storm::jani::ModelFeature::Arrays);  // can be substituted
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
