@@ -88,8 +88,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Pmax) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_Pmin) {
@@ -104,8 +104,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Pmin) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmax) {
@@ -120,8 +120,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmax) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmin) {
@@ -137,8 +137,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmin) {
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
 
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_Rmax) {
@@ -153,8 +153,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Rmax) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_Rmin) {
@@ -169,8 +169,8 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Rmin) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmax) {
@@ -217,8 +217,8 @@ TYPED_TEST(BeliefExplorationAPITest, maze2_Rmin) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, maze2_slippery_Rmin) {
@@ -233,8 +233,8 @@ TYPED_TEST(BeliefExplorationAPITest, maze2_slippery_Rmin) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, refuel_Pmax) {
@@ -249,9 +249,9 @@ TYPED_TEST(BeliefExplorationAPITest, refuel_Pmax) {
 
     EXPECT_EQ(2, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,2), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 2), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, refuel_Pmin) {
@@ -266,8 +266,8 @@ TYPED_TEST(BeliefExplorationAPITest, refuel_Pmin) {
 
     EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
-    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
-    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);
 }
 
 TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
@@ -301,9 +301,9 @@ TYPED_TEST(BeliefExplorationAPITest, noHeuristicValues) {
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple2.prism", "Rmax=?[F \"goal\"]");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
 
-    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0,0},{1,0}},{{0,0.7}},{{0,1},{1,1}}};
-    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2,1}},{{2,1}}};
-    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals,obs1vals};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0, 0}, {1, 0}}, {{0, 0.7}}, {{0, 1}, {1, 1}}};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2, 1}}, {{2, 1}}};
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals, obs1vals};
 
     auto result = storm::pomdp::api::underapproximateWithoutHeuristicValues<ValueType>(this->env(), data.model, task, 10, additionalVals);
 

@@ -26,151 +26,145 @@ class BeliefManager {
     typedef boost::container::flat_set<StateType> BeliefSupportType;
     typedef uint64_t BeliefId;
 
-    enum class TriangulationMode { Static,
-                Dynamic
-            };
+    enum class TriangulationMode { Static, Dynamic };
 
-            BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision, TriangulationMode const &triangulationMode);
+    BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision, TriangulationMode const &triangulationMode);
 
-            void setRewardModel(std::optional<std::string> rewardModelName = std::nullopt);
+    void setRewardModel(std::optional<std::string> rewardModelName = std::nullopt);
 
-            void unsetRewardModel();
+    void unsetRewardModel();
 
-            struct Triangulation {
-                std::vector<BeliefId> gridPoints;
-                std::vector<BeliefValueType> weights;
-                uint64_t size() const;
-            };
+    struct Triangulation {
+        std::vector<BeliefId> gridPoints;
+        std::vector<BeliefValueType> weights;
+        uint64_t size() const;
+    };
 
-            struct BeliefClipping {
-                bool isClippable;
-                BeliefId startingBelief;
-                BeliefId targetBelief;
-                BeliefValueType delta;
-                BeliefType deltaValues;
-                bool onGrid = false;
-            };
+    struct BeliefClipping {
+        bool isClippable;
+        BeliefId startingBelief;
+        BeliefId targetBelief;
+        BeliefValueType delta;
+        BeliefType deltaValues;
+        bool onGrid = false;
+    };
 
-            BeliefId noId() const;
+    BeliefId noId() const;
 
-            bool isEqual(BeliefId const &first, BeliefId const &second) const;
+    bool isEqual(BeliefId const &first, BeliefId const &second) const;
 
-            std::string toString(BeliefId const &beliefId) const;
+    std::string toString(BeliefId const &beliefId) const;
 
+    std::string toString(Triangulation const &t) const;
 
-            std::string toString(Triangulation const &t) const;
+    ValueType getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands);
 
-            ValueType getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands);
+    std::pair<bool, ValueType> getWeightedSum(BeliefId const &beliefId, std::unordered_map<StateType, ValueType> const &summands);
 
-            std::pair<bool, ValueType> getWeightedSum(BeliefId const &beliefId, std::unordered_map<StateType, ValueType> const &summands);
+    BeliefId const &getInitialBelief() const;
 
-            BeliefId const &getInitialBelief() const;
+    ValueType getBeliefActionReward(BeliefId const &beliefId, uint64_t const &localActionIndex) const;
 
-            ValueType getBeliefActionReward(BeliefId const &beliefId, uint64_t const &localActionIndex) const;
+    uint32_t getBeliefObservation(BeliefId beliefId);
 
-            uint32_t getBeliefObservation(BeliefId beliefId);
+    uint64_t getBeliefNumberOfChoices(BeliefId beliefId);
 
-            uint64_t getBeliefNumberOfChoices(BeliefId beliefId);
+    /**
+     * Returns the first state in the belief as a representative
+     * @param beliefId
+     * @return
+     */
+    uint64_t getRepresentativeState(BeliefId const &beliefId);
 
-            /**
-             * Returns the first state in the belief as a representative
-             * @param beliefId
-             * @return
-             */
-            uint64_t getRepresentativeState(BeliefId const &beliefId);
+    Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution);
 
-            Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution);
+    template<typename DistributionType>
+    void addToDistribution(DistributionType &distr, StateType const &state, BeliefValueType const &value);
 
-            template<typename DistributionType>
-            void addToDistribution(DistributionType &distr, StateType const &state, BeliefValueType const &value);
+    void joinSupport(BeliefId const &beliefId, BeliefSupportType &support);
 
-            void joinSupport(BeliefId const &beliefId, BeliefSupportType &support);
+    BeliefId getNumberOfBeliefIds() const;
 
-            BeliefId getNumberOfBeliefIds() const;
+    std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex,
+                                                                     std::vector<BeliefValueType> const &observationResolutions);
 
-            std::vector<std::pair<BeliefId, ValueType>>
-            expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex, std::vector<BeliefValueType> const &observationResolutions);
+    std::vector<std::pair<BeliefId, ValueType>> expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
+                                                              std::vector<uint64_t> const &observationResolutions);
 
-            std::vector<std::pair<BeliefId, ValueType>>
-            expandAndClip(BeliefId const &beliefId, uint64_t actionIndex, std::vector<uint64_t> const &observationResolutions);
+    std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
+    BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite = storm::storage::BitVector());
 
-            BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite = storm::storage::BitVector());
+    std::string getObservationLabel(BeliefId const &beliefId);
 
-            std::string getObservationLabel(BeliefId const & beliefId);
+    std::vector<BeliefValueType> computeMatrixBeliefProduct(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix);
 
-            std::vector<BeliefValueType> computeMatrixBeliefProduct(BeliefId const & beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix);
+   private:
+    std::vector<BeliefValueType> getBeliefAsVector(BeliefId const &beliefId);
 
-        private:
+    std::vector<BeliefValueType> getBeliefAsVector(const BeliefType &belief);
 
-            std::vector<BeliefValueType> getBeliefAsVector(BeliefId const &beliefId);
+    BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector &isInfinite);
 
-            std::vector<BeliefValueType> getBeliefAsVector(const BeliefType &belief);
+    template<typename DistributionType>
+    void adjustDistribution(DistributionType &distr);
 
-            BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite);
+    struct BeliefHash {
+        std::size_t operator()(const BeliefType &belief) const;
+    };
 
-            template<typename DistributionType>
-            void adjustDistribution(DistributionType &distr);
+    struct Belief_equal_to {
+        bool operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const;
+    };
 
-            struct BeliefHash {
-                std::size_t operator()(const BeliefType &belief) const;
-            };
+    struct FreudenthalDiff {
+        FreudenthalDiff(StateType const &dimension, BeliefValueType diff);
 
-            struct Belief_equal_to {
-                bool operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const;
-            };
+        StateType dimension;   // i
+        BeliefValueType diff;  // d[i]
+        bool operator>(FreudenthalDiff const &other) const;
+    };
 
-            struct FreudenthalDiff {
-                FreudenthalDiff(StateType const &dimension, BeliefValueType diff);
+    BeliefType const &getBelief(BeliefId const &id) const;
 
-                StateType dimension; // i
-                BeliefValueType diff; // d[i]
-                bool operator>(FreudenthalDiff const &other) const;
-            };
+    BeliefId getId(BeliefType const &belief) const;
 
-            BeliefType const &getBelief(BeliefId const &id) const;
+    std::string toString(BeliefType const &belief) const;
 
-            BeliefId getId(BeliefType const &belief) const;
+    bool isEqual(BeliefType const &first, BeliefType const &second) const;
 
-            std::string toString(BeliefType const &belief) const;
+    bool assertBelief(BeliefType const &belief) const;
 
-            bool isEqual(BeliefType const &first, BeliefType const &second) const;
+    bool assertTriangulation(BeliefType const &belief, Triangulation const &triangulation) const;
 
-            bool assertBelief(BeliefType const &belief) const;
+    uint32_t getBeliefObservation(BeliefType belief) const;
 
-            bool assertTriangulation(BeliefType const &belief, Triangulation const &triangulation) const;
+    void triangulateBeliefFreudenthal(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
 
-            uint32_t getBeliefObservation(BeliefType belief) const;
+    void triangulateBeliefDynamic(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
 
-            void triangulateBeliefFreudenthal(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
+    Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
 
-            void triangulateBeliefDynamic(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
+    std::vector<std::pair<BeliefId, ValueType>> expandInternal(
+        BeliefId const &beliefId, uint64_t actionIndex, std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = std::nullopt,
+        std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = std::nullopt);
 
-            Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
+    BeliefId computeInitialBelief();
 
-            std::vector<std::pair<BeliefId, ValueType>> expandInternal(
-                BeliefId const &beliefId, uint64_t actionIndex,
-                std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = std::nullopt,
-                std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = std::nullopt);
+    BeliefId getOrAddBeliefId(BeliefType const &belief);
 
-            BeliefId computeInitialBelief();
+    PomdpType const &pomdp;
+    std::vector<ValueType> pomdpActionRewardVector;
 
-            BeliefId getOrAddBeliefId(BeliefType const &belief);
+    std::vector<BeliefType> beliefs;
+    std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
+    BeliefId initialBeliefId;
 
-            PomdpType const& pomdp;
-            std::vector<ValueType> pomdpActionRewardVector;
-            
-            std::vector<BeliefType> beliefs;
-            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
-            BeliefId initialBeliefId;
-            
-            storm::utility::ConstantsComparator<BeliefValueType> cc;
+    storm::utility::ConstantsComparator<BeliefValueType> cc;
 
-            std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
-            
-            TriangulationMode triangulationMode;
-            
-        };
-    }
-}
+    std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
+
+    TriangulationMode triangulationMode;
+};
+}  // namespace storage
+}  // namespace storm

@@ -18,7 +18,7 @@ class Formula;
 }
 namespace pomdp {
 namespace modelchecker {
-            template <typename ValueType>
+template<typename ValueType>
 class PreprocessingPomdpValueBoundsModelChecker {
    public:
     typedef pomdp::storage::PreprocessingPomdpValueBounds<ValueType> ValueBounds;
@@ -55,7 +55,7 @@ class PreprocessingPomdpValueBoundsModelChecker {
     std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomMemorylessPolicy(
         storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info,
         std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
-            };
-        }
-    }
-}
+};
+}  // namespace modelchecker
+}  // namespace pomdp
+}  // namespace storm

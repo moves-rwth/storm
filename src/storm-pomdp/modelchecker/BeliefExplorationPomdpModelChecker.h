@@ -1,7 +1,7 @@
-#include "storm/utility/logging.h"
-#include "storm-pomdp/storage/BeliefManager.h"
-#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
+#include "storm-pomdp/storage/BeliefManager.h"
+#include "storm/utility/logging.h"
 
 #include "storm/storage/jani/Property.h"
 #include "utility/Stopwatch.h"
@@ -293,79 +293,80 @@ class BeliefExplorationPomdpModelChecker {
                                  std::shared_ptr<ExplorerType>& underApproximation, bool interactive);
 
     /**
-                 * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
-                 * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
-                 * @param clippingStateId the state ID of the clipping belief
-                 * @param computeRewards true, if rewards are computed
-                 * @param min true, if objective is to minimise
-                 * @param beliefManager the belief manager used
-                 * @param beliefExplorer the belief MDP explorer used
-                 */
-                void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
+     * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
+     * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
+     * @param clippingStateId the state ID of the clipping belief
+     * @param computeRewards true, if rewards are computed
+     * @param min true, if objective is to minimise
+     * @param beliefManager the belief manager used
+     * @param beliefExplorer the belief MDP explorer used
+     */
+    void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
+                    std::shared_ptr<ExplorerType>& beliefExplorer);
 
-                /**
-                 * Clips the belief with the given state ID to a belief grid.
-                 * If a new candidate is added to the belief space, it is expanded. If necessary, its direct successors are added to the exploration queue to be
-                 * handled by the main exploration routine.
-                 * @param clippingStateId the state ID of the clipping belief
-                 * @param computeRewards true, if rewards are computed
-                 * @param min true, if objective is to minimise
-                 * @param beliefManager the belief manager used
-                 * @param beliefExplorer the belief MDP explorer used
-                 */
-                bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
-                                          std::shared_ptr<ExplorerType>& beliefExplorer, uint64_t localActionIndex);
+    /**
+     * Clips the belief with the given state ID to a belief grid.
+     * If a new candidate is added to the belief space, it is expanded. If necessary, its direct successors are added to the exploration queue to be
+     * handled by the main exploration routine.
+     * @param clippingStateId the state ID of the clipping belief
+     * @param computeRewards true, if rewards are computed
+     * @param min true, if objective is to minimise
+     * @param beliefManager the belief manager used
+     * @param beliefExplorer the belief MDP explorer used
+     */
+    bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
+                              std::shared_ptr<ExplorerType>& beliefExplorer, uint64_t localActionIndex);
 
-                /**
-                 * Heuristically rates the quality of the approximation described by the given successor observation info.
-                 * Here, 0 means a bad approximation and 1 means a good approximation.
-                 */
-                BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info,
-                                                BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
+    /**
+     * Heuristically rates the quality of the approximation described by the given successor observation info.
+     * Here, 0 means a bad approximation and 1 means a good approximation.
+     */
+    BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution,
+                                    BeliefValueType const& maxResolution);
 
-                /**
-                 * Obtains the quality ratings for all observations
-                 * @param overApproximation pointer to the over-approximation belief explorer
-                 * @param observationResolutionVector vector containing the resolutions used in the over-approximation for each observation
-                 * @return vector of ratings
-                 */
-                std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation,
-                                                                   std::vector<BeliefValueType> const& observationResolutionVector);
+    /**
+     * Obtains the quality ratings for all observations
+     * @param overApproximation pointer to the over-approximation belief explorer
+     * @param observationResolutionVector vector containing the resolutions used in the over-approximation for each observation
+     * @return vector of ratings
+     */
+    std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation,
+                                                       std::vector<BeliefValueType> const& observationResolutionVector);
 
-                /**
-                 * Obtains the difference between the given lower and upper bounds
-                 * @param l the lower bound
-                 * @param u the upper bound
-                 * @return the difference
-                 */
-                typename PomdpModelType::ValueType getGap(typename PomdpModelType::ValueType const& l, typename PomdpModelType::ValueType const& u);
+    /**
+     * Obtains the difference between the given lower and upper bounds
+     * @param l the lower bound
+     * @param u the upper bound
+     * @return the difference
+     */
+    typename PomdpModelType::ValueType getGap(typename PomdpModelType::ValueType const& l, typename PomdpModelType::ValueType const& u);
 
-                /**
-                 * Sets the command for the interactive belief unfolding
-                 * @param newUnfoldingControl the new command
-                 */
-                void setUnfoldingControl(UnfoldingControl newUnfoldingControl);
+    /**
+     * Sets the command for the interactive belief unfolding
+     * @param newUnfoldingControl the new command
+     */
+    void setUnfoldingControl(UnfoldingControl newUnfoldingControl);
 
-                /* Variables */
+    /* Variables */
 
-                Statistics statistics;
-                Options options;
+    Statistics statistics;
+    Options options;
 
-                std::shared_ptr<PomdpModelType> inputPomdp;
-                std::shared_ptr<PomdpModelType> preprocessedPomdp;
+    std::shared_ptr<PomdpModelType> inputPomdp;
+    std::shared_ptr<PomdpModelType> preprocessedPomdp;
 
-                storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
-                storm::utility::ConstantsComparator<ValueType> valueTypeCC;
+    storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
+    storm::utility::ConstantsComparator<ValueType> valueTypeCC;
 
-                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
+    storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
 
-                std::shared_ptr<ExplorerType> interactiveUnderApproximationExplorer;
+    std::shared_ptr<ExplorerType> interactiveUnderApproximationExplorer;
 
-                Status unfoldingStatus;
-                UnfoldingControl unfoldingControl;
-                Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
-            };
+    Status unfoldingStatus;
+    UnfoldingControl unfoldingControl;
+    Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
+};
 
-        }
-    }
-}
+}  // namespace modelchecker
+}  // namespace pomdp
+}  // namespace storm

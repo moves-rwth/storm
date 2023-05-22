@@ -3,49 +3,46 @@
 #pragma once
 
 #include "storm-config.h"
-#include "storm/settings/modules/ModuleSettings.h"
 #include "storm-pomdp/storage/PomdpMemory.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
-    namespace settings {
-        namespace modules {
+namespace settings {
+namespace modules {
 
-            /*!
-             * This class represents the settings for POMDP model checking.
-             */
-            class ToParametricSettings : public ModuleSettings {
-            public:
+/*!
+ * This class represents the settings for POMDP model checking.
+ */
+class ToParametricSettings : public ModuleSettings {
+   public:
+    /*!
+     * Creates a new set of POMDP settings.
+     */
+    ToParametricSettings();
 
-                /*!
-                 * Creates a new set of POMDP settings.
-                 */
-                ToParametricSettings();
+    virtual ~ToParametricSettings() = default;
 
-                virtual ~ToParametricSettings() = default;
+    bool isExportToParametricSet() const;
+    std::string getExportToParametricFilename() const;
 
-                bool isExportToParametricSet() const;
-                std::string getExportToParametricFilename() const;
+    bool isQualitativeReductionSet() const;
 
-                bool isQualitativeReductionSet() const;
+    bool isMecReductionSet() const;
+    bool isTransformSimpleSet() const;
+    bool isTransformBinarySet() const;
+    bool isConstantRewardsSet() const;
+    bool allowPostSimplifications() const;
+    std::string getFscApplicationTypeString() const;
 
-                bool isMecReductionSet() const;
-                bool isTransformSimpleSet() const;
-                bool isTransformBinarySet() const;
-                bool isConstantRewardsSet() const;
-                bool allowPostSimplifications() const;
-                std::string getFscApplicationTypeString() const;
+    bool check() const override;
+    void finalize() override;
 
-                bool check() const override;
-                void finalize() override;
+    // The name of the module.
+    static const std::string moduleName;
 
-                // The name of the module.
-                static const std::string moduleName;
+   private:
+};
 
-            private:
-
-
-            };
-
-        } // namespace modules
-    } // namespace settings
-} // namespace storm
+}  // namespace modules
+}  // namespace settings
+}  // namespace storm
