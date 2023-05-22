@@ -26,9 +26,9 @@
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
+#include "storm/settings/modules/GurobiSettings.h"
 
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
@@ -52,7 +52,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
             storm::settings::addModule<storm::settings::modules::BeliefExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ToParametricSettings>();
-        
+
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
@@ -62,6 +62,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+            storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();

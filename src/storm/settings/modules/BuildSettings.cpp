@@ -32,6 +32,7 @@ const std::string applyNoMaxProgAssumptionOptionName = "nomaxprog";
 const std::string buildChoiceLabelOptionName = "buildchoicelab";
 const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
 const std::string buildStateValuationsOptionName = "buildstateval";
+const std::string buildObservationValuationsOptionName = "buildobsval";
 const std::string buildAllLabelsOptionName = "build-all-labels";
 const std::string buildOutOfBoundsStateOptionName = "build-out-of-bounds-state";
 const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-guards-label";
@@ -63,6 +64,10 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
             .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, buildObservationValuationsOptionName, false,
+                                                   "If set, also build the observation valuations (only relevant for POMDPs)")
+                        .setIsAdvanced()
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, buildAllLabelsOptionName, false, "If set, build all labels").setIsAdvanced().build());
     this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
@@ -150,6 +155,10 @@ bool BuildSettings::isBuildChoiceOriginsSet() const {
 
 bool BuildSettings::isBuildStateValuationsSet() const {
     return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
+}
+
+bool BuildSettings::isBuildObservationValuationsSet() const {
+    return this->getOption(buildObservationValuationsOptionName).getHasOptionBeenSet();
 }
 
 bool BuildSettings::isBuildOutOfBoundsStateSet() const {

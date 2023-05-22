@@ -4,14 +4,20 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
-    namespace pomdp {
-        namespace modelchecker {
-            template<typename ValueType>
-            struct BeliefExplorationPomdpModelCheckerOptions;
-        }
-    }
-    
-    namespace settings {
+namespace builder {
+template<typename PomdpType, typename BeliefValueType>
+class BeliefMdpExplorer;
+}
+namespace pomdp {
+namespace modelchecker {
+template<typename ValueType>
+struct BeliefExplorationPomdpModelCheckerOptions;
+}
+
+enum BeliefNumberType { Default, Float, Rational };
+}  // namespace pomdp
+
+namespace settings {
         namespace modules {
 
             /*!
@@ -26,18 +32,21 @@ namespace storm {
                 BeliefExplorationSettings();
 
                 virtual ~BeliefExplorationSettings() = default;
-                
+
+                bool isCutZeroGapSet() const;
                 bool isRefineSet() const;
                 double getRefinePrecision() const;
-                bool isRefineStepLimitSet() const;
                 uint64_t getRefineStepLimit() const;
-                
-                bool isExplorationTimeLimitSet() const;
+
                 uint64_t getExplorationTimeLimit() const;
                 
                 /// Discretization Resolution
                 uint64_t getResolutionInit() const;
                 double getResolutionFactor() const;
+
+                /// Clipping Grid Resolution
+                uint64_t getClippingGridResolution() const;
+
                 /// The maximal number of newly expanded MDP states in a refinement step
                 uint64_t getSizeThresholdInit() const;
                 double getSizeThresholdFactor() const;
@@ -60,7 +69,12 @@ namespace storm {
                 
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
-    
+
+                /// Controls if (grid) clipping is to be used
+                bool isUseClippingSet() const;
+
+                bool isStateEliminationCutoffSet() const;
+
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;
                 

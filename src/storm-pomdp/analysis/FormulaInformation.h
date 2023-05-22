@@ -1,11 +1,10 @@
 #pragma once
 
+#include <optional>
 #include <set>
 #include <string>
-#include <boost/optional.hpp>
-
-#include "storm/storage/BitVector.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     
@@ -33,8 +32,9 @@ namespace storm {
                 };
                 
                 FormulaInformation(); // Unsupported
-                FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir, boost::optional<std::string> const& rewardModelName = boost::none);
-                
+                FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir,
+                                   std::optional<std::string> const& rewardModelName = std::nullopt);
+
                 Type const& getType() const;
                 bool isNonNestedReachabilityProbability() const;
                 bool isNonNestedExpectedRewardFormula() const;
@@ -45,19 +45,19 @@ namespace storm {
                 storm::solver::OptimizationDirection const& getOptimizationDirection() const;
                 bool minimize() const;
                 bool maximize() const;
-                
-                template <typename PomdpType>
+
+                template<typename PomdpType>
                 void updateTargetStates(PomdpType const& pomdp, storm::storage::BitVector&& newTargetStates);
-                
-                template <typename PomdpType>
+
+                template<typename PomdpType>
                 void updateSinkStates(PomdpType const& pomdp, storm::storage::BitVector&& newSinkStates);
-                
-            private:
+
+               private:
                 Type type;
                 storm::solver::OptimizationDirection optimizationDirection;
-                boost::optional<StateSet> targetStates;
-                boost::optional<StateSet> sinkStates;
-                boost::optional<std::string> rewardModelName;
+                std::optional<StateSet> targetStates;
+                std::optional<StateSet> sinkStates;
+                std::optional<std::string> rewardModelName;
             };
             
             template <typename PomdpType>

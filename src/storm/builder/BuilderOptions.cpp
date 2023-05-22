@@ -44,6 +44,7 @@ BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels)
       applyMaximalProgressAssumption(false),
       buildChoiceLabels(false),
       buildStateValuations(false),
+      buildObservationValuations(false),
       buildChoiceOrigins(false),
       scaleAndLiftTransitionRewards(true),
       explorationChecks(false),

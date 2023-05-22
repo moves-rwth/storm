@@ -15,7 +15,7 @@ namespace storm {
         }
         
         template<typename  ValueType>
-        std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> BinaryPomdpTransformer<ValueType>::transform(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple, bool keepStateValuations) const {
+        PomdpTransformationResult<ValueType> BinaryPomdpTransformer<ValueType>::transform(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple, bool keepStateValuations) const {
             auto data = transformTransitions(pomdp, transformSimple);
             storm::storage::sparse::ModelComponents<ValueType> components;
             components.stateLabeling = transformStateLabeling(pomdp, data);
@@ -27,8 +27,10 @@ namespace storm {
             if (keepStateValuations && pomdp.hasStateValuations()) {
                 components.stateValuations = pomdp.getStateValuations().blowup(data.simpleStateToOriginalState);
             }
-            
-            return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
+            PomdpTransformationResult<ValueType> result;
+            result.transformedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
+            result.transformedStateToOriginalStateMap = data.simpleStateToOriginalState;
+            return result;
         }
         
         struct BinaryPomdpTransformerRowGroup {

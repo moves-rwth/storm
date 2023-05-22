@@ -133,13 +133,13 @@ namespace storm {
         storm::storage::BitVector GlobalPomdpMecChoiceEliminator<ValueType>::getEndComponentsWithSingleOutStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs) const {
             storm::storage::BitVector result(pomdp.getNumberOfStates(), false);
             for (auto const& mec : mecs) {
-                boost::optional<uint64_t> uniqueOutState = boost::none;
+                std::optional<uint64_t> uniqueOutState = std::nullopt;
                 for (auto const& stateActionsPair : mec) {
                     // Check whether this is an 'out' state, i.e., not all actions stay inside the MEC
                     if (stateActionsPair.second.size() != pomdp.getNumberOfChoices(stateActionsPair.first)) {
                         if (uniqueOutState) {
                             // we already found one out state, so this mec is invalid
-                            uniqueOutState = boost::none;
+                            uniqueOutState = std::nullopt;
                             break;
                         } else {
                             uniqueOutState = stateActionsPair.first;
@@ -147,7 +147,7 @@ namespace storm {
                     }
                 }
                 if (uniqueOutState) {
-                    result.set(uniqueOutState.get(), true);
+                    result.set(uniqueOutState.value(), true);
                 }
             }
             return result;

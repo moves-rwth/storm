@@ -27,9 +27,7 @@
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
-
 #include "storm/api/storm.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
@@ -259,16 +257,16 @@ namespace storm {
 
             }
             
-            template<typename ValueType, storm::dd::DdType DdType>
+            template<typename ValueType, storm::dd::DdType DdType, typename BeliefType>
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
-                    STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
+                    STORM_PRINT_AND_LOG("Exploring the belief MDP... \n");
                     auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {
@@ -324,9 +322,9 @@ namespace storm {
                     transformationPerformed = true;
                     memoryUnfolded = true;
                 }
-        
-                // From now on the pomdp is considered memoryless
-        
+
+                // From now on the POMDP is considered memoryless
+
                 if (transformSettings.isMecReductionSet()) {
                     STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                     // Note: Elimination of mec choices only preserves memoryless schedulers.
@@ -342,10 +340,10 @@ namespace storm {
                 if (transformSettings.isTransformBinarySet() || transformSettings.isTransformSimpleSet()) {
                     if (transformSettings.isTransformSimpleSet()) {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true).transformedPomdp;
                     } else {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false).transformedPomdp;
                     }
                     pomdp->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG(" done.\n");
@@ -400,18 +398,19 @@ namespace storm {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException, "Expected a POMDP in sparse representation.");
             
                 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
-                if (!pomdpSettings.isNoCanonicSet()) {
-                    storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
-                    pomdp = makeCanonic.transform();
-                }
-                
+
                 std::shared_ptr<storm::logic::Formula const> formula;
                 if (!symbolicInput.properties.empty()) {
                     formula = symbolicInput.properties.front().getRawFormula();
                     STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
                     STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1, "There is currently no support for multiple properties. All other properties will be ignored.");
                 }
-            
+
+                if (!pomdpSettings.isNoCanonicSet()) {
+                    storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
+                    pomdp = makeCanonic.transform();
+                }
+
                 if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
                     STORM_PRINT_AND_LOG("Analyzing states with unique observation ...\n");
                     storm::analysis::UniqueObservationStates<ValueType> uniqueAnalysis(*pomdp);
@@ -435,14 +434,12 @@ namespace storm {
                         sw.stop();
                         STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s.\n");
                     }
-                    
+
                     sw.restart();
-                    if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
+                    if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
                         STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
                     }
-                    
-
                 } else {
                     STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
                 }

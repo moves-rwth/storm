@@ -12,30 +12,31 @@
 namespace storm {
     namespace pomdp {
         namespace analysis {
-            
-            bool FormulaInformation::StateSet::empty() const {
-                STORM_LOG_ASSERT(states.empty() == observations.empty(), "Inconsistent StateSet.");
-                return observations.empty();
-            }
-            
-            FormulaInformation::FormulaInformation() : type(Type::Unsupported) {
-                // Intentionally left empty
-            }
-            
-            FormulaInformation::FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir, boost::optional<std::string> const& rewardModelName) : type(type), optimizationDirection(dir), rewardModelName(rewardModelName) {
-                STORM_LOG_ASSERT(!this->rewardModelName.is_initialized() || this->type == Type::NonNestedExpectedRewardFormula, "Got a reward model name for a non-reward formula.");
 
-            }
-             
-            FormulaInformation::Type const&  FormulaInformation::getType() const {
-                return type;
-            }
-            
-            bool  FormulaInformation::isNonNestedReachabilityProbability() const {
-                return type == Type::NonNestedReachabilityProbability;
-            }
-            
-            bool  FormulaInformation::isNonNestedExpectedRewardFormula() const {
+    bool FormulaInformation::StateSet::empty() const {
+        STORM_LOG_ASSERT(states.empty() == observations.empty(), "Inconsistent StateSet.");
+        return observations.empty();
+    }
+
+    FormulaInformation::FormulaInformation() : type(Type::Unsupported) {
+        // Intentionally left empty
+    }
+
+    FormulaInformation::FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir, std::optional<std::string> const& rewardModelName)
+        : type(type), optimizationDirection(dir), rewardModelName(rewardModelName) {
+        STORM_LOG_ASSERT(!this->rewardModelName.has_value() || this->type == Type::NonNestedExpectedRewardFormula,
+                         "Got a reward model name for a non-reward formula.");
+    }
+
+    FormulaInformation::Type const& FormulaInformation::getType() const {
+        return type;
+    }
+
+    bool FormulaInformation::isNonNestedReachabilityProbability() const {
+        return type == Type::NonNestedReachabilityProbability;
+    }
+
+    bool  FormulaInformation::isNonNestedExpectedRewardFormula() const {
                 return type == Type::NonNestedExpectedRewardFormula;
             }
             
@@ -45,17 +46,17 @@ namespace storm {
             
             typename FormulaInformation::StateSet const& FormulaInformation::getTargetStates() const {
                 STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::NonNestedReachabilityProbability, "Target states requested for unexpected formula type.");
-                return targetStates.get();
+                return targetStates.value();
             }
              
             typename FormulaInformation::StateSet const& FormulaInformation::getSinkStates() const {
                 STORM_LOG_ASSERT(this->type == Type::NonNestedReachabilityProbability, "Sink states requested for unexpected formula type.");
-               return sinkStates.get();
+                return sinkStates.value();
             }
              
             std::string const& FormulaInformation::getRewardModelName() const {
                 STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula, "Reward model requested for unexpected formula type.");
-                return rewardModelName.get();
+                return rewardModelName.value();
             }
             
             storm::solver::OptimizationDirection const& FormulaInformation::getOptimizationDirection() const {

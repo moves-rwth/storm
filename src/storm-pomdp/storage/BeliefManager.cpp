@@ -1,9 +1,10 @@
 #include "storm-pomdp/storage/BeliefManager.h"
 
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/constants.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "solver/GlpkLpSolver.h"
 
 namespace storm {
     namespace storage {
@@ -29,6 +30,31 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        bool BeliefManager<PomdpType, BeliefValueType, StateType>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
+            return lhBelief == rhBelief;
+        }
+
+        template<>
+        bool BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
+            // If the sizes are different, we don't have to look inside the belief
+            if(lhBelief.size() != rhBelief.size()){
+                return false;
+            }
+            // Assumes that beliefs are ordered
+            auto lhIt = lhBelief.begin();
+            auto rhIt = rhBelief.begin();
+            while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
+                // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
+                if (lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > 1e-15) {
+                    return false;
+                }
+                ++lhIt;
+                ++rhIt;
+            }
+            return lhIt == lhBelief.end() && rhIt == rhBelief.end();
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::size_t BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefHash::operator()(const BeliefType &belief) const {
             std::size_t seed = 0;
             // Assumes that beliefs are ordered
@@ -39,18 +65,29 @@ namespace storm {
             return seed;
         }
 
+        template<>
+        std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::BeliefHash::operator()(const BeliefType &belief) const {
+            std::size_t seed = 0;
+            // Assumes that beliefs are ordered
+            for (auto const &entry : belief) {
+                boost::hash_combine(seed, entry.first);
+                boost::hash_combine(seed, round(storm::utility::convertNumber<double>(entry.second) * 1e15));
+            }
+            return seed;
+        }
+
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision, TriangulationMode const &triangulationMode)
                 : pomdp(pomdp), triangulationMode(triangulationMode) {
-            cc = storm::utility::ConstantsComparator<ValueType>(precision, false);
+            cc = storm::utility::ConstantsComparator<BeliefValueType>(precision, false);
             beliefToIdMap.resize(pomdp.getNrObservations());
             initialBeliefId = computeInitialBelief();
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        void BeliefManager<PomdpType, BeliefValueType, StateType>::setRewardModel(boost::optional<std::string> rewardModelName) {
+        void BeliefManager<PomdpType, BeliefValueType, StateType>::setRewardModel(std::optional<std::string> rewardModelName) {
             if (rewardModelName) {
-                auto const &rewardModel = pomdp.getRewardModel(rewardModelName.get());
+                auto const &rewardModel = pomdp.getRewardModel(rewardModelName.value());
                 pomdpActionRewardVector = rewardModel.getTotalRewardVector(pomdp.getTransitionMatrix());
             } else {
                 setRewardModel(pomdp.getUniqueRewardModelName());
@@ -91,11 +128,28 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType
         BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands) {
-            ValueType result = storm::utility::zero<ValueType>();
+            auto result = storm::utility::zero<ValueType>();
             for (auto const &entry : getBelief(beliefId)) {
                 result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
             }
             return result;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::pair<bool, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, std::unordered_map<StateType, ValueType> const& summands) {
+            bool successful = true;
+            auto result = storm::utility::zero<ValueType>();
+            for (auto const &entry : getBelief(beliefId)) {
+                auto probIter = summands.find(entry.first);
+                if (probIter != summands.end()){
+                    result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
+                } else {
+                    successful = false;
+                    break;
+                }
+            }
+            return {successful, result};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -114,7 +168,7 @@ namespace storm {
                 uint64_t choiceIndex = choiceIndices[entry.first] + localActionIndex;
                 STORM_LOG_ASSERT(choiceIndex < choiceIndices[entry.first + 1], "Invalid local action index.");
                 STORM_LOG_ASSERT(choiceIndex < pomdpActionRewardVector.size(), "Invalid choice index.");
-                result += entry.second * pomdpActionRewardVector[choiceIndex];
+                result += storm::utility::convertNumber<ValueType>(entry.second) * pomdpActionRewardVector[choiceIndex];
             }
             return result;
         }
@@ -146,6 +200,15 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        template<typename DistributionType>
+        void BeliefManager<PomdpType, BeliefValueType, StateType>::adjustDistribution(DistributionType &distr) {
+            if(distr.size() == 1 && cc.isEqual(distr.begin()->second, storm::utility::one<BeliefValueType>())){
+                // If the distribution consists of only one entry and its value is sufficiently close to 1, make it exactly 1 to avoid numerical problems
+                distr.begin()->second = storm::utility::one<BeliefValueType>();
+            }
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         void BeliefManager<PomdpType, BeliefValueType, StateType>::joinSupport(BeliefId const &beliefId, BeliefSupportType &support) {
             auto const &belief = getBelief(beliefId);
             for (auto const &entry : belief) {
@@ -167,13 +230,20 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
+                                                                            std::vector<uint64_t> const &observationResolutions) {
+            return expandInternal(beliefId, actionIndex, std::nullopt, observationResolutions);
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
         BeliefManager<PomdpType, BeliefValueType, StateType>::expand(BeliefId const &beliefId, uint64_t actionIndex) {
             return expandInternal(beliefId, actionIndex);
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefType const &BeliefManager<PomdpType, BeliefValueType, StateType>::getBelief(BeliefId const &id) const {
-            STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existend belief.");
+            STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existent belief.");
             STORM_LOG_ASSERT(id < getNumberOfBeliefIds(), "Belief index " << id << " is out of range.");
             return beliefs[id];
         }
@@ -198,7 +268,7 @@ namespace storm {
                 } else {
                     str << ", ";
                 }
-                str << entry.first << ": " << entry.second;
+                str << entry.first << ": " <<  std::setprecision(std::numeric_limits<double>::max_digits10 + 1) << entry.second;
             }
             str << " }";
             return str.str();
@@ -224,8 +294,8 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         bool BeliefManager<PomdpType, BeliefValueType, StateType>::assertBelief(BeliefType const &belief) const {
-            BeliefValueType sum = storm::utility::zero<ValueType>();
-            boost::optional<uint32_t> observation;
+            auto sum = storm::utility::zero<BeliefValueType>();
+            std::optional<uint32_t> observation;
             for (auto const &entry : belief) {
                 if (entry.first >= pomdp.getNumberOfStates()) {
                     STORM_LOG_ERROR("Belief does refer to non-existing pomdp state " << entry.first << ".");
@@ -233,7 +303,7 @@ namespace storm {
                 }
                 uint64_t entryObservation = pomdp.getObservation(entry.first);
                 if (observation) {
-                    if (observation.get() != entryObservation) {
+                    if (observation.value() != entryObservation) {
                         STORM_LOG_ERROR("Beliefsupport contains different observations.");
                         return false;
                     }
@@ -274,7 +344,7 @@ namespace storm {
                 return false;
             }
             BeliefType triangulatedBelief;
-            BeliefValueType weightSum = storm::utility::zero<BeliefValueType>();
+            auto weightSum = storm::utility::zero<BeliefValueType>();
             for (uint64_t i = 0; i < triangulation.weights.size(); ++i) {
                 if (cc.isZero(triangulation.weights[i])) {
                     STORM_LOG_ERROR("Zero weight in triangulation.");
@@ -290,7 +360,7 @@ namespace storm {
                 weightSum += triangulation.weights[i];
                 BeliefType const &gridPoint = getBelief(triangulation.gridPoints[i]);
                 for (auto const &pointEntry : gridPoint) {
-                    BeliefValueType &triangulatedValue = triangulatedBelief.emplace(pointEntry.first, storm::utility::zero<ValueType>()).first->second;
+                    BeliefValueType &triangulatedValue = triangulatedBelief.emplace(pointEntry.first, storm::utility::zero<BeliefValueType>()).first->second;
                     triangulatedValue += triangulation.weights[i] * pointEntry.second;
                 }
             }
@@ -323,17 +393,17 @@ namespace storm {
             // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
             // Probabilities will be triangulated to values in 0/N, 1/N, 2/N, ..., N/N
             // Variable names are mostly based on the paper
-            // However, we speed this up a little by exploiting that belief states usually have sparse support (i.e. numEntries is much smaller than pomdp.getNumberOfStates()).
-            // Initialize diffs and the first row of the 'qs' matrix (aka v)
-            std::set<FreudenthalDiff, std::greater<FreudenthalDiff>> sorted_diffs; // d (and p?) in the paper
-            std::vector<BeliefValueType> qsRow; // Row of the 'qs' matrix from the paper (initially corresponds to v
+            // However, we speed this up a little by exploiting that belief states usually have sparse support (i.e. numEntries is much smaller than
+            // pomdp.getNumberOfStates()). Initialize diffs and the first row of the 'qs' matrix (aka v)
+            std::set<FreudenthalDiff, std::greater<>> sorted_diffs;  // d (and p?) in the paper
+            std::vector<BeliefValueType> qsRow;                      // Row of the 'qs' matrix from the paper (initially corresponds to v
             qsRow.reserve(numEntries);
-            std::vector<StateType> toOriginalIndicesMap; // Maps 'local' indices to the original pomdp state indices
+            std::vector<StateType> toOriginalIndicesMap;             // Maps 'local' indices to the original pomdp state indices
             toOriginalIndicesMap.reserve(numEntries);
             BeliefValueType x = resolution;
             for (auto const &entry : belief) {
-                qsRow.push_back(storm::utility::floor(x)); // v
-                sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back()); // x-v
+                qsRow.push_back(storm::utility::floor(x));                            // v
+                sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back());  // x-v
                 toOriginalIndicesMap.push_back(entry.first);
                 x -= entry.second * resolution;
             }
@@ -350,7 +420,7 @@ namespace storm {
                 BeliefValueType weight = previousSortedDiff->diff - currentSortedDiff->diff;
                 if (i == 0) {
                     // The first weight is a bit different
-                    weight += storm::utility::one<ValueType>();
+                    weight += storm::utility::one<BeliefValueType>();
                 } else {
                     // 'compute' the next row of the qs matrix
                     qsRow[previousSortedDiff->dimension] += storm::utility::one<BeliefValueType>();
@@ -435,24 +505,27 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-        BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId const &beliefId, uint64_t actionIndex,
-                                                                             boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions) {
+        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId,
+                              typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(
+            BeliefId const &beliefId, uint64_t actionIndex, std::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
+            std::optional<std::vector<uint64_t>> const &observationGridClippingResolutions) {
             std::vector<std::pair<BeliefId, ValueType>> destinations;
 
             BeliefType belief = getBelief(beliefId);
 
             // Find the probability we go to each observation
-            BeliefType successorObs; // This is actually not a belief but has the same type
+            BeliefType successorObs;  // This is actually not a belief but has the same type
             for (auto const &pointEntry : belief) {
                 uint64_t state = pointEntry.first;
                 for (auto const &pomdpTransition : pomdp.getTransitionMatrix().getRow(state, actionIndex)) {
                     if (!storm::utility::isZero(pomdpTransition.getValue())) {
                         auto obs = pomdp.getObservation(pomdpTransition.getColumn());
-                        addToDistribution(successorObs, obs, pointEntry.second * pomdpTransition.getValue());
+                        addToDistribution(successorObs, obs, pointEntry.second * storm::utility::convertNumber<BeliefValueType>(pomdpTransition.getValue()));
                     }
                 }
             }
+            adjustDistribution(successorObs);
 
             // Now for each successor observation we find and potentially triangulate the successor belief
             for (auto const &successor : successorObs) {
@@ -461,27 +534,217 @@ namespace storm {
                     uint64_t state = pointEntry.first;
                     for (auto const &pomdpTransition : pomdp.getTransitionMatrix().getRow(state, actionIndex)) {
                         if (pomdp.getObservation(pomdpTransition.getColumn()) == successor.first) {
-                            ValueType prob = pointEntry.second * pomdpTransition.getValue() / successor.second;
+                            BeliefValueType prob = pointEntry.second * storm::utility::convertNumber<BeliefValueType>(pomdpTransition.getValue()) / successor.second;
                             addToDistribution(successorBelief, pomdpTransition.getColumn(), prob);
                         }
                     }
                 }
+                adjustDistribution(successorBelief);
                 STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
 
-                // Insert the destination. We know that destinations have to be disjoined since they have different observations
+                // Insert the destination. We know that destinations have to be disjoint since they have different observations
                 if (observationTriangulationResolutions) {
-                    Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.get()[successor.first]);
+                    Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.value()[successor.first]);
                     for (size_t j = 0; j < triangulation.size(); ++j) {
                         // Here we additionally assume that triangulation.gridPoints does not contain the same point multiple times
-                        destinations.emplace_back(triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
+                        BeliefValueType a = triangulation.weights[j] * successor.second;
+                        destinations.emplace_back(triangulation.gridPoints[j], storm::utility::convertNumber<ValueType>(a));
+                    }
+                } else if(observationGridClippingResolutions){
+                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.value()[successor.first],
+                                                               storm::storage::BitVector(pomdp.getNumberOfStates()));
+                    if(clipping.isClippable) {
+                        BeliefValueType a = (storm::utility::one<BeliefValueType>() - clipping.delta) * successor.second;
+                        destinations.emplace_back(clipping.targetBelief, storm::utility::convertNumber<ValueType>(a));
+                    } else {
+                        // Belief on Grid
+                        destinations.emplace_back(getOrAddBeliefId(successorBelief), storm::utility::convertNumber<ValueType>(successor.second));
                     }
                 } else {
-                    destinations.emplace_back(getOrAddBeliefId(successorBelief), successor.second);
+                    destinations.emplace_back(getOrAddBeliefId(successorBelief), storm::utility::convertNumber<ValueType>(successor.second));
                 }
             }
 
             return destinations;
+        }
 
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite){
+            auto res = clipBeliefToGrid(getBelief(beliefId), resolution, isInfinite);
+            res.startingBelief = beliefId;
+            return res;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite){
+            uint32_t obs = getBeliefObservation(belief);
+            STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+            if(!lpSolver){
+                lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>("POMDP LP Solver");
+            } else {
+                lpSolver->pop();
+            }
+            lpSolver->push();
+
+            std::vector<BeliefValueType> helper(belief.size(), storm::utility::zero<BeliefValueType>());
+            helper[0] = storm::utility::convertNumber<BeliefValueType>(resolution);
+            bool done = false;
+            // Set-up Variables
+            std::vector<storm::expressions::Expression> decisionVariables;
+            // Add variable for the clipping value, it is to be minimized
+            auto bigDelta = lpSolver->addBoundedContinuousVariable("D", storm::utility::zero<BeliefValueType>(), storm::utility::one<BeliefValueType>(),
+                                                                   storm::utility::one<BeliefValueType>());
+            // State clipping values
+            std::vector<storm::expressions::Expression> deltas;
+            uint64_t i = 0;
+            for (auto const &state : belief) {
+                // This is a quite dirty fix to enable GLPK for the TACAS '22 implementation without substantially changing the implementation for Gurobi.
+                if (typeid(*lpSolver) == typeid(storm::solver::GlpkLpSolver<ValueType>) && !isInfinite.empty()) {
+                    if (isInfinite[state.first]) {
+                        auto localDelta =
+                            lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i), storm::utility::zero<BeliefValueType>(), state.second);
+                        auto deltaExpr = storm::expressions::Expression(localDelta);
+                        deltas.push_back(deltaExpr);
+                        lpSolver->addConstraint("state_val_inf_" + std::to_string(i),
+                                                deltaExpr == lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+                    }
+                } else {
+                    BeliefValueType bound = state.second;
+                    if (!isInfinite.empty()) {
+                        bound = isInfinite[state.first] ? storm::utility::zero<BeliefValueType>() : state.second;
+                    }
+                    auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i), storm::utility::zero<BeliefValueType>(), bound);
+                    deltas.push_back(storm::expressions::Expression(localDelta));
+                }
+                ++i;
+            }
+            lpSolver->update();
+            std::vector<BeliefType> gridCandidates;
+            while (!done) {
+                BeliefType candidate;
+                auto belIter = belief.begin();
+                for (uint64_t j = 0; j < belief.size() - 1; ++j) {
+                    if (!cc.isEqual(helper[j] - helper[j + 1], storm::utility::zero<BeliefValueType>())) {
+                        candidate[belIter->first] = (helper[j] - helper[j + 1]) / storm::utility::convertNumber<BeliefValueType>(resolution);
+                    }
+                    belIter++;
+                }
+                if (!cc.isEqual(helper[belief.size() - 1], storm::utility::zero<BeliefValueType>())) {
+                    candidate[belIter->first] = helper[belief.size() - 1] / storm::utility::convertNumber<BeliefValueType>(resolution);
+                }
+                if (isEqual(candidate, belief)) {
+                    // TODO Improve handling of successors which are already on the grid
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, true};
+                } else {
+                    gridCandidates.push_back(candidate);
+
+                    // Add variables a_j
+                    auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(gridCandidates.size() - 1));
+                    decisionVariables.push_back(storm::expressions::Expression(decisionVar));
+                    lpSolver->update();
+
+                    i = 0;
+                    for (auto const &state : belief) {
+                        // Add the constraint to describe the transformation between the state values in the beliefs
+                        // d_i
+                        storm::expressions::Expression leftSide = deltas[i];
+                        storm::expressions::Expression targetValue = lpSolver->getConstant(candidate[i]);
+                        if (candidate.find(state.first) != candidate.end()) {
+                            targetValue = lpSolver->getConstant(candidate.at(state.first));
+                        } else {
+                            targetValue = lpSolver->getConstant(storm::utility::zero<BeliefValueType>());
+                        }
+
+                        // b(s_i) - b_j(s_i) + D * b_j(s_i) - 1 + a_j
+                        storm::expressions::Expression rightSide = lpSolver->getConstant(state.second) - targetValue + storm::expressions::Expression(bigDelta) * targetValue - lpSolver->getConstant(storm::utility::one<BeliefValueType>()) +  storm::expressions::Expression(decisionVar);
+
+                        // Add left >= right
+                        lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide >= rightSide);
+                        ++i;
+                        lpSolver->update();
+                    }
+                }
+                if (helper.back() == storm::utility::convertNumber<BeliefValueType>(resolution)) {
+                    // If the last entry of helper is the gridResolution, we have enumerated all necessary distributions
+                    done = true;
+                } else {
+                    // Update helper by finding the index to increment
+                    auto helperIt = helper.end()-1;
+                    while (*helperIt == *(helperIt-1)) {
+                        --helperIt;
+                    }
+                    STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong");
+                    // Increment the value at the index
+                    *helperIt += 1;
+                    // Reset all indices greater than the changed one to 0
+                    ++helperIt;
+                    while (helperIt != helper.end()) {
+                        *helperIt = 0;
+                        ++helperIt;
+                    }
+
+                }
+            }
+
+            // Only one target belief should be chosen
+            lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<BeliefValueType>()));
+            // Link D and d_i
+            lpSolver->addConstraint("delta", storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+            // Exclude D = 0 (self-loop)
+            lpSolver->addConstraint("not_zero", storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+
+            lpSolver->update();
+
+            lpSolver->optimize();
+            // Get the optimal belief for clipping
+            BeliefId targetBelief = noId();
+            // Not a belief but has the same type
+            BeliefType deltaValues;
+            auto optDelta = storm::utility::zero<BeliefValueType>();
+            auto deltaSum = storm::utility::zero<BeliefValueType>();
+            if(lpSolver->isOptimal()){
+                optDelta = lpSolver->getObjectiveValue();
+                for(uint64_t dist = 0; dist < gridCandidates.size(); ++dist){
+                    if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(dist)))){
+                        targetBelief = getOrAddBeliefId(gridCandidates[dist]);
+                        break;
+                    }
+                }
+                i = 0;
+                for (auto const &state : belief) {
+                    auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(i)));
+                    if(cc.isLess(storm::utility::zero<BeliefValueType>(),val)){
+                        deltaValues.emplace(state.first, val);
+                        deltaSum += val;
+                    }
+                    ++i;
+                }
+
+                if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
+                    // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
+                    // For a sound result, we consider the state to not be clippable
+                    STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
+                    STORM_LOG_WARN("Origin" << toString(belief));
+                    STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
+                }
+
+                if(optDelta == storm::utility::one<BeliefValueType>()) {
+                    STORM_LOG_WARN(
+                            "LP solver returned an optimal value of 1. Sum of state clipping values is " << deltaSum);
+                    // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
+                    STORM_LOG_DEBUG("Origin" << toString(belief));
+                    STORM_LOG_DEBUG("Target [Bel " << targetBelief << "] " << toString(targetBelief));
+
+                    if (deltaSum == storm::utility::one<BeliefValueType>()) {
+                        return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
+                    }
+                    optDelta = deltaSum;
+                }
+            }
+            return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues, false};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -491,7 +754,7 @@ namespace storm {
             STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1,
                              "POMDP does not contain an initial state");
             BeliefType belief;
-            belief[*pomdp.getInitialStates().begin()] = storm::utility::one<ValueType>();
+            belief[*pomdp.getInitialStates().begin()] = storm::utility::one<BeliefValueType>();
 
             STORM_LOG_ASSERT(assertBelief(belief), "Invalid initial belief.");
             return getOrAddBeliefId(belief);
@@ -504,13 +767,55 @@ namespace storm {
             auto insertioRes = beliefToIdMap[obs].emplace(belief, beliefs.size());
             if (insertioRes.second) {
                 // There actually was an insertion, so add the new belief
+                STORM_LOG_TRACE("Add Belief " << beliefs.size() << " " << toString(belief));
                 beliefs.push_back(belief);
             }
             // Return the id
             return insertioRes.first->second;
         }
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentativeState(BeliefId const &beliefId) {
+            return getBelief(beliefId).begin()->first;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::string BeliefManager<PomdpType, BeliefValueType, StateType>::getObservationLabel(BeliefId const &beliefId) {
+            if(pomdp.hasObservationValuations()){
+                return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
+            } else {
+                STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
+                return "";
+            }
+
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefAsVector(BeliefId const &beliefId){
+            return getBeliefAsVector(getBelief(beliefId));
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefAsVector(const BeliefType &belief){
+            std::vector<BeliefValueType> res(pomdp.getNumberOfStates(), storm::utility::zero<BeliefValueType>());
+            for(auto const &stateprob : belief){
+                res[stateprob.first] = stateprob.second;
+            }
+            return res;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::computeMatrixBeliefProduct(const BeliefId &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix){
+            std::vector<BeliefValueType> beliefAsVector = getBeliefAsVector(beliefId);
+            std::vector<BeliefValueType> res(matrix.getRowCount());
+            matrix.multiplyWithVector(beliefAsVector, res);
+            return res;
+        }
 
         template class BeliefManager<storm::models::sparse::Pomdp<double>>;
+
+        template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
+
+        template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
 
         template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
     }

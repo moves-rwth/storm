@@ -44,9 +44,6 @@ namespace storm {
                 // The name of the module.
                 static const std::string moduleName;
 
-            private:
-
-                
             };
 
         } // namespace modules
