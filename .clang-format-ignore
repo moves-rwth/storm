@@ -1,6 +1,3 @@
 ./src/storm-pars/*
 ./src/storm-pars-cli/*
-./src/storm-pomdp/*
-./src/storm-pomdp-cli/*
 ./src/test/storm-pars/*
-./src/test/storm-pomdp/*
