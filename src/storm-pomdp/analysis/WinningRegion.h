@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <vector>
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/BitVector.h"
