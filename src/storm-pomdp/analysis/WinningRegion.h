@@ -5,6 +5,9 @@
 #include "storm/storage/BitVector.h"
 
 namespace storm {
+namespace expressions {
+class Expression;
+}
 namespace pomdp {
 class WinningRegion {
    public:
