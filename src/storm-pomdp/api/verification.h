@@ -135,5 +135,5 @@ uint64_t getNumberOfPreprocessingSchedulers(
     return modelcheckingResult.cutoffSchedulers.size();
 }
 }  // namespace api
-}
-}
+}  // namespace pomdp
+}  // namespace storm
