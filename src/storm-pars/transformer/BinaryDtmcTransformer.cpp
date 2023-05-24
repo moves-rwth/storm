@@ -162,11 +162,11 @@ storm::models::sparse::StateLabeling BinaryDtmcTransformer::transformStateLabeli
 storm::models::sparse::StandardRewardModel<RationalFunction> BinaryDtmcTransformer::transformRewardModel(
     storm::models::sparse::Dtmc<RationalFunction> const& dtmc, storm::models::sparse::StandardRewardModel<RationalFunction> const& rewardModel,
     TransformationData const& data) const {
-    boost::optional<std::vector<RationalFunction>> stateRewards, actionRewards;
+    std::optional<std::vector<RationalFunction>> stateRewards, actionRewards;
     STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::NotSupportedException, "Only state rewards supported.");
     if (rewardModel.hasStateRewards()) {
         stateRewards = rewardModel.getStateRewardVector();
-        stateRewards.get().resize(data.simpleMatrix.getRowCount(), storm::utility::zero<RationalFunction>());
+        stateRewards->resize(data.simpleMatrix.getRowCount(), storm::utility::zero<RationalFunction>());
     }
     return storm::models::sparse::StandardRewardModel<RationalFunction>(std::move(stateRewards), std::move(actionRewards));
 }
