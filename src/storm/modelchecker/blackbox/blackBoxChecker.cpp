@@ -3,3 +3,6 @@
 //
 
 #include "blackBoxChecker.h"
+
+//TODO einzelnd kompilieren
+//TODO über storm executeable ausführbar sein

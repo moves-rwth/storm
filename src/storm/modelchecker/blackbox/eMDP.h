@@ -7,9 +7,20 @@ namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
-class eMDP : public NondeterministicModel<ValueType, RewardModelType> {
+class eMDP {
    public:
-    //flexMatrix
+    //addVisit
+    //getVisited
+    //addState
+    // print funktion
+    //? Save to disk
+   private:
+    //flexSparseMatrix mit value integer
+
+    //see bMDP
+        //mapping von state zu index und zurück?
+        //available actions
+        // 0 5 9
 };
 
 } //namespace blackbox

@@ -5,6 +5,8 @@
 #ifndef STORM_EMDP2BMDP_H
 #define STORM_EMDP2BMDP_H
 
-class eMDP2bMDP {};
+#include <utility>
+
+;
 
 #endif  // STORM_EMDP2BMDP_H
