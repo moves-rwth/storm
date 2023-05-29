@@ -2,19 +2,38 @@
 #define STORM_EMDP_H
 
 #include "storm/models/sparse/NondeterministicModel.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 
 namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
+template<class ValueType>
 class eMDP {
    public:
+    typedef uint_fast64_t index_type;
+    
+    //TODO initial state has to be somehow set
+    /*!
+     * Constructs an empty eMDP
+     */
+    eMDP();
+
+    void addVisit(index_type state, index_type action, index_type succ);
+
+    void addState(index_type state, std::vector<index_type> avail_actions);
+
+    void print();
+
+
     //addVisit
     //getVisited
     //addState
     // print funktion
     //? Save to disk
    private:
+   storm::storage::FlexibleSparseMatrix<ValueType> visitsMatrix;
+   std::unordered_map<index_type, index_type> explorationOrder;  // maps state to its position of when its been found
     //flexSparseMatrix mit value integer
 
     //see bMDP
