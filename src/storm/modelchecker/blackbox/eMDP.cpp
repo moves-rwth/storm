@@ -27,20 +27,29 @@ void eMDP<ValueType>::print() {
 
 template<class ValueType>
 void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
+    // TODO add checks if state and succ are already known
+    //      -> throw errors or add them yourself?
+    index_type state_index = explorationOrder[state];
+    index_type succ_index = explorationOrder[succ];
+    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
+
+    auto row = visitsMatrix.getRow(row_group_index, action);
+    // the row eventually is not big enough
+    if (row.size() <= succ_index) {
+        row.resize(succ_index + 1);
+    }
+    row[succ_index].setValue(row[succ_index].getValue() + 1);
 }
 
 
 template<class ValueType>
-void eMDP<ValueType>::addState(index_type state, std::vector<index_type> avail_actions){
+void eMDP<ValueType>::addState(index_type state, index_type avail_actions){
     // add state to explorationOrder -> mark it as known
     int knownStates = 0;
     explorationOrder.emplace(state, knownStates);
     
     // reserve avail_actions many new rows in visitsMatrix
-    visitsMatrix.addRows(avail_actions.size());
-    
-
-    
+    visitsMatrix.addRows(avail_actions);    
 }
 
 template<class ValueType>
@@ -50,8 +59,16 @@ bool eMDP<ValueType>::isStateKnown(index_type state) {
 
 template<class ValueType>
 void eMDP<ValueType>::test() {
+    std::vector<index_type> actions = {0, 1};
     print();
-    addState(1, (std::vector<index_type>()));
+    addState(0, actions);
+    addState(1, actions);
+    print();
+    addVisit(0, 0, 0);
+    addVisit(0, 0, 0);
+    print();
+    addVisit(0, 1, 1);
+    addVisit(1, 0, 1);
     print();
 }
 

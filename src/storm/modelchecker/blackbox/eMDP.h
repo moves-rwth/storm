@@ -21,7 +21,7 @@ class eMDP {
 
     void addVisit(index_type state, index_type action, index_type succ);
 
-    void addState(index_type state, std::vector<index_type> avail_actions);
+    void addState(index_type state, index_type avail_actions);
 
     void print();
 
