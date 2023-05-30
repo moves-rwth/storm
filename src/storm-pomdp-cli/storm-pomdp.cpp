@@ -432,13 +432,13 @@ void processOptionsWithValueTypeAndDdLib(storm::cli::SymbolicInput const& symbol
         sw.restart();
         if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
             sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s.\n");
+            STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << ".\n");
         }
 
         sw.restart();
         if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
             sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
+            STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
         }
     } else {
         STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
