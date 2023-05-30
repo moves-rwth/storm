@@ -25,6 +25,10 @@ class eMDP {
 
     void print();
 
+    bool isStateKnown(index_type state);
+
+    void test();
+
 
     //addVisit
     //getVisited
