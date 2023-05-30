@@ -9,10 +9,6 @@
 #include "storm/utility/vector.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
-namespace storm {
-namespace models {
-namespace sparse {
-
 template<typename ValueType>
 class ValueTypePair {
    private:
@@ -29,7 +25,11 @@ class ValueTypePair {
     }
 };
 
-template<typename ValueType = ValueTypePair<double>, typename RewardModelType = StandardRewardModel<ValueTypePair<double>>>
+namespace storm {
+namespace models {
+namespace sparse {
+
+template<class ValueType = ValueTypePair<double>, typename RewardModelType = StandardRewardModel<ValueTypePair<double>>>
 class bMDP : public NondeterministicModel<ValueType, RewardModelType> {
     public:
     /*!
