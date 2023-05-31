@@ -17,6 +17,9 @@ Version 1.7.x
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
+- `storm-pomdp`: streamlined implementation for quantitative analysis
+- `storm-pomdp`: added clipping for POMDP under-approximation
+- `storm-pomdp`: added API for interactive exploration of belief MDPs
 - Developer: Introduced forward declarations (in their own headers), in particular for storm::RationalNumber, storm::RationalFunction, and storm::json
 - Developer: LpSolver interface now supports RawMode (to avoid overhead of `storm::expression`) and indicator constraints
 
