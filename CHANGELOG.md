@@ -5,10 +5,10 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.7.x
+Version 1.8.x
 -------------
 
-## Version 1.7.1
+## Version 1.8.0
 - Revised implementation of value iteration algorithms and its variants, fixing a bug in the optimistic value iteration heuristic.
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
@@ -23,6 +23,9 @@ Version 1.7.x
 - Developer: Introduced forward declarations (in their own headers), in particular for storm::RationalNumber, storm::RationalFunction, and storm::json
 - Developer: LpSolver interface now supports RawMode (to avoid overhead of `storm::expression`) and indicator constraints
 
+
+Version 1.7.x
+-------------
 
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.
