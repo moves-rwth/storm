@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([cudd], [3.0.0], [Fabio@Colorado.EDU])
+AC_INIT([cudd],[3.0.0],[Fabio@Colorado.EDU])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
@@ -130,14 +130,14 @@ AC_CHECK_FUNCS([powl gethostname getrlimit getrusage sysconf])
 # Specifically, check for correct treatment of +Infinity
 AC_MSG_CHECKING([for +Infinity (IEEE 754 floating point)])
 AC_CACHE_VAL(ac_cv_have_ieee_754,
-[ AC_TRY_RUN([
+[ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <math.h>
 main(void)
 {
     if (HUGE_VAL != HUGE_VAL * 3 || HUGE_VAL != HUGE_VAL / 3) return 1;
     return 0;
 }
-],ac_cv_have_ieee_754=yes,ac_cv_have_ieee_754=no,ac_cv_have_ieee_754=maybe)])
+]])],[ac_cv_have_ieee_754=yes],[ac_cv_have_ieee_754=no],[ac_cv_have_ieee_754=maybe])])
 if test x$ac_cv_have_ieee_754 = xmaybe ; then
   AC_COMPILE_IFELSE(
   [AC_LANG_PROGRAM([#include <math.h>], [  double x = INFINITY])],
