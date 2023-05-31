@@ -20,8 +20,6 @@
 
 #include "storm/settings/modules/AbstractionSettings.h"
 
-#include "storm-parsers/parser/ExpressionParser.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
 

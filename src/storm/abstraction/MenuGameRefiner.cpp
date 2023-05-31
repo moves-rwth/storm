@@ -14,8 +14,6 @@
 #include "storm/utility/shortestPaths.h"
 #include "storm/utility/solver.h"
 
-#include "storm-parsers/parser/ExpressionParser.h"
-
 #include "storm/solver/MathsatSmtSolver.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"

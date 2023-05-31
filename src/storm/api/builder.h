@@ -1,9 +1,5 @@
 #pragma once
 
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm-parsers/parser/DirectEncodingParser.h"
-#include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
-
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/ModelFeatures.h"
 
@@ -138,40 +134,6 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildS
         case storm::models::ModelType::Smg:
             return std::make_shared<storm::models::sparse::Smg<ValueType, RewardModelType>>(std::move(components));
     }
-}
-
-template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile,
-                                                                            boost::optional<std::string> const& stateRewardsFile = boost::none,
-                                                                            boost::optional<std::string> const& transitionRewardsFile = boost::none,
-                                                                            boost::optional<std::string> const& choiceLabelingFile = boost::none) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact or parametric models with explicit input are not supported.");
-}
-
-template<>
-inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile,
-                                                                                boost::optional<std::string> const& stateRewardsFile,
-                                                                                boost::optional<std::string> const& transitionRewardsFile,
-                                                                                boost::optional<std::string> const& choiceLabelingFile) {
-    return storm::parser::AutoParser<double, double>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "",
-                                                                 transitionRewardsFile ? transitionRewardsFile.get() : "",
-                                                                 choiceLabelingFile ? choiceLabelingFile.get() : "");
-}
-
-template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(
-    std::string const& drnFile, storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
-    return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile, options);
-}
-
-template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitIMCAModel(std::string const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact models with direct encoding are not supported.");
-}
-
-template<>
-inline std::shared_ptr<storm::models::sparse::Model<double>> buildExplicitIMCAModel(std::string const& imcaFile) {
-    return storm::parser::ImcaMarkovAutomatonParser<double>::parseImcaFile(imcaFile);
 }
 
 }  // namespace api
