@@ -13,7 +13,7 @@ Version 1.7.x
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
 - Upgraded shipped version of sylvan
-- Upgraded repo / version for carl (for polynomials)
+- Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/moves-rwth/carl-storm) in at least version 14.23.
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
