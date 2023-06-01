@@ -347,7 +347,7 @@ void FlexibleSparseMatrix<int>::addRow() {
 
 template<>
 void FlexibleSparseMatrix<int>::addRows(index_type num_rows) {
-    STORM_LOG_THROW(num_rows > 0, storm::exceptions::InvalidArgumentException, "Illegal number of new rows for GrowableFlexibleSparseMatrix.");
+    STORM_LOG_THROW(num_rows > 0, storm::exceptions::InvalidArgumentException, "Illegal number of new rows for FlexibleSparseMatrix.");
     // set indice of new group in rowGroupIndices
     rowGroupIndices.push_back(getRowCount());
 
@@ -358,7 +358,7 @@ void FlexibleSparseMatrix<int>::addRows(index_type num_rows) {
 
 template<>
 void FlexibleSparseMatrix<int>::addRows(std::vector<row_type> rows) {
-    STORM_LOG_THROW(!rows.empty(), storm::exceptions::InvalidArgumentException, "Cannot expand GrowableFlexibleSparseMatrix with empty row vector.");
+    STORM_LOG_THROW(!rows.empty(), storm::exceptions::InvalidArgumentException, "Cannot expand FlexibleSparseMatrix with empty row vector.");
     // set indice of new group in rowGroupIndices
     rowGroupIndices.push_back(getRowCount());
 
