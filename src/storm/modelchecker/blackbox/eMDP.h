@@ -29,8 +29,6 @@ class eMDP {
 
     bool isStateKnown(index_type state);
 
-    void test();
-
     index_type getVisited(index_type state, index_type action);
 
     index_type getVisited(index_type state, index_type action, index_type succ);

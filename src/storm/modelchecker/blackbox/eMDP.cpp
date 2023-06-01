@@ -86,21 +86,6 @@ eMDP<ValueType>::index_type eMDP<ValueType>::getVisited(index_type state, index_
     return visitsMatrix.getRow(row_group_index, action)[succ].getValue();
 }
 
-
-template<class ValueType>
-void eMDP<ValueType>::test() {
-    print();
-    addState(0, 2);
-    addState(1, 2);
-    print();
-    addVisit(0, 0, 0);
-    addVisit(0, 0, 0);
-    print();
-    addVisit(0, 1, 1);
-    addVisit(1, 0, 1);
-    print();
-}
-
 template class eMDP<int>;
 
 } //namespace blackbox
