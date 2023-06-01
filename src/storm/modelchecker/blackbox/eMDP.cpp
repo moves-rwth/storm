@@ -73,6 +73,21 @@ bool eMDP<ValueType>::isStateKnown(index_type state) {
 }
 
 template<class ValueType>
+eMDP<ValueType>::index_type eMDP<ValueType>::getVisited(index_type state, index_type action) {
+    index_type state_index = explorationOrder[state];
+    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
+    return visitsMatrix.getRowSum(visitsMatrix.getRow(row_group_index, action));
+}
+
+template<class ValueType>
+eMDP<ValueType>::index_type eMDP<ValueType>::getVisited(index_type state, index_type action, index_type succ) {
+    index_type state_index = explorationOrder[state];
+    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
+    return visitsMatrix.getRow(row_group_index, action)[succ].getValue();
+}
+
+
+template<class ValueType>
 void eMDP<ValueType>::test() {
     print();
     addState(0, 2);

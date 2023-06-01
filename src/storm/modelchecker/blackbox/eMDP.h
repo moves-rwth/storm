@@ -31,12 +31,12 @@ class eMDP {
 
     void test();
 
+    index_type getVisited(index_type state, index_type action);
 
-    //addVisit
-    //getVisited
-    //addState
-    // print funktion
+    index_type getVisited(index_type state, index_type action, index_type succ);
+
     //? Save to disk
+
    private:
    storm::storage::FlexibleSparseMatrix<ValueType> visitsMatrix;
    std::unordered_map<index_type, index_type> explorationOrder;  // maps state to its position of when its been found
