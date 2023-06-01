@@ -34,7 +34,7 @@ class eMDP {
      * @param succ    state index of successor state
      * @param visits  visits to be added to counter
      */
-    void addVisits(index_type state, index_type action, index_type succ, index_type visits);
+    void addVisits(index_type state, index_type action, index_type succ, ValueType visits);
 
     /*!
      * Add a new state to the eMDP
@@ -59,7 +59,7 @@ class eMDP {
      * @param state   state index 
      * @param action  action index
      */
-    index_type getVisited(index_type state, index_type action);
+    ValueType getVisited(index_type state, index_type action);
 
     /*!
      * returns how often this state action successor triple was sampled
@@ -67,7 +67,7 @@ class eMDP {
      * @param action  action index
      * @param succ    successor state index
      */
-    index_type getVisited(index_type state, index_type action, index_type succ);
+    ValueType getVisited(index_type state, index_type action, index_type succ);
 
     //? Save to disk
 
