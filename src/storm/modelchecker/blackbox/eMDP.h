@@ -21,6 +21,8 @@ class eMDP {
 
     void addVisit(index_type state, index_type action, index_type succ);
 
+    void addVisits(index_type state, index_type action, index_type succ, index_type visits);
+
     void addState(index_type state, index_type avail_actions);
 
     void print();

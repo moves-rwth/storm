@@ -27,11 +27,16 @@ void eMDP<ValueType>::print() {
     std::cout << "columnCount: " << visitsMatrix.getColumnCount() << "\n";
     for (int i = 0; i < visitsMatrix.getRowCount(); i++)
         visitsMatrix.printRow(std::cout, i);
-        std:cout << "\n";
+        std::cout << "\n";
 }
 
 template<class ValueType>
 void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
+    this->addVisits(state, action, succ, 1);
+}
+
+template<class ValueType>
+void eMDP<ValueType>::addVisits(index_type state, index_type action, index_type succ, index_type visits) {
     // TODO add checks if state and succ are already known
     //      -> throw errors or add them yourself?
     index_type state_index = explorationOrder[state];
@@ -49,10 +54,8 @@ void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type s
         }
     }
     
-    row[succ_index].setValue(row[succ_index].getValue() + 1);
-    
+    row[succ_index].setValue(row[succ_index].getValue() + visits);
 }
-
 
 template<class ValueType>
 void eMDP<ValueType>::addState(index_type state, index_type avail_actions){
