@@ -215,12 +215,6 @@ class FlexibleSparseMatrix {
      */
     void addRows(index_type num_rows);
 
-    /*!
-     * extend the matrix with the given rows
-     * @param rows vector of rows to extend the matrix with
-     */
-    void addRows(std::vector<row_type> rows);
-
    private:
     std::vector<row_type> data;
 

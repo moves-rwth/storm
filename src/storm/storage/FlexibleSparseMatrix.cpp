@@ -356,18 +356,6 @@ void FlexibleSparseMatrix<int>::addRows(index_type num_rows) {
     }
 }
 
-template<>
-void FlexibleSparseMatrix<int>::addRows(std::vector<row_type> rows) {
-    STORM_LOG_THROW(!rows.empty(), storm::exceptions::InvalidArgumentException, "Cannot expand FlexibleSparseMatrix with empty row vector.");
-    // set indice of new group in rowGroupIndices
-    rowGroupIndices.push_back(getRowCount());
-
-    // fastest way to extend list according to 
-    // https://stackoverflow.com/questions/313432/c-extend-a-vector-with-another-vector    
-    data.reserve(data.size() + rows.size());
-    data.insert(data.end(), rows.begin(), rows.end());
-}
-
 // Explicitly instantiate the matrix.
 template class FlexibleSparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
