@@ -14,6 +14,8 @@ eMDP<ValueType>::eMDP() : explorationOrder(), visitsMatrix(0){
 
 template<class ValueType>
 void eMDP<ValueType>::print() {
+    visitsMatrix.updateDimensions();
+
     std::cout << "exploration order:\n";
     for (const auto& i: explorationOrder)
         std::cout << "[" << i.first << ", " << i.second << "] ";
@@ -21,8 +23,11 @@ void eMDP<ValueType>::print() {
     std::cout << "\n";
 
     std::cout << "visitsMatrix:\n";
+    std::cout << "rowCount: " << visitsMatrix.getRowCount() << "\n";
+    std::cout << "columnCount: " << visitsMatrix.getColumnCount() << "\n";
     for (int i = 0; i < visitsMatrix.getRowCount(); i++)
         visitsMatrix.printRow(std::cout, i);
+        std:cout << "\n";
 }
 
 template<class ValueType>
@@ -33,19 +38,26 @@ void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type s
     index_type succ_index = explorationOrder[succ];
     index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
 
-    auto row = visitsMatrix.getRow(row_group_index, action);
-    // the row eventually is not big enough
-    if (row.size() <= succ_index) {
+    auto& row = visitsMatrix.getRow(row_group_index, action);
+    index_type row_size = row.size(); 
+
+    // the row potentially is not big enough
+    if (row_size <= succ_index) {
         row.resize(succ_index + 1);
+        for (index_type i = row_size; i < succ_index + 1; i++) {
+            row[i].setColumn(i);
+        }
     }
+    
     row[succ_index].setValue(row[succ_index].getValue() + 1);
+    
 }
 
 
 template<class ValueType>
 void eMDP<ValueType>::addState(index_type state, index_type avail_actions){
     // add state to explorationOrder -> mark it as known
-    int knownStates = 0;
+    int knownStates = explorationOrder.size();
     explorationOrder.emplace(state, knownStates);
     
     // reserve avail_actions many new rows in visitsMatrix
@@ -59,10 +71,9 @@ bool eMDP<ValueType>::isStateKnown(index_type state) {
 
 template<class ValueType>
 void eMDP<ValueType>::test() {
-    std::vector<index_type> actions = {0, 1};
     print();
-    addState(0, actions);
-    addState(1, actions);
+    addState(0, 2);
+    addState(1, 2);
     print();
     addVisit(0, 0, 0);
     addVisit(0, 0, 0);
