@@ -26,8 +26,7 @@ void eMDP<ValueType>::print() {
     std::cout << "rowCount: " << visitsMatrix.getRowCount() << "\n";
     std::cout << "columnCount: " << visitsMatrix.getColumnCount() << "\n";
     for (int i = 0; i < visitsMatrix.getRowCount(); i++)
-        visitsMatrix.printRow(std::cout, i);
-        std::cout << "\n";
+        visitsMatrix.printRow(std::cout, i) << "\n";
 }
 
 template<class ValueType>
@@ -41,9 +40,8 @@ void eMDP<ValueType>::addVisits(index_type state, index_type action, index_type 
     //      -> throw errors or add them yourself?
     index_type state_index = explorationOrder[state];
     index_type succ_index = explorationOrder[succ];
-    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
 
-    auto& row = visitsMatrix.getRow(row_group_index, action);
+    auto& row = visitsMatrix.getRow(state_index, action);
     index_type row_size = row.size(); 
 
     // the row potentially is not big enough
@@ -82,8 +80,7 @@ ValueType eMDP<ValueType>::getVisited(index_type state, index_type action) {
 template<class ValueType>
 ValueType eMDP<ValueType>::getVisited(index_type state, index_type action, index_type succ) {
     index_type state_index = explorationOrder[state];
-    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
-    return visitsMatrix.getRow(row_group_index, action)[succ].getValue();
+    return visitsMatrix.getRow(state_index, action)[succ].getValue();
 }
 
 template class eMDP<int>;
