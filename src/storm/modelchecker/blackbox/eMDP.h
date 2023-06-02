@@ -17,6 +17,7 @@ namespace blackbox {
 *       -> Problem: Nondeterministic model uses SparseMatrix
 *   - eMDP for now expects to know all states, that are processed.
 *       -> add checks or behavoir in case addVisit or getVisited was called with unknown states or actions
+*   - getVisited rename to getSampleCount
 */
 template<class ValueType>
 class eMDP {

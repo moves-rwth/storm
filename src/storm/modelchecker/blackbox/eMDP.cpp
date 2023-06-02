@@ -85,7 +85,7 @@ ValueType eMDP<ValueType>::getVisited(index_type state, index_type action, index
     if (row.size() <= succ_index) {
         return 0; // TODO use generic ValueType zero
     }
-    return row[succ].getValue();
+    return row[succ_index].getValue();
 }
 
 template class eMDP<int>;
