@@ -80,7 +80,12 @@ ValueType eMDP<ValueType>::getVisited(index_type state, index_type action) {
 template<class ValueType>
 ValueType eMDP<ValueType>::getVisited(index_type state, index_type action, index_type succ) {
     index_type state_index = explorationOrder[state];
-    return visitsMatrix.getRow(state_index, action)[succ].getValue();
+    index_type succ_index = explorationOrder[succ];
+    auto& row = visitsMatrix.getRow(state_index, action);
+    if (row.size() <= succ_index) {
+        return 0; // TODO use generic ValueType zero
+    }
+    return row[succ].getValue();
 }
 
 template class eMDP<int>;

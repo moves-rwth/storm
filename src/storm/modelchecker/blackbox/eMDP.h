@@ -8,12 +8,21 @@ namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
+
+/*!
+* TODO
+*   - don't use FlexibleSparseMatrix as visitsMatrix -> memory inefficient because each row has to be filled to last entry
+*       -> Perhaps Vector of hashmaps is more reasonable
+*   - Make class child class of NondeterministicModel
+*       -> Problem: Nondeterministic model uses SparseMatrix
+*   - eMDP for now expects to know all states, that are processed.
+*       -> add checks or behavoir in case addVisit or getVisited was called with unknown states or actions
+*/
 template<class ValueType>
 class eMDP {
    public:
     typedef uint_fast64_t index_type;
     
-    //TODO initial state has to be somehow set
     /*!
      * Constructs an empty eMDP
      */
