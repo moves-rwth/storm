@@ -74,6 +74,7 @@ uint_fast64_t HashStorage::get_succ_action_samples(uint_fast64_t state, uint_fas
         //TODO
 }
  
+/*
 int main(int argc, char const *argv[])
 {       
         HashStorage x = HashStorage();
@@ -88,3 +89,4 @@ int main(int argc, char const *argv[])
                 std::cout << "Act: " << x << "\n";
         
 }
+*/
