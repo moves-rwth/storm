@@ -1,15 +1,14 @@
 #ifndef STORM_BMDP_H
 #define STORM_BMDP_H
 
+#include "models/sparse/NondeterministicModel.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/sparse/StateLabeling.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/Modeltype.h"
-#include "storm/models/sparse/StateLabeling.h"
 
-#endif  // STORM_BMDP_H
 
 namespace storm {
 namespace models {
@@ -24,6 +23,11 @@ class ValueTypePair {
    private:
     std::pair<ValueType,ValueType> valuePair;
    public:
+
+    ValueTypePair(std::pair<ValueType,ValueType> valuePair): valuePair{valuePair}{}
+    ValueTypePair(std::pair<ValueType,ValueType> &&valuePair): valuePair{std::move(valuePair)}{}
+
+
     ValueType getLBound() {
         valuePair.first();
     }
@@ -35,10 +39,13 @@ class ValueTypePair {
     }
 };
 
-template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
-class bMDP : public NondeterministicModel<ValueTypePair<ValueType>, RewardModelType> {
+template<class BoundType, typename RewardModelType = StandardRewardModel<BoundType>>
+class bMDP : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelType> {
+
+    using ValueType = ValueTypePair<BoundType>;
+
     public:
-    /*!
+     /*!
      * Constructs a model from the given data.
      *
      * @param transitionMatrix The matrix representing the transitions in the model.
@@ -47,9 +54,7 @@ class bMDP : public NondeterministicModel<ValueTypePair<ValueType>, RewardModelT
      */
     bMDP(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateLabeling const& stateLabeling,
         std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
-        ModelType type = ModelType::bMDP) {
-
-    };
+        ModelType type = ModelType::bMDP);
 
      /*!
      * Constructs a model by moving the given data.
@@ -61,17 +66,25 @@ class bMDP : public NondeterministicModel<ValueTypePair<ValueType>, RewardModelT
     bMDP(storm::storage::SparseMatrix<ValueType>&& transitionMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
         std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::bMDP);
 
+    /*!
+     * Constructs a model from the given data.
+     *
+     * @param components The components for this model.
+     */
+    bMDP(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components, ModelType type = ModelType::bMDP);
+    bMDP(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components, ModelType type = ModelType::bMDP);
 
-    bMDP(Mdp<ValueType, RewardModelType> const& other) = default;
-    bMDP& operator=(bMDP<ValueType, RewardModelType> const& other) = default;
+    bMDP(bMDP<BoundType, RewardModelType> const& other) = default;
+    bMDP& operator=(bMDP<BoundType, RewardModelType> const& other) = default;
 
-    bMDP(Mdp<ValueType, RewardModelType>&& other) = default;
-    bMDP& operator=(bMDP<ValueType, RewardModelType>&& other) = default;
-    virtual ~Mdp() = default;
+    bMDP(bMDP<BoundType, RewardModelType>&& other) = default;
+    bMDP& operator=(bMDP<BoundType, RewardModelType>&& other) = default;
+    virtual ~bMDP() = default;
 };
 
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
 
+#endif  // STORM_BMDP_H
 

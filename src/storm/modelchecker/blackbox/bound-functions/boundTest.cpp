@@ -1,5 +1,6 @@
 #include "hoeffDingBound.h"
 #include "oneSidedHoeffDingBound.h"
+#include <cstdio>
 
 /*!
  * File to test Bound Functions

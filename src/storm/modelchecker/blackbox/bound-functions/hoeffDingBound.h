@@ -1,4 +1,5 @@
 #include "boundFunc.h"
+#include <cmath>
 
 template <typename ValueType>
 class hoeffDingBound : public boundFunc<ValueType> {
