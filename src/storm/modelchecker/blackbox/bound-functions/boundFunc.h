@@ -16,7 +16,7 @@ class BoundFunc {
      * @param delta : Inconfidence value delta
      * @return : ValueTypePair with upper and lower bound
      */
-    virtual std::pair<ValueType,ValueType> INTERVAL(int totalSamples, int partialSample, double delta) = 0; //abstract method
+    virtual std::pair<ValueType,ValueType> INTERVAL(int64_t totalSamples, int64_t partialSample, double delta) = 0; //abstract method
 };
 
 template <typename ValueType>
@@ -36,7 +36,7 @@ ValueType clamp1(ValueType x) {
 template <typename ValueType>
 class HoeffDingBound : public BoundFunc<ValueType> {
    public:
-    std::pair<ValueType,ValueType> INTERVAL(int totalSamples, int partialSample, double delta) {
+    std::pair<ValueType,ValueType> INTERVAL(int64_t totalSamples, int64_t partialSample, double delta) {
         ValueType bound_width = sqrt((log(delta / 2)) / (-2 * totalSamples));
         ValueType median = (ValueType)partialSample / (ValueType)totalSamples;
         return std::make_pair(median - bound_width, median + bound_width);
@@ -46,7 +46,7 @@ class HoeffDingBound : public BoundFunc<ValueType> {
 template <typename ValueType>
 class OneSidedHoeffDingBound : public BoundFunc<ValueType> {
    public:
-    std::pair<ValueType,ValueType> INTERVAL(int totalSamples, int partialSample, double delta) {
+    std::pair<ValueType,ValueType> INTERVAL(int64_t totalSamples, int64_t partialSample, double delta) {
         ValueType bound_width = sqrt((log(delta / 2)) / (-2 * totalSamples));
         ValueType median = (ValueType)partialSample / (ValueType)totalSamples;
         return std::make_pair(median - bound_width, 1);
