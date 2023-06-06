@@ -204,6 +204,17 @@ class FlexibleSparseMatrix {
     template<typename TPrime>
     friend std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<TPrime> const& matrix);
 
+    /*!
+     * add an empty row to the matrix
+     */
+    void addRow();
+
+    /*!
+     * extend the matrix with multiple empty rows
+     * @param num_rows number of empty rows to add
+     */
+    void addRows(index_type num_rows);
+
    private:
     std::vector<row_type> data;
 

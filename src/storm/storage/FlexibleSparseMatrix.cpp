@@ -339,9 +339,29 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
     return out;
 }
 
+template<>
+void FlexibleSparseMatrix<int>::addRow() {
+    row_type new_vec;
+    data.push_back(new_vec);
+}
+
+template<>
+void FlexibleSparseMatrix<int>::addRows(index_type num_rows) {
+    STORM_LOG_THROW(num_rows > 0, storm::exceptions::InvalidArgumentException, "Illegal number of new rows for FlexibleSparseMatrix.");
+    // set indice of new group in rowGroupIndices
+    rowGroupIndices.push_back(getRowCount());
+
+    for (index_type i = 0; i < num_rows; i++) {
+        addRow();
+    }
+}
+
 // Explicitly instantiate the matrix.
 template class FlexibleSparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
+
+template class FlexibleSparseMatrix<int>;
+//template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<int> const& matrix);
 
 #ifdef STORM_HAVE_CARL
 template class FlexibleSparseMatrix<storm::RationalNumber>;
