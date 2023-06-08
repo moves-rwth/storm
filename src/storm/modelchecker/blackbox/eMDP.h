@@ -1,36 +1,29 @@
 #ifndef STORM_EMDP_H
 #define STORM_EMDP_H
 
-#include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/storage/FlexibleSparseMatrix.h"
+#include "storage/HashStorage.h"
 
 namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
 
-/*!
-* TODO
-*   - don't use FlexibleSparseMatrix as visitsMatrix -> memory inefficient because each row has to be filled to last entry
-*       -> Perhaps Vector of hashmaps is more reasonable
-*   - Make class child class of NondeterministicModel
-*       -> Problem: Nondeterministic model uses SparseMatrix
-*   - eMDP for now expects to know all states, that are processed.
-*       -> add checks or behavoir in case addVisit or getVisited was called with unknown states or actions
-*   - getVisited rename to getSampleCount
-*/
 template<class ValueType>
-class eMDP {
+
+//TODO: How should initial state be saved and handled?
+//TODO: Add Methods for access of explorationOrder
+
+class Emdp {
    public:
     typedef uint_fast64_t index_type;
     
     /*!
      * Constructs an empty eMDP
      */
-    eMDP();
+    Emdp();
 
     /*!
-     * increments the visits count of the given tripel by 1
+     * increments the visits count of the given triple by 1
      * @param state   state index in which action was taken 
      * @param action  action index of chosen action
      * @param succ    state index of successor state
@@ -48,10 +41,10 @@ class eMDP {
 
     /*!
      * Add a new state to the eMDP
-     * @param state  state index of new state 
-     * @param avail_actions  number of available actions at state
+     * @param state  state index of new state
+     * @param avail_actions vector of available actions at state
      */
-    void addState(index_type state, index_type avail_actions);
+    void addState(index_type state, std::vector<index_type> avail_actions);
 
     /*!
      * print the eMDP to std::cout
@@ -69,7 +62,7 @@ class eMDP {
      * @param state   state index 
      * @param action  action index
      */
-    ValueType getVisited(index_type state, index_type action);
+    ValueType getSampleCount(index_type state, index_type action);
 
     /*!
      * returns how often this state action successor triple was sampled
@@ -77,19 +70,21 @@ class eMDP {
      * @param action  action index
      * @param succ    successor state index
      */
-    ValueType getVisited(index_type state, index_type action, index_type succ);
+    ValueType getSampleCount(index_type state, index_type action, index_type succ);
 
     //? Save to disk
 
    private:
-   storm::storage::FlexibleSparseMatrix<ValueType> visitsMatrix;
-   std::unordered_map<index_type, index_type> explorationOrder;  // maps state to its position of when its been found
-    //flexSparseMatrix mit value integer
+    /*!
+     * Adds the state and its corresponding exploration time to explorationOrder
+     *
+     * @param state
+     */
+    void addStateToExplorationOrder(index_type state);
 
-    //see bMDP
-        //mapping von state zu index und zurück?
-        //available actions
-        // 0 5 9
+   storage::HashStorage hashStorage;
+   std::unordered_map<index_type, index_type> explorationOrder; // maps state to its position of when its been found
+   index_type explorationCount = 0; //Number of explored states
 };
 
 } //namespace blackbox

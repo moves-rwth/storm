@@ -39,9 +39,9 @@ class ValueTypePair {
 };
 
 template<class BoundType, typename RewardModelType = StandardRewardModel<BoundType>>
-class Bmdp : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelType> {
+class Bmdp : public NondeterministicModel<BoundType, RewardModelType> {
 
-    using ValueType = ValueTypePair<BoundType>;
+    using ValueType = BoundType;
 
     public:
      /*!
