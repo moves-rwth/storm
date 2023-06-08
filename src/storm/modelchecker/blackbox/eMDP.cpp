@@ -3,93 +3,78 @@
 //
 
 #include "eMDP.h"
+#include "stdint.h"
 
 namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
 template<class ValueType>
-eMDP<ValueType>::eMDP() : explorationOrder(), visitsMatrix(0){
+Emdp<ValueType>::Emdp() : explorationOrder(), hashStorage(){
 }
 
 template<class ValueType>
-void eMDP<ValueType>::print() {
-    visitsMatrix.updateDimensions();
+void Emdp<ValueType>::addStateToExplorationOrder(index_type state) {
+    if(explorationOrder.find(state) == explorationOrder.end())
+        explorationOrder[state] = (explorationCount++);
+}
 
-    std::cout << "exploration order:\n";
+template<class ValueType>
+void Emdp<ValueType>::print() {
+
+    std::cout << "exploration order [state, explorationTime]:\n";
     for (const auto& i: explorationOrder)
         std::cout << "[" << i.first << ", " << i.second << "] ";
-    
-    std::cout << "\n";
 
-    std::cout << "visitsMatrix:\n";
-    std::cout << "rowCount: " << visitsMatrix.getRowCount() << "\n";
-    std::cout << "columnCount: " << visitsMatrix.getColumnCount() << "\n";
-    for (int i = 0; i < visitsMatrix.getRowCount(); i++)
-        visitsMatrix.printRow(std::cout, i) << "\n";
+    std::cout << "\nexplored eMDP:\n";
+    hashStorage.print();
 }
 
 template<class ValueType>
-void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
-    this->addVisits(state, action, succ, 1);
+void Emdp<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
+    addStateToExplorationOrder(succ);
+    hashStorage.inc_trans(state, action, succ, 1);
 }
 
 template<class ValueType>
-void eMDP<ValueType>::addVisits(index_type state, index_type action, index_type succ, ValueType visits) {
-    // TODO add checks if state and succ are already known
-    //      -> throw errors or add them yourself?
-    index_type state_index = explorationOrder[state];
-    index_type succ_index = explorationOrder[succ];
-
-    auto& row = visitsMatrix.getRow(state_index, action);
-    index_type row_size = row.size(); 
-
-    // the row potentially is not big enough
-    if (row_size <= succ_index) {
-        row.resize(succ_index + 1);
-        for (index_type i = row_size; i < succ_index + 1; i++) {
-            row[i].setColumn(i);
-        }
-    }
-    
-    row[succ_index].setValue(row[succ_index].getValue() + visits);
+void Emdp<ValueType>::addVisits(index_type state, index_type action, index_type succ, ValueType visits) {
+    addStateToExplorationOrder(succ);
+    hashStorage.inc_trans(state, action, succ, visits);
 }
 
 template<class ValueType>
-void eMDP<ValueType>::addState(index_type state, index_type avail_actions){
-    // add state to explorationOrder -> mark it as known
-    int knownStates = explorationOrder.size();
-    explorationOrder.emplace(state, knownStates);
-    
-    // reserve avail_actions many new rows in visitsMatrix
-    visitsMatrix.addRows(avail_actions);    
+void Emdp<ValueType>::addState(index_type state, std::vector<index_type> avail_actions) {
+    addStateToExplorationOrder(state);
+    hashStorage.add_state_actions(state, avail_actions);
 }
 
 template<class ValueType>
-bool eMDP<ValueType>::isStateKnown(index_type state) {
-    return explorationOrder.find(state) != explorationOrder.end();
+bool Emdp<ValueType>::isStateKnown(index_type state) {
+    return hashStorage.state_exists(state);
 }
 
 template<class ValueType>
-ValueType eMDP<ValueType>::getVisited(index_type state, index_type action) {
-    index_type state_index = explorationOrder[state];
-    index_type row_group_index = visitsMatrix.getRowGroupIndices()[state_index];
-    return visitsMatrix.getRowSum(row_group_index + action);
+ValueType Emdp<ValueType>::getSampleCount(index_type state, index_type action) {
+    return hashStorage.get_total_samples(state, action);
 }
 
 template<class ValueType>
-ValueType eMDP<ValueType>::getVisited(index_type state, index_type action, index_type succ) {
-    index_type state_index = explorationOrder[state];
-    index_type succ_index = explorationOrder[succ];
-    auto& row = visitsMatrix.getRow(state_index, action);
-    if (row.size() <= succ_index) {
-        return 0; // TODO use generic ValueType zero
-    }
-    return row[succ_index].getValue();
+ValueType Emdp<ValueType>::getSampleCount(index_type state, index_type action, index_type succ) {
+    return hashStorage.get_succ_samples(state, action, succ);
 }
-
-template class eMDP<int>;
 
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
+
+/*
+int main(int argc, char const *argv[]) {
+    auto emdp = storm::modelchecker::blackbox::Emdp<uint_fast64_t>();
+    emdp.addVisit(1,2,3);
+    emdp.addVisits(1,2,4,10);
+    emdp.addVisit(1,2,3);
+    emdp.addVisits(2,2,3,16);
+    emdp.print();
+    return 0;
+}
+*/
