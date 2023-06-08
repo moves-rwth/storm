@@ -1,4 +1,4 @@
-#include "storm/modelchecker/blackbox/Bmdp.h"
+#include "storm/modelchecker/blackbox/bMDP.h"
 #include "models/ModelType.h"
 
 namespace storm {
