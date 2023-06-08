@@ -87,7 +87,7 @@ class HashStorage {
                  * @param action 
                  * @return uint_fast64_t 
                  */
-                int_fast64_t get_total_samples(uint_fast64_t state, uint_fast64_t action);
+                uint_fast64_t get_total_samples(uint_fast64_t state, uint_fast64_t action);
 
                 /*!
                  * Returns the samples for a (state,action,succ) tripple 
