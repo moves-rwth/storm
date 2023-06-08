@@ -10,17 +10,17 @@ namespace modelchecker {
 namespace blackbox {
 
 template<class ValueType>
-Emdp<ValueType>::Emdp() : explorationOrder(), hashStorage(){
+eMDP<ValueType>::eMDP() : explorationOrder(), hashStorage(){
 }
 
 template<class ValueType>
-void Emdp<ValueType>::addStateToExplorationOrder(index_type state) {
+void eMDP<ValueType>::addStateToExplorationOrder(index_type state) {
     if(explorationOrder.find(state) == explorationOrder.end())
         explorationOrder[state] = (explorationCount++);
 }
 
 template<class ValueType>
-void Emdp<ValueType>::print() {
+void eMDP<ValueType>::print() {
 
     std::cout << "exploration order [state, explorationTime]:\n";
     for (const auto& i: explorationOrder)
@@ -31,35 +31,35 @@ void Emdp<ValueType>::print() {
 }
 
 template<class ValueType>
-void Emdp<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
+void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
     addStateToExplorationOrder(succ);
     hashStorage.inc_trans(state, action, succ, 1);
 }
 
 template<class ValueType>
-void Emdp<ValueType>::addVisits(index_type state, index_type action, index_type succ, ValueType visits) {
+void eMDP<ValueType>::addVisits(index_type state, index_type action, index_type succ, ValueType visits) {
     addStateToExplorationOrder(succ);
     hashStorage.inc_trans(state, action, succ, visits);
 }
 
 template<class ValueType>
-void Emdp<ValueType>::addState(index_type state, std::vector<index_type> avail_actions) {
+void eMDP<ValueType>::addState(index_type state, std::vector<index_type> avail_actions) {
     addStateToExplorationOrder(state);
     hashStorage.add_state_actions(state, avail_actions);
 }
 
 template<class ValueType>
-bool Emdp<ValueType>::isStateKnown(index_type state) {
+bool eMDP<ValueType>::isStateKnown(index_type state) {
     return hashStorage.state_exists(state);
 }
 
 template<class ValueType>
-ValueType Emdp<ValueType>::getSampleCount(index_type state, index_type action) {
+ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action) {
     return hashStorage.get_total_samples(state, action);
 }
 
 template<class ValueType>
-ValueType Emdp<ValueType>::getSampleCount(index_type state, index_type action, index_type succ) {
+ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action, index_type succ) {
     return hashStorage.get_succ_samples(state, action, succ);
 }
 
@@ -69,7 +69,7 @@ ValueType Emdp<ValueType>::getSampleCount(index_type state, index_type action, i
 
 /*
 int main(int argc, char const *argv[]) {
-    auto emdp = storm::modelchecker::blackbox::Emdp<uint_fast64_t>();
+    auto emdp = storm::modelchecker::blackbox::eMDP<uint_fast64_t>();
     emdp.addVisit(1,2,3);
     emdp.addVisits(1,2,4,10);
     emdp.addVisit(1,2,3);

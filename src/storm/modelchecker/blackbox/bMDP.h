@@ -14,8 +14,8 @@ namespace models {
 namespace sparse {
 
 /*!
-* Template class to store the bounds of the Bmdp
-* ValueType of Bmdp
+* Template class to store the bounds of the bMDP
+* ValueType of bMDP
 */
 template<typename ValueType>
 class ValueTypePair {
@@ -39,9 +39,9 @@ class ValueTypePair {
 };
 
 template<class BoundType, typename RewardModelType = StandardRewardModel<BoundType>>
-class Bmdp : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelType> {
+class bMDP : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelType> {
 
-    using ValueType = ValueTypePair<BoundType>;
+    using BoundPair = ValueTypePair<BoundType>;
 
     public:
      /*!
@@ -51,7 +51,7 @@ class Bmdp : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelT
      * @param stateLabeling The labeling of the states.
      * @param rewardModels A mapping of reward model names to reward models.
      */
-    Bmdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateLabeling const& stateLabeling,
+     bMDP(storm::storage::SparseMatrix<BoundPair> const& transitionMatrix, StateLabeling const& stateLabeling,
         std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
         ModelType type = ModelType::Bmdp);
 
@@ -62,7 +62,7 @@ class Bmdp : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelT
      * @param stateLabeling The labeling of the states.
      * @param rewardModels A mapping of reward model names to reward models.
      */
-    Bmdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
+     bMDP(storm::storage::SparseMatrix<BoundPair>&& transitionMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
         std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::Bmdp);
 
     /*!
@@ -70,15 +70,15 @@ class Bmdp : public NondeterministicModel<ValueTypePair<BoundType>, RewardModelT
      *
      * @param components The components for this model.
      */
-    Bmdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components, ModelType type = ModelType::Bmdp);
-    Bmdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components, ModelType type = ModelType::Bmdp);
+     bMDP(storm::storage::sparse::ModelComponents<BoundPair, RewardModelType> const& components, ModelType type = ModelType::Bmdp);
+     bMDP(storm::storage::sparse::ModelComponents<BoundPair, RewardModelType>&& components, ModelType type = ModelType::Bmdp);
 
-    Bmdp(Bmdp<BoundType, RewardModelType> const& other) = default;
-    Bmdp& operator=(Bmdp<BoundType, RewardModelType> const& other) = default;
+     bMDP(bMDP<BoundType, RewardModelType> const& other) = default;
+     bMDP& operator=(bMDP<BoundType, RewardModelType> const& other) = default;
 
-    Bmdp(Bmdp<BoundType, RewardModelType>&& other) = default;
-    Bmdp& operator=(Bmdp<BoundType, RewardModelType>&& other) = default;
-    virtual ~Bmdp() = default;
+     bMDP(bMDP<BoundType, RewardModelType>&& other) = default;
+     bMDP& operator=(bMDP<BoundType, RewardModelType>&& other) = default;
+    virtual ~bMDP() = default;
 };
 
 }  // namespace sparse

@@ -13,14 +13,14 @@ template<class ValueType>
 //TODO: How should initial state be saved and handled?
 //TODO: Add Methods for access of explorationOrder
 
-class Emdp {
+class eMDP {
    public:
     typedef uint_fast64_t index_type;
     
     /*!
      * Constructs an empty eMDP
      */
-    Emdp();
+    eMDP();
 
     /*!
      * increments the visits count of the given triple by 1
