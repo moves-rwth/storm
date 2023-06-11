@@ -5,22 +5,30 @@
 
 namespace storm {
 namespace modelchecker {
+
 namespace blackbox {
 
 
-template<class ValueType>
+template<typename ValueType>
 
 //TODO: How should initial state be saved and handled?
 //TODO: Add Methods for access of explorationOrder
 
 class eMDP {
    public:
-    typedef uint_fast64_t index_type;
+    typedef ValueType index_type;
     
     /*!
      * Constructs an empty eMDP
      */
     eMDP();
+
+    /*!
+     * adds initial state to eMDP
+     * 
+     * @param state initial state 
+     */
+    void addInitialState(index_type state);
 
     /*!
      * increments the visits count of the given triple by 1
@@ -50,6 +58,8 @@ class eMDP {
      * print the eMDP to std::cout
      */
     void print();
+
+    void toDot();
 
     /*!
      * returns true. if the state was already added to this eMDP. false otherwise
@@ -82,7 +92,8 @@ class eMDP {
      */
     void addStateToExplorationOrder(index_type state);
 
-   storage::HashStorage hashStorage;
+   storage::HashStorage<index_type> hashStorage;
+   index_type init_state = -1;
    std::unordered_map<index_type, index_type> explorationOrder; // maps state to its position of when its been found
    index_type explorationCount = 0; //Number of explored states
 };

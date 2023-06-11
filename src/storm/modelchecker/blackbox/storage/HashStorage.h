@@ -5,7 +5,6 @@
 #include <iostream>
 
 
-//TODO: Should we make HashStorage templated or is it fine if we use uint_fast64_t?
 
 namespace storm {
 namespace modelchecker {
@@ -16,24 +15,42 @@ namespace storage {
  * Class to store eMDPs
  * The underlying data structure uses consequitive hashmaps and NOT matrices
  */
+template<typename IntValueType>
 class HashStorage {
    private:
+   typedef IntValueType index_type;
     /*!
                 * Helper function, returns the succ_map of a (state,action) Pair
                 * 
                 * @param state 
                 * @param action 
-                * @return std::unordered_map<uint_fast64_t, uint_fast64_t>
+                * @return std::unordered_map<index_type, index_type>
      */
-    std::unordered_map<uint_fast64_t, uint_fast64_t> get_succ_map(uint_fast64_t state, uint_fast64_t action);
+
+        /*!
+    * eMDPs are saved as 3 consequitive hashmaps 
+    * 1.) key = state      | value = 2.) hashmap 
+    * 2.) key = action     | value = pair (#total samples, 3.) hashmap)
+    * 3.) key = succ       | value = #samples of the (state,action,succ) triple
+    */
+    using count_sampleMap_pair = std::pair<index_type, std::unordered_map<index_type, index_type> >;
+    std::unordered_map<index_type, std::unordered_map<index_type, count_sampleMap_pair > > data;
+
+    std::unordered_map<index_type, index_type> get_succ_map(index_type state, index_type action);
 
    public:
+    /**
+     * Construct empty Hash Storage 
+     * 
+     */
+    HashStorage();
+
     /*!
                  * adds state do data 
                  * 
                  * @param state
      */
-    void add_state(uint_fast64_t state);
+    void add_state(index_type state);
 
     /*!
                  * Adds a vector of actions to the state 
@@ -42,7 +59,7 @@ class HashStorage {
                  * @param state 
                  * @param actions
      */
-    void add_state_actions(uint_fast64_t state, std::vector<uint_fast64_t> actions);
+    void add_state_actions(index_type state, std::vector<index_type> actions);
 
     /*!
                  * Increments a transition of the form (state,action,succ) = samples
@@ -54,31 +71,31 @@ class HashStorage {
                  * @param succ 
                  * @param samples
      */
-    void inc_trans(uint_fast64_t state, uint_fast64_t action, uint_fast64_t succ, uint_fast64_t samples);
+    void inc_trans(index_type state, index_type action, index_type succ, index_type samples);
 
     /*!
                  * Returns a vector of all states 
                  * 
-                 * @return std::vector<uint_fast64_t>
+                 * @return std::vector<index_type>
      */
-    std::vector<uint_fast64_t> get_state_vec();
+    std::vector<index_type> get_state_vec();
 
     /*!
                  * Returns a vector of available actions for the state  
                  * 
                  * @param state 
-                 * @return std::vector<uint_fast64_t>
+                 * @return std::vector<index_type>
      */
-    std::vector<uint_fast64_t> get_state_actions_vec(uint_fast64_t state);
+    std::vector<index_type> get_state_actions_vec(index_type state);
 
     /*!
                  * Returns a vector of all successors for a (state,action) pair 
                  * 
                  * @param state 
                  * @param action 
-                 * @return std::vector<uint_fast64_t>
+                 * @return std::vector<index_type>
      */
-    std::vector<uint_fast64_t> get_state_action_succ_vec(uint_fast64_t state, uint_fast64_t action);
+    std::vector<index_type> get_state_action_succ_vec(index_type state, index_type action);
 
     /*!
                  * Returns true if the state exists in data 
@@ -87,16 +104,16 @@ class HashStorage {
                  * @return true 
                  * @return false
      */
-    bool state_exists(uint_fast64_t state);
+    bool state_exists(index_type state);
 
     /*!
                  * Returns the total samples for a given state and action 
                  * 
                  * @param state 
                  * @param action 
-                 * @return uint_fast64_t
+                 * @return index_type
      */
-    int_fast64_t get_total_samples(uint_fast64_t state, uint_fast64_t action);
+    index_type get_total_samples(index_type state, index_type action);
 
     /*!
                  * Returns the samples for a (state,action,succ) triple
@@ -104,9 +121,9 @@ class HashStorage {
                  * @param state 
                  * @param action 
                  * @param succ 
-                 * @return uint_fast64_t
+                 * @return index_type
      */
-    int_fast64_t get_succ_samples(uint_fast64_t state, uint_fast64_t action, uint_fast64_t succ);
+    index_type get_succ_samples(index_type state, index_type action, index_type succ);
 
     /*!
                  * Prints the data structure to std::cout
