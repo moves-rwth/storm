@@ -2,6 +2,11 @@
 #define STORM_EMDP_H
 
 #include "storage/HashStorage.h"
+#include <string.h>
+#include "stdint.h"
+#include <iostream>
+#include <fstream>
+
 
 namespace storm {
 namespace modelchecker {
@@ -59,7 +64,24 @@ class eMDP {
      */
     void print();
 
-    void toDot();
+    /*!
+     * Converts the eMDP to dot string representation 
+     * 
+     * @return std::string 
+     */
+    std::string toDotString();
+    /*!
+     * Writes toDotString() to a file with name filename 
+     * 
+     * @param filename  
+     */
+    void writeDotFile(std::string filename);
+
+    /*!
+     * prints toDotString to std::cout 
+     * 
+     */
+    void printDot();
 
     /*!
      * returns true. if the state was already added to this eMDP. false otherwise

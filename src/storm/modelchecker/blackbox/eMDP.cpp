@@ -1,10 +1,4 @@
-//
-// Created by Maximilian Kamps on 25.05.23.
-//
-
 #include "eMDP.h"
-#include "stdint.h"
-#include <string.h>
 
 namespace storm {
 namespace modelchecker {
@@ -42,7 +36,7 @@ void eMDP<ValueType>::print() {
 
 
 template<typename ValueType>
-void eMDP<ValueType>::toDot() {
+std::string eMDP<ValueType>::toDotString() {
     std::unordered_map<int, std::string> color_map; //colors to distinguish actions 
     color_map[0] = "green";
     color_map[1] = "red";
@@ -51,10 +45,10 @@ void eMDP<ValueType>::toDot() {
     color_map[4] = "pink";
     color_map[5] = "orange";
 
-    std::cout << "digraph G {\n";
-    std::cout << "node [shape=circle style=filled, fixedsize=true, width=2, height=2]\n"; //Node Attributes 
+    std::string dot_str = "digraph G {\n";
+    dot_str += "node [shape=circle style=filled, fixedsize=true, width=2, height=2]\n"; //Node Attributes 
     
-    std::cout << init_state << " [fillcolor=green]\n"; //Make the initial state a different color 
+    dot_str += std::to_string(init_state) + " [fillcolor=green]\n"; //Make the initial state a different color 
 
     for (auto state : hashStorage.get_state_vec()) {
         std::string action_str = ""; //build a string of all the actions and total Samples of state 
@@ -63,18 +57,33 @@ void eMDP<ValueType>::toDot() {
             action_str += "\\n act: " + std::to_string(action) 
             + " | #tot_spl: " + std::to_string(hashStorage.get_total_samples(state, action));
             for (auto succ : hashStorage.get_state_action_succ_vec(state, action)) {
-                std::cout << "  " << state << " -> " << succ // transition 
-                << " [label=\"act: "  << action << "\\n #spl: " //label with action and samples 
-                << hashStorage.get_succ_samples(state, action, succ) 
-                << "\", color=" << color_map[color_ctr] << "]\n"; //color of trabsition 
+                dot_str += "  " + std::to_string(state) + " -> " + std::to_string(succ) // transition 
+                + " [label=\"act: "  + std::to_string(action) + "\\n #spl: " //label with action and samples 
+                + std::to_string(hashStorage.get_succ_samples(state, action, succ)) 
+                + "\", color=" + color_map[color_ctr] + "]\n"; //color of trabsition 
             }
             color_ctr++;
         }
-        std::cout << "  " << state << " [ label=\"state: " << state << action_str << "\"]\n"; // text in state 
+        dot_str += "  " + std::to_string(state) + " [ label=\"state: " + std::to_string(state) + action_str + "\"]\n"; // text in state 
     }
 
-    std::cout << "}\n";
+    dot_str += "}\n";
+    return dot_str;
 }
+
+template<typename ValueType>
+void eMDP<ValueType>::writeDotFile(std::string filename) {
+    std::ofstream MyFile(filename);
+    MyFile << toDotString();
+    MyFile.close();
+}
+
+template<typename ValueType>
+void eMDP<ValueType>::printDot() {
+    std::cout(toDotString());
+}
+
+
 
 template<typename ValueType>
 void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
@@ -117,11 +126,10 @@ ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action, i
 int main(int argc, char const *argv[]) {
     auto emdp = storm::modelchecker::blackbox::eMDP<int_fast32_t>();
     emdp.addInitialState(1);
-    emdp.addVisit(1,10,2);
-    emdp.addVisit(2,11,3);
-    emdp.addVisit(3,12,4);
-    emdp.addVisit(3,12,5);
-    emdp.toDot();
+    for(int i = 0; i < 100; i++) {
+        emdp.addVisit(i, 10, i+1);
+    }
+    emdp.writeToDotFile();
     return 0;
 }
 
