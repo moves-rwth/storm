@@ -77,7 +77,7 @@ Again, we use the BRP model and check if any of the parameters are monotonic:
 ```console
 $ storm-pars --prism brp.pm --prop 'P=? [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <=pK <=0.9' --monotonicity-analysis --bisimulation
 ```
-We use `--bisimulation` to apply further model simplification and significantly reduce the workload of the modelchecker.
+We use `--bisimulation` to apply further model simplification and significantly reduce the workload of the model checker.
 This results in the following output:
 
 {% include includes/show_output.html class="mon_parametric_models" path="parametric/brp_mon.out" %}
