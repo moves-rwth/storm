@@ -7,7 +7,8 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.8.x
 -------------
-## Version 1.8.1
+
+## Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81
 
 ## Version 1.8.0 (2023/05)
