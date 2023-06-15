@@ -14,7 +14,7 @@ categories: [Obtain Storm]
 - In general, if issues occur installing certain dependencies of Storm make sure to also consult the documentation of the corresponding dependency.
 
 ### CArL
-- When manually installing CArL make sure you are using the `master14` branch of CArL as the current master branch uses a newer C++ standard that Storm does not require and therefore does not enable.
+- When manually installing CArL make sure you are using the [Carl-storm] (https://github.com/moves-rwth/carl-storm) repository which is compatible with the latest Storm versions.
 
 ## OS specific issues
 We list common issues for specific operating systems.
