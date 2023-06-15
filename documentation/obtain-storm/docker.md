@@ -24,12 +24,12 @@ Next you should start the Docker app and its tray icon should be visible.
 If you are running Windows, you may need to reboot your machine for the Docker installation to be completed and available using the command line.
 
 ## Download Docker Image
-Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/movesrwth/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `ci-release`. Furthermore we also provide debug builds indicated by the suffix `-debug`.
+Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/movesrwth/storm/tags/){:target="_blank"}. We offer images for the latest release (tag `stable`), all previous releases (tagged with the version number `x.y.z`), and a daily version of the most recent development version of Storm (tag `ci-release`). Furthermore, we also provide debug builds for each image (indicated by the suffix `-debug`).
 
 Download the Storm container you want to use:
 
 ```console
-$ docker pull movesrwth/storm:travis
+$ docker pull movesrwth/storm:stable
 ```
 
 ## Run the Docker Image (Linux and macOS)
@@ -42,7 +42,7 @@ $ cd ~/Desktop/data
 The next command starts the previously downloaded image and enables file sharing with the current directory:
 
 ```console
-$ docker run --mount type=bind,source="$(pwd)",target=/data -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis
+$ docker run --mount type=bind,source="$(pwd)",target=/data -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:stable
 ```
 
 After executing the command you are now within the Docker container indicated by a different prompt:
@@ -80,7 +80,7 @@ In the _Shared Drives_ option tick the drive letters you want to make Storm avai
 The next command starts the previously downloaded image and enables file sharing with the earlier set directory:
 
 ```console
-> docker run --mount type=bind,source=%hostdir%,target=%sharedir% -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:travis
+> docker run --mount type=bind,source=%hostdir%,target=%sharedir% -w /opt/storm/build/bin --rm -it --name storm movesrwth/storm:stable
 ```
 
 After executing the command you are now within the Docker container indicated by a different prompt:
@@ -107,7 +107,7 @@ $ ./storm --prism ../../resources/examples/testfiles/dtmc/die.pm --io:exportexpl
 
 Afterwards there should be a file named `die.drn` in the shared directory now.
 
-In the end exit the container.
+In the end exit the container with:
 
 ```console
 $ exit
