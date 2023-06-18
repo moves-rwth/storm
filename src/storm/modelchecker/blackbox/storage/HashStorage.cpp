@@ -5,9 +5,36 @@ namespace modelchecker {
 namespace blackbox {
 namespace storage {
 
+//-------------------- Iterator Methods ---------------------------//
+
 template<typename IntValueType>
-HashStorage<IntValueType>::HashStorage() {
-    data = std::unordered_map<index_type, std::unordered_map<index_type, count_sampleMap_pair > >();
+KeyIterator<IntValueType>::KeyIterator(void* map) {
+    cur = (*(std::unordered_map<int, void*>*) map).begin();
+    end = (*(std::unordered_map<int, void*>*) map).end();
+}
+
+template<typename IntValueType>
+KeyIterator<IntValueType>::KeyIterator() {
+    std::unordered_map<int, void*> empty_map;
+    cur = empty_map.begin();
+    end = empty_map.end();
+}
+
+template<typename IntValueType>
+IntValueType KeyIterator<IntValueType>::next() {
+    IntValueType key = cur->first;
+    cur++;
+    return key;
+}
+
+template<typename IntValueType>
+bool KeyIterator<IntValueType>::hasNext() {
+    return cur != end;
+} 
+//--------------------- HashStorage Mathods -------------------------//
+
+template<typename IntValueType>
+HashStorage<IntValueType>::HashStorage() : data() {
 }
 
 template<typename IntValueType>
@@ -29,8 +56,10 @@ std::unordered_map<IntValueType, IntValueType> HashStorage<IntValueType>::get_su
 template<typename IntValueType>
 void HashStorage<IntValueType>::add_state(IntValueType state) {
     if (data.find(state) == data.end())
-        data[state] = std::unordered_map<IntValueType, count_sampleMap_pair>();
+           data[state] = std::unordered_map<IntValueType, count_sampleMap_pair>();
 }
+
+//__________________ Add states and actions to Datastructure __________//
 
 template<typename IntValueType>
 void HashStorage<IntValueType>::add_state_actions(IntValueType state, std::vector<IntValueType> actions) {
@@ -47,13 +76,16 @@ void HashStorage<IntValueType>::inc_trans(IntValueType state, IntValueType actio
     add_state(succ);   // add succ to data if it doesn't exist
 
     auto* act_map = &data.at(state);  // add action to data if it doesn't exist
-    if (act_map->find(action) == act_map->end())
+    if (act_map->find(action) == act_map->end()) {
         (*act_map)[action] = count_sampleMap_pair();
+    }
 
     auto* sample_map = &(act_map->at(action).second);
     (*act_map).at(action).first += samples;  // Increment the total samples for the action
     (*sample_map)[succ] += samples;          // Increments the samples for the (state,action,succ) triple
 }
+
+//__________________ Access the Datastructure via Vectors _________________//
 
 template<typename IntValueType>
 std::vector<IntValueType> HashStorage<IntValueType>::get_state_vec() {
@@ -76,6 +108,34 @@ std::vector<IntValueType> HashStorage<IntValueType>::get_state_action_succ_vec(I
     for (auto const& p : get_succ_map(state, action)) succ_vec.push_back(p.first);
     return succ_vec;
 }
+//__________________ Access the Datastructure via Iterators _________________//
+
+template<typename IntValueType>
+KeyIterator<IntValueType> HashStorage<IntValueType>::get_state_itr() {
+    return KeyIterator<IntValueType>(&data);
+}
+
+template<typename IntValueType>
+KeyIterator<IntValueType> HashStorage<IntValueType>::get_state_actions_itr(IntValueType state) {
+    if (data.find(state) == data.end()) {
+        return KeyIterator<IntValueType>();
+    }
+    return KeyIterator<IntValueType>(&data.at(state));
+}
+
+template<typename IntValueType>
+KeyIterator<IntValueType> HashStorage<IntValueType>::get_state_action_succ_itr(IntValueType state, IntValueType action) {
+    if (data.find(state) == data.end()) {
+        return KeyIterator<IntValueType>();
+    }
+    auto* act_map = &data.at(state);
+    if(act_map->find(action) == act_map->end()) {
+        return KeyIterator<IntValueType>();
+    }
+    return KeyIterator<IntValueType>(&(act_map->at(action).second));
+}
+
+//__________________ Access seperate elements of the Datastructure _____________________//
 
 template<typename IntValueType>
 bool HashStorage<IntValueType>::state_exists(IntValueType state) {
@@ -119,30 +179,47 @@ void HashStorage<IntValueType>::print() {
 }
 template class HashStorage<int_fast32_t>; //Type for which class gets compiled 
 template class HashStorage<int_fast64_t>; //Type for which class gets compiled 
+template class KeyIterator<int_fast32_t>; //Type for which class gets compiled 
+template class KeyIterator<int_fast64_t>; //Type for which class gets compiled 
 }
 }
 }
 }
 
-/*
+
 int main(int argc, char const *argv[])
-{
-        auto x = storm::modelchecker::blackbox::storage::HashStorage<int>();
-        x.inc_trans(1,2,3,10);
-        x.inc_trans(1,2,3,5);
-        x.inc_trans(1,2,4,3);
-        x.inc_trans(5,6,9,3);
-        x.get_succ_samples(1,2,3);
+{       
+    
+    auto x = storm::modelchecker::blackbox::storage::HashStorage<int_fast32_t>();
+    x.inc_trans(1,2,3,10);
+    x.inc_trans(1,2,7,5);
+    x.inc_trans(1,2,4,3);
+    x.inc_trans(1,3,5,3);
 
-        std::vector<int> vect;
-        vect.push_back(100);
-        vect.push_back(101);
-        vect.push_back(102);
+    //auto i1 = x.get_state_itr();
 
-        x.add_state_actions(10, vect);
+    auto i1 = x.get_state_itr();
 
-        x.print();
+    while (i1.hasNext())
+    {
+        std::cout << i1.next() << "\n";
+    }
+    std::cout << "next itr \n";
+    
+    auto i2 = x.get_state_actions_itr(1);
+
+    while (i2.hasNext())
+    {
+        std::cout << i2.next() << "\n";
+    }
+
+    auto i3 = x.get_state_action_succ_itr(1,2);
+    std::cout << "next itr \n";
+    while (i3.hasNext())
+    {
+        std::cout << i3.next() << "\n";
+    }
 }
-*/
+
 
 
