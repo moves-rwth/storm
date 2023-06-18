@@ -5,9 +5,8 @@ namespace modelchecker {
 namespace blackbox {
 
 template<typename ValueType>
-eMDP<ValueType>::eMDP() : explorationOrder(), hashStorage() {
+eMDP<ValueType>::eMDP() : explorationOrder(), hashStorage(), stateLabeling() {
 }
-
 
 template<typename ValueType>
 void eMDP<ValueType>::addInitialState(index_type state) {
@@ -32,8 +31,6 @@ void eMDP<ValueType>::print() {
     std::cout << "explored eMDP:\n";
     hashStorage.print();
 }
-
-
 
 template<typename ValueType>
 std::string eMDP<ValueType>::toDotString() {
@@ -83,8 +80,6 @@ void eMDP<ValueType>::printDot() {
     std::cout(toDotString());
 }
 
-
-
 template<typename ValueType>
 void eMDP<ValueType>::addVisit(index_type state, index_type action, index_type succ) {
     addStateToExplorationOrder(succ);
@@ -104,6 +99,28 @@ void eMDP<ValueType>::addState(index_type state, std::vector<index_type> avail_a
 }
 
 template<typename ValueType>
+void eMDP<ValueType>::addStateLabel(std::string label, index_type state) {
+    auto* labelVec = &stateLabeling[state];
+    auto it = find(labelVec->begin(), labelVec->end(), label);
+    if(it == labelVec->end())
+        labelVec->push_back(label);
+}
+
+template<typename ValueType>
+void eMDP<ValueType>::removeStateLabel(std::string label, index_type state) {
+    auto* labelVec = &stateLabeling[state];
+
+    auto it = find(labelVec->begin(), labelVec->end(), label);
+    if(it != labelVec->end())
+        labelVec->erase(it);
+}
+
+template<typename ValueType>
+std::vector<std::string> eMDP<ValueType>::getStateLabels(index_type state) {
+    return stateLabeling[state];
+}
+
+template<typename ValueType>
 bool eMDP<ValueType>::isStateKnown(index_type state) {
     return hashStorage.state_exists(state);
 }
@@ -118,6 +135,21 @@ ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action, i
     return hashStorage.get_succ_samples(state, action, succ);
 }
 
+template<typename ValueType>
+storage::KeyIterator<ValueType> eMDP<ValueType>::get_state_itr() {
+    return hashStorage.get_state_itr();
+}
+
+template<typename ValueType>
+storage::KeyIterator<ValueType> eMDP<ValueType>::get_state_actions_itr(index_type state) {
+    return hashStorage.get_state_actions_itr(state);
+}
+
+template<typename ValueType>
+storage::KeyIterator<ValueType> eMDP<ValueType>::get_state_action_succ_itr(index_type state, index_type action) {
+    return hashStorage.get_state_action_succ_itr(state, action);
+}
+
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
@@ -126,10 +158,26 @@ ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action, i
 int main(int argc, char const *argv[]) {
     auto emdp = storm::modelchecker::blackbox::eMDP<int_fast32_t>();
     emdp.addInitialState(1);
-    for(int i = 0; i < 100; i++) {
-        emdp.addVisit(i, 10, i+1);
+    
+    emdp.addStateLabel("label1", 1);
+    emdp.addStateLabel("label2", 1);
+    emdp.addStateLabel("label2", 1);
+    emdp.addStateLabel("label3", 1);
+    
+    for(auto x : emdp.getStateLabels(1)) {
+        std::cout << x << "\n";
     }
-    emdp.writeToDotFile();
+
+    std::cout << "\n";
+    emdp.removeStateLabel("label1", 1);
+    emdp.removeStateLabel("label2", 1);
+
+    for(auto x : emdp.getStateLabels(1)) {
+        std::cout << x << "\n";
+    }
+    
+    
+    emdp.writeDotFile("name.txt");
     return 0;
 }
 

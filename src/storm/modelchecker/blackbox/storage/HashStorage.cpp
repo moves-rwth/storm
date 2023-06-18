@@ -186,7 +186,7 @@ template class KeyIterator<int_fast64_t>; //Type for which class gets compiled
 }
 }
 
-
+/*
 int main(int argc, char const *argv[])
 {       
     
@@ -220,6 +220,7 @@ int main(int argc, char const *argv[])
         std::cout << i3.next() << "\n";
     }
 }
+*/
 
 
 

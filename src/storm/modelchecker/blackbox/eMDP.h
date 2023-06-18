@@ -1,11 +1,13 @@
 #ifndef STORM_EMDP_H
 #define STORM_EMDP_H
 
-#include "storage/HashStorage.h"
+#pragma once
 #include <string.h>
 #include "stdint.h"
 #include <iostream>
 #include <fstream>
+
+#include "storage/HashStorage.h"
 
 
 namespace storm {
@@ -15,9 +17,6 @@ namespace blackbox {
 
 
 template<typename ValueType>
-
-//TODO: How should initial state be saved and handled?
-//TODO: Add Methods for access of explorationOrder
 
 class eMDP {
    public:
@@ -34,7 +33,7 @@ class eMDP {
      * @param state initial state 
      */
     void addInitialState(index_type state);
-
+    
     /*!
      * increments the visits count of the given triple by 1
      * @param state   state index in which action was taken 
@@ -58,6 +57,30 @@ class eMDP {
      * @param avail_actions vector of available actions at state
      */
     void addState(index_type state, std::vector<index_type> avail_actions);
+
+    /*!
+     * Adds a new Label to the state 
+     * 
+     * @param label 
+     * @param state 
+     */
+    void addStateLabel(std::string label, index_type state);
+    
+    /*!
+     * Removes a label from the state 
+     * 
+     * @param label 
+     * @param state 
+     */
+    void removeStateLabel(std::string label, index_type state);
+    
+    /*!
+     * Returns the vector of Labels for a state 
+     * 
+     * @param state 
+     * @return std::vector<std::string> 
+     */
+    std::vector<std::string> getStateLabels(index_type state);
 
     /*!
      * print the eMDP to std::cout
@@ -106,6 +129,30 @@ class eMDP {
 
     //? Save to disk
 
+    /*!
+     * Returns a KeyIterator over the states 
+     * 
+     * @return KeyIterator<index_type> 
+     */
+    storage::KeyIterator<index_type> get_state_itr();
+
+    /*!
+     * Returns a KeyIterator over the actions of a state
+     * 
+     * @param state 
+     * @return KeyIterator<index_type> 
+     */
+    storage::KeyIterator<index_type> get_state_actions_itr(index_type state);
+
+    /*!
+     * Returns a KeyIterator over the successor of a state for a given action 
+     * 
+     * @param state 
+     * @param action 
+     * @return KeyIterator<index_type> 
+     */
+    storage::KeyIterator<index_type> get_state_action_succ_itr(index_type state, index_type action);
+    
    private:
     /*!
      * Adds the state and its corresponding exploration time to explorationOrder
@@ -115,11 +162,11 @@ class eMDP {
     void addStateToExplorationOrder(index_type state);
 
    storage::HashStorage<index_type> hashStorage;
-   index_type init_state = -1;
    std::unordered_map<index_type, index_type> explorationOrder; // maps state to its position of when its been found
+   std::unordered_map<index_type, std::vector<std::string> > stateLabeling; 
+   index_type init_state = -1;
    index_type explorationCount = 0; //Number of explored states
 };
-
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
