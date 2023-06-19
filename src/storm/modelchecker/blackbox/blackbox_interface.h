@@ -7,7 +7,6 @@
 */
 #include <random>
 
-#include "storage/HashStorage.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
 
 
@@ -15,14 +14,13 @@ namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
+template <typename StateType>
 class blackboxMDP {
     public:
-     typedef uint_fast64_t index_type;
-
      /*!
       * returns the state indentifier of the initial state
      */
-     virtual index_type get_initial_state() = 0;
+     virtual StateType get_initial_state() = 0;
 
      /*!
       * returns a KeyIterator over the available actions of the given state 
@@ -30,7 +28,7 @@ class blackboxMDP {
       * @param state 
       * @return KeyIterator<index_type> 
       */
-     virtual storage::KeyIterator<index_type> get_avail_actions(index_type state) = 0;
+     virtual StateType get_avail_actions(StateType state) = 0;
      
 
      /*!
@@ -40,7 +38,7 @@ class blackboxMDP {
       * @param action
       * @return successor state identfier
       */
-     virtual index_type sample_suc(index_type state, index_type action) = 0;
+     virtual StateType sample_suc(StateType state, StateType action) = 0;
 
      /*!
       * returns a lower bound for all transition probilities in this MDP 
@@ -61,7 +59,7 @@ class blackboxMDP {
       * 
       * @throws NotSupportedException, NotImplementedException 
       */
-     virtual index_type get_suc_count(index_type state, index_type action);
+     virtual StateType get_suc_count(StateType state, StateType action);
 };
 
 template <typename StateType, typename ValueType>
@@ -72,7 +70,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
      /*!
       * returns the state indentifier of the initial state
      */
-     index_type get_initial_state();
+     StateType get_initial_state();
 
      /*!
       * returns a KeyIterator over the available actions of the given state 
@@ -80,7 +78,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
       * @param state 
       * @return index_type number of available actions; actions are labeled in ascending order from 0
       */
-     index_type get_avail_actions(index_type state);
+     StateType get_avail_actions(StateType state);
      
 
      /*!
@@ -90,7 +88,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
       * @param action
       * @return successor state identfier
       */
-     index_type sample_suc(index_type state, index_type action);
+     StateType sample_suc(StateType state, StateType action);
 
      /*!
       * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
@@ -98,7 +96,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
      bool is_greybox();
 
     private:
-     void exploreState(index_type state);
+     void exploreState(StateType state);
 
      storm::modelchecker::exploration_detail::StateGeneration<StateType, ValueType> stateGeneration;
      storm::modelchecker::exploration_detail::ExplorationInformation<StateType, ValueType> explorationInformation;

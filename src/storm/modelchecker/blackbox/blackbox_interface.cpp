@@ -12,12 +12,14 @@ namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
-typename blackboxMDP::index_type blackboxMDP::get_suc_count(blackboxMDP::index_type state, blackboxMDP::index_type action) {
+template <typename StateType>
+StateType blackboxMDP<StateType>::get_suc_count(StateType state, StateType action) {
     STORM_LOG_THROW(is_greybox(), storm::exceptions::NotImplementedException, "get_suc_count is not implemented for this greybox MDP");
     STORM_LOG_THROW(!is_greybox(), storm::exceptions::NotSupportedException, "get_suc_count is not implemented for this greybox MDP");
 }
 
-double blackboxMDP::get_pmin() {
+template <typename StateType>
+double blackboxMDP<StateType>::get_pmin() {
     throw storm::exceptions::NotImplementedException();
 }
 
@@ -30,19 +32,19 @@ blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm
 }
 
 template <typename StateType, typename ValueType>
-typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type blackboxWrapperOnWhitebox<StateType, ValueType>::get_initial_state() {
+StateType blackboxWrapperOnWhitebox<StateType, ValueType>::get_initial_state() {
     stateGeneration.computeInitialStates();
     return stateGeneration.getFirstInitialState();
 }
 
 template <typename StateType, typename ValueType>
-typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type blackboxWrapperOnWhitebox<StateType, ValueType>::get_avail_actions(index_type state) {
+StateType blackboxWrapperOnWhitebox<StateType, ValueType>::get_avail_actions(StateType state) {
     StateType stateRow = explorationInformation.getRowGroup(state);
     return explorationInformation.getRowGroupSize(stateRow);
 }
 
 template <typename StateType, typename ValueType>
-typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(index_type state, index_type action) {
+StateType blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(StateType state, StateType action) {
     StateType stateRowIdx = explorationInformation.getStartRowOfGroup(explorationInformation.getRowGroup(state));
     auto& actionRow = explInfo.getRowOfMatrix(stateRowIdx + action);
 
@@ -62,7 +64,7 @@ bool blackboxWrapperOnWhitebox<StateType, ValueType>::is_greybox() {
 }
 
 template <typename StateType, typename ValueType>
-void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(index_type state) {
+void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType state) {
     // TODO optimization: terminal and target states don't need to explored
 
     auto& unexploredIt = explorationInformation.findUnexploredState(currentStateId);
