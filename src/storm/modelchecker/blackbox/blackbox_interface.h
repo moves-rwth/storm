@@ -8,7 +8,8 @@
 #include <random>
 
 #include "storm/modelchecker/exploration/StateGeneration.h"
-
+#include "storm/modelchecker/exploration/ExplorationInformation.h"
+#include "storm/logic/Formula.h"
 
 namespace storm {
 namespace modelchecker {
@@ -63,9 +64,9 @@ class blackboxMDP {
 };
 
 template <typename StateType, typename ValueType>
-class blackboxWrapperOnWhitebox: blackboxMDP {
+class blackboxWrapperOnWhitebox: blackboxMDP<StateType> {
     public:
-     blackboxWrapperOnWhitebox(storm::prism::Program& program);
+     blackboxWrapperOnWhitebox(storm::prism::Program const& program, storm::logic::Formula const& conditionFormula, storm::logic::Formula const& targetFormula);
     
      /*!
       * returns the state indentifier of the initial state
@@ -98,6 +99,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
     private:
      void exploreState(StateType state);
 
+     storm::prism::Program program;
      storm::modelchecker::exploration_detail::StateGeneration<StateType, ValueType> stateGeneration;
      storm::modelchecker::exploration_detail::ExplorationInformation<StateType, ValueType> explorationInformation;
      mutable std::default_random_engine randomGenerator;

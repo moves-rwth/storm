@@ -1,11 +1,18 @@
 #include "storm/modelchecker/blackbox/blackbox_interface.h"
 
+#include "storm/modelchecker/exploration/StateGeneration.h"
+#include "storm/modelchecker/exploration/ExplorationInformation.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+
+#include "storm/logic/Formula.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/utility/macros.h"
 
 #include "storm/generator/CompressedState.h"
+#include "storm/solver/OptimizationDirection.h"
 
 
 namespace storm {
@@ -16,6 +23,7 @@ template <typename StateType>
 StateType blackboxMDP<StateType>::get_suc_count(StateType state, StateType action) {
     STORM_LOG_THROW(is_greybox(), storm::exceptions::NotImplementedException, "get_suc_count is not implemented for this greybox MDP");
     STORM_LOG_THROW(!is_greybox(), storm::exceptions::NotSupportedException, "get_suc_count is not implemented for this greybox MDP");
+    return 0;
 }
 
 template <typename StateType>
@@ -24,10 +32,11 @@ double blackboxMDP<StateType>::get_pmin() {
 }
 
 template <typename StateType, typename ValueType>
-blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program& program)
-                                                : explorationInformation(storm::OptimizationDirection::Maximize),
-                                                  stateGeneration(program, explorationInformation, 
-                                                  (storm::expressions::Expression()), (storm::expressions::Expression())) {
+blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program const& program, storm::logic::Formula const& conditionFormula, storm::logic::Formula const& targetFormula)
+                                                : program(program.substituteConstantsFormulas()),
+                                                  explorationInformation(storm::OptimizationDirection::Maximize),
+                                                  stateGeneration(this->program, explorationInformation, 
+                                                  conditionFormula.toExpression(this->program.getManager(), this->program.getLabelToExpressionMapping()), targetFormula.toExpression(this->program.getManager(), this->program.getLabelToExpressionMapping())) {
     // intentionally left empty
 }
 
@@ -46,9 +55,9 @@ StateType blackboxWrapperOnWhitebox<StateType, ValueType>::get_avail_actions(Sta
 template <typename StateType, typename ValueType>
 StateType blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(StateType state, StateType action) {
     StateType stateRowIdx = explorationInformation.getStartRowOfGroup(explorationInformation.getRowGroup(state));
-    auto& actionRow = explInfo.getRowOfMatrix(stateRowIdx + action);
+    auto& actionRow = explorationInformation.getRowOfMatrix(stateRowIdx + action);
 
-    std::uniform_int_distribution<ActionType> distribution(0, actionRow.size() - 1);
+    std::uniform_int_distribution<StateType> distribution(0, actionRow.size() - 1);
     StateType successor = actionRow[distribution(randomGenerator)].getColumn();
     
     // explore successor and add new unexplored states if necessary
@@ -67,7 +76,7 @@ template <typename StateType, typename ValueType>
 void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType state) {
     // TODO optimization: terminal and target states don't need to explored
 
-    auto& unexploredIt = explorationInformation.findUnexploredState(currentStateId);
+    auto unexploredIt = explorationInformation.findUnexploredState(state);
     if (unexploredIt == explorationInformation.unexploredStatesEnd()) {
         return;
     }
@@ -90,9 +99,10 @@ void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType sta
     }
 
     explorationInformation.terminateCurrentRowGroup();
-    explorationInformation.removeUnexploredState(successor);
+    explorationInformation.removeUnexploredState(unexploredIt);
 }
 
+template class blackboxWrapperOnWhitebox<uint32_t, double>;
 
 } //namespace blackbox
 } //namespace modelchecker
