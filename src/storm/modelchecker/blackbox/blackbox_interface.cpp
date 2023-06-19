@@ -15,6 +15,10 @@ typename blackboxMDP::index_type blackboxMDP::get_suc_count(blackboxMDP::index_t
     STORM_LOG_THROW(!is_greybox(), storm::exceptions::NotSupportedException, "get_suc_count is not implemented for this greybox MDP");
 }
 
+double blackboxMDP::get_pmin() {
+    throw storm::exceptions::NotImplementedException();
+}
+
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
