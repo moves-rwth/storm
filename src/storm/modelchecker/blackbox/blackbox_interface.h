@@ -5,6 +5,8 @@
  * This header defines the general interface expected from a blackbox MDP
  * 
 */
+#include <random>
+
 #include "storage/HashStorage.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
 
@@ -76,9 +78,9 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
       * returns a KeyIterator over the available actions of the given state 
       * 
       * @param state 
-      * @return KeyIterator<index_type> 
+      * @return index_type number of available actions; actions are labeled in ascending order from 0
       */
-     storage::KeyIterator<index_type> get_avail_actions(index_type state);
+     index_type get_avail_actions(index_type state);
      
 
      /*!
@@ -96,8 +98,12 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
      bool is_greybox();
 
     private:
+     void exploreState(index_type state);
+
      storm::modelchecker::exploration_detail::StateGeneration<StateType, ValueType> stateGeneration;
      storm::modelchecker::exploration_detail::ExplorationInformation<StateType, ValueType> explorationInformation;
+     mutable std::default_random_engine randomGenerator;
+
 };
 
 } //namespace blackbox
