@@ -2,14 +2,23 @@
 #################################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
+# A different base image can be set from the commandline with:
+# --build-arg BASE_IMG=<new_base_image>
 
-FROM movesrwth/storm-basesystem:latest
+# Set base image
+ARG BASE_IMG=movesrwth/storm-basesystem:latest
+FROM $BASE_IMG
 MAINTAINER Matthias Volk <m.volk@utwente.nl>
 
+# Specify configurations
+# These configurations can be set from the commandline with:
+# --build-arg <config_name>=<value>
+# CMake build type
+ARG build_type=Release
 # Specify number of threads to use for parallel compilation
-# This number can be set from the commandline with:
-# --build-arg no_threads=<value>
 ARG no_threads=1
+# Specify CMake arguments for Storm
+ARG cmake_args="-DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
 
 
 # Build Carl
@@ -26,11 +35,10 @@ RUN mkdir -p /opt/carl/build
 WORKDIR /opt/carl/build
 
 # Configure Carl
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON
+RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type
 
 # Build Carl library
 RUN make lib_carl -j $no_threads
-
 
 
 # Build Storm
@@ -46,7 +54,7 @@ RUN mkdir -p /opt/storm/build
 WORKDIR /opt/storm/build
 
 # Configure Storm
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_LOG_DISABLE_DEBUG=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON
+RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type $cmake_args
 
 # Build external dependencies of Storm
 RUN make resources -j $no_threads
