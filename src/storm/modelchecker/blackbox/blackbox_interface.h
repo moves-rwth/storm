@@ -6,6 +6,7 @@
  * 
 */
 #include "storage/HashStorage.h"
+#include "storm/modelchecker/exploration/StateGeneration.h"
 
 
 namespace storm {
@@ -61,10 +62,11 @@ class blackboxMDP {
      virtual index_type get_suc_count(index_type state, index_type action);
 };
 
-
+template <typename StateType, typename ValueType>
 class blackboxWrapperOnWhitebox: blackboxMDP {
     public:
-
+     blackboxWrapperOnWhitebox(storm::prism::Program& program);
+    
      /*!
       * returns the state indentifier of the initial state
      */
@@ -92,6 +94,10 @@ class blackboxWrapperOnWhitebox: blackboxMDP {
       * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
       */
      bool is_greybox();
+
+    private:
+     storm::modelchecker::exploration_detail::StateGeneration<StateType, ValueType> stateGeneration;
+     storm::modelchecker::exploration_detail::ExplorationInformation<StateType, ValueType> explorationInformation;
 };
 
 } //namespace blackbox

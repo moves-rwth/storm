@@ -19,6 +19,34 @@ double blackboxMDP::get_pmin() {
     throw storm::exceptions::NotImplementedException();
 }
 
+template <typename StateType, typename ValueType>
+blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program& program)
+                                                : explorationInformation(storm::OptimizationDirection::Maximize),
+                                                  stateGeneration(program, explorationInformation, 
+                                                  (storm::expressions::Expression()), (storm::expressions::Expression())) {
+    // intentionally left empty
+}
+
+template <typename StateType, typename ValueType>
+typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type blackboxWrapperOnWhitebox<StateType, ValueType>::get_initial_state() {
+    return 0;
+}
+
+template <typename StateType, typename ValueType>
+storage::KeyIterator<typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type> blackboxWrapperOnWhitebox<StateType, ValueType>::get_avail_actions(index_type state) {
+    return storage::KeyIterator<typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type>();
+}
+
+template <typename StateType, typename ValueType>
+typename blackboxWrapperOnWhitebox<StateType, ValueType>::index_type blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(index_type state, index_type action) {
+ return 0;
+}
+
+template <typename StateType, typename ValueType>
+bool blackboxWrapperOnWhitebox<StateType, ValueType>::is_greybox() {
+    return false;
+}
+
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
