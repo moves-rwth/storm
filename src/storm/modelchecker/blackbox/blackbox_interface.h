@@ -42,7 +42,7 @@ class blackboxMDP {
      /*!
       * returns a lower bound for all transition probilities in this MDP 
       */
-    virtual double get_pmin();
+     virtual double get_pmin();
 
      /*!
       * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
@@ -59,6 +59,39 @@ class blackboxMDP {
       * @throws NotSupportedException, NotImplementedException 
       */
      virtual index_type get_suc_count(index_type state, index_type action);
+};
+
+
+class blackboxWrapperOnWhitebox: blackboxMDP {
+    public:
+
+     /*!
+      * returns the state indentifier of the initial state
+     */
+     index_type get_initial_state();
+
+     /*!
+      * returns a KeyIterator over the available actions of the given state 
+      * 
+      * @param state 
+      * @return KeyIterator<index_type> 
+      */
+     storage::KeyIterator<index_type> get_avail_actions(index_type state);
+     
+
+     /*!
+      * sample a random successor from the action on the given state and return the successors state identifier. 
+      * 
+      * @param state 
+      * @param action
+      * @return successor state identfier
+      */
+     index_type sample_suc(index_type state, index_type action);
+
+     /*!
+      * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
+      */
+     bool is_greybox();
 };
 
 } //namespace blackbox
