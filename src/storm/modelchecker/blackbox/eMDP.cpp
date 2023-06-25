@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "eMDP.h"
 
 namespace storm {
