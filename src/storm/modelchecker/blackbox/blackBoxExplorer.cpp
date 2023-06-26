@@ -12,7 +12,7 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType>> heuristicSim) :
+blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
                                                          blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }
@@ -30,7 +30,7 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
         ActionType actionTaken;
         StateType suc;
         // do exploration
-        while (!heuristicSim->shouldStopSim()) {
+        while (!heuristicSim->shouldStopSim(stack)) {
             actionTaken = heuristicSim->sampleAction(stack.back().first);
             suc = blackboxMdp->sample_suc((stack.back().first), actionTaken);
 

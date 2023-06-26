@@ -19,13 +19,13 @@ class blackBoxExplorer {
     typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
  
     public:
-     blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType>> heuristicSim);
+     blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim);
 
      void performExploration(eMDP<StateType>& eMDP, StateType numExplorations);
 
     private:
      std::shared_ptr<blackboxMDP<StateType>> blackboxMdp;
-     std::shared_ptr<heuristicSim::heuristicSim<StateType>> heuristicSim;
+     std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim;
 
 };
 
