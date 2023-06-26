@@ -19,10 +19,40 @@ blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(storm::modelchecker::bl
 
 template <typename StateType, typename ValueType>
 void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>& eMDP, StateType numExplorations) {
-    
-    
+    StateActionStack stack;
+    StateType maxPathLen = 10; // TODO magicNumber, collect constants
+
+    // set initial state
+    eMDP.addInitialState(blackboxMDP.get_initial_state());
+
     for (StateType i = 0; i < numExplorations; i++) {
-        // do exploratioon
+        stack.push_back(std::make_pair(blackboxMDP.get_initial_state(), 0));
+        ActionType actionTaken;
+        StateType suc;
+        // do exploration
+        while (!heuristicSim.shouldStopSim()) {
+            actionTaken = heuristicSim.sampleAction(stack.back().first);
+            suc = blackboxMDP.sample_suc(stack.back.first), actionToTake));
+
+            // save in stack
+            stack.back().second = actionTaken;
+            stack.push_back(std::make_pair(suc, 0));
+        }
+
+        // save stack in eMDP
+        StateType state;
+        suc = stack.back().first;
+        stack.pop_back();
+        while (!stack.empty()) {
+            state = stack.back().first;
+            actionTaken = stack.back().second;
+            eMDP.addVisit(state, actionTaken, suc);
+            suc = state;
+            stack.pop();
+        }
+
+        // update maxPathLen
+        maxPathLen = 3 * eMDP.getSize();
     }
 }
 

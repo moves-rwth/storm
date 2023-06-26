@@ -15,6 +15,9 @@ namespace blackbox {
 
 template <typename StateType, typename ValueType>
 class blackBoxExplorer {
+    typedef StateType ActionType;
+    typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
+ 
     public:
      blackBoxExplorer(blackboxMDP<StateType>& blackboxMDP, heuristicSim::heuristicSim<StateType>& heuristicSim);
 
