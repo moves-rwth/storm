@@ -5,6 +5,8 @@
 #ifndef STORM_HEURISTICSIM_H
 #define STORM_HEURISTICSIM_H
 
+#include <random>
+
 #include "storm/modelchecker/blackbox/blackbox_interface.h"
 
 namespace storm {
@@ -29,11 +31,11 @@ class heuristicSim {
 
      virtual bool shouldStopSim(StateActionStack& pathHist) = 0;
  
-     virtual ActionType sampleAction(StateType state) = 0;
+     virtual ActionType sampleAction(StateActionStack& pathHist) = 0;
 
      virtual void reset() = 0;
 
-    private:
+    protected:
      std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp;
 };
 
@@ -44,6 +46,7 @@ class naiveHeuristicSim : public heuristicSim<StateType, ValueType> {
     using StateActionStack = typename heuristicSim<StateType, ValueType>::StateActionStack;
 
     public:
+     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp, std::seed_seq seed);
      naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp);
 
      HeuristicsSim getType() {
@@ -52,9 +55,13 @@ class naiveHeuristicSim : public heuristicSim<StateType, ValueType> {
 
      bool shouldStopSim(StateActionStack& pathHist);
  
-     ActionType sampleAction(StateType state);
+     ActionType sampleAction(StateActionStack& pathHist);
 
      void reset();
+
+    private:
+     mutable std::default_random_engine randomGenerator;
+
 };
 
 } //namespace heuristicSim

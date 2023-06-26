@@ -31,7 +31,7 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
         StateType suc;
         // do exploration
         while (!heuristicSim->shouldStopSim(stack)) {
-            actionTaken = heuristicSim->sampleAction(stack.back().first);
+            actionTaken = heuristicSim->sampleAction(stack);
             suc = blackboxMdp->sample_suc((stack.back().first), actionTaken);
 
             // save in stack
@@ -52,7 +52,7 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
         }
 
         // update maxPathLen
-        maxPathLen = 3 * eMDP.getSize();
+        maxPathLen = 3 * eMDP.getSize();  // TODO magic number; collect constants
     }
 }
 
