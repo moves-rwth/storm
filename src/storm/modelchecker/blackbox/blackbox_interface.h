@@ -21,9 +21,10 @@ class blackboxMDP {
     public:
 
      /*
-      * default move constructor
+      * default constructors
      */
-     blackBoxMDP(blackBoxMDP<StateType>&& other) = default;
+     blackboxMDP() = default;
+     blackboxMDP(blackboxMDP&& other) = default;
 
      /*!
       * returns the state indentifier of the initial state

@@ -24,7 +24,7 @@ class blackBoxExplorer {
      void performExploration(eMDP<StateType>& eMDP, StateType numExplorations);
 
     private:
-     blackBoxMDP<StateType> blackboxMDP;
+     blackboxMDP<StateType> blackboxMdp;
      heuristicSim::heuristicSim<StateType> heuristicSim;
 
 };

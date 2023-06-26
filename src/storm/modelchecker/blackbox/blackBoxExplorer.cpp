@@ -13,7 +13,7 @@ namespace blackbox {
 
 template <typename StateType, typename ValueType>
 blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(storm::modelchecker::blackbox::blackboxMDP<StateType>& blackboxMDP, heuristicSim::heuristicSim<StateType>& heuristicSim) :
-                                                         blackboxMDP(blackboxMDP), heuristicSim(heuristicSim) {
+                                                         blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }
 
@@ -23,16 +23,16 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
     StateType maxPathLen = 10; // TODO magicNumber, collect constants
 
     // set initial state
-    eMDP.addInitialState(blackboxMDP.get_initial_state());
+    eMDP.addInitialState(blackboxMdp.get_initial_state());
 
     for (StateType i = 0; i < numExplorations; i++) {
-        stack.push_back(std::make_pair(blackboxMDP.get_initial_state(), 0));
+        stack.push_back(std::make_pair(blackboxMdp.get_initial_state(), 0));
         ActionType actionTaken;
         StateType suc;
         // do exploration
         while (!heuristicSim.shouldStopSim()) {
             actionTaken = heuristicSim.sampleAction(stack.back().first);
-            suc = blackboxMDP.sample_suc(stack.back.first), actionToTake));
+            suc = blackboxMdp.sample_suc((stack.back.first), actionTaken);
 
             // save in stack
             stack.back().second = actionTaken;

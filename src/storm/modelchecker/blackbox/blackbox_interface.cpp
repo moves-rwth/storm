@@ -103,6 +103,8 @@ void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType sta
     explorationInformation.removeUnexploredState(unexploredIt);
 }
 
+template class blackboxMDP<uint32_t>;
+
 template class blackboxWrapperOnWhitebox<uint32_t, double>;
 
 } //namespace blackbox

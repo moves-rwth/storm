@@ -60,9 +60,8 @@ void HashStorage<IntValueType>::add_state(IntValueType state) {
 }
 
 template<typename IntValueType>
-HashStorage<IntValueType>::index_type HashStorage<IntValueType>::get_state_count() {
-    if (data.find(state) == data.end())
-           data[state] = std::unordered_map<IntValueType, count_sampleMap_pair>();
+typename HashStorage<IntValueType>::index_type HashStorage<IntValueType>::get_state_count() {
+    return data.size();
 }
 
 //__________________ Add states and actions to Datastructure __________//
