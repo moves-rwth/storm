@@ -16,11 +16,13 @@ namespace blackbox {
 template <typename StateType, typename ValueType>
 class blackBoxExplorer {
     public:
-     blackBoxExplorer(blackboxMDP<StateType> blackBoxMDP, heuristicSim::heuristicSim<StateType> heuristicSim);
+     blackBoxExplorer(blackboxMDP<StateType>& blackboxMDP, heuristicSim::heuristicSim<StateType>& heuristicSim);
 
      void performExploration(eMDP<StateType>& eMDP, StateType numExplorations);
 
     private:
+     blackBoxMDP<StateType> blackboxMDP;
+     heuristicSim::heuristicSim<StateType> heuristicSim;
 
 };
 

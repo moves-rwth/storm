@@ -11,7 +11,14 @@ namespace blackbox {
 namespace heuristicSim {
 
 template <typename StateType>
-class heuristicSim {};
+class heuristicSim {
+    /*
+     * default move constructor
+    */
+    heuristicSim(heuristicSim&& other) = default;
+
+
+};
 
 } //namespace heuristicSim
 } //namespace blackbox

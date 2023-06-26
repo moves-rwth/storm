@@ -19,6 +19,12 @@ namespace blackbox {
 template <typename StateType>
 class blackboxMDP {
     public:
+
+     /*
+      * default move constructor
+     */
+     blackBoxMDP(blackBoxMDP<StateType>&& other) = default;
+
      /*!
       * returns the state indentifier of the initial state
      */
