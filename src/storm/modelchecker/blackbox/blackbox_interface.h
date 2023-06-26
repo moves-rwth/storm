@@ -15,6 +15,7 @@ namespace storm {
 namespace modelchecker {
 namespace blackbox {
 
+// TODO add reward system
 template <typename StateType>
 class blackboxMDP {
     public:
