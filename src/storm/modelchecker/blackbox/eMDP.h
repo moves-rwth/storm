@@ -127,6 +127,11 @@ class eMDP {
      */
     ValueType getSampleCount(index_type state, index_type action, index_type succ);
 
+    /*!
+     * returns toatla number of states in this eMDP
+     */
+    ValueType getSize();
+
     //? Save to disk
 
     /*!

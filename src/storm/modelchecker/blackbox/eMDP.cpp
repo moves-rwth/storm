@@ -138,6 +138,11 @@ ValueType eMDP<ValueType>::getSampleCount(index_type state, index_type action, i
 }
 
 template<typename ValueType>
+ValueType eMDP<ValueType>::getSize() {
+    return hashStorage.get_state_count();
+}
+
+template<typename ValueType>
 storage::KeyIterator<ValueType> eMDP<ValueType>::get_state_itr() {
     return hashStorage.get_state_itr();
 }

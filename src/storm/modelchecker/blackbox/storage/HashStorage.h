@@ -167,6 +167,11 @@ class HashStorage {
     index_type get_succ_samples(index_type state, index_type action, index_type succ);
 
     /*!
+     * Returns how many states there are in this HashStorage
+     */
+    index_type get_state_count();
+
+    /*!
      * Prints the data structure to std::cout
      *
      */

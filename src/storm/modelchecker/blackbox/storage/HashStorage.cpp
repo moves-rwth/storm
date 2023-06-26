@@ -31,7 +31,7 @@ template<typename IntValueType>
 bool KeyIterator<IntValueType>::hasNext() {
     return cur != end;
 } 
-//--------------------- HashStorage Mathods -------------------------//
+//--------------------- HashStorage Methods -------------------------//
 
 template<typename IntValueType>
 HashStorage<IntValueType>::HashStorage() : data() {
@@ -55,6 +55,12 @@ std::unordered_map<IntValueType, IntValueType> HashStorage<IntValueType>::get_su
 
 template<typename IntValueType>
 void HashStorage<IntValueType>::add_state(IntValueType state) {
+    if (data.find(state) == data.end())
+           data[state] = std::unordered_map<IntValueType, count_sampleMap_pair>();
+}
+
+template<typename IntValueType>
+HashStorage<IntValueType>::index_type HashStorage<IntValueType>::get_state_count() {
     if (data.find(state) == data.end())
            data[state] = std::unordered_map<IntValueType, count_sampleMap_pair>();
 }
