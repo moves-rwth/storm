@@ -3,6 +3,7 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/logic/Formula.h"
 
@@ -32,11 +33,11 @@ double blackboxMDP<StateType>::get_pmin() {
 }
 
 template <typename StateType, typename ValueType>
-blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program const& program, storm::logic::Formula const& conditionFormula, storm::logic::Formula const& targetFormula)
+blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program const& program)
                                                 : program(program.substituteConstantsFormulas()),
                                                   explorationInformation(storm::OptimizationDirection::Maximize),
                                                   stateGeneration(this->program, explorationInformation, 
-                                                  conditionFormula.toExpression(this->program.getManager(), this->program.getLabelToExpressionMapping()), targetFormula.toExpression(this->program.getManager(), this->program.getLabelToExpressionMapping())) {
+                                                  storm::expressions::ExpressionManager().boolean(true), storm::expressions::ExpressionManager().boolean(true)) {
     // intentionally left empty
 }
 

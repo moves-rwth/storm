@@ -66,7 +66,7 @@ class blackboxMDP {
 template <typename StateType, typename ValueType>
 class blackboxWrapperOnWhitebox: blackboxMDP<StateType> {
     public:
-     blackboxWrapperOnWhitebox(storm::prism::Program const& program, storm::logic::Formula const& conditionFormula, storm::logic::Formula const& targetFormula);
+     blackboxWrapperOnWhitebox(storm::prism::Program const& program);
     
      /*!
       * returns the state indentifier of the initial state
