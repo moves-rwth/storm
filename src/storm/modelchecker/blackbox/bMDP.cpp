@@ -37,10 +37,8 @@ bMDP<BoundType, RewardModelType>::bMDP(storm::storage::sparse::ModelComponents<B
 }
 
 template class bMDP<double>;
-template class bMDP<storm::RationalNumber>;
 
 template class bMDP<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class bMDP<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
