@@ -13,16 +13,13 @@ namespace heuristicSim {
 template <typename StateType>
 class heuristicSim {
     typedef StateType ActionType;
-    /*
-     * default move constructor
-    */
-    heuristicSim(heuristicSim&& other) = default;
+    public:
 
-    bool shouldStopSim();
+     bool shouldStopSim();
+ 
+     ActionType sampleAction(StateType state);
 
-    ActionType sampleAction(StateType state);
-
-    void reset();
+     void reset();
 
 
 

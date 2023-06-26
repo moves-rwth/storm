@@ -12,7 +12,7 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(storm::modelchecker::blackbox::blackboxMDP<StateType>& blackboxMDP, heuristicSim::heuristicSim<StateType>& heuristicSim) :
+blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType>> heuristicSim) :
                                                          blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }
@@ -23,16 +23,16 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
     StateType maxPathLen = 10; // TODO magicNumber, collect constants
 
     // set initial state
-    eMDP.addInitialState(blackboxMdp.get_initial_state());
+    eMDP.addInitialState(blackboxMdp->get_initial_state());
 
     for (StateType i = 0; i < numExplorations; i++) {
-        stack.push_back(std::make_pair(blackboxMdp.get_initial_state(), 0));
+        stack.push_back(std::make_pair(blackboxMdp->get_initial_state(), 0));
         ActionType actionTaken;
         StateType suc;
         // do exploration
-        while (!heuristicSim.shouldStopSim()) {
-            actionTaken = heuristicSim.sampleAction(stack.back().first);
-            suc = blackboxMdp.sample_suc((stack.back.first), actionTaken);
+        while (!heuristicSim->shouldStopSim()) {
+            actionTaken = heuristicSim->sampleAction(stack.back().first);
+            suc = blackboxMdp->sample_suc((stack.back().first), actionTaken);
 
             // save in stack
             stack.back().second = actionTaken;
@@ -48,13 +48,15 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
             actionTaken = stack.back().second;
             eMDP.addVisit(state, actionTaken, suc);
             suc = state;
-            stack.pop();
+            stack.pop_back();
         }
 
         // update maxPathLen
         maxPathLen = 3 * eMDP.getSize();
     }
 }
+
+template class blackBoxExplorer<uint32_t, double>;
 
 } //namespace blackbox
 } //namespace modelchecker

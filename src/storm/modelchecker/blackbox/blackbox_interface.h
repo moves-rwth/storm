@@ -20,12 +20,6 @@ template <typename StateType>
 class blackboxMDP {
     public:
 
-     /*
-      * default constructors
-     */
-     blackboxMDP() = default;
-     blackboxMDP(blackboxMDP&& other) = default;
-
      /*!
       * returns the state indentifier of the initial state
      */
