@@ -1,14 +1,6 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.15)
 
-cmake_policy(VERSION 3.2)
-
- set(CMAKE_CXX_STANDARD 17)
-
-# When searching for packages, we would like to first search in prefixes specified by <PackageName>_ROOT.
-# However, this behavior is only supported since CMake 3.12.
-if(POLICY CMP0074)
-	cmake_policy(SET CMP0074 NEW)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 
 # Set project name
 project (storm CXX C)
