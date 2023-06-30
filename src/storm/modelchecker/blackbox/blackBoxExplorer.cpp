@@ -12,7 +12,7 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-BlackBoxExplorer<StateType, ValueType>::BlackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
+BlackBoxExplorer<StateType, ValueType>::BlackBoxExplorer(std::shared_ptr<BlackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
                                                          blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }
@@ -23,16 +23,16 @@ void BlackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
     StateType maxPathLen = 10; // TODO magicNumber, collect constants
 
     // set initial state
-    eMDP.addInitialState(blackboxMdp->get_initial_state());
+    eMDP.addInitialState(blackboxMdp->getInitialState());
 
     for (StateType i = 0; i < numExplorations; i++) {
-        stack.push_back(std::make_pair(blackboxMdp->get_initial_state(), 0));
+        stack.push_back(std::make_pair(blackboxMdp->getInitialState(), 0));
         ActionType actionTaken;
         StateType suc;
         // do exploration
         while (!heuristicSim->shouldStopSim(stack)) {
             actionTaken = heuristicSim->sampleAction(stack);
-            suc = blackboxMdp->sample_suc((stack.back().first), actionTaken);
+            suc = blackboxMdp->sampleSuc((stack.back().first), actionTaken);
 
             // save in stack
             stack.back().second = actionTaken;

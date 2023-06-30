@@ -17,13 +17,13 @@ namespace blackbox {
 
 // TODO add reward system
 template <typename StateType>
-class blackboxMDP {
+class BlackboxMDP {
     public:
 
      /*!
       * returns the state indentifier of the initial state
      */
-     virtual StateType get_initial_state() = 0;
+     virtual StateType getInitialState() = 0;
 
      /*!
       * returns a KeyIterator over the available actions of the given state 
@@ -31,7 +31,7 @@ class blackboxMDP {
       * @param state 
       * @return KeyIterator<index_type> 
       */
-     virtual StateType get_avail_actions(StateType state) = 0;
+     virtual StateType getAvailActions(StateType state) = 0;
      
 
      /*!
@@ -41,17 +41,17 @@ class blackboxMDP {
       * @param action
       * @return successor state identfier
       */
-     virtual StateType sample_suc(StateType state, StateType action) = 0;
+     virtual StateType sampleSuc(StateType state, StateType action) = 0;
 
      /*!
       * returns a lower bound for all transition probilities in this MDP 
       */
-     virtual double get_pmin();
+     virtual double getPmin();
 
      /*!
       * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
       */
-     virtual bool is_greybox() = 0;
+     virtual bool isGreybox() = 0;
      
      /*!
       * greybox method
@@ -62,18 +62,18 @@ class blackboxMDP {
       * 
       * @throws NotSupportedException, NotImplementedException 
       */
-     virtual StateType get_suc_count(StateType state, StateType action);
+     virtual StateType getSucCount(StateType state, StateType action);
 };
 
 template <typename StateType, typename ValueType>
-class blackboxWrapperOnWhitebox: blackboxMDP<StateType> {
+class BlackboxWrapperOnWhitebox: BlackboxMDP<StateType> {
     public:
-     blackboxWrapperOnWhitebox(storm::prism::Program const& program);
+     BlackboxWrapperOnWhitebox(storm::prism::Program const& program);
     
      /*!
       * returns the state indentifier of the initial state
      */
-     StateType get_initial_state();
+     StateType getInitialState();
 
      /*!
       * returns a KeyIterator over the available actions of the given state 
@@ -81,7 +81,7 @@ class blackboxWrapperOnWhitebox: blackboxMDP<StateType> {
       * @param state 
       * @return index_type number of available actions; actions are labeled in ascending order from 0
       */
-     StateType get_avail_actions(StateType state);
+     StateType getAvailActions(StateType state);
      
 
      /*!
@@ -91,12 +91,12 @@ class blackboxWrapperOnWhitebox: blackboxMDP<StateType> {
       * @param action
       * @return successor state identfier
       */
-     StateType sample_suc(StateType state, StateType action);
+     StateType sampleSuc(StateType state, StateType action);
 
      /*!
       * returns true if this MDP is a greybox MDP, false if it is a blackbox MDP 
       */
-     bool is_greybox();
+     bool isGreybox();
 
     private:
      void exploreState(StateType state);

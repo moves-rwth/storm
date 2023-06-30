@@ -10,13 +10,13 @@ namespace blackbox {
 namespace heuristicSim {
 
 template<typename StateType, typename ValueType>
-heuristicSim<StateType, ValueType>::heuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp) :
+heuristicSim<StateType, ValueType>::heuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp) :
                                                 blackboxMdp(blackboxMdp) {
     // intentionally left empty
 }
 
 template<typename StateType, typename ValueType>
-naiveHeuristicSim<StateType, ValueType>::naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp,
+naiveHeuristicSim<StateType, ValueType>::naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp,
                                                            std::seed_seq seed) :
                                                            heuristicSim<StateType, ValueType>(blackboxMdp),
                                                            randomGenerator(seed) {
@@ -24,7 +24,7 @@ naiveHeuristicSim<StateType, ValueType>::naiveHeuristicSim(std::shared_ptr<storm
 }
 
 template<typename StateType, typename ValueType>
-naiveHeuristicSim<StateType, ValueType>::naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp) :
+naiveHeuristicSim<StateType, ValueType>::naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp) :
                                                            naiveHeuristicSim(blackboxMdp, std::chrono::system_clock::now().time_since_epoch().count()) {
     // intentionally left empty
 }
@@ -38,7 +38,7 @@ bool naiveHeuristicSim<StateType, ValueType>::shouldStopSim(StateActionStack& pa
 template<typename StateType, typename ValueType>
 typename naiveHeuristicSim<StateType, ValueType>::ActionType naiveHeuristicSim<StateType, ValueType>::sampleAction(StateActionStack& pathHist) {
     // complete random sampling
-    StateType availActions = heuristicSim<StateType, ValueType>::blackboxMdp->get_avail_actions(pathHist.back().first);
+    StateType availActions = heuristicSim<StateType, ValueType>::blackboxMdp->getAvailActions(pathHist.back().first);
     std::uniform_int_distribution<ActionType> distribution(0, availActions - 1);
     return distribution(randomGenerator);
 }

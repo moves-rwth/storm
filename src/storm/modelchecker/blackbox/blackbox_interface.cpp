@@ -21,19 +21,19 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType>
-StateType blackboxMDP<StateType>::get_suc_count(StateType state, StateType action) {
-    STORM_LOG_THROW(is_greybox(), storm::exceptions::NotImplementedException, "get_suc_count is not implemented for this greybox MDP");
-    STORM_LOG_THROW(!is_greybox(), storm::exceptions::NotSupportedException, "get_suc_count is not implemented for this greybox MDP");
+StateType BlackboxMDP<StateType>::getSucCount(StateType state, StateType action) {
+    STORM_LOG_THROW(isGreybox(), storm::exceptions::NotImplementedException, "getSucCount is not implemented for this greybox MDP");
+    STORM_LOG_THROW(!isGreybox(), storm::exceptions::NotSupportedException, "getSucCount is not implemented for this blackbox MDP");
     return 0;
 }
 
 template <typename StateType>
-double blackboxMDP<StateType>::get_pmin() {
+double BlackboxMDP<StateType>::getPmin() {
     throw storm::exceptions::NotImplementedException();
 }
 
 template <typename StateType, typename ValueType>
-blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm::prism::Program const& program)
+BlackboxWrapperOnWhitebox<StateType, ValueType>::BlackboxWrapperOnWhitebox(storm::prism::Program const& program)
                                                 : program(program.substituteConstantsFormulas()),
                                                   explorationInformation(storm::OptimizationDirection::Maximize),
                                                   stateGeneration(this->program, explorationInformation, 
@@ -42,19 +42,19 @@ blackboxWrapperOnWhitebox<StateType, ValueType>::blackboxWrapperOnWhitebox(storm
 }
 
 template <typename StateType, typename ValueType>
-StateType blackboxWrapperOnWhitebox<StateType, ValueType>::get_initial_state() {
+StateType BlackboxWrapperOnWhitebox<StateType, ValueType>::getInitialState() {
     stateGeneration.computeInitialStates();
     return stateGeneration.getFirstInitialState();
 }
 
 template <typename StateType, typename ValueType>
-StateType blackboxWrapperOnWhitebox<StateType, ValueType>::get_avail_actions(StateType state) {
+StateType BlackboxWrapperOnWhitebox<StateType, ValueType>::getAvailActions(StateType state) {
     StateType stateRow = explorationInformation.getRowGroup(state);
     return explorationInformation.getRowGroupSize(stateRow);
 }
 
 template <typename StateType, typename ValueType>
-StateType blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(StateType state, StateType action) {
+StateType BlackboxWrapperOnWhitebox<StateType, ValueType>::sampleSuc(StateType state, StateType action) {
     StateType stateRowIdx = explorationInformation.getStartRowOfGroup(explorationInformation.getRowGroup(state));
     auto& actionRow = explorationInformation.getRowOfMatrix(stateRowIdx + action);
 
@@ -69,12 +69,12 @@ StateType blackboxWrapperOnWhitebox<StateType, ValueType>::sample_suc(StateType 
 }
 
 template <typename StateType, typename ValueType>
-bool blackboxWrapperOnWhitebox<StateType, ValueType>::is_greybox() {
+bool BlackboxWrapperOnWhitebox<StateType, ValueType>::isGreybox() {
     return false;
 }
 
 template <typename StateType, typename ValueType>
-void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType state) {
+void BlackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType state) {
     // TODO optimization: terminal and target states don't need to explored
 
     auto unexploredIt = explorationInformation.findUnexploredState(state);
@@ -103,9 +103,9 @@ void blackboxWrapperOnWhitebox<StateType, ValueType>::exploreState(StateType sta
     explorationInformation.removeUnexploredState(unexploredIt);
 }
 
-template class blackboxMDP<uint32_t>;
+template class BlackboxMDP<uint32_t>;
 
-template class blackboxWrapperOnWhitebox<uint32_t, double>;
+template class BlackboxWrapperOnWhitebox<uint32_t, double>;
 
 } //namespace blackbox
 } //namespace modelchecker

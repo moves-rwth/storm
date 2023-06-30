@@ -25,7 +25,7 @@ class heuristicSim {
     typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
 
     public:
-     heuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp);
+     heuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
 
      virtual HeuristicsSim getType() = 0;
 
@@ -36,7 +36,7 @@ class heuristicSim {
      virtual void reset() = 0;
 
     protected:
-     std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp;
+     std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp;
 };
 
 
@@ -46,8 +46,8 @@ class naiveHeuristicSim : public heuristicSim<StateType, ValueType> {
     using StateActionStack = typename heuristicSim<StateType, ValueType>::StateActionStack;
 
     public:
-     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp, std::seed_seq seed);
-     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::blackboxMDP<StateType>> blackboxMdp);
+     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp, std::seed_seq seed);
+     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
 
      HeuristicsSim getType() {
         return HeuristicsSim::NAIVE;
