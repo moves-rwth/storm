@@ -12,7 +12,7 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-BlackBoxExplorer<StateType, ValueType>::BlackBoxExplorer(std::shared_ptr<BlackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
+BlackBoxExplorer<StateType, ValueType>::BlackBoxExplorer(std::shared_ptr<BlackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::HeuristicSim<StateType, ValueType>> heuristicSim) :
                                                          blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }

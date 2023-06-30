@@ -14,20 +14,20 @@ namespace modelchecker {
 namespace blackbox {
 namespace heuristicSim {
 
-enum HeuristicsSim{NAIVE};
+enum HeuristicSimType{NAIVE};
 
 // TODO this heuristic class should be able to return the action to take
 //      given the latest path, state and 'other' information.
 //      because 'other' is not known right now it has to be implemented later on
 template <typename StateType, typename ValueType>
-class heuristicSim {
+class HeuristicSim {
     typedef StateType ActionType;
     typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
 
     public:
-     heuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
+     HeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
 
-     virtual HeuristicsSim getType() = 0;
+     virtual HeuristicSimType getType() = 0;
 
      virtual bool shouldStopSim(StateActionStack& pathHist) = 0;
  
@@ -41,16 +41,16 @@ class heuristicSim {
 
 
 template <typename StateType, typename ValueType>
-class naiveHeuristicSim : public heuristicSim<StateType, ValueType> {
-    using ActionType = typename heuristicSim<StateType, ValueType>::ActionType;
-    using StateActionStack = typename heuristicSim<StateType, ValueType>::StateActionStack;
+class NaiveHeuristicSim : public HeuristicSim<StateType, ValueType> {
+    using ActionType = typename HeuristicSim<StateType, ValueType>::ActionType;
+    using StateActionStack = typename HeuristicSim<StateType, ValueType>::StateActionStack;
 
     public:
-     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp, std::seed_seq seed);
-     naiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
+     NaiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp, std::seed_seq seed);
+     NaiveHeuristicSim(std::shared_ptr<storm::modelchecker::blackbox::BlackboxMDP<StateType>> blackboxMdp);
 
-     HeuristicsSim getType() {
-        return HeuristicsSim::NAIVE;
+     HeuristicSimType getType() {
+        return HeuristicSimType::NAIVE;
      }
 
      bool shouldStopSim(StateActionStack& pathHist);
