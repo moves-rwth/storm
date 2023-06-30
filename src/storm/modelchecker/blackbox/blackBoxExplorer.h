@@ -14,12 +14,12 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-class blackBoxExplorer {
+class BlackBoxExplorer {
     typedef StateType ActionType;
     typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
  
     public:
-     blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim);
+     BlackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim);
 
      void performExploration(eMDP<StateType>& eMDP, StateType numExplorations);
 

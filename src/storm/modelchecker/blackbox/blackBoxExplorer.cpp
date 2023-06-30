@@ -12,13 +12,13 @@ namespace modelchecker {
 namespace blackbox {
 
 template <typename StateType, typename ValueType>
-blackBoxExplorer<StateType, ValueType>::blackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
+BlackBoxExplorer<StateType, ValueType>::BlackBoxExplorer(std::shared_ptr<blackboxMDP<StateType>> blackboxMDP, std::shared_ptr<heuristicSim::heuristicSim<StateType, ValueType>> heuristicSim) :
                                                          blackboxMdp(blackboxMDP), heuristicSim(heuristicSim) {
     // intentionally empty
 }
 
 template <typename StateType, typename ValueType>
-void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>& eMDP, StateType numExplorations) {
+void BlackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>& eMDP, StateType numExplorations) {
     StateActionStack stack;
     StateType maxPathLen = 10; // TODO magicNumber, collect constants
 
@@ -56,7 +56,7 @@ void blackBoxExplorer<StateType, ValueType>::performExploration(eMDP<StateType>&
     }
 }
 
-template class blackBoxExplorer<uint32_t, double>;
+template class BlackBoxExplorer<uint32_t, double>;
 
 } //namespace blackbox
 } //namespace modelchecker

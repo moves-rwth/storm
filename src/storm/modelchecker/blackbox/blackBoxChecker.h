@@ -5,6 +5,6 @@
 #ifndef STORM_BLACKBOXCHECKER_H
 #define STORM_BLACKBOXCHECKER_H
 
-class blackBoxChecker {};
+class BlackBoxChecker {};
 
 #endif  // STORM_BLACKBOXCHECKER_H
