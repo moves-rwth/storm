@@ -185,6 +185,9 @@ void HashStorage<IntValueType>::print() {
 template class HashStorage<int_fast32_t>; //Type for which class gets compiled 
 template class KeyIterator<int_fast32_t>; //Type for which class gets compiled 
 
+template class HashStorage<uint32_t>; //Type for which class gets compiled 
+template class KeyIterator<uint32_t>; //Type for which class gets compiled 
+
 // comment out because int_fast32_t and int_fast64_t are both long int
 // template class HashStorage<int_fast64_t>; //Type for which class gets compiled
 // template class KeyIterator<int_fast64_t>; //Type for which class gets compiled 

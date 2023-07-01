@@ -79,7 +79,7 @@ void eMDP<ValueType>::writeDotFile(std::string filename) {
 
 template<typename ValueType>
 void eMDP<ValueType>::printDot() {
-    std::cout(toDotString());
+    std::cout << toDotString();
 }
 
 template<typename ValueType>
@@ -157,11 +157,14 @@ storage::KeyIterator<ValueType> eMDP<ValueType>::get_state_action_succ_itr(index
     return hashStorage.get_state_action_succ_itr(state, action);
 }
 
+template class eMDP<int_fast32_t>;
+template class eMDP<uint32_t>;
+
 } //namespace blackbox
 } //namespace modelchecker
 } //namespace storm
 
-
+/*
 int main(int argc, char const *argv[]) {
     auto emdp = storm::modelchecker::blackbox::eMDP<int_fast32_t>();
     emdp.addInitialState(1);
@@ -187,4 +190,5 @@ int main(int argc, char const *argv[]) {
     emdp.writeDotFile("name.txt");
     return 0;
 }
+*/
 

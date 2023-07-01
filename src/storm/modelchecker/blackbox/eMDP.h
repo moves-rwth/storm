@@ -17,7 +17,6 @@ namespace blackbox {
 
 
 template<typename ValueType>
-
 class eMDP {
    public:
     typedef ValueType index_type;
