@@ -25,7 +25,7 @@ While compiling the source code is not always a breeze (depending on your operat
 Currently, we provide support for
 
 - <i class="fa fa-apple" aria-hidden="true"></i> macOS on either x86- or [ARM-based](apple-silicon.html) CPUs
-- <i class="icon-debian"></i> Debian 10 and higher
+- <i class="icon-debian"></i> Debian 11 and higher
 - <i class="icon-ubuntu"></i> Ubuntu 20.04 and higher
 
 which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running.

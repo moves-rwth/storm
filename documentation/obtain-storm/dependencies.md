@@ -81,7 +81,7 @@ $ brew install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
 ### <i class="icon-debian"></i> Debian and <i class="icon-ubuntu"></i> Ubuntu
 <!-- If these are changed, also change them in `vm.md` -->
 
-We currently support Debian from version 10 and Ubuntu from version 20.04.
+We currently support Debian from version 11 and Ubuntu from version 20.04.
 
 - Required:
 ``` console
