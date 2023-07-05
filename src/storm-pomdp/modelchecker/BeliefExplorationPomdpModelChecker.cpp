@@ -19,8 +19,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-#include "utility/graph.h"
 
 namespace storm {
 namespace pomdp {

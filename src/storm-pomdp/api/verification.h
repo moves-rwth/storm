@@ -72,7 +72,7 @@ storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sp
     options.skipHeuristicSchedulers = false;
     options.useClipping = useClipping;
     options.useStateEliminationCutoff = false;
-    options.sizeThresholdInit = storm::utility::infinity<ValueType>();
+    options.sizeThresholdInit = storm::utility::infinity<uint64_t>();
     options.interactiveUnfolding = true;
     options.refine = false;
     options.gapThresholdInit = 0;
