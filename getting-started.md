@@ -10,12 +10,12 @@ layout: default
 To be able to run Storm, you need to obtain it and run it on your system.
 Currently, you can choose one of the following options:
 
-* Build Storm [from source](documentation/obtain-storm/build.html),
+* Build Storm [from source](documentation/obtain-storm/build.html) on macOS or Linux
 * Install Storm via a supported package manager
-	* [Homebrew](documentation/obtain-storm/homebrew.html)
-	* [AUR](https://aur.archlinux.org/packages/stormchecker-git/) (thanks to [Sascha Wunderlich](https://www.saschawunderlich.de/university/))
-* Use a [Docker container](documentation/obtain-storm/docker.html)
-* Use a [virtual machine](documentation/obtain-storm/vm.html)
+	* [Homebrew](documentation/obtain-storm/homebrew.html) on macOS
+	* [AUR](https://aur.archlinux.org/packages/stormchecker) on Arch Linux
+* Use a [Docker container](documentation/obtain-storm/docker.html) on macOS, Linux or Windows
+* Use a [virtual machine](documentation/obtain-storm/vm.html) on macOS, Linux or Windows
 
 ## 2. Prepare a model checking query
 

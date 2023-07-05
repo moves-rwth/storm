@@ -14,7 +14,7 @@ This guide shows you how to obtain the source code of Storm and build it.
 This installation method is recommended if you either
 
 * want to make changes to the Storm code base,
-* can not use a supported package manager ([Homebrew](homebrew.html), [AUR](https://aur.archlinux.org/packages/stormchecker-git/)), or
+* can not use a supported package manager ([Homebrew](homebrew.html), [AUR](https://aur.archlinux.org/packages/stormchecker)), or
 * need to avoid overhead from virtualization due to [Docker](docker.html) or [VM](vm.html) usage.
 
 While compiling the source code is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
@@ -27,8 +27,10 @@ Currently, we provide support for
 - <i class="fa fa-apple" aria-hidden="true"></i> macOS on either x86- or [ARM-based](apple-silicon.html) CPUs
 - <i class="icon-debian"></i> Debian 11 and higher
 - <i class="icon-ubuntu"></i> Ubuntu 20.04 and higher
+- <i class="icon-archlinux"></i> Arch Linux
 
 which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running.
+Building on Windows is currently not supported and we recommend to use either a [Docker container](docker.html) or [VM image](vm.html).
 
 ## Dependencies
 
