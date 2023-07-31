@@ -20,6 +20,7 @@
 #include "storm/storage/jani/Property.h"
 
 #include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/print.h"
 #include "storm/exceptions/OptionParserException.h"
 
 namespace storm {
