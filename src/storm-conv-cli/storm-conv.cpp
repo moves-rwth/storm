@@ -345,9 +345,8 @@ bool parseOptions(const int argc, const char* argv[]) {
     }
 
     if (general.isVersionSet()) {
-        storm::cli::printVersion("storm-conv");
+        storm::cli::printVersion();
         result = false;
-        ;
     }
 
     return result;
@@ -360,7 +359,7 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
 
-        // Print header info only if output to sdtout is disabled
+        // Print header info only if output to stdout is disabled
         bool outputToStdOut = false;
         for (int i = 1; i < argc; ++i) {
             if (std::string(argv[i]) == "--" + storm::settings::modules::ConversionOutputSettings::stdoutOptionName) {

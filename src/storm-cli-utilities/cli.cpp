@@ -17,25 +17,33 @@
 // Includes for the linked libraries and versions header.
 #include "storm/adapters/IntelTbbAdapter.h"
 
+#ifdef STORM_HAVE_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
 #ifdef STORM_HAVE_GLPK
 #include "glpk.h"
 #endif
 #ifdef STORM_HAVE_GUROBI
 #include "gurobi_c.h"
 #endif
-#ifdef STORM_HAVE_Z3
-#include "z3.h"
-#endif
 #ifdef STORM_HAVE_MSAT
 #include "mathsat.h"
 #endif
-#ifdef STORM_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
+#ifdef STORM_HAVE_SOPLEX
+#include "soplex.h"
 #endif
-
 #ifdef STORM_HAVE_SMTRAT
 #include "lib/smtrat.h"
+#endif
+#ifdef STORM_HAVE_SPOT
+#include <spot/misc/version.hh>
+#endif
+#ifdef STORM_HAVE_XERCES
+#include <xercesc/util/XercesVersion.hpp>
+#endif
+#ifdef STORM_HAVE_Z3
+#include "z3.h"
 #endif
 
 namespace storm {
@@ -107,13 +115,25 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
     }
 }
 
-void printVersion(std::string const& name) {
+void printVersion() {
     STORM_PRINT(storm::StormVersion::longVersionString() << '\n');
     STORM_PRINT(storm::StormVersion::buildInfo() << '\n');
 
-#ifdef STORM_HAVE_INTELTBB
-    STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
-                                                                << TBB_INTERFACE_VERSION << ").\n");
+    // Print configuration options
+#ifdef STORM_USE_CLN_EA
+    STORM_PRINT("Using CLN numbers for exact arithmetic.\n");
+#else
+    STORM_PRINT("Using GMP numbers for exact arithmetic.\n");
+#endif
+#ifdef STORM_USE_CLN_RF
+    STORM_PRINT("Using CLN numbers for rational functions.\n");
+#else
+    STORM_PRINT("Using GMP numbers for rational functions.\n");
+#endif
+
+    // Print linked dependencies
+#ifdef STORM_HAVE_CARL
+    STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
@@ -121,22 +141,39 @@ void printVersion(std::string const& name) {
 #ifdef STORM_HAVE_GUROBI
     STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
 #endif
-#ifdef STORM_HAVE_Z3
-    unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
-    Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-    STORM_PRINT("Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
+#ifdef STORM_HAVE_HYPRO
+    STORM_PRINT("Linked with HyPro v" << STORM_HYPRO_VERSION << ".\n");
+#endif
+#ifdef STORM_HAVE_INTELTBB
+    STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
+                                                                << TBB_INTERFACE_VERSION << ").\n");
 #endif
 #ifdef STORM_HAVE_MSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
 #endif
-#ifdef STORM_HAVE_SMTRAT
-    STORM_PRINT("Linked with SMT-RAT " << SMTRAT_VERSION << ".\n");
+#ifdef STORM_HAVE_SOPLEX
+    STORM_PRINT("Linked with Soplex: " << soplex::printVersion() << ".\n");
 #endif
-#ifdef STORM_HAVE_CARL
-    // TODO get version string
-    STORM_PRINT("Linked with CArL.\n");
+#ifdef STORM_HAVE_SMTRAT
+    STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
+#endif
+#ifdef STORM_HAVE_SPOT
+    STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
+#endif
+#ifdef STORM_HAVE_XERCES
+    STORM_PRINT("Linked with Xerces-C v" << gXercesMajVersion << "." << gXercesMinVersion << "." << gXercesRevision << ".\n");
+#endif
+#ifdef STORM_HAVE_Z3
+    unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
+    Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
+#ifdef STORM_HAVE_Z3_OPTIMIZE
+    STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber
+                                                  << " (with optimization features).\n");
+#else
+    STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
+#endif
 #endif
 
 #ifdef STORM_HAVE_CUDA
@@ -170,7 +207,7 @@ void printVersion(std::string const& name) {
         }
         STORM_PRINT('\n');
     } else {
-        STORM_PRINT("Compiled with CUDA support, but an error occured trying to find CUDA devices.\n");
+        STORM_PRINT("Compiled with CUDA support, but an error occurred trying to find CUDA devices.\n");
     }
 #endif
 }
@@ -193,9 +230,8 @@ bool parseOptions(const int argc, const char* argv[]) {
     }
 
     if (general.isVersionSet()) {
-        printVersion("storm");
+        printVersion();
         result = false;
-        ;
     }
 
     return result;

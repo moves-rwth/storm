@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_CLI_H_
-#define STORM_UTILITY_CLI_H_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -21,7 +20,7 @@ std::string shellQuoteSingleIfNecessary(const std::string& arg);
 
 void printHeader(std::string const& name, const int argc, const char** argv);
 
-void printVersion(std::string const& name);
+void printVersion();
 
 void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds = 0);
 
@@ -39,5 +38,3 @@ void processOptions();
 void setUrgentOptions();
 }  // namespace cli
 }  // namespace storm
-
-#endif
