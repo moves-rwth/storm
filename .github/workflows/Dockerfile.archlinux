@@ -20,7 +20,7 @@ ARG packages=""
 
 # Install dependencies
 ######################
-RUN pacman -Sy
+RUN pacman -Syu --noconfirm  # Updates needed as Archlinux is rolling release
 RUN pacman -S --noconfirm base-devel git cmake boost cln gmp ginac glpk hwloc z3 xerces-c eigen $packages
 
 
