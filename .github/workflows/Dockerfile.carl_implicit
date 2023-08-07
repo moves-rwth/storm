@@ -43,7 +43,7 @@ RUN make resources -j $no_threads
 RUN make storm -j $no_threads
 
 # Build additional binaries of Storm
-# (This can be skipped or adapted dependending on custom needs)
+# (This can be skipped or adapted depending on custom needs)
 RUN make binaries -j $no_threads
 
 # Set path
