@@ -11,7 +11,7 @@ class BinaryNumericalFunctionExpression : public BinaryExpression {
     /*!
      * An enum type specifying the different operators applicable.
      */
-    enum class OperatorType { Plus, Minus, Times, Divide, Min, Max, Power, Modulo };
+    enum class OperatorType { Plus, Minus, Times, Divide, Min, Max, Power, Modulo, Logarithm };
 
     /*!
      * Constructs a binary numerical function expression with the given return type, operands and operator.

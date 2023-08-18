@@ -114,6 +114,7 @@ class Type {
     Type minus() const;
     Type divide(Type const& other) const;
     Type modulo(Type const& other) const;
+    Type logarithm(Type const& other) const;
     Type power(Type const& other, bool allowIntegerType = false) const;
     Type logicalConnective(Type const& other) const;
     Type logicalConnective() const;

@@ -221,6 +221,11 @@ Type Type::modulo(Type const& other) const {
     return std::max(*this, other);
 }
 
+Type Type::logarithm(Type const& other) const {
+    STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
+    return this->getManager().getRationalType();
+}
+
 Type Type::power(Type const& other, bool allowIntegerType) const {
     STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
     STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");

@@ -151,6 +151,8 @@ boost::any ToCppVisitor::visit(BinaryNumericalFunctionExpression const& expressi
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
+        case BinaryNumericalFunctionExpression::OperatorType::Logarithm:
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Log expressions not implemented for C++ translation.");
     }
     return boost::none;
 }
