@@ -44,6 +44,9 @@ std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType)
         case OperatorType::Modulo:
             stream << "%";
             break;
+        case OperatorType::Logarithm:
+            stream << "log";
+            break;
         case OperatorType::Equal:
             stream << "=";
             break;

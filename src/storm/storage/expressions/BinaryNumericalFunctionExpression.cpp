@@ -55,8 +55,24 @@ storm::expressions::OperatorType BinaryNumericalFunctionExpression::getOperator(
         case OperatorType::Modulo:
             result = storm::expressions::OperatorType::Modulo;
             break;
+        case OperatorType::Logarithm:
+            result = storm::expressions::OperatorType::Logarithm;
+            break;
     }
     return result;
+}
+
+template<typename V>
+V logHelper(V const& x, V const& b) {
+    // There is no std::log method for arbitrary bases.
+    // This catches common cases which should yield more accurate results
+    if (b == static_cast<V>(2)) {
+        return std::log2(x);
+    } else if (b == static_cast<V>(10)) {
+        return std::log10(x);
+    } else {
+        return std::log2(x) / std::log2(b);
+    }
 }
 
 int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
@@ -89,6 +105,9 @@ int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* v
             break;
         case OperatorType::Modulo:
             result = firstOperandEvaluation % secondOperandEvaluation;
+            break;
+        case OperatorType::Logarithm:
+            result = logHelper(firstOperandEvaluation, secondOperandEvaluation);
             break;
     }
     return result;
@@ -124,6 +143,9 @@ double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valu
             break;
         case OperatorType::Modulo:
             result = std::fmod(firstOperandEvaluation, secondOperandEvaluation);
+            break;
+        case OperatorType::Logarithm:
+            result = logHelper(firstOperandEvaluation, secondOperandEvaluation);
             break;
     }
     return result;
@@ -163,6 +185,9 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     break;
                 case OperatorType::Modulo:
                     newValue = firstOperandEvaluation % secondOperandEvaluation;
+                    break;
+                case OperatorType::Logarithm:
+                    // Do not simplify as it is not clear how a non-integer result should be treated.
                     break;
                 case OperatorType::Divide:
                     if (firstOperandEvaluation % secondOperandEvaluation == 0) {
@@ -217,6 +242,9 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     }
                     break;
                 }
+                case OperatorType::Logarithm:
+                    // Do not simplify as it is not clear how a non-rational result should be treated.
+                    break;
             }
             if (newValue) {
                 return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.value()));
@@ -266,6 +294,9 @@ void BinaryNumericalFunctionExpression::printToStream(std::ostream& stream) cons
             break;
         case OperatorType::Modulo:
             stream << *this->getFirstOperand() << " % " << *this->getSecondOperand();
+            break;
+        case OperatorType::Logarithm:
+            stream << "log(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")";
             break;
     }
     stream << ")";
