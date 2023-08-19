@@ -696,7 +696,7 @@ class BitVector {
      * @param endIndex The smallest index that is not part of the search range. Should not be larger than the total size of the BitVector.
      * @return If backwards is false, the index of the found bit is returned (or endIndex in case no bit with Value is present).
      *         If backwards is true, the index **after** the found bit is returned (or startIndex in case no bit with value Value is present).
-     *         If startIndex >= endIndex, we always return endIndex.
+     *         If startIndex >= endIndex, this returns (Backward ? startIndex : endIndex)
      */
     template<bool Value, bool Backward = false>
     static uint_fast64_t getNextIndexWithValue(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
