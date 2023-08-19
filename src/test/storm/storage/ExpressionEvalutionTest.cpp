@@ -75,7 +75,7 @@ TEST(ExpressionEvaluation, NegativeModulo) {
     storm::expressions::Expression mod = manager->integer(4);
 
     bool pass = true;
-    storm::expressions::Expression expr = creator.createPowerModuloExpression(n, storm::expressions::OperatorType::Modulo, mod, pass);
+    storm::expressions::Expression expr = creator.createPowerModuloLogarithmExpression(n, storm::expressions::OperatorType::Modulo, mod, pass);
 
     auto positiveModulo = [](int a, int b) { return a >= 0 ? a % b : (a % b) + b; };
 
