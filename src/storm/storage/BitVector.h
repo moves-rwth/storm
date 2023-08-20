@@ -19,6 +19,7 @@ class BitVector {
     /*!
      * A class that enables iterating over the indices of the bit vector whose corresponding bits are set to
      * true. Note that this is a const iterator, which cannot alter the bit vector.
+     * The indices are iterated over from smallest to largest
      */
     class const_iterator {
         // Declare the BitVector class as a friend class to access its internal storage.
@@ -104,6 +105,81 @@ class BitVector {
 
         // The index of the bit that is past the end of the range of this iterator.
         uint_fast64_t endIndex;
+    };
+    /*!
+     * A class that enables iterating over the indices of the bit vector whose corresponding bits are set to
+     * true. Note that this is a const iterator, which cannot alter the bit vector.
+     * The indices are iterated over from largest to smallest
+     */
+    class const_reverse_iterator {
+        // Declare the BitVector class as a friend class to access its internal storage.
+        friend class BitVector;
+
+       public:
+        // Define iterator
+        using iterator_category = std::input_iterator_tag;
+        using value_type = uint_fast64_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = uint_fast64_t*;
+        using reference = uint_fast64_t&;
+
+        /*!
+         * Constructs a reverse iterator over the indices of the set bits in the given bit vector, starting and
+         * stopping, respectively, at the given index range [lowerBound, upperBound).
+         *
+         * @param dataPtr A pointer to the first bucket of the underlying bit vector.
+         * @param upperBound indicates the index where to begin the reverse iteration. We start at the bit with index upperBound-1
+         * @param setOnFirstBit A flag that indicates whether the iterator is to be moved to the index of the
+         * first bit upon construction.
+         * @param lowerBound The index at which to abort the iteration process.
+         */
+        const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound = 0ull, bool setOnFirstBit = true);
+        const_reverse_iterator(const_reverse_iterator const& other);
+        const_reverse_iterator& operator=(const_reverse_iterator const& other);
+
+        /*!
+         * Lets the iterator point to the previous bit with value 1
+         * @return A reference to this iterator.
+         */
+        const_reverse_iterator& operator++();
+
+        /*!
+         * Lets the iterator point to the n'th previous bit with value 1
+         */
+        const_reverse_iterator& operator+=(size_t n);
+
+        /*!
+         * Returns the index of the current bit to which this iterator points.
+         *
+         * @return The index of the current bit to which this iterator points.
+         */
+        uint_fast64_t operator*() const;
+
+        /*!
+         * Compares the iterator with another iterator for inequality.
+         *
+         * @param other The iterator with respect to which inequality is checked.
+         * @return True if the two iterators are unequal.
+         */
+        bool operator!=(const_reverse_iterator const& other) const;
+
+        /*!
+         * Compares the iterator with another iterator for equality.
+         *
+         * @param other The iterator with respect to which equality is checked.
+         * @return True if the two iterators are equal.
+         */
+        bool operator==(const_reverse_iterator const& other) const;
+
+       private:
+        /// The underlying bit vector of this iterator.
+        uint64_t const* dataPtr;
+
+        /// The index of the bit this iterator currently points to **plus 1** (so that 0 can be used for BitVector::rend())
+        uint64_t currentIndex;
+
+        /// The index of the smallest possible bit that this iterator may point to
+        uint64_t lowerBound;
     };
 
     /*!
@@ -502,13 +578,37 @@ class BitVector {
 
     /*!
      * Returns an iterator to the indices of the set bits in the bit vector.
+     * Initially, the iterator points to the smallest index of a bit with value 1
      */
     const_iterator begin() const;
 
     /*!
-     * Returns an iterator pointing at the element past the bit vector.
+     * Returns an iterator to the indices of the set bits in the bit vector.
+     * Initially, the iterator points to the smallest index that is >= lowerBound
+     */
+    const_iterator begin(uint64_t lowerBound) const;
+
+    /*!
+     * Returns an iterator pointing at the element past the back of the bit vector.
      */
     const_iterator end() const;
+
+    /*!
+     * Returns a reverse iterator to the indices of the set bits in the bit vector.
+     * Initially, the iterator points to the largest index of a bit with value 1
+     */
+    const_reverse_iterator rbegin() const;
+
+    /*!
+     * Returns a reverse iterator to the indices of the set bits in the bit vector.
+     * Initially, the iterator points to the largest index that is < upperBound
+     */
+    const_reverse_iterator rbegin(uint64_t upperBound) const;
+
+    /*!
+     * Returns a reverse iterator pointing at the element past the front of the bit vector.
+     */
+    const_reverse_iterator rend() const;
 
     /*!
      * Retrieves the index of the bit that is the next bit set to true in the bit vector. If there is none,
@@ -531,6 +631,28 @@ class BitVector {
      * @return The index of the next bit that is set after the given index.
      */
     uint_fast64_t getNextUnsetIndex(uint_fast64_t startingIndex) const;
+
+    /*!
+     * Retrieves the smallest index i such that all bits in the range [i,endIndex) are 0.
+     *
+     * @note this can be seen as a backward version of getNextSetIndex.
+     *
+     * @param endIndex The index at which to start the backward search. The
+     * bit at this index itself is *not* included in the search range.
+     * @return The smallest index i such that all bits in the range [i,endIndex) are 0.
+     */
+    uint64_t getStartOfZeroSequenceBefore(uint64_t endIndex) const;
+
+    /*!
+     * Retrieves the smallest index i such that all bits in the range [i,endIndex) are 1.
+     *
+     * @note this can be seen as a backward version of getNextUnSetIndex.
+     *
+     * @param endIndex The index at which to start the backward search. The
+     * bit at this index itself is *not* included in the search range.
+     * @return The smallest index i such that all bits in the range [i,endIndex) are 1.
+     */
+    uint64_t getStartOfOneSequenceBefore(uint64_t endIndex) const;
 
     /*!
      * Compare two intervals [start1, start1+length] and [start2, start2+length] and swap them if the second
@@ -564,16 +686,20 @@ class BitVector {
     BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount);
 
     /*!
-     * Retrieves the index of the next bit that is set to the given value after (and including) the given starting index.
+     * Retrieves the index of the next bit that is set to the given value.
+     * The considered indices are in the range [startIndex, endIndex)
      *
-     * @param value the value of the bit whose index is to be found.
+     * @tparam Value the value of the bit whose index is to be found.
+     * @tparam Backward if true, we search for the bit with closest index to endIndex, otherwise we search for the bit with closest index to startIndex.
      * @param dataPtr A pointer to the first bucket of the data storage.
-     * @param startingIndex The index where to start the search.
-     * @param endIndex The index at which to stop the search.
-     * @return The index of the bit that is set after the given starting index, but before the given end index
-     * in the given bit vector or endIndex in case the end index was reached.
+     * @param startingIndex The smallest index that is included in the search range.
+     * @param endIndex The smallest index that is not part of the search range. Should not be larger than the total size of the BitVector.
+     * @return If backwards is false, the index of the found bit is returned (or endIndex in case no bit with Value is present).
+     *         If backwards is true, the index **after** the found bit is returned (or startIndex in case no bit with value Value is present).
+     *         If startIndex >= endIndex, this returns (Backward ? startIndex : endIndex)
      */
-    static uint_fast64_t getNextIndexWithValue(bool value, uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
+    template<bool Value, bool Backward = false>
+    static uint_fast64_t getNextIndexWithValue(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex);
 
     /*!
      * Truncate the last bucket so that no bits are set starting from bitCount.
