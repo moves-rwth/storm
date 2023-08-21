@@ -38,6 +38,7 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
     /*
      * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+     * If a state-action pair (aka choice) has a transition that leaves the subsystem, the entire state-action pair is ignored.
      *
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
@@ -48,6 +49,8 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
     /*
      * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+     * If a state-action pair (aka choice) has a transition that leaves the subsystem, the entire state-action pair is ignored, independent of how the given
+     * 'choices' vector is set for that choice.
      *
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
@@ -105,8 +108,8 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
      * @param choices The choices of the subsystem to decompose.
      */
     void performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                 storm::storage::SparseMatrix<ValueType> backwardTransitions, storm::storage::BitVector const* states = nullptr,
-                                                 storm::storage::BitVector const* choices = nullptr);
+                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                 storm::storage::BitVector const* states = nullptr, storm::storage::BitVector const* choices = nullptr);
 };
 }  // namespace storage
 }  // namespace storm
