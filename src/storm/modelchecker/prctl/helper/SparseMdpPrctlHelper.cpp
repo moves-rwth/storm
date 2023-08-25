@@ -147,7 +147,7 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                 storm::storage::BitVector const& nextStates) {
+    storm::storage::BitVector const& nextStates) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support next probabilities with reward models.");
     } else {
@@ -330,9 +330,9 @@ void extractValueAndSchedulerHint(SparseMdpHintType<SolutionType>& hintStorage, 
 template<typename ValueType, typename SolutionType>
 SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSolutionType const& type, ModelCheckerHint const& hint,
                                              storm::OptimizationDirection const& dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates,
-                                          storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, bool produceScheduler,
-                                          boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
+                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates,
+                                             storm::storage::BitVector const& phiStates, storm::storage::BitVector const& targetStates, bool produceScheduler,
+                                             boost::optional<storm::storage::BitVector> const& selectedChoices = boost::none) {
     SparseMdpHintType<SolutionType> result;
 
     // There are no end components if we minimize until probabilities or
@@ -442,8 +442,7 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
                                                            bool produceScheduler, SparseMdpHintType<SolutionType>& hint) {
     // Initialize the solution vector.
     std::vector<SolutionType> x =
-        hint.hasValueHint()
-            ? std::move(hint.getValueHint())
+        hint.hasValueHint() ? std::move(hint.getValueHint())
                             : std::vector<SolutionType>(submatrix.getRowGroupCount(),
                                                         hint.hasLowerResultBound() ? hint.getLowerResultBound() : storm::utility::zero<SolutionType>());
 
@@ -718,7 +717,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
             // Obtain proper hint information either from the provided hint or from requirements of the solver.
             SparseMdpHintType<SolutionType> hintInformation = computeHints<ValueType, SolutionType>(
-                env, SemanticSolutionType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates, phiStates, qualitativeStateSets.statesWithProbability1, produceScheduler);
+                env, SemanticSolutionType::UntilProbabilities, hint, goal.direction(), transitionMatrix, backwardTransitions, qualitativeStateSets.maybeStates,
+                phiStates, qualitativeStateSets.statesWithProbability1, produceScheduler);
 
             // Declare the components of the equation system we will solve.
             storm::storage::SparseMatrix<ValueType> submatrix;
@@ -820,7 +820,7 @@ template<typename ValueType, typename SolutionType>
 template<typename RewardModelType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeInstantaneousRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                    RewardModelType const& rewardModel, uint_fast64_t stepCount) {
+    RewardModelType const& rewardModel, uint_fast64_t stepCount) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         throw storm::exceptions::NotImplementedException() << "We do not support this function with interval models.";
     } else {
@@ -841,7 +841,7 @@ template<typename ValueType, typename SolutionType>
 template<typename RewardModelType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeCumulativeRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                 RewardModelType const& rewardModel, uint_fast64_t stepBound) {
+    RewardModelType const& rewardModel, uint_fast64_t stepBound) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         throw storm::exceptions::NotImplementedException() << "We do not support this function with interval models.";
     } else {

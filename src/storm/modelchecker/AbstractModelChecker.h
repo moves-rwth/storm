@@ -113,7 +113,8 @@ class AbstractModelChecker {
                                                                     CheckTask<storm::logic::RewardOperatorFormula, SolutionType> const& checkTask);
     virtual std::unique_ptr<CheckResult> checkTimeOperatorFormula(Environment const& env,
                                                                   CheckTask<storm::logic::TimeOperatorFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(Environment const& env, CheckTask<storm::logic::LongRunAverageOperatorFormula, SolutionType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(
+        Environment const& env, CheckTask<storm::logic::LongRunAverageOperatorFormula, SolutionType> const& checkTask);
     virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(Environment const& env,
                                                                        CheckTask<storm::logic::UnaryBooleanStateFormula, SolutionType> const& checkTask);
 

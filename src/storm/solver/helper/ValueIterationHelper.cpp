@@ -66,7 +66,7 @@ template<storm::OptimizationDirection Dir, bool Relative, storm::OptimizationDir
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                     MultiplicationStyle mult) const {
+                                                                                   MultiplicationStyle mult) const {
     VIOperatorBackend<SolutionType, Dir, Relative> backend{precision};
     std::vector<SolutionType>* operand1{&operand};
     std::vector<SolutionType>* operand2{&operand};
@@ -115,7 +115,7 @@ template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
                                                                                    uint64_t& numIterations, bool relative, SolutionType const& precision,
                                                                                    std::optional<storm::OptimizationDirection> const& dir,
-                                                                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
+                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
                                                                                    MultiplicationStyle mult, bool robust) const {
     STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {

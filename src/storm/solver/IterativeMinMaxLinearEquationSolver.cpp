@@ -209,7 +209,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 template<typename ValueType, typename SolutionType>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicyIteration(
     Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b,
-                                                                            std::vector<storm::storage::sparse::state_type>&& initialPolicy) const {
+    std::vector<storm::storage::sparse::state_type>&& initialPolicy) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         throw storm::exceptions::NotImplementedException() << "We did not implement policy iteration for interval-based models.";
         return false;

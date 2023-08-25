@@ -43,7 +43,7 @@ class SparseMdpPrctlHelper {
 
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                           storm::storage::BitVector const& nextStates);
+                                                              storm::storage::BitVector const& nextStates);
 
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeUntilProbabilities(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -53,27 +53,27 @@ class SparseMdpPrctlHelper {
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeGloballyProbabilities(Environment const& env,
                                                                                              storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                          storm::storage::BitVector const& psiStates, bool qualitative,
-                                                                                          bool produceScheduler, bool useMecBasedTechnique = false);
+                                                                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                             storm::storage::BitVector const& psiStates, bool qualitative,
+                                                                                             bool produceScheduler, bool useMecBasedTechnique = false);
 
     template<typename RewardModelType>
     static std::vector<SolutionType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                  storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                              RewardModelType const& rewardModel, uint_fast64_t stepCount);
+                                                                 RewardModelType const& rewardModel, uint_fast64_t stepCount);
 
     template<typename RewardModelType>
     static std::vector<SolutionType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel,
-                                                           uint_fast64_t stepBound);
+                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                              RewardModelType const& rewardModel, uint_fast64_t stepBound);
 
     template<typename RewardModelType>
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeTotalRewards(Environment const& env,
                                                                                     storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                 RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
-                                                                                 ModelCheckerHint const& hint = ModelCheckerHint());
+                                                                                    storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                    RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
+                                                                                    ModelCheckerHint const& hint = ModelCheckerHint());
 
     template<typename RewardModelType>
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityRewards(
@@ -83,15 +83,14 @@ class SparseMdpPrctlHelper {
 
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityTimes(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                      storm::storage::BitVector const& targetStates, bool qualitative,
-                                                                                      bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
+        storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative,
+        bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
 
     static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                             storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
-                                                             bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
+                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
+                                                                bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
 
     static std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

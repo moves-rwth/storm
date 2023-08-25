@@ -439,6 +439,7 @@ class Model : public storm::models::Model<CValueType> {
      * @return
      */
     virtual std::string additionalDotStateInfo(uint64_t state) const;
+
    private:
     // Upon construction of a model, this function asserts that the specified components are valid
     void assertValidityOfComponents(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const;
@@ -494,4 +495,3 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-

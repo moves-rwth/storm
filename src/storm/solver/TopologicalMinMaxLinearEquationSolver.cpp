@@ -293,8 +293,9 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveFullyC
 
 template<typename ValueType, typename SolutionType>
 bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir,
-                                                                              storm::storage::BitVector const& sccRowGroups, storm::storage::BitVector const& sccRows,
-                                                                std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
+                                                                              storm::storage::BitVector const& sccRowGroups,
+                                                                              storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX,
+                                                                              std::vector<ValueType> const& globalB) const {
     // Set up the SCC solver
     if (!this->sccSolver) {
         this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);

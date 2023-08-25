@@ -28,7 +28,8 @@ class ValueIterationHelper {
                     bool robust = true) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
-                    SolutionType const& precision, std::optional<storm::OptimizationDirection> const& dir = {}, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
+                    SolutionType const& precision, std::optional<storm::OptimizationDirection> const& dir = {},
+                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
                     bool robust = true) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,

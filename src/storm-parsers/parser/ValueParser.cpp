@@ -36,6 +36,5 @@ template class ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
 template class ValueParser<storm::Interval>;
 
-
 }  // namespace parser
 }  // namespace storm

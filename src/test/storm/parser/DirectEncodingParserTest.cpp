@@ -2,9 +2,9 @@
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(DirectEncodingParserTest, DtmcParsing) {
@@ -95,5 +95,4 @@ TEST(DirectEncodingParserTest, IntervalDtmcTest) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     ASSERT_EQ(613, dtmc->getNumberOfStates());
-
 }

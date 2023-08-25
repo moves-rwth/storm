@@ -175,6 +175,7 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
      * Retrieves whether the solver is aware that the requirements were checked.
      */
     bool isRequirementsCheckedSet() const;
+
    protected:
     virtual bool internalSolveEquations(Environment const& env, OptimizationDirection d, std::vector<SolutionType>& x,
                                         std::vector<ValueType> const& b) const = 0;
@@ -208,7 +209,7 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     bool requirementsChecked;
 
     /// For uncertain models, if this flag is set to true, the uncertainty is resolved adverserially and angelically otherwise.
-    bool robust; // TODO use.
+    bool robust;  // TODO use.
 };
 
 template<typename ValueType, typename SolutionType = ValueType>
@@ -249,4 +250,3 @@ class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolv
 
 }  // namespace solver
 }  // namespace storm
-

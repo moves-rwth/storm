@@ -19,7 +19,6 @@
 
 namespace carl {
 
-
 template<typename P>
 class FactorizedPolynomial;
 

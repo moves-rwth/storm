@@ -1,11 +1,11 @@
 #ifndef STORM_PARSER_VALUEPARSER_H_
 #define STORM_PARSER_VALUEPARSER_H_
 
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "storm-parsers/parser/ExpressionParser.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -75,10 +75,9 @@ inline storm::RationalNumber parseNumber(std::string const& value, bool logError
     storm::RationalNumber result;
     bool success = carl::try_parse(value, result);
     if (!success) {
-        if(logError) {
+        if (logError) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot parse " << value << " as a rational number.");
-        }
-        else {
+        } else {
             STORM_LOG_TRACE("Cannot parse " << value << " as a rational number.");
             throw storm::exceptions::WrongFormatException() << "Cannot parse " << value << " as a rational number.";
         }
@@ -101,7 +100,7 @@ inline storm::Interval parseNumber(std::string const& value, bool logError) {
     STORM_LOG_ASSERT(logError, "Disabling logError is not supported for intervals.");
     try {
         return parseNumber<double>(value, false);
-    } catch(storm::exceptions::WrongFormatException&) {
+    } catch (storm::exceptions::WrongFormatException&) {
         // Okay, lets continue;
     }
     std::string intermediate = value;
@@ -111,30 +110,35 @@ inline storm::Interval parseNumber(std::string const& value, bool logError) {
     if (intermediate.front() == '(') {
         leftBound = carl::BoundType::STRICT;
     } else {
-        STORM_LOG_THROW(intermediate.front() == '[', storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into an interval. Expect start with '(' or '['.");
+        STORM_LOG_THROW(intermediate.front() == '[', storm::exceptions::WrongFormatException,
+                        "Could not parse value '" << value << "' into an interval. Expect start with '(' or '['.");
         leftBound = carl::BoundType::WEAK;
     }
     if (intermediate.back() == ')') {
         rightBound = carl::BoundType::STRICT;
     } else {
-        STORM_LOG_THROW(intermediate.back() == ']', storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into an interval. Expect end with ']' or ')'");
+        STORM_LOG_THROW(intermediate.back() == ']', storm::exceptions::WrongFormatException,
+                        "Could not parse value '" << value << "' into an interval. Expect end with ']' or ')'");
         rightBound = carl::BoundType::WEAK;
     }
-    intermediate = intermediate.substr(1,intermediate.size() - 2);
+    intermediate = intermediate.substr(1, intermediate.size() - 2);
 
     std::vector<std::string> words;
     boost::split(words, intermediate, boost::is_any_of(","));
-    STORM_LOG_THROW(words.size() == 2, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into an interval. Did not find a comma.");
+    STORM_LOG_THROW(words.size() == 2, storm::exceptions::WrongFormatException,
+                    "Could not parse value '" << value << "' into an interval. Did not find a comma.");
     double leftVal, rightVal;
     try {
         leftVal = parseNumber<double>(words[0]);
     } catch (storm::exceptions::WrongFormatException&) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << words[0] << "' as lower value of interval " << value << ".");
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Could not parse value '" << words[0] << "' as lower value of interval " << value << ".");
     }
     try {
         rightVal = parseNumber<double>(words[1]);
     } catch (storm::exceptions::WrongFormatException&) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << words[1] << "' as lower value of interval " << value << ".");
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        "Could not parse value '" << words[1] << "' as lower value of interval " << value << ".");
     }
     return storm::Interval(leftVal, leftBound, rightVal, rightBound);
 }
