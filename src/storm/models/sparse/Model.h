@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_MODEL_H_
-#define STORM_MODELS_SPARSE_MODEL_H_
+#pragma once
 
 #include <optional>
 #include <unordered_map>
@@ -384,6 +383,16 @@ class Model : public storm::models::Model<CValueType> {
 
     virtual bool isExact() const override;
 
+    virtual bool supportsUncertainty() const;
+
+    /*!
+     * Checks whether the model actually is uncertain, i.e., whether there is a non-singleton transition relation.
+     * Performance warning: the worst-case complexity is linear in the number of transitions
+     *
+     * @return True iff the model can be instantiated in more than one way.
+     */
+    virtual bool hasUncertainty() const;
+
     virtual std::size_t hash() const;
 
    protected:
@@ -430,7 +439,6 @@ class Model : public storm::models::Model<CValueType> {
      * @return
      */
     virtual std::string additionalDotStateInfo(uint64_t state) const;
-
    private:
     // Upon construction of a model, this function asserts that the specified components are valid
     void assertValidityOfComponents(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const;
@@ -487,4 +495,3 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 }  // namespace models
 }  // namespace storm
 
-#endif /* STORM_MODELS_SPARSE_MODEL_H_ */

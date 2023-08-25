@@ -193,6 +193,7 @@ template class NondeterministicModel<double>;
 template class NondeterministicModel<storm::RationalNumber>;
 template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class NondeterministicModel<storm::RationalFunction>;
+template class NondeterministicModel<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models

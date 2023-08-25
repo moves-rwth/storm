@@ -59,6 +59,12 @@ namespace utility {
 namespace graph {
 
 /*!
+ *
+ */
+template<typename T>
+storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+
+/*!
  * Performs a forward depth-first search through the underlying graph structure to identify the states that
  * are reachable from the given set only passing through a constrained set of states until some target
  * have been reached.

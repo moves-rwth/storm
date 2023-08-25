@@ -3,11 +3,9 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {
-
-template<typename ValueType, bool TrivialRowGrouping>
-class ValueIterationOperator;
 
 /*!
  * Helper class to extract optimal scheduler choices from a MinMax equation system solution

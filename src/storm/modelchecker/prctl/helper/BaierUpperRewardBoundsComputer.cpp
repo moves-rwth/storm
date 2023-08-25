@@ -138,10 +138,7 @@ ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
 }
 
 template class BaierUpperRewardBoundsComputer<double>;
-
-#ifdef STORM_HAVE_CARL
 template class BaierUpperRewardBoundsComputer<storm::RationalNumber>;
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

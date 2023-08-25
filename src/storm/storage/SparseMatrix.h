@@ -689,14 +689,14 @@ class SparseMatrix {
      */
     void makeRowDirac(index_type row, index_type column, bool dropZeroEntries = false);
 
-    /*
+    /*!
      * Sums the entries in all rows.
      *
      * @return The vector of sums of the entries in the respective rows.
      */
     std::vector<ValueType> getRowSumVector() const;
 
-    /*
+    /*!
      * Sums the entries in the given row and columns.
      *
      * @param row The row whose entries to add.
@@ -704,6 +704,14 @@ class SparseMatrix {
      * @return The sum of the entries in the given row and columns.
      */
     value_type getConstrainedRowSum(index_type row, storm::storage::BitVector const& columns) const;
+
+    /*!
+     * Creates a BitVector of length nrRows with a set bit in position x if the x'th row is in the selected set of row groups.
+     *
+     * @param An indicator bit vector that selects the row groups
+     * @return The rows that correspond to the rowgroups
+     */
+    storm::storage::BitVector getCorrespondingRows(storm::storage::BitVector const& selectedRowGroups) const;
 
     /*!
      * Computes a vector whose i-th entry is the sum of the entries in the i-th selected row where only those

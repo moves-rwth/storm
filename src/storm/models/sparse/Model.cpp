@@ -57,7 +57,8 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->getTransitionMatrix().isProbabilistic(), "The matrix is not probabilistic.");
+    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(),
+                     "The matrix is not probabilistic.");
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
     for (auto const& rewardModel : this->getRewardModels()) {
@@ -647,8 +648,28 @@ bool Model<ValueType, RewardModelType>::supportsParameters() const {
 }
 
 template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::supportsUncertainty() const {
+    return std::is_same<ValueType, storm::Interval>::value;
+}
+
+template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::hasParameters() const {
     if (!this->supportsParameters()) {
+        return false;
+    }
+    // Check for parameters
+    for (auto const& entry : this->getTransitionMatrix()) {
+        if (!storm::utility::isConstant(entry.getValue())) {
+            return true;
+        }
+    }
+    // Only constant values present
+    return false;
+}
+
+template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::hasUncertainty() const {
+    if (!this->supportsUncertainty()) {
         return false;
     }
     // Check for parameters
@@ -713,6 +734,7 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 #endif
 
 template class Model<double>;
+template class Model<storm::Interval>;
 
 #ifdef STORM_HAVE_CARL
 template class Model<storm::RationalNumber>;

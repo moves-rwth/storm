@@ -34,6 +34,8 @@ ValueType ValueParser<ValueType>::parseValue(std::string const& value) const {
 template class ValueParser<double>;
 template class ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
+template class ValueParser<storm::Interval>;
+
 
 }  // namespace parser
 }  // namespace storm

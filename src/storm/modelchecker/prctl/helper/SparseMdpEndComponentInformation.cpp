@@ -408,11 +408,9 @@ void SparseMdpEndComponentInformation<ValueType>::setScheduler(storm::storage::S
 }
 
 template class SparseMdpEndComponentInformation<double>;
-
-#ifdef STORM_HAVE_CARL
 template class SparseMdpEndComponentInformation<storm::RationalNumber>;
+template class SparseMdpEndComponentInformation<storm::Interval>;
 // template class SparseMdpEndComponentInformation<storm::RationalFunction>;
-#endif
 
 }  // namespace helper
 }  // namespace modelchecker

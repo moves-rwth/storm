@@ -283,5 +283,7 @@ uint_fast64_t StronglyConnectedComponentDecomposition<ValueType>::getMaxSccDepth
 template class StronglyConnectedComponentDecomposition<double>;
 template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
 template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
+template class StronglyConnectedComponentDecomposition<storm::Interval>;
+
 }  // namespace storage
 }  // namespace storm

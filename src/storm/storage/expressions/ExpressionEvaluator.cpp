@@ -9,6 +9,10 @@ ExpressionEvaluator<double>::ExpressionEvaluator(storm::expressions::ExpressionM
     // Intentionally left empty.
 }
 
+ExpressionEvaluator<storm::Interval>::ExpressionEvaluator(storm::expressions::ExpressionManager const& manager) : ExprtkExpressionEvaluator(manager) {
+    // Intentionally left empty.
+}
+
 template<typename RationalType>
 ExpressionEvaluatorWithVariableToExpressionMap<RationalType>::ExpressionEvaluatorWithVariableToExpressionMap(
     storm::expressions::ExpressionManager const& manager)

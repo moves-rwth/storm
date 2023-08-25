@@ -97,6 +97,7 @@ template class Ctmc<storm::RationalNumber>;
 
 template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Ctmc<storm::RationalFunction>;
+template class Ctmc<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models

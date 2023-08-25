@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/modelchecker/prctl/helper/SolutionType.h"
+#include "storm/modelchecker/prctl/helper/SemanticSolutionType.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/solver.h"

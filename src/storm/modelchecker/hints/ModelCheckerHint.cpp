@@ -29,6 +29,8 @@ template ExplicitModelCheckerHint<storm::RationalNumber> const& ModelCheckerHint
 template ExplicitModelCheckerHint<storm::RationalNumber>& ModelCheckerHint::asExplicitModelCheckerHint();
 template ExplicitModelCheckerHint<storm::RationalFunction> const& ModelCheckerHint::asExplicitModelCheckerHint() const;
 template ExplicitModelCheckerHint<storm::RationalFunction>& ModelCheckerHint::asExplicitModelCheckerHint();
+template ExplicitModelCheckerHint<storm::Interval> const& ModelCheckerHint::asExplicitModelCheckerHint() const;
+template ExplicitModelCheckerHint<storm::Interval>& ModelCheckerHint::asExplicitModelCheckerHint();
 
 }  // namespace modelchecker
 }  // namespace storm

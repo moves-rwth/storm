@@ -384,6 +384,7 @@ void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<
 template class Scheduler<double>;
 template class Scheduler<storm::RationalNumber>;
 template class Scheduler<storm::RationalFunction>;
+template class Scheduler<storm::Interval>;
 
 }  // namespace storage
 }  // namespace storm
