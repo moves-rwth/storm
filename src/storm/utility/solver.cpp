@@ -1,14 +1,14 @@
 #include "storm/utility/solver.h"
 
-#include "storm/solver/GlpkLpSolver.h"
-#include "storm/solver/GurobiLpSolver.h"
-#include "storm/solver/SoplexLpSolver.h"
-#include "storm/solver/Z3LpSolver.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/solver/GlpkLpSolver.h"
+#include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/MathsatSmtSolver.h"
+#include "storm/solver/SoplexLpSolver.h"
+#include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/utility/NumberTraits.h"
 

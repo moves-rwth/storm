@@ -20,7 +20,7 @@ BitVector::const_iterator::const_iterator(uint64_t const* dataPtr, uint_fast64_t
     : dataPtr(dataPtr), endIndex(endIndex) {
     if (setOnFirstBit) {
         // Set the index of the first set bit in the vector.
-        currentIndex = getNextIndexWithValue(true, dataPtr, startIndex, endIndex);
+        currentIndex = getNextIndexWithValue<true>(dataPtr, startIndex, endIndex);
     } else {
         currentIndex = startIndex;
     }
@@ -41,13 +41,13 @@ BitVector::const_iterator& BitVector::const_iterator::operator=(const_iterator c
 }
 
 BitVector::const_iterator& BitVector::const_iterator::operator++() {
-    currentIndex = getNextIndexWithValue(true, dataPtr, ++currentIndex, endIndex);
+    currentIndex = getNextIndexWithValue<true>(dataPtr, ++currentIndex, endIndex);
     return *this;
 }
 
 BitVector::const_iterator& BitVector::const_iterator::operator+=(size_t n) {
     for (size_t i = 0; i < n; ++i) {
-        currentIndex = getNextIndexWithValue(true, dataPtr, ++currentIndex, endIndex);
+        currentIndex = getNextIndexWithValue<true>(dataPtr, ++currentIndex, endIndex);
     }
     return *this;
 }
@@ -61,6 +61,55 @@ bool BitVector::const_iterator::operator!=(const_iterator const& other) const {
 }
 
 bool BitVector::const_iterator::operator==(const_iterator const& other) const {
+    return currentIndex == other.currentIndex;
+}
+
+BitVector::const_reverse_iterator::const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound, bool setOnFirstBit)
+    : dataPtr(dataPtr), lowerBound(lowerBound) {
+    if (setOnFirstBit) {
+        // Set the index of the first set bit in the vector.
+        currentIndex = getNextIndexWithValue<true, true>(dataPtr, lowerBound, upperBound);
+    } else {
+        currentIndex = upperBound;
+    }
+}
+
+BitVector::const_reverse_iterator::const_reverse_iterator(const_reverse_iterator const& other)
+    : dataPtr(other.dataPtr), currentIndex(other.currentIndex), lowerBound(other.lowerBound) {
+    // Intentionally left empty.
+}
+
+BitVector::const_reverse_iterator& BitVector::const_reverse_iterator::operator=(const_reverse_iterator const& other) {
+    // Only assign contents if the source and target are not the same.
+    if (this != &other) {
+        dataPtr = other.dataPtr;
+        currentIndex = other.currentIndex;
+        lowerBound = other.lowerBound;
+    }
+    return *this;
+}
+
+BitVector::const_reverse_iterator& BitVector::const_reverse_iterator::operator++() {
+    currentIndex = getNextIndexWithValue<true, true>(dataPtr, lowerBound, --currentIndex);
+    return *this;
+}
+
+BitVector::const_reverse_iterator& BitVector::const_reverse_iterator::operator+=(size_t n) {
+    for (size_t i = 0; i < n; ++i) {
+        currentIndex = getNextIndexWithValue<true, true>(dataPtr, lowerBound, --currentIndex);
+    }
+    return *this;
+}
+
+uint_fast64_t BitVector::const_reverse_iterator::operator*() const {
+    return currentIndex - 1;  // the stored index is off-by-one!
+}
+
+bool BitVector::const_reverse_iterator::operator!=(const_reverse_iterator const& other) const {
+    return currentIndex != other.currentIndex;
+}
+
+bool BitVector::const_reverse_iterator::operator==(const_reverse_iterator const& other) const {
     return currentIndex == other.currentIndex;
 }
 
@@ -704,90 +753,130 @@ BitVector::const_iterator BitVector::begin() const {
     return const_iterator(buckets, 0, bitCount);
 }
 
+BitVector::const_iterator BitVector::begin(uint64_t lowerBound) const {
+    return const_iterator(buckets, lowerBound, bitCount);
+}
+
 BitVector::const_iterator BitVector::end() const {
     return const_iterator(buckets, bitCount, bitCount, false);
 }
 
+BitVector::const_reverse_iterator BitVector::rbegin() const {
+    return const_reverse_iterator(buckets, bitCount);
+}
+BitVector::const_reverse_iterator BitVector::rbegin(uint64_t upperBound) const {
+    return const_reverse_iterator(buckets, upperBound);
+}
+
+BitVector::const_reverse_iterator BitVector::rend() const {
+    return const_reverse_iterator(buckets, 0ull, 0ull, false);
+}
+
 uint_fast64_t BitVector::getNextSetIndex(uint_fast64_t startingIndex) const {
-    return getNextIndexWithValue(true, buckets, startingIndex, bitCount);
+    return getNextIndexWithValue<true>(buckets, startingIndex, bitCount);
 }
 
 uint_fast64_t BitVector::getNextUnsetIndex(uint_fast64_t startingIndex) const {
 #ifdef ASSERT_BITVECTOR
-    STORM_LOG_ASSERT(getNextIndexWithValue(false, buckets, startingIndex, bitCount) == (~(*this)).getNextSetIndex(startingIndex),
+    STORM_LOG_ASSERT(getNextIndexWithValue<false>(buckets, startingIndex, bitCount) == (~(*this)).getNextSetIndex(startingIndex),
                      "The result is inconsistent with the next set index of the complement of this bitvector");
 #endif
-    return getNextIndexWithValue(false, buckets, startingIndex, bitCount);
+    return getNextIndexWithValue<false>(buckets, startingIndex, bitCount);
 }
 
-uint_fast64_t BitVector::getNextIndexWithValue(bool value, uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex) {
-    uint_fast8_t currentBitInByte = startingIndex & mod64mask;
-    uint64_t const* bucketIt = dataPtr + (startingIndex >> 6);
-    startingIndex = (startingIndex >> 6 << 6);
+uint64_t BitVector::getStartOfZeroSequenceBefore(uint64_t endIndex) const {
+    return getNextIndexWithValue<true, true>(buckets, 0, endIndex);
+}
 
-    uint64_t mask;
-    if (currentBitInByte == 0) {
-        mask = -1ull;
-    } else {
-        mask = (1ull << (64 - currentBitInByte)) - 1ull;
+uint64_t BitVector::getStartOfOneSequenceBefore(uint64_t endIndex) const {
+#ifdef ASSERT_BITVECTOR
+    STORM_LOG_ASSERT((getNextIndexWithValue<false, true>(buckets, 0, endIndex) == (~(*this)).getStartOfZeroSequenceBefore(endIndex)),
+                     "The result is inconsistent with the next set index of the complement of this bitvector");
+#endif
+    return getNextIndexWithValue<false, true>(buckets, 0, endIndex);
+}
+
+template<bool Value, bool Backward>
+uint_fast64_t BitVector::getNextIndexWithValue(uint64_t const* dataPtr, uint64_t startingIndex, uint64_t endIndex) {
+    if (startingIndex >= endIndex) {
+        return Backward ? startingIndex : endIndex;
     }
 
-    // For efficiency reasons, we branch on the desired value at this point
-    if (value) {
-        while (startingIndex < endIndex) {
-            // Compute the remaining bucket content.
-            uint64_t remainingInBucket = *bucketIt & mask;
+    uint64_t currentBucketIndexOffset = Backward ? endIndex - 1 : startingIndex;
+    uint_fast8_t currentBitInBucket = currentBucketIndexOffset & mod64mask;
+    uint64_t const* bucketIt = dataPtr + (currentBucketIndexOffset >> 6);
+    currentBucketIndexOffset = (currentBucketIndexOffset >> 6 << 6);
 
-            // Check if there is at least one bit in the remainder of the bucket that is set to true.
-            if (remainingInBucket != 0) {
-                // As long as the current bit is not set, move the current bit.
-                while ((remainingInBucket & (1ull << (63 - currentBitInByte))) == 0) {
-                    ++currentBitInByte;
+    // Get relevant contents of the first bucket (the one that contains the bit with index currentBucketIndexOffset + currentBitInBucket)
+    uint64_t relevantBitsInBucket;
+    if constexpr (Backward) {
+        relevantBitsInBucket = -1ull << (63 - currentBitInBucket);  // 111..111'1'000...000 where the last '1' is at the currentBitInBucket
+    } else {
+        relevantBitsInBucket = -1ull >> currentBitInBucket;  // 000..000'1'111..111 where the first '1' is at the currentBitInBucket
+    }
+    uint64_t currentBucket = Value ? (*bucketIt & relevantBitsInBucket) : (*bucketIt | ~relevantBitsInBucket);
+
+    // Find the right bucket
+    if (currentBucket == (Value ? 0ull : -1ull)) {
+        // The first bucket does not contain a bit with the desired value...
+        do {
+            // Move to next bucket (if there is some)
+            if constexpr (Backward) {
+                if (currentBucketIndexOffset <= startingIndex) {
+                    // No bucket found!
+                    return startingIndex;
                 }
-
-                // Only return the index of the set bit if we are still in the valid range.
-                if (startingIndex + currentBitInByte < endIndex) {
-                    return startingIndex + currentBitInByte;
-                } else {
+                --bucketIt;
+                currentBucketIndexOffset -= 64;  // does not underflow:  currentBucketIndexOffset is greater than startIndex and always a multiple of 64
+            } else {
+                ++bucketIt;
+                currentBucketIndexOffset += 64;
+                if (currentBucketIndexOffset >= endIndex) {
+                    // No bucket found!
                     return endIndex;
                 }
             }
-
-            // Advance to the next bucket.
-            startingIndex += 64;
-            ++bucketIt;
-            mask = -1ull;
-            currentBitInByte = 0;
-        }
-    } else {
-        while (startingIndex < endIndex) {
-            // Compute the remaining bucket content.
-            uint64_t remainingInBucket = *bucketIt & mask;
-
-            // Check if there is at least one bit in the remainder of the bucket that is set to false.
-            if (remainingInBucket != (-1ull & mask)) {
-                // As long as the current bit is not false, move the current bit.
-                while ((remainingInBucket & (1ull << (63 - currentBitInByte))) != 0) {
-                    ++currentBitInByte;
-                }
-
-                // Only return the index of the set bit if we are still in the valid range.
-                if (startingIndex + currentBitInByte < endIndex) {
-                    return startingIndex + currentBitInByte;
-                } else {
-                    return endIndex;
-                }
-            }
-
-            // Advance to the next bucket.
-            startingIndex += 64;
-            ++bucketIt;
-            mask = -1ull;
-            currentBitInByte = 0;
-        }
+            // Check if the bucket contains our bit
+        } while ((*bucketIt) == (Value ? 0ull : -1ull));
+        // At this point we have found our bucket, but it is not the first one
+        currentBucket = *bucketIt;
+        currentBitInBucket = Backward ? 63u : 0u;  // search within the bucket starting at the last or at the first bit
     }
 
-    return endIndex;
+    if constexpr (!Value) {
+        currentBucket = ~currentBucket;  // invert so that we always search for a '1' from this point
+    }
+    // At this point, currentBucket definitely contains a 1-bit and all bits (Backward ? after : before) the currentBitInBucket are zero
+    STORM_LOG_ASSERT(currentBucket != 0ull, "Bitvector's getNextIndexWithValue method in invalid state.");
+
+#if (defined(__GNUG__) || defined(__clang__))
+    // Use fast and easy builtin functions to find the correct bit index
+    if constexpr (Backward) {
+        // take max since the startIndex might point somewhere into the current bucket so the found bit might come before the startIndex
+        return std::max<uint64_t>(startingIndex,
+                                  currentBucketIndexOffset + 64ull - __builtin_ctzll(currentBucket));  // make sure to return +1 index after the found 1
+    } else {
+        // take min since the endIndex might point somewhere into the current bucket so the found bit might come after the endIndex
+        return std::min<uint64_t>(endIndex, currentBucketIndexOffset + __builtin_clzll(currentBucket));
+    }
+#else
+    // Find the correct bit index manually
+    uint64_t compareMask = 1ull << (63 - currentBitInBucket);  // 000..000'1'000..000 with '1' at currentBitInBucket position
+    while (!static_cast<bool>(currentBucket & compareMask)) {
+        if constexpr (Backward) {
+            compareMask <<= 1ull;
+            --currentBitInBucket;
+        } else {
+            compareMask >>= 1ull;
+            ++currentBitInBucket;
+        }
+    }
+    if constexpr (Backward) {
+        return std::max(startingIndex, currentBucketIndexOffset + currentBitInBucket + 1ull);  // make sure to return +1 index after the found 1
+    } else {
+        return std::min(endIndex, currentBucketIndexOffset + currentBitInBucket);
+    }
+#endif
 }
 
 storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) const {

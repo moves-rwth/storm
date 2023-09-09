@@ -5,21 +5,31 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.7.x
+Version 1.8.x
 -------------
 
-## Version 1.7.1
+## Version 1.8.1 (2023/06)
+- Workaround for issue with Boost >= 1.81
+
+## Version 1.8.0 (2023/05)
+- Revised implementation of value iteration algorithms and its variants, fixing a bug in the optimistic value iteration heuristic.
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
 - Upgraded shipped version of sylvan
-- Upgraded repo / version for carl (for polynomials)
+- Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/moves-rwth/carl-storm) in at least version 14.23.
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-pars`: completely reworked the command-line interface (and partially the c++ API).
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
-- Developer: Introduced forward declarations (in their own headers), in particular for storm::RationalNumber, storm::RationalFunction, and storm::json
+- `storm-pomdp`: streamlined implementation for quantitative analysis
+- `storm-pomdp`: added clipping for POMDP under-approximation
+- `storm-pomdp`: added API for interactive exploration of belief MDPs
+- Developer: Introduced forward declarations (in their own headers), in particular for `storm::RationalNumber`, `storm::RationalFunction`, and `storm::json`
 - Developer: LpSolver interface now supports RawMode (to avoid overhead of `storm::expression`) and indicator constraints
 
+
+Version 1.7.x
+-------------
 
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.

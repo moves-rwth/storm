@@ -614,6 +614,8 @@ std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             return "pow";
         case OpType::Modulo:
             return "%";
+        case OpType::Logarithm:
+            return "log";
         case OpType::Equal:
             return "=";
         case OpType::NotEqual:

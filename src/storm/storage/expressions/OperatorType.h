@@ -20,6 +20,7 @@ enum class OperatorType {
     Max,
     Power,
     Modulo,
+    Logarithm,
     Equal,
     NotEqual,
     Less,

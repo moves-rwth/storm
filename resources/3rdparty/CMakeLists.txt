@@ -112,8 +112,8 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 
-if ("${Boost_VERSION}" STREQUAL "108100")
-    message(STATUS "Storm - Using workaround for Boost 1.81")
+if (${Boost_VERSION} VERSION_GREATER_EQUAL "1.81.0")
+    message(STATUS "Storm - Using workaround for Boost >= 1.81")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_PHOENIX_STL_TUPLE_H_")
 endif()
 
@@ -294,7 +294,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "14.22")
+set(CARL_MINVERSION "14.23")
 set(CARL_C14VERSION "14")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
@@ -332,7 +332,8 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
             message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
         endif()
     else()
-        message(FATAL_ERROR "We only support a diverged fork of carl -- Version 14.")
+        message(FATAL_ERROR "We only support a diverged version of carl, indicated by Carl version 14.x. These versions can be found at https://github.com/moves-rwth/carl-storm. 
+			      On this system, we found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
     endif()
 
     set(STORM_HAVE_CARL ON)

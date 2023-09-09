@@ -6,9 +6,8 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-#include "storm/solver/helper/OptimisticValueIterationHelper.h"
-#include "storm/solver/helper/SoundValueIterationHelper.h"
-#include "storm/solver/multiplier/Multiplier.h"
+
+#include "storm/solver/helper/ValueIterationOperator.h"
 
 #include "storm/solver/SolverStatus.h"
 
@@ -56,46 +55,8 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
 
     bool solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
-    template<typename RationalType, typename ImpreciseType>
-    bool solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir,
-                                            IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver,
-                                            storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX,
-                                            std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A,
-                                            std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && !NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(
-        Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<std::is_same<ValueType, ImpreciseType>::value && NumberTraits<ValueType>::IsExact, bool>::type solveEquationsRationalSearchHelper(
-        Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename ImpreciseType>
-    typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type solveEquationsRationalSearchHelper(
-        Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
-    template<typename RationalType, typename ImpreciseType>
-    static bool sharpen(storm::OptimizationDirection dir, uint64_t precision, storm::storage::SparseMatrix<RationalType> const& A,
-                        std::vector<ImpreciseType> const& x, std::vector<RationalType> const& b, std::vector<RationalType>& tmp);
-    static bool isSolution(storm::OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& matrix, std::vector<ValueType> const& values,
-                           std::vector<ValueType> const& b);
-
-    void computeOptimalValueForRowGroup(uint_fast64_t group, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b,
-                                        uint_fast64_t* choice = nullptr) const;
-
-    struct ValueIterationResult {
-        ValueIterationResult(uint64_t iterations, SolverStatus status) : iterations(iterations), status(status) {
-            // Intentionally left empty.
-        }
-
-        uint64_t iterations;
-        SolverStatus status;
-    };
-
-    template<typename ValueTypePrime>
-    friend class IterativeMinMaxLinearEquationSolver;
-
-    ValueIterationResult performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX,
-                                               std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative,
-                                               SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations,
-                                               storm::solver::MultiplicationStyle const& multiplicationStyle) const;
+    void setUpViOperator() const;
+    void extractScheduler(std::vector<ValueType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir, bool updateX = true) const;
 
     void createLinearEquationSolver(Environment const& env) const;
 
@@ -103,11 +64,8 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
 
     // possibly cached data
-    mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplierA;
-    mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;   // A.rowGroupCount() entries
-    mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2;  // A.rowGroupCount() entries
-    mutable std::unique_ptr<storm::solver::helper::SoundValueIterationHelper<ValueType>> soundValueIterationHelper;
-    mutable std::unique_ptr<storm::solver::helper::OptimisticValueIterationHelper<ValueType>> optimisticValueIterationHelper;
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, false>> viOperator;
+    mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;  // A.rowGroupCount() entries
 };
 
 }  // namespace solver

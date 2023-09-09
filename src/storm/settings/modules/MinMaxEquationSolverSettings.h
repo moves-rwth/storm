@@ -91,22 +91,12 @@ class MinMaxEquationSolverSettings : public ModuleSettings {
     storm::solver::MultiplicationStyle getValueIterationMultiplicationStyle() const;
 
     /*!
-     * Retrievew whether updates in interval iteration have to be made symmetrically
+     * @return if a MinMax solver should always require a unique solution for its input even if it is not a requirement of the used method.
      */
-    bool isForceIntervalIterationSymmetricUpdatesSet() const;
+    bool isForceUniqueSolutionRequirementSet() const;
 
     // The name of the module.
     static const std::string moduleName;
-
-   private:
-    static const std::string solvingMethodOptionName;
-    static const std::string maximalIterationsOptionName;
-    static const std::string maximalIterationsOptionShortName;
-    static const std::string precisionOptionName;
-    static const std::string absoluteOptionName;
-    static const std::string valueIterationMultiplicationStyleOptionName;
-    static const std::string intervalIterationSymmetricUpdatesOptionName;
-    static const std::string forceBoundsOptionName;
 };
 
 }  // namespace modules

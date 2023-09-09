@@ -1,14 +1,6 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.15)
 
-cmake_policy(VERSION 3.2)
-
- set(CMAKE_CXX_STANDARD 17)
-
-# When searching for packages, we would like to first search in prefixes specified by <PackageName>_ROOT.
-# However, this behavior is only supported since CMake 3.12.
-if(POLICY CMP0074)
-	cmake_policy(SET CMP0074 NEW)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 
 # Set project name
 project (storm CXX C)
@@ -191,7 +183,7 @@ set(SHIPPED_CARL_USE_GINAC ON)
 # Detect Apple Silicon and adjust settings
 if(APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
 	message(STATUS "Storm - Detected that target system uses Apple Silicon.")
-	message(WARNING "Compiling natively on Apple Silicon is experimental. Pleare report issues to support@stormchecker.org. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
+	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report issues to support@stormchecker.org. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
 	set(APPLE_SILICON 1)
 	if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
 		message(WARNING "CLN and GiNaC are currently not supported on Apple Silicon-based architectures. Disabling Storm and carl usage of the libraries.")

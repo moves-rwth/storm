@@ -1,4 +1,7 @@
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
+
+#include <deque>
+
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
@@ -21,6 +24,8 @@ struct product_state_hash {
     size_t operator()(product_state s) const noexcept {
 #ifdef STORM_HAVE_SPOT
         return spot::wang32_hash(s.first ^ spot::wang32_hash(s.second));
+#else
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
 #endif
     }
 };

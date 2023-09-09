@@ -24,8 +24,8 @@ class MinMaxSolverEnvironment {
     void setRelativeTerminationCriterion(bool value);
     storm::solver::MultiplicationStyle const& getMultiplicationStyle() const;
     void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
-    bool isSymmetricUpdatesSet() const;
-    void setSymmetricUpdates(bool value);
+    bool isForceRequireUnique() const;
+    void setForceRequireUnique(bool value);
 
    private:
     storm::solver::MinMaxMethod minMaxMethod;
@@ -34,6 +34,6 @@ class MinMaxSolverEnvironment {
     storm::RationalNumber precision;
     bool considerRelativeTerminationCriterion;
     storm::solver::MultiplicationStyle multiplicationStyle;
-    bool symmetricUpdates;
+    bool forceRequireUnique;
 };
 }  // namespace storm

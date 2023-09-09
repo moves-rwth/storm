@@ -546,16 +546,59 @@ TEST(BitVectorTest, NextUnsetIndex) {
     ASSERT_EQ(vector.size(), vector.getNextUnsetIndex(18));
 }
 
+TEST(BitVectorTest, SequenceBefore) {
+    storm::storage::BitVector vector(65);
+
+    vector.set(14);
+    vector.set(17);
+    vector.set(64);
+
+    auto vector_compl = ~vector;
+
+    for (uint64_t i = 0; i <= 65; ++i) {
+        uint64_t expected;
+        if (i <= 14) {
+            expected = 0ul;
+        } else if (i <= 17) {
+            expected = 15ul;
+        } else if (i <= 64) {
+            expected = 18ul;
+        } else {
+            expected = 65ul;
+        }
+        ASSERT_EQ(expected, vector.getStartOfZeroSequenceBefore(i)) << " input index is i=" << i;
+        ASSERT_EQ(expected, vector_compl.getStartOfOneSequenceBefore(i)) << " input index is i=" << i;
+    }
+}
+
 TEST(BitVectorTest, Iterator) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector.set(i, i % 2 == 0);
     }
 
+    uint64_t i = 0;
     for (auto bit : vector) {
-        ASSERT_TRUE(bit % 2 == 0);
+        ASSERT_EQ(i, bit);
+        i += 2;
     }
+    ASSERT_EQ(i, 32ull);
+}
+
+TEST(BitVectorTest, ReverseIterator) {
+    storm::storage::BitVector vector(547490);
+
+    uint64_t i = 2;
+    for (; i < vector.size(); i += 3) {
+        vector.set(i, true);
+    }
+
+    for (auto bitIt = vector.rbegin(); bitIt != vector.rend(); ++bitIt) {
+        i -= 3;
+        ASSERT_EQ(i, *bitIt);
+    }
+    ASSERT_EQ(i, 2ull);
 }
 
 TEST(BitVectorTest, CompareAndSwap) {

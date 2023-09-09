@@ -24,6 +24,19 @@ class DoubleViEnvironment {
     }
 };
 
+class DoubleViRegMultEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
+        return env;
+    }
+};
+
 class DoubleSoundViEnvironment {
    public:
     typedef double ValueType;
@@ -141,9 +154,9 @@ class MinMaxLinearEquationSolverTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<DoubleViEnvironment, DoubleSoundViEnvironment, DoubleIntervalIterationEnvironment, DoubleOptimisticViEnvironment,
-                         DoubleTopologicalViEnvironment, DoubleTopologicalCudaViEnvironment, DoublePIEnvironment, RationalPIEnvironment,
-                         RationalRationalSearchEnvironment>
+typedef ::testing::Types<DoubleViEnvironment, DoubleViRegMultEnvironment, DoubleSoundViEnvironment, DoubleIntervalIterationEnvironment,
+                         DoubleOptimisticViEnvironment, DoubleTopologicalViEnvironment, DoubleTopologicalCudaViEnvironment, DoublePIEnvironment,
+                         RationalPIEnvironment, RationalRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(MinMaxLinearEquationSolverTest, TestingTypes, );

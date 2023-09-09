@@ -1,6 +1,7 @@
 #ifndef STORM_UTILITY_CLI_H_
 #define STORM_UTILITY_CLI_H_
 
+#include <cstdint>
 #include <string>
 
 namespace storm {
