@@ -23,6 +23,8 @@ namespace storm {
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
             const std::string ParametricSettings::useMonotonicityName = "use-monotonicity";
 //            const std::string ParametricSettings::onlyGlobalName = "onlyGlobal";
+            const std::string ParametricSettings::timeTravellingEnabledName = "time-travel";
+            const std::string ParametricSettings::linearToSimpleEnabledName = "linear-to-simple";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -36,6 +38,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
 //                this->addOption(storm::settings::OptionBuilder(moduleName, onlyGlobalName, false, "If set, only global monotonicity will be used.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, timeTravellingEnabledName, false, "Enabled time travelling (flip transitions to improve PLA bounds).").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, linearToSimpleEnabledName, false, "Converts linear (constant * parameter) transitions to simple (only constant or parameter) transitions.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -72,6 +76,14 @@ namespace storm {
 
             bool ParametricSettings::isUseMonotonicitySet() const {
                 return this->getOption(useMonotonicityName).getHasOptionBeenSet();
+            }
+
+            bool ParametricSettings::isTimeTravellingEnabled() const {
+                return this->getOption(timeTravellingEnabledName).getHasOptionBeenSet();
+            }
+
+            bool ParametricSettings::isLinearToSimpleEnabled() const {
+                return this->getOption(linearToSimpleEnabledName).getHasOptionBeenSet();
             }
 //            bool ParametricSettings::isOnlyGlobalSet() const {
 //                return this->getOption(onlyGlobalName).getHasOptionBeenSet();

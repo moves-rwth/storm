@@ -69,6 +69,16 @@ namespace storm {
                  */
                 bool isUseMonotonicitySet() const;
 
+                /*! 
+                 * Retrieves whether time-travelling should be enabled.
+                 */
+				bool isTimeTravellingEnabled() const;
+
+                /*! 
+                 * Retrieves whether time-travelling should be enabled.
+                 */
+				bool isLinearToSimpleEnabled() const;
+
 //                bool isOnlyGlobalSet() const;
 
                 const static std::string moduleName;
@@ -83,6 +93,9 @@ namespace storm {
                 const static std::string samplesGraphPreservingOptionName;
                 const static std::string sampleExactOptionName;
                 const static std::string useMonotonicityName;
+				const static std::string timeTravellingEnabledName;
+				const static std::string linearToSimpleEnabledName;
+                
 //                const static std::string onlyGlobalName;
 
             };

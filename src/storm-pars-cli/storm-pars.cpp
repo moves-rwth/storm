@@ -1,3 +1,4 @@
+#include "adapters/RationalFunctionAdapter.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 
@@ -11,15 +12,18 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "storm-pars/transformer/TimeTravelling.h"
+
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm-pars/transformer/BinaryDtmcTransformer.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
@@ -48,7 +52,6 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-
 
 namespace storm {
     namespace pars {
@@ -293,6 +296,22 @@ namespace storm {
 
             if (mpi.applyBisimulation) {
                 result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+                result.changed = true;
+            }
+            
+            if (parametricSettings.isLinearToSimpleEnabled()) {
+                STORM_LOG_INFO("Transforming linear to simple...");
+                transformer::BinaryDtmcTransformer transformer;
+                result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
+                result.changed = true;
+            }
+
+            if (parametricSettings.isTimeTravellingEnabled()) {
+                transformer::TimeTravelling tt;
+                auto formulas = storm::api::extractFormulasFromProperties(input.properties);
+                modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
+                result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
+                    tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
                 result.changed = true;
             }
 
@@ -634,14 +653,6 @@ namespace storm {
 
                 derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-                // TODO Make Initial State flexible
-                uint_fast64_t initialState;           
-                const storm::storage::BitVector initialVector = dtmc->getStates("init");
-                for (uint_fast64_t x : initialVector) {
-                    initialState = x;
-                    break;
-                }
-                
                 modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
                 std::shared_ptr<storm::logic::Formula> formulaWithoutBound;
                 if (!referenceCheckTask.isRewardModelSet()) {
