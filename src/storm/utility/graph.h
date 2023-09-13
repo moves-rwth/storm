@@ -286,7 +286,7 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
  */
 template<typename T>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler);
+                                     storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that chooses an action that has at least one successor in the
