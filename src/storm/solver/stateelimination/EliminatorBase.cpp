@@ -21,6 +21,9 @@ EliminatorBase<ValueType, Mode>::EliminatorBase(storm::storage::FlexibleSparseMa
 
 template<typename ValueType, ScalingMode Mode>
 void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, bool clearRow) {
+    using MatrixEntry = storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
+                                                    typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type>;
+
     // Start by finding the entry in the given column.
     bool hasEntryInColumn = false;
     ValueType columnValue = storm::utility::zero<ValueType>();
@@ -104,12 +107,8 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         // First, find the probability with which the predecessor can move to the current state, because
         // the forward probabilities of the state to be eliminated need to be scaled with this factor.
         FlexibleRowType& predecessorForwardTransitions = matrix.getRow(predecessor);
-        FlexibleRowIterator multiplyElement =
-            std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(),
-                         [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                         typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) {
-                             return a.getColumn() == column;
-                         });
+        FlexibleRowIterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(),
+                                                           [&](MatrixEntry const& a) { return a.getColumn() == column; });
 
         // Make sure we have found the probability and set it to zero.
         STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException,
@@ -142,17 +141,13 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
             }
 
             if (first2 == last2) {
-                std::copy_if(first1, last1, result,
-                             [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                             typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) {
-                                 return a.getColumn() != column;
-                             });
+                std::copy_if(first1, last1, result, [&](MatrixEntry const& a) { return a.getColumn() != column; });
                 break;
             }
             if (first2->getColumn() < first1->getColumn()) {
-                auto successorEntry = storm::utility::simplify(std::move(*first2 * multiplyFactor));
-                *result = successorEntry;
-                newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorEntry.getValue());
+                ValueType successorValue = storm::utility::simplify<ValueType>((first2->getValue() * multiplyFactor));
+                *result = MatrixEntry(first2->getColumn(), successorValue);
+                newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorValue);
                 ++first2;
                 ++successorOffsetInNewBackwardTransitions;
             } else if (first1->getColumn() < first2->getColumn()) {
@@ -162,8 +157,7 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
                 ValueType sprod = multiplyFactor * first2->getValue();
                 ValueType sum = first1->getValue() + storm::utility::simplify(sprod);
                 auto probability = storm::utility::simplify(sum);
-                *result = storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                      typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), probability);
+                *result = MatrixEntry(first1->getColumn(), probability);
                 newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
                 ++first1;
                 ++first2;
@@ -172,9 +166,9 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         }
         for (; first2 != last2; ++first2) {
             if (first2->getColumn() != column) {
-                auto stateProbability = storm::utility::simplify(std::move(*first2 * multiplyFactor));
-                *result = stateProbability;
-                newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, stateProbability.getValue());
+                ValueType probability = storm::utility::simplify<ValueType>(first2->getValue() * multiplyFactor);
+                *result = MatrixEntry(first2->getColumn(), probability);
+                newBackwardEntries[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
                 ++successorOffsetInNewBackwardTransitions;
             }
         }
@@ -201,12 +195,8 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
         // Delete the current state as a predecessor of the successor state only if we are going to remove the
         // current state's forward transitions.
         if (clearRow) {
-            FlexibleRowIterator elimIt =
-                std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(),
-                             [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                             typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) {
-                                 return a.getColumn() == row;
-                             });
+            FlexibleRowIterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(),
+                                                      [&](MatrixEntry const& a) { return a.getColumn() == row; });
             STORM_LOG_ASSERT(elimIt != successorBackwardTransitions.end(),
                              "Expected a proper backward transition from " << successorEntry.getColumn() << " to " << column << ", but found none.");
             successorBackwardTransitions.erase(elimIt);
@@ -245,17 +235,9 @@ void EliminatorBase<ValueType, Mode>::eliminate(uint64_t row, uint64_t column, b
             }
         }
         if (isFilterPredecessor()) {
-            std::copy_if(first2, last2, result,
-                         [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                         typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) {
-                             return a.getColumn() != row && filterPredecessor(a.getColumn());
-                         });
+            std::copy_if(first2, last2, result, [&](MatrixEntry const& a) { return a.getColumn() != row && filterPredecessor(a.getColumn()); });
         } else {
-            std::copy_if(first2, last2, result,
-                         [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type,
-                                                         typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) {
-                             return a.getColumn() != row;
-                         });
+            std::copy_if(first2, last2, result, [&](MatrixEntry const& a) { return a.getColumn() != row; });
         }
         // Now move the new predecessors in place.
         successorBackwardTransitions = std::move(newPredecessors);
