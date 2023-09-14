@@ -1,3 +1,4 @@
+#include "adapters/RationalFunctionAdapter.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
@@ -15,6 +16,8 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "storm-pars/transformer/TimeTravelling.h"
+
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
@@ -25,12 +28,12 @@
 #include "storm-pars/settings/modules/PartitionSettings.h"
 
 
+#include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 
 #include "storm-pars/utility/parametric.h"
-
 
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
@@ -213,6 +216,22 @@ namespace storm {
 
             if (mpi.applyBisimulation) {
                 result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+                result.changed = true;
+            }
+            
+            if (parametricSettings.isLinearToSimpleEnabled()) {
+                STORM_LOG_INFO("Transforming linear to simple...");
+                transformer::BinaryDtmcTransformer transformer;
+                result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
+                result.changed = true;
+            }
+
+            if (parametricSettings.isTimeTravellingEnabled()) {
+                transformer::TimeTravelling tt;
+                auto formulas = storm::api::extractFormulasFromProperties(input.properties);
+                modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
+                result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
+                    tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
                 result.changed = true;
             }
 

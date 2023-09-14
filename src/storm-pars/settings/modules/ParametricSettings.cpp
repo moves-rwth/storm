@@ -19,6 +19,8 @@ namespace storm {
             const std::string transformContinuousOptionName = "transformcontinuous";
             const std::string transformContinuousShortOptionName = "tc";
             const std::string useMonotonicityName = "use-monotonicity";
+            const std::string timeTravellingEnabledName = "time-travel";
+            const std::string linearToSimpleEnabledName = "linear-to-simple";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> modes = {"feasibility", "verification", "monotonicity", "sampling", "solutionfunction", "partitioning"};
@@ -28,6 +30,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "the location.").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformContinuousOptionName, false, "Sets whether to transform a continuous time input model to a discrete time model.").setShortName(transformContinuousShortOptionName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, timeTravellingEnabledName, false, "Enabled time travelling (flip transitions to improve PLA bounds).").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, linearToSimpleEnabledName, false, "Converts linear (constant * parameter) transitions to simple (only constant or parameter) transitions.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -56,6 +60,13 @@ namespace storm {
                 return *mode;
             }
 
+            bool ParametricSettings::isTimeTravellingEnabled() const {
+                return this->getOption(timeTravellingEnabledName).getHasOptionBeenSet();
+            }
+
+            bool ParametricSettings::isLinearToSimpleEnabled() const {
+                return this->getOption(linearToSimpleEnabledName).getHasOptionBeenSet();
+            }
 
         } // namespace modules
     } // namespace settings

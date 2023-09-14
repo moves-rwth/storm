@@ -476,21 +476,17 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
 
 template<typename T>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler) {
+                                     storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
-        bool setValue = false;
-        STORM_LOG_ASSERT(nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state] > 0,
-                         "Expected at least one action enabled in state " << state);
-        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-            bool allSuccessorsInStates = true;
-            for (auto const& element : transitionMatrix.getRow(choice)) {
-                if (!states.get(element.getColumn())) {
-                    allSuccessorsInStates = false;
-                    break;
-                }
+        [[maybe_unused]] bool setValue{false};
+        for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
+            if (rowFilter && !rowFilter->get(choice)) {
+                continue;
             }
+            auto const row = transitionMatrix.getRow(choice);
+            bool const allSuccessorsInStates = std::all_of(row.begin(), row.end(), [&states](auto const& entry) { return states.get(entry.getColumn()); });
             if (allSuccessorsInStates) {
                 for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                     scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);

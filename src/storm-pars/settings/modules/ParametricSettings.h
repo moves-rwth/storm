@@ -45,9 +45,17 @@ namespace storm::settings::modules {
                  */
                 pars::utility::ParametricMode getOperationMode() const;
 
+                /*! 
+                 * Retrieves whether time-travelling should be enabled.
+                 */
+				bool isTimeTravellingEnabled() const;
+
+                /*! 
+                 * Retrieves whether time-travelling should be enabled.
+                 */
+				bool isLinearToSimpleEnabled() const;
+
                 const static std::string moduleName;
-                
-            private:
 
             };
 }
