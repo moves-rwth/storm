@@ -201,7 +201,7 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         storm::utility::Stopwatch watch(true);
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(
             model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true), task->getRegion(), engine, direction,
-            storm::utility::zero<ValueType>(), !task->isMaxGapRelative(), monotonicitySettings, task->getBound(), generateSplitEstimates);
+            storm::utility::zero<ValueType>(), !task->isMaxGapRelative(), monotonicitySettings, task->getBound().getInvertedBound(), generateSplitEstimates);
         watch.stop();
 
         printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);

@@ -39,6 +39,10 @@ struct Bound {
         return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
     }
 
+    Bound getInvertedBound() const {
+        return Bound(invert(comparisonType), threshold);
+    }
+
     friend std::ostream& operator<<(std::ostream& out, Bound const& bound);
 };
 

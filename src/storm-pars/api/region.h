@@ -258,14 +258,14 @@ namespace storm {
                                                                                                                   boost::optional<ValueType> const& precision,
                                                                                                                   bool absolutePrecision,
                                                                                                                   MonotonicitySetting const& monotonicitySetting,
-                                                                                                                  std::optional<storm::logic::Bound> const& bound,
+                                                                                                                  std::optional<storm::logic::Bound> const& boundInvariant,
                                                                                                                   bool generateSplitEstimates = false,
                                                                                                                   std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
             Environment env;
             bool preconditionsValidated = false;
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
-            auto res = regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision, bound);
+            auto res = regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision, boundInvariant);
             STORM_LOG_ASSERT(res.first.isConstant(), "result must be a constant");
             return {storm::utility::convertNumber<storm::RationalNumber>(res.first.constantPart()), std::move(res.second)};
         }

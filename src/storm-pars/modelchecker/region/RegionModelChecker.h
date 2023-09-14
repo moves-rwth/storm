@@ -18,7 +18,7 @@ namespace storm {
     
     class Environment;
     
-    namespace modelchecker{
+    namespace modelchecker {
 
     // TODO type names are inconsistent and all over the place
         template<typename ParametricType>
@@ -66,12 +66,23 @@ namespace storm {
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, uint64_t monThresh = 0);
 
             // TODO return type is not quite nice
+            // TODO consider returning v' as well
             /*!
              * Finds the extremal value within the given region and with the given precision.
              * The returned value v corresponds to the value at the returned valuation.
-             * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
+             * The actual maximum (minimum) lies in the interval [v, v'] ([v', v])
+             * where v' is based on the precision. (With absolute precision, v' = v +/- precision).
+             * TODO: Check documentation, which was incomplete.
+             *
+             * @param env
+             * @param region The region in which to optimize
+             * @param dir The direction in which to optimize
+             * @param precision The required precision (unless boundInvariant is set).
+             * @param absolutePrecision true iff precision should be measured absolutely
+             * @param boundInvariant if this invariant on v is violated, the algorithm may return v while violating the precision requirements.
+             * @return
              */
-            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& terminationBound = std::nullopt);
+            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant = std::nullopt);
             /*!
              * Checks whether the bound is satisfied on the complete region.
              * @return

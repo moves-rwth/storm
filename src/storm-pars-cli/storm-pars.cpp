@@ -303,7 +303,7 @@ namespace storm {
             auto const& rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
             auto engine = rvs.getRegionCheckEngine();
             bool generateSplitEstimates = rvs.isSplittingThresholdSet();
-            std::optional<uint64_t> maxSplitsPerStep = rvs.getSplittingThreshold();
+            std::optional<uint64_t> maxSplitsPerStep = generateSplitEstimates ? std::make_optional(rvs.getSplittingThreshold()) : std::nullopt;
             storm::utility::Stopwatch watch(true);
             if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine,  monotonicitySettings, generateSplitEstimates, maxSplitsPerStep)) {
                 STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
@@ -524,11 +524,11 @@ int main(const int argc, const char** argv) {
 
         storm::utility::cleanUp();
         return 0;
-//    } catch (storm::exceptions::BaseException const& exception) {
-//        STORM_LOG_ERROR("An exception caused Storm-pars to terminate. The message of the exception is: " << exception.what());
-//        return 1;
-//    } catch (std::exception const& exception) {
-//        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pars to terminate. The message of this exception is: " << exception.what());
-//        return 2;
-//    }
+    } catch (storm::exceptions::BaseException const& exception) {
+        STORM_LOG_ERROR("An exception caused Storm-pars to terminate. The message of the exception is: " << exception.what());
+        return 1;
+    } catch (std::exception const& exception) {
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pars to terminate. The message of this exception is: " << exception.what());
+        return 2;
+    }
 }
