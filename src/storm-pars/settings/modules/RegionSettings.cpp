@@ -209,7 +209,6 @@ namespace storm {
                 return this->getOption(splittingThresholdName).getHasOptionBeenSet();
             }
 
-
         } // namespace modules
     } // namespace settings
 } // namespace storm
