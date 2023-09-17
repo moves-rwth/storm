@@ -11,215 +11,163 @@ on:
   pull_request:
 
 env:
-  CARL_GIT_URL: "https://github.com/moves-rwth/carl-storm.git"
-  STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
-  STORM_BRANCH: "${{ github.ref }}"
-  # github runners currently have two cores
+  # GitHub runners currently have two cores
   NR_JOBS: "2"
-
-  # cmake arguments
-  CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
-  CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
-
-  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug"
-  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release"
 
 jobs:
   # Perform in-depth tests with different configurations
   indepthTests:
-    name: Indepth Tests (${{ matrix.cmakeArgs.name }})
+    name: Indepth Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
-    env:
-      DISTRO: "ubuntu-22.04"
     strategy:
       matrix:
-        cmakeArgs:
-          - {name: "GMP exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          # This is the standard config
-          # - {name: "GMP exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
-          - {name: "CLN exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "CLN exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "GMP exact; CLN rational functions; No Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=OFF -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
+        config:
+          - {name: "GMP exact; GMP rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
+          - {name: "CLN exact; GMP rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
+          - {name: "CLN exact; CLN rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
+          - {name: "GMP exact; CLN rational functions; No Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=OFF -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
     steps:
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
       - name: Git clone
-        # git clone cannot clone individual commits based on a sha and some other refs
-        # this workaround fixes this and fetches only one commit
+        uses: actions/checkout@v3
+      - name: Replace Dockerfile
+        run: cp .github/workflows/Dockerfile.carl_implicit Dockerfile
+      - name: Build storm from Dockerfile
+        run: docker build -t movesrwth/storm:ci . --build-arg build_type="${{ matrix.config.buildType }}" --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+
+      # A bit hacky... but its usefulness has been proven in production
+      - name: Check release makeflags
+        if: matrix.config.buildType == 'Release'
         run: |
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${{ matrix.cmakeArgs.args }}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+      - name: Check debug makeflags
+        if: matrix.config.buildType == 'Debug'
+        run: |
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
+
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
 
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
     # Run on latest Archlinux version to get most recent compiler versions
-    name: Compiler Tests (${{ matrix.compilers.name }})
+    name: Compiler Tests (${{ matrix.compilers.name }}, ${{ matrix.compilers.buildType }})
     runs-on: ubuntu-latest
-    env:
-      DISTRO: "archlinux:latest"
     strategy:
       matrix:
         compilers:
-          - {name: "GCC", args: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++", packages: ""}
-          - {name: "Clang", args: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++", packages: "clang"}
+          - {name: "GCC", buildType: "Debug", cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON", packages: ""}
+          - {name: "Clang", buildType: "Debug", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON", packages: "clang"}
     steps:
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged ${DISTRO}
-      - name: Sync Archlinux
-        run: sudo docker exec storm bash -c "pacman -Sy"
-      - name: Install dependencies
-        run: sudo docker exec storm bash -c "pacman -S --noconfirm base-devel git cmake boost cln gmp ginac glpk hwloc z3 xerces-c eigen ${{ matrix.compilers.packages }}"
       - name: Git clone
-        # git clone cannot clone individual commits based on a sha and some other refs
-        # this workaround fixes this and fetches only one commit
-        run: |
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${{ matrix.compilers.args }} ${CMAKE_RELEASE}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+        uses: actions/checkout@v3
+      - name: Replace Dockerfile
+        run: cp .github/workflows/Dockerfile.archlinux Dockerfile
+      - name: Build storm from Dockerfile
+        run: docker build -t movesrwth/storm:ci . --build-arg build_type="${{ matrix.compilers.buildType }}" --build-arg cmake_args="${{ matrix.compilers.cmakeArgs }}" --build-arg packages="${{ matrix.compilers.packages }}" --build-arg no_threads=${NR_JOBS}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
 
-  noDeploy:
-    name: Build and Test
+      # A bit hacky... but its usefulness has been proven in production
+      - name: Check release makeflags
+        if: matrix.compilers.buildType == 'Release'
+        run: |
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+      - name: Check debug makeflags
+        if: matrix.compilers.buildType == 'Debug'
+        run: |
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
+
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+
+  distroTests:
+    name: Distro Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-11", "ubuntu-20.04", "ubuntu-22.04"]
-        debugOrRelease: ["release"]
+        distro: ["debian-11", "debian-12", "ubuntu-20.04", "ubuntu-22.04"]
+        buildType: ["Release"]
     steps:
-      - name: Setup cmake arguments
-        # this is strangely the best way to implement environment variables based on the value of another
-        # GITHUB_ENV is a magic variable pointing to a file; if a line with format {NAME}={VALUE}
-        # then the env variable with name NAME will be created/updated with VALUE
-        run: |
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CMAKE_ARGS=${CMAKE_DEBUG}" || echo "CMAKE_ARGS=${CMAKE_RELEASE}") >> $GITHUB_ENV
-
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${{ matrix.distro }}
       - name: Git clone
-        # git clone cannot clone individual commits based on a sha and some other refs
-        # this workaround fixes this and fetches only one commit
-        run: |
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+        uses: actions/checkout@v3
+      - name: Build storm from Dockerfile
+        run: docker build -t movesrwth/storm:ci . --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} --build-arg build_type="${{ matrix.buildType }}" --build-arg no_threads=${NR_JOBS}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
 
-        # A bit hacky... but its usefullnes has been proven in production
+        # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
-        if: matrix.debugOrRelease == 'release'
+        if: matrix.buildType == 'Release'
         run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
       - name: Check debug makeflags
-        if: matrix.debugOrRelease == 'debug'
+        if: matrix.buildType == 'Debug'
         run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
 
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
   deploy:
-    name: Build, Test and Deploy
+    name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
-    env:
-      DISTRO: "latest"
     strategy:
       matrix:
-        debugOrRelease: ["debug", "release"]
+        buildType:
+          - {name: "Debug", dockerTag: "ci-debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
+          - {name: "Release", dockerTag: "ci", cmakeArgs: "-DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
     steps:
-      - name: Setup cmake arguments
-        # this is strangely the best way to implement environment variables based on the value of another
-        # GITHUB_ENV is a magic variable pointing to a file; if a line with format {NAME}={VALUE}
-        # then the env variable with name NAME will be created/updated with VALUE
+      - name: Git clone
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Build storm from Dockerfile
+        run: docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . --build-arg build_type="${{ matrix.buildType.name }}" --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
+
+        # A bit hacky... but its usefulness has been proven in production
+      - name: Check release makeflags
+        if: matrix.buildType.name == 'Release'
         run: |
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CMAKE_ARGS=${CMAKE_DEBUG}" || echo "CMAKE_ARGS=${CMAKE_RELEASE}") >> $GITHUB_ENV
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CARL_CMAKE_ARGS=${CARL_CMAKE_DEBUG}" || echo "CARL_CMAKE_ARGS=${CARL_CMAKE_RELEASE}") >> $GITHUB_ENV
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+      - name: Check debug makeflags
+        if: matrix.buildType.name == 'Debug'
+        run: |
+          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
+
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
-
-        #####
-        # Build & DEPLOY CARL
-        #####
-        # We should not do partial updates :/
-        # but we need to install some dependencies
-        # Surely we can find a better way to do this at some point
-      - name: Update base system
-        run: |
-          sudo docker exec storm apt-get update
-          sudo docker exec storm apt-get upgrade -qqy
-      - name: install dependencies
-        run: sudo docker exec storm apt-get install -qq -y uuid-dev pkg-config
-      - name: Git clone carl
-        run: sudo docker exec storm git clone --depth 1 $CARL_GIT_URL /opt/carl
-      - name: Run cmake for carl
-        run: sudo docker exec storm bash -c "mkdir /opt/carl/build; cd /opt/carl/build; cmake .. ${CARL_CMAKE_ARGS}"
-      - name: Build carl
-        run: sudo docker exec storm bash -c "cd /opt/carl/build; make lib_carl -j ${NR_JOBS}"
-      - name: Deploy carl
-        # Only deploy if using master on original repo (and not for pull requests or forks)
-        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: |
-          sudo docker commit storm movesrwth/carl:ci-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/carl:ci-${{ matrix.debugOrRelease }}
-
-
-        #####
-        # Build & TEST & DEPLOY STORM
-        #####
-      - name: Git shallow clone
-        # Only clone shallow if not using master on original repo (and not for pull requests or forks)
-        if: ${{ !(github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master') }}
-        run: |
-          # git clone cannot clone individual commits based on a sha and some other refs
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Git deep clone
-        # needed for versioning for now on deployment
-        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: |
-          sudo docker exec storm git clone --branch master $STORM_GIT_URL /opt/storm
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
-
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.debugOrRelease == 'release'
-        run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.debugOrRelease == 'debug'
-        run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-
+        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
       - name: Deploy storm
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
-          sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
+          docker commit ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
+          docker push movesrwth/storm:${{ matrix.buildType.dockerTag }}
 
   notify:
     name: Email notification
     runs-on: ubuntu-latest
-    needs: [indepthTests, noDeploy, deploy]
+    needs: [indepthTests, compilerTests, distroTests, deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:

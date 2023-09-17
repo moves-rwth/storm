@@ -1,13 +1,9 @@
-# Base Dockerfile for using Storm
-#################################
+# Base Dockerfile for using Storm on Archlinux
+##############################################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
-# A different base image can be set from the commandline with:
-# --build-arg BASE_IMG=<new_base_image>
 
-# Set base image
-ARG BASE_IMG=movesrwth/storm-basesystem:latest
-FROM $BASE_IMG
+FROM archlinux:latest
 MAINTAINER Matthias Volk <m.volk@utwente.nl>
 
 # Specify configurations
@@ -19,26 +15,13 @@ ARG build_type=Release
 ARG no_threads=1
 # Specify CMake arguments for Storm
 ARG cmake_args="-DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
+# Additional packages
+ARG packages=""
 
-
-# Build Carl
-############
-# Explicitly build the Carl library
-# This is needed when using pycarl/stormpy later on
-WORKDIR /opt/
-
-# Obtain Carl from public repository
-RUN git clone https://github.com/moves-rwth/carl-storm.git carl
-
-# Switch to build directory
-RUN mkdir -p /opt/carl/build
-WORKDIR /opt/carl/build
-
-# Configure Carl
-RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type
-
-# Build Carl library
-RUN make lib_carl -j $no_threads
+# Install dependencies
+######################
+RUN pacman -Syu --noconfirm  # Updates needed as Archlinux is rolling release
+RUN pacman -S --noconfirm base-devel git cmake boost cln gmp ginac glpk hwloc z3 xerces-c eigen $packages
 
 
 # Build Storm

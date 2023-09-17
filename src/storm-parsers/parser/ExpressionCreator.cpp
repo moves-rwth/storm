@@ -178,9 +178,9 @@ storm::expressions::Expression ExpressionCreator::createMultExpression(storm::ex
     return manager.boolean(false);
 }
 
-storm::expressions::Expression ExpressionCreator::createPowerModuloExpression(storm::expressions::Expression const& e1,
-                                                                              storm::expressions::OperatorType const& operatorType,
-                                                                              storm::expressions::Expression const& e2, bool& pass) const {
+storm::expressions::Expression ExpressionCreator::createPowerModuloLogarithmExpression(storm::expressions::Expression const& e1,
+                                                                                       storm::expressions::OperatorType const& operatorType,
+                                                                                       storm::expressions::Expression const& e2, bool& pass) const {
     if (this->createExpressions) {
         try {
             switch (operatorType) {
@@ -189,6 +189,9 @@ storm::expressions::Expression ExpressionCreator::createPowerModuloExpression(st
                     break;
                 case storm::expressions::OperatorType::Modulo:
                     return e1 % e2;
+                    break;
+                case storm::expressions::OperatorType::Logarithm:
+                    return storm::expressions::logarithm(e1, e2);
                     break;
                 default:
                     STORM_LOG_ASSERT(false, "Invalid operation.");

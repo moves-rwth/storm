@@ -48,6 +48,26 @@ TEST(PrismParser, SimpleTest) {
     EXPECT_FALSE(result.hasUnboundedVariables());
 }
 
+TEST(PrismParser, expressionTest) {
+    std::string testInput = R"(dtmc
+
+        module test
+	        c : [0..1] init 0;
+	        [] c = ceil(log(1,2)) -> (c'=1);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
+    EXPECT_FALSE(result.hasUnboundedVariables());
+    EXPECT_EQ(1ul, result.getNumberOfModules());
+    ASSERT_TRUE(result.hasModule("test"));
+    EXPECT_EQ(1ul, result.getModule("test").getNumberOfCommands());
+    auto const& guard = result.getModule("test").getCommands().front().getGuardExpression().getBaseExpression();
+    ASSERT_TRUE(guard.isBinaryRelationExpression());
+    EXPECT_EQ(0ll, guard.asBinaryRelationExpression().getSecondOperand()->evaluateAsInt());
+}
+
 TEST(PrismParser, ComplexTest) {
     std::string testInput =
         R"(ma

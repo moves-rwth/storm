@@ -537,6 +537,13 @@ Expression modulo(Expression const& first, Expression const& second) {
     return first % second;
 }
 
+Expression logarithm(Expression const& first, Expression const& second) {
+    assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+    return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(
+        first.getBaseExpression().getManager(), first.getType().logarithm(second.getType()), first.getBaseExpressionPointer(),
+        second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Logarithm)));
+}
+
 Expression apply(std::vector<storm::expressions::Expression> const& expressions,
                  std::function<Expression(Expression const&, Expression const&)> const& function) {
     STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build function application of empty expression list.");
