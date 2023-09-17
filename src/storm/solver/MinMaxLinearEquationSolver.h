@@ -71,6 +71,16 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     void unsetOptimizationDirection();
 
     /*!
+     * Set whether uncertainty should be interpreted adverserially (robust) or not
+     */
+    void setUncertaintyIsRobust(bool robust);
+
+    /*!
+     * Is the uncertainty to be interpreted robustly (adverserially) or not?
+     */
+    bool isUncertaintyRobust() const;
+
+    /*!
      * Sets the states for which the choices are fixed.
      * @param schedulerFixedForRowGroup bitvector with the states where the choices are fixed.
      */
@@ -209,7 +219,7 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     bool requirementsChecked;
 
     /// For uncertain models, if this flag is set to true, the uncertainty is resolved adverserially and angelically otherwise.
-    bool robust;  // TODO use.
+    bool robustUncertainty;
 };
 
 template<typename ValueType, typename SolutionType = ValueType>

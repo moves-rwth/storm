@@ -139,25 +139,20 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
 
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b,
-                                                                                    OptimizationDirection const& dir, bool updateX) const {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We did not implement optimistic value iteration for interval-based models.";
-        return;
+                                                                                    OptimizationDirection const& dir, bool updateX, bool robust) const {
+    // Make sure that storage for scheduler choices is available
+    if (!this->schedulerChoices) {
+        this->schedulerChoices = std::vector<uint64_t>(x.size(), 0);
     } else {
-        // Make sure that storage for scheduler choices is available
-        if (!this->schedulerChoices) {
-            this->schedulerChoices = std::vector<uint64_t>(x.size(), 0);
-        } else {
-            this->schedulerChoices->resize(x.size(), 0);
-        }
-        // Set the correct choices.
-        STORM_LOG_WARN_COND(viOperator, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
-        if (!viOperator) {
-            setUpViOperator();
-        }
-        storm::solver::helper::SchedulerTrackingHelper<ValueType> schedHelper(viOperator);
-        schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, updateX ? &x : nullptr);
+        this->schedulerChoices->resize(x.size(), 0);
     }
+    // Set the correct choices.
+    STORM_LOG_WARN_COND(viOperator, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
+    if (!viOperator) {
+        setUpViOperator();
+    }
+    storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType> schedHelper(viOperator);
+    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr);
 }
 
 template<typename ValueType, typename SolutionType>
@@ -471,7 +466,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir);
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
         }
 
         if (!this->isCachingEnabled()) {
@@ -554,12 +549,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
     this->startMeasureProgress();
     auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                              env.solver().minMax().getMultiplicationStyle());
+                              env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
     this->reportStatus(status, numIterations);
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {
-        this->extractScheduler(x, b, dir);
+        this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
     }
 
     if (!this->isCachingEnabled()) {
@@ -612,7 +607,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir);
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
         }
 
         if (!this->isCachingEnabled()) {
@@ -663,7 +658,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir);
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
         }
 
         this->reportStatus(status, numIterations);
@@ -756,7 +751,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir);
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
         }
 
         if (!this->isCachingEnabled()) {

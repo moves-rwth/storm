@@ -56,6 +56,7 @@ class SolveGoal {
             comparisonType = checkTask.getBoundComparisonType();
             threshold = checkTask.getBoundThreshold();
         }
+        robustAgainstUncertainty = checkTask.getRobustUncertainty();
     }
 
     SolveGoal(bool minimize);
@@ -74,6 +75,8 @@ class SolveGoal {
     bool minimize() const;
 
     OptimizationDirection direction() const;
+
+    bool isRobust() const;
 
     bool isBounded() const;
 
@@ -97,6 +100,7 @@ class SolveGoal {
     boost::optional<storm::logic::ComparisonType> comparisonType;
     boost::optional<SolutionType> threshold;
     boost::optional<storm::storage::BitVector> relevantValueVector;
+    bool robustAgainstUncertainty = true; // If set to false, the uncertainty is interpreted as controllable.
 };
 
 template<typename ValueType, typename MatrixType, typename SolutionType>

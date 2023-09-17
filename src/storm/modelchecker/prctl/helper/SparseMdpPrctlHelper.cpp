@@ -162,13 +162,13 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     }
 }
 
-template<typename ValueType>
+template<typename ValueType, typename SolutionType = ValueType>
 std::vector<uint_fast64_t> computeValidSchedulerHint(Environment const& env, SemanticSolutionType const& type,
                                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                      storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates,
                                                      storm::storage::BitVector const& targetStates) {
-    storm::storage::Scheduler<ValueType> validScheduler(maybeStates.size());
+    storm::storage::Scheduler<SolutionType> validScheduler(maybeStates.size());
 
     if (type == SemanticSolutionType::UntilProbabilities) {
         storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
@@ -368,7 +368,7 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
         // If the solver requires an initial scheduler, compute one now. Note that any scheduler is valid if there are no end components.
         if (requirements.validInitialScheduler() && !result.noEndComponents) {
             STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-            result.schedulerHint = computeValidSchedulerHint(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+            result.schedulerHint = computeValidSchedulerHint<ValueType, SolutionType>(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
             requirements.clearValidInitialScheduler();
         }
 
@@ -559,19 +559,28 @@ QualitativeStateSetsUntilProbabilities getQualitativeStateSetsUntilProbabilities
     }
 }
 
-template<typename ValueType>
-void extractSchedulerChoices(storm::storage::Scheduler<ValueType>& scheduler, std::vector<uint_fast64_t> const& subChoices,
+template<typename SolutionType, bool subChoicesCoverOnlyMaybeStates = true>
+void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler, std::vector<uint64_t> const& subChoices,
                              storm::storage::BitVector const& maybeStates) {
-    auto subChoiceIt = subChoices.begin();
-    for (auto maybeState : maybeStates) {
-        scheduler.setChoice(*subChoiceIt, maybeState);
-        ++subChoiceIt;
+    if constexpr (subChoicesCoverOnlyMaybeStates) {
+        auto subChoiceIt = subChoices.begin();
+        for (auto maybeState : maybeStates) {
+            scheduler.setChoice(*subChoiceIt, maybeState);
+            ++subChoiceIt;
+        }
+        assert(subChoiceIt == subChoices.end());
+    } else {
+        // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
+        // Consequentially, we run a slightly different code here for interval-based models.
+        assert(maybeStates.size() == subChoices.size());
+        for (auto maybeState : maybeStates) {
+            scheduler.setChoice(subChoices[maybeState], maybeState);
+        }
     }
-    assert(subChoiceIt == subChoices.end());
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
                      QualitativeStateSetsUntilProbabilities const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates,
                      storm::storage::BitVector const& psiStates) {
@@ -605,7 +614,8 @@ void computeFixedPointSystemUntilProbabilities(storm::solver::SolveGoal<ValueTyp
         // TODO: we can drop more than those entries and actually remove many states (all but the ones reachable in one step from the maybe states),
         // TODO ctned: however, there is quite some bookkeeping involved in projecting the right vectors.
         // TODO ctned: Instead is likely easier to just do a pass and make a unique sink and a unique target state.
-        submatrix = transitionMatrix.filterEntries(qualitativeStateSets.maybeStates);
+        // TODO ctned: If this is ever changed, extractSchedulerChoices must also be updated.
+        submatrix = transitionMatrix.filterEntries(transitionMatrix.getCorrespondingRows(qualitativeStateSets.maybeStates));
 
         // Prepare the right-hand side of the equation system. For entry i this corresponds to
         // the accumulated probability of going from state i to some state that has probability 1.
@@ -756,13 +766,9 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
             } else {
                 // Set values of resulting vector according to result.
-                if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-                    storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
-                    if (produceScheduler) {
-                        extractSchedulerChoices(*scheduler, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates);
-                    }
-                } else {
-                    STORM_LOG_THROW(produceScheduler, storm::exceptions::NotImplementedException, "Exporting schedulers with robust VI not supported");
+                storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                if (produceScheduler) {
+                    extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates);
                 }
             }
         }
@@ -770,11 +776,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
 
     // Extend scheduler with choices for the states in the qualitative state sets.
     if (produceScheduler) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-            throw storm::exceptions::NotImplementedException() << "We do not support this function with interval models.";
-        } else {
-            extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
-        }
+        extendScheduler(*scheduler, goal, qualitativeStateSets, transitionMatrix, backwardTransitions, phiStates, psiStates);
     }
 
     // Sanity check for created scheduler.
@@ -1103,7 +1105,7 @@ QualitativeStateSetsReachabilityRewards getQualitativeStateSetsReachabilityRewar
 }
 
 template<typename ValueType, typename SolutionType>
-void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
+void extendScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::solver::SolveGoal<ValueType, SolutionType> const& goal,
                      QualitativeStateSetsReachabilityRewards const& qualitativeStateSets, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates,
                      std::function<storm::storage::BitVector()> const& zeroRewardChoicesGetter) {
@@ -1123,8 +1125,8 @@ void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::sol
     }
 }
 
-template<typename ValueType>
-void extractSchedulerChoices(storm::storage::Scheduler<ValueType>& scheduler, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+template<typename ValueType, typename SolutionType>
+void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                              std::vector<uint_fast64_t> const& subChoices, storm::storage::BitVector const& maybeStates,
                              boost::optional<storm::storage::BitVector> const& selectedChoices) {
     auto subChoiceIt = subChoices.begin();
@@ -1303,12 +1305,12 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     storm::utility::vector::setVectorValues(result, qualitativeStateSets.infinityStates, storm::utility::infinity<SolutionType>());
 
     // If requested, we will produce a scheduler.
-    std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
+    std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
     if (produceScheduler) {
         if constexpr (std::is_same_v<ValueType, storm::Interval>) {
             throw storm::exceptions::NotImplementedException() << "We do not support producing schedulers in this function with interval models.";
         } else {
-            scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
+            scheduler = std::make_unique<storm::storage::Scheduler<SolutionType>>(transitionMatrix.getRowGroupCount());
         }
     }
 

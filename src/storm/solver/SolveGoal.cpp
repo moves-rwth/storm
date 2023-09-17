@@ -109,6 +109,11 @@ bool SolveGoal<ValueType, SolutionType>::boundIsStrict() const {
 }
 
 template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::isRobust() const {
+    return robustAgainstUncertainty;
+}
+
+template<typename ValueType, typename SolutionType>
 SolutionType const& SolveGoal<ValueType, SolutionType>::thresholdValue() const {
     return threshold.get();
 }

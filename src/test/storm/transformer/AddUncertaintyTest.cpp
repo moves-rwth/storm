@@ -16,5 +16,5 @@ TEST(AddUncertaintyTransformerTest, BrpTest) {
 
     auto transformer = storm::transformer::AddUncertainty(model);
     auto uncertainModel = transformer.transform(0.01);
-    // TODO
+    EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
 }

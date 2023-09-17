@@ -290,9 +290,9 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
  * @param transitionMatrix The transition matrix.
  * @param scheduler The resulting scheduler. The scheduler is only set at the given states.
  */
-template<typename T>
+template<typename T, typename SchedulerType>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler);
+                                     storm::storage::Scheduler<SchedulerType>& scheduler);
 
 /*!
  * Computes a scheduler for the given states that chooses an action that has at least one successor in the
@@ -320,10 +320,10 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
  * @note No choice is defined for ProbGreater0E-States if all the probGreater0-choices violate the row filter.
  *       This also holds for states that only reach psi via such states.
  */
-template<typename T>
+template<typename T, typename SchedulerType>
 void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                   storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+                                   storm::storage::Scheduler<SchedulerType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a reward infinity.
@@ -333,9 +333,9 @@ void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transi
  * @param backwardTransitions The reversed transition relation.
  * @param scheduler The resulting scheduler for the rewInf States. The scheduler is not set at other states.
  */
-template<typename T>
+template<typename T, typename SchedulerType>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<T>& scheduler);
+                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<SchedulerType>& scheduler);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a probability 0.
@@ -344,9 +344,9 @@ void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm
  * @param transitionMatrix The transition matrix of the system.
  * @param scheduler The resulting scheduler for the prob0EStates States. The scheduler is not set at probGreater0A states.
  */
-template<typename T>
+template<typename T, typename SchedulerType>
 void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<T>& scheduler);
+                            storm::storage::Scheduler<SchedulerType>& scheduler);
 
 /*!
  * Computes a scheduler for the given prob1EStates such that in the induced system the given psiStates are reached with probability 1.
@@ -359,10 +359,10 @@ void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm
  * @param scheduler The resulting scheduler for the prob1EStates. The scheduler is not set at the remaining states.
  * @param rowFilter If given, only scheduler choices within this filter are taken. This filter is ignored for the psiStates.
  */
-template<typename T>
+template<typename T, typename SchedulerType>
 void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
                             storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler,
+                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerType>& scheduler,
                             boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!

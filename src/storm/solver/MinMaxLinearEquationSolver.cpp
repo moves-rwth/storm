@@ -183,6 +183,16 @@ bool MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::isRequirementsC
 }
 
 template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyIsRobust(bool robust) {
+    this->robustUncertainty = robust;
+}
+
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isUncertaintyRobust() const {
+    return this->robustUncertainty;
+}
+
+template<typename ValueType, typename SolutionType>
 MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getRequirements(
     Environment const& env, bool hasUniqueSolution, bool hasNoEndComponents, boost::optional<storm::solver::OptimizationDirection> const& direction,
     bool hasInitialScheduler, bool trackScheduler) const {

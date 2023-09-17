@@ -121,6 +121,11 @@ class ValueIterationOperator {
         return apply(operand, operand, offsets, backend);
     }
 
+    template<OptimizationDirection RobustDir, typename OperandType, typename OffsetType, typename BackendType>
+    bool applyInPlaceRobust(OperandType& operand, OffsetType const& offsets, BackendType& backend) const {
+        return applyRobust<RobustDir>(operand, operand, offsets, backend);
+    }
+
     /*!
      * Sets rows that will be skipped when applying the operator.
      * @note each row group shall have at least one row that is not ignored

@@ -59,7 +59,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     bool solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const;
 
     void setUpViOperator() const;
-    void extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir, bool updateX = true) const;
+    void extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir, bool robust, bool updateX = true) const;
 
     void createLinearEquationSolver(Environment const& env) const;
 
