@@ -451,6 +451,7 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
+    solver->setUncertaintyIsRobust(goal.isRobust());
     solver->setHasUniqueSolution(hint.hasUniqueSolution());
     solver->setHasNoEndComponents(hint.hasNoEndComponents());
     if (hint.hasLowerResultBound()) {
@@ -737,13 +738,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             // If the hint information tells us that we have to eliminate MECs, we do so now.
             boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
             if (hintInformation.getEliminateEndComponents()) {
-                if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-                    throw storm::exceptions::NotImplementedException()
-                        << "We do not support the elimination of end components and the creation of an adequate equation system with interval models.";
-                } else {
                     ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(goal, transitionMatrix, backwardTransitions,
                                                                                                     qualitativeStateSets, submatrix, b, produceScheduler);
-                }
             } else {
                 // Otherwise, we compute the standard equations.
                 computeFixedPointSystemUntilProbabilities(goal, transitionMatrix, qualitativeStateSets, submatrix, b);
@@ -756,7 +752,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             // If we eliminated end components, we need to extract the result differently.
             if (ecInformation && ecInformation.get().getEliminatedEndComponents()) {
                 if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-                    throw storm::exceptions::NotImplementedException() << "We do not support this function with interval models.";
+                    throw storm::exceptions::NotImplementedException() << "We do not support this end component with interval models.";
                 } else {
                     ecInformation.get().setValues(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                     if (produceScheduler) {

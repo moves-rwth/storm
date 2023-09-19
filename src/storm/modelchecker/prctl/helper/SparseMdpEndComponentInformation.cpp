@@ -8,6 +8,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 
+#include "storm/exceptions/NotImplementedException.h"
+
 namespace storm {
 namespace modelchecker {
 namespace helper {
@@ -103,7 +105,11 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix,
     std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
-
+    // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        throw storm::exceptions::NotImplementedException()
+            << "We do not support the elimination of end components and the creation of an adequate equation system with interval models.";
+    }
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
     std::vector<uint64_t> const& maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
     uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
@@ -241,6 +247,11 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates,
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
+    // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        throw storm::exceptions::NotImplementedException()
+            << "We do not support the elimination of end components and the creation of an adequate equation system with interval models.";
+    }
 
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
     std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();

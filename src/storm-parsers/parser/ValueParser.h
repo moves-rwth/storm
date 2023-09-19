@@ -129,12 +129,14 @@ inline storm::Interval parseNumber(std::string const& value, bool logError) {
                     "Could not parse value '" << value << "' into an interval. Did not find a comma.");
     double leftVal, rightVal;
     try {
+        boost::trim(words[0]);
         leftVal = parseNumber<double>(words[0]);
     } catch (storm::exceptions::WrongFormatException&) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                         "Could not parse value '" << words[0] << "' as lower value of interval " << value << ".");
     }
     try {
+        boost::trim(words[1]);
         rightVal = parseNumber<double>(words[1]);
     } catch (storm::exceptions::WrongFormatException&) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,

@@ -1,5 +1,3 @@
-// Exported by storm
-// Original model type: DTMC
 @type: MDP
 @parameters
 
