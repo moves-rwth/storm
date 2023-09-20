@@ -31,7 +31,7 @@ bool detectFiniteBeliefMdp(storm::models::sparse::Pomdp<ValueType> const& pomdp,
     storm::storage::BitVector relevantStates;
     if (targetStates) {
         relevantStates = ~targetStates.value();
-        options.subsystem(&relevantStates);
+        options.subsystem(relevantStates);
     }
     storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccs(pomdp.getTransitionMatrix(), options);
 

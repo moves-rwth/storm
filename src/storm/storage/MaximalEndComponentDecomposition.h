@@ -1,12 +1,11 @@
-#ifndef STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
-#define STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
+#pragma once
 
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/MaximalEndComponent.h"
+#include "storm/utility/OptionalRef.h"
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
 
 /*!
  * This class represents the decomposition of a nondeterministic model into its maximal end components.
@@ -109,9 +108,7 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
      */
     void performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                  storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                 storm::storage::BitVector const* states = nullptr, storm::storage::BitVector const* choices = nullptr);
+                                                 storm::OptionalRef<storm::storage::BitVector const> states = storm::NullRef,
+                                                 storm::OptionalRef<storm::storage::BitVector const> choices = storm::NullRef);
 };
-}  // namespace storage
-}  // namespace storm
-
-#endif /* STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_ */
+}  // namespace storm::storage

@@ -34,7 +34,7 @@ template<typename ValueType>
 MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                               storm::storage::BitVector const& states) {
-    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, &states);
+    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states);
 }
 
 template<typename ValueType>
@@ -42,13 +42,13 @@ MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(st
                                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                               storm::storage::BitVector const& states,
                                                                               storm::storage::BitVector const& choices) {
-    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, &states, &choices);
+    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states, choices);
 }
 
 template<typename ValueType>
 MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model,
                                                                               storm::storage::BitVector const& states) {
-    performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), &states);
+    performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), states);
 }
 
 template<typename ValueType>
@@ -76,8 +76,8 @@ MaximalEndComponentDecomposition<ValueType>& MaximalEndComponentDecomposition<Va
 template<typename ValueType>
 void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                          storm::storage::BitVector const* states,
-                                                                                          storm::storage::BitVector const* choices) {
+                                                                                          storm::OptionalRef<storm::storage::BitVector const> states,
+                                                                                          storm::OptionalRef<storm::storage::BitVector const> choices) {
     // Get some data for convenient access.
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
@@ -87,11 +87,11 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
     StronglyConnectedComponentDecompositionOptions sccDecOptions;
     sccDecOptions.dropNaiveSccs();
     if (states) {
-        sccDecOptions.subsystem(states);
+        sccDecOptions.subsystem(*states);
     }
     if (choices) {
         ecChoices = *choices;
-        sccDecOptions.choices(&ecChoices);
+        sccDecOptions.choices(ecChoices);
     } else {
         ecChoices.resize(transitionMatrix.getRowCount(), true);
     }
@@ -118,7 +118,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                     ecChoices.set(choice, false);       // The choice leaves the SCC
                     ecSccIndices.set(sccIndex, false);  // This SCC is not 'stable' yet
                 } else {
-                    stateCanStayInScc = true;  // The choice stays in the SCC
+                    stateCanStayInScc = true;           // The choice stays in the SCC
                 }
             }
             if (!stateCanStayInScc) {
@@ -159,8 +159,8 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         remainingEcCandidates = storm::utility::graph::performProbGreater0A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions,
                                                                             remainingEcCandidates, ~remainingEcCandidates, false, 0, ecChoices);
         remainingEcCandidates.complement();
-        sccDecOptions.subsystem(&remainingEcCandidates);
-        sccDecOptions.choices(&ecChoices);
+        sccDecOptions.subsystem(remainingEcCandidates);
+        sccDecOptions.choices(ecChoices);
     }
 
     STORM_LOG_DEBUG("MEC decomposition found " << this->size() << " MEC(s).");

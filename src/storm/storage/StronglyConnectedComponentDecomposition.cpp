@@ -10,13 +10,13 @@
 
 namespace storm::storage {
 
-StronglyConnectedComponentDecompositionOptions& StronglyConnectedComponentDecompositionOptions::subsystem(storm::storage::BitVector const* subsystem) {
-    subsystemPtr = subsystem;
+StronglyConnectedComponentDecompositionOptions& StronglyConnectedComponentDecompositionOptions::subsystem(storm::storage::BitVector const& subsystem) {
+    optSubsystem.reset(subsystem);
     return *this;
 }
 
-StronglyConnectedComponentDecompositionOptions& StronglyConnectedComponentDecompositionOptions::choices(storm::storage::BitVector const* choices) {
-    choicesPtr = choices;
+StronglyConnectedComponentDecompositionOptions& StronglyConnectedComponentDecompositionOptions::choices(storm::storage::BitVector const& choices) {
+    optChoices.reset(choices);
     return *this;
 }
 
@@ -132,9 +132,9 @@ StronglyConnectedComponentDecomposition<ValueType>& StronglyConnectedComponentDe
  * is increased.
  */
 template<typename ValueType>
-void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const* subsystem,
-                                storm::storage::BitVector const* choices, bool /*forceTopologicalSort*/, uint64_t startState, uint64_t& currentIndex,
-                                SccDecompositionResult& result, SccDecompositionMemoryCache& cache) {
+void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::OptionalRef<storm::storage::BitVector const> subsystem,
+                                storm::OptionalRef<storm::storage::BitVector const> choices, bool /*forceTopologicalSort*/, uint64_t startState,
+                                uint64_t& currentIndex, SccDecompositionResult& result, SccDecompositionMemoryCache& cache) {
     // The forceTopologicalSort flag can be ignored as this method always generates a topological sort.
 
     // Prepare the stack used for turning the recursive procedure into an iterative one.
@@ -238,7 +238,7 @@ void StronglyConnectedComponentDecomposition<ValueType>::performSccDecomposition
     this->blocks.resize(result.sccCount);
     for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
         // Check if this state (and is SCC) should be considered in this decomposition.
-        if ((!options.subsystemPtr || options.subsystemPtr->get(state))) {
+        if ((!options.optSubsystem || options.optSubsystem->get(state))) {
             if (!options.areNaiveSccsDropped || result.nonTrivialStates.get(state)) {
                 uint64_t sccIndex = result.stateToSccMapping[state];
                 if (!options.areOnlyBottomSccsConsidered || sccDepths.value()[sccIndex] == 0) {
@@ -278,7 +278,7 @@ void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& tran
 template<typename ValueType>
 void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StronglyConnectedComponentDecompositionOptions const& options,
                              SccDecompositionResult& result, SccDecompositionMemoryCache& cache) {
-    STORM_LOG_ASSERT(!options.choicesPtr || options.subsystemPtr, "Expecting subsystem if choices are given.");
+    STORM_LOG_ASSERT(!options.optChoices || options.optSubsystem, "Expecting subsystem if choices are given.");
 
     uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
     result.initialize(numberOfStates, options.isComputeSccDepthsSet || options.areOnlyBottomSccsConsidered);
@@ -288,13 +288,13 @@ void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& tran
     uint64_t currentIndex = 0;
     auto performSccDecompFromState = [&](uint64_t startState) {
         if (!cache.hasPreorderNumber(startState)) {
-            performSccDecompositionGCM(transitionMatrix, options.subsystemPtr, options.choicesPtr, options.isTopologicalSortForced, startState, currentIndex,
+            performSccDecompositionGCM(transitionMatrix, options.optSubsystem, options.optChoices, options.isTopologicalSortForced, startState, currentIndex,
                                        result, cache);
         }
     };
 
-    if (options.subsystemPtr) {
-        for (auto state : *options.subsystemPtr) {
+    if (options.optSubsystem) {
+        for (auto state : *options.optSubsystem) {
             performSccDecompFromState(state);
         }
     } else {

@@ -6,6 +6,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/utility/OptionalRef.h"
 namespace storm {
 
 namespace storage {
@@ -15,10 +16,10 @@ class SparseMatrix;
 
 struct StronglyConnectedComponentDecompositionOptions {
     /// Sets a bit vector indicating which subsystem to consider for the decomposition into SCCs.
-    StronglyConnectedComponentDecompositionOptions& subsystem(storm::storage::BitVector const* subsystem);
+    StronglyConnectedComponentDecompositionOptions& subsystem(storm::storage::BitVector const& subsystem);
 
     /// Sets a bit vector indicating which choices of the states are contained in the subsystem.
-    StronglyConnectedComponentDecompositionOptions& choices(storm::storage::BitVector const* choices);
+    StronglyConnectedComponentDecompositionOptions& choices(storm::storage::BitVector const& choices);
 
     /// Sets if trivial SCCs (i.e. SCCs consisting of just one state without a self-loop) are to be kept in the decomposition.
     StronglyConnectedComponentDecompositionOptions& dropNaiveSccs(bool value = true);
@@ -32,8 +33,8 @@ struct StronglyConnectedComponentDecompositionOptions {
     /// Sets if scc depths can be retrieved.
     StronglyConnectedComponentDecompositionOptions& computeSccDepths(bool value = true);
 
-    storm::storage::BitVector const* subsystemPtr = nullptr;
-    storm::storage::BitVector const* choicesPtr = nullptr;
+    storm::OptionalRef<storm::storage::BitVector const> optSubsystem;
+    storm::OptionalRef<storm::storage::BitVector const> optChoices;
     bool areNaiveSccsDropped = false;
     bool areOnlyBottomSccsConsidered = false;
     bool isTopologicalSortForced = false;
