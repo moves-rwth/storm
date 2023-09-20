@@ -60,6 +60,11 @@ class MaximalEndComponent {
     bool operator==(MaximalEndComponent const& other);
 
     /*!
+     * @return true iff this is a different MEC as other
+     */
+    bool operator!=(MaximalEndComponent const& other);
+
+    /*!
      * Adds the given state and the given choices to the MEC.
      *
      * @param state The state for which to add the choices.

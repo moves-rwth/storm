@@ -79,7 +79,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                                                                                           storm::OptionalRef<storm::storage::BitVector const> states,
                                                                                           storm::OptionalRef<storm::storage::BitVector const> choices) {
     // Get some data for convenient access.
-    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+    auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     storm::storage::BitVector remainingEcCandidates, ecChoices;
     SccDecompositionResult sccDecRes;

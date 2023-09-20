@@ -98,13 +98,13 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
    private:
     /*!
-     * Performs the actual decomposition of the given subsystem in the given model into MECs. As a side-effect
-     * this stores the MECs found in the current decomposition.
+     * Performs the actual decomposition of the given subsystem in the given model into MECs. Stores the MECs found in the current decomposition.
      *
      * @param transitionMatrix The transition matrix representing the system whose subsystem to decompose into MECs.
      * @param backwardTransitions The reversed transition relation.
-     * @param states The states of the subsystem to decompose.
-     * @param choices The choices of the subsystem to decompose.
+     * @param states The states of the subsystem to decompose. If not given, all states are considered.
+     * @param choices The choices of the subsystem to decompose. If not given, all choices are considered.
+     *
      */
     void performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                  storm::storage::SparseMatrix<ValueType> const& backwardTransitions,

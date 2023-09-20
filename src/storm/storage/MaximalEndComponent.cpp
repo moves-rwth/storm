@@ -33,6 +33,10 @@ bool MaximalEndComponent::operator==(MaximalEndComponent const& other) {
     return stateToChoicesMapping == other.stateToChoicesMapping;
 }
 
+bool MaximalEndComponent::operator!=(MaximalEndComponent const& other) {
+    return stateToChoicesMapping != other.stateToChoicesMapping;
+}
+
 void MaximalEndComponent::addState(uint_fast64_t state, set_type const& choices) {
     stateToChoicesMapping[state] = choices;
 }
