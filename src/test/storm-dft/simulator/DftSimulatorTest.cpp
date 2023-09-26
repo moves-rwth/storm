@@ -31,12 +31,12 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
 
     size_t count = 0;
     size_t invalid = 0;
-    storm::dft::simulator::SimulationResult res;
+    storm::dft::simulator::SimulationTraceResult res;
     for (size_t i = 0; i < noRuns; ++i) {
         res = simulator.simulateCompleteTrace(timebound);
-        if (res == storm::dft::simulator::SimulationResult::SUCCESSFUL) {
+        if (res == storm::dft::simulator::SimulationTraceResult::SUCCESSFUL) {
             ++count;
-        } else if (res == storm::dft::simulator::SimulationResult::INVALID) {
+        } else if (res == storm::dft::simulator::SimulationTraceResult::INVALID) {
             // Discard invalid traces
             ++invalid;
         }

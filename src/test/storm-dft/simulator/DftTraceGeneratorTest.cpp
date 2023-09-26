@@ -167,23 +167,21 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     auto state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
-    storm::dft::simulator::SimulationResult res;
-    double timebound;
     // First random step
-    std::tie(res, timebound) = simulator.randomStep();
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_NEAR(timebound, 0.522079, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
 #endif
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
-    std::tie(res, timebound) = simulator.randomStep();
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    res = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_NEAR(timebound, 0.9497214, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
 #endif
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
@@ -201,23 +199,21 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     auto state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
-    storm::dft::simulator::SimulationResult res;
-    double timebound;
     // First random step
-    std::tie(res, timebound) = simulator.randomStep();
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_NEAR(timebound, 0.522079, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
 #endif
     auto stateStep1 = simulator.getCurrentState();
     EXPECT_FALSE(stateStep1->hasFailed(dft->getTopLevelIndex()));
 
-    std::tie(res, timebound) = simulator.randomStep();
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    res = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_NEAR(timebound, 0.9497214, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
 #endif
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
@@ -227,11 +223,11 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
-    std::tie(res, timebound) = simulator.randomStep();
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    res = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_NEAR(timebound, 2.4686932, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214 + 2.4686932, 1e-6);
 #endif
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
@@ -265,8 +261,8 @@ TYPED_TEST(DftTraceGeneratorTest, Fdep) {
     ASSERT_FALSE(triggerDep);
     ASSERT_EQ(nextBE->name(), "B_Power");
 
-    storm::dft::simulator::SimulationResult res = simulator.step(iterFailable);
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    storm::dft::simulator::SimulationStepResult res = simulator.step(iterFailable);
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(4));
 
@@ -285,7 +281,7 @@ TYPED_TEST(DftTraceGeneratorTest, Fdep) {
     ASSERT_EQ(nextBE->name(), "B");
 
     res = simulator.step(iterFailable);
-    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
