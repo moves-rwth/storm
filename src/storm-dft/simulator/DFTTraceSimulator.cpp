@@ -142,6 +142,36 @@ SimulationStepResult DFTTraceSimulator<ValueType>::step(storm::dft::storage::Fai
 }
 
 template<typename ValueType>
+SimulationTraceResult DFTTraceSimulator<ValueType>::simulateNextStep(double timebound) {
+    // Perform random step
+    SimulationStepResult stepResult = randomStep();
+
+    // Check current state
+    if (stepResult == SimulationStepResult::INVALID) {
+        // No next state can be reached, because the state is invalid.
+        STORM_LOG_TRACE("Invalid state " << dft.getStateString(state) << " was reached.");
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Handling of invalid states is not supported for simulation");
+        return SimulationTraceResult::INVALID;
+    } else if (stepResult == SimulationStepResult::UNSUCCESSFUL) {
+        STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because no further failures are possible.");
+        return SimulationTraceResult::UNSUCCESSFUL;
+    }
+    STORM_LOG_ASSERT(stepResult == SimulationStepResult::SUCCESSFUL, "Simulation step should be successful.");
+
+    if (getCurrentTime() > timebound) {
+        // Timebound was exceeded
+        return SimulationTraceResult::UNSUCCESSFUL;
+    } else if (state->hasFailed(dft.getTopLevelIndex())) {
+        // DFT is failed
+        STORM_LOG_TRACE("DFT has failed after " << getCurrentTime());
+        return SimulationTraceResult::SUCCESSFUL;
+    } else {
+        // No conclusive outcome was reached yet
+        return SimulationTraceResult::CONTINUE;
+    }
+}
+
+template<typename ValueType>
 SimulationTraceResult DFTTraceSimulator<ValueType>::simulateCompleteTrace(double timebound) {
     resetToInitial();
 
@@ -151,31 +181,11 @@ SimulationTraceResult DFTTraceSimulator<ValueType>::simulateCompleteTrace(double
         return SimulationTraceResult::SUCCESSFUL;
     }
 
-    while (getCurrentTime() <= timebound) {
-        // Perform random step
-        SimulationStepResult stepResult = randomStep();
-
-        // Check whether state is invalid
-        if (stepResult == SimulationStepResult::UNSUCCESSFUL) {
-            STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because no further failures are possible.");
-            return SimulationTraceResult::UNSUCCESSFUL;
-        } else if (stepResult == SimulationStepResult::INVALID) {
-            // No next state can be reached, because the state is invalid.
-            STORM_LOG_TRACE("Invalid state " << dft.getStateString(state) << " was reached.");
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Handling of invalid states is not supported for simulation");
-            return SimulationTraceResult::INVALID;
-        }
-
-        // Check whether DFT is failed within timebound
-        if (state->hasFailed(dft.getTopLevelIndex()) && getCurrentTime() <= timebound) {
-            STORM_LOG_TRACE("DFT has failed after " << getCurrentTime());
-            return SimulationTraceResult::SUCCESSFUL;
-        }
-    }
-
-    // Time limit was reached
-    STORM_LOG_TRACE("Time limit" << timebound << " exceeded: " << time);
-    return SimulationTraceResult::UNSUCCESSFUL;
+    SimulationTraceResult result = SimulationTraceResult::CONTINUE;
+    do {
+        result = simulateNextStep(timebound);
+    } while (result == SimulationTraceResult::CONTINUE);
+    return result;
 }
 
 template<>

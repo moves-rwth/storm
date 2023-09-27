@@ -18,8 +18,9 @@ enum class SimulationStepResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
 
 /*!
  * Result of a simulation trace.
+ * CONTINUE is only used for partial traces to indicate that no conclusive outcome has been reached yet.
  */
-enum class SimulationTraceResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
+enum class SimulationTraceResult { SUCCESSFUL, UNSUCCESSFUL, INVALID, CONTINUE };
 
 /*!
  * Simulator for DFTs.
@@ -105,15 +106,25 @@ class DFTTraceSimulator {
     SimulationStepResult randomStep();
 
     /*!
+     * Simulate the (randomly chosen) next step and return the outcome of the current (partial) trace.
+     *
+     * @param timebound Time bound in which the system failure should occur.
+     * @return Result of (partial) trace is (1) SUCCESSFUL if the current state corresponds to a system failure and the current time does not exceed the
+     * timebound. (2) UNSUCCESSFUL, if the current time exceeds the timebound, (3) INVALID, if an invalid state (due to a restrictor) was reached, or (4)
+     * CONTINUE, if the simulation should continue.
+     */
+    SimulationTraceResult simulateNextStep(double timebound);
+
+    /*!
      * Perform a complete simulation of a failure trace by using the random number generator.
      * The simulation starts in the initial state and tries to reach a state where the top-level event of the DFT has failed.
      * If this target state can be reached within the given timebound, the simulation was successful.
      * If an invalid state (due to a restrictor) was reached, the simulated trace is invalid.
      *
      * @param timebound Time bound in which the system failure should occur.
-     * @return Result of simulation trace is (1) successful if a system failure occurred for the generated trace within the time bound,
-     *                                       (2) unsuccessful, if no system failure occurred within the time bound, or
-     *                                       (3) invalid, if an invalid state (due to a restrictor) was reached during the trace generation.
+     * @return Result of simulation trace is (1) SUCCESSFUL if a system failure occurred for the generated trace within the time bound,
+     *                                       (2) UNSUCCESSFUL, if no system failure occurred within the time bound, or
+     *                                       (3) INVALID, if an invalid state (due to a restrictor) was reached during the trace generation.
      */
     SimulationTraceResult simulateCompleteTrace(double timebound);
 
