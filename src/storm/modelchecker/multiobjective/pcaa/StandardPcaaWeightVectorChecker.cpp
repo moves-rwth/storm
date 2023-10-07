@@ -250,7 +250,7 @@ void computeSchedulerProb1(storm::storage::SparseMatrix<ValueType> const& transi
 
         for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
             auto predecessor = predecessorEntry.getColumn();
-            if (consideredStates.get(predecessor) & !processedStates.get(predecessor)) {
+            if (consideredStates.get(predecessor) && !processedStates.get(predecessor)) {
                 // Find a choice leading to an already processed state (such a choice has to exist since this is a predecessor of the currentState)
                 auto const& groupStart = transitionMatrix.getRowGroupIndices()[predecessor];
                 auto const& groupEnd = transitionMatrix.getRowGroupIndices()[predecessor + 1];
@@ -869,8 +869,8 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
                     unprocessedStates.set(state, false);
                     originalSolution[state] = ecqSolution[ecqState];
                 }
-                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices,
-                                      &ecQuotient->origTotalReward0Choices);
+                auto validChoices = transitionMatrix.getRowFilter(ecStatesToProcess, ecStatesToProcess | ecStatesToReach);
+                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices, &validChoices);
                 // Clear bitvectors for next ecqState.
                 ecStatesToProcess.clear();
                 ecStatesToReach.clear();
