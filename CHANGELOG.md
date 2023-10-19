@@ -8,6 +8,12 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.8.x
 -------------
 
+## Version 1.8.2
+- Print all linked libraries when using `--version`.
+- Developer: Require at least CMake version 3.15.
+- Developer: Moved `storm-config.h.in` into `src` directory.
+- Developer: Use Dockerfile in CI.
+
 ## Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81
 
