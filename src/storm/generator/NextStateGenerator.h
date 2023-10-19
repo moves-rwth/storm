@@ -93,6 +93,9 @@ class NextStateGenerator {
     virtual bool isPartiallyObservable() const = 0;
     virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
 
+    /// Initializes the out-of-bounds state and states with overlapping guards.
+    void initializeSpecialStates();
+
     /// Initializes a builder for state valuations by adding the appropriate variables.
     virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
 
