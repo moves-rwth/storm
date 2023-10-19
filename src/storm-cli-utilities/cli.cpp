@@ -13,41 +13,8 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
-#include <type_traits>
-
 #include "storm-cli-utilities/model-handling.h"
 
-// Includes for the linked libraries and versions header.
-#include "storm/adapters/IntelTbbAdapter.h"
-
-#ifdef STORM_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#endif
-#ifdef STORM_HAVE_GLPK
-#include "glpk.h"
-#endif
-#ifdef STORM_HAVE_GUROBI
-#include "gurobi_c.h"
-#endif
-#ifdef STORM_HAVE_MSAT
-#include "mathsat.h"
-#endif
-#ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
-#endif
-#ifdef STORM_HAVE_SMTRAT
-#include "lib/smtrat.h"
-#endif
-#ifdef STORM_HAVE_SPOT
-#include <spot/misc/version.hh>
-#endif
-#ifdef STORM_HAVE_XERCES
-#include <xercesc/util/XercesVersion.hpp>
-#endif
-#ifdef STORM_HAVE_Z3
-#include "z3.h"
-#endif
 
 namespace storm {
 namespace cli {
