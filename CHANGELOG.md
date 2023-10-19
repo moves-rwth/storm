@@ -10,6 +10,7 @@ Version 1.8.x
 
 ## Version 1.8.2
 - Print all linked libraries when using `--version`.
+- `storm-conv`: Removed option `--stdout`.
 - Developer: Require at least CMake version 3.15.
 - Developer: Moved `storm-config.h.in` into `src` directory.
 - Developer: Use Dockerfile in CI.

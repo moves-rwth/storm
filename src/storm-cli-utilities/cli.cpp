@@ -15,7 +15,6 @@
 
 #include "storm-cli-utilities/model-handling.h"
 
-
 namespace storm {
 namespace cli {
 
