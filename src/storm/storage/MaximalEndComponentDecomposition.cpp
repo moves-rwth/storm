@@ -118,7 +118,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
                     ecChoices.set(choice, false);       // The choice leaves the SCC
                     ecSccIndices.set(sccIndex, false);  // This SCC is not 'stable' yet
                 } else {
-                    stateCanStayInScc = true;           // The choice stays in the SCC
+                    stateCanStayInScc = true;  // The choice stays in the SCC
                 }
             }
             if (!stateCanStayInScc) {
