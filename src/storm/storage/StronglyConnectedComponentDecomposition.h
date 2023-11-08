@@ -1,57 +1,40 @@
-#ifndef STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
-#define STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_
+#pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
+#include <vector>
+
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Decomposition.h"
-#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponent.h"
-#include "storm/utility/constants.h"
+#include "storm/utility/OptionalRef.h"
 namespace storm {
-namespace models {
-namespace sparse {
-// Forward declare the model class.
-template<typename ValueType, typename RewardModelType>
-class Model;
-}  // namespace sparse
-}  // namespace models
 
 namespace storage {
 
+template<typename ValueType>
+class SparseMatrix;
+
 struct StronglyConnectedComponentDecompositionOptions {
     /// Sets a bit vector indicating which subsystem to consider for the decomposition into SCCs.
-    StronglyConnectedComponentDecompositionOptions& subsystem(storm::storage::BitVector const* subsystem) {
-        subsystemPtr = subsystem;
-        return *this;
-    }
-    /// Sets a bit vector indicating which choices of the states are contained in the subsystem.
-    StronglyConnectedComponentDecompositionOptions& choices(storm::storage::BitVector const* choices) {
-        choicesPtr = choices;
-        return *this;
-    }
-    /// Sets if trivial SCCs (i.e. SCCs consisting of just one state without a self-loop) are to be kept in the decomposition.
-    StronglyConnectedComponentDecompositionOptions& dropNaiveSccs(bool value = true) {
-        areNaiveSccsDropped = value;
-        return *this;
-    }
-    /// Sets if only bottom SCCs, i.e. SCCs in which all states have no way of leaving the SCC), are kept.
-    StronglyConnectedComponentDecompositionOptions& onlyBottomSccs(bool value = true) {
-        areOnlyBottomSccsConsidered = value;
-        return *this;
-    }
-    /// Enforces that the returned SCCs are sorted in a topological order.
-    StronglyConnectedComponentDecompositionOptions& forceTopologicalSort(bool value = true) {
-        isTopologicalSortForced = value;
-        return *this;
-    }
-    /// Sets if scc depths can be retrieved.
-    StronglyConnectedComponentDecompositionOptions& computeSccDepths(bool value = true) {
-        isComputeSccDepthsSet = value;
-        return *this;
-    }
+    StronglyConnectedComponentDecompositionOptions& subsystem(storm::storage::BitVector const& subsystem);
 
-    storm::storage::BitVector const* subsystemPtr = nullptr;
-    storm::storage::BitVector const* choicesPtr = nullptr;
+    /// Sets a bit vector indicating which choices of the states are contained in the subsystem.
+    StronglyConnectedComponentDecompositionOptions& choices(storm::storage::BitVector const& choices);
+
+    /// Sets if trivial SCCs (i.e. SCCs consisting of just one state without a self-loop) are to be kept in the decomposition.
+    StronglyConnectedComponentDecompositionOptions& dropNaiveSccs(bool value = true);
+
+    /// Sets if only bottom SCCs, i.e. SCCs in which all states have no way of leaving the SCC), are kept.
+    StronglyConnectedComponentDecompositionOptions& onlyBottomSccs(bool value = true);
+
+    /// Enforces that the returned SCCs are sorted in a topological order.
+    StronglyConnectedComponentDecompositionOptions& forceTopologicalSort(bool value = true);
+
+    /// Sets if scc depths can be retrieved.
+    StronglyConnectedComponentDecompositionOptions& computeSccDepths(bool value = true);
+
+    storm::OptionalRef<storm::storage::BitVector const> optSubsystem;
+    storm::OptionalRef<storm::storage::BitVector const> optChoices;
     bool areNaiveSccsDropped = false;
     bool areOnlyBottomSccsConsidered = false;
     bool isTopologicalSortForced = false;
@@ -59,17 +42,69 @@ struct StronglyConnectedComponentDecompositionOptions {
 };
 
 /*!
+ * Holds temporary computation data used during the SCC decomposition algorithm.
+ * Can be kept in memory to avoid re-allocations, which is useful if multiple SCC decompositions are computed (e.g. as part of an end component decomposition
+ * algorithm).
+ */
+struct SccDecompositionMemoryCache {
+    void initialize(uint64_t numStates);
+    bool hasPreorderNumber(uint64_t stateIndex) const;
+    std::vector<uint64_t> preorderNumbers, recursionStateStack, s, p;
+};
+
+/*!
+ * Holds the result data of the implemented SCC decomposition algorithm.
+ */
+struct SccDecompositionResult {
+    void initialize(uint64_t numStates, bool computeSccDepths);
+    bool stateHasScc(uint64_t stateIndex) const;     /// True if an SCC is associated to the given state
+    uint64_t sccCount;                               /// Number of found SCCs
+    std::vector<uint64_t> stateToSccMapping;         /// Mapping from states to the SCC it belongs to
+    storm::storage::BitVector nonTrivialStates;      /// Keep track of trivial states (singleton SCCs without selfloop).
+    std::optional<std::vector<uint64_t>> sccDepths;  /// Holds SCC depths if requested. @see getSccDepth()
+};
+
+/*!
+ * Computes an SCC decomposition for the given matrix and options.
+ *
+ * @note This method does initialize the given result data. This means that if multiple SCC decompositions (e.g. with different options) are computed, the
+ * result memory can be re-used to avoid expensive reallocations.
+ *
+ * @param transitionMatrix transition matrix of the model
+ * @param options options for the decomposition
+ * @param result The resulting information will be stored into this struct.
+ */
+template<typename ValueType>
+void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StronglyConnectedComponentDecompositionOptions const& options,
+                             SccDecompositionResult& result);
+
+/*!
+ * Computes an SCC decomposition for the given matrix and options.
+ *
+ * @note This method does initialize the given result and cache data. This means that if multiple SCC decompositions (e.g. with different options) are computed,
+ * the result and cache memory can be re-used to avoid expensive reallocations.
+ *
+ * @param transitionMatrix transition matrix of the model
+ * @param options options for the decomposition
+ * @param result The resulting information will be stored into this struct.
+ * @param cache memory used by the underlying algorithm
+ */
+template<typename ValueType>
+void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StronglyConnectedComponentDecompositionOptions const& options,
+                             SccDecompositionResult& result, SccDecompositionMemoryCache& cache);
+
+/*!
  * This class represents the decomposition of a graph-like structure into its strongly connected components.
  */
 template<typename ValueType>
 class StronglyConnectedComponentDecomposition : public Decomposition<StronglyConnectedComponent> {
    public:
-    /*
+    /*!
      * Creates an empty SCC decomposition.
      */
     StronglyConnectedComponentDecomposition();
 
-    /*
+    /*!
      * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is
      * given by a sparse matrix).
      *
@@ -126,6 +161,14 @@ class StronglyConnectedComponentDecomposition : public Decomposition<StronglyCon
      */
     uint_fast64_t getMaxSccDepth() const;
 
+    /*!
+     * Computes a vector that for each state has the index of the scc of that state in it.
+     * If a state has no SCC in this decomposition (e.g. because we considered a subsystem), they will get SCC index std::numeric_limits<uint64_t>::max()
+     *
+     * @param numberOfStates the total number of states
+     */
+    std::vector<uint64_t> computeStateToSccIndexMap(uint64_t numberOfStates) const;
+
    private:
     /*
      * Performs the SCC decomposition of the given block in the given model. As a side-effect this fills
@@ -136,9 +179,7 @@ class StronglyConnectedComponentDecomposition : public Decomposition<StronglyCon
     void performSccDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                  StronglyConnectedComponentDecompositionOptions const& options);
 
-    boost::optional<std::vector<uint_fast64_t>> sccDepths;
+    std::optional<std::vector<uint_fast64_t>> sccDepths;
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_STRONGLYCONNECTEDCOMPONENTDECOMPOSITION_H_ */
