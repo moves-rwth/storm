@@ -1,19 +1,17 @@
 #include "storm-conv/api/storm-conv.h"
-#include <storage/jani/localeliminator/AutomaticAction.h>
 
+#include "storm/api/properties.h"
+#include "storm/io/file.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/api/properties.h"
-#include "storm/io/file.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace api {

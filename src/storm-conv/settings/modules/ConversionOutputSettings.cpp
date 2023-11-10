@@ -14,12 +14,10 @@ namespace settings {
 namespace modules {
 
 const std::string ConversionOutputSettings::moduleName = "output";
-const std::string ConversionOutputSettings::stdoutOptionName = "stdout";
 const std::string ConversionOutputSettings::janiOutputOptionName = "tojani";
 const std::string ConversionOutputSettings::prismOutputOptionName = "toprism";
 
 ConversionOutputSettings::ConversionOutputSettings() : ModuleSettings(moduleName) {
-    this->addOption(storm::settings::OptionBuilder(moduleName, stdoutOptionName, false, "If set, the output will be printed to stdout.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, janiOutputOptionName, false, "exports the model as Jani file.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).")
                                          .setDefaultValueString("")
@@ -30,10 +28,6 @@ ConversionOutputSettings::ConversionOutputSettings() : ModuleSettings(moduleName
                                          .setDefaultValueString("")
                                          .build())
                         .build());
-}
-
-bool ConversionOutputSettings::isStdOutOutputEnabled() const {
-    return this->getOption(stdoutOptionName).getHasOptionBeenSet();
 }
 
 bool ConversionOutputSettings::isJaniOutputSet() const {

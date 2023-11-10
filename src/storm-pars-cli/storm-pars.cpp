@@ -310,8 +310,6 @@ namespace storm {
             return result;
         }
 
-
-
         template <typename ValueType>
         void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting()) {
             STORM_LOG_THROW(regions.size() == 1,  storm::exceptions::NotSupportedException, "Region verification is supported for a (single) region only.");
@@ -502,9 +500,6 @@ namespace storm {
         }
 
         void processOptions() {
-            // Start by setting some urgent options (log levels, resources, etc.)
-            storm::cli::setUrgentOptions();
-
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto engine = coreSettings.getEngine();
             STORM_LOG_WARN_COND(engine != storm::utility::Engine::Dd || engine != storm::utility::Engine::Hybrid || coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "The selected DD library does not support parametric models. Switching to Sylvan...");
@@ -523,26 +518,8 @@ namespace storm {
  * Main entry point of the executable storm-pars.
  */
 int main(const int argc, const char** argv) {
-
-    //try {
-        storm::utility::setUp();
-        storm::cli::printHeader("Storm-pars", argc, argv);
-        storm::settings::initializeParsSettings("Storm-pars", "storm-pars");
-
-        storm::utility::Stopwatch totalTimer(true);
-        if (!storm::cli::parseOptions(argc, argv)) {
-            return -1;
-        }
-
-        storm::pars::processOptions();
-
-        totalTimer.stop();
-        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
-            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
-        }
-
-        storm::utility::cleanUp();
-        return 0;
+    try {
+        return storm::cli::process("Storm-pars", "storm-pars", storm::settings::initializeParsSettings, storm::pars::processOptions, argc, argv);
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm-pars to terminate. The message of the exception is: " << exception.what());
         return 1;

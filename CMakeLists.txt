@@ -541,7 +541,7 @@ message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERS
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
+	"${PROJECT_SOURCE_DIR}/src/storm-config.h.in"
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 

@@ -10,11 +10,6 @@ class ConversionOutputSettings : public ModuleSettings {
     ConversionOutputSettings();
 
     /*!
-     * Retrieves whether the output should be printed to stdout
-     */
-    bool isStdOutOutputEnabled() const;
-
-    /*!
      * Retrieves whether the output should be in the Jani format
      */
     bool isJaniOutputSet() const;
@@ -49,8 +44,6 @@ class ConversionOutputSettings : public ModuleSettings {
 
     // The name of the module.
     static const std::string moduleName;
-    // name of the option that enables output to stdout. It needs to be public because we have to check this option very early
-    static const std::string stdoutOptionName;
 
    private:
     // Define the string names of the options as constants.

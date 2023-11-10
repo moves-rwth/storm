@@ -28,8 +28,8 @@
 /*!
  * Initialize the settings manager.
  */
-void initializeSettings() {
-    storm::settings::mutableManager().setName("Storm-PGCL", "storm-pgcl");
+void initializeSettings(std::string const& name, std::string const& executableName) {
+    storm::settings::mutableManager().setName(name, executableName);
 
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
@@ -60,56 +60,47 @@ void programGraphToDotFile(storm::ppg::ProgramGraph const& prog) {
     storm::utility::closeFile(stream);
 }
 
+void processOptions() {
+    auto pgcl = storm::settings::getModule<storm::settings::modules::PGCLSettings>();
+    if (!pgcl.isPgclFileSet()) {
+        return;
+    }
+
+    storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(pgcl.getPgclFilename());
+    storm::ppg::ProgramGraph* progGraph = storm::builder::ProgramGraphBuilder::build(prog);
+
+    progGraph->printInfo(std::cout);
+    if (pgcl.isProgramGraphToDotSet()) {
+        programGraphToDotFile(*progGraph);
+    }
+    if (pgcl.isToJaniSet()) {
+        storm::builder::JaniProgramGraphBuilderSetting settings;
+        // To disable reward detection, uncomment the following line
+        // TODO add a setting for this.
+        // settings.filterRewardVariables = false;
+        storm::builder::JaniProgramGraphBuilder builder(*progGraph, settings);
+        if (pgcl.isProgramVariableRestrictionSet()) {
+            // TODO More fine grained control
+            storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(pgcl.getProgramVariableRestrictions());
+            builder.restrictAllVariables(restr);
+        }
+        storm::jani::Model* model = builder.build();
+
+        delete progGraph;
+        std::vector<storm::jani::Property> properties;
+        if (pgcl.isPropertyInputSet()) {
+            boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(pgcl.getPropertyInputFilter());
+            properties = storm::api::parsePropertiesForSymbolicModelDescription(pgcl.getPropertyInput(), *model, propertyFilter);
+        }
+
+        handleJani(*model, properties);
+        delete model;
+    }
+}
+
 int main(const int argc, const char** argv) {
     try {
-        storm::utility::setUp();
-        storm::cli::printHeader("Storm-PGCL", argc, argv);
-        initializeSettings();
-
-        bool optionsCorrect = storm::cli::parseOptions(argc, argv);
-        if (!optionsCorrect) {
-            return -1;
-        }
-
-        // Start by setting some urgent options (log levels, resources, etc.)
-        storm::cli::setUrgentOptions();
-
-        auto pgcl = storm::settings::getModule<storm::settings::modules::PGCLSettings>();
-        if (!pgcl.isPgclFileSet()) {
-            return -1;
-        }
-
-        storm::pgcl::PgclProgram prog = storm::parser::PgclParser::parse(pgcl.getPgclFilename());
-        storm::ppg::ProgramGraph* progGraph = storm::builder::ProgramGraphBuilder::build(prog);
-
-        progGraph->printInfo(std::cout);
-        if (pgcl.isProgramGraphToDotSet()) {
-            programGraphToDotFile(*progGraph);
-        }
-        if (pgcl.isToJaniSet()) {
-            storm::builder::JaniProgramGraphBuilderSetting settings;
-            // To disable reward detection, uncomment the following line
-            // TODO add a setting for this.
-            // settings.filterRewardVariables = false;
-            storm::builder::JaniProgramGraphBuilder builder(*progGraph, settings);
-            if (pgcl.isProgramVariableRestrictionSet()) {
-                // TODO More fine grained control
-                storm::storage::IntegerInterval restr = storm::storage::parseIntegerInterval(pgcl.getProgramVariableRestrictions());
-                builder.restrictAllVariables(restr);
-            }
-            storm::jani::Model* model = builder.build();
-
-            delete progGraph;
-            std::vector<storm::jani::Property> properties;
-            if (pgcl.isPropertyInputSet()) {
-                boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(pgcl.getPropertyInputFilter());
-                properties = storm::api::parsePropertiesForSymbolicModelDescription(pgcl.getPropertyInput(), *model, propertyFilter);
-            }
-
-            handleJani(*model, properties);
-            delete model;
-        } else {
-        }
+        return storm::cli::process("Storm-PGCL", "storm-pgcl", initializeSettings, processOptions, argc, argv);
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm-PGCL to terminate. The message of the exception is: " << exception.what());
         return 1;

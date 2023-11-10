@@ -8,6 +8,14 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.8.x
 -------------
 
+## Version 1.8.2
+- Print all linked libraries when using `--version`.
+- `storm-conv`: Removed option `--stdout`.
+- `storm-pars`: completely reworked the command-line interface (and partially the c++ API).
+- Developer: Require at least CMake version 3.15.
+- Developer: Moved `storm-config.h.in` into `src` directory.
+- Developer: Use Dockerfile in CI.
+
 ## Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81
 
@@ -18,7 +26,6 @@ Version 1.8.x
 - Upgraded shipped version of sylvan
 - Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/moves-rwth/carl-storm) in at least version 14.23.
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
-- `storm-pars`: completely reworked the command-line interface (and partially the c++ API).
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
 - `storm-pomdp`: streamlined implementation for quantitative analysis
