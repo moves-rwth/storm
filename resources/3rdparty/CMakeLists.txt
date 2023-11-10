@@ -37,7 +37,7 @@ add_dependencies(l3pp l3pp_ext)
 ##
 #############################################################
 
-add_imported_library_interface(gmm "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.2/include")
+add_imported_library_interface(gmm "${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include")
 list(APPEND STORM_DEP_TARGETS gmm)
 
 #############################################################
@@ -135,7 +135,7 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 # Use the shipped version of ExprTK
 message (STATUS "Storm - Including ExprTk.")
-add_imported_library_interface(ExprTk "${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk")
 list(APPEND STORM_DEP_TARGETS ExprTk)
 
 
@@ -148,7 +148,7 @@ list(APPEND STORM_DEP_TARGETS ExprTk)
 
 # Use the shipped version of Parallel Hashmap
 message (STATUS "Storm - Including Parallel Hashmap.")
-set(PHMAP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/parallel_hashmap/parallel_hashmap")
+set(PHMAP_INCLUDE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap/parallel_hashmap")
 file(GLOB PHMAP_HEADERS "${PHMAP_INCLUDE_DIR}/*.h")
 
 # Add the parallel_hashmap headers to the headers that are copied to the include directory in the build directory.
@@ -175,7 +175,7 @@ endforeach()
 
 # Use the shipped version of cpphoafparser
 message (STATUS "Storm - Including cpphoafparser 0.99.2")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
+include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
 
 #############################################################
 ##
@@ -185,7 +185,7 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-add_imported_library_interface(ModernJSON "${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/src/")
 list(APPEND STORM_DEP_TARGETS ModernJSON)
 
 #############################################################
@@ -202,7 +202,7 @@ set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
     # Get the z3 version by compiling and running a simple program
-    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${PROJECT_SOURCE_DIR}/resources/3rdparty/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
+    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${STORM_3RDPARTY_SOURCE_DIR}/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
     if (version_compile_result AND version_run_result EQUAL 0)
         if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
             set(Z3_VERSION "${CMAKE_MATCH_1}")
@@ -460,7 +460,7 @@ if(USE_HYPRO)
 	find_package(hypro QUIET REQUIRED)
 	if(hypro_FOUND)
 		set(STORM_HAVE_HYPRO ON)
-		message(STATUS "Storm - Linking with hypro.")
+		message(STATUS "Storm - Linking with HyPro version ${hypro_VERSION}.")
 		include_directories("${hypro_INCLUDE_DIR}")
 		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
 	else()
@@ -811,7 +811,7 @@ if(ENABLE_CUDA)
 
     #create library
     find_package(CUDA REQUIRED)
-    set(CUSP_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/resources/3rdparty/cusplibrary")
+    set(CUSP_INCLUDE_DIRS "${STORM_3RDPARTY_SOURCE_DIR}/cusplibrary")
     find_package(Cusp REQUIRED)
     find_package(Thrust REQUIRED)
 
