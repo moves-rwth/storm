@@ -65,7 +65,7 @@ std::shared_ptr<FeasibilitySynthesisTask const> createFeasibilitySynthesisTaskFr
                         "When a bound is given, the guarantee is that this bound will be satisfied by a solution.");
     } else {
         if (feasibilitySettings.hasOptimalValueGuaranteeBeenSet()) {
-            t.setMaximalAllowedGap(feasibilitySettings.getOptimalValueGuarantee());
+            t.setMaximalAllowedGap(storm::utility::convertNumber<storm::RationalNumber>(feasibilitySettings.getOptimalValueGuarantee()));
             t.setMaximalAllowedGapIsRelative(!feasibilitySettings.isAbsolutePrecisionSet());
         }
         STORM_LOG_THROW(feasibilitySettings.isParameterDirectionSet(), storm::exceptions::NotSupportedException,
