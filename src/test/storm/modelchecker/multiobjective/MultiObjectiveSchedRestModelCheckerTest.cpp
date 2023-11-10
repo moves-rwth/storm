@@ -16,7 +16,7 @@
 #include "storm/storage/SchedulerClass.h"
 #include "storm/storage/jani/Property.h"
 
-#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
 namespace {
 
@@ -530,4 +530,4 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
 }
 }  // namespace
 
-#endif /* defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
+#endif /* STORM_HAVE_Z3_OPTIMIZE */
