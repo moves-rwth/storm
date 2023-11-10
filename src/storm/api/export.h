@@ -79,13 +79,13 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
     std::ofstream stream;
     storm::utility::openFile(filename, stream);
     if (checkResult->isExplicitQualitativeCheckResult()) {
-        stream << checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations(), model->getStateLabeling()).dump(4);
+        auto j = checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations(), model->getStateLabeling());
+        stream << storm::dumpJson(j);
     } else {
         STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException,
                         "Export of check results is only supported for explicit check results (e.g. in the sparse engine)");
-        stream << checkResult->template asExplicitQuantitativeCheckResult<ValueType>()
-                      .toJson(model->getOptionalStateValuations(), model->getStateLabeling())
-                      .dump(4);
+        auto j = checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations(), model->getStateLabeling());
+        stream << storm::dumpJson(j);
     }
     storm::utility::closeFile(stream);
 }

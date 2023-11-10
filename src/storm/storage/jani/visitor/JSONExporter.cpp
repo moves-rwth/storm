@@ -732,7 +732,26 @@ boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression 
     return ExportJsonType(expression.getValue());
 }
 boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-    return ExportJsonType(expression.getValue());
+    // Helper to check if the literal is exported (i.e. dumped) with enough accuracy.
+    auto isExportAccurate = [](ExportJsonType const& j) {
+        return storm::utility::convertNumber<storm::RationalNumber, std::string>(j.dump()) == j.template get_ref<storm::RationalNumber const&>();
+    };
+    ExportJsonType val(expression.getValue());
+
+    if (!isExportAccurate(val)) {
+        // Try if exact export is possible as fraction of two literals
+        auto [num, den] = storm::utility::asFraction(expression.getValue());
+        if (!storm::utility::isOne(den)) {
+            ExportJsonType numJson(num), denJson(den);
+            if (isExportAccurate(num) && isExportAccurate(den)) {
+                val = ExportJsonType();
+                val["op"] = operatorTypeToJaniString(storm::expressions::OperatorType::Divide);
+                val["left"] = std::move(numJson);
+                val["right"] = std::move(denJson);
+            }
+        }
+    }
+    return val;
 }
 
 boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) {
@@ -798,15 +817,8 @@ void JsonExporter::toStream(storm::jani::Model const& janiModel, std::vector<sto
     exporter.convertModel(janiModel, !compact);
     STORM_LOG_INFO("Started to convert properties of model " << janiModel.getName() << ".");
     exporter.convertProperties(formulas, janiModel);
-    if (compact) {
-        // Dump without line breaks/indents
-        STORM_LOG_INFO("Producing compact json output... " << janiModel.getName() << ".");
-        os << exporter.finalize().dump() << '\n';
-    } else {
-        // Dump with line breaks and indention with 4 spaces
-        STORM_LOG_INFO("Producing json output... " << janiModel.getName() << ".");
-        os << exporter.finalize().dump(4) << '\n';
-    }
+    STORM_LOG_INFO("Producing json output... " << janiModel.getName() << ".");
+    os << storm::dumpJson(exporter.finalize(), compact) << '\n';
     STORM_LOG_INFO("Conversion completed " << janiModel.getName() << ".");
 }
 

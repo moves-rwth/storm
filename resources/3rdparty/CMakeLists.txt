@@ -185,7 +185,7 @@ include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/src/")
+add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/include/")
 list(APPEND STORM_DEP_TARGETS ModernJSON)
 
 #############################################################
