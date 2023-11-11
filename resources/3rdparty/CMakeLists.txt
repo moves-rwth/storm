@@ -451,25 +451,6 @@ endif()
 
 #############################################################
 ##
-##      HyPro
-##
-#############################################################
-
-set(STORM_HAVE_HYPRO OFF)
-if(USE_HYPRO)
-	find_package(hypro QUIET REQUIRED)
-	if(hypro_FOUND)
-		set(STORM_HAVE_HYPRO ON)
-		message(STATUS "Storm - Linking with HyPro version ${hypro_VERSION}.")
-		include_directories("${hypro_INCLUDE_DIR}")
-		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
-	else()
-		message(FATAL_ERROR "Storm - HyPro was requested but not found")
-	endif()
-endif()
-
-#############################################################
-##
 ##	gmp
 ##
 #############################################################

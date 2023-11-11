@@ -111,9 +111,6 @@ void printVersion() {
 #ifdef STORM_HAVE_GUROBI
     STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
 #endif
-#ifdef STORM_HAVE_HYPRO
-    STORM_PRINT("Linked with HyPro v" << STORM_HYPRO_VERSION << ".\n");
-#endif
 #ifdef STORM_HAVE_INTELTBB
     STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
                                                                 << TBB_INTERFACE_VERSION << ").\n");
