@@ -1,0 +1,55 @@
+bin/storm-pars  --mode feasibility --feasibility:method pla --prism brp.pm  --prop 'P<=0.01 [F s=5]' --region "0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9"
+Storm-pars 1.8.2 (dev)
+
+Date: Sat Nov 11 20:56:08 2023
+Command line arguments: --mode feasibility '--feasibility:method' pla --prism brp.pm --prop 'P<=0.01 [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9'
+Current working directory: ~/storm/build
+
+Time for model input parsing: 0.009s.
+
+Time for model construction: 0.063s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	135
+Transitions: 	175
+Reward Models:  none
+State Labels: 	3 labels
+  * deadlock -> 5 item(s)
+  * init -> 1 item(s)
+  * (s = 5) -> 4 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Time for model simplification: 0.003s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	43
+Transitions: 	83
+Reward Models:  none
+State Labels: 	4 labels
+  * target -> 1 item(s)
+  * init -> 1 item(s)
+  * deadlock -> 1 item(s)
+  * (s = 5) -> 1 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Time for model preprocessing: 0.004s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	43
+Transitions: 	83
+Reward Models:  none
+State Labels: 	4 labels
+  * target -> 1 item(s)
+  * init -> 1 item(s)
+  * deadlock -> 1 item(s)
+  * (s = 5) -> 1 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+Find feasible solution for  P=? [F (s = 5)] within region 1/10<=pK<=9/10,1/10<=pL<=9/10;
+Result at initial state: 947822915828163/288230376151711744 ( approx. 0.003288421326) at [pK=17/20, pL=17/20].
+Time for model checking: 0.005s.

@@ -1,23 +1,26 @@
-Storm-pars 1.2.2-alpha
+./storm-pars  --mode solutionfunction  --prism brp.pm  --prop 'P=? [F s=5]'
+Storm-pars 1.8.2 (dev)
 
-Command line arguments: --prism parametric_die.pm --prop P=? [F s=7&d=1] 
-Current working directory: ~/storm/release-build
+Date: Sun Nov 12 2023
+Command line arguments: --mode solutionfunction --prism brp.pm --prop 'P=? [F s=5]'
+Current working directory: ~/storm/build/bin
 
-Time for model construction: 0.024s.
+Time for model input parsing: 0.009s.
 
--------------------------------------------------------------- 
+Time for model construction: 0.052s.
+
+--------------------------------------------------------------
 Model type: 	DTMC (sparse)
-States: 	13
-Transitions: 	20
+States: 	135
+Transitions: 	175
 Reward Models:  none
 State Labels: 	3 labels
-   * deadlock -> 0 item(s)
+   * deadlock -> 5 item(s)
    * init -> 1 item(s)
-   * ((s = 7) & (d = 1)) -> 1 item(s)
+   * (s = 5) -> 4 item(s)
 Choice Labels: 	none
--------------------------------------------------------------- 
+--------------------------------------------------------------
 
-Model checking property P=? [F ((s = 7) & (d = 1))] ...
-Result (initial states): 
-((p)^2)/(p+1)
-Time for model checking: 0.002s.
+Model checking property "1": P=? [F (s = 5)] ...
+Result (initial states): (-1 * (pK^10*pL^10+(-120)*pK^7*pL^7+(-10)*pK^9*pL^9+45*pK^8*pL^8+210*pK^6*pL^6+(-250)*pK^5*pL^5+(-100)*pK^3*pL^3+25*pK^2*pL^2+200*pK^4*pL^4+(-1)))/(1)
+Time for model checking: 0.006s.

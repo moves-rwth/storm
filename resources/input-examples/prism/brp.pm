@@ -20,7 +20,7 @@ module sender
 
     s : [0..6];
     // 0 idle
-    // 1 next_frame 
+    // 1 next_frame
     // 2 wait_ack
     // 3 retransmit
     // 4 success
@@ -37,7 +37,7 @@ module sender
     s_ab : bool;
     fs : bool;
     ls : bool;
-    
+
     // idle
     [NewFile] (s=0) -> (s'=1) & (i'=1) & (srep'=0);
     // next_frame
@@ -54,10 +54,10 @@ module sender
     [] (s=4) & (i<N) -> (s'=1) & (i'=i+1);
     [] (s=4) & (i=N) -> (s'=0) & (srep'=3);
     // error
-    [SyncWait] (s=5) -> (s'=6); 
+    [SyncWait] (s=5) -> (s'=6);
     // wait sync
-    [SyncWait] (s=6) -> (s'=0) & (s_ab'=false); 
-    
+    [SyncWait] (s=6) -> (s'=0) & (s_ab'=false);
+
 endmodule
 
 module receiver
@@ -80,62 +80,62 @@ module receiver
     br : bool;
     r_ab : bool;
     recv : bool;
-    
-    
+
+
     // new_file
     [SyncWait] (r=0) -> (r'=0);
-    [aG] (r=0) -> (r'=1) & (fr'=fs) & (lr'=ls) & (br'=bs) & (recv'=T);
+    [aG] (r=0) -> (r'=1) & (fr'=fs) & (lr'=ls) & (br'=bs) & (recv'=Tvar);
     // fst_safe_frame
     [] (r=1) -> (r'=2) & (r_ab'=br);
     // frame_received
     [] (r=2) & (r_ab=br) & (fr=true) & (lr=false)  -> (r'=3) & (rrep'=1);
     [] (r=2) & (r_ab=br) & (fr=false) & (lr=false) -> (r'=3) & (rrep'=2);
     [] (r=2) & (r_ab=br) & (fr=false) & (lr=true)  -> (r'=3) & (rrep'=3);
-    [aA] (r=2) & !(r_ab=br) -> (r'=4);  
+    [aA] (r=2) & !(r_ab=br) -> (r'=4);
     // frame_reported
     [aA] (r=3) -> (r'=4) & (r_ab'=!r_ab);
     // idle
-    [aG] (r=4) -> (r'=2) & (fr'=fs) & (lr'=ls) & (br'=bs) & (recv'=T);
+    [aG] (r=4) -> (r'=2) & (fr'=fs) & (lr'=ls) & (br'=bs) & (recv'=Tvar);
     [SyncWait] (r=4) & (ls=true) -> (r'=5);
     [SyncWait] (r=4) & (ls=false) -> (r'=5) & (rrep'=4);
     // resync
     [SyncWait] (r=5) -> (r'=0) & (rrep'=0);
-    
+
 endmodule
 
 // prevents more than one file being sent
-module tester 
+module tester
 
-    T : bool;
-    
-    [NewFile] (T=false) -> (T'=true);
-    
+    Tvar : bool;
+
+    [NewFile] (Tvar=false) -> (Tvar'=true);
+
 endmodule
 
 module  channelK
 
     k : [0..2];
-    
+
     // idle
     [aF] (k=0) -> pK : (k'=1) + 1-pK : (k'=2);
     // sending
     [aG] (k=1) -> (k'=0);
     // lost
     [TO_Msg] (k=2) -> (k'=0);
-    
+
 endmodule
 
 module  channelL
 
     l : [0..2];
-    
+
     // idle
     [aA] (l=0) -> pL : (l'=1) + 1-pL : (l'=2);
     // sending
     [aB] (l=1) -> (l'=0);
     // lost
     [TO_Ack] (l=2) -> (l'=0);
-    
+
 endmodule
 
 label "error" = s=5;
@@ -144,5 +144,3 @@ rewards
 	[TO_Msg] true : TOMsg;
 	[TO_Ack] true : TOAck;
 endrewards
-
-

@@ -1,0 +1,25 @@
+./storm-pars  --mode verification  --prism brp.pm  --prop 'P<=0.9999 [F s=5]' --region "0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9"
+Storm-pars 1.8.2 (dev)
+
+Date: Sun Nov 12 2023
+Command line arguments: --mode verification --prism brp.pm --prop 'P<=0.9999 [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9'
+Current working directory: ~/storm/build/bin
+
+Time for model input parsing: 0.001s.
+
+Time for model construction: 0.013s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	135
+Transitions: 	175
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 5 item(s)
+   * init -> 1 item(s)
+   * (s = 5) -> 4 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+Formula is satisfied by all parameter instantiations.
+Time for model checking: 0.007s.
+➜  bin git:(pars-cli) ✗ ./storm-pars  --mode verification  --prism brp.pm  --prop 'P<=0.9999 [F s=5]' --region "0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9"

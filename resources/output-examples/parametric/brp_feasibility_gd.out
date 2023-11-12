@@ -1,13 +1,13 @@
-./storm-pars  --mode monotonicity  --prism brp.pm  --prop 'P=? [F s=5]' --bisimulation
+./storm-pars  --mode feasibility --feasibility:method gd --prism brp.pm  --prop 'P<=0.01 [F s=5]'
 Storm-pars 1.8.2 (dev)
 
-Date: Sun Nov 12 2023
-Command line arguments: --mode monotonicity --prism brp.pm --prop 'P=? [F s=5]' --bisimulation
+Date: Sat Nov 11 2023
+Command line arguments: --mode feasibility '--feasibility:method' gd --prism brp.pm --prop 'P<=0.01 [F s=5]'
 Current working directory: ~/storm/build/bin
 
-Time for model input parsing: 0.002s.
+Time for model input parsing: 0.001s.
 
-Time for model construction: 0.018s.
+Time for model construction: 0.012s.
 
 --------------------------------------------------------------
 Model type: 	DTMC (sparse)
@@ -36,23 +36,25 @@ State Labels: 	4 labels
 Choice Labels: 	none
 --------------------------------------------------------------
 
-Time for model preprocessing: 0.001s.
+Time for model preprocessing: 0.000s.
 
 --------------------------------------------------------------
 Model type: 	DTMC (sparse)
-States: 	23
-Transitions: 	43
+States: 	43
+Transitions: 	83
 Reward Models:  none
-State Labels: 	2 labels
+State Labels: 	4 labels
+   * target -> 1 item(s)
    * init -> 1 item(s)
+   * deadlock -> 1 item(s)
    * (s = 5) -> 1 item(s)
 Choice Labels: 	none
 --------------------------------------------------------------
-Number of done states: 23
-No Assumptions
-Monotonicity Result:
-    #Incr: 0 #Decr: 2
-pK MonDecr; pL MonDecr;
-
-
-Total time for monotonicity checking: 0.000s.
+Find feasible solution for  P=? [F (s = 5)]
+Finding an extremum using Gradient Descent
+Trying out a new starting point
+Trying initial guess (p->0.5 for every parameter p or set start point)
+Starting at {pK : 4503608634569751/9007199254740992, pL : 4503608634569751/9007199254740992}
+Aborting because the bound is satisfied
+Result at initial state: 0.001706273496 ( approx. 0.001706273496) at [pK=62679533432486317/72057594037927936, pL=62679533432486317/72057594037927936].
+Time for model checking: 0.006s.
