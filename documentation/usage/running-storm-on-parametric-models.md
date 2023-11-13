@@ -20,7 +20,7 @@ The current support focusses on five modes, of which two are more experimental:
 3. Partitioning -- Finding regions for which the verification problem holds.
 4. Solution Function computation -- Finding a closed-form representation of a solution function, mapping parameter values to, e.g., reachability probabilities.
 5. Monotonicity analysis (experimental) -- Checking whether the solution function is monotonic in one of the parameters.
-6. Sampling (experimental) -- Quickly sampling parametric models multiple times.
+6. Sampling (experimental) -- Quickly sampling parametric models for different parameter valuations.
 
 We outline these modes in more detail below.
 In what follows, Storm typically assumes that all occurring parameters are graph-preserving, that is, they do not influence the topology of the underlying Markov model.
@@ -47,7 +47,7 @@ We use the `--regions` option to set the parameter region. In this case, the equ
 
 The complete output to be expected is:
 
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_feasibility_pla.out" %}
+{% include includes/show_output.html class="brp_feasibility_pla" path="parametric/brp_feasibility_pla.out" %}
 
 In particular, the output says
 
@@ -63,12 +63,12 @@ Instead of giving a bound, pla also support optimization:
 $ storm-pars  --mode feasibility --feasibility:method pla --prism brp.pm  --prop 'P=? [F s=5]' --direction min --region "0.1 <= pL <= 0.9, 0.1 <= pK <= 0.9" --guarantee 0.0001 abs
 ```
 
-In this case, we do not give a bound and specify with `--direction min` that we want to minimize.
-Additionally, we give a `--guarantee 0.0001 abs`, specifying that we want to be find a solution which is within 0.0001 of the optimal value, where the distance is measured in absolute terms.
+In this case, we do not give a bound and specify with `--direction min` that we want to minimize the reachability probability.
+Additionally, we give a `--guarantee 0.0001 abs`, specifying that we want to find a solution which is within 0.0001 of the optimal value, where the distance is measured in absolute terms.
 
 The complete output to be expected is:
 
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_feasibility_pla_guarantee.out" %}
+{% include includes/show_output.html class="brp_feasibility_pla_guarantee" path="parametric/brp_feasibility_pla_guarantee.out" %}
 
 In particular, the output says
 
@@ -76,11 +76,11 @@ In particular, the output says
 Result at initial state: 5282881788238101/9223372036854775808 ( approx. 0.0005727711912) at [pK=287/320, pL=287/320].
 ```
 
-This output indicates not only how to instantiate pK and pL to obtain `P=? [F s=5] = approx. 0.0005727711912`, but also that this value is within 0.0001 from the absolute lower boudn (within the given region).
+This output indicates not only how to instantiate pK and pL to obtain `P=? [F s=5] = approx. 0.0005727711912`, but also that this value is within 0.0001 from the absolute lower bound (within the given region).
 
 ### Feasibility with gd
 
-The gd engine is based on work in {% cite HSJMK22 %}
+The gd engine is based on work in {% cite HSJMK22 %}.
 
 ```console
 $ storm-pars  --mode feasibility --feasibility:method gd --prism brp.pm  --prop 'P<=0.01 [F s=5]'
@@ -89,7 +89,7 @@ In this case, the region for searching cannot be given.
 
 The complete output to be expected is:
 
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_feasibility_pla.out" %}
+{% include includes/show_output.html class="brp_feasibility_pla" path="parametric/brp_feasibility_pla.out" %}
 
 In particular, the output says
 
@@ -107,8 +107,7 @@ $ storm-pars  --mode verification --prism brp.pm  --prop 'P<=0.9999 [F s=5]' --r
 ```
 will provide output
 
-
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_verification_valid.out" %}
+{% include includes/show_output.html class="brp_verification_valid" path="parametric/brp_verification_valid.out" %}
 
 In contrast, running
 ```console
@@ -116,7 +115,9 @@ $ storm-pars  --mode verification --prism brp.pm  --prop 'P<=0.99 [F s=5]' --reg
 ```
 will yield output that says that the statement is *not* true:
 
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_verification_invalid.out" %}
+{% include includes/show_output.html class="brp_verification_invalid" path="parametric/brp_verification_invalid.out" %}
+
+To find a counterexample, one can use the feasibility mode above.
 
 
 ## Parameter Space Partitioning
@@ -130,14 +131,14 @@ $ storm-pars  --mode partitioning --prism brp.pm  --prop 'P<=0.99 [F s=5]' --reg
 
 This produces the following output:
 
-{% include includes/show_output.html class="pla_parametric_models" path="parametric/brp_partitioning.out" %}
+{% include includes/show_output.html class="brp_partitioning" path="parametric/brp_partitioning.out" %}
 
-We can see that for two parameters, Storm even visulalizes the acquired data to give an initial understanding of the region partition.
+We can see that for two parameters, Storm even visulalizes the acquired data to give an initial understanding of the region partition. To cover more (or less) parts of the parameter space, use `--partitioning:terminationCondition 0.01` to say that 99% of the parameter space should be covered.
 
 
 ## Computing the exact solution function
 
-We can run storm to obtain closed-form solutions, i.e. a rational function that represents, e.g., the probability with which the given property is satisfied for certain parameter valuations.  A comprehensive overview on the theoretical backgrounds is given in {% cite JAHJKQV19 %}.
+We can run Storm to obtain closed-form solutions, i.e. a rational function that represents, e.g., the probability with which the given property is satisfied for certain parameter valuations.  A comprehensive overview on the theoretical backgrounds is given in {% cite JAHJKQV19 %}.
 
 ```console
 $ storm-pars --mode solutionfunction  --prism brp.pm  --prop 'P=? [F s=5]'  
@@ -149,7 +150,7 @@ The result is an expression over the parameter pL and pK:
 (-1 * (pK^10*pL^10+(-120)*pK^7*pL^7+(-10)*pK^9*pL^9+45*pK^8*pL^8+210*pK^6*pL^6+(-250)*pK^5*pL^5+(-100)*pK^3*pL^3+25*pK^2*pL^2+200*pK^4*pL^4+(-1)))/(1)
 ```
 
-{% include includes/show_output.html class="closed_form_parametric_models" path="parametric/closed_form.out" %}
+{% include includes/show_output.html class="closed_form" path="parametric/closed_form.out" %}
 
 ## Monotonicity analysis
 
@@ -163,7 +164,7 @@ $ ./storm-pars  --mode monotonicity  --prism brp.pm  --prop 'P=? [F s=5]' --bisi
 We use `--bisimulation` to apply further model simplification and significantly reduce the workload of the model checker.
 This results in the following output:
 
-{% include includes/show_output.html class="mon_parametric_models" path="parametric/brp_mon.out" %}
+{% include includes/show_output.html class="brp_mon" path="parametric/brp_mon.out" %}
 
 In particular, the output specifies that both pL and pK are monotonically decreasing.
 
