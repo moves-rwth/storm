@@ -732,18 +732,14 @@ boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression 
     return ExportJsonType(expression.getValue());
 }
 boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-    // Helper to check if the literal is exported (i.e. dumped) with enough accuracy.
-    auto isExportAccurate = [](ExportJsonType const& j) {
-        return storm::utility::convertNumber<storm::RationalNumber, std::string>(j.dump()) == j.template get_ref<storm::RationalNumber const&>();
-    };
     ExportJsonType val(expression.getValue());
 
-    if (!isExportAccurate(val)) {
+    if (!storm::isJsonNumberExportAccurate(val)) {
         // Try if exact export is possible as fraction of two literals
         auto [num, den] = storm::utility::asFraction(expression.getValue());
         if (!storm::utility::isOne(den)) {
             ExportJsonType numJson(num), denJson(den);
-            if (isExportAccurate(num) && isExportAccurate(den)) {
+            if (isJsonNumberExportAccurate(numJson) && isJsonNumberExportAccurate(denJson)) {
                 val = ExportJsonType();
                 val["op"] = operatorTypeToJaniString(storm::expressions::OperatorType::Divide);
                 val["left"] = std::move(numJson);

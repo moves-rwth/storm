@@ -8,6 +8,26 @@
 
 namespace storm {
 
+template<typename ValueType>
+bool isJsonNumberExportAccurate(storm::json<ValueType> const& j) {
+    STORM_LOG_ASSERT(j.is_number_float(), "Expected a json object of type float.");
+    auto jDump = j.dump();
+    // json::dump() internally converts ValueType to double which might be nan or inf, depending on how exactly the conversion works.
+    // In that case, nlohmann/json will produce "null" (as neither nan nor inf are valid json values).
+    // See https://json.nlohmann.me/api/basic_json/number_float_t/
+    if (jDump == "null") {
+        return false;
+    }
+    // Parse the dumped value with full accuracy
+    auto parsed = storm::utility::convertNumber<storm::RationalNumber, std::string>(jDump);
+    // Check if parsed and actual value coincide.
+    if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        return parsed == j.template get_ref<ValueType const&>();
+    } else {
+        return parsed == storm::utility::convertNumber<storm::RationalNumber>(j.template get_ref<ValueType const&>());
+    }
+}
+
 template<typename ValueType, typename CallBack>
 void json_for_each_number_float(storm::json<ValueType> const& j, CallBack const& f) {
     if (j.is_structured()) {
@@ -25,11 +45,11 @@ void warnIfJsonExportNotAccurate(storm::json<ValueType> const& j) {
     uint64_t num_bad(0), num_all(0);
     json_for_each_number_float(j, [&message, &num_bad, &num_all](auto const& v_json) {
         ++num_all;
-        auto const& actualValue = v_json.template get_ref<ValueType const&>();
-        if (std::string v_dump = v_json.dump(); actualValue != storm::utility::convertNumber<ValueType>(v_dump)) {
+        if (!isJsonNumberExportAccurate(v_json)) {
             ++num_bad;
             if (num_bad == 1) {
-                message << "Inaccurate JSON export: The number " << actualValue << " will be rounded to  " << v_dump << ". ";
+                auto const& actualValue = v_json.template get_ref<ValueType const&>();
+                message << "Inaccurate JSON export: The number " << actualValue << " will be exported as " << v_json.dump() << ". ";
             }
         };
     });
