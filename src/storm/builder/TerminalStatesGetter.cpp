@@ -9,7 +9,7 @@ namespace builder {
 void getTerminalStatesFromFormula(storm::logic::Formula const& formula,
                                   std::function<void(storm::expressions::Expression const&, bool)> const& terminalExpressionCallback,
                                   std::function<void(std::string const&, bool)> const& terminalLabelCallback) {
-    auto isAtomic = [](auto const& f) { return f.isAtomicExpressionFormula() || f.isAtomicLabelFormula(); };
+    auto isAtomic = [](auto const& f) { return f.isAtomicExpressionFormula() || f.isAtomicLabelFormula() || f.isBooleanLiteralFormula(); };
     if (formula.isAtomicExpressionFormula()) {
         terminalExpressionCallback(formula.asAtomicExpressionFormula().getExpression(), true);
     } else if (formula.isAtomicLabelFormula()) {
