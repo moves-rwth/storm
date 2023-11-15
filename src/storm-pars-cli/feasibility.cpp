@@ -207,7 +207,7 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
         printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
     } else {
         STORM_LOG_THROW(task->getMaximalAllowedGap() != std::nullopt, storm::exceptions::NotSupportedException,
-                        "Without a bound, PLA requires an explicit target in form of a guarantee..");
+                        "Without a bound, PLA requires an explicit target in form of a guarantee.");
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
