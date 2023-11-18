@@ -103,13 +103,6 @@ class CoreSettings : public ModuleSettings {
     bool isUseIntelTbbSet() const;
 
     /*!
-     * Retrieves whether the option to use CUDA is set.
-     *
-     * @return True iff the option was set.
-     */
-    bool isUseCudaSet() const;
-
-    /*!
      * Retrieves the selected engine.
      *
      * @return The selected engine.
@@ -141,7 +134,6 @@ class CoreSettings : public ModuleSettings {
     static const std::string ddLibraryOptionName;
     static const std::string intelTbbOptionName;
     static const std::string intelTbbOptionShortName;
-    static const std::string cudaOptionName;
 };
 
 }  // namespace modules
