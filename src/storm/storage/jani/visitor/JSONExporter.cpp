@@ -353,7 +353,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boos
     return opDecl;
 }
 
-boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const& f, boost::any const& data) const {
+boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Conversion of game formulas to Jani is not supported.");
 }
 
@@ -1194,12 +1194,10 @@ void JsonExporter::convertProperties(std::vector<storm::jani::Property> const& f
         return;
     }
 
-    uint64_t index = 0;
     for (auto const& f : formulas) {
         ExportJsonType propDecl;
         propDecl["name"] = f.getName();
         propDecl["expression"] = convertFilterExpression(f.getFilter(), model, modelFeatures);
-        ++index;
         properties.push_back(std::move(propDecl));
     }
     jsonStruct["properties"] = std::move(properties);
