@@ -240,7 +240,11 @@ std::string Expression::toString() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
-    stream << expression.getBaseExpression();
+    if (expression.isInitialized()) {
+        stream << expression.getBaseExpression();
+    } else {
+        stream << "__storm::notinitialized__";
+    }
     return stream;
 }
 

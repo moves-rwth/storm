@@ -696,6 +696,20 @@ class Program : public LocatedInformation {
      */
     Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
 
+    /*!
+     * Replace the initialization in variables by an init-expression. This should not change the semantics of the program and can be a preprocessing step.
+     *
+     * @return
+     */
+    Program replaceVariableInitializationByInitExpression() const;
+
+    /**
+     * Substitutes a constant with a given name by a global variable that is bound between lowerBound and upperBound
+     * @return
+     */
+    Program replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
+                                      bool observable = true) const;
+
     /**
      * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further.
      * @return A simplified, equivalent program.
