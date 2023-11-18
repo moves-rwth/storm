@@ -46,19 +46,16 @@ namespace storm {
              * @return Pair of bools, >= 0 and <= 0.
              */
             static std::pair<bool, bool> checkDerivative(ValueType const& derivative, storage::ParameterRegion<ValueType> const& reg) {
-                bool monIncr = false;
-                bool monDecr = false;
-
                 if (derivative.isZero()) {
-                    monIncr = true;
-                    monDecr = true;
                     return std::pair<bool, bool>(true, true);
                 }
                 if (derivative.isConstant()) {
-                    monIncr = derivative.constantPart() >= 0;
-                    monDecr = derivative.constantPart() <= 0;
+                    bool monIncr = derivative.constantPart() >= 0;
+                    bool monDecr = derivative.constantPart() <= 0;
                     return std::pair<bool, bool>(monIncr, monDecr);
                 }
+                bool monIncr = false;
+                bool monDecr = false;
 
                 std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
                 std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
@@ -66,7 +63,7 @@ namespace storm {
                 std::set<VariableType> variables = derivative.gatherVariables();
 
                 expressions::Expression exprBounds = manager->boolean(true);
-                for (auto variable : variables) {
+                for (auto const& variable : variables) {
                     auto managerVariable = manager->declareRationalVariable(variable.name());
                     auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
                     auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));

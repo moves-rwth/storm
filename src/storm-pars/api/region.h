@@ -250,8 +250,8 @@ namespace storm {
          * Finds the extremal value in the given region
          */
         template <typename ValueType>
-        std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
-                                                                                                                  storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const& task,
+        std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                                                                  storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
                                                                                                                   storm::storage::ParameterRegion<ValueType> const& region,
                                                                                                                   storm::modelchecker::RegionCheckEngine engine,
                                                                                                                   storm::solver::OptimizationDirection const& dir,

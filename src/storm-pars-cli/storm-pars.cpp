@@ -63,7 +63,6 @@
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 
-// TODO reformat in a seperate PR
 namespace storm {
     namespace pars {
         struct PreprocessResult {

@@ -11,7 +11,6 @@
 namespace storm {
     namespace settings {
         namespace modules {
-    // TODO @Svenja, check what the module prefix is, maybe instead of doing mon- we could set this to true for the onces where we now have mon-"optionname"
             const std::string MonotonicitySettings::moduleName = "mon";
             const std::string MonotonicitySettings::usePLABounds = "useBounds";
             const std::string MonotonicitySettings::sccElimination = "eliminateSCCs";
