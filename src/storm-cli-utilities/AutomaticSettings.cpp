@@ -1,4 +1,4 @@
-#include "storm/utility/AutomaticSettings.h"
+#include "storm-cli-utilities/AutomaticSettings.h"
 
 #include <sstream>
 

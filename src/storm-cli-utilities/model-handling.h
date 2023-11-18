@@ -5,8 +5,8 @@
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-parsers/api/storm-parsers.h"
 
+#include "storm-cli-utilities/AutomaticSettings.h"
 #include "storm/io/file.h"
-#include "storm/utility/AutomaticSettings.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
@@ -34,6 +34,7 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm-cli-utilities/Qvbs.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -44,7 +45,6 @@
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/storage/Qvbs.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 
