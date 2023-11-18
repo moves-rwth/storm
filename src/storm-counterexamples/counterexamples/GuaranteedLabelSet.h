@@ -49,9 +49,7 @@ std::vector<storm::storage::FlatSet<uint_fast64_t>> getGuaranteedLabelSets(storm
         }
     }
 
-    uint_fast64_t iters = 0;
     while (!worklist.empty()) {
-        ++iters;
         uint_fast64_t const& currentState = worklist.front();
 
         size_t analysisInformationSizeBefore = analysisInformation[currentState].size();
