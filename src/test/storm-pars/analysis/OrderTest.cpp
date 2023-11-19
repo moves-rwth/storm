@@ -3,6 +3,7 @@
 #include "storm-config.h"
 #include "storm-pars/api/analysis.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/graph.h"
 
 TEST(OrderTest, Simple) {
     auto numberOfStates = 7;

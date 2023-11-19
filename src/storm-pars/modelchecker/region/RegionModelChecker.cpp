@@ -6,11 +6,13 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Dtmc.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"

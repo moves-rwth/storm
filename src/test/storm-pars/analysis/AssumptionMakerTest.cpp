@@ -14,6 +14,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/graph.h"
 
 TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
