@@ -5,6 +5,7 @@
 #include "mathsat.h"
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/storage/expressions/OperatorType.h"
 
 TEST(MathsatExpressionAdapter, StormToMathsatBasic) {
     msat_config config = msat_create_config();

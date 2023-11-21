@@ -11,6 +11,7 @@
 #include "storm/exceptions/NotImplementedException.h"
 
 #include "storm-pars/analysis/AssumptionChecker.h"
+#include "storm/utility/Stopwatch.h"
 
 
 namespace storm {

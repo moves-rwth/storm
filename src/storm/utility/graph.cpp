@@ -11,7 +11,7 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/abstraction/ExplicitGameStrategyPair.h"
+#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/models/sparse/DeterministicModel.h"
@@ -1309,7 +1309,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair) {
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair) {
     ExplicitGameProb01Result result(psiStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
 
     // Initialize the stack used for the DFS with the states
@@ -1519,7 +1519,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates) {
     // During the execution, the two state sets in the result hold the potential player 1/2 states.
     ExplicitGameProb01Result result;
@@ -2025,14 +2025,13 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<doub
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
@@ -2154,15 +2153,14 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<stor
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
