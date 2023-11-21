@@ -704,7 +704,11 @@ class Program : public LocatedInformation {
     Program replaceVariableInitializationByInitExpression() const;
 
     /**
-     * Substitutes a constant with a given name by a global variable that is bound between lowerBound and upperBound
+     * Substitutes the given constant by a fresh global variable that is bound between lowerBound and upperBound.
+     * The provided lowerBound and upperBound are not considered if the constant is Boolean.
+     * If the constant is defined by an expression, that expression is used as initial value for the created variable.
+     * @note If the given constant appears at positions where a variable would be invalid (e.g. variable bounds 
+         or the definition of another constant), the resulting program is malformed.
      * @return
      */
     Program replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
