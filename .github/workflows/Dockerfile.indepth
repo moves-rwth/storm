@@ -3,12 +3,12 @@
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
 # A different base image can be set from the commandline with:
-# --build-arg STORM_BASE=<new_base_image>
+# --build-arg BASE_IMG=<new_base_image>
 
 # Set base image
 ARG BASE_IMG=movesrwth/storm-basesystem:latest
 FROM $BASE_IMG
-MAINTAINER Matthias Volk <m.volk@utwente.nl>
+MAINTAINER Matthias Volk <m.volk@tue.nl>
 
 # Specify configurations
 # These configurations can be set from the commandline with:
@@ -19,6 +19,18 @@ ARG build_type=Release
 ARG no_threads=1
 # Specify CMake arguments for Storm
 ARG cmake_args="-DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
+# Specify MathSAT version
+ARG mathsat_version=5.6.10
+
+
+# Build MathSAT
+############
+WORKDIR /opt/
+
+# Obtain MathSAT 5
+RUN apt-get -y update; apt-get -y install curl
+RUN curl -L -o mathsat5.tar.gz "https://mathsat.fbk.eu/download.php?file=mathsat-$mathsat_version-linux-x86_64.tar.gz"
+RUN tar -xzf mathsat5.tar.gz && mv mathsat-$mathsat_version-linux-x86_64 mathsat5 && rm mathsat5.tar.gz
 
 
 # Build Storm
