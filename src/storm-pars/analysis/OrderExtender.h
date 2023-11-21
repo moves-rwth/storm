@@ -2,7 +2,7 @@
 #define STORM_ORDEREXTENDER_H
 
 #include <boost/container/flat_set.hpp>
-#include "storm/api/storm.h"
+#include "storm/utility/Stopwatch.h"
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"

@@ -32,7 +32,7 @@ namespace counterexamples {
  * Helper to avoid case disticinot between prism and jani
  * Returns the number of edges/commands in a symbolic model description.
  */
-size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
+inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {

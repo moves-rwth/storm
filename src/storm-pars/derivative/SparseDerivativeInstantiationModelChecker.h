@@ -52,6 +52,7 @@ class SparseDerivativeInstantiationModelChecker {
     }
 
    private:
+    // TODO it is not good that this model is not a reference. (but we reduce to state based rewards in this code.)
     models::sparse::Dtmc<FunctionType> model;
     std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTask;
     // store the current formula. Note that currentCheckTask only stores a reference to the formula.

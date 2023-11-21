@@ -11,10 +11,7 @@
 namespace storm {
     namespace settings {
         namespace modules {
-    // TODO @Svenja, check what the module prefix is, maybe instead of doing mon- we could set this to true for the onces where we now have mon-"optionname"
             const std::string MonotonicitySettings::moduleName = "mon";
-            const std::string MonotonicitySettings::monotonicityAnalysis = "monotonicity-analysis";
-            const std::string MonotonicitySettings::monotonicityAnalysisShortName = "ma";
             const std::string MonotonicitySettings::usePLABounds = "useBounds";
             const std::string MonotonicitySettings::sccElimination = "eliminateSCCs";
             const std::string MonotonicitySettings::samplesMonotonicityAnalysis = "samples";
@@ -28,7 +25,6 @@ namespace storm {
             const std::string MonotonicitySettings::monotoneParameters ="parameters";
 
             MonotonicitySettings::MonotonicitySettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").setIsAdvanced().setShortName(monotonicityAnalysisShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, usePLABounds, true, "Sets whether pla bounds should be used for monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, true, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, true, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
@@ -40,10 +36,6 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(monotonicityThreshold, "The depth threshold from which on monotonicity is used for Parameter Lifting").setDefaultValueUnsignedInteger(0).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotoneParameters, true, "Sets monotone parameters from file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("monotoneParametersFilename", "The file where the monotone parameters are set").build()).build());
-            }
-
-            bool MonotonicitySettings::isMonotonicityAnalysisSet() const {
-                return this->getOption(monotonicityAnalysis).getHasOptionBeenSet();
             }
 
             bool MonotonicitySettings::isUsePLABoundsSet() const {

@@ -15,6 +15,7 @@
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/graph.h"
 
 #include "test/storm_gtest.h"
 

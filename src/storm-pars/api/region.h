@@ -21,6 +21,7 @@
 
 #include "storm/environment/Environment.h"
 
+#include "storm/api/storm.h"
 #include "storm/api/transformation.h"
 #include "storm/io/file.h"
 #include "storm/models/sparse/Model.h"
@@ -44,23 +45,23 @@ namespace storm {
         };
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
             // we try to parse it as a file, otherwise we assume it's a region string.
             if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
-                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables, splittingThreshold);
+                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables);
             } else {
-                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables, splittingThreshold);
+                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables);
             }
         }
 
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
-            return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables, splittingThreshold);
+        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+            return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -70,11 +71,11 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
-            return parseRegions<ValueType>(inputString, modelParameters, splittingThreshold);
+            return parseRegions<ValueType>(inputString, modelParameters);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -84,23 +85,23 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
-            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters, splittingThreshold)});
+            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters)});
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
             // Handle the "empty region" case
             if (inputString == "" && consideredVariables.empty()) {
                 return storm::storage::ParameterRegion<ValueType>();
             }
             
-            auto res = parseRegions<ValueType>(inputString, consideredVariables, splittingThreshold);
+            auto res = parseRegions<ValueType>(inputString, consideredVariables);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model) {
             // Handle the "empty region" case
             if (inputString == "" && !model.hasParameters()) {
                 return storm::storage::ParameterRegion<ValueType>();
@@ -247,35 +248,53 @@ namespace storm {
         // TODO: update documentation
         /*!
          * Finds the extremal value in the given region
-         * @param engine The considered region checking engine
-         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
-         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
-         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
          */
         template <typename ValueType>
-        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+        std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                                                                  storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+                                                                                                                  storm::storage::ParameterRegion<ValueType> const& region,
+                                                                                                                  storm::modelchecker::RegionCheckEngine engine,
+                                                                                                                  storm::solver::OptimizationDirection const& dir,
+                                                                                                                  boost::optional<ValueType> const& precision,
+                                                                                                                  bool absolutePrecision,
+                                                                                                                  MonotonicitySetting const& monotonicitySetting,
+                                                                                                                  std::optional<storm::logic::Bound> const& boundInvariant,
+                                                                                                                  bool generateSplitEstimates = false,
+                                                                                                                  std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
             Environment env;
             bool preconditionsValidated = false;
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);
-            return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision);
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
+            auto res = regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision, boundInvariant);
+            STORM_LOG_ASSERT(res.first.isConstant(), "result must be a constant");
+            return {storm::utility::convertNumber<storm::RationalNumber>(res.first.constantPart()), std::move(res.second)};
         }
 
-        // TODO: update documentation
         /*!
-         * Checks if a given extremal value is indeed the extremal value in the given region
-         * @param engine The considered region checking engine
-         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
-         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
-         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         * Verifies whether a region satisfies a property.
          */
         template <typename ValueType>
-        bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, ValueType const& suggestion, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false,  boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+        bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                storm::logic::Formula const& formula,
+                                storm::storage::ParameterRegion<ValueType> const& region,
+                                storm::modelchecker::RegionCheckEngine engine,
+                                MonotonicitySetting const& monotonicitySetting,
+                                bool generateSplitEstimates = false,
+                                std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
             Environment env;
+            STORM_LOG_THROW(formula.isProbabilityOperatorFormula() || formula.isRewardOperatorFormula(), storm::exceptions::NotSupportedException, "Only probability and reward operators supported");
+            STORM_LOG_THROW(formula.asOperatorFormula().hasBound(), storm::exceptions::NotSupportedException, "Verification requires a bounded operator formula.");
+
+            storm::logic::Bound const& bound = formula.asOperatorFormula().getBound();
+            std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = formula.clone();
+            formulaWithoutBounds->asOperatorFormula().removeBound();
             bool preconditionsValidated = false;
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);
-            return regionChecker->checkExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision, suggestion);
+            auto regionChecker = initializeRegionModelChecker(env, model,storm::api::createTask<ValueType>(formulaWithoutBounds, true), engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
+            if (maxSplitsPerStepThreshold && maxSplitsPerStepThreshold < std::numeric_limits<uint64_t>::max()) {
+                regionChecker->setMaxSplitDimensions(maxSplitsPerStepThreshold.value());
+            }
+            return regionChecker->verifyRegion(env, region, bound);
         }
         
         template <typename ValueType>

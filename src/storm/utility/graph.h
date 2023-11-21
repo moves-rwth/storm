@@ -51,7 +51,7 @@ class Add;
 
 }  // namespace dd
 
-namespace abstraction {
+namespace storage {
 class ExplicitGameStrategyPair;
 }
 
@@ -779,8 +779,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr);
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr);
 
 /*!
  * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -802,8 +801,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
 
 /*!

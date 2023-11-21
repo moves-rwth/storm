@@ -6,11 +6,13 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Dtmc.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -331,13 +333,13 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision) {
+        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& terminationBound) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing extremal values is not supported for this region model checker.");
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck) {
+        bool RegionModelChecker<ParametricType>::verifyRegion(Environment const&, storm::storage::ParameterRegion<ParametricType> const&, storm::logic::Bound const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
             return false;
         }
@@ -367,6 +369,16 @@ namespace storm {
         void RegionModelChecker<ParametricType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
             STORM_LOG_WARN("Setting constant entries fo local monotonicity result not implemented");
             // Does nothing
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setMaxSplitDimensions(uint64_t) {
+            STORM_LOG_WARN("Setting max splitting dimensions is not implemented for this model checker");
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::resetMaxSplitDimensions() {
+            STORM_LOG_WARN("Resetting max splitting dimensions is not implemented for this model checker");
         }
 
         template <typename ParametricType>

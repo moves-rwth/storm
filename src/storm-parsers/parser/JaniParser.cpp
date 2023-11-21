@@ -103,7 +103,7 @@ template<typename ValueType>
 void JaniParser<ValueType>::readFile(std::string const& path) {
     std::ifstream file;
     storm::utility::openFile(path, file);
-    parsedStructure << file;
+    file >> parsedStructure;
     storm::utility::closeFile(file);
 }
 
