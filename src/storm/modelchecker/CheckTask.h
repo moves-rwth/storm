@@ -241,7 +241,7 @@ class CheckTask {
     }
 
     /*!
-     * Retrieves the bound (if set).
+     * Retrieves the bound
      */
     boost::optional<storm::logic::Bound> const& getOptionalBound() const {
         return bound;

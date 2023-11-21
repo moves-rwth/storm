@@ -184,7 +184,6 @@ namespace storm {
                 }
 
                 ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
-                subRegion.setSplitThreshold(this->getSplitThreshold());
 
                 if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
@@ -280,16 +279,6 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region) {
             out << region.toString();
             return out;
-        }
-
-        template <typename ParametricType>
-        void ParameterRegion<ParametricType>::setSplitThreshold(uint_fast64_t splitThreshold) {
-            this->splitThreshold = splitThreshold;
-        }
-
-        template <typename ParametricType>
-        uint_fast64_t ParameterRegion<ParametricType>::getSplitThreshold() const {
-            return splitThreshold;
         }
 
 

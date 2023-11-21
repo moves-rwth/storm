@@ -4,10 +4,11 @@
 #include "storm/exceptions/InvalidOperationException.h"
 
 #include "storm/models/ModelType.h"
-
+#include "storm/utility/Stopwatch.h"
 #include "storm/modelchecker/results/CheckResult.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 #include "storm-pars/analysis/AssumptionChecker.h"
 

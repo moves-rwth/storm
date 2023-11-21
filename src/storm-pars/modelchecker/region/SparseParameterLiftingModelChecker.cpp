@@ -232,10 +232,17 @@ namespace storm {
         };
 
         template<typename SparseModelType, typename ConstantType>
-        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision, bool absolutePrecision, boost::optional<ConstantType> const& initialValue) {
+        std::pair<ConstantType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env,
+                                                                                                                                                                                                                                         storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region,
+                                                                                                                                                                                                                                         storm::solver::OptimizationDirection const& dir,
+                                                                                                                                                                                                                                         typename SparseModelType::ValueType const& precision,
+                                                                                                                                                                                                                                         bool absolutePrecision,
+                                                                                                                                                                                                                                         boost::optional<ConstantType> const& initialValue,
+                                                                                                                                                                                                                                         std::optional<storm::logic::Bound> const& terminationBound) {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting extremal values at the initial state requires a model with a single initial state.");
+            STORM_LOG_THROW(!this->currentCheckTask->isBoundSet(), storm::exceptions::NotSupportedException, "Computing extremal values with parameter lifting requires no bound on the operator.");
             bool const useMonotonicity = this->isUseMonotonicitySet();
             bool const minimize = storm::solver::minimize(dir);
 
@@ -294,6 +301,11 @@ namespace storm {
                 STORM_LOG_INFO("Initial value: " << value.get() << " as provided by the user");
             }
 
+            if (terminationBound != std::nullopt && !terminationBound.value().isSatisfied(value.get())) {
+                return std::make_pair(storm::utility::convertNumber<ConstantType>(value.get()), valuation);
+            }
+
+
             auto numberOfSplits = 0;
             auto numberOfPLACalls = 0;
             auto numberOfOrderCopies = 0;
@@ -310,6 +322,7 @@ namespace storm {
                     auto localMonotonicityResult = regionQueue.top().localMonRes;
                     auto currBound = regionQueue.top().bound;
                     STORM_LOG_INFO("Currently looking at region: " << currRegion);
+
                     std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
                     // Check whether this region needs further investigation based on the bound of the parent region
@@ -326,6 +339,7 @@ namespace storm {
                     if (investigateBounds) {
                         numberOfPLACalls++;
                         auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                        // TODO this looks dangerous
                         currBound = bounds[*this->parametricModel->getInitialStates().begin()];
                         // Check whether this region needs further investigation based on the bound of this region
                         bool lookAtRegion;
@@ -372,7 +386,12 @@ namespace storm {
                             if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
                                 value = currValue;
                                 valuation = point;
+                                if (terminationBound != std::nullopt && !terminationBound.value().isSatisfied(value.get())) {
+                                    return std::make_pair(storm::utility::convertNumber<ConstantType>(value.get()), valuation);
+                                }
                             }
+
+
 
                             bool splitRegion;
                             if (absolutePrecision) {
@@ -441,16 +460,17 @@ namespace storm {
                         }
                     }
 
-                    STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound.get() << ".");
                     STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region.\n");
+                    STORM_LOG_INFO("Best value: " << value.get() << ". Regions queued: " << regionQueue.size() << "\n");
+
                 }
                 loopWatch.stop();
             }
 
             STORM_LOG_INFO("Total number of splits: " << numberOfSplits << '\n');
-            STORM_LOG_INFO("Total number of plaCalls: " << numberOfPLACalls << '\n');
+            STORM_LOG_INFO("Total number of pla calls: " << numberOfPLACalls << '\n');
             if (useMonotonicity) {
-                STORM_LOG_INFO("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << '\n');
+                STORM_LOG_INFO("Total number of pla calls for bounds for monotonicity checking: " << numberOfPLACallsBounds << '\n');
                 STORM_LOG_INFO("Total number of copies of the order: " << numberOfOrderCopies << '\n');
                 STORM_LOG_INFO("Total number of copies of the local monotonicity result: " << numberOfMonResCopies
                                                                                         << '\n');
@@ -458,18 +478,26 @@ namespace storm {
             STORM_LOG_INFO("\nTotal time for region refinement: " << loopWatch << ".\n\n");
             STORM_LOG_INFO("\nTotal time for additional bounds: " << boundsWatch << ".\n\n");
 
-            return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
+            return std::make_pair(storm::utility::convertNumber<ConstantType>(value.get()), valuation);
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision, bool absolutePrecision) {
-            return computeExtremalValue(env, region, dir, precision, absolutePrecision, boost::none);
+        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& terminationBound) {
+            auto res = computeExtremalValue(env, region, dir, precision, absolutePrecision, boost::none, terminationBound);
+            return  {storm::utility::convertNumber<typename SparseModelType::ValueType>(res.first), res.second};
         }
 
         template <typename SparseModelType, typename ConstantType>
-        bool SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision, bool absolutePrecision, typename SparseModelType::ValueType const& valueToCheck) {
-            auto res = computeExtremalValue(env, region, dir, precision, absolutePrecision, storm::utility::convertNumber<ConstantType>(valueToCheck)).first;
-            return storm::solver::minimize(dir) ? storm::utility::convertNumber<ConstantType>(res) >= storm::utility::convertNumber<ConstantType>(valueToCheck) : storm::utility::convertNumber<ConstantType>(res) <= storm::utility::convertNumber<ConstantType>(valueToCheck);
+        bool SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::verifyRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::logic::Bound const& bound) {
+            // Use the bound from the formula.
+            ConstantType valueToCheck = storm::utility::convertNumber<ConstantType>(bound.threshold.evaluateAsDouble());
+            // We will try to violate the bound.
+            storm::solver::OptimizationDirection dir = isLowerBound(bound.comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+            // We pass the bound as an invariant; as soon as it is obtained, we can stop the search.
+            auto res = computeExtremalValue(env, region, dir, storm::utility::zero<typename SparseModelType::ValueType>(), false, boost::none, bound).first;
+            STORM_LOG_DEBUG("Reported extremal value " << res);
+            // TODO use termination bound instead of initial value?
+            return storm::solver::minimize(dir) ? storm::utility::convertNumber<ConstantType>(res) >= valueToCheck : storm::utility::convertNumber<ConstantType>(res) <= valueToCheck;
         }
 
         template <typename SparseModelType, typename ConstantType>
