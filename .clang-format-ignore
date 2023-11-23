@@ -1,3 +1,2 @@
-./src/storm-pars/*
-./src/storm-pars-cli/*
-./src/test/storm-pars/*
+# Contains file path patterns that clang-format should ignore.
+# Currently intentionally left empty.
