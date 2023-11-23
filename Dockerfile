@@ -8,7 +8,7 @@
 # Set base image
 ARG BASE_IMG=movesrwth/storm-basesystem:latest
 FROM $BASE_IMG
-MAINTAINER Matthias Volk <m.volk@utwente.nl>
+MAINTAINER Matthias Volk <m.volk@tue.nl>
 
 # Specify configurations
 # These configurations can be set from the commandline with:
