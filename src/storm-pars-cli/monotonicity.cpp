@@ -2,20 +2,15 @@
 
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
-#include "storm-pars-cli/sampling.h"
-#include "storm-pars-cli/print.h"
 #include "storm-pars-cli/monotonicity.h"
+#include "storm-pars-cli/print.h"
+#include "storm-pars-cli/sampling.h"
 
-
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/api/region.h"
 #include "storm-pars/analysis/MonotonicityHelper.h"
-
-
-
+#include "storm-pars/api/region.h"
+#include "storm-pars/api/storm-pars.h"
 
 #include "storm-pars/utility/parametric.h"
-
 
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
@@ -28,13 +23,11 @@
 
 #include "storm/settings/SettingsManager.h"
 
-
 #include "storm/io/file.h"
-#include "storm/utility/initialize.h"
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/macros.h"
 #include "storm/utility/Engine.h"
-
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/initialize.h"
+#include "storm/utility/macros.h"
 
 namespace storm::pars {
 template<typename ValueType>
@@ -116,4 +109,4 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
 
 template void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model, cli::SymbolicInput const& input,
                                   std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> const& regions);
-}
+}  // namespace storm::pars

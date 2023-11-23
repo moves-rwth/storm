@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/settings/modules/ModuleSettings.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm::settings::modules {
 
@@ -21,5 +21,4 @@ class RegionVerificationSettings : public ModuleSettings {
     const static std::string moduleName;
 };
 
-
-}
+}  // namespace storm::settings::modules

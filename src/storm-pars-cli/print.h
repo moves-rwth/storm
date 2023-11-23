@@ -6,8 +6,7 @@
 
 namespace storm::pars {
 template<typename ValueType>
-void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const &result,
-                              storm::utility::Stopwatch *watch = nullptr,
+void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const &result, storm::utility::Stopwatch *watch = nullptr,
                               const storm::utility::parametric::Valuation<ValueType> *valuation = nullptr);
 
 }

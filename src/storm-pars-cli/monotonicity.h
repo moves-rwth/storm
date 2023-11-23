@@ -2,8 +2,8 @@
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
-#include "storm/models/sparse/Model.h"
 #include "storm-pars/api/region.h"
+#include "storm/models/sparse/Model.h"
 
 namespace storm::pars {
 template<typename ValueType>

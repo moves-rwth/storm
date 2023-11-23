@@ -10,8 +10,8 @@ class PartitionSettings : public ModuleSettings {
    public:
     PartitionSettings();
     /*!
-	 * Retrieves the threshold considered for iterative region refinement.
-	 * The refinement converges as soon as the fraction of unknown area falls below this threshold
+     * Retrieves the threshold considered for iterative region refinement.
+     * The refinement converges as soon as the fraction of unknown area falls below this threshold
      */
     double getCoverageThreshold() const;
 
@@ -27,7 +27,7 @@ class PartitionSettings : public ModuleSettings {
     uint64_t getDepthLimit() const;
 
     /*!
-	 * Retrieves whether no illustration of the result should be printed.
+     * Retrieves whether no illustration of the result should be printed.
      */
     bool isPrintNoIllustrationSet() const;
 
@@ -38,4 +38,4 @@ class PartitionSettings : public ModuleSettings {
 
     const static std::string moduleName;
 };
-}
+}  // namespace storm::settings::modules

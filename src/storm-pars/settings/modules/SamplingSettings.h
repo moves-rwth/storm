@@ -26,4 +26,4 @@ class SamplingSettings : public ModuleSettings {
     static const std::string moduleName;
 };
 
-}
+}  // namespace storm::settings::modules

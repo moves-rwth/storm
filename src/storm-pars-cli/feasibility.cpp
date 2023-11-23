@@ -11,7 +11,6 @@
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 
-
 namespace storm::pars {
 
 template<typename VT1>
