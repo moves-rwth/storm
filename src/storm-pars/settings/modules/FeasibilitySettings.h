@@ -1,7 +1,7 @@
 #pragma once
 
-#include "storm/settings/modules/ModuleSettings.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
+#include "storm/settings/modules/ModuleSettings.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm::settings::modules {
@@ -22,7 +22,7 @@ class FeasibilitySettings : public ModuleSettings {
      */
     bool hasOptimalValueGuaranteeBeenSet() const;
     /*!
-	 * Retrieves the precision for the extremal value
+     * Retrieves the precision for the extremal value
      */
     double getOptimalValueGuarantee() const;
 
@@ -32,16 +32,16 @@ class FeasibilitySettings : public ModuleSettings {
     bool isAbsolutePrecisionSet() const;
 
     /*!
-	 * Retrieves whether an extremal value is to be computed
+     * Retrieves whether an extremal value is to be computed
      */
     bool isParameterDirectionSet() const;
 
     /*!
-	 * Retrieves whether to minimize or maximize over parameters
+     * Retrieves whether to minimize or maximize over parameters
      */
     storm::solver::OptimizationDirection getParameterDirection() const;
 
     const static std::string moduleName;
 };
 
-}
+}  // namespace storm::settings::modules

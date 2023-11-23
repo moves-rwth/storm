@@ -4,19 +4,17 @@
 
 #include "storm/settings/SettingsManager.h"
 
-
 namespace storm::pars {
 
 template<typename ValueType>
-void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result,
-                              storm::utility::Stopwatch *watch,
+void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const &result, storm::utility::Stopwatch *watch,
                               const storm::utility::parametric::Valuation<ValueType> *valuation) {
     if (result) {
         STORM_PRINT_AND_LOG("Result (initial states)");
         if (valuation) {
             bool first = true;
             std::stringstream ss;
-            for (auto const& entry : *valuation) {
+            for (auto const &entry : *valuation) {
                 if (!first) {
                     ss << ", ";
                 } else {
@@ -29,7 +27,7 @@ void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> 
         }
         STORM_PRINT_AND_LOG(": ")
 
-        auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(result.get());
+        auto const *regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const *>(result.get());
         if (regionCheckResult != nullptr) {
             auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
             std::stringstream outStream;
@@ -40,7 +38,7 @@ void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> 
             }
             outStream << '\n';
             if (!partitionSettings.isPrintNoIllustrationSet()) {
-                auto const* regionRefinementCheckResult = dynamic_cast<storm::modelchecker::RegionRefinementCheckResult<ValueType> const*>(regionCheckResult);
+                auto const *regionRefinementCheckResult = dynamic_cast<storm::modelchecker::RegionRefinementCheckResult<ValueType> const *>(regionCheckResult);
                 if (regionRefinementCheckResult != nullptr) {
                     regionRefinementCheckResult->writeIllustrationToStream(outStream);
                 }
@@ -59,6 +57,6 @@ void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> 
 }
 
 template void printInitialStatesResult<storm::RationalFunction>(std::unique_ptr<storm::modelchecker::CheckResult> const &result,
-                                       storm::utility::Stopwatch *watch,
-                                       const storm::utility::parametric::Valuation<storm::RationalFunction> *valuation);
-}
+                                                                storm::utility::Stopwatch *watch,
+                                                                const storm::utility::parametric::Valuation<storm::RationalFunction> *valuation);
+}  // namespace storm::pars

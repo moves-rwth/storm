@@ -206,7 +206,8 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::d
 }
 
 template<typename FunctionType, typename ConstantType>
-ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGradientDescent(std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>& position) {
+ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGradientDescent(
+    std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>& position) {
     uint_fast64_t initialStateModel = model.getStates("init").getNextSetIndex(0);
 
     ConstantType currentValue;

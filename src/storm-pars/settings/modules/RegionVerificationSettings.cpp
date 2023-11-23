@@ -1,13 +1,12 @@
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 
-#include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/OptionBuilder.h"
 
-#include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/utility/macros.h"
 
 namespace storm::settings::modules {
-
 
 const std::string RegionVerificationSettings::moduleName = "regionverif";
 const std::string splittingThresholdName = "splitting-threshold";
@@ -29,16 +28,13 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                         .build());
 }
 
-
-
 int RegionVerificationSettings::getSplittingThreshold() const {
-return this->getOption(splittingThresholdName).getArgumentByName("splitting-threshold").getValueAsInteger();
+    return this->getOption(splittingThresholdName).getArgumentByName("splitting-threshold").getValueAsInteger();
 }
 
 bool RegionVerificationSettings::isSplittingThresholdSet() const {
-return this->getOption(splittingThresholdName).getHasOptionBeenSet();
+    return this->getOption(splittingThresholdName).getHasOptionBeenSet();
 }
-
 
 storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionCheckEngine() const {
     std::string engineString = this->getOption(checkEngineOptionName).getArgumentByName("name").getValueAsString();
@@ -57,5 +53,4 @@ storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionChec
     return result;
 }
 
-
-}
+}  // namespace storm::settings::modules
