@@ -98,11 +98,11 @@ performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<D
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
 typename std::enable_if<DdType != storm::dd::DdType::Sylvan && !std::is_same<ValueType, double>::value,
                         std::shared_ptr<storm::models::Model<ExportValueType>>>::type
-performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
-                                std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                                storm::storage::BisimulationType const& bisimulationType = storm::storage::BisimulationType::Strong,
-                                storm::dd::bisimulation::SignatureMode const& mode = storm::dd::bisimulation::SignatureMode::Eager,
-                                storm::dd::bisimulation::QuotientFormat const& quotientFormat = storm::dd::bisimulation::QuotientFormat::Dd) {
+performBisimulationMinimization(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const&,
+                                std::vector<std::shared_ptr<storm::logic::Formula const>> const&,
+                                storm::storage::BisimulationType const& = storm::storage::BisimulationType::Strong,
+                                storm::dd::bisimulation::SignatureMode const& = storm::dd::bisimulation::SignatureMode::Eager,
+                                storm::dd::bisimulation::QuotientFormat const& = storm::dd::bisimulation::QuotientFormat::Dd) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                     "Symbolic bisimulation minimization is not supported for this combination of DD library and value type.");
     return nullptr;

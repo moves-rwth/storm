@@ -646,7 +646,7 @@ void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
+void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const&) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     if (ioSettings.isExportBuildSet()) {
@@ -799,7 +799,7 @@ inline void printCounterexample(std::shared_ptr<storm::counterexamples::Countere
 }
 
 template<typename ValueType>
-void generateCounterexamples(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+void generateCounterexamples(std::shared_ptr<storm::models::ModelBase> const&, SymbolicInput const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 

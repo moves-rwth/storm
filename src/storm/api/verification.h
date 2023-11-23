@@ -213,8 +213,8 @@ verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::mod
 
 template<typename ValueType>
 typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type
-verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& mdp,
-                       storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+verifyWithSparseEngine(storm::Environment const&, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const&,
+                       storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify SMGs with this data type.");
 }
 

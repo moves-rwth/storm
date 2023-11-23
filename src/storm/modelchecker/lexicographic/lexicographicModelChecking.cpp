@@ -15,7 +15,7 @@ namespace modelchecker {
 namespace lexicographic {
 
 template<typename SparseModelType, typename ValueType>
-helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model,
+helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const&, SparseModelType const& model,
                                                                 CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask,
                                                                 CheckFormulaCallback const& formulaChecker) {
     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1,
