@@ -207,11 +207,11 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::d
 
 template<typename FunctionType, typename ConstantType>
 ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGradientDescent(
-    Environment const& env, std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>& position) {
+    std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>& position) {
     uint_fast64_t initialStateModel = model.getStates("init").getNextSetIndex(0);
 
     ConstantType currentValue;
-    switch (this->currentCheckTask->getBound().comparisonType) {
+    switch (this->synthesisTask->getBound().comparisonType) {
         case logic::ComparisonType::Greater:
         case logic::ComparisonType::GreaterEqual:
             currentValue = -utility::infinity<ConstantType>();
@@ -319,22 +319,22 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
                 currentValue = valueVector[initialStateModel];
             }
 
-            if (currentCheckTask->getBound().isSatisfied(currentValue) && stochasticPosition) {
+            if (synthesisTask->getBound().isSatisfied(currentValue) && stochasticPosition) {
                 break;
             }
 
             for (auto const& parameter : miniBatch) {
                 auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
                 ConstantType delta = checkResult->getValueVector()[derivativeEvaluationHelper->getInitialState()];
-                if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less ||
-                    currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
+                if (synthesisTask->getBound().comparisonType == logic::ComparisonType::Less ||
+                    synthesisTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
                     delta = -delta;
                 }
                 deltaVector[parameter] = delta;
             }
         } else {
-            if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less ||
-                currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
+            if (synthesisTask->getBound().comparisonType == logic::ComparisonType::Less ||
+                synthesisTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
                 currentValue = utility::infinity<ConstantType>();
             } else {
                 currentValue = -utility::infinity<ConstantType>();
@@ -382,16 +382,16 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
 
 template<typename FunctionType, typename ConstantType>
 std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType>
-GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent(Environment const& env) {
-    STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
+GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
+    STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent");
 
     resetDynamicValues();
 
-    STORM_LOG_ASSERT(this->currentCheckTask->isBoundSet(), "No bound on formula! E.g. P>=0.5 [F \"goal\"]");
+    STORM_LOG_ASSERT(this->synthesisTask->isBoundSet(), "Task does not involve a bound.");
 
     std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> bestInstantiation;
     ConstantType bestValue;
-    switch (this->currentCheckTask->getBound().comparisonType) {
+    switch (this->synthesisTask->getBound().comparisonType) {
         case logic::ComparisonType::Greater:
         case logic::ComparisonType::GreaterEqual:
             bestValue = -utility::infinity<ConstantType>();
@@ -435,11 +435,11 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
 
         stochasticWatch.start();
         STORM_PRINT_AND_LOG("Starting at " << point << "\n");
-        ConstantType prob = stochasticGradientDescent(env, point);
+        ConstantType prob = stochasticGradientDescent(point);
         stochasticWatch.stop();
 
         bool isFoundPointBetter = false;
-        switch (this->currentCheckTask->getBound().comparisonType) {
+        switch (this->synthesisTask->getBound().comparisonType) {
             case logic::ComparisonType::Greater:
             case logic::ComparisonType::GreaterEqual:
                 isFoundPointBetter = prob > bestValue;
@@ -454,7 +454,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
             bestValue = prob;
         }
 
-        if (currentCheckTask->getBound().isSatisfied(bestValue)) {
+        if (synthesisTask->getBound().isSatisfied(bestValue)) {
             STORM_PRINT_AND_LOG("Aborting because the bound is satisfied\n");
             break;
         } else if (storm::utility::resources::isTerminate()) {

@@ -141,6 +141,8 @@ MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manage
     msat_destroy_config(config);
 
     expressionAdapter = std::unique_ptr<storm::adapters::MathsatExpressionAdapter>(new storm::adapters::MathsatExpressionAdapter(manager, env));
+#else
+    (void)options;
 #endif
 }
 
@@ -176,6 +178,7 @@ void MathsatSmtSolver::pop(uint_fast64_t n) {
 #ifdef STORM_HAVE_MSAT
     SmtSolver::pop(n);
 #else
+    (void)n;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
@@ -198,6 +201,7 @@ void MathsatSmtSolver::add(storm::expressions::Expression const& e) {
         }
     }
 #else
+    (void)e;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }

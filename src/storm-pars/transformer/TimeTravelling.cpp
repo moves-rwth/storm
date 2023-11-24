@@ -237,8 +237,8 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
                 if (entry.first == constantVariable) {
                     for (auto const& successor : entry.second) {
                         matrixWithAdditionalStates.getRow(newStateIndex)
-                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                                successor, directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
+                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(successor,
+                                                                                        directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
                     }
                     // Issue: multiple transitions can go to a single state, not allowed
                     // Solution: Join them
@@ -269,11 +269,11 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
                         workingSets[entry.first].emplace(successor);
 
                         matrixWithAdditionalStates.getRow(newStateIndex + 1)
-                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                                pTransitions.at(successor), directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
+                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(pTransitions.at(successor),
+                                                                                        directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
                         matrixWithAdditionalStates.getRow(newStateIndex + 2)
-                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(
-                                oneMinusPTransitions.at(successor), directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
+                            .push_back(storage::MatrixEntry<uint64_t, RationalFunction>(oneMinusPTransitions.at(successor),
+                                                                                        directProbs.at(successor) / cumulativeProbabilities.at(entry.first)));
                     }
                     // Issue: multiple transitions can go to a single state, not allowed
                     // Solution: Join them
@@ -398,9 +398,8 @@ std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravell
     return newEntries;
 }
 
-models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize,
-                                                                  uint64_t newSize, uint64_t stateWithLabels,
-                                                                  const std::set<std::string> labelsInFormula) {
+models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
+                                                                  uint64_t stateWithLabels, const std::set<std::string> labelsInFormula) {
     models::sparse::StateLabeling newLabels(newSize);
     for (auto const& label : oldLabeling.getLabels()) {
         newLabels.addLabel(label);
@@ -421,8 +420,7 @@ models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse
     return newLabels;
 }
 
-bool labelsIntersectedEqual(const std::set<std::string>& labels1, const std::set<std::string>& labels2,
-                                            const std::set<std::string>& intersection) {
+bool labelsIntersectedEqual(const std::set<std::string>& labels1, const std::set<std::string>& labels2, const std::set<std::string>& intersection) {
     for (auto const& label : intersection) {
         bool set1ContainsLabel = labels1.count(label) > 0;
         bool set2ContainsLabel = labels2.count(label) > 0;
@@ -474,10 +472,12 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
     }
 }
 
-bool TimeTravelling::collapseConstantTransitions(uint64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint64_t, bool>& alreadyVisited,
-                                const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                                const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-                                const models::sparse::StateLabeling stateLabeling, const std::set<std::string> labelsInFormula) {
+bool TimeTravelling::collapseConstantTransitions(uint64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix,
+                                                 std::map<uint64_t, bool>& alreadyVisited,
+                                                 const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+                                                 const std::set<carl::Variable>& allParameters,
+                                                 const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+                                                 const models::sparse::StateLabeling stateLabeling, const std::set<std::string> labelsInFormula) {
     auto copiedRow = matrix.getRow(state);
     bool firstIteration = true;
     for (auto const& entry : copiedRow) {
@@ -500,8 +500,8 @@ bool TimeTravelling::collapseConstantTransitions(uint64_t state, storage::Flexib
                 continueConvertingHere = alreadyVisited.at(nextState);
             } else {
                 alreadyVisited[nextState] = false;
-                continueConvertingHere =
-                    collapseConstantTransitions(nextState, matrix, alreadyVisited, treeStates, allParameters, stateRewardVector, stateLabeling, labelsInFormula);
+                continueConvertingHere = collapseConstantTransitions(nextState, matrix, alreadyVisited, treeStates, allParameters, stateRewardVector,
+                                                                     stateLabeling, labelsInFormula);
                 alreadyVisited[nextState] = continueConvertingHere;
             }
         }

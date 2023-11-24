@@ -11,7 +11,7 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/abstraction/ExplicitGameStrategyPair.h"
+#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/models/sparse/DeterministicModel.h"
@@ -1096,14 +1096,12 @@ storm::dd::Bdd<Type> computeSchedulerProbGreater0E(storm::models::symbolic::Nond
     storm::dd::Bdd<Type> frontier = psiStates;
     storm::dd::Bdd<Type> scheduler = manager.getBddZero();
 
-    uint_fast64_t iterations = 0;
     while (!frontier.isZero()) {
         storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E =
             frontier.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
         frontier = phiStates && statesAndChoicesWithProbabilityGreater0E.existsAbstract(model.getNondeterminismVariables()) && !statesWithProbabilityGreater0E;
         scheduler = scheduler || (frontier && statesAndChoicesWithProbabilityGreater0E).existsAbstractRepresentative(model.getNondeterminismVariables());
         statesWithProbabilityGreater0E |= frontier;
-        ++iterations;
     }
 
     return scheduler;
@@ -1118,7 +1116,6 @@ storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::Nondeterminis
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbabilityGreater0E = psiStates;
 
-    uint_fast64_t iterations = 0;
     storm::dd::Bdd<Type> abstractedTransitionMatrix = transitionMatrix.existsAbstract(model.getNondeterminismVariables());
     while (lastIterationStates != statesWithProbabilityGreater0E) {
         lastIterationStates = statesWithProbabilityGreater0E;
@@ -1126,7 +1123,6 @@ storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::Nondeterminis
             statesWithProbabilityGreater0E.inverseRelationalProduct(abstractedTransitionMatrix, model.getRowVariables(), model.getColumnVariables());
         statesWithProbabilityGreater0E &= phiStates;
         statesWithProbabilityGreater0E |= lastIterationStates;
-        ++iterations;
     }
 
     return statesWithProbabilityGreater0E;
@@ -1147,7 +1143,6 @@ storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::Nondeterminis
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbabilityGreater0A = psiStates;
 
-    uint_fast64_t iterations = 0;
     while (lastIterationStates != statesWithProbabilityGreater0A) {
         lastIterationStates = statesWithProbabilityGreater0A;
         statesWithProbabilityGreater0A =
@@ -1156,7 +1151,6 @@ storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::Nondeterminis
         statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.universalAbstract(model.getNondeterminismVariables());
         statesWithProbabilityGreater0A &= phiStates;
         statesWithProbabilityGreater0A |= psiStates;
-        ++iterations;
     }
 
     return statesWithProbabilityGreater0A;
@@ -1176,7 +1170,6 @@ storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicMode
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbability1A = psiStates || statesWithProbabilityGreater0A;
 
-    uint_fast64_t iterations = 0;
     while (lastIterationStates != statesWithProbability1A) {
         lastIterationStates = statesWithProbability1A;
         statesWithProbability1A = statesWithProbability1A.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -1185,7 +1178,6 @@ storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicMode
         statesWithProbability1A = statesWithProbability1A.universalAbstract(model.getNondeterminismVariables());
         statesWithProbability1A &= statesWithProbabilityGreater0A;
         statesWithProbability1A |= psiStates;
-        ++iterations;
     }
 
     return statesWithProbability1A;
@@ -1199,7 +1191,6 @@ storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicMode
     storm::dd::DdManager<Type> const& manager = model.getManager();
     storm::dd::Bdd<Type> statesWithProbability1E = statesWithProbabilityGreater0E;
 
-    uint_fast64_t iterations = 0;
     bool outerLoopDone = false;
     while (!outerLoopDone) {
         storm::dd::Bdd<Type> innerStates = manager.getBddZero();
@@ -1228,7 +1219,6 @@ storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicMode
         } else {
             statesWithProbability1E = innerStates;
         }
-        ++iterations;
     }
 
     return statesWithProbability1E;
@@ -1244,7 +1234,6 @@ storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::Nondetermin
 
     storm::dd::Bdd<Type> innerStates = manager.getBddZero();
 
-    uint64_t iterations = 0;
     bool innerLoopDone = false;
     while (!innerLoopDone) {
         storm::dd::Bdd<Type> temporary = statesWithProbability1E.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -1266,7 +1255,6 @@ storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::Nondetermin
         } else {
             innerStates = temporary;
         }
-        ++iterations;
     }
 
     return scheduler;
@@ -1309,7 +1297,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair) {
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair) {
     ExplicitGameProb01Result result(psiStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
 
     // Initialize the stack used for the DFS with the states
@@ -1453,7 +1441,6 @@ SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticT
     storm::dd::Bdd<Type> player2States = model.getManager().getBddZero();
 
     bool done = false;
-    uint_fast64_t iterations = 0;
     while (!done) {
         storm::dd::Bdd<Type> tmp =
             (transitionMatrix && player1States.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables()) && phiStates;
@@ -1479,7 +1466,6 @@ SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticT
         }
 
         player1States = tmp;
-        ++iterations;
     }
 
     // Since we have determined the complements of the desired sets, we need to complement it now.
@@ -1519,7 +1505,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates) {
     // During the execution, the two state sets in the result hold the potential player 1/2 states.
     ExplicitGameProb01Result result;
@@ -1535,7 +1521,6 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
     // Initialize the stack used for the DFS with the states
     std::vector<uint_fast64_t> stack;
     bool maybeStatesDone = false;
-    uint_fast64_t maybeStateIterations = 0;
     while (!maybeStatesDone || produceStrategiesInIteration) {
         storm::storage::BitVector player1Solution = psiStates;
         storm::storage::BitVector player2Solution(result.player2States.size());
@@ -1633,7 +1618,6 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
             result.player1States = player1Solution;
             result.player2States = player2Solution;
         }
-        ++maybeStateIterations;
     }
 
     return result;
@@ -1662,10 +1646,8 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
     boost::optional<storm::dd::Bdd<Type>> consideredPlayer2States;
 
     bool maybeStatesDone = false;
-    uint_fast64_t maybeStateIterations = 0;
     while (!maybeStatesDone || produceStrategiesInIteration) {
         bool solutionStatesDone = false;
-        uint_fast64_t solutionStateIterations = 0;
 
         // If we are to produce strategies in this iteration, we prepare some storage.
         if (produceStrategiesInIteration) {
@@ -1742,7 +1724,6 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
             } else {
                 player1Solution = valid;
             }
-            ++solutionStateIterations;
         }
 
         // If the states with probability 1 and the potential probability 1 states coincide, we have found
@@ -1760,7 +1741,6 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
             // state set.
             maybePlayer1States = player1Solution;
         }
-        ++maybeStateIterations;
     }
 
     // From now on, the solution is stored in maybeStates (as it coincides with the previous solution).
@@ -2025,14 +2005,13 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<doub
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
@@ -2154,15 +2133,14 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<stor
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,

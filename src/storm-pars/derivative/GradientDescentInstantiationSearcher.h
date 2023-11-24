@@ -1,5 +1,4 @@
-#ifndef STORM_DERIVATIVECHECKER_H
-#define STORM_DERIVATIVECHECKER_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -12,7 +11,9 @@
 #include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
+#include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-pars/utility/parametric.h"
+
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -41,7 +42,7 @@ class GradientDescentInstantiationSearcher {
      * using the printRunAsJson function
      */
     GradientDescentInstantiationSearcher<FunctionType, ConstantType>(
-        storm::models::sparse::Dtmc<FunctionType> const model, GradientDescentMethod method = GradientDescentMethod::ADAM, ConstantType learningRate = 0.1,
+        storm::models::sparse::Dtmc<FunctionType> const& model, GradientDescentMethod method = GradientDescentMethod::ADAM, ConstantType learningRate = 0.1,
         ConstantType averageDecay = 0.9, ConstantType squaredAverageDecay = 0.999, uint_fast64_t miniBatchSize = 32, ConstantType terminationEpsilon = 1e-6,
         boost::optional<
             std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
@@ -56,6 +57,7 @@ class GradientDescentInstantiationSearcher {
           terminationEpsilon(terminationEpsilon),
           constraintMethod(constraintMethod),
           recordRun(recordRun) {
+        // TODO should we put this in subclasses?
         switch (method) {
             case GradientDescentMethod::ADAM: {
                 Adam adam;
@@ -125,49 +127,43 @@ class GradientDescentInstantiationSearcher {
     }
 
     /**
-     * specifyFormula specifies a CheckTask.
      * This will setup the matrices used for computing the derivatives by constructing the
-     * SparseDerivativeInstantiationModelChecker. Note this can consume a substantial amount of memory if the model is
-     * big and there's a large number of parameters.
-     * @param env The environment. Pass the same environment as to gradientDescent. We need this because we need to know what kind of
-     * equation solver we are dealing with.
-     * @param checkTask The CheckTask.
+     * SparseDerivativeInstantiationModelChecker.
+     * Note this consumes a substantial amount of memory,
+     * if the model is big and there's a large number of parameters.
+     * @param env The environment. We need this because we need to know what kind of equation solver we are dealing with.
+     * @param task The FeasibilitySynthesisTask.
      */
-    void specifyFormula(Environment const& env, modelchecker::CheckTask<logic::Formula, FunctionType> const& checkTask) {
-        this->currentFormula = checkTask.getFormula().asSharedPointer();
-        this->currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(
-            checkTask.substituteFormula(*currentFormula).template convertValueType<FunctionType>());
+    void setup(Environment const& env, std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task) {
+        this->env = env;
+        this->parameters = storm::models::sparse::getProbabilityParameters(model);
+        this->synthesisTask = task;
+        STORM_LOG_ASSERT(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(),
+                         "Formula must be either a reward or a probability operator formula");
 
-        if (!checkTask.getFormula().isRewardOperatorFormula()) {
-            this->currentFormulaNoBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-                checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asSharedPointer(),
-                storm::logic::OperatorInformation(boost::none, boost::none));
-        } else {
-            // No worries, this works as intended, the API is just weird.
-            this->currentFormulaNoBound =
-                std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asRewardOperatorFormula().getSubformula().asSharedPointer());
+        std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = task->getFormula().clone();
+        formulaWithoutBounds->asOperatorFormula().removeBound();
+        this->currentFormulaNoBound = formulaWithoutBounds->asSharedPointer();
+
+        if (task->getFormula().isRewardOperatorFormula()) {
+            auto rewardParameters = storm::models::sparse::getRewardParameters(model);
+            this->parameters.insert(rewardParameters.begin(), rewardParameters.end());
         }
+
         this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(*currentFormulaNoBound);
         this->currentCheckTaskNoBoundConstantType =
             std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(*currentFormulaNoBound);
 
-        this->parameters = storm::models::sparse::getProbabilityParameters(model);
-        if (checkTask.getFormula().isRewardOperatorFormula()) {
-            for (auto const& rewardParameter : storm::models::sparse::getRewardParameters(model)) {
-                this->parameters.insert(rewardParameter);
-            }
-        }
         instantiationModelChecker->specifyFormula(*this->currentCheckTaskNoBound);
         derivativeEvaluationHelper->specifyFormula(env, *this->currentCheckTaskNoBound);
     }
 
     /**
      * Perform Gradient Descent.
-     * @param env The environment. Pass the same environment as to specifyFormula.
      */
     std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>,
               ConstantType>
-    gradientDescent(Environment const& env);
+    gradientDescent();
 
     /**
      * Print the previously done run as JSON. This run can be retrieved using getVisualizationWalk.
@@ -189,13 +185,13 @@ class GradientDescentInstantiationSearcher {
    private:
     void resetDynamicValues();
 
-    std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTask;
+    Environment env;
+    std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> synthesisTask;
     std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTaskNoBound;
     std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, ConstantType>> currentCheckTaskNoBoundConstantType;
-    std::shared_ptr<storm::logic::Formula const> currentFormula;
     std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
 
-    const models::sparse::Dtmc<FunctionType> model;
+    const models::sparse::Dtmc<FunctionType>& model;
     std::set<typename utility::parametric::VariableType<FunctionType>::type> parameters;
     const std::unique_ptr<storm::derivative::SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>> derivativeEvaluationHelper;
     std::unique_ptr<storm::analysis::MonotonicityHelper<FunctionType, ConstantType>> monotonicityHelper;
@@ -251,7 +247,6 @@ class GradientDescentInstantiationSearcher {
     ConstantType logarithmicBarrierTerm;
 
     ConstantType stochasticGradientDescent(
-        Environment const& env,
         std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>& position);
     ConstantType doStep(
         typename utility::parametric::VariableType<FunctionType>::type steppingParameter,
@@ -271,5 +266,3 @@ class GradientDescentInstantiationSearcher {
 };
 }  // namespace derivative
 }  // namespace storm
-
-#endif  // STORM_DERIVATIVECHECKER_H

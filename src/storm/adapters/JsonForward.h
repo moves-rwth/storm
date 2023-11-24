@@ -2,7 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "basic_json_forward.h"
+#include "nlohmann/json_fwd.hpp"
 
 namespace storm {
 

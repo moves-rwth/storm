@@ -12,6 +12,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
