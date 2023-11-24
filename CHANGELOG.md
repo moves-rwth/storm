@@ -12,6 +12,7 @@ Version 1.8.x
 - Print all linked libraries when using `--version`.
 - Removed HyPro as dependency.
 - `storm-conv`: Removed option `--stdout`.
+- `storm-pars`: completely reworked the command-line interface (and partially the c++ API).
 - Developer: Require at least CMake version 3.15.
 - Developer: Moved `storm-config.h.in` into `src` directory.
 - Developer: Use Dockerfile in CI.

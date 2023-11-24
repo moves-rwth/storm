@@ -27,6 +27,20 @@ grep GOOGLETEST_VERSION $STORM_DIR/resources/3rdparty/googletest/CMakeLists.txt
 
 We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. Note that our code might not be compatible with future versions of gtest.
 
+## nlohmann/json for Modern C++
+
+The currently shipped version is forked from the [official github](https://github.com/nlohmann/json) commit `6eab7a2b187b10b2494e39c1961750bfd1bda500`.
+We extended the library towards rational numbers, see [here](../resources/3rdparty/modernjson/README_STORM.md).
+To update, you can follow these steps:
+
+1. Check out the above commit in a separate repository
+2. Copy the contents of `$STORM_DIR/resources/3rdparty/modernjson/include` to the repository you just checked out and commit to a fresh branch
+3. The diff for that commit shows you the exact modifications we made.
+4. Merge the json version you want to update to into your branch.
+5. Resolve potential conflicts and review what has changed, in particular if it affects handling of floating point numbers.
+7. When this is all done, copy the contents back into the storm directory. Make sure to not apply any unnecessary code formatting to keep the diff smallish.
+8. *Update the commit hash mentioned in this document*
+
 ## Spot
 
 To update (shipped version of Spot), just change the url in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.

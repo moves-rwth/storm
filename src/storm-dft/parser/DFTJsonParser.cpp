@@ -18,7 +18,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(
     std::ifstream file;
     storm::utility::openFile(filename, file);
     Json jsonInput;
-    jsonInput << file;
+    file >> jsonInput;
     storm::utility::closeFile(file);
     return parseJson(jsonInput);
 }

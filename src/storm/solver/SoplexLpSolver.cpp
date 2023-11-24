@@ -402,22 +402,22 @@ void SoplexLpSolver<ValueType, RawMode>::pop() {
 #endif
 
 template<typename ValueType, bool RawMode>
-int_fast64_t SoplexLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable) const {
+int_fast64_t SoplexLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables");
 }
 
 template<typename ValueType, bool RawMode>
-bool SoplexLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable) const {
+bool SoplexLpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables");
 }
 
 template<typename ValueType, bool RawMode>
-void SoplexLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const& gap, bool relative) {
+void SoplexLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
 
 template<typename ValueType, bool RawMode>
-ValueType SoplexLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
+ValueType SoplexLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
 
