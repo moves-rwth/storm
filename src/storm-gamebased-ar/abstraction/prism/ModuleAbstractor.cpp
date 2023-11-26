@@ -16,7 +16,7 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 
@@ -136,4 +136,4 @@ template class ModuleAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber
 #endif
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

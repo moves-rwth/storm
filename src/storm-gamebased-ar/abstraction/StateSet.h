@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -22,4 +22,4 @@ class StateSet {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

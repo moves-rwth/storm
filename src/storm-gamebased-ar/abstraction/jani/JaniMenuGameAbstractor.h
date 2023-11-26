@@ -33,7 +33,9 @@ namespace jani {
 // Forward-declare concrete Model class.
 class Model;
 }  // namespace jani
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 namespace jani {
 
@@ -185,4 +187,4 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
 };
 }  // namespace jani
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -1,6 +1,6 @@
 #include "storm-gamebased-ar/abstraction/RefinementCommand.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 RefinementCommand::RefinementCommand(uint64_t referencedPlayer1Choice, std::vector<storm::expressions::Expression> const& predicates)
@@ -25,4 +25,4 @@ std::vector<storm::expressions::Expression> const& RefinementCommand::getPredica
 }
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -8,7 +8,9 @@ namespace storm {
 namespace storage {
 class BitVector;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 class ExplicitQualitativeGameResult;
@@ -24,4 +26,4 @@ class ExplicitQualitativeResult : public QualitativeResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar
