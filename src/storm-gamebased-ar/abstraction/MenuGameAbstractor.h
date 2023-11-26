@@ -15,7 +15,9 @@ namespace dd {
 template<storm::dd::DdType DdType>
 class Bdd;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -92,7 +94,7 @@ class MenuGameAbstractor {
    protected:
     bool isRestrictToRelevantStatesSet() const;
 
-    void exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename,
+    void exportToDot(storm::gbar::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename,
                      storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const;
 
    private:
@@ -103,4 +105,4 @@ class MenuGameAbstractor {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

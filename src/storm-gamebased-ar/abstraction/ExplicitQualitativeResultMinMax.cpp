@@ -1,6 +1,6 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeResultMinMax.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 bool ExplicitQualitativeResultMinMax::isExplicit() const {
@@ -40,4 +40,4 @@ ExplicitQualitativeResult& ExplicitQualitativeResultMinMax::getProb1Max() {
 }
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

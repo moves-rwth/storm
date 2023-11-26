@@ -37,7 +37,9 @@ class Edge;
 class Assignment;
 class OrderedAssignments;
 }  // namespace jani
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 template<storm::dd::DdType DdType>
 class AbstractionInformation;
@@ -278,4 +280,4 @@ class EdgeAbstractor {
 };
 }  // namespace jani
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

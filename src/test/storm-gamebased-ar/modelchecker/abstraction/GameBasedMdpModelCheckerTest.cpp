@@ -34,7 +34,7 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Cudd) {
 
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
     auto mdpModelchecker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>>(
+        std::make_shared<storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>>(
             program);
 
     // A parser that we use for conveniently constructing the formulas.
@@ -113,9 +113,8 @@ TEST(GameBasedMdpModelCheckerTest, DISABLED_Dice_Sylvan) {
     ASSERT_EQ(model->getNumberOfTransitions(), 436ull);
 
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-    auto mdpModelchecker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>>(
-            program);
+    auto mdpModelchecker = std::make_shared<
+        storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>>(program);
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

@@ -18,7 +18,9 @@ namespace solver {
 class SmtSolverFactory;
 }
 }  // namespace utility
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -88,4 +90,4 @@ class ValidBlockAbstractor {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

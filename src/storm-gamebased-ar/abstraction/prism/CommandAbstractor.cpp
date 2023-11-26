@@ -19,7 +19,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 template<storm::dd::DdType DdType, typename ValueType>
@@ -793,4 +793,4 @@ template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumbe
 #endif
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

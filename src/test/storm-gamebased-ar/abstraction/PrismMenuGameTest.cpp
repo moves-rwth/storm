@@ -35,11 +35,11 @@ TEST(PrismMenuGame, DieAbstractionTest_Cudd) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(26ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
@@ -62,11 +62,11 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(26ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
@@ -88,11 +88,11 @@ TEST(PrismMenuGame, DieAbstractionTest_Sylvan) {
 
 //    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-//    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction> abstractor(program, smtSolverFactory);
-//    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction> refiner(abstractor, smtSolverFactory->create(manager));
+//    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction> abstractor(program, smtSolverFactory);
+//    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction> refiner(abstractor, smtSolverFactory->create(manager));
 //    refiner.refine(initialPredicates);
 
-//    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction> game = abstractor.abstract();
+//    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction> game = abstractor.abstract();
 
 //    EXPECT_EQ(26, game.getNumberOfTransitions());
 //    EXPECT_EQ(4, game.getNumberOfStates());
@@ -114,13 +114,13 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("s") == manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(24ull, game.getNumberOfTransitions());
     EXPECT_EQ(5ull, game.getNumberOfStates());
@@ -143,13 +143,13 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("s") == manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(24ull, game.getNumberOfTransitions());
     EXPECT_EQ(5ull, game.getNumberOfStates());
@@ -187,11 +187,11 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(20ull, game.getNumberOfTransitions());
     EXPECT_EQ(13ull, game.getNumberOfStates());
@@ -229,11 +229,11 @@ TEST(PrismMenuGame, DieFullAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(20ull, game.getNumberOfTransitions());
     EXPECT_EQ(13ull, game.getNumberOfStates());
@@ -257,11 +257,11 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(31ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
@@ -285,11 +285,11 @@ TEST(PrismMenuGame, CrowdsAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(31ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
@@ -313,8 +313,8 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(
@@ -322,7 +322,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Cudd) {
                             manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <=
                         manager.getVariableExpression("runCount")}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(68ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -346,8 +346,8 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(
@@ -355,7 +355,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest_Sylvan) {
                             manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <=
                         manager.getVariableExpression("runCount")}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(68ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -433,11 +433,11 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(15113ull, game.getNumberOfTransitions());
     EXPECT_EQ(8607ull, game.getNumberOfStates());
@@ -515,11 +515,11 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(15113ull, game.getNumberOfTransitions());
     EXPECT_EQ(8607ull, game.getNumberOfStates());
@@ -545,11 +545,11 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(90ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -575,11 +575,11 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(90ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -605,13 +605,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(276ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
@@ -637,13 +637,13 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(276ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
@@ -700,11 +700,11 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(436ull, game.getNumberOfTransitions());
     EXPECT_EQ(169ull, game.getNumberOfStates());
@@ -761,11 +761,11 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(436ull, game.getNumberOfTransitions());
     EXPECT_EQ(169ull, game.getNumberOfStates());
@@ -792,11 +792,11 @@ TEST(PrismMenuGame, WlanAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(903ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -823,11 +823,11 @@ TEST(PrismMenuGame, WlanAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(903ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
@@ -854,13 +854,13 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(1800ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
@@ -887,13 +887,13 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(1800ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
@@ -1018,11 +1018,11 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Cudd) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     EXPECT_EQ(9503ull, game.getNumberOfTransitions());
     EXPECT_EQ(5523ull, game.getNumberOfStates());
@@ -1147,11 +1147,11 @@ TEST(PrismMenuGame, WlanFullAbstractionTest_Sylvan) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, double> game = abstractor.abstract();
 
     EXPECT_EQ(9503ull, game.getNumberOfTransitions());
     EXPECT_EQ(5523ull, game.getNumberOfStates());

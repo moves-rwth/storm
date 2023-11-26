@@ -7,7 +7,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<typename ValueType>
@@ -59,4 +59,4 @@ std::pair<ValueType, ValueType> ExplicitQuantitativeResult<ValueType>::getRange(
 template class ExplicitQuantitativeResult<double>;
 template class ExplicitQuantitativeResult<storm::RationalNumber>;
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar
