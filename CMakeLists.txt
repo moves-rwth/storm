@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.15)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Set project name
 project (storm CXX C)
@@ -430,7 +430,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##
 #############################################################
 if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++20")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif()
 
