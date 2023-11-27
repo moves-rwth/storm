@@ -67,7 +67,8 @@ class OptionalRef {
      * @note Exploits template argument deduction so that the class template can be derived from expressions like `OptionalRef(foo)` (even if foo is of type
      * e.g. T&)
      */
-    template<class U, class = decltype(optionalref_detail::FUN<T>(std::declval<U>()), std::enable_if_t<!std::is_same_v<OptionalRef, std::remove_cvref_t<U>>>())>
+    template<class U, class = decltype(optionalref_detail::FUN<T>(std::declval<U>()),
+                                       std::enable_if_t<!std::is_same_v<OptionalRef, std::remove_cv_t<std::remove_reference_t<U>>>>())>
     constexpr OptionalRef(U&& u) noexcept(noexcept(optionalref_detail::FUN<T>(std::forward<U>(u))))
         : ptr(std::addressof(optionalref_detail::FUN<T>(std::forward<U>(u)))) {}
 
