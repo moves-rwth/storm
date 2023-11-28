@@ -50,7 +50,7 @@ std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialSt
         // Register initial state
         id = stateToIdCallback(initialState);
     } else {
-        initialState->letBEFail(constFailedBE, nullptr);
+        initialState->letBEFail(constFailedBE);
         // Propagate the constant failure to reach the real initial state
         storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
         propagateFailure(initialState, constFailedBE, queues);
@@ -133,79 +133,75 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     storm::generator::Choice<ValueType, StateType> choice(0, !exploreDependencies);
 
     // Let BE fail
-    for (; iterFailable != state->getFailableElements().end(!exploreDependencies); ++iterFailable) {
-        // Get BE which fails next
-        std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
-                  std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
-            nextBEPair = iterFailable.getFailBE(mDft);
-        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> nextBE = nextBEPair.first;
-        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = nextBEPair.second;
-        STORM_LOG_ASSERT(nextBE, "NextBE is null.");
-        STORM_LOG_ASSERT(iterFailable.isFailureDueToDependency() == exploreDependencies, "Failure due to dependencies does not match.");
-        STORM_LOG_ASSERT((dependency != nullptr) == exploreDependencies, "Failure due to dependencies does not match.");
+    for (; iterFailable != this->state->getFailableElements().end(!exploreDependencies); ++iterFailable) {
+        DFTStatePointer newState;
+        if (iterFailable.isFailureDueToDependency()) {
+            // Next failure due to dependency
+            STORM_LOG_ASSERT(exploreDependencies, "Failure should be due to dependency.");
+            std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = iterFailable.asDependency(mDft);
+            // Obtain successor state by propagating dependency failure to dependent BE
+            newState = createSuccessorState(this->state, dependency, true);
 
-        // Obtain successor state by propagating failure
-        DFTStatePointer newState = createSuccessorState(state, nextBE, dependency);
+            auto [newStateId, shouldStop] = getNewStateId(newState, stateToIdCallback);
+            if (shouldStop) {
+                continue;
+            }
+            STORM_LOG_ASSERT(newStateId != this->state->getId(),
+                             "Self loop was added for " << newStateId << " and successful trigger of " << dependency->name());
 
-        if (newState->isInvalid() || newState->isTransient()) {
-            STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
-            // Continue with next possible state
-            continue;
-        }
-
-        StateType newStateId;
-        if (newState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
-            // Use unique failed state
-            newStateId = 0;
-        } else {
-            // Add new state
-            newStateId = stateToIdCallback(newState);
-        }
-
-        // Set transitions
-        if (exploreDependencies) {
-            // Failure is due to dependency -> add non-deterministic choice if necessary
+            // Add non-deterministic choice if necessary
             ValueType probability = dependency->probability();
             choice.addProbability(newStateId, probability);
             STORM_LOG_TRACE("Added transition to " << newStateId << " with probability " << probability);
 
             if (!storm::utility::isOne(probability)) {
                 // Add transition to state where dependency was unsuccessful
-                DFTStatePointer unsuccessfulState = createSuccessorState(state, nextBE, dependency, false);
+                DFTStatePointer unsuccessfulState = createSuccessorState(this->state, dependency, false);
                 // Add state
                 StateType unsuccessfulStateId = stateToIdCallback(unsuccessfulState);
                 ValueType remainingProbability = storm::utility::one<ValueType>() - probability;
                 choice.addProbability(unsuccessfulStateId, remainingProbability);
                 STORM_LOG_TRACE("Added transition to " << unsuccessfulStateId << " with remaining probability " << remainingProbability);
-                STORM_LOG_ASSERT(unsuccessfulStateId != state->getId(),
-                                 "Self loop was added (through PDEP) for " << unsuccessfulStateId << " and failure of " << nextBE->name());
+                STORM_LOG_ASSERT(unsuccessfulStateId != this->state->getId(),
+                                 "Self loop was added for " << unsuccessfulStateId << " and unsuccessful trigger of " << dependency->name());
             }
             result.addChoice(std::move(choice));
+
+            // Handle premature stop for dependencies
+            if (!iterFailable.isConflictingDependency()) {
+                // We only explore the first non-conflicting dependency because we can fix an order.
+                break;
+            }
+            if (takeFirstDependency) {
+                // We discard further exploration as we already chose one dependent event
+                break;
+            }
         } else {
-            // Failure is due to "normal" BE failure
+            STORM_LOG_ASSERT(!exploreDependencies, "Failure due to dependency should not be possible.");
+
+            // Next failure due to BE failing on its own
+            std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> nextBE = iterFailable.asBE(mDft);
+            // Obtain successor state by propagating failure of BE
+            newState = createSuccessorState(this->state, nextBE);
+
+            auto [newStateId, shouldStop] = getNewStateId(newState, stateToIdCallback);
+            if (shouldStop) {
+                continue;
+            }
+            STORM_LOG_ASSERT(newStateId != this->state->getId(), "Self loop was added for " << newStateId << " and failure of " << nextBE->name());
+
             // Set failure rate according to activation
-            ValueType rate = state->getBERate(nextBE->id());
-            STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
+            ValueType rate = this->state->getBERate(nextBE->id());
+            STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Failure rate should not be zero.");
             choice.addProbability(newStateId, rate);
             STORM_LOG_TRACE("Added transition to " << newStateId << " with failure rate " << rate);
         }
-        STORM_LOG_ASSERT(newStateId != state->getId(), "Self loop was added for " << newStateId << " and failure of " << nextBE->name());
 
-        // Handle premature stop for dependencies
-        if (iterFailable.isFailureDueToDependency() && !iterFailable.isConflictingDependency()) {
-            // We only explore the first non-conflicting dependency because we can fix an order.
-            break;
-        }
-        if (takeFirstDependency && exploreDependencies) {
-            // We discard further exploration as we already chose one dependent event
-            break;
-        }
     }  // end iteration of failing BE
 
     if (exploreDependencies) {
         if (result.empty()) {
-            // Dependencies might have been prevented from sequence enforcer
-            // -> explore BEs now
+            // Dependencies might have been prevented from sequence enforcer -> explore BEs now instead of dependencies
             return exploreState(stateToIdCallback, false, takeFirstDependency);
         }
     } else {
@@ -227,56 +223,81 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 }
 
 template<typename ValueType, typename StateType>
-typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(
-    DFTStatePointer const state, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& failedBE,
-    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>& triggeringDependency, bool dependencySuccessful) const {
-    // Construct new state as copy from original one
-    DFTStatePointer newState = state->copy();
-
-    if (!dependencySuccessful) {
-        // Dependency was unsuccessful -> no BE fails
-        STORM_LOG_ASSERT(triggeringDependency != nullptr, "Dependency is not given");
-        STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << triggeringDependency->name() << " [" << triggeringDependency->id() << "]"
-                                                                    << " in " << mDft.getStateString(state));
-        newState->letDependencyBeUnsuccessful(triggeringDependency);
-        return newState;
+std::pair<size_t, bool> DftNextStateGenerator<ValueType, StateType>::getNewStateId(DFTStatePointer newState, StateToIdCallback const& stateToIdCallback) const {
+    if (newState->isInvalid() || newState->isTransient()) {
+        STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
+        return std::make_pair(0, true);
     }
 
-    STORM_LOG_TRACE("With the failure of " << failedBE->name() << " [" << failedBE->id() << "]"
-                                           << (triggeringDependency != nullptr ? " (through dependency " + triggeringDependency->name() + " [" +
-                                                                                     std::to_string(triggeringDependency->id()) + ")]"
-                                                                               : "")
-                                           << " in " << mDft.getStateString(state));
+    if (newState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
+        // Use unique failed state
+        return std::make_pair(0, false);
+    } else {
+        // Add new state
+        return std::make_pair(stateToIdCallback(newState), false);
+    }
+}
 
-    newState->letBEFail(failedBE, triggeringDependency);
+template<typename ValueType, typename StateType>
+typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(
+    DFTStatePointer const origState, std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency,
+    bool dependencySuccessful) const {
+    // Construct new state as copy from original one
+    DFTStatePointer newState = origState->copy();
+
+    if (dependencySuccessful) {
+        // Dependency was successful -> dependent BE fails
+        STORM_LOG_TRACE("With the successful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]"
+                                                                  << " in " << mDft.getStateString(origState));
+        newState->letDependencyTrigger(dependency, true);
+        STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Dependency " << dependency->name() << " does not have unique dependent event.");
+        return createSuccessorState(newState, dependency->dependentEvents().front());
+    } else {
+        // Dependency was unsuccessful -> no BE fails
+        STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]"
+                                                                    << " in " << mDft.getStateString(origState));
+        newState->letDependencyTrigger(dependency, false);
+        return newState;
+    }
+}
+
+template<typename ValueType, typename StateType>
+typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(
+    DFTStatePointer const origState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be) const {
+    // Construct new state as copy from original one
+    DFTStatePointer newState = origState->copy();
+
+    STORM_LOG_TRACE("With the failure of " << be->name() << " [" << be->id() << "]"
+                                           << " in " << mDft.getStateString(origState));
+    newState->letBEFail(be);
 
     // Propagate
     storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
-    propagateFailure(newState, failedBE, queues);
+    propagateFailure(newState, be, queues);
 
     // Check whether transient failure lead to TLE failure
     // TODO handle for all types of BEs.
-    if (failedBE->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
-        auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(failedBE);
+    if (be->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
+        auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
         if (beExp->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex())) {
             newState->markAsTransient();
         }
     }
 
-    // Check whether fail safe propagation can be discarded
+    // Check whether failsafe propagation can be discarded
     bool discardFailSafe = false;
     discardFailSafe |= newState->isInvalid();
     discardFailSafe |= newState->isTransient();
     discardFailSafe |= (newState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState);
 
-    // Propagate fail safe (if necessary)
+    // Propagate failsafe (if necessary)
     if (!discardFailSafe) {
-        propagateFailsafe(newState, failedBE, queues);
+        propagateFailsafe(newState, be, queues);
 
         // Update failable dependencies
-        newState->updateFailableDependencies(failedBE->id());
-        newState->updateDontCareDependencies(failedBE->id());
-        newState->updateFailableInRestrictions(failedBE->id());
+        newState->updateFailableDependencies(be->id());
+        newState->updateDontCareDependencies(be->id());
+        newState->updateFailableInRestrictions(be->id());
     }
     return newState;
 }

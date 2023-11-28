@@ -244,19 +244,18 @@ class DFTState {
 
     /**
      * Sets the next BE as failed.
-     * Optionally also marks the triggering dependency as successful.
      *
      * @param be BE to fail.
-     * @param dependency Dependency which triggered the failure (or nullptr if the BE fails on its own).
      */
-    void letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be,
-                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency);
+    void letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be);
 
     /**
-     * Sets the dependency as unsuccesful meaning no BE will fail.
+     * Trigger the dependency and set it as successful/unsuccessful.
+     *
      * @param dependency Dependency.
+     * @param successful Whether the triggering was successful.
      */
-    void letDependencyBeUnsuccessful(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency);
+    void letDependencyTrigger(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency, bool successful = true);
 
     /**
      * Order the state in decreasing order using the symmetries.
