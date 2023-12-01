@@ -475,11 +475,21 @@ bool DFTState<ValueType>::isEventDisabledViaRestriction(size_t id) const {
 }
 
 template<typename ValueType>
-bool DFTState<ValueType>::hasOperationalPostSeqElements(size_t id) const {
+bool DFTState<ValueType>::isEventRelevantInRestriction(size_t id) const {
     STORM_LOG_ASSERT(!mDft.isDependency(id), "Element is dependency.");
     STORM_LOG_ASSERT(!mDft.isRestriction(id), "Element is restriction.");
+
+    // First check sequence enforcer
     auto const& postIds = mStateGenerationInfo.seqRestrictionPostElements(id);
     for (size_t id : postIds) {
+        if (isOperational(id)) {
+            return true;
+        }
+    }
+
+    // Second check mutexes
+    auto const& mutexIds = mStateGenerationInfo.mutexRestrictionElements(id);
+    for (size_t id : mutexIds) {
         if (isOperational(id)) {
             return true;
         }

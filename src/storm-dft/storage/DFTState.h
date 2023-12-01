@@ -271,11 +271,11 @@ class DFTState {
     bool isEventDisabledViaRestriction(size_t id) const;
 
     /*!
-     * Checks whether operational post seq elements are present
-     * @param id
-     * @return
+     * Check whether the event is still relevant for any restriction.
+     * @param id Event id.
+     * @return True iff a restriction makes this event still relevant.
      */
-    bool hasOperationalPostSeqElements(size_t id) const;
+    bool isEventRelevantInRestriction(size_t id) const;
 
     /*!
      * Check whether at least one relevant event is still operational.
