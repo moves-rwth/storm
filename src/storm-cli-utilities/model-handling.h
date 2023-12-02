@@ -1069,15 +1069,15 @@ template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
     storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    storm::api::AbstractionRefinementOptions options(
+    storm::gbar::api::AbstractionRefinementOptions options(
         parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()),
         parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
 
     verifyProperties<ValueType>(input, [&input, &options, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                 std::shared_ptr<storm::logic::Formula const> const& states) {
         STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-        return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, input.model.get(),
-                                                                                    storm::api::createTask<ValueType>(formula, true), options);
+        return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, input.model.get(),
+                                                                                          storm::api::createTask<ValueType>(formula, true), options);
     });
 }
 
@@ -1238,12 +1238,13 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, 
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input,
                                            ModelProcessingInformation const& mpi) {
-    verifyProperties<ValueType>(input, [&model, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                      std::shared_ptr<storm::logic::Formula const> const& states) {
-        STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-        auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
-        return storm::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(formula, true));
-    });
+    verifyProperties<ValueType>(
+        input, [&model, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
+            auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
+            return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
+                                                                                              storm::api::createTask<ValueType>(formula, true));
+        });
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

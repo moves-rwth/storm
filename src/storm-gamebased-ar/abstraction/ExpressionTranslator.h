@@ -17,7 +17,9 @@ class Bdd;
 namespace expressions {
 class Expression;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -50,4 +52,4 @@ class ExpressionTranslator : public storm::expressions::ExpressionVisitor {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -15,7 +15,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -72,7 +72,7 @@ bool MenuGameAbstractor<DdType, ValueType>::isRestrictToRelevantStatesSet() cons
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename,
+void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::gbar::abstraction::MenuGame<DdType, ValueType> const& currentGame, std::string const& filename,
                                                         storm::dd::Bdd<DdType> const& highlightStatesBdd, storm::dd::Bdd<DdType> const& filter) const {
     std::ofstream out;
     storm::utility::openFile(filename, out);
@@ -199,4 +199,4 @@ template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
 template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

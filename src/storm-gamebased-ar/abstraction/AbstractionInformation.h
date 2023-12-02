@@ -24,7 +24,9 @@ namespace dd {
 template<storm::dd::DdType DdType>
 class DdManager;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 struct AbstractionInformationOptions {
@@ -672,4 +674,4 @@ class AbstractionInformation {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

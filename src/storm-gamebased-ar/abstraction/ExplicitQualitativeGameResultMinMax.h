@@ -3,7 +3,7 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResult.h"
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeResultMinMax.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 class ExplicitQualitativeGameResultMinMax : public ExplicitQualitativeResultMinMax {
@@ -22,4 +22,4 @@ class ExplicitQualitativeGameResultMinMax : public ExplicitQualitativeResultMinM
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -7,7 +7,7 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -235,4 +235,4 @@ template class LocalExpressionInformation<storm::dd::DdType::Sylvan>;
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::CUDD> const& partition);
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::Sylvan> const& partition);
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

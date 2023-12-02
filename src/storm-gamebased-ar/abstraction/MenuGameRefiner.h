@@ -29,7 +29,9 @@ namespace storage {
 class BitVector;
 class ExplicitGameStrategyPair;
 }  // namespace storage
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -132,7 +134,7 @@ class MenuGameRefiner {
      *
      * @param True if predicates for refinement could be derived, false otherwise.
      */
-    bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
+    bool refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
                 SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) const;
 
     /*!
@@ -140,7 +142,7 @@ class MenuGameRefiner {
      *
      * @param True if predicates for refinement could be derived, false otherwise.
      */
-    bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
+    bool refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
                 std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
                 storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
@@ -152,7 +154,7 @@ class MenuGameRefiner {
      *
      * @param True if predicates for refinement could be derived, false otherwise.
      */
-    bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
+    bool refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
                 std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
                 storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
@@ -164,7 +166,7 @@ class MenuGameRefiner {
      *
      * @param True if predicates for refinement could be derived, false otherwise.
      */
-    bool refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
+    bool refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
                 SymbolicQuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const;
 
     /*!
@@ -175,10 +177,10 @@ class MenuGameRefiner {
    private:
     RefinementPredicates derivePredicatesFromDifferingChoices(storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& lowerChoice,
                                                               storm::dd::Bdd<Type> const& upperChoice) const;
-    RefinementPredicates derivePredicatesFromChoice(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState,
+    RefinementPredicates derivePredicatesFromChoice(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState,
                                                     storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& choice,
                                                     storm::dd::Bdd<Type> const& choiceSuccessors) const;
-    RefinementPredicates derivePredicatesFromPivotState(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState,
+    RefinementPredicates derivePredicatesFromPivotState(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState,
                                                         storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy,
                                                         storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
 
@@ -197,14 +199,14 @@ class MenuGameRefiner {
         storm::expressions::ExpressionManager& interpolationManager, std::vector<std::vector<storm::expressions::Expression>> const& trace,
         std::map<storm::expressions::Variable, storm::expressions::Expression> const& variableSubstitution) const;
 
-    boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game,
+    boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                                             SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult,
                                                                             storm::dd::Bdd<Type> const& minPlayer1Strategy,
                                                                             storm::dd::Bdd<Type> const& minPlayer2Strategy,
                                                                             storm::dd::Bdd<Type> const& maxPlayer1Strategy,
                                                                             storm::dd::Bdd<Type> const& maxPlayer2Strategy) const;
     std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>> buildTrace(
-        storm::expressions::ExpressionManager& expressionManager, storm::abstraction::MenuGame<Type, ValueType> const& game,
+        storm::expressions::ExpressionManager& expressionManager, storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
         storm::dd::Bdd<Type> const& spanningTree, storm::dd::Bdd<Type> const& pivotState) const;
 
     std::pair<std::vector<uint64_t>, std::vector<uint64_t>> buildReversedLabeledPath(ExplicitPivotStateResult<ValueType> const& pivotStateResult) const;
@@ -212,7 +214,7 @@ class MenuGameRefiner {
     buildTraceFromReversedLabeledPath(storm::expressions::ExpressionManager& expressionManager, std::vector<uint64_t> const& reversedPath,
                                       std::vector<uint64_t> const& reversedLabels, storm::dd::Odd const& odd,
                                       std::vector<uint64_t> const* stateToOffset = nullptr) const;
-    boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::abstraction::MenuGame<Type, ValueType> const& game,
+    boost::optional<RefinementPredicates> derivePredicatesFromInterpolation(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                                             ExplicitPivotStateResult<ValueType> const& pivotStateResult,
                                                                             storm::dd::Odd const& odd) const;
 
@@ -265,4 +267,4 @@ class MenuGameRefiner {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

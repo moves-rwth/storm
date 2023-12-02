@@ -15,7 +15,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace modelchecker {
 
 template<typename ModelType>
@@ -67,7 +67,7 @@ BisimulationAbstractionRefinementModelChecker<ModelType>::getAbstractModel() {
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>>
+std::pair<std::unique_ptr<storm::gbar::abstraction::StateSet>, std::unique_ptr<storm::gbar::abstraction::StateSet>>
 BisimulationAbstractionRefinementModelChecker<ModelType>::getConstraintAndTargetStates(storm::models::Model<ValueType> const& abstractModel) {
     STORM_LOG_ASSERT(lastAbstractModel, "Expected abstract model.");
     std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>> ddResult;
@@ -79,9 +79,9 @@ BisimulationAbstractionRefinementModelChecker<ModelType>::getConstraintAndTarget
         ddResult = this->getConstraintAndTargetStates(*lastAbstractModel->template as<storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType>>());
     }
 
-    std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> result;
-    result.first = std::make_unique<storm::abstraction::SymbolicStateSet<DdType>>(ddResult.first);
-    result.second = std::make_unique<storm::abstraction::SymbolicStateSet<DdType>>(ddResult.second);
+    std::pair<std::unique_ptr<storm::gbar::abstraction::StateSet>, std::unique_ptr<storm::gbar::abstraction::StateSet>> result;
+    result.first = std::make_unique<storm::gbar::abstraction::SymbolicStateSet<DdType>>(ddResult.first);
+    result.second = std::make_unique<storm::gbar::abstraction::SymbolicStateSet<DdType>>(ddResult.second);
     return result;
 }
 
@@ -94,16 +94,16 @@ BisimulationAbstractionRefinementModelChecker<ModelType>::getConstraintAndTarget
 
     auto const& checkTask = this->getCheckTask();
 
-    SymbolicPropositionalModelChecker<QuotientModelType> checker(quotient);
+    storm::modelchecker::SymbolicPropositionalModelChecker<QuotientModelType> checker(quotient);
     if (checkTask.getFormula().isUntilFormula()) {
-        std::unique_ptr<CheckResult> subresult = checker.check(checkTask.getFormula().asUntilFormula().getLeftSubformula());
+        std::unique_ptr<storm::modelchecker::CheckResult> subresult = checker.check(checkTask.getFormula().asUntilFormula().getLeftSubformula());
         result.first = subresult->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector();
         subresult = checker.check(checkTask.getFormula().asUntilFormula().getRightSubformula());
         result.second = subresult->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector();
     } else if (checkTask.getFormula().isEventuallyFormula()) {
         storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula().asEventuallyFormula();
         result.first = quotient.getReachableStates();
-        std::unique_ptr<CheckResult> subresult = checker.check(eventuallyFormula.getSubformula());
+        std::unique_ptr<storm::modelchecker::CheckResult> subresult = checker.check(eventuallyFormula.getSubformula());
         result.second = subresult->asSymbolicQualitativeCheckResult<DdType>().getTruthValuesVector();
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The given formula is not supported by this model checker.");
@@ -136,4 +136,4 @@ template class BisimulationAbstractionRefinementModelChecker<storm::models::symb
 template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::gbar
