@@ -372,15 +372,12 @@ void Module::createMissingInitialValues() {
 void Module::removeVariableInitialization() {
     for (auto& variable : booleanVariables) {
         variable.setInitialValueExpression(expressions::Expression());
-        assert(!variable.hasInitialValue());
     }
     for (auto& variable : integerVariables) {
         variable.setInitialValueExpression(expressions::Expression());
-        assert(!variable.hasInitialValue());
     }
     for (auto& variable : clockVariables) {
         variable.setInitialValueExpression(expressions::Expression());
-        assert(!variable.hasInitialValue());
     }
 }
 

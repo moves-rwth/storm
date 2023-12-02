@@ -1175,7 +1175,7 @@ Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& 
 }
 
 Program Program::replaceVariableInitializationByInitExpression() const {
-    std::vector<BooleanVariable> newBooleanVariables;
+    std::vector<BooleanVariable> newBooleanVariables = globalBooleanVariables;
     for (auto& newVar : newBooleanVariables) {
         newVar.setInitialValueExpression(storm::expressions::Expression());
     }
