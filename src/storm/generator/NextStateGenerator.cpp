@@ -52,6 +52,9 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
     : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {}
 
 template<typename ValueType, typename StateType>
+NextStateGenerator<ValueType, StateType>::~NextStateGenerator() = default;
+
+template<typename ValueType, typename StateType>
 NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
     return options;
 }

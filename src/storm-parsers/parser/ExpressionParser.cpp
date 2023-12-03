@@ -7,6 +7,8 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 
+#include "storm-parsers/parser/SpiritErrorHandler.h"
+
 namespace boost {
 namespace spirit {
 namespace traits {

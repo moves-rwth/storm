@@ -1,14 +1,14 @@
 #include "MonotonicityChecker.h"
 
+#include "storm/solver/Z3SmtSolver.h"
+
 namespace storm {
 namespace analysis {
-/*** Constructor ***/
 template<typename ValueType>
-MonotonicityChecker<ValueType>::MonotonicityChecker(storage::SparseMatrix<ValueType> matrix) {
+MonotonicityChecker<ValueType>::MonotonicityChecker(storage::SparseMatrix<ValueType> const& matrix) {
     this->matrix = matrix;
 }
 
-/*** Public methods ***/
 template<typename ValueType>
 typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(
     std::shared_ptr<Order> const& order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region) {
@@ -113,6 +113,52 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
         index++;
     }
     return localMonotonicity;
+}
+
+template<typename ValueType>
+std::pair<bool, bool> MonotonicityChecker<ValueType>::checkDerivative(ValueType const& derivative, storage::ParameterRegion<ValueType> const& reg) {
+    if (derivative.isZero()) {
+        return std::pair<bool, bool>(true, true);
+    }
+    if (derivative.isConstant()) {
+        bool monIncr = derivative.constantPart() >= 0;
+        bool monDecr = derivative.constantPart() <= 0;
+        return std::pair<bool, bool>(monIncr, monDecr);
+    }
+    bool monIncr = false;
+    bool monDecr = false;
+
+    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
+    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+    solver::Z3SmtSolver s(*manager);
+    std::set<VariableType> variables = derivative.gatherVariables();
+
+    expressions::Expression exprBounds = manager->boolean(true);
+    for (auto const& variable : variables) {
+        auto managerVariable = manager->declareRationalVariable(variable.name());
+        auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
+        auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
+        exprBounds = exprBounds && manager->rational(lb) <= managerVariable && managerVariable <= manager->rational(ub);
+    }
+
+    auto converter = expressions::RationalFunctionToExpression<ValueType>(manager);
+
+    // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
+    expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
+    s.add(exprBounds);
+    s.add(exprToCheck);
+    monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+
+    // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
+    exprToCheck = converter.toExpression(derivative) > manager->rational(0);
+    s.reset();
+    s.add(exprBounds);
+    s.add(exprToCheck);
+    monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
+
+    STORM_LOG_ASSERT(!(monIncr && monDecr), "Error analyzing " << derivative);
+
+    return std::pair<bool, bool>(monIncr, monDecr);
 }
 
 /*** Private methods ***/

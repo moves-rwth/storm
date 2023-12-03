@@ -18,7 +18,6 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/storage/BitVectorHashMap.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateStorage.h"

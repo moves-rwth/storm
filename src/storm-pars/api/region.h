@@ -21,7 +21,7 @@
 
 #include "storm/environment/Environment.h"
 
-#include "storm/api/storm.h"
+#include "storm/api/properties.h"
 #include "storm/api/transformation.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -310,6 +310,9 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
     bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
     auto regionChecker =
         initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
+    if (maxSplitsPerStepThreshold && maxSplitsPerStepThreshold < std::numeric_limits<uint64_t>::max()) {
+        regionChecker->setMaxSplitDimensions(maxSplitsPerStepThreshold.value());
+    }
     auto res = regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(),
                                                    absolutePrecision, boundInvariant);
     STORM_LOG_ASSERT(res.first.isConstant(), "result must be a constant");
@@ -334,8 +337,8 @@ bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const
     formulaWithoutBounds->asOperatorFormula().removeBound();
     bool preconditionsValidated = false;
     bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
-    auto regionChecker = initializeRegionModelChecker(env, model, storm::api::createTask<ValueType>(formulaWithoutBounds, true), engine, generateSplitEstimates,
-                                                      allowModelSimplification, preconditionsValidated, monotonicitySetting);
+    auto regionChecker = initializeRegionModelChecker(env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true),
+                                                      engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
     if (maxSplitsPerStepThreshold && maxSplitsPerStepThreshold < std::numeric_limits<uint64_t>::max()) {
         regionChecker->setMaxSplitDimensions(maxSplitsPerStepThreshold.value());
     }
