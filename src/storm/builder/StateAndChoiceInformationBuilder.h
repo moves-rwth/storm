@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/any.hpp>
+#include <any>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -31,8 +31,8 @@ class StateAndChoiceInformationBuilder {
 
     void setBuildChoiceOrigins(bool value);
     bool isBuildChoiceOrigins() const;
-    void addChoiceOriginData(boost::any const& originData, uint_fast64_t choiceIndex);
-    std::vector<boost::any> buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices);
+    void addChoiceOriginData(std::any const& originData, uint_fast64_t choiceIndex);
+    std::vector<std::any> buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices);
 
     void setBuildStatePlayerIndications(bool value);
     bool isBuildStatePlayerIndications() const;
@@ -57,7 +57,7 @@ class StateAndChoiceInformationBuilder {
     std::unordered_map<std::string, storm::storage::BitVector> _choiceLabels;
 
     bool _buildChoiceOrigins;
-    std::vector<boost::any> _dataOfChoiceOrigins;
+    std::vector<std::any> _dataOfChoiceOrigins;
 
     bool _buildStatePlayerIndications;
     std::vector<storm::storage::PlayerIndex> _statePlayerIndications;

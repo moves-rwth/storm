@@ -129,7 +129,7 @@ class NextStateGenerator {
 
     VariableInformation const& getVariableInformation() const;
 
-    virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
+    virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<std::any>& dataForChoiceOrigins) const;
 
     /*!
      * Performs a remapping of all values stored by applying the given remapping.

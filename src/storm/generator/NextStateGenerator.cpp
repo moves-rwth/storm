@@ -312,7 +312,7 @@ void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::jso
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> NextStateGenerator<ValueType, StateType>::generateChoiceOrigins(
-    std::vector<boost::any>& dataForChoiceOrigins) const {
+    std::vector<std::any>& dataForChoiceOrigins) const {
     STORM_LOG_ERROR_COND(!options.isBuildChoiceOriginsSet(), "Generating choice origins is not supported for the considered model format.");
     return nullptr;
 }

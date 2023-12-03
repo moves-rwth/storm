@@ -992,7 +992,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         // Add the edge indices if requested.
         if (this->getOptions().isBuildChoiceOriginsSet()) {
-            choice.addOriginData(boost::any(std::move(edgeIndices)));
+            choice.addOriginData(std::any(std::move(edgeIndices)));
         }
 
         // Add the rewards to the choice.
@@ -1070,7 +1070,7 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
                         EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(automatonIndex, indexAndEdge.first)};
-                        result.back().addOriginData(boost::any(std::move(edgeIndex)));
+                        result.back().addOriginData(std::any(std::move(edgeIndex)));
                     }
                 }
             }
@@ -1350,7 +1350,7 @@ void JaniNextStateGenerator<ValueType, StateType>::createSynchronizationInformat
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(
-    std::vector<boost::any>& dataForChoiceOrigins) const {
+    std::vector<std::any>& dataForChoiceOrigins) const {
     if (!this->getOptions().isBuildChoiceOriginsSet()) {
         return nullptr;
     }
@@ -1363,11 +1363,11 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
     STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
     edgeIndexSetToIdentifierMap.insert(std::make_pair(EdgeIndexSet(), 0));
     uint_fast64_t currentIdentifier = 1;
-    for (boost::any& originData : dataForChoiceOrigins) {
-        STORM_LOG_ASSERT(originData.empty() || boost::any_cast<EdgeIndexSet>(&originData) != nullptr,
+    for (std::any& originData : dataForChoiceOrigins) {
+        STORM_LOG_ASSERT(!originData.has_value() || std::any_cast<EdgeIndexSet>(&originData) != nullptr,
                          "Origin data has unexpected type: " << originData.type().name() << ".");
 
-        EdgeIndexSet currentEdgeIndexSet = originData.empty() ? EdgeIndexSet() : boost::any_cast<EdgeIndexSet>(std::move(originData));
+        EdgeIndexSet currentEdgeIndexSet = !originData.has_value() ? EdgeIndexSet() : std::any_cast<EdgeIndexSet>(std::move(originData));
         auto insertionRes = edgeIndexSetToIdentifierMap.emplace(std::move(currentEdgeIndexSet), currentIdentifier);
         identifiers.push_back(insertionRes.first->second);
         if (insertionRes.second) {
