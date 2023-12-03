@@ -66,9 +66,8 @@ struct FromVectorHelper {
 
 template<DdType LibraryType>
 struct FromVectorHelper<LibraryType, storm::RationalFunction> {
-    static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<storm::RationalFunction> const& explicitValues,
-                                       storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables,
-                                       storm::logic::ComparisonType comparisonType, storm::RationalFunction value) {
+    static Bdd<LibraryType> fromVector(DdManager<LibraryType> const&, std::vector<storm::RationalFunction> const&, storm::dd::Odd const&,
+                                       std::set<storm::expressions::Variable> const&, storm::logic::ComparisonType, storm::RationalFunction) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot compare rational functions to bound.");
         return Bdd<LibraryType>();
     }
