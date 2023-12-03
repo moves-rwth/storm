@@ -10,6 +10,8 @@ file(GLOB_RECURSE STORM_CLI_UTIL_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-cli-uti
 
 # Create storm-cli-utilities.
 add_library(storm-cli-utilities SHARED ${STORM_CLI_UTIL_SOURCES} ${STORM_CLI_UTIL_HEADERS})
+target_precompile_headers(storm-cli-utilities REUSE_FROM storm)
+
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-cli-utilities PROPERTIES DEFINE_SYMBOL "")

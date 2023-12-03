@@ -19,6 +19,7 @@ function(configure_testsuite_target testsuite)
 	target_link_libraries(test-${testsuite} storm storm-parsers storm-conv)
 	target_link_libraries(test-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 
+	target_precompile_headers(test-${testsuite} REUSE_FROM storm)
 	add_dependencies(test-${testsuite} test-resources)
 	add_test(NAME run-test-${testsuite} COMMAND $<TARGET_FILE:test-${testsuite}>)
 	add_dependencies(tests test-${testsuite})

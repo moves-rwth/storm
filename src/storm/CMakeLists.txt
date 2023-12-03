@@ -56,6 +56,7 @@ add_dependencies(storm resources)
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
+target_precompile_headers(storm PRIVATE <any> <map> <vector> <optional> <iostream> <set> <fstream> <boost/container/flat_set.hpp> <boost/dynamic_bitset.hpp> <boost/range/irange.hpp>)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

@@ -11,6 +11,8 @@ file(GLOB_RECURSE STORM_CONV_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-conv/*/*.h)
 # Create storm-conv.
 add_library(storm-conv SHARED ${STORM_CONV_SOURCES} ${STORM_CONV_HEADERS})
 
+target_precompile_headers(storm-conv REUSE_FROM storm)
+
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-conv PROPERTIES DEFINE_SYMBOL "")
 #add_dependencies(storm resources)

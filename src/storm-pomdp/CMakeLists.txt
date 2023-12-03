@@ -10,7 +10,7 @@ file(GLOB_RECURSE STORM_POMDP_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-pomdp/*/*.
 
 # Create storm-pomdp.
 add_library(storm-pomdp SHARED ${STORM_POMDP_SOURCES} ${STORM_POMDP_HEADERS})
-
+target_precompile_headers(storm-pomdp REUSE_FROM storm)
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-pomdp PROPERTIES DEFINE_SYMBOL "")
 #add_dependencies(storm resources)
