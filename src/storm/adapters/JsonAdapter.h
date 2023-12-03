@@ -5,8 +5,6 @@
 #include "storm/adapters/JsonForward.h"
 
 namespace storm {
-template<typename ValueType>
-using json = nlohmann::basic_json<std::map, std::vector, std::string, bool, int64_t, uint64_t, ValueType>;
 
 /*!
  * @pre j.is_number_float() must be true
