@@ -36,7 +36,9 @@ namespace prism {
 class Command;
 class Assignment;
 }  // namespace prism
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 template<storm::dd::DdType DdType>
 class AbstractionInformation;
@@ -275,4 +277,4 @@ class CommandAbstractor {
 };
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -10,7 +10,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 using namespace storm::expressions;
@@ -238,4 +238,4 @@ template class ExpressionTranslator<storm::dd::DdType::CUDD>;
 template class ExpressionTranslator<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

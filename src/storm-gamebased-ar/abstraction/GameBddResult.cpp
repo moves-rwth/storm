@@ -1,7 +1,7 @@
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -19,4 +19,4 @@ template struct GameBddResult<storm::dd::DdType::CUDD>;
 template struct GameBddResult<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

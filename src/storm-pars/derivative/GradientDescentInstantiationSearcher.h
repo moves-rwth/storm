@@ -41,7 +41,7 @@ class GradientDescentInstantiationSearcher {
      * @param recordRun Records the run into a global variable, which can be converted into JSON
      * using the printRunAsJson function
      */
-    GradientDescentInstantiationSearcher<FunctionType, ConstantType>(
+    GradientDescentInstantiationSearcher(
         storm::models::sparse::Dtmc<FunctionType> const& model, GradientDescentMethod method = GradientDescentMethod::ADAM, ConstantType learningRate = 0.1,
         ConstantType averageDecay = 0.9, ConstantType squaredAverageDecay = 0.999, uint_fast64_t miniBatchSize = 32, ConstantType terminationEpsilon = 1e-6,
         boost::optional<

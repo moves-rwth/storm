@@ -4,7 +4,7 @@
 
 #include "storm/solver/OptimizationDirection.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<typename ValueType>
@@ -29,4 +29,4 @@ class ExplicitQuantitativeResultMinMax {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

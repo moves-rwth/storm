@@ -22,6 +22,7 @@
 #include "storm/storage/dd/sylvan/utility.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"

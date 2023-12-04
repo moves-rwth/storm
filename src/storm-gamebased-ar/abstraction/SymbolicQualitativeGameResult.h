@@ -3,7 +3,7 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResult.h"
 #include "storm/utility/graph.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -17,4 +17,4 @@ class SymbolicQualitativeGameResult : public storm::utility::graph::SymbolicGame
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

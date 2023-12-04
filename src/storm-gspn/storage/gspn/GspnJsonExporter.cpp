@@ -1,10 +1,11 @@
 #include "GspnJsonExporter.h"
 
-#include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotImplementedException.h"
-
 #include <algorithm>
 #include <string>
+
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace gspn {

@@ -3843,7 +3843,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     /// @brief comparison: 3-way
     /// @sa https://json.nlohmann.me/api/basic_json/operator_spaceship/
     template<typename ScalarType>
-    requires nlohmann::storm::is_scalar<ScalarType><ScalarType>
+    requires nlohmann::storm::is_scalar<ScalarType>
     std::partial_ordering operator<=>(ScalarType rhs) const noexcept // *NOPAD*
     {
         return *this <=> basic_json(rhs); // *NOPAD*
@@ -3868,7 +3868,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     /// @brief comparison: less than or equal
     /// @sa https://json.nlohmann.me/api/basic_json/operator_le/
     template<typename ScalarType>
-    requires nlohmann::storm::is_scalar<ScalarType><ScalarType>
+    requires nlohmann::storm::is_scalar<ScalarType>
     bool operator<=(ScalarType rhs) const noexcept
     {
         return *this <= basic_json(rhs);
@@ -3889,7 +3889,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
     /// @brief comparison: greater than or equal
     /// @sa https://json.nlohmann.me/api/basic_json/operator_ge/
     template<typename ScalarType>
-    requires nlohmann::storm::is_scalar<ScalarType><ScalarType>
+    requires nlohmann::storm::is_scalar<ScalarType>
     bool operator>=(ScalarType rhs) const noexcept
     {
         return *this >= basic_json(rhs);

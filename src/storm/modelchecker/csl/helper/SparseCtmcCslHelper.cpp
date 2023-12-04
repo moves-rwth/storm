@@ -5,9 +5,6 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
 
@@ -39,7 +36,7 @@ template<typename ValueType>
 bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Environment const& env, ValueType& epsilon,
                                                                     std::vector<ValueType> const& resultVector,
                                                                     storm::storage::BitVector const& relevantPositions) {
-    // Check if the check is necessary for the provided settings
+    // Check if the check is necessary for the provided environment
     if (!env.solver().isForceSoundness() || !env.solver().timeBounded().getRelativeTerminationCriterion()) {
         // No need to update epsilon
         return false;

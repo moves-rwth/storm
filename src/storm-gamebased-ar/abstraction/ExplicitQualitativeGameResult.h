@@ -3,7 +3,7 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeResult.h"
 #include "storm/utility/graph.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 class ExplicitQualitativeGameResult : public storm::utility::graph::ExplicitGameProb01Result, public ExplicitQualitativeResult {
@@ -16,4 +16,4 @@ class ExplicitQualitativeGameResult : public storm::utility::graph::ExplicitGame
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

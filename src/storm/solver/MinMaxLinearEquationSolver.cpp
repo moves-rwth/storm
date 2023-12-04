@@ -6,7 +6,6 @@
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
-#include "storm/solver/TopologicalCudaMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -225,8 +224,6 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquati
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
     } else if (method == MinMaxMethod::Topological) {
         result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
-    } else if (method == MinMaxMethod::TopologicalCuda) {
-        result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
     } else if (method == MinMaxMethod::LinearProgramming) {
         result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
     } else if (method == MinMaxMethod::Acyclic) {

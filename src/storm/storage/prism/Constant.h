@@ -68,8 +68,7 @@ class Constant : public LocatedInformation {
     bool isDefined() const;
 
     /*!
-     * Retrieves the expression that defines the constant. This may only be called if the object is a defined
-     * constant.
+     * Retrieves the expression that defines the constant. Note that the expression may not be initialized.
      *
      * @return The expression that defines the constant.
      */

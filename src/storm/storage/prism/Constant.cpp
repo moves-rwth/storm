@@ -32,7 +32,6 @@ bool Constant::isDefined() const {
 }
 
 storm::expressions::Expression const& Constant::getExpression() const {
-    STORM_LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant.");
     return this->expression;
 }
 
