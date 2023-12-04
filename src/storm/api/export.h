@@ -2,6 +2,7 @@
 
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/DDEncodingExporter.h"
 #include "storm/io/DirectEncodingExporter.h"
