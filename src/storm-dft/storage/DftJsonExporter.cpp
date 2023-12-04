@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <string>
 
-#include <storm/exceptions/InvalidArgumentException.h>
 #include "storm/adapters/JsonAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
 
