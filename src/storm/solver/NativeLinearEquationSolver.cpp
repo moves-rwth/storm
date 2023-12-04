@@ -19,7 +19,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
-
 namespace storm {
 namespace solver {
 

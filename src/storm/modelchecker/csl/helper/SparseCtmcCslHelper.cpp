@@ -5,7 +5,6 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
 

@@ -11,7 +11,6 @@
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/storage/dd/bisimulation/QuotientFormat.h"
 
-
 namespace storm {
 namespace dd {
 namespace bisimulation {

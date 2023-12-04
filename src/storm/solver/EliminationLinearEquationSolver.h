@@ -3,7 +3,6 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 
-
 namespace storm {
 namespace solver {
 
