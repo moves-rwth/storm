@@ -35,7 +35,7 @@ ExplicitDFTModelBuilder<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool
 
 template<typename ValueType, typename StateType>
 ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft,
-                                                                       storm::dft::storage::DFTIndependentSymmetries const& symmetries)
+                                                                       storm::dft::storage::DftSymmetries const& symmetries)
     : dft(dft),
       stateGenerationInfo(std::make_shared<storm::dft::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
       generator(dft, *stateGenerationInfo),

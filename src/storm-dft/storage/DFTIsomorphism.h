@@ -8,6 +8,8 @@
 #include "storm-dft/storage/elements/DFTElementType.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+
 namespace storm::dft {
 namespace storage {
 

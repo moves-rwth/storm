@@ -1,7 +1,5 @@
 #pragma once
 
-#include "storm-dft/storage/SymmetricUnits.h"
-
 namespace storm::dft {
 namespace storage {
 
@@ -116,7 +114,7 @@ class DFTStateGenerationInfo {
     /**
      * Generate more symmetries by combining two symmetries
      */
-    void generateSymmetries(storm::dft::storage::DFTIndependentSymmetries const& symmetries) {
+    void generateSymmetries() {
         // Iterate over possible children
         for (size_t i = 0; i < mSymmetries.size(); ++i) {
             size_t childStart = mSymmetries[i].second[0];

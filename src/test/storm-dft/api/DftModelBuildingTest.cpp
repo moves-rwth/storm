@@ -14,8 +14,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::string property = "Tmin=? [F \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DftSymmetries symmetries;
 
     // Set relevant events (none)
     storm::dft::utility::RelevantEvents relevantEvents{};

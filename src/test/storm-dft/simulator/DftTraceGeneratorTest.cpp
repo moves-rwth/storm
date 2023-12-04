@@ -4,8 +4,7 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
-#include "storm-dft/storage/DFTIsomorphism.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/utility/SymmetryFinder.h"
 
 #include "storm-parsers/api/storm-parsers.h"
 
@@ -80,11 +79,9 @@ class DftTraceGeneratorTest : public ::testing::Test {
         dft->setRelevantEvents(relevantEvents, false);
 
         // Find symmetries
-        std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-        storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+        storm::dft::storage::DftSymmetries symmetries;
         if (config.useSR) {
-            auto colouring = dft->colourDFT();
-            symmetries = dft->findSymmetries(colouring);
+            symmetries = storm::dft::utility::SymmetryFinder<double>::findSymmetries(*dft);
         }
         storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
         return std::make_pair(dft, stateGenerationInfo);

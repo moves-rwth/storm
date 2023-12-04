@@ -4,7 +4,7 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/DftSymmetries.h"
 
 namespace {
 
@@ -20,8 +20,7 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
     dft->setRelevantEvents(relevantEvents, false);
 
     // Find symmetries
-    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DftSymmetries symmetries;
     storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
 
     // Init random number generator
