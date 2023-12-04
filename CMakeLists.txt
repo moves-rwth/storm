@@ -430,6 +430,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##
 #############################################################
 if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
+	message(WARNING "Using the XCode Project Generator has previously yielded problems. See https://github.com/moves-rwth/storm/issues/65. We recommend using the command line or an IDE with native CMAKE support, such as CLION.")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif()
