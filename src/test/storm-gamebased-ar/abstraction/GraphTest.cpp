@@ -34,11 +34,11 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     // The target states are those states where !(s < 3).
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = !abstractor.getStates(initialPredicates[0]) && game.getReachableStates();
@@ -194,11 +194,11 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[7]) && abstractor.getStates(initialPredicates[22]) &&
@@ -381,11 +381,11 @@ TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
-    storm::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::CUDD, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
-    storm::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<storm::dd::DdType::CUDD, double> game = abstractor.abstract();
 
     // The target states are those states where col == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = abstractor.getStates(initialPredicates[2]) && game.getReachableStates();

@@ -6,7 +6,7 @@
 
 #include "storm/utility/OsDetection.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 /*!
@@ -111,4 +111,4 @@ class MenuGame : public storm::models::symbolic::StochasticTwoPlayerGame<Type, V
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

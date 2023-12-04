@@ -1,7 +1,7 @@
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -23,4 +23,4 @@ template class SymbolicStateSet<storm::dd::DdType::CUDD>;
 template class SymbolicStateSet<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

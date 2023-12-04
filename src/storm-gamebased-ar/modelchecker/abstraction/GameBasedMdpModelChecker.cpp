@@ -51,14 +51,14 @@
 
 #include "storm/modelchecker/results/CheckResult.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace modelchecker {
 
 using detail::PreviousExplicitResult;
-using storm::abstraction::ExplicitQuantitativeResult;
-using storm::abstraction::ExplicitQuantitativeResultMinMax;
-using storm::abstraction::SymbolicQuantitativeGameResult;
-using storm::abstraction::SymbolicQuantitativeGameResultMinMax;
+using storm::gbar::abstraction::ExplicitQuantitativeResult;
+using storm::gbar::abstraction::ExplicitQuantitativeResultMinMax;
+using storm::gbar::abstraction::SymbolicQuantitativeGameResult;
+using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
 using storm::storage::ExplicitGameStrategyPair;
 
 template<storm::dd::DdType Type, typename ModelType>
@@ -125,15 +125,15 @@ GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::stora
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-bool GameBasedMdpModelChecker<Type, ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+bool GameBasedMdpModelChecker<Type, ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     storm::logic::FragmentSpecification fragment = storm::logic::reachability();
     return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(
-    Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeUntilProbabilities(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
     std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
     if (preprocessedModel.isPrismProgram()) {
@@ -157,8 +157,8 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeU
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(
-    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeReachabilityProbabilities(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
     std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
     if (preprocessedModel.isPrismProgram()) {
@@ -180,10 +180,10 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::computeR
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask,
-                                                                 storm::OptimizationDirection player2Direction, storm::dd::Bdd<Type> const& initialStates,
-                                                                 storm::dd::Bdd<Type> const& prob0, storm::dd::Bdd<Type> const& prob1) {
-    std::unique_ptr<CheckResult> result;
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitativeCheck(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection player2Direction,
+    storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& prob0, storm::dd::Bdd<Type> const& prob1) {
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     if (checkTask.isBoundSet()) {
         // Despite having a bound, we create a quantitative result so that the next layer can perform the comparison.
@@ -227,11 +227,11 @@ std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask,
-                                                                 storm::dd::Bdd<Type> const& initialStates,
-                                                                 SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) {
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitativeCheck(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::dd::Bdd<Type> const& initialStates,
+    SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) {
     // Check whether we can already give the answer based on the current information.
-    std::unique_ptr<CheckResult> result =
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
         checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates,
                                                              qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
     if (result) {
@@ -246,10 +246,10 @@ std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm
 }
 
 template<typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask,
-                                                                 storm::OptimizationDirection player2Direction, storm::storage::BitVector const& initialStates,
-                                                                 storm::storage::BitVector const& prob0, storm::storage::BitVector const& prob1) {
-    std::unique_ptr<CheckResult> result;
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitativeCheck(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection player2Direction,
+    storm::storage::BitVector const& initialStates, storm::storage::BitVector const& prob0, storm::storage::BitVector const& prob1) {
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     if (checkTask.isBoundSet()) {
         // Despite having a bound, we create a quantitative result so that the next layer can perform the comparison.
@@ -293,11 +293,11 @@ std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm
 }
 
 template<typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask,
-                                                                 storm::storage::BitVector const& initialStates,
-                                                                 ExplicitQualitativeGameResultMinMax const& qualitativeResult) {
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQualitativeCheck(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::storage::BitVector const& initialStates,
+    ExplicitQualitativeGameResultMinMax const& qualitativeResult) {
     // Check whether we can already give the answer based on the current information.
-    std::unique_ptr<CheckResult> result =
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
         checkForResultAfterQualitativeCheck<ValueType>(checkTask, storm::OptimizationDirection::Minimize, initialStates,
                                                        qualitativeResult.prob0Min.getPlayer1States(), qualitativeResult.prob1Min.getPlayer1States());
     if (result) {
@@ -312,10 +312,10 @@ std::unique_ptr<CheckResult> checkForResultAfterQualitativeCheck(CheckTask<storm
 }
 
 template<typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<storm::logic::Formula, ValueType> const& checkTask,
-                                                                  storm::OptimizationDirection const& player2Direction,
-                                                                  std::pair<ValueType, ValueType> const& initialValueRange) {
-    std::unique_ptr<CheckResult> result;
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativeCheck(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::OptimizationDirection const& player2Direction,
+    std::pair<ValueType, ValueType> const& initialValueRange) {
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // If the minimum value exceeds an upper threshold or the maximum value is below a lower threshold, we can
     // return the value because the property will definitely hold. Vice versa, if the minimum value exceeds an
@@ -357,9 +357,9 @@ std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(CheckTask<stor
 }
 
 template<typename ValueType>
-std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(ValueType const& minValue, ValueType const& maxValue,
-                                                                  storm::utility::ConstantsComparator<ValueType> const& comparator) {
-    std::unique_ptr<CheckResult> result;
+std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativeCheck(ValueType const& minValue, ValueType const& maxValue,
+                                                                                       storm::utility::ConstantsComparator<ValueType> const& comparator) {
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // If the lower and upper bounds are close enough, we can return the result.
     if (comparator.isEqual(minValue, maxValue)) {
@@ -373,7 +373,7 @@ std::unique_ptr<CheckResult> checkForResultAfterQuantitativeCheck(ValueType cons
 template<storm::dd::DdType Type, typename ValueType>
 SymbolicQuantitativeGameResult<Type, ValueType> solveMaybeStates(
     Environment const& env, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction,
-    storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& maybeStates, storm::dd::Bdd<Type> const& prob1States,
     boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
     STORM_LOG_TRACE("Performing quantative solution step. Player 1: " << player1Direction << ", player 2: " << player2Direction << ".");
 
@@ -411,7 +411,7 @@ SymbolicQuantitativeGameResult<Type, ValueType> solveMaybeStates(
 template<storm::dd::DdType Type, typename ValueType>
 SymbolicQuantitativeGameResult<Type, ValueType> computeQuantitativeResult(
     Environment const& env, storm::OptimizationDirection player1Direction, storm::OptimizationDirection player2Direction,
-    storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult,
     storm::dd::Add<Type, ValueType> const& initialStatesAdd, storm::dd::Bdd<Type> const& maybeStates,
     boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> const& startInfo = boost::none) {
     bool min = player2Direction == storm::OptimizationDirection::Minimize;
@@ -625,9 +625,9 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(
-    Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::expressions::Expression const& constraintExpression,
-    storm::expressions::Expression const& targetStateExpression) {
+std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performGameBasedAbstractionRefinement(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask,
+    storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
     STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException,
                     "The game-based abstraction refinement model checker can only compute the result for the initial states.");
 
@@ -642,15 +642,15 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performG
     storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
 
     // Create the abstractor.
-    storm::abstraction::MenuGameAbstractorOptions abstractorOptions(std::move(options.constraints));
+    storm::gbar::abstraction::MenuGameAbstractorOptions abstractorOptions(std::move(options.constraints));
     if (preprocessedModel.isPrismProgram()) {
-        abstractor = std::make_shared<storm::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(), smtSolverFactory,
-                                                                                                           abstractorOptions);
+        abstractor = std::make_shared<storm::gbar::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(),
+                                                                                                                 smtSolverFactory, abstractorOptions);
     } else {
-        abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory,
-                                                                                                         abstractorOptions);
+        abstractor = std::make_shared<storm::gbar::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(),
+                                                                                                               smtSolverFactory, abstractorOptions);
     }
-    std::unique_ptr<CheckResult> result;
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
     abstractor->getDdManager().execute([&]() {
         if (!constraintExpression.isTrue()) {
             abstractor->addTerminalStates(!constraintExpression);
@@ -659,8 +659,9 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performG
         abstractor->setTargetStates(targetStateExpression);
 
         // Create a refiner that can be used to refine the abstraction when needed.
-        storm::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
-        storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()), refinerOptions);
+        storm::gbar::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
+        storm::gbar::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()),
+                                                                           refinerOptions);
         refiner.refine(initialPredicates, false);
 
         storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
@@ -679,7 +680,7 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performG
 
             // (1) build the abstraction.
             storm::utility::Stopwatch abstractionWatch(true);
-            storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
+            storm::gbar::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
             abstractionWatch.stop();
             totalAbstractionWatch.add(abstractionWatch);
 
@@ -742,10 +743,11 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performG
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performSymbolicAbstractionSolutionStep(
-    Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game,
-    storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& constraintStates,
-    storm::dd::Bdd<Type> const& targetStates, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner,
+std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performSymbolicAbstractionSolutionStep(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStates,
+    storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates,
+    storm::gbar::abstraction::MenuGameRefiner<Type, ValueType> const& refiner,
     boost::optional<SymbolicQualitativeGameResultMinMax<Type>>& previousQualitativeResult,
     boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>>& previousMinQuantitativeResult) {
     STORM_LOG_TRACE("Using dd-based solving.");
@@ -757,7 +759,8 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performS
     storm::utility::Stopwatch qualitativeWatch(true);
     SymbolicQualitativeGameResultMinMax<Type> qualitativeResult =
         computeProb01States(previousQualitativeResult, game, player1Direction, transitionMatrixBdd, constraintStates, targetStates);
-    std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        checkForResultAfterQualitativeCheck<Type, ValueType>(checkTask, initialStates, qualitativeResult);
     if (result) {
         return result;
     }
@@ -1354,11 +1357,11 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performExplicitAbstractionSolutionStep(
-    Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::abstraction::MenuGame<Type, ValueType> const& game,
-    storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& initialStatesBdd, storm::dd::Bdd<Type> const& constraintStatesBdd,
-    storm::dd::Bdd<Type> const& targetStatesBdd, storm::abstraction::MenuGameRefiner<Type, ValueType> const& refiner,
-    boost::optional<PreviousExplicitResult<ValueType>>& previousResult) {
+std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performExplicitAbstractionSolutionStep(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction,
+    storm::dd::Bdd<Type> const& initialStatesBdd, storm::dd::Bdd<Type> const& constraintStatesBdd, storm::dd::Bdd<Type> const& targetStatesBdd,
+    storm::gbar::abstraction::MenuGameRefiner<Type, ValueType> const& refiner, boost::optional<PreviousExplicitResult<ValueType>>& previousResult) {
     STORM_LOG_TRACE("Using sparse solving.");
 
     // (0) Start by transforming the necessary symbolic elements to explicit ones.
@@ -1432,7 +1435,7 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performE
     totalSolutionWatch.add(qualitativeWatch);
     STORM_LOG_INFO("Qualitative computation completed in " << qualitativeWatch.getTimeInMilliseconds() << "ms.");
 
-    std::unique_ptr<CheckResult> result = checkForResultAfterQualitativeCheck<ValueType>(checkTask, initialStates, qualitativeResult);
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checkForResultAfterQualitativeCheck<ValueType>(checkTask, initialStates, qualitativeResult);
     if (result) {
         return result;
     }
@@ -1595,7 +1598,8 @@ std::vector<storm::expressions::Expression> GameBasedMdpModelChecker<Type, Model
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+storm::OptimizationDirection GameBasedMdpModelChecker<Type, ModelType>::getPlayer1Direction(
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
     if (preprocessedModel.getModelType() == storm::storage::SymbolicModelDescription::ModelType::DTMC) {
         return storm::OptimizationDirection::Maximize;
     } else if (checkTask.isOptimizationDirectionSet()) {
@@ -1669,9 +1673,9 @@ ExplicitQualitativeGameResultMinMax GameBasedMdpModelChecker<Type, ModelType>::c
 
 template<storm::dd::DdType Type, typename ModelType>
 SymbolicQualitativeGameResultMinMax<Type> GameBasedMdpModelChecker<Type, ModelType>::computeProb01States(
-    boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& previousQualitativeResult, storm::abstraction::MenuGame<Type, ValueType> const& game,
-    storm::OptimizationDirection player1Direction, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates,
-    storm::dd::Bdd<Type> const& targetStates) {
+    boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& previousQualitativeResult,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::OptimizationDirection player1Direction,
+    storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& constraintStates, storm::dd::Bdd<Type> const& targetStates) {
     SymbolicQualitativeGameResultMinMax<Type> result;
 
     if (reuseQualitativeResults) {
@@ -1756,11 +1760,11 @@ SymbolicQualitativeGameResultMinMax<Type> GameBasedMdpModelChecker<Type, ModelTy
 }
 
 template<storm::dd::DdType Type, typename ModelType>
-void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor,
-                                                                storm::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements,
+void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::gbar::abstraction::MenuGameAbstractor<Type, ValueType> const& abstractor,
+                                                                storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, uint64_t refinements,
                                                                 uint64_t peakPlayer1States, uint64_t peakTransitions) const {
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        storm::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
+        storm::gbar::abstraction::AbstractionInformation<Type> const& abstractionInformation = abstractor.getAbstractionInformation();
 
         std::streamsize originalPrecision = std::cout.precision();
         std::cout << std::fixed << std::setprecision(2);
@@ -1827,4 +1831,4 @@ template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models
 template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 template class GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::gbar

@@ -7,7 +7,7 @@
 
 #include "storm/storage/expressions/Expression.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 class RefinementCommand {
@@ -33,4 +33,4 @@ class RefinementCommand {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

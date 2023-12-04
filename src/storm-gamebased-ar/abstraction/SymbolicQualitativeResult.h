@@ -10,7 +10,9 @@ namespace dd {
 template<storm::dd::DdType Type>
 class Bdd;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -22,4 +24,4 @@ class SymbolicQualitativeResult : public QualitativeResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

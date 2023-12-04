@@ -369,6 +369,18 @@ void Module::createMissingInitialValues() {
     }
 }
 
+void Module::removeVariableInitialization() {
+    for (auto& variable : booleanVariables) {
+        variable.setInitialValueExpression(expressions::Expression());
+    }
+    for (auto& variable : integerVariables) {
+        variable.setInitialValueExpression(expressions::Expression());
+    }
+    for (auto& variable : clockVariables) {
+        variable.setInitialValueExpression(expressions::Expression());
+    }
+}
+
 bool Module::hasInvariant() const {
     return this->invariant.isInitialized();
 }

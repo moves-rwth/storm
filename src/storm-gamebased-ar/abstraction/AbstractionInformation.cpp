@@ -10,7 +10,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -624,4 +624,4 @@ template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector
 AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables,
                                                                                          storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

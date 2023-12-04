@@ -14,12 +14,12 @@ class GSPNExportSettings : public ModuleSettings {
     GSPNExportSettings();
 
     /**
-     * Retrieve whether the pgcl file option was set
+     * Retrieve whether the to dot option was set
      */
     bool isWriteToDotSet() const;
 
     /**
-     * Retrieves the pgcl file name
+     * Retrieves the dot file name
      */
     std::string getWriteToDotFilename() const;
 

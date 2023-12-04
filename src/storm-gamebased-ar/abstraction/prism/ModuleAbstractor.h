@@ -15,7 +15,9 @@ namespace prism {
 // Forward-declare concrete module class.
 class Module;
 }  // namespace prism
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 template<storm::dd::DdType DdType>
 class AbstractionInformation;
@@ -139,4 +141,4 @@ class ModuleAbstractor {
 };
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

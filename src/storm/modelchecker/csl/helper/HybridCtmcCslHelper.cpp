@@ -317,9 +317,10 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
-    Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
-    storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates,
-    storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound) {
+    Environment const& /*env*/, storm::models::symbolic::Ctmc<DdType, ValueType> const& /*model*/, bool /*onlyInitialStatesRelevant*/,
+    storm::dd::Add<DdType, ValueType> const& /*rateMatrix*/, storm::dd::Add<DdType, ValueType> const& /*exitRateVector*/,
+    storm::dd::Bdd<DdType> const& /*phiStates*/, storm::dd::Bdd<DdType> const& /*psiStates*/, bool /*qualitative*/, double /*lowerBound*/,
+    double /*upperBound*/) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
 }
 
@@ -387,9 +388,9 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
-    Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
-    storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
-    typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+    Environment const& /*env*/, storm::models::symbolic::Ctmc<DdType, ValueType> const& /*model*/, bool /*onlyInitialStatesRelevant*/,
+    storm::dd::Add<DdType, ValueType> const& /*rateMatrix*/, storm::dd::Add<DdType, ValueType> const& /*exitRateVector*/,
+    typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& /*rewardModel*/, double /*timeBound*/) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
 }
 
@@ -474,9 +475,9 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
-    Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant,
-    storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector,
-    typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+    Environment const& /*env*/, storm::models::symbolic::Ctmc<DdType, ValueType> const& /*model*/, bool /*onlyInitialStatesRelevant*/,
+    storm::dd::Add<DdType, ValueType> const& /*rateMatrix*/, storm::dd::Add<DdType, ValueType> const& /*exitRateVector*/,
+    typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& /*rewardModel*/, double /*timeBound*/) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
 }
 

@@ -148,7 +148,7 @@ Add<LibraryType, ValueType> Add<LibraryType, ValueType>::ceil() const {
 }
 
 template<DdType LibraryType, typename ValueType>
-Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t precision) const {
+Add<LibraryType, storm::RationalNumber> Add<LibraryType, ValueType>::sharpenKwekMehlhorn(uint64_t) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 

@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -27,4 +27,4 @@ class QualitativeResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

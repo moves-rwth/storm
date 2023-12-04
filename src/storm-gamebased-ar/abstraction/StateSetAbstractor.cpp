@@ -10,7 +10,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -179,4 +179,4 @@ template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
 template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

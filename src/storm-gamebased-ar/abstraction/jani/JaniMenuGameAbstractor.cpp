@@ -28,7 +28,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 namespace jani {
 
@@ -172,8 +172,8 @@ storm::expressions::Expression JaniMenuGameAbstractor<DdType, ValueType>::getIni
 
 template<storm::dd::DdType DdType, typename ValueType>
 storm::dd::Bdd<DdType> JaniMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) {
-    storm::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation,
-                                                                smtSolverFactory->create(abstractionInformation.getExpressionManager()));
+    storm::gbar::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation,
+                                                                      smtSolverFactory->create(abstractionInformation.getExpressionManager()));
     return translator.translate(expression);
 }
 
@@ -340,4 +340,4 @@ template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::Rational
 #endif
 }  // namespace jani
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

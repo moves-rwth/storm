@@ -4,17 +4,17 @@
 
 #include "storm-gamebased-ar/modelchecker/abstraction/AbstractAbstractionRefinementModelChecker.h"
 
-namespace storm {
-namespace models {
+namespace storm::models {
 template<typename ValueType>
 class Model;
 }
 
-namespace dd {
+namespace storm::dd {
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 class BisimulationDecomposition;
 }
 
+namespace storm::gbar {
 namespace modelchecker {
 
 template<typename ModelType>
@@ -35,7 +35,7 @@ class BisimulationAbstractionRefinementModelChecker : public AbstractAbstraction
     virtual std::string const& getName() const override;
     virtual void initializeAbstractionRefinement() override;
     virtual std::shared_ptr<storm::models::Model<ValueType>> getAbstractModel() override;
-    virtual std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> getConstraintAndTargetStates(
+    virtual std::pair<std::unique_ptr<storm::gbar::abstraction::StateSet>, std::unique_ptr<storm::gbar::abstraction::StateSet>> getConstraintAndTargetStates(
         storm::models::Model<ValueType> const& abstractModel) override;
     virtual uint64_t getAbstractionPlayer() const override;
     virtual bool requiresSchedulerSynthesis() const override;
@@ -58,4 +58,4 @@ class BisimulationAbstractionRefinementModelChecker : public AbstractAbstraction
 };
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::gbar
