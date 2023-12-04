@@ -15,7 +15,6 @@
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/storage/BitVectorHashMap.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"

@@ -3,8 +3,6 @@
 #include "storm/adapters/IntelTbbAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/SparseMatrix.h"
 
 #include "storm/exceptions/NotSupportedException.h"
@@ -35,11 +33,7 @@ void GmmxxMultiplier<ValueType>::clearCache() const {
 
 template<typename ValueType>
 bool GmmxxMultiplier<ValueType>::parallelize(Environment const& env) const {
-#ifdef STORM_HAVE_INTELTBB
-    return storm::settings::getModule<storm::settings::modules::CoreSettings>().isUseIntelTbbSet();
-#else
     return false;
-#endif
 }
 
 template<typename ValueType>
