@@ -1,8 +1,6 @@
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/utility/macros.h"
 

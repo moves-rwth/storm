@@ -33,7 +33,9 @@ namespace prism {
 // Forward-declare concrete Program class.
 class Program;
 }  // namespace prism
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 
@@ -182,4 +184,4 @@ class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
 };
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -3,7 +3,7 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResult.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 bool QualitativeResult::isSymbolic() const {
@@ -33,4 +33,4 @@ ExplicitQualitativeResult const& QualitativeResult::asExplicitQualitativeResult(
 }
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

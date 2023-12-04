@@ -109,6 +109,11 @@ void transformPrism(storm::prism::Program& prismProgram, std::vector<storm::jani
 }
 
 std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program,
+                                                                                     storm::converter::PrismToJaniConverterOptions options) {
+    return convertPrismToJani(program, {}, options);
+}
+
+std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program,
                                                                                      std::vector<storm::jani::Property> const& properties,
                                                                                      storm::converter::PrismToJaniConverterOptions options) {
     // Perform conversion

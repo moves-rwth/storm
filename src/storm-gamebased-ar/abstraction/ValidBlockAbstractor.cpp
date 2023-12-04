@@ -7,7 +7,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/solver.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -146,4 +146,4 @@ template class ValidBlockAbstractor<storm::dd::DdType::CUDD>;
 template class ValidBlockAbstractor<storm::dd::DdType::Sylvan>;
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

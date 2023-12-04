@@ -17,7 +17,7 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 namespace jani {
 
@@ -160,4 +160,4 @@ template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalNum
 #endif
 }  // namespace jani
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -29,7 +29,7 @@ class Partition {
    public:
     Partition();
 
-    bool operator==(Partition<DdType, ValueType> const& other);
+    bool operator==(Partition<DdType, ValueType> const& other) const;
 
     Partition<DdType, ValueType> replacePartition(storm::dd::Add<DdType, ValueType> const& newPartitionAdd, uint64_t numberOfBlocks,
                                                   uint64_t nextFreeBlockIndex,

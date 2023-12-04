@@ -14,6 +14,7 @@
 
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
@@ -39,11 +40,12 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace modelchecker {
 
 template<typename ModelType>
-AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker() : AbstractModelChecker<ModelType>(), checkTask(nullptr) {
+AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker()
+    : storm::modelchecker::AbstractModelChecker<ModelType>(), checkTask(nullptr) {
     storm::settings::modules::AbstractionSettings::ReuseMode reuseMode =
         storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getReuseMode();
     reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
@@ -58,7 +60,7 @@ AbstractAbstractionRefinementModelChecker<ModelType>::~AbstractAbstractionRefine
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     bool enableRewards = this->supportsReachabilityRewards();
     storm::logic::FragmentSpecification fragment =
@@ -72,15 +74,15 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::supportsReachabilityR
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeUntilProbabilities(
-    Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeUntilProbabilities(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
     this->setCheckTask(checkTask.template substituteFormula<storm::logic::Formula>(checkTask.getFormula()));
     return performAbstractionRefinement(env);
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilities(
-    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilities(
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(this->supportsReachabilityRewards(), storm::exceptions::NotSupportedException,
                     "Reachability rewards are not supported by this abstraction-refinement model checker.");
     this->setCheckTask(checkTask.template substituteFormula<storm::logic::Formula>(checkTask.getFormula()));
@@ -88,19 +90,20 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityRewards(
+    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     this->setCheckTask(checkTask.template substituteFormula<storm::logic::Formula>(checkTask.getFormula()));
     return performAbstractionRefinement(env);
 }
 
 template<typename ModelType>
-void AbstractAbstractionRefinementModelChecker<ModelType>::setCheckTask(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-    this->checkTask = std::make_unique<CheckTask<storm::logic::Formula, ValueType>>(checkTask);
+void AbstractAbstractionRefinementModelChecker<ModelType>::setCheckTask(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+    this->checkTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>>(checkTask);
 }
 
 template<typename ModelType>
-CheckTask<storm::logic::Formula, typename AbstractAbstractionRefinementModelChecker<ModelType>::ValueType> const&
+storm::modelchecker::CheckTask<storm::logic::Formula, typename AbstractAbstractionRefinementModelChecker<ModelType>::ValueType> const&
 AbstractAbstractionRefinementModelChecker<ModelType>::getCheckTask() const {
     return *checkTask;
 }
@@ -116,7 +119,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::getReuseQuantitativeR
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::performAbstractionRefinement(Environment const& env) {
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::performAbstractionRefinement(Environment const& env) {
     STORM_LOG_THROW(checkTask->isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException,
                     "The abstraction-refinement model checkers can only compute the result for the initial states.");
 
@@ -124,7 +127,7 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
     this->initializeAbstractionRefinement();
 
     uint64_t iterations = 0;
-    std::unique_ptr<CheckResult> result;
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
     auto start = std::chrono::high_resolution_clock::now();
     while (!result) {
         ++iterations;
@@ -138,7 +141,8 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
                                               << std::chrono::duration_cast<std::chrono::milliseconds>(abstractionEnd - abstractionStart).count() << "ms).");
 
         // Obtain lower and upper bounds from the abstract model.
-        std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> bounds = computeBounds(env, *abstractModel);
+        std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> bounds =
+            computeBounds(env, *abstractModel);
 
         // Try to derive the final result from the obtained bounds.
         if (bounds.first || bounds.second) {
@@ -165,14 +169,14 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeBounds(
-    Environment const& env, storm::models::Model<ValueType> const& abstractModel) {
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeBounds(Environment const& env, storm::models::Model<ValueType> const& abstractModel) {
     // We go through two phases. In phase (1) we are solving the qualitative part and in phase (2) the quantitative part.
 
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> result;
 
     // Preparation: determine the constraint states and the target states of the reachability objective.
-    std::pair<std::unique_ptr<storm::abstraction::StateSet>, std::unique_ptr<storm::abstraction::StateSet>> constraintAndTargetStates =
+    std::pair<std::unique_ptr<storm::gbar::abstraction::StateSet>, std::unique_ptr<storm::gbar::abstraction::StateSet>> constraintAndTargetStates =
         getConstraintAndTargetStates(abstractModel);
 
     // Phase (1): solve qualitatively.
@@ -210,9 +214,8 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel,
-                                                                                                bool lowerBounds,
-                                                                                                QuantitativeCheckResult<ValueType> const& quantitativeResult) {
+bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(
+    storm::models::Model<ValueType> const& abstractModel, bool lowerBounds, storm::modelchecker::QuantitativeCheckResult<ValueType> const& quantitativeResult) {
     bool result = false;
     if (checkTask->isBoundSet()) {
         storm::logic::ComparisonType comparisonType = checkTask->getBoundComparisonType();
@@ -252,7 +255,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQu
 
 template<typename ModelType>
 void AbstractAbstractionRefinementModelChecker<ModelType>::printBoundsInformation(
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>& bounds) {
     STORM_LOG_THROW(bounds.first->isSymbolicQuantitativeCheckResult() && bounds.second->isSymbolicQuantitativeCheckResult(),
                     storm::exceptions::NotSupportedException, "Expected symbolic bounds.");
 
@@ -261,8 +264,9 @@ void AbstractAbstractionRefinementModelChecker<ModelType>::printBoundsInformatio
 }
 
 template<typename ModelType>
-void AbstractAbstractionRefinementModelChecker<ModelType>::printBoundsInformation(SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds,
-                                                                                  SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds) {
+void AbstractAbstractionRefinementModelChecker<ModelType>::printBoundsInformation(
+    storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds,
+    storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds) {
     // If there is exactly one value that we stored, we print the current bounds as an interval.
     if (lowerBounds.getStates().getNonZeroCount() == 1 && upperBounds.getStates().getNonZeroCount() == 1) {
         STORM_LOG_TRACE("Obtained bounds [" << lowerBounds.getValueVector().getMax() << ", " << upperBounds.getValueVector().getMax() << "] on actual result.");
@@ -280,24 +284,26 @@ void AbstractAbstractionRefinementModelChecker<ModelType>::printBoundsInformatio
 }
 
 template<typename ModelType>
-void AbstractAbstractionRefinementModelChecker<ModelType>::filterInitialStates(storm::models::Model<ValueType> const& abstractModel,
-                                                                               std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
+void AbstractAbstractionRefinementModelChecker<ModelType>::filterInitialStates(
+    storm::models::Model<ValueType> const& abstractModel,
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>& bounds) {
     STORM_LOG_THROW(abstractModel.isSymbolicModel(), storm::exceptions::NotSupportedException, "Expected symbolic model.");
 
     filterInitialStates(*abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>(), bounds);
 }
 
 template<typename ModelType>
-void AbstractAbstractionRefinementModelChecker<ModelType>::filterInitialStates(storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
-                                                                               std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
+void AbstractAbstractionRefinementModelChecker<ModelType>::filterInitialStates(
+    storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>& bounds) {
     storm::modelchecker::SymbolicQualitativeCheckResult<DdType> initialStateFilter(abstractModel.getReachableStates(), abstractModel.getInitialStates());
     bounds.first->filter(initialStateFilter);
     bounds.second->filter(initialStateFilter);
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolution(storm::models::Model<ValueType> const& abstractModel,
-                                                                                    storm::abstraction::QualitativeResultMinMax const& qualitativeResults) {
+bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolution(
+    storm::models::Model<ValueType> const& abstractModel, storm::gbar::abstraction::QualitativeResultMinMax const& qualitativeResults) {
     STORM_LOG_THROW(abstractModel.isSymbolicModel(), storm::exceptions::NotSupportedException, "Expected symbolic model.");
 
     return skipQuantitativeSolution(*abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>(),
@@ -307,7 +313,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolut
 template<typename ModelType>
 bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolution(
     storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
+    storm::gbar::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
     bool isRewardFormula =
         checkTask->getFormula().isEventuallyFormula() && checkTask->getFormula().asEventuallyFormula().getContext() == storm::logic::FormulaContext::Reward;
     if (isRewardFormula) {
@@ -328,9 +334,11 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::skipQuantitativeSolut
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
-    Environment const& env, storm::models::Model<ValueType> const& abstractModel, storm::abstraction::StateSet const& constraintStates,
-    storm::abstraction::StateSet const& targetStates, storm::abstraction::QualitativeResultMinMax const& qualitativeResults) {
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(Environment const& env, storm::models::Model<ValueType> const& abstractModel,
+                                                                                storm::gbar::abstraction::StateSet const& constraintStates,
+                                                                                storm::gbar::abstraction::StateSet const& targetStates,
+                                                                                storm::gbar::abstraction::QualitativeResultMinMax const& qualitativeResults) {
     STORM_LOG_ASSERT(abstractModel.isSymbolicModel(), "Expected symbolic abstract model.");
 
     return computeQuantitativeResult(env, *abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>(),
@@ -339,10 +347,11 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
-    storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    storm::gbar::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
     STORM_LOG_THROW(abstractModel.isOfType(storm::models::ModelType::Dtmc) || abstractModel.isOfType(storm::models::ModelType::Mdp) ||
                         abstractModel.isOfType(storm::models::ModelType::S2pg),
                     storm::exceptions::NotSupportedException, "Abstract model type is not supported.");
@@ -360,11 +369,12 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
-    storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    storm::gbar::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> result;
     storm::dd::Bdd<DdType> maybe;
 
     bool isRewardFormula =
@@ -389,13 +399,13 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
             checkTask->isRewardModelSet() ? abstractModel.getRewardModel(checkTask->getRewardModel()) : abstractModel.getRewardModel(""), maybe,
             targetStates.getStates(), !qualitativeResults.getProb1Min().getStates() && abstractModel.getReachableStates(), startValues);
 
-        result.first = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
+        result.first = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
         result.second = result.first->clone();
     } else {
         storm::dd::Add<DdType, ValueType> values = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(
             env, abstractModel, abstractModel.getTransitionMatrix(), maybe, qualitativeResults.getProb1Min().getStates(), startValues);
 
-        result.first = std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
+        result.first = std::make_unique<storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>>(abstractModel.getReachableStates(), values);
         result.second = result.first->clone();
     }
 
@@ -403,11 +413,12 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
-    storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    storm::gbar::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> result;
     storm::dd::Bdd<DdType> maybeMin;
     storm::dd::Bdd<DdType> maybeMax;
 
@@ -467,11 +478,12 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
+std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>
+AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
-    storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    storm::gbar::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> result;
     storm::dd::Bdd<DdType> maybeMin;
     storm::dd::Bdd<DdType> maybeMax;
 
@@ -509,7 +521,7 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilitiesHelper(
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityProbabilitiesHelper(
     Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
     storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates,
     storm::dd::Bdd<DdType> const& prob1States, storm::dd::Add<DdType, ValueType> const& startValues) {
@@ -542,9 +554,9 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
-    Environment const& env, storm::models::Model<ValueType> const& abstractModel, storm::abstraction::StateSet const& constraintStates,
-    storm::abstraction::StateSet const& targetStates) {
+std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
+    Environment const& env, storm::models::Model<ValueType> const& abstractModel, storm::gbar::abstraction::StateSet const& constraintStates,
+    storm::gbar::abstraction::StateSet const& targetStates) {
     STORM_LOG_ASSERT(abstractModel.isSymbolicModel(), "Expected symbolic abstract model.");
 
     return computeQualitativeResult(env, *abstractModel.template as<storm::models::symbolic::Model<DdType, ValueType>>(),
@@ -552,9 +564,9 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
+std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
     Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_THROW(abstractModel.isOfType(storm::models::ModelType::Dtmc) || abstractModel.isOfType(storm::models::ModelType::Mdp) ||
                         abstractModel.isOfType(storm::models::ModelType::S2pg),
                     storm::exceptions::NotSupportedException, "Expected discrete-time abstract model.");
@@ -570,12 +582,12 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
+std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
     Environment const& env, storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for DTMC.");
-    std::unique_ptr<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
-        std::make_unique<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>>();
+    std::unique_ptr<storm::gbar::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
+        std::make_unique<storm::gbar::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>>();
 
     auto start = std::chrono::high_resolution_clock::now();
     bool isRewardFormula =
@@ -583,11 +595,11 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
     storm::dd::Bdd<DdType> transitionMatrixBdd = abstractModel.getTransitionMatrix().notZero();
     if (isRewardFormula) {
         auto prob1 = storm::utility::graph::performProb1(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-        result->prob1Min = result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
+        result->prob1Min = result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
     } else {
         auto prob01 = storm::utility::graph::performProb01(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-        result->prob0Min = result->prob0Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
-        result->prob1Min = result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
+        result->prob0Min = result->prob0Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
+        result->prob1Min = result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
     }
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -598,12 +610,12 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
+std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
     Environment const& env, storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for MDP.");
-    std::unique_ptr<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
-        std::make_unique<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>>();
+    std::unique_ptr<storm::gbar::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
+        std::make_unique<storm::gbar::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>>();
 
     auto start = std::chrono::high_resolution_clock::now();
     bool isRewardFormula =
@@ -619,7 +631,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
                     lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates()
                                            : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(),
                                                                                          targetStates.getStates()));
-                result->prob1Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob1Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
                 computedMin = true;
             }
 
@@ -627,7 +639,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
                 auto states = storm::utility::graph::performProb1A(
                     abstractModel, transitionMatrixBdd, targetStates.getStates(),
                     storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
                 if (!computedMin) {
                     result->prob1Min = result->prob1Max;
                 }
@@ -639,13 +651,13 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
             bool computedMax = false;
             if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
                 auto states = storm::utility::graph::performProb0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                result->prob0Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob0Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
                 states = storm::utility::graph::performProb1E(
                     abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(),
                     lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates()
                                            : storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(),
                                                                                          targetStates.getStates()));
-                result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
                 computedMax = true;
             }
 
@@ -655,10 +667,10 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
                     lastQualitativeResults ? lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>().getProb1Min().getStates()
                                            : targetStates.getStates(),
                     storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                result->prob1Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob1Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
 
                 states = storm::utility::graph::performProb0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                result->prob0Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
+                result->prob0Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(states);
 
                 if (!computedMax) {
                     result->prob0Max = result->prob0Min;
@@ -676,7 +688,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
                 auto prob1 = storm::utility::graph::performProb1E(
                     abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(),
                     storm::utility::graph::performProbGreater0E(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                result->prob1Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
+                result->prob1Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
                 computedMin = true;
             }
 
@@ -684,7 +696,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
                 auto prob1 = storm::utility::graph::performProb1A(
                     abstractModel, transitionMatrixBdd, targetStates.getStates(),
                     storm::utility::graph::performProbGreater0A(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates()));
-                result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
+                result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob1);
                 if (!computedMin) {
                     result->prob1Min = result->prob1Max;
                 }
@@ -696,16 +708,16 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
             if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
                 auto prob01 =
                     storm::utility::graph::performProb01Min(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                result->prob0Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
-                result->prob1Min = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
+                result->prob0Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
+                result->prob1Min = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
                 computedMin = true;
             }
 
             if (abstractionPlayer == 1 || checkTask->getOptimizationDirection() == storm::OptimizationDirection::Maximize) {
                 auto prob01 =
                     storm::utility::graph::performProb01Max(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates());
-                result->prob0Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
-                result->prob1Max = storm::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
+                result->prob0Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.first);
+                result->prob1Max = storm::gbar::abstraction::SymbolicQualitativeMdpResult<DdType>(prob01.second);
                 if (!computedMin) {
                     result->prob0Min = result->prob0Max;
                     result->prob1Min = result->prob1Max;
@@ -734,11 +746,11 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
+std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
     Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for S2PG.");
-    std::unique_ptr<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> result;
+    std::unique_ptr<storm::gbar::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> result;
 
     // Obtain the player optimization directions.
     uint64_t abstractionPlayer = this->getAbstractionPlayer();
@@ -757,7 +769,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
         result = computeQualitativeResultReuse(abstractModel, transitionMatrixBdd, constraintStates, targetStates, abstractionPlayer,
                                                modelNondeterminismDirection, requiresSchedulers);
     } else {
-        result = std::make_unique<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>>();
+        result = std::make_unique<storm::gbar::abstraction::SymbolicQualitativeGameResultMinMax<DdType>>();
 
         result->prob0Min = storm::utility::graph::performProb0(abstractModel, transitionMatrixBdd, constraintStates.getStates(), targetStates.getStates(),
                                                                abstractionPlayer == 1 ? storm::OptimizationDirection::Minimize : modelNondeterminismDirection,
@@ -799,13 +811,13 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 }
 
 template<typename ModelType>
-std::unique_ptr<storm::abstraction::SymbolicQualitativeGameResultMinMax<AbstractAbstractionRefinementModelChecker<ModelType>::DdType>>
+std::unique_ptr<storm::gbar::abstraction::SymbolicQualitativeGameResultMinMax<AbstractAbstractionRefinementModelChecker<ModelType>::DdType>>
 AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResultReuse(
     storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::dd::Bdd<DdType> const& transitionMatrixBdd,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    storm::gbar::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::gbar::abstraction::SymbolicStateSet<DdType> const& targetStates,
     uint64_t abstractionPlayer, storm::OptimizationDirection const& modelNondeterminismDirection, bool requiresSchedulers) {
-    std::unique_ptr<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> result =
-        std::make_unique<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>>();
+    std::unique_ptr<storm::gbar::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> result =
+        std::make_unique<storm::gbar::abstraction::SymbolicQualitativeGameResultMinMax<DdType>>();
 
     // Depending on the model nondeterminism direction, we choose a different order of operations.
     if (modelNondeterminismDirection == storm::OptimizationDirection::Minimize) {
@@ -877,7 +889,7 @@ AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResultRe
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQualitativeCheck(
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQualitativeCheck(
     storm::models::Model<ValueType> const& abstractModel) {
     STORM_LOG_THROW(abstractModel.isSymbolicModel(), storm::exceptions::NotSupportedException, "Expected symbolic model.");
 
@@ -885,9 +897,9 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQualitativeCheck(
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQualitativeCheck(
     storm::models::symbolic::Model<DdType, ValueType> const& abstractModel) {
-    std::unique_ptr<CheckResult> result;
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     auto const& symbolicQualitativeResultMinMax = lastQualitativeResults->asSymbolicQualitativeResultMinMax<DdType>();
 
@@ -940,9 +952,10 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::tryToObtainResultFromBounds(
-    storm::models::Model<ValueType> const& abstractModel, std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds) {
-    std::unique_ptr<CheckResult> result;
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::tryToObtainResultFromBounds(
+    storm::models::Model<ValueType> const& abstractModel,
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>>& bounds) {
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     if (bounds.first == nullptr || bounds.second == nullptr) {
         STORM_LOG_ASSERT(bounds.first || bounds.second, "Expected at least one bound.");
@@ -968,7 +981,7 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 
 template<typename ModelType>
 bool AbstractAbstractionRefinementModelChecker<ModelType>::boundsAreSufficientlyClose(
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds) {
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> const& bounds) {
     STORM_LOG_ASSERT(bounds.first->isSymbolicQuantitativeCheckResult(), "Expected symbolic quantitative check result.");
     storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds =
         bounds.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
@@ -981,8 +994,8 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::boundsAreSufficiently
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::getAverageOfBounds(
-    std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> const& bounds) {
+std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::getAverageOfBounds(
+    std::pair<std::unique_ptr<storm::modelchecker::CheckResult>, std::unique_ptr<storm::modelchecker::CheckResult>> const& bounds) {
     STORM_LOG_ASSERT(bounds.first->isSymbolicQuantitativeCheckResult(), "Expected symbolic quantitative check result.");
     storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds =
         bounds.first->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
@@ -1002,4 +1015,4 @@ template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::gbar

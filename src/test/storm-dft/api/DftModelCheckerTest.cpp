@@ -22,7 +22,7 @@ class NoOptimizationsConfig {
     }
 };
 
-class DontCareConfig {
+class DontCareOnlyConfig {
    public:
     typedef double ValueType;
 
@@ -31,7 +31,7 @@ class DontCareConfig {
     }
 };
 
-class ModularisationConfig {
+class ModularisationOnlyConfig {
    public:
     typedef double ValueType;
 
@@ -40,12 +40,30 @@ class ModularisationConfig {
     }
 };
 
-class SymmetryReductionConfig {
+class SymmetryReductionOnlyConfig {
    public:
     typedef double ValueType;
 
     static DftAnalysisConfig createConfig() {
         return DftAnalysisConfig{true, false, false};
+    }
+};
+
+class ModularisationConfig {
+   public:
+    typedef double ValueType;
+
+    static DftAnalysisConfig createConfig() {
+        return DftAnalysisConfig{false, true, true};
+    }
+};
+
+class SymmetryReductionConfig {
+   public:
+    typedef double ValueType;
+
+    static DftAnalysisConfig createConfig() {
+        return DftAnalysisConfig{true, false, true};
     }
 };
 
@@ -114,7 +132,9 @@ class DftModelCheckerTest : public ::testing::Test {
     DftAnalysisConfig config;
 };
 
-typedef ::testing::Types<NoOptimizationsConfig, DontCareConfig, ModularisationConfig, SymmetryReductionConfig, AllOptimizationsConfig> TestingTypes;
+typedef ::testing::Types<NoOptimizationsConfig, DontCareOnlyConfig, ModularisationOnlyConfig, SymmetryReductionOnlyConfig, ModularisationConfig,
+                         SymmetryReductionConfig, AllOptimizationsConfig>
+    TestingTypes;
 
 TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes, );
 
@@ -237,6 +257,11 @@ TYPED_TEST(DftModelCheckerTest, Symmetry) {
     EXPECT_NEAR(result, 2804183 / 2042040.0, this->precision());
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft", 1.0);
     EXPECT_NEAR(result, 0.3421934224, this->precisionReliability());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep_symmetry.dft");
+    EXPECT_NEAR(result, 6553 / 5376.0, this->precision());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/pdep_symmetry.dft", 1.0);
+    EXPECT_NEAR(result, 0.4223514414, this->precisionReliability());
 }
 
 TYPED_TEST(DftModelCheckerTest, HecsReliability) {

@@ -1,6 +1,6 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 ExplicitQualitativeGameResult const& ExplicitQualitativeGameResultMinMax::getProb0(storm::OptimizationDirection const& dir) const {
@@ -35,4 +35,4 @@ ExplicitQualitativeGameResult& ExplicitQualitativeGameResultMinMax::getProb1(sto
     }
 }
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

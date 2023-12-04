@@ -3,7 +3,7 @@
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -16,4 +16,4 @@ struct BottomStateResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

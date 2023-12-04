@@ -5,7 +5,7 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeResultMinMax.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -23,4 +23,4 @@ class SymbolicQualitativeGameResultMinMax : public SymbolicQualitativeResultMinM
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -7,7 +7,9 @@ namespace storm {
 namespace storage {
 class BitVector;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 
 template<typename ValueType>
@@ -28,4 +30,4 @@ class ExplicitQuantitativeResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

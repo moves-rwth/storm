@@ -4,7 +4,7 @@
 
 #include "storm/storage/dd/Bdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type>
@@ -20,4 +20,4 @@ class SymbolicQualitativeMdpResult : public SymbolicQualitativeResult<Type> {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

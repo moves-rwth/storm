@@ -41,7 +41,7 @@ FormulaParser::FormulaParser(storm::prism::Program& program)
 
 FormulaParser::FormulaParser(FormulaParser const& other) : FormulaParser(other.manager) {
     other.identifiers_.for_each(
-        [=](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
+        [this](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
 }
 
 FormulaParser& FormulaParser::operator=(FormulaParser const& other) {

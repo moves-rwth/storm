@@ -11,7 +11,9 @@ namespace dd {
 template<storm::dd::DdType Type>
 class Bdd;
 }
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 template<storm::dd::DdType Type>
 class SymbolicQualitativeResult;
@@ -32,4 +34,4 @@ class SymbolicQualitativeResultMinMax : public QualitativeResultMinMax {
     virtual SymbolicQualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const = 0;
 };
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

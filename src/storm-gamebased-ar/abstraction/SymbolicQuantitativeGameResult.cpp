@@ -1,7 +1,7 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResult.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -63,4 +63,4 @@ template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, double>
 template class SymbolicQuantitativeGameResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

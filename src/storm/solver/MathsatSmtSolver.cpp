@@ -249,11 +249,11 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::ex
     }
     return this->lastResult;
 #else
+    (void)assumptions;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
 
-#ifndef WINDOWS
 SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
 #ifdef STORM_HAVE_MSAT
     lastCheckAssumptions = true;
@@ -277,10 +277,10 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_l
     }
     return this->lastResult;
 #else
+    (void)assumptions;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
-#endif
 
 storm::expressions::SimpleValuation MathsatSmtSolver::getModelAsValuation() {
 #ifdef STORM_HAVE_MSAT
@@ -340,6 +340,7 @@ std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::v
     });
     return valuations;
 #else
+    (void)important;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
@@ -445,6 +446,8 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
     this->pop();
     return static_cast<uint_fast64_t>(numberOfModels);
 #else
+    (void)important;
+    (void)callback;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
@@ -473,6 +476,8 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
     this->pop();
     return static_cast<uint_fast64_t>(numberOfModels);
 #else
+    (void)important;
+    (void)callback;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
@@ -500,7 +505,7 @@ std::vector<storm::expressions::Expression> MathsatSmtSolver::getUnsatAssumption
 #endif
 }
 
-void MathsatSmtSolver::setInterpolationGroup(uint_fast64_t group) {
+void MathsatSmtSolver::setInterpolationGroup(uint64_t group) {
 #ifdef STORM_HAVE_MSAT
     auto groupIter = this->interpolationGroups.find(group);
     if (groupIter == this->interpolationGroups.end()) {
@@ -510,11 +515,12 @@ void MathsatSmtSolver::setInterpolationGroup(uint_fast64_t group) {
     }
     msat_set_itp_group(env, groupIter->second);
 #else
+    (void)group;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }
 
-storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
+storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint64_t> const& groupsA) {
 #ifdef STORM_HAVE_MSAT
     STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException,
                     "Unable to generate interpolant, because the last check did not determine the formulas to be unsatisfiable.");
@@ -535,6 +541,7 @@ storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint
 
     return this->expressionAdapter->translateExpression(interpolant);
 #else
+    (void)groupsA;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
 #endif
 }

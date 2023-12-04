@@ -24,7 +24,7 @@ TEST(GameBasedDtmcModelCheckerTest, DISABLED_Die_Cudd) {
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     auto checker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>>(
+        std::make_shared<storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>>(
             program);
 
     // A parser that we use for conveniently constructing the formulas.
@@ -65,9 +65,8 @@ TEST(GameBasedDtmcModelCheckerTest, DISABLED_Die_Sylvan) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
 
-    auto checker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>>(
-            program);
+    auto checker = std::make_shared<
+        storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>>(program);
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula, true);
@@ -106,7 +105,7 @@ TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Cudd) {
     storm::parser::FormulaParser formulaParser;
 
     auto checker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>>(
+        std::make_shared<storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>>(
             program);
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
@@ -129,9 +128,8 @@ TEST(GameBasedDtmcModelCheckerTest, DISABLED_SynchronousLeader_Sylvan) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
 
-    auto checker =
-        std::make_shared<storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>>(
-            program);
+    auto checker = std::make_shared<
+        storm::gbar::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::Sylvan, storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>>(program);
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formula, true);

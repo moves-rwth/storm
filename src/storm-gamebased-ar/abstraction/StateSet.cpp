@@ -2,7 +2,7 @@
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 bool StateSet::isSymbolic() const {
@@ -26,4 +26,4 @@ template SymbolicStateSet<storm::dd::DdType::Sylvan> const& StateSet::asSymbolic
 template SymbolicStateSet<storm::dd::DdType::Sylvan>& StateSet::asSymbolicStateSet();
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -10,10 +10,6 @@
 // Includes for the linked libraries and versions header.
 #include "storm/adapters/IntelTbbAdapter.h"
 
-#ifdef STORM_HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#endif
 #ifdef STORM_HAVE_GLPK
 #include "glpk.h"
 #endif
@@ -141,41 +137,6 @@ void printVersion() {
 #else
     STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
 #endif
-#endif
-
-#ifdef STORM_HAVE_CUDA
-    int deviceCount = 0;
-    cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
-
-    if (error_id == cudaSuccess) {
-        STORM_PRINT("Compiled with CUDA support, ");
-        // This function call returns 0 if there are no CUDA capable devices.
-        if (deviceCount == 0) {
-            STORM_PRINT("but there are no available device(s) that support CUDA.\n");
-        } else {
-            STORM_PRINT("detected " << deviceCount << " CUDA capable device(s):\n");
-        }
-
-        int dev, driverVersion = 0, runtimeVersion = 0;
-
-        for (dev = 0; dev < deviceCount; ++dev) {
-            cudaSetDevice(dev);
-            cudaDeviceProp deviceProp;
-            cudaGetDeviceProperties(&deviceProp, dev);
-
-            STORM_PRINT("CUDA device " << dev << ": \"" << deviceProp.name << "\"\n");
-
-            // Console log
-            cudaDriverGetVersion(&driverVersion);
-            cudaRuntimeGetVersion(&runtimeVersion);
-            STORM_PRINT("  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / "
-                                                                            << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << '\n');
-            STORM_PRINT("  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor << '\n');
-        }
-        STORM_PRINT('\n');
-    } else {
-        STORM_PRINT("Compiled with CUDA support, but an error occurred trying to find CUDA devices.\n");
-    }
 #endif
 }
 

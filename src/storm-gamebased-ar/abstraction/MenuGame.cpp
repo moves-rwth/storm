@@ -12,7 +12,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -91,4 +91,4 @@ template class MenuGame<storm::dd::DdType::Sylvan, double>;
 template class MenuGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

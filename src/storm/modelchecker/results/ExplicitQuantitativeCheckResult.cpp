@@ -1,5 +1,6 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidOperationException.h"

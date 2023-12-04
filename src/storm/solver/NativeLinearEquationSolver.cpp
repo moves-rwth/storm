@@ -19,9 +19,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
-
 namespace storm {
 namespace solver {
 
