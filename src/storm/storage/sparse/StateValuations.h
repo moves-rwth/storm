@@ -165,8 +165,17 @@ class StateValuationsBuilder {
      * The number of given variable values for each type needs to match the number of added variables.
      * After calling this method, no more variables should be added.
      */
-    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {},
-                  std::vector<storm::RationalNumber>&& rationalValues = {}, std::vector<int64_t>&& observationLabelValues = {});
+    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {});
+
+    /*!
+     * Adds a new state including rational values.
+     * The variable values have to be given in the same order as the variables have been added.
+     * The number of given variable values for each type needs to match the number of added variables.
+     * After calling this method, no more variables should be added.
+     * @note there are two versions of this to allow forward declaration of RationalNumber
+     */
+    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues,
+                  std::vector<storm::RationalNumber>&& rationalValues, std::vector<int64_t>&& observationLabelValues = {});
 
     /*!
      * Creates the finalized state valuations object.
