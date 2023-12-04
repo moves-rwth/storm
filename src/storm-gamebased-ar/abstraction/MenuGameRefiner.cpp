@@ -25,7 +25,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 using storm::settings::modules::AbstractionSettings;
@@ -119,7 +119,7 @@ void MenuGameRefiner<Type, ValueType>::refine(std::vector<storm::expressions::Ex
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::abstraction::MenuGame<Type, ValueType> const& game,
+SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                                                  storm::dd::Bdd<Type> const& transitionFilter) {
     storm::dd::Add<Type, ValueType> maxProbabilities = game.getInitialStates().template toAdd<ValueType>();
 
@@ -160,7 +160,7 @@ SymbolicMostProbablePathsResult<Type, ValueType> getMostProbablePathSpanningTree
 
 template<storm::dd::DdType Type, typename ValueType>
 SymbolicPivotStateResult<Type, ValueType> pickPivotState(AbstractionSettings::PivotSelectionHeuristic const& heuristic,
-                                                         storm::abstraction::MenuGame<Type, ValueType> const& game,
+                                                         storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                          PivotStateCandidatesResult<Type> const& pivotStateCandidateResult,
                                                          boost::optional<SymbolicQualitativeGameResultMinMax<Type>> const& qualitativeResult,
                                                          boost::optional<SymbolicQuantitativeGameResultMinMax<Type, ValueType>> const& quantitativeResult) {
@@ -436,7 +436,7 @@ RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromDiffe
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromChoice(storm::abstraction::MenuGame<Type, ValueType> const& game,
+RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromChoice(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
                                                                                   storm::dd::Bdd<Type> const& pivotState,
                                                                                   storm::dd::Bdd<Type> const& player1Choice, storm::dd::Bdd<Type> const& choice,
                                                                                   storm::dd::Bdd<Type> const& choiceSuccessors) const {
@@ -529,9 +529,10 @@ RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromChoic
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-PivotStateCandidatesResult<Type> computePivotStates(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
-                                                    storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy,
-                                                    storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) {
+PivotStateCandidatesResult<Type> computePivotStates(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game,
+                                                    storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& minPlayer1Strategy,
+                                                    storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy,
+                                                    storm::dd::Bdd<Type> const& maxPlayer2Strategy) {
     PivotStateCandidatesResult<Type> result;
 
     // Build the fragment of transitions that is reachable by either the min or the max strategies.
@@ -563,7 +564,7 @@ PivotStateCandidatesResult<Type> computePivotStates(storm::abstraction::MenuGame
 
 template<storm::dd::DdType Type, typename ValueType>
 RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromPivotState(
-    storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& pivotState, storm::dd::Bdd<Type> const& minPlayer1Strategy,
     storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy, storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
     // Compute the lower and the upper choice for the pivot state.
     std::set<storm::expressions::Variable> variablesToAbstract = game.getNondeterminismVariables();
@@ -632,7 +633,7 @@ RefinementPredicates MenuGameRefiner<Type, ValueType>::derivePredicatesFromPivot
 template<storm::dd::DdType Type, typename ValueType>
 std::pair<std::vector<std::vector<storm::expressions::Expression>>, std::map<storm::expressions::Variable, storm::expressions::Expression>>
 MenuGameRefiner<Type, ValueType>::buildTrace(storm::expressions::ExpressionManager& expressionManager,
-                                             storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree,
+                                             storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& spanningTree,
                                              storm::dd::Bdd<Type> const& pivotState) const {
     std::vector<std::vector<storm::expressions::Expression>> predicates;
 
@@ -999,7 +1000,7 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
 
 template<storm::dd::DdType Type, typename ValueType>
 boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(
-    storm::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult,
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, SymbolicPivotStateResult<Type, ValueType> const& symbolicPivotStateResult,
     storm::dd::Bdd<Type> const& minPlayer1Strategy, storm::dd::Bdd<Type> const& minPlayer2Strategy, storm::dd::Bdd<Type> const& maxPlayer1Strategy,
     storm::dd::Bdd<Type> const& maxPlayer2Strategy) const {
     // Compute the most probable path from any initial state to the pivot state.
@@ -1030,7 +1031,8 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
 
 template<storm::dd::DdType Type, typename ValueType>
 boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolation(
-    storm::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult, storm::dd::Odd const& odd) const {
+    storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, ExplicitPivotStateResult<ValueType> const& pivotStateResult,
+    storm::dd::Odd const& odd) const {
     // Create a new expression manager that we can use for the interpolation.
     AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
     std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
@@ -1054,7 +1056,7 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
+bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
                                               SymbolicQualitativeGameResultMinMax<Type> const& qualitativeResult) const {
     STORM_LOG_TRACE("Trying refinement after qualitative check.");
     // Get all relevant strategies.
@@ -1485,7 +1487,7 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
+bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
                                               std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling,
                                               storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
@@ -1574,7 +1576,7 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type,
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
+bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
                                               std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling,
                                               storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
@@ -1659,7 +1661,7 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type,
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
+bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Bdd<Type> const& transitionMatrixBdd,
                                               SymbolicQuantitativeGameResultMinMax<Type, ValueType> const& quantitativeResult) const {
     STORM_LOG_TRACE("Refining after quantitative check.");
     // Get all relevant strategies.
@@ -1848,4 +1850,4 @@ template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>
 #endif
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

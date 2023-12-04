@@ -1,11 +1,12 @@
 #include "DftJsonExporter.h"
 
+#include <algorithm>
+#include <string>
+
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
-
-#include <algorithm>
-#include <storm/exceptions/InvalidArgumentException.h>
-#include <string>
 
 namespace storm::dft {
 namespace storage {

@@ -27,7 +27,9 @@ class Bdd;
 template<storm::dd::DdType DdType, typename ValueType>
 class Add;
 }  // namespace dd
+}  // namespace storm
 
+namespace storm::gbar {
 namespace abstraction {
 template<storm::dd::DdType DdType>
 class AbstractionInformation;
@@ -158,4 +160,4 @@ class StateSetAbstractor {
     storm::dd::Bdd<DdType> constraint;
 };
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -2,7 +2,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<typename ValueType>
@@ -61,4 +61,4 @@ ExplicitQuantitativeResult<ValueType>& ExplicitQuantitativeResultMinMax<ValueTyp
 template class ExplicitQuantitativeResultMinMax<double>;
 template class ExplicitQuantitativeResultMinMax<storm::RationalNumber>;
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

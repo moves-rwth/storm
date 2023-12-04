@@ -2,7 +2,7 @@
 
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResult.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 ExplicitQualitativeGameResult& ExplicitQualitativeResult::asExplicitQualitativeGameResult() {
@@ -14,4 +14,4 @@ ExplicitQualitativeGameResult const& ExplicitQualitativeResult::asExplicitQualit
 }
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

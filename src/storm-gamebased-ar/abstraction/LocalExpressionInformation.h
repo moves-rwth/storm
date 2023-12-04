@@ -10,7 +10,7 @@
 
 #include "storm/storage/dd/DdType.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -173,4 +173,4 @@ template<storm::dd::DdType DdType>
 std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<DdType> const& partition);
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

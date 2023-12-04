@@ -1,6 +1,6 @@
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResult.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 ExplicitQualitativeGameResult::ExplicitQualitativeGameResult(storm::utility::graph::ExplicitGameProb01Result const& prob01Result)
@@ -13,4 +13,4 @@ storm::storage::BitVector const& ExplicitQualitativeGameResult::getStates() cons
 }
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

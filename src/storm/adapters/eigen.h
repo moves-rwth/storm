@@ -8,10 +8,11 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wdeprecated-anon-enum-enum-conversion"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
 #if __GNUC__ > 8
-#pragma GCC diagnostic ignored "-Wdeprecated-copy"  // Ignore warnings present for GCC 9 and later. The warnings should be fixed for Eigen versions after 3.3.7
+#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 #endif
 #endif
 

@@ -2,7 +2,7 @@
 
 #include "storm/storage/dd/Bdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
@@ -15,4 +15,4 @@ struct GameBddResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

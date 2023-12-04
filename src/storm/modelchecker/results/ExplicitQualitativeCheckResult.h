@@ -6,13 +6,12 @@
 #include <map>
 #include <optional>
 
+#include "storm/adapters/JsonForward.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
-
-#include "storm/adapters/JsonAdapter.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {

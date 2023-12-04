@@ -26,7 +26,7 @@
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 namespace prism {
 
@@ -165,8 +165,8 @@ storm::expressions::Expression PrismMenuGameAbstractor<DdType, ValueType>::getIn
 
 template<storm::dd::DdType DdType, typename ValueType>
 storm::dd::Bdd<DdType> PrismMenuGameAbstractor<DdType, ValueType>::getStates(storm::expressions::Expression const& expression) {
-    storm::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation,
-                                                                smtSolverFactory->create(abstractionInformation.getExpressionManager()));
+    storm::gbar::abstraction::ExpressionTranslator<DdType> translator(abstractionInformation,
+                                                                      smtSolverFactory->create(abstractionInformation.getExpressionManager()));
     return translator.translate(expression);
 }
 
@@ -330,4 +330,4 @@ template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::Rationa
 #endif
 }  // namespace prism
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

@@ -5,7 +5,7 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
-namespace storm {
+namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -40,4 +40,4 @@ class SymbolicQuantitativeGameResult {
 };
 
 }  // namespace abstraction
-}  // namespace storm
+}  // namespace storm::gbar

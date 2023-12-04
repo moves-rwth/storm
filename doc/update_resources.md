@@ -41,6 +41,13 @@ To update, you can follow these steps:
 7. When this is all done, copy the contents back into the storm directory. Make sure to not apply any unnecessary code formatting to keep the diff smallish.
 8. *Update the commit hash mentioned in this document*
 
+
+## parallel hashmap
+
+Download the new sources from [github](https://github.com/greg7mdp/parallel-hashmap) and put them to `$STORM_DIR/resources/3rdparty/parallel_hashmap/`.
+Remove directories that are not needed, e.g, `rm -r doc examples html css benchmark tests index.html`.
+
+
 ## Spot
 
 To update (shipped version of Spot), just change the url in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.

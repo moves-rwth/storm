@@ -8,10 +8,27 @@
 namespace storm {
 
 /*!
+ * Helper to prevent OptionalRef's to rvalue types
+ * @see https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper#Possible_implementation
+ */
+
+namespace optionalref_detail {
+template<class T>
+constexpr T& FUN(T& t) noexcept {
+    return t;
+}
+template<class T>
+void FUN(T&&) = delete;
+}  // namespace optionalref_detail
+
+/*!
  * Auxiliary struct used to identify OptionalRefs that do not contain a reference.
+ * Inspired by std::nullopt, see https://en.cppreference.com/w/cpp/utility/optional/nullopt_t
  */
 struct NullRefType {
-} constexpr NullRef;
+    constexpr explicit NullRefType(int) {}
+};
+inline constexpr NullRefType NullRef{0};
 
 /*!
  * Helper class that optionally holds a reference to an object of type T.
@@ -50,8 +67,10 @@ class OptionalRef {
      * @note Exploits template argument deduction so that the class template can be derived from expressions like `OptionalRef(foo)` (even if foo is of type
      * e.g. T&)
      */
-    template<class U>
-    OptionalRef(U&& obj) : ptr(std::addressof(obj)) {}
+    template<class U, class = decltype(optionalref_detail::FUN<T>(std::declval<U>()),
+                                       std::enable_if_t<!std::is_same_v<OptionalRef, std::remove_cv_t<std::remove_reference_t<U>>>>())>
+    constexpr OptionalRef(U&& u) noexcept(noexcept(optionalref_detail::FUN<T>(std::forward<U>(u))))
+        : ptr(std::addressof(optionalref_detail::FUN<T>(std::forward<U>(u)))) {}
 
     /*!
      * Creates a copy of the given OptionalRef. `this` and `other` will both reference the same object
