@@ -5,9 +5,6 @@
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
 #include "storm/storage/expressions/OperatorType.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-
 #include "storm/io/file.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"

@@ -14,7 +14,6 @@
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"

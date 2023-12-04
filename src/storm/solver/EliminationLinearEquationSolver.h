@@ -3,7 +3,6 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 
-#include "storm/settings/modules/EliminationSettings.h"
 
 namespace storm {
 namespace solver {

@@ -4,9 +4,6 @@
 
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"

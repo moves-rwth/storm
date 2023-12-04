@@ -9,8 +9,8 @@
 
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
+#include "storm/storage/dd/bisimulation/QuotientFormat.h"
 
-#include "storm/settings/modules/BisimulationSettings.h"
 
 namespace storm {
 namespace dd {

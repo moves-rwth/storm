@@ -16,8 +16,6 @@
 
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 
