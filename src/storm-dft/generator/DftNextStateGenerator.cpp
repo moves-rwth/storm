@@ -251,7 +251,10 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
                                                                   << " in " << mDft.getStateString(origState));
         newState->letDependencyTrigger(dependency, true);
         STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Dependency " << dependency->name() << " does not have unique dependent event.");
-        return createSuccessorState(newState, dependency->dependentEvents().front());
+        STORM_LOG_ASSERT(dependency->dependentEvents().front()->isBasicElement(),
+                         "Trigger event " << dependency->dependentEvents().front()->name() << " is not a BE.");
+        auto trigger = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(dependency->dependentEvents().front());
+        return createSuccessorState(newState, trigger);
     } else {
         // Dependency was unsuccessful -> no BE fails
         STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]"

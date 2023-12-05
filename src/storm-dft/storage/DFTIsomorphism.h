@@ -294,7 +294,8 @@ class DFTColouring {
 
     void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTDependency<ValueType>> const& dep) {
         // TODO this can be improved for n-ary dependencies.
-        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be = dep->dependentEvents()[0];
+        STORM_LOG_ASSERT(dep->dependentEvents().front()->isBasicElement(), "Trigger event " << dep->dependentEvents().front()->name() << " is not a BE.");
+        auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(dep->dependentEvents().front());
         switch (be->beType()) {
             case storm::dft::storage::elements::BEType::CONSTANT: {
                 auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
