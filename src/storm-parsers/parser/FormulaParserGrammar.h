@@ -40,6 +40,8 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
      */
     void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
 
+    qi::symbols<char, storm::expressions::Expression> const& getIdentifiers() const;
+
    private:
     void initialize();
 

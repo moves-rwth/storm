@@ -84,7 +84,7 @@ class NextStateGenerator {
     NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options,
                        std::shared_ptr<ActionMask<ValueType, StateType>> const& = nullptr);
 
-    virtual ~NextStateGenerator() = default;
+    virtual ~NextStateGenerator();
 
     uint64_t getStateSize() const;
     virtual ModelType getModelType() const = 0;

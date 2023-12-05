@@ -1,13 +1,8 @@
 #ifndef STORM_PARSER_FORMULAPARSER_H_
 #define STORM_PARSER_FORMULAPARSER_H_
 
-#include <sstream>
-
-#include "storm-parsers/parser/ExpressionParser.h"
-#include "storm-parsers/parser/SpiritParserDefinitions.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/utility/macros.h"
 
 namespace storm {
 namespace prism {
@@ -72,9 +67,6 @@ class FormulaParser {
 
     // The manager used to parse expressions.
     std::shared_ptr<storm::expressions::ExpressionManager const> manager;
-
-    // Keep track of added identifier expressions.
-    qi::symbols<char, storm::expressions::Expression> identifiers_;
 
     // The grammar used to parse the input.
     std::shared_ptr<FormulaParserGrammar> grammar;

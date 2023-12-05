@@ -2,13 +2,14 @@
 #define STORM_PARSER_VALUEPARSER_H_
 
 #include <boost/lexical_cast.hpp>
-#include "storm-parsers/parser/ExpressionParser.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 namespace storm {
 namespace parser {
+class ExpressionParser;
+
 /*!
  * Parser for values according to their ValueType.
  */
@@ -18,10 +19,8 @@ class ValueParser {
     /*!
      * Constructor.
      */
-    ValueParser() : manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
-        // Set empty mapping to enable expression creation even without parameters
-        parser.setIdentifierMapping(identifierMapping);
-    }
+    ValueParser();
+    virtual ~ValueParser();
 
     /*!
      * Parse ValueType from string.
@@ -41,7 +40,7 @@ class ValueParser {
 
    private:
     std::shared_ptr<storm::expressions::ExpressionManager> manager;
-    storm::parser::ExpressionParser parser;
+    std::unique_ptr<storm::parser::ExpressionParser> parser;  // Pointer to avoid header include.
     storm::expressions::ExpressionEvaluator<ValueType> evaluator;
     std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
 };

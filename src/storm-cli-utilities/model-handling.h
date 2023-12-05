@@ -5,6 +5,7 @@
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/parser/ExpressionParser.h"
 
 #include "storm/io/file.h"
 #include "storm/utility/AutomaticSettings.h"

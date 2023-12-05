@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/generator/ArrayVariableReplacementInformation.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/macros.h"
 

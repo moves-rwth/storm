@@ -17,6 +17,8 @@
 #include "storm/utility/math.h"
 #include "storm/utility/prism.h"
 
+#include "storm/adapters/AddExpressionAdapter.h"
+
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
