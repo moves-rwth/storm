@@ -1,8 +1,9 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "test/storm_gtest.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/Add.h"
@@ -15,6 +16,7 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm-parsers/api/model_descriptions.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 

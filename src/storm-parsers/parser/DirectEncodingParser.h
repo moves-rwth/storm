@@ -1,13 +1,15 @@
 #ifndef STORM_PARSER_DIRECTENCODINGPARSER_H_
 #define STORM_PARSER_DIRECTENCODINGPARSER_H_
 
-#include "storm-parsers/parser/ValueParser.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
 namespace storm {
 namespace parser {
+
+template<typename T>
+class ValueParser;
 
 struct DirectEncodingParserOptions {
     bool buildChoiceLabeling = false;

@@ -8,6 +8,8 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm-parsers/parser/ValueParser.h"
+
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidArgumentException.h"

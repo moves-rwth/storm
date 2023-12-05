@@ -2,6 +2,7 @@
 
 #include "storm/storage/jani/Model.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"

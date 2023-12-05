@@ -2,6 +2,8 @@
 
 #include "storm/logic/Formulas.h"
 
+#include "storm/models/symbolic/Model.h"
+
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"

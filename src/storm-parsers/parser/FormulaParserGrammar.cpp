@@ -16,6 +16,10 @@ FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::E
     initialize();
 }
 
+qi::symbols<char, storm::expressions::Expression> const& FormulaParserGrammar::getIdentifiers() const {
+    return identifiers_;
+}
+
 void FormulaParserGrammar::initialize() {
     // Register all variables so we can parse them in the expressions.
     for (auto variableTypePair : *constManager) {
