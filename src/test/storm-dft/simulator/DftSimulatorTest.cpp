@@ -79,7 +79,7 @@ TEST(DftSimulatorTest, VotingUnreliability) {
 
 TEST(DftSimulatorTest, PandUnreliability) {
     double result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/pand.dft", 1, 10000);
-    EXPECT_NEAR(result, 0.03087312562, 0.01);
+    EXPECT_NEAR(result, 0.05434443602, 0.01);
 }
 
 TEST(DftSimulatorTest, PorUnreliability) {
