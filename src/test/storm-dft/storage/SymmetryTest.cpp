@@ -34,6 +34,8 @@ TEST(SymmetryTest, SymmetriesStaticFT) {
     EXPECT_EQ(symmetries.nrSymmetries(), 1ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(0).size(), 1ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(0)[0].size(), 2ul);
+    symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/voting5.dft");
+    EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
 }
 
 TEST(SymmetryTest, SymmetriesDynamicFT) {
@@ -76,8 +78,8 @@ TEST(SymmetryTest, SymmetriesDynamicFT) {
     EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
     EXPECT_EQ(symmetries.nrSymmetries(), 1ul);
-    // EXPECT_EQ(symmetries.getSymmetryGroup(1).size(), 2ul);
-    // EXPECT_EQ(symmetries.getSymmetryGroup(1)[0].size(), 2ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(1).size(), 1ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(1)[0].size(), 2ul);
 
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
     EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
@@ -113,7 +115,11 @@ TEST(SymmetryTest, SymmetriesDynamicFT) {
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/all_be_distributions.dft");
     EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/all_gates.dft");
-    EXPECT_EQ(symmetries.nrSymmetries(), 0ul);
+    EXPECT_EQ(symmetries.nrSymmetries(), 2ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(21).size(), 2ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(21)[0].size(), 4ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(32).size(), 1ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(32)[0].size(), 2ul);
 }
 
 TEST(SymmetryTest, SymmetricFT) {

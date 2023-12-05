@@ -33,8 +33,10 @@ class SymmetryFinder {
     static void findSymmetriesHelper(storm::dft::storage::DFT<ValueType> const& dft, std::vector<size_t> const& candidates,
                                      storm::dft::storage::DFTColouring<ValueType> const& colouring, std::map<size_t, std::vector<std::vector<size_t>>>& result);
 
-    static std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(
+    static std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getInfluencedIds(
         storm::dft::storage::DFT<ValueType> const& dft, size_t index);
+
+    static bool hasSeqRestriction(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> elem);
 };
 
 }  // namespace utility

@@ -79,6 +79,14 @@ class DFTBE : public DFTElement<ValueType> {
     }
 
     /*!
+     * Return the number of ingoing dependencies.
+     * @return Number of ingoing dependencies.
+     */
+    size_t nrIngoingDependencies() const {
+        return mIngoingDependencies.size();
+    }
+
+    /*!
      * Return ingoing dependencies.
      * @return List of dependencies which can trigger this BE.
      */

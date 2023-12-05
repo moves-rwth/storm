@@ -148,18 +148,26 @@ void SymmetryFinder<ValueType>::findSymmetriesHelper(storm::dft::storage::DFT<Va
             // This item is already in a class.
             continue;
         }
-        if (!dft.getElement(*it1)->hasOnlyStaticParents()) {
+        auto elem1 = dft.getElement(*it1);
+        if (!elem1->hasOnlyStaticParents()) {
+            continue;
+        }
+        if (hasSeqRestriction(elem1)) {
             continue;
         }
 
-        std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndDependencyIds(dft, *it1);
+        std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getInfluencedIds(dft, *it1);
         auto it2 = it1;
         for (++it2; it2 != candidates.cend(); ++it2) {
-            if (!dft.getElement(*it2)->hasOnlyStaticParents()) {
+            auto elem2 = dft.getElement(*it2);
+            if (!elem2->hasOnlyStaticParents()) {
+                continue;
+            }
+            if (hasSeqRestriction(elem2)) {
                 continue;
             }
 
-            if (influencedElem1Ids == getSortedParentAndDependencyIds(dft, *it2)) {
+            if (influencedElem1Ids == getInfluencedIds(dft, *it2)) {
                 std::map<size_t, size_t> bijection = findBijection(dft, *it1, *it2, colouring, true);
                 if (!bijection.empty()) {
                     STORM_LOG_TRACE("Subdfts are symmetric");
@@ -185,7 +193,17 @@ void SymmetryFinder<ValueType>::findSymmetriesHelper(storm::dft::storage::DFT<Va
 }
 
 template<typename ValueType>
-std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> SymmetryFinder<ValueType>::getSortedParentAndDependencyIds(
+bool SymmetryFinder<ValueType>::hasSeqRestriction(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> elem) {
+    for (auto const& restr : elem->restrictions()) {
+        if (restr->isSeqEnforcer()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template<typename ValueType>
+std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> SymmetryFinder<ValueType>::getInfluencedIds(
     storm::dft::storage::DFT<ValueType> const& dft, size_t index) {
     // Parents
     std::vector<size_t> parents = dft.getElement(index)->parentIds();
@@ -204,7 +222,11 @@ std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> Symmet
         outgoingDeps.push_back(dep->id());
     }
     std::sort(outgoingDeps.begin(), outgoingDeps.end());
-    return std::make_tuple(parents, ingoingDeps, outgoingDeps);
+    std::vector<size_t> restrictions;
+    for (auto const& restr : dft.getElement(index)->restrictions()) {
+        restrictions.push_back(restr->id());
+    }
+    return std::make_tuple(parents, ingoingDeps, outgoingDeps, restrictions);
 }
 
 template class SymmetryFinder<double>;
