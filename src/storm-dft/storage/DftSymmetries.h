@@ -28,6 +28,12 @@ class DftSymmetries {
      */
     std::vector<size_t>::const_iterator end() const;
 
+    /*!
+     * Get symmetry group corresponding to give top level index.
+     *
+     * @param index: Index of the top level element forming the symmetry group.
+     * @return Symmetry group.
+     */
     std::vector<std::vector<size_t>> const& getSymmetryGroup(size_t index) const;
 
     friend std::ostream& operator<<(std::ostream& out, DftSymmetries const& symmetries);

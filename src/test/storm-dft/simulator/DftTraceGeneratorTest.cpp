@@ -75,7 +75,7 @@ class DftTraceGeneratorTest : public ::testing::Test {
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>(*dft, {}, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>({}, relevantNames);
         dft->setRelevantEvents(relevantEvents, false);
 
         // Find symmetries

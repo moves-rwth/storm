@@ -66,7 +66,7 @@ template<typename ValueType, typename StateType>
 storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
     STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
     // Initialization
-    bool hasDependencies = state->getFailableElements().hasDependencies();
+    bool hasDependencies = this->state->getFailableElements().hasDependencies();
     return exploreState(stateToIdCallback, hasDependencies, mTakeFirstDependency);
 }
 
@@ -78,18 +78,16 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     storm::generator::StateBehavior<ValueType, StateType> result;
 
     STORM_LOG_TRACE("Currently failable: " << state->getFailableElements().getCurrentlyFailableString());
-    // size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
-    // size_t currentFailable = 0;
     // TODO remove exploreDependencies
-    auto iterFailable = state->getFailableElements().begin(!exploreDependencies);
+    auto iterFailable = this->state->getFailableElements().begin(!exploreDependencies);
 
     // Check for absorbing state:
     // - either no relevant event remains (i.e., all relevant events have failed already), or
     // - no BE can fail
-    if (!state->hasOperationalRelevantEvent() || iterFailable == state->getFailableElements().end(!exploreDependencies)) {
+    if (!this->state->hasOperationalRelevantEvent() || iterFailable == this->state->getFailableElements().end(!exploreDependencies)) {
         storm::generator::Choice<ValueType, StateType> choice(0, true);
         // Add self loop
-        choice.addProbability(state->getId(), storm::utility::one<ValueType>());
+        choice.addProbability(this->state->getId(), storm::utility::one<ValueType>());
         STORM_LOG_TRACE("Added self loop for " << state->getId());
         // No further exploration required
         result.addChoice(std::move(choice));
@@ -176,7 +174,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
             // No transition was generated
             STORM_LOG_TRACE("No transitions were generated.");
             // Add self loop
-            choice.addProbability(state->getId(), storm::utility::one<ValueType>());
+            choice.addProbability(this->state->getId(), storm::utility::one<ValueType>());
             STORM_LOG_TRACE("Added self loop for " << state->getId());
         }
         STORM_LOG_ASSERT(choice.size() > 0, "At least one choice should have been generated.");

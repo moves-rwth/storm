@@ -83,7 +83,7 @@ class DFTSpare : public DFTGate<ValueType> {
         if (state.isOperational(this->mId)) {
             if (state.isFailsafe(state.uses(this->mId))) {
                 this->failsafe(state, queues);
-                this->childrenDontCare(state, queues);
+                this->childrenDontCare(queues);
             }
         }
     }

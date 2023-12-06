@@ -126,7 +126,7 @@ class DFTDependency : public DFTElement<ValueType> {
         return this->probability() == otherDEP.probability();
     }
 
-    void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+    void extendSpareModule(std::set<size_t>&) const override {
         // Do nothing
     }
 

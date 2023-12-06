@@ -19,7 +19,6 @@ void DFTTraceSimulator<ValueType>::setRandomNumberGenerator(boost::mt19937& rand
 template<typename ValueType>
 void DFTTraceSimulator<ValueType>::resetToInitial() {
     state = generator.createInitialState();
-    ;
 }
 
 template<typename ValueType>
