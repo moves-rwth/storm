@@ -117,7 +117,7 @@ void printVersion() {
     msat_free(msatVersion);
 #endif
 #ifdef STORM_HAVE_SOPLEX
-    STORM_PRINT("Linked with Soplex: " << soplex::printVersion() << ".\n");
+    STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_SMTRAT
     STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
