@@ -101,6 +101,7 @@ class DftNextStateGenerator {
    private:
     /*!
      * Explore current state and generate all successor states.
+     *
      * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
      * @param exploreDependencies Flag indicating whether failures due to dependencies or due to BEs should be explored.
      * @param takeFirstDependency If true, instead of exploring all possible orders of dependency failures, a fixed order is explored where always the first
@@ -117,7 +118,7 @@ class DftNextStateGenerator {
      * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
      * @return Pair of id for new state, and true iff state should not be further explored.
      */
-    std::pair<size_t, bool> getNewStateId(DFTStatePointer state, StateToIdCallback const& stateToIdCallback) const;
+    std::pair<StateType, bool> getNewStateId(DFTStatePointer state, StateToIdCallback const& stateToIdCallback) const;
 
     // The dft used for the generation of next states.
     storm::dft::storage::DFT<ValueType> const& mDft;

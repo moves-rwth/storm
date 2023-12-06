@@ -1,6 +1,7 @@
 #include "DftNextStateGenerator.h"
 
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/exceptions/InvalidModelException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
@@ -24,68 +25,34 @@ bool DftNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
 
 template<typename ValueType, typename StateType>
 typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createInitialState() const {
-    return std::make_shared<storm::dft::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+    DFTStatePointer initialState = std::make_shared<storm::dft::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+
+    // Check whether constant failed BEs are present
+    if (mStateGenerationInfo.immediateFailedBE().size() > 0) {
+        STORM_LOG_THROW(mStateGenerationInfo.immediateFailedBE().size() < 2, storm::exceptions::NotSupportedException,
+                        "DFTs with more than one constantly failed BE are not supported. Transform DFT to contain a unique failed BE.");
+        // Propagate the constant failure to reach the real initial state
+        auto constFailedBE = mDft.getBasicElement(mStateGenerationInfo.immediateFailedBE().front());
+        initialState = createSuccessorState(initialState, constFailedBE);
+    }
+
+    return initialState;
 }
 
 template<typename ValueType, typename StateType>
 std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
     DFTStatePointer initialState = createInitialState();
-
-    // Check whether constant failed BEs are present
-    size_t constFailedBeCounter = 0;
-    std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> constFailedBE = nullptr;
-    for (auto& be : mDft.getBasicElements()) {
-        if (be->beType() == storm::dft::storage::elements::BEType::CONSTANT) {
-            auto constBe = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
-            if (constBe->failed()) {
-                constFailedBeCounter++;
-                STORM_LOG_THROW(constFailedBeCounter < 2, storm::exceptions::NotSupportedException,
-                                "DFTs with more than one constantly failed BE are not supported. Try using the option '--uniquefailedbe'.");
-                constFailedBE = constBe;
-            }
-        }
-    }
-    StateType id;
-    if (constFailedBeCounter == 0) {
-        // Register initial state
-        id = stateToIdCallback(initialState);
-    } else {
-        initialState->letBEFail(constFailedBE);
-        // Propagate the constant failure to reach the real initial state
-        storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
-        propagateFailure(initialState, constFailedBE, queues);
-
-        if (initialState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
-            propagateFailsafe(initialState, constFailedBE, queues);
-
-            // Update failable dependencies
-            initialState->updateFailableDependencies(constFailedBE->id());
-            initialState->updateDontCareDependencies(constFailedBE->id());
-            initialState->updateFailableInRestrictions(constFailedBE->id());
-
-            // Unique failed state
-            id = 0;
-        } else {
-            propagateFailsafe(initialState, constFailedBE, queues);
-
-            // Update failable dependencies
-            initialState->updateFailableDependencies(constFailedBE->id());
-            initialState->updateDontCareDependencies(constFailedBE->id());
-            initialState->updateFailableInRestrictions(constFailedBE->id());
-
-            id = stateToIdCallback(initialState);
-        }
-    }
-
+    // Register initial state
+    auto [id, shouldStop] = getNewStateId(initialState, stateToIdCallback);
     initialState->setId(id);
-
+    STORM_LOG_THROW(!shouldStop, storm::exceptions::InvalidModelException, "Initial state is already invalid due to a restriction.");
     return {id};
 }
 
 template<typename ValueType, typename StateType>
 void DftNextStateGenerator<ValueType, StateType>::load(storm::storage::BitVector const& state) {
     // Load the state from bitvector
-    size_t id = 0;  // TODO: set correct id
+    StateType id = 0;  // TODO: set correct id
     this->state = std::make_shared<storm::dft::storage::DFTState<ValueType>>(state, mDft, mStateGenerationInfo, id);
 }
 
@@ -223,7 +190,8 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 }
 
 template<typename ValueType, typename StateType>
-std::pair<size_t, bool> DftNextStateGenerator<ValueType, StateType>::getNewStateId(DFTStatePointer newState, StateToIdCallback const& stateToIdCallback) const {
+std::pair<StateType, bool> DftNextStateGenerator<ValueType, StateType>::getNewStateId(DFTStatePointer newState,
+                                                                                      StateToIdCallback const& stateToIdCallback) const {
     if (newState->isInvalid() || newState->isTransient()) {
         STORM_LOG_TRACE("State is ignored because " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
         return std::make_pair(0, true);
@@ -360,7 +328,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     this->uniqueFailedState = true;
     // Introduce explicit fail state with id 0
     DFTStatePointer failedState = std::make_shared<storm::dft::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
-    size_t failedStateId = stateToIdCallback(failedState);
+    StateType failedStateId = stateToIdCallback(failedState);
     STORM_LOG_ASSERT(failedStateId == 0, "Unique failed state has not id 0.");
     STORM_LOG_TRACE("Introduce fail state with id 0.");
 

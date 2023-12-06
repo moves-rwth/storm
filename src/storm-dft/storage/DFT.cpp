@@ -249,8 +249,16 @@ template<typename ValueType>
 DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DftSymmetries const& symmetries) const {
     DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
-    // Generate pre- and post-set info for restrictions, and mutexes
     for (auto const& elem : mElements) {
+        // Check if BEs are immediately failed
+        if (elem->isBasicElement()) {
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(elem);
+            if ((be->beType() == storm::dft::storage::elements::BEType::CONSTANT && be->canFail()) ||
+                be->beType() == storm::dft::storage::elements::BEType::PROBABILITY) {
+                generationInfo.addImmediateFailedBE(be->id());
+            }
+        }
+        // Generate pre- and post-set info for restrictions, and mutexes
         if (!elem->isDependency() && !elem->isRestriction()) {
             // Ids of elements which are the direct predecessor in the list of children of a restriction
             std::vector<size_t> seqRestrictionPres;

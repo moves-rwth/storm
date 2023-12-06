@@ -10,6 +10,7 @@ class DFTStateGenerationInfo {
     std::map<size_t, size_t> mSpareUsageIndex;                          // id spare -> index first bit in state
     std::map<size_t, size_t> mSpareActivationIndex;                     // id spare representative -> index in state
     std::vector<size_t> mIdToStateIndex;                                // id -> index first bit in state
+    std::vector<size_t> mImmediateFailedBEs;                            // list of BEs which are immediately failed
     std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements;   // id -> list of restriction pre elements
     std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements;  // id -> list of restriction post elements
     std::map<size_t, std::vector<size_t>> mMutexRestrictionElements;    // id -> list of elements in the same mutexes
@@ -53,6 +54,14 @@ class DFTStateGenerationInfo {
         STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
         STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
         mIdToStateIndex[id] = index;
+    }
+
+    void addImmediateFailedBE(size_t id) {
+        mImmediateFailedBEs.push_back(id);
+    }
+
+    std::vector<size_t> const& immediateFailedBE() const {
+        return mImmediateFailedBEs;
     }
 
     void setRestrictionPreElements(size_t id, std::vector<size_t> const& elems) {
