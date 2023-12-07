@@ -6,7 +6,7 @@
 # --build-arg BASE_IMG=<new_base_image>
 
 # Set base image
-ARG BASE_IMG=movesrwth/storm-basesystem:latest
+ARG BASE_IMG=movesrwth/storm-dependencies:latest
 FROM $BASE_IMG
 MAINTAINER Matthias Volk <m.volk@tue.nl>
 
@@ -18,27 +18,7 @@ ARG build_type=Release
 # Specify number of threads to use for parallel compilation
 ARG no_threads=1
 # Specify CMake arguments for Storm
-ARG cmake_args="-DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
-
-
-# Build Carl
-############
-# Explicitly build the Carl library
-# This is needed when using pycarl/stormpy later on
-WORKDIR /opt/
-
-# Obtain Carl from public repository
-RUN git clone https://github.com/moves-rwth/carl-storm.git carl
-
-# Switch to build directory
-RUN mkdir -p /opt/carl/build
-WORKDIR /opt/carl/build
-
-# Configure Carl
-RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type
-
-# Build Carl library
-RUN make lib_carl -j $no_threads
+ARG cmake_args="-DSTORM_PORTABLE=ON"
 
 
 # Build Storm
