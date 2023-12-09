@@ -1,13 +1,14 @@
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
 namespace storm {
 namespace modelchecker {
 
