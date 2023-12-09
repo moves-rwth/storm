@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
+#include <variant>
 #include <vector>
 
-#include <variant>
 #include "storm/storage/PlayerIndex.h"
 
 namespace storm {
