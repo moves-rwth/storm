@@ -14,6 +14,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"

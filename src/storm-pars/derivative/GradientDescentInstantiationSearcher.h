@@ -6,7 +6,6 @@
 #include "GradientDescentMethod.h"
 #include "analysis/GraphConditions.h"
 #include "logic/Formula.h"
-#include "settings/modules/GeneralSettings.h"
 #include "solver/LinearEquationSolver.h"
 #include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"

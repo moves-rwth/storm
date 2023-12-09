@@ -1,5 +1,7 @@
 #include "storm-config.h"
 
+#include <memory>
+#include <vector>
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
@@ -52,7 +54,7 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
     auto criticalTuple = extender.toOrder(
         region,
-        make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+        std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -95,7 +97,7 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_model) {
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
     auto criticalTuple = extender.toOrder(
         region,
-        make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+        std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
