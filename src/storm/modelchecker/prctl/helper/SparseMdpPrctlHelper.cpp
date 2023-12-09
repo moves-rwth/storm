@@ -368,7 +368,8 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
         // If the solver requires an initial scheduler, compute one now. Note that any scheduler is valid if there are no end components.
         if (requirements.validInitialScheduler() && !result.noEndComponents) {
             STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-            result.schedulerHint = computeValidSchedulerHint<ValueType, SolutionType>(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+            result.schedulerHint =
+                computeValidSchedulerHint<ValueType, SolutionType>(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
             requirements.clearValidInitialScheduler();
         }
 
@@ -738,8 +739,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
             // If the hint information tells us that we have to eliminate MECs, we do so now.
             boost::optional<SparseMdpEndComponentInformation<ValueType>> ecInformation;
             if (hintInformation.getEliminateEndComponents()) {
-                    ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(goal, transitionMatrix, backwardTransitions,
-                                                                                                    qualitativeStateSets, submatrix, b, produceScheduler);
+                ecInformation = computeFixedPointSystemUntilProbabilitiesEliminateEndComponents(goal, transitionMatrix, backwardTransitions,
+                                                                                                qualitativeStateSets, submatrix, b, produceScheduler);
             } else {
                 // Otherwise, we compute the standard equations.
                 computeFixedPointSystemUntilProbabilities(goal, transitionMatrix, qualitativeStateSets, submatrix, b);
@@ -764,7 +765,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
                 if (produceScheduler) {
-                    extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(), qualitativeStateSets.maybeStates);
+                    extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(),
+                                                                                                       qualitativeStateSets.maybeStates);
                 }
             }
         }

@@ -1043,7 +1043,6 @@ template RationalFunction zero();
 
 template bool isNan(RationalFunction const&);
 
-
 // Instantiations for polynomials.
 template Polynomial one();
 template Polynomial zero();

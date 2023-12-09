@@ -293,7 +293,8 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
  */
 template<typename T, typename SchedulerType>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<SchedulerType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+                                     storm::storage::Scheduler<SchedulerType>& scheduler,
+                                     boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that chooses an action that has at least one successor in the
@@ -324,7 +325,8 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
 template<typename T, typename SchedulerType>
 void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                   storm::storage::Scheduler<SchedulerType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+                                   storm::storage::Scheduler<SchedulerType>& scheduler,
+                                   boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a reward infinity.

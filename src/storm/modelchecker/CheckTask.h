@@ -51,7 +51,8 @@ class CheckTask {
     template<typename NewFormulaType>
     CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
         CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
-                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint, this->robustUncertainty);
+                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
+                                                    this->robustUncertainty);
         result.updateOperatorInformation();
         return result;
     }
@@ -129,7 +130,8 @@ class CheckTask {
     template<typename NewValueType>
     CheckTask<FormulaType, NewValueType> convertValueType() const {
         return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
-                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint, this->robustUncertainty);
+                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
+                                                    this->robustUncertainty);
     }
 
     /*!
@@ -329,7 +331,8 @@ class CheckTask {
      */
     CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection,
               boost::optional<storm::logic::PlayerCoalition> playerCoalition, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant,
-              boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint, bool robust)
+              boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint,
+              bool robust)
         : formula(formula),
           optimizationDirection(optimizationDirection),
           playerCoalition(playerCoalition),

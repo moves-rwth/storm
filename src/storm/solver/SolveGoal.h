@@ -100,7 +100,7 @@ class SolveGoal {
     boost::optional<storm::logic::ComparisonType> comparisonType;
     boost::optional<SolutionType> threshold;
     boost::optional<storm::storage::BitVector> relevantValueVector;
-    bool robustAgainstUncertainty = true; // If set to false, the uncertainty is interpreted as controllable.
+    bool robustAgainstUncertainty = true;  // If set to false, the uncertainty is interpreted as controllable.
 };
 
 template<typename ValueType, typename MatrixType, typename SolutionType>

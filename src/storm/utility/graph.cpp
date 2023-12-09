@@ -2209,8 +2209,7 @@ template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStat
                                      storm::storage::Scheduler<double>& scheduler);
 
 template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
-                                     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
-                                     storm::storage::Scheduler<double>& scheduler);
+                                     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::Scheduler<double>& scheduler);
 
 template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
                                      storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::BitVector const& phiStates,
@@ -2278,8 +2277,7 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<stor
                                                storm::storage::SparseMatrix<storm::Interval> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::storage::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
                                                std::vector<uint64_t> const& player1RowGrouping,
