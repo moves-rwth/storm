@@ -49,6 +49,7 @@ endif(ADDITIONAL_LINK_DIRS)
 
 # Create libstorm.
 add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS})
+target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
 # Remove define symbol for shared libstorm.
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm resources)
@@ -56,7 +57,6 @@ add_dependencies(storm resources)
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
-target_precompile_headers(storm PRIVATE <any> <map> <vector> <optional> <iostream> <set> <fstream> <boost/container/flat_set.hpp> <boost/dynamic_bitset.hpp> <boost/range/irange.hpp>)
 
 # Create storm.
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

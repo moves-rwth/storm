@@ -15,7 +15,7 @@ foreach (testsuite analysis)
     target_link_libraries(test-permissive-${testsuite} storm-permissive storm-parsers)
     target_link_libraries(test-permissive-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 
-    target_precompile_headers(test-permissive-${testsuite} REUSE_FROM storm)
+    target_precompile_headers(test-permissive-${testsuite} REUSE_FROM test-builder)
 
 
     add_dependencies(test-permissive-${testsuite} test-resources)
