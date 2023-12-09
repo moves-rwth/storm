@@ -715,7 +715,7 @@ storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeA
 }
 
 storm::logic::PlayerCoalition FormulaParserGrammar::createPlayerCoalition(
-    std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
+    std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
     return storm::logic::PlayerCoalition(playerIds);
 }
 
