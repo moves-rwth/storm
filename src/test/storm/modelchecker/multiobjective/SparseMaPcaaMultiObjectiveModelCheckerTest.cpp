@@ -1,7 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
@@ -465,4 +465,4 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
     }
 }
 
-#endif /*  defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
+#endif /* STORM_HAVE_Z3_OPTIMIZE */

@@ -9,47 +9,48 @@ namespace builder {
 void getTerminalStatesFromFormula(storm::logic::Formula const& formula,
                                   std::function<void(storm::expressions::Expression const&, bool)> const& terminalExpressionCallback,
                                   std::function<void(std::string const&, bool)> const& terminalLabelCallback) {
+    auto isAtomic = [](auto const& f) { return f.isAtomicExpressionFormula() || f.isAtomicLabelFormula() || f.isBooleanLiteralFormula(); };
     if (formula.isAtomicExpressionFormula()) {
         terminalExpressionCallback(formula.asAtomicExpressionFormula().getExpression(), true);
     } else if (formula.isAtomicLabelFormula()) {
         terminalLabelCallback(formula.asAtomicLabelFormula().getLabel(), true);
     } else if (formula.isEventuallyFormula()) {
         storm::logic::Formula const& sub = formula.asEventuallyFormula().getSubformula();
-        if (sub.isAtomicExpressionFormula() || sub.isAtomicLabelFormula()) {
+        if (isAtomic(sub)) {
             getTerminalStatesFromFormula(sub, terminalExpressionCallback, terminalLabelCallback);
         }
     } else if (formula.isUntilFormula()) {
         storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
-        if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
-            getTerminalStatesFromFormula(right, terminalExpressionCallback, terminalLabelCallback);
-        }
         storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
-        if (left.isAtomicExpressionFormula()) {
-            terminalExpressionCallback(left.asAtomicExpressionFormula().getExpression(), false);
-        } else if (left.isAtomicLabelFormula()) {
-            terminalLabelCallback(left.asAtomicLabelFormula().getLabel(), false);
+        if (isAtomic(left) && isAtomic(right)) {
+            getTerminalStatesFromFormula(right, terminalExpressionCallback, terminalLabelCallback);
+            if (left.isAtomicExpressionFormula()) {
+                terminalExpressionCallback(left.asAtomicExpressionFormula().getExpression(), false);
+            } else if (left.isAtomicLabelFormula()) {
+                terminalLabelCallback(left.asAtomicLabelFormula().getLabel(), false);
+            }
         }
     } else if (formula.isBoundedUntilFormula() && !formula.asBoundedUntilFormula().hasMultiDimensionalSubformulas()) {
         storm::logic::BoundedUntilFormula const& boundedUntil = formula.asBoundedUntilFormula();
-        bool hasLowerBound = false;
-        for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {
-            if (boundedUntil.hasLowerBound(i) &&
-                (boundedUntil.getLowerBound(i).containsVariables() || !storm::utility::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
-                hasLowerBound = true;
-                break;
+        storm::logic::Formula const& right = boundedUntil.getRightSubformula();
+        storm::logic::Formula const& left = boundedUntil.getLeftSubformula();
+        if (isAtomic(left) && isAtomic(right)) {
+            bool hasLowerBound = false;
+            for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {
+                if (boundedUntil.hasLowerBound(i) &&
+                    (boundedUntil.getLowerBound(i).containsVariables() || !storm::utility::isZero(boundedUntil.getLowerBound(i).evaluateAsRational()))) {
+                    hasLowerBound = true;
+                    break;
+                }
             }
-        }
-        if (!hasLowerBound) {
-            storm::logic::Formula const& right = boundedUntil.getRightSubformula();
-            if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
+            if (!hasLowerBound) {
                 getTerminalStatesFromFormula(right, terminalExpressionCallback, terminalLabelCallback);
             }
-        }
-        storm::logic::Formula const& left = boundedUntil.getLeftSubformula();
-        if (left.isAtomicExpressionFormula()) {
-            terminalExpressionCallback(left.asAtomicExpressionFormula().getExpression(), false);
-        } else if (left.isAtomicLabelFormula()) {
-            terminalLabelCallback(left.asAtomicLabelFormula().getLabel(), false);
+            if (left.isAtomicExpressionFormula()) {
+                terminalExpressionCallback(left.asAtomicExpressionFormula().getExpression(), false);
+            } else if (left.isAtomicLabelFormula()) {
+                terminalLabelCallback(left.asAtomicLabelFormula().getLabel(), false);
+            }
         }
     } else if (formula.isProbabilityOperatorFormula()) {
         storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();

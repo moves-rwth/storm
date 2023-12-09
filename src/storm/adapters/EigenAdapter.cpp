@@ -1,4 +1,5 @@
 #include "storm/adapters/EigenAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace adapters {

@@ -4,9 +4,6 @@
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/NativeEquationSolverSettings.h"
-
 #include "storm/environment/solver/GameSolverEnvironment.h"
 
 #include "storm/exceptions/IllegalFunctionCallException.h"

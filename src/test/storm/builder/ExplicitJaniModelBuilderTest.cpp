@@ -3,6 +3,7 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"

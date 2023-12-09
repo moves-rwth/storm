@@ -990,7 +990,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
         // Here, we further decompose the SCC into sub-SCCs.
         storm::storage::BitVector nonEntrySccStates = scc & ~entryStates;
         storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition(
-            forwardTransitions, storm::storage::StronglyConnectedComponentDecompositionOptions().subsystem(&nonEntrySccStates));
+            forwardTransitions, storm::storage::StronglyConnectedComponentDecompositionOptions().subsystem(nonEntrySccStates));
         STORM_LOG_TRACE("Decomposed SCC into " << decomposition.size() << " sub-SCCs.");
 
         // Store a bit vector of remaining SCCs so we can be flexible when it comes to the order in which

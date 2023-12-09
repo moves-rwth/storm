@@ -1,5 +1,6 @@
 #include "storm-config.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/generator/BeliefSupportTracker.h"

@@ -1,7 +1,10 @@
-#include <storm/exceptions/InvalidArgumentException.h>
+
 #include "storm-config.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "test/storm_gtest.h"
+
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 TEST(PrismParser, StandardModelTest) {
     storm::prism::Program result;

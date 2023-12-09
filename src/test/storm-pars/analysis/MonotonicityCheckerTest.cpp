@@ -14,6 +14,7 @@
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/graph.h"
 
 #include "test/storm_gtest.h"
 
@@ -25,8 +26,10 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -34,7 +37,7 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // For order extender
@@ -45,18 +48,19 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
-    storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
+    storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
     auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
-    //start testing
+    // start testing
     auto var = modelParameters.begin();
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
@@ -70,8 +74,10 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -79,7 +85,7 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // For order extender
@@ -90,18 +96,19 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
-    storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
+    storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
     auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
-    //start testing
+    // start testing
     auto var = modelParameters.begin();
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 0, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
@@ -116,8 +123,10 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -125,7 +134,7 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // For order extender
@@ -136,24 +145,26 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
-    storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
+    storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(nullptr, region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
-    //monchecker
+    // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(matrix);
 
-    //start testing
+    // start testing
     auto var = modelParameters.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
-        EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, i, *var, region));
+        EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+                  monChecker->checkLocalMonotonicity(order, i, *var, region));
     }
 }
 
@@ -165,8 +176,10 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -174,7 +187,7 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // For order extender
@@ -185,28 +198,29 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
-    storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
+    storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(nullptr, region);
     auto order = std::get<0>(res);
-    order->addRelation(1,3);
-    order->addRelation(3,2);
+    order->addRelation(1, 3);
+    order->addRelation(3, 2);
 
-    //monchecker
+    // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(matrix);
 
-    //start testing
+    // start testing
     auto var = modelParameters.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
-        EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, i, *var, region));
+        EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr,
+                  monChecker->checkLocalMonotonicity(order, i, *var, region));
     }
 }
-
 
 TEST(MonotonicityCheckerTest, Casestudy3) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
@@ -216,8 +230,10 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -225,7 +241,7 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // For order extender
@@ -236,27 +252,28 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
-    storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
+    storm::storage::SparseMatrix<storm::RationalFunction> matrix = model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.extendOrder(nullptr, region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
-    //monchecker
+    // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(matrix);
 
-    //start testing
+    // start testing
     auto var = modelParameters.begin();
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Not, monChecker->checkLocalMonotonicity(order, 0, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
 
-    region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
+    region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 0, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 2, *var, region));

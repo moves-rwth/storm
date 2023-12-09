@@ -233,6 +233,18 @@ void processOptions() {
     }
 }
 
+void process() {
+    storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+    if (generalSettings.isParametricSet()) {
+        processOptions<storm::RationalFunction>();
+    } else if (generalSettings.isExactSet()) {
+        STORM_LOG_WARN("Exact solving over rational numbers is not implemented. Performing exact solving using rational functions instead.");
+        processOptions<storm::RationalFunction>();
+    } else {
+        processOptions<double>();
+    }
+}
+
 /*!
  * Entry point for Storm-DFT.
  *
@@ -242,36 +254,7 @@ void processOptions() {
  */
 int main(const int argc, const char** argv) {
     try {
-        storm::utility::setUp();
-        storm::cli::printHeader("Storm-dft", argc, argv);
-        storm::dft::settings::initializeDftSettings("Storm-dft", "storm-dft");
-
-        storm::utility::Stopwatch totalTimer(true);
-        if (!storm::cli::parseOptions(argc, argv)) {
-            return -1;
-        }
-
-        // Start by setting some urgent options (log levels, resources, etc.)
-        storm::cli::setUrgentOptions();
-
-        storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        if (generalSettings.isParametricSet()) {
-            processOptions<storm::RationalFunction>();
-        } else if (generalSettings.isExactSet()) {
-            STORM_LOG_WARN("Exact solving over rational numbers is not implemented. Performing exact solving using rational functions instead.");
-            processOptions<storm::RationalFunction>();
-        } else {
-            processOptions<double>();
-        }
-
-        totalTimer.stop();
-        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
-            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
-        }
-
-        // All operations have now been performed, so we clean up everything and terminate.
-        storm::utility::cleanUp();
-        return 0;
+        return storm::cli::process("Storm-dft", "storm-dft", storm::dft::settings::initializeDftSettings, process, argc, argv);
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm-DFT to terminate. The message of the exception is: " << exception.what());
         return 1;

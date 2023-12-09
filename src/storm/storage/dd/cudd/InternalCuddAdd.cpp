@@ -131,7 +131,7 @@ InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil(
 }
 
 template<typename ValueType>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t /*precision*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
 }
 
@@ -197,8 +197,8 @@ bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdTy
 }
 
 template<>
-bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& other,
-                                                                            storm::RationalNumber const& precision, bool relative) const {
+bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& /*other*/,
+                                                                            storm::RationalNumber const& /*precision*/, bool /*relative*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 

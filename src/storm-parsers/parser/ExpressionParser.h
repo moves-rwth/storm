@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
-#include "storm-parsers/parser/SpiritParserDefinitions.h"
 #include "storm/storage/expressions/OperatorType.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"

@@ -93,14 +93,14 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabiliti
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeBoundedUntilProbabilities(
-    Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::BoundedUntilFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeConditionalProbabilities(
-    Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -115,20 +115,20 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilit
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeGloballyProbabilities(
-    Environment const& env, CheckTask<storm::logic::GloballyFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::GloballyFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeNextProbabilities(Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeNextProbabilities(Environment const&,
                                                                                        CheckTask<storm::logic::NextFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities(Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities(Environment const&,
                                                                                         CheckTask<storm::logic::UntilFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
@@ -136,12 +136,12 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbab
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeHOAPathProbabilities(
-    Environment const& env, CheckTask<storm::logic::HOAPathFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::HOAPathFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLTLProbabilities(Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLTLProbabilities(Environment const&,
                                                                                       CheckTask<storm::logic::PathFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -184,34 +184,34 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Env
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeConditionalRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
+    Environment const&, storm::logic::RewardMeasureType, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeCumulativeRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) {
+    Environment const&, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeInstantaneousRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask) {
+    Environment const&, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
+    Environment const&, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTotalRewards(Environment const&, storm::logic::RewardMeasureType,
                                                                                   CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
@@ -219,14 +219,14 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTotalReward
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) {
+    Environment const&, storm::logic::RewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageProbabilities(
-    Environment const& env, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -244,7 +244,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTimes(Envir
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
+    Environment const& , storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -298,7 +298,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicExpress
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicLabelFormula(
-    Environment const& env, CheckTask<storm::logic::AtomicLabelFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::AtomicLabelFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -331,7 +331,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBinaryBoolean
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBooleanLiteralFormula(
-    Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
@@ -417,27 +417,27 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkUnaryBooleanS
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLexObjectiveFormula(
-    Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(
-    Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkQuantileFormula(Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkQuantileFormula(Environment const&,
                                                                                    CheckTask<storm::logic::QuantileFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkGameFormula(Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkGameFormula(Environment const&,
                                                                                CheckTask<storm::logic::GameFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");

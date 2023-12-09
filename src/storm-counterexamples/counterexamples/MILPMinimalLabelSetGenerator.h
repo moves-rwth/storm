@@ -509,10 +509,11 @@ class MILPMinimalLabelSetGenerator {
      * @param variableInformation A struct with information about the variables of the model.
      * @return The total number of constraints that were created.
      */
-    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp,
+    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const&,
                                                   std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                   StateInformation const& stateInformation, ChoiceInformation const& choiceInformation,
                                                   VariableInformation const& variableInformation) {
+        // mdp argument is unused by retained for consistency over different assertConstraints
         uint_fast64_t numberOfConstraintsCreated = 0;
 
         for (auto state : stateInformation.relevantStates) {
@@ -921,58 +922,6 @@ class MILPMinimalLabelSetGenerator {
             }
         }
         return result;
-    }
-
-    /*!
-     * Computes a mapping from relevant states to choices such that a state is mapped to one of its choices if
-     * it is selected by the subsystem computed by the solver.
-     *
-     * @param solver The MILP solver.
-     * @param mdp The MDP.
-     * @param stateInformation The information about the states in the model.
-     * @param choiceInformation The information about the choices in the model.
-     * @param variableInformation A struct with information about the variables of the model.
-     */
-    static std::map<uint_fast64_t, uint_fast64_t> getChoices(storm::solver::LpSolver<double> const& solver, storm::models::sparse::Mdp<T> const& mdp,
-                                                             StateInformation const& stateInformation, ChoiceInformation const& choiceInformation,
-                                                             VariableInformation const& variableInformation) {
-        std::map<uint_fast64_t, uint_fast64_t> result;
-
-        for (auto state : stateInformation.relevantStates) {
-            std::list<storm::expressions::Variable>::const_iterator choiceVariableIterator =
-                variableInformation.stateToChoiceVariablesIndexMap.at(state).begin();
-            for (auto choice : choiceInformation.relevantChoicesForRelevantStates.at(state)) {
-                bool choiceTaken = solver.getBinaryValue(*choiceVariableIterator);
-                ++choiceVariableIterator;
-                if (choiceTaken) {
-                    result.emplace_hint(result.end(), state, choice);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /*!
-     * Computes the reachability probability and the selected initial state in the given optimized MILP model.
-     *
-     * @param solver The MILP solver.
-     * @param mdp The MDP.
-     * @param variableInformation A struct with information about the variables of the model.
-     */
-    static std::pair<uint_fast64_t, double> getReachabilityProbability(storm::solver::LpSolver<double> const& solver, storm::models::sparse::Mdp<T> const& mdp,
-                                                                       VariableInformation const& variableInformation) {
-        uint_fast64_t selectedInitialState = 0;
-        for (auto const& initialStateVariablePair : variableInformation.initialStateToChoiceVariableMap) {
-            bool initialStateChosen = solver.getBinaryValue(initialStateVariablePair.second);
-            if (initialStateChosen) {
-                selectedInitialState = initialStateVariablePair.first;
-                break;
-            }
-        }
-
-        double reachabilityProbability = solver.getContinuousValue(variableInformation.virtualInitialStateVariable);
-        return std::make_pair(selectedInitialState, reachabilityProbability);
     }
 
    public:

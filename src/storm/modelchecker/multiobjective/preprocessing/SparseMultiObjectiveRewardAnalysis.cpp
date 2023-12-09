@@ -9,8 +9,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/transformer/EndComponentEliminator.h"

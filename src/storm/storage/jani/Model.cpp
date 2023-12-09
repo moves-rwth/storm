@@ -933,18 +933,13 @@ std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
     for (auto actionIndex : allActionIndices) {
         std::string const& actionName = this->getAction(actionIndex).getName();
         std::vector<std::string> synchVectorInputs;
-        uint64_t numberOfParticipatingAutomata = 0;
-        int i = 0;
         for (auto const& actionIndices : automatonActionIndices) {
             if (actionIndices.find(actionIndex) != actionIndices.end()) {
-                ++numberOfParticipatingAutomata;
                 synchVectorInputs.push_back(actionName);
             } else {
                 synchVectorInputs.push_back(storm::jani::SynchronizationVector::NO_ACTION_INPUT);
             }
-            ++i;
         }
-
         synchVectors.push_back(storm::jani::SynchronizationVector(synchVectorInputs, actionName));
     }
 
@@ -964,7 +959,7 @@ class CompositionSimplificationVisitor : public CompositionVisitor {
         return boost::any_cast<std::shared_ptr<Composition>>(oldComposition.accept(*this, boost::any()));
     }
 
-    virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override {
+    virtual boost::any visit(AutomatonComposition const& composition, boost::any const&) override {
         std::string name = composition.getAutomatonName();
         if (automatonToCopiesMap.count(name) != 0) {
             auto& copies = automatonToCopiesMap[name];

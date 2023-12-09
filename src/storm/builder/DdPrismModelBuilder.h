@@ -9,15 +9,20 @@
 
 #include "storm/builder/TerminalStatesGetter.h"
 
-#include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/utility/macros.h"
+
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace dd {
 template<storm::dd::DdType T>
 class Bdd;
-}
+template<storm::dd::DdType LibraryType, typename ValueType>
+class Add;
+template<storm::dd::DdType T>
+class DdManager;
+}  // namespace dd
 
 namespace models {
 namespace symbolic {

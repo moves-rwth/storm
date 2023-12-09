@@ -101,6 +101,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
     this->transientVariableInformation = TransientVariableInformation<ValueType>(this->model, this->parallelAutomata);
     this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
+    this->initializeSpecialStates();
 
     // Create a proper evaluator.
     this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(this->model.getManager());

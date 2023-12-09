@@ -22,17 +22,15 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: "GMP exact; GMP rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "CLN exact; GMP rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "CLN exact; CLN rational functions; Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "GMP exact; CLN rational functions; No Spot", buildType: "Debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=OFF -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
+          - {name: "GMP exact; GMP rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
+          - {name: "CLN exact; GMP rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
+          - {name: "CLN exact; CLN rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
+          - {name: "GMP exact; CLN rational functions; No dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SYSTEM=OFF -DSTORM_USE_SOPLEX=OFF -DMSAT_ROOT= -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
     steps:
       - name: Git clone
-        uses: actions/checkout@v3
-      - name: Replace Dockerfile
-        run: cp .github/workflows/Dockerfile.carl_implicit Dockerfile
+        uses: actions/checkout@v4
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:ci . --build-arg build_type="${{ matrix.config.buildType }}" --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+        run: docker build -t movesrwth/storm:ci . --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} --build-arg build_type="${{ matrix.config.buildType }}" --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
 
@@ -64,7 +62,7 @@ jobs:
           - {name: "Clang", buildType: "Debug", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON", packages: "clang"}
     steps:
       - name: Git clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Replace Dockerfile
         run: cp .github/workflows/Dockerfile.archlinux Dockerfile
       - name: Build storm from Dockerfile
@@ -97,7 +95,7 @@ jobs:
         buildType: ["Release"]
     steps:
       - name: Git clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build storm from Dockerfile
         run: docker build -t movesrwth/storm:ci . --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} --build-arg build_type="${{ matrix.buildType }}" --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
@@ -125,15 +123,18 @@ jobs:
     strategy:
       matrix:
         buildType:
-          - {name: "Debug", dockerTag: "ci-debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
-          - {name: "Release", dockerTag: "ci", cmakeArgs: "-DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
+          - {name: "Debug", dockerTag: "ci-debug", baseImg: "storm-dependencies:latest-debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
+          - {name: "Release", dockerTag: "ci", baseImg: "storm-dependencies:latest", cmakeArgs: "-DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON"}
     steps:
       - name: Git clone
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
+      - name: Git describe
+        id: ghd
+        uses: proudust/gh-describe@v1
+      - name: Set static Storm version
+        run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . --build-arg build_type="${{ matrix.buildType.name }}" --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+        run: docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} --build-arg build_type="${{ matrix.buildType.name }}" --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
 
@@ -171,8 +172,8 @@ jobs:
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
-      - uses: technote-space/workflow-conclusion-action@v2
-      - uses: dawidd6/action-send-mail@v2
+      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

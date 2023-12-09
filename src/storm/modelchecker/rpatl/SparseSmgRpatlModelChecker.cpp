@@ -15,8 +15,6 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 

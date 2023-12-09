@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/eigen.h"
 
 #include "storm/storage/SparseMatrix.h"

@@ -1,7 +1,8 @@
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 #include <vector>
+#include "storm/utility/OptionalRef.h"
 
 namespace storm {
 
@@ -40,7 +41,8 @@ class JaniScopeChanger {
      * Returns true if this is a case as well as an automaton index where to pout the variable
      */
     std::pair<bool, uint64_t> canMakeVariableLocal(storm::expressions::Variable const& variable, Model const& model,
-                                                   std::vector<Property> const& properties = {}, boost::optional<uint64_t> automatonIndex = boost::none) const;
+                                                   storm::OptionalRef<std::vector<Property> const> properties = storm::NullRef,
+                                                   std::optional<uint64_t> automatonIndex = std::nullopt) const;
 
     /*!
      * Moves as many variables to the global scope as possible
@@ -50,7 +52,7 @@ class JaniScopeChanger {
     /*!
      * Moves as many variables to a local scope as possible
      */
-    void makeVariablesLocal(Model& model, std::vector<Property> const& properties = {}) const;
+    void makeVariablesLocal(Model& model, storm::OptionalRef<std::vector<Property> const> properties = storm::NullRef) const;
 };
 }  // namespace jani
 

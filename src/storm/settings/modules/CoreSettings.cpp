@@ -28,7 +28,6 @@ const std::string CoreSettings::statisticsOptionShortName = "stats";
 const std::string CoreSettings::engineOptionName = "engine";
 const std::string CoreSettings::engineOptionShortName = "e";
 const std::string CoreSettings::ddLibraryOptionName = "ddlib";
-const std::string CoreSettings::cudaOptionName = "cuda";
 const std::string CoreSettings::intelTbbOptionName = "enable-tbb";
 const std::string CoreSettings::intelTbbOptionShortName = "tbb";
 
@@ -83,7 +82,6 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
                         .setShortName(statisticsOptionShortName)
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA.").setIsAdvanced().build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, intelTbbOptionName, false, "Sets whether to use Intel TBB (if Storm was built with support for TBB).")
             .setShortName(intelTbbOptionShortName)
@@ -164,10 +162,6 @@ bool CoreSettings::isShowStatisticsSet() const {
 
 bool CoreSettings::isUseIntelTbbSet() const {
     return this->getOption(intelTbbOptionName).getHasOptionBeenSet();
-}
-
-bool CoreSettings::isUseCudaSet() const {
-    return this->getOption(cudaOptionName).getHasOptionBeenSet();
 }
 
 storm::utility::Engine CoreSettings::getEngine() const {

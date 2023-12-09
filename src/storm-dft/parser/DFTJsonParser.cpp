@@ -5,6 +5,7 @@
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/utility/RelevantEvents.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
@@ -18,7 +19,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(
     std::ifstream file;
     storm::utility::openFile(filename, file);
     Json jsonInput;
-    jsonInput << file;
+    file >> jsonInput;
     storm::utility::closeFile(file);
     return parseJson(jsonInput);
 }

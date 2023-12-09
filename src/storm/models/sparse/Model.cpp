@@ -596,7 +596,7 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
         stateChoicesJson["c"] = std::move(choicesJson);
         output.push_back(std::move(stateChoicesJson));
     }
-    outStream << output.dump(4);
+    outStream << storm::dumpJson(output);
 }
 
 template<>

@@ -44,8 +44,6 @@ option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to 
 MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
 option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
 mark_as_advanced(USE_SMTRAT)
-option(USE_HYPRO "Sets whether HyPro should be included." OFF)
-mark_as_advanced(USE_HYPRO)
 option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
 option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
@@ -67,7 +65,6 @@ MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
-set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
 set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
 MARK_AS_ADVANCED(SPOT_ROOT)
@@ -433,6 +430,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##
 #############################################################
 if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
+	message(WARNING "Using the XCode Project Generator has previously yielded problems. See https://github.com/moves-rwth/storm/issues/65. We recommend using the command line or an IDE with native CMAKE support, such as CLION.")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif()
@@ -541,7 +539,7 @@ message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERS
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-config.h.in"
+	"${PROJECT_SOURCE_DIR}/src/storm-config.h.in"
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 

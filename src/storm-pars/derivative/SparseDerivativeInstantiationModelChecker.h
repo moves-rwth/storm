@@ -46,12 +46,13 @@ class SparseDerivativeInstantiationModelChecker {
         Environment const& env, storm::utility::parametric::Valuation<FunctionType> const& valuation,
         typename utility::parametric::VariableType<FunctionType>::type const& parameter,
         boost::optional<std::vector<ConstantType>> const& valueVector = boost::none);
-    
+
     uint64_t getInitialState() {
         return initialStateEqSystem;
     }
 
    private:
+    // TODO it is not good that this model is not a reference. (but we reduce to state based rewards in this code.)
     models::sparse::Dtmc<FunctionType> model;
     std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTask;
     // store the current formula. Note that currentCheckTask only stores a reference to the formula.
@@ -61,7 +62,9 @@ class SparseDerivativeInstantiationModelChecker {
     std::map<typename utility::parametric::VariableType<FunctionType>::type, std::unique_ptr<storm::solver::LinearEquationSolver<ConstantType>>>
         linearEquationSolvers;
     std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> matrixMappingUnderived;
-    std::map<typename utility::parametric::VariableType<FunctionType>::type, std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>> matrixMappingsDerived;
+    std::map<typename utility::parametric::VariableType<FunctionType>::type,
+             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>>
+        matrixMappingsDerived;
     std::unordered_map<FunctionType, ConstantType> functionsUnderived;
     std::map<typename utility::parametric::VariableType<FunctionType>::type, std::unordered_map<FunctionType, ConstantType>> functionsDerived;
     storage::SparseMatrix<FunctionType> constrainedMatrixEquationSystem;
@@ -77,8 +80,8 @@ class SparseDerivativeInstantiationModelChecker {
     uint_fast64_t initialStateModel;
 
     void initializeInstantiatedMatrix(storage::SparseMatrix<FunctionType>& matrix, storage::SparseMatrix<ConstantType>& matrixInstantiated,
-        std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>& matrixMapping,
-        std::unordered_map<FunctionType, ConstantType>& functions);
+                                      std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>& matrixMapping,
+                                      std::unordered_map<FunctionType, ConstantType>& functions);
     void setup(Environment const& env, modelchecker::CheckTask<storm::logic::Formula, FunctionType> const& checkTask);
 
     utility::Stopwatch instantiationWatch;

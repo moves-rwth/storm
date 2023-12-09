@@ -1,8 +1,6 @@
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/utility/macros.h"
 
@@ -15,7 +13,7 @@ namespace modelchecker {
 namespace lexicographic {
 
 template<typename SparseModelType, typename ValueType>
-helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model,
+helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const&, SparseModelType const& model,
                                                                 CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask,
                                                                 CheckFormulaCallback const& formulaChecker) {
     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1,

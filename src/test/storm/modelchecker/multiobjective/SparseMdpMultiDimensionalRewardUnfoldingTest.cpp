@@ -285,7 +285,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
 TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
     storm::Environment env;
@@ -606,4 +606,4 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-#endif /* STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
+#endif /* STORM_HAVE_Z3_OPTIMIZE */
