@@ -25,8 +25,10 @@ double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse
 }
 
 void expectThrow(std::string const& path, std::string const& formulaString) {
-    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties("Rmin=? [ F \"target\"]"));
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::DirectEncodingParser<storm::Interval>::parseModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parseProperties("Rmin=? [ F \"target\"]"));
 
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
