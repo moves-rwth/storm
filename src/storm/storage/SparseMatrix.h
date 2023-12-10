@@ -1033,6 +1033,12 @@ class SparseMatrix {
      * Checks for each row whether it sums to one.
      */
     bool isProbabilistic() const;
+
+    /*!
+     * Checks whether each entry is positive (omitted entries are zero by default and thus not (strictly) positive)
+     */
+    bool hasOnlyPositiveEntries() const;
+
     /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
      * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.

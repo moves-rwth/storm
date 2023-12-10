@@ -2445,6 +2445,17 @@ bool SparseMatrix<ValueType>::isProbabilistic() const {
 }
 
 template<typename ValueType>
+bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
+    storm::utility::ConstantsComparator<ValueType> comparator;
+    for (auto const& entry : *this) {
+        if (!comparator.isLess(storm::utility::zero<ValueType>(), entry.getValue())) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename ValueType>
 template<typename OtherValueType>
 bool SparseMatrix<ValueType>::isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const {
     // Check for matching sizes.
