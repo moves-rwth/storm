@@ -1,5 +1,6 @@
 #include <queue>
 #include <sstream>
+#include <vector>
 
 #include "storm-pars/analysis/OrderExtender.cpp"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"

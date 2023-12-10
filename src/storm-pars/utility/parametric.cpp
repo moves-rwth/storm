@@ -1,16 +1,11 @@
 #include <string>
 
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#ifdef STORM_HAVE_CARL
-#include <carl/core/VariablePool.h>
-#include <carl/numbers/numbers.h>
-#endif
 
 namespace storm {
 namespace utility {

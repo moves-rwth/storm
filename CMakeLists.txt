@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -379,6 +379,24 @@ if (STORM_DEVELOPER)
 else()
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
 endif()
+
+#############################################################
+##
+##	Set precompiled headers
+##
+#############################################################
+
+# Selection is based on (relatively extensive, but ad-hoc) compilation profiling in late 2023.
+# As changes mean recompilations of the complete code base, we only use std libraries and boost libraries here for now.
+SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>"
+		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>"
+		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
+
+#############################################################
+##
+##	Compiler tests during config
+##
+#############################################################
 
 # Test compiler by compiling small program.
 CHECK_C_SOURCE_COMPILES("

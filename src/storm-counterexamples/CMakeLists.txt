@@ -11,6 +11,8 @@ file(GLOB_RECURSE STORM_CEX_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-counterexamp
 # Create storm-counterexamples.
 add_library(storm-counterexamples SHARED ${STORM_CEX_SOURCES} ${STORM_CEX_HEADERS})
 
+target_precompile_headers(storm-counterexamples REUSE_FROM storm)
+
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-counterexamples PROPERTIES DEFINE_SYMBOL "")
 #add_dependencies(storm resources)

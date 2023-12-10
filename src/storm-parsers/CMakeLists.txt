@@ -20,6 +20,7 @@ list(APPEND STORM_TARGETS storm-parsers)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 target_link_libraries(storm-parsers PUBLIC storm)
+target_precompile_headers(storm-parsers REUSE_FROM storm)
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_PARSER_HEADERS})

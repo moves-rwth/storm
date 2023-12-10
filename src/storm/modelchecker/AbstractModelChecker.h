@@ -1,7 +1,6 @@
 #ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 #define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
 
-#include <boost/optional.hpp>
 #include <string>
 
 #include "storm/logic/Formulas.h"

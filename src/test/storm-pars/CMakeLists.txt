@@ -15,6 +15,7 @@ foreach (testsuite analysis modelchecker utility derivative transformer)
       add_executable (test-pars-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp analysis/MonotonicityCheckerTest.cpp)
 	  target_link_libraries(test-pars-${testsuite} storm-pars storm-parsers)
 	  target_link_libraries(test-pars-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
+	  target_precompile_headers(test-pars-${testsuite} REUSE_FROM test-builder)
 
 	  add_dependencies(test-pars-${testsuite} test-resources)
 	  add_test(NAME run-test-pars-${testsuite} COMMAND $<TARGET_FILE:test-pars-${testsuite}>)

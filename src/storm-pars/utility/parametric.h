@@ -1,9 +1,10 @@
 #ifndef STORM_UTILITY_PARAMETRIC_H
 #define STORM_UTILITY_PARAMETRIC_H
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 #include <map>
+#include <set>
 
 namespace storm {
 namespace utility {

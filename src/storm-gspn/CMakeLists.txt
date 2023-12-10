@@ -10,6 +10,7 @@ file(GLOB_RECURSE STORM_GSPN_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-gspn/*/*.h)
 
 # Create storm-gspn.
 add_library(storm-gspn SHARED ${STORM_GSPN_SOURCES} ${STORM_GSPN_HEADERS})
+target_precompile_headers(storm-gspn REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-gspn PROPERTIES DEFINE_SYMBOL "")

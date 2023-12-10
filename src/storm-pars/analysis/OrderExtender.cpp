@@ -1,4 +1,5 @@
 #include "OrderExtender.h"
+#include <vector>
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -390,7 +391,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
 template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState,
-                                                                                             const vector<uint_fast64_t>& successors, bool allowMerge) {
+                                                                                             const std::vector<uint_fast64_t>& successors, bool allowMerge) {
     // when it is cyclic and the current state is part of an SCC we do forwardreasoning
     if (cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
         // Try to extend the order for this scc
@@ -842,7 +843,8 @@ MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonot
     return monotonicityChecker;
 }
 template<typename ValueType, typename ConstantType>
-const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
+const std::vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>&
+OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
     return occuringVariablesAtState;
 }
 
