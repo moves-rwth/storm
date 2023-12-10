@@ -63,3 +63,7 @@ TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 1, 1, 0.42857, 0.42, false);
 }
+
+TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]", 1, 1, 0.42857, 0.42, false);
+}
