@@ -6,6 +6,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"

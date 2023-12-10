@@ -1,6 +1,8 @@
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace utility {
 

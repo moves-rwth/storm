@@ -1,5 +1,8 @@
 #include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -7,9 +10,6 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
 namespace modelchecker {

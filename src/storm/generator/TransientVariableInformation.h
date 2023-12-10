@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/generator/ArrayVariableReplacementInformation.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"

@@ -2,7 +2,6 @@
 #include <cmath>
 #include <cstdint>
 #include <random>
-#include "analysis/GraphConditions.h"
 #include "environment/Environment.h"
 #include "environment/solver/GmmxxSolverEnvironment.h"
 #include "environment/solver/MinMaxSolverEnvironment.h"
@@ -11,14 +10,12 @@
 #include "modelchecker/results/CheckResult.h"
 #include "settings/SettingsManager.h"
 #include "settings/modules/GeneralSettings.h"
-#include "solver/helper/SoundValueIterationHelper.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/utility/constants.h"
 #include "utility/SignalHandler.h"
-#include "utility/graph.h"
 
 namespace storm {
 namespace derivative {
