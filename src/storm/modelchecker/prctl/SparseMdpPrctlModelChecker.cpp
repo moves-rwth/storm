@@ -45,51 +45,60 @@ template<typename SparseMdpModelType>
 bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<storm::logic::Formula, SolutionType> const& checkTask,
                                                                      bool* requiresSingleInitialState) {
     storm::logic::Formula const& formula = checkTask.getFormula();
-    if (formula.isInFragment(storm::logic::prctlstar()
-                                 .setLongRunAverageRewardFormulasAllowed(true)
-                                 .setLongRunAverageProbabilitiesAllowed(true)
-                                 .setConditionalProbabilityFormulasAllowed(true)
-                                 .setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true)
-                                 .setTotalRewardFormulasAllowed(true)
-                                 .setRewardBoundedUntilFormulasAllowed(true)
-                                 .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                                 .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                                 .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                                 .setTimeOperatorsAllowed(true)
-                                 .setReachbilityTimeFormulasAllowed(true)
-                                 .setRewardAccumulationAllowed(true))) {
-        return true;
-    } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
-        auto multiObjectiveFragment = storm::logic::multiObjective()
-                                          .setTimeAllowed(true)
-                                          .setCumulativeRewardFormulasAllowed(true)
-                                          .setTimeBoundedCumulativeRewardFormulasAllowed(true)
-                                          .setStepBoundedCumulativeRewardFormulasAllowed(true)
-                                          .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                                          .setTimeBoundedUntilFormulasAllowed(true)
-                                          .setStepBoundedUntilFormulasAllowed(true)
-                                          .setRewardBoundedUntilFormulasAllowed(true)
-                                          .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                                          .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                                          .setRewardAccumulationAllowed(true);
-        auto lexObjectiveFragment = storm::logic::lexObjective()
-                                        .setHOAPathFormulasAllowed(true)
-                                        .setCumulativeRewardFormulasAllowed(true)
-                                        .setTimeBoundedCumulativeRewardFormulasAllowed(true)
-                                        .setStepBoundedCumulativeRewardFormulasAllowed(true)
-                                        .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                                        .setTimeBoundedUntilFormulasAllowed(true)
-                                        .setStepBoundedUntilFormulasAllowed(true)
-                                        .setRewardBoundedUntilFormulasAllowed(true)
-                                        .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                                        .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                                        .setRewardAccumulationAllowed(true);
-
-        if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
-            if (requiresSingleInitialState) {
-                *requiresSingleInitialState = true;
-            }
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        if (formula.isInFragment(storm::logic::propositional())) {
             return true;
+        }
+        if (formula.isInFragment(storm::logic::reachability())) {
+            return true;
+        }
+    } else {
+        if (formula.isInFragment(storm::logic::prctlstar()
+                                     .setLongRunAverageRewardFormulasAllowed(true)
+                                     .setLongRunAverageProbabilitiesAllowed(true)
+                                     .setConditionalProbabilityFormulasAllowed(true)
+                                     .setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true)
+                                     .setTotalRewardFormulasAllowed(true)
+                                     .setRewardBoundedUntilFormulasAllowed(true)
+                                     .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                     .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                     .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                     .setTimeOperatorsAllowed(true)
+                                     .setReachbilityTimeFormulasAllowed(true)
+                                     .setRewardAccumulationAllowed(true))) {
+            return true;
+        } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
+            auto multiObjectiveFragment = storm::logic::multiObjective()
+                                              .setTimeAllowed(true)
+                                              .setCumulativeRewardFormulasAllowed(true)
+                                              .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                              .setTimeBoundedUntilFormulasAllowed(true)
+                                              .setStepBoundedUntilFormulasAllowed(true)
+                                              .setRewardBoundedUntilFormulasAllowed(true)
+                                              .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                              .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                              .setRewardAccumulationAllowed(true);
+            auto lexObjectiveFragment = storm::logic::lexObjective()
+                                            .setHOAPathFormulasAllowed(true)
+                                            .setCumulativeRewardFormulasAllowed(true)
+                                            .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                            .setTimeBoundedUntilFormulasAllowed(true)
+                                            .setStepBoundedUntilFormulasAllowed(true)
+                                            .setRewardBoundedUntilFormulasAllowed(true)
+                                            .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                            .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                            .setRewardAccumulationAllowed(true);
+
+            if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
+                if (requiresSingleInitialState) {
+                    *requiresSingleInitialState = true;
+                }
+                return true;
+            }
         }
     }
     return false;
