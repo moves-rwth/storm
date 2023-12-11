@@ -341,28 +341,29 @@ ValueType DFTState<ValueType>::getBERate(size_t id) const {
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be,
-                                    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be) {
     STORM_LOG_ASSERT(!hasFailed(be->id()), "Element " << *be << " has already failed.");
-    if (dependency != nullptr) {
-        // Consider failure due to dependency
-        failableElements.removeDependency(dependency->id());
-        setDependencySuccessful(dependency->id());
-    } else {
-        // Consider "normal" failure
-        STORM_LOG_ASSERT(be->canFail(), "Element " << *be << " cannot fail.");
-    }
+    // Check if BE can fail on its own or is triggered by dependency
+    STORM_LOG_ASSERT(be->canFail() || std::any_of(be->ingoingDependencies().begin(), be->ingoingDependencies().end(),
+                                                  [this](std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType>> dep) {
+                                                      return this->dependencySuccessful(dep->id());
+                                                  }),
+                     "Element " << *be << " cannot fail.");
     // Set BE as failed
     setFailed(be->id());
     failableElements.removeBE(be->id());
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letDependencyTrigger(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency, bool successful) {
     STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
-    STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
     failableElements.removeDependency(dependency->id());
-    setDependencyUnsuccessful(dependency->id());
+    if (successful) {
+        setDependencySuccessful(dependency->id());
+    } else {
+        STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
+        setDependencyUnsuccessful(dependency->id());
+    }
 }
 
 template<typename ValueType>
@@ -474,11 +475,21 @@ bool DFTState<ValueType>::isEventDisabledViaRestriction(size_t id) const {
 }
 
 template<typename ValueType>
-bool DFTState<ValueType>::hasOperationalPostSeqElements(size_t id) const {
+bool DFTState<ValueType>::isEventRelevantInRestriction(size_t id) const {
     STORM_LOG_ASSERT(!mDft.isDependency(id), "Element is dependency.");
     STORM_LOG_ASSERT(!mDft.isRestriction(id), "Element is restriction.");
+
+    // First check sequence enforcer
     auto const& postIds = mStateGenerationInfo.seqRestrictionPostElements(id);
     for (size_t id : postIds) {
+        if (isOperational(id)) {
+            return true;
+        }
+    }
+
+    // Second check mutexes
+    auto const& mutexIds = mStateGenerationInfo.mutexRestrictionElements(id);
+    for (size_t id : mutexIds) {
         if (isOperational(id)) {
             return true;
         }

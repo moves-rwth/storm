@@ -4,9 +4,13 @@
 #include <utility>
 #include <vector>
 
+#include "storm/exceptions/InvalidArgumentException.h"
+
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/elements/DFTElementType.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+
+#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm::dft {
 namespace storage {
@@ -18,33 +22,22 @@ struct GateGroupToHash {
     /**
      * Hash function, which ensures that the colours are sorted according to their rank.
      */
-    uint_fast64_t operator()(storm::dft::storage::elements::DFTElementType type, size_t nrChildren, size_t nrParents, size_t nrPDEPs, size_t rank) const {
+    uint_fast64_t operator()(storm::dft::storage::elements::DFTElementType type, size_t nrChildren, size_t nrParents, size_t nrPDEPs, size_t nrRestrictions,
+                             size_t rank) const {
         // Sets first bit to 1
         uint_fast64_t groupHash = static_cast<uint_fast64_t>(1) << 63;
         // Assumes 5 bits for the rank,
         groupHash |= (static_cast<uint_fast64_t>(rank) & fivebitmask) << (62 - 5);
-        // 8 bits for the nrChildren,
+        // 8 bits for the nrChildren
         groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmask) << (62 - 5 - 8);
-        // 5 bits for nrParents,
+        // 5 bits for nrParents
         groupHash |= (static_cast<uint_fast64_t>(nrParents) & fivebitmask) << (62 - 5 - 8 - 5);
-        // 5 bits for nrPDEPs,
+        // 5 bits for nrPDEPs
         groupHash |= (static_cast<uint_fast64_t>(nrPDEPs) & fivebitmask) << (62 - 5 - 8 - 5 - 5);
+        // 5 bits for nrRestrictions
+        groupHash |= (static_cast<uint_fast64_t>(nrPDEPs) & fivebitmask) << (62 - 5 - 8 - 5 - 5 - 5);
         // 5 bits for the type
-        groupHash |= (static_cast<uint_fast64_t>(type) & fivebitmask) << (62 - 5 - 8 - 5 - 5 - 5);
-        return groupHash;
-    }
-};
-
-struct RestrictionGroupToHash {
-    static constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
-
-    static constexpr uint_fast64_t eightbitmask = (1 << 8) - 1;
-
-    uint_fast64_t operator()(storm::dft::storage::elements::DFTElementType type, size_t nrChildren, size_t rank) const {
-        uint_fast64_t groupHash = static_cast<uint_fast64_t>(0);
-        groupHash |= (static_cast<uint_fast64_t>(rank) & fivebitmask) << (62 - 5);
-        groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmask) << (62 - 5 - 8);
-        groupHash |= (static_cast<uint_fast64_t>(type) & fivebitmask) << (62 - 5 - 8 - 5);
+        groupHash |= (static_cast<uint_fast64_t>(type) & fivebitmask) << (62 - 5 - 8 - 5 - 5 - 5 - 5);
         return groupHash;
     }
 };
@@ -53,20 +46,39 @@ template<typename ValueType>
 struct BEColourClass {
     BEColourClass() = default;
 
-    BEColourClass(storm::dft::storage::elements::BEType type, ValueType active, ValueType passive, size_t parents)
-        : type(type), nrParents(parents), aRate(active), pRate(passive) {
-        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << type);
+    BEColourClass(storm::dft::storage::elements::BEType type, size_t nrParents, size_t nrOutDep, size_t nrInDep, size_t nrRestrictions)
+        : type(type), nrParents(nrParents), nrOutDep(nrOutDep), nrInDep(nrInDep), nrRestrictions(nrRestrictions) {
+        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::SAMPLES, "Expected type CONSTANT but got type " << type);
     }
 
-    BEColourClass(storm::dft::storage::elements::BEType type, bool fail, size_t parents) : type(type), nrParents(parents), failed(fail) {
+    BEColourClass(storm::dft::storage::elements::BEType type, bool fail, size_t nrParents, size_t nrOutDep, size_t nrInDep, size_t nrRestrictions)
+        : type(type), nrParents(nrParents), nrOutDep(nrOutDep), nrInDep(nrInDep), nrRestrictions(nrRestrictions), failed(fail) {
         STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::CONSTANT, "Expected type CONSTANT but got type " << type);
+    }
+
+    BEColourClass(storm::dft::storage::elements::BEType type, ValueType valA, ValueType valB, size_t nrParents, size_t nrOutDep, size_t nrInDep,
+                  size_t nrRestrictions)
+        : type(type), nrParents(nrParents), nrOutDep(nrOutDep), nrInDep(nrInDep), nrRestrictions(nrRestrictions), valueA(valA), valueB(valB) {
+        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::EXPONENTIAL || type == storm::dft::storage::elements::BEType::PROBABILITY ||
+                             type == storm::dft::storage::elements::BEType::LOGNORMAL || type == storm::dft::storage::elements::BEType::WEIBULL,
+                         "Unexpected type " << type);
+    }
+
+    BEColourClass(storm::dft::storage::elements::BEType type, ValueType valA, ValueType valB, size_t phases, size_t nrParents, size_t nrOutDep, size_t nrInDep,
+                  size_t nrRestrictions)
+        : type(type), nrParents(nrParents), nrOutDep(nrOutDep), nrInDep(nrInDep), nrRestrictions(nrRestrictions), valueA(valA), valueB(valB), phases(phases) {
+        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::ERLANG, "Expected type ERLANG but got type " << type);
     }
 
     storm::dft::storage::elements::BEType type;
     size_t nrParents;
-    ValueType aRate;
-    ValueType pRate;
-    bool failed;
+    size_t nrOutDep;
+    size_t nrInDep;
+    size_t nrRestrictions;
+    ValueType valueA;  // Meaning of value depends on type (active rate/probability, mean, shape)
+    ValueType valueB;  // Meaning of value depends on type (passive rate/probability, stddev, rate)
+    bool failed;       // For constant BE
+    size_t phases;     // For Erlang BE
 };
 
 template<typename ValueType>
@@ -74,25 +86,33 @@ bool operator==(BEColourClass<ValueType> const& lhs, BEColourClass<ValueType> co
     if (lhs.type != rhs.type) {
         return false;
     }
+    if (lhs.nrParents != rhs.nrParents || lhs.nrOutDep != rhs.nrOutDep || lhs.nrInDep != rhs.nrInDep || lhs.nrRestrictions != rhs.nrRestrictions) {
+        return false;
+    }
     switch (lhs.type) {
-        case storm::dft::storage::elements::BEType::EXPONENTIAL:
-            return lhs.nrParents == rhs.nrParents && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
         case storm::dft::storage::elements::BEType::CONSTANT:
-            return lhs.nrParents == rhs.nrParents && lhs.failed == rhs.failed;
+            return lhs.failed == rhs.failed;
+        case storm::dft::storage::elements::BEType::PROBABILITY:
+        case storm::dft::storage::elements::BEType::EXPONENTIAL:
+        case storm::dft::storage::elements::BEType::LOGNORMAL:
+        case storm::dft::storage::elements::BEType::WEIBULL:
+            return lhs.valueA == rhs.valueA && lhs.valueB == rhs.valueB;
+        case storm::dft::storage::elements::BEType::ERLANG:
+            return lhs.valueA == rhs.valueA && lhs.valueA == rhs.valueB && lhs.phases == rhs.phases;
+        case storm::dft::storage::elements::BEType::SAMPLES:
+            // Samples are not compared and always assumed to be non-symmetric
+            return false;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << lhs.type << "' is not known.");
             break;
     }
 }
 
-/**
- *
- */
 template<typename ValueType>
 struct BijectionCandidates {
     std::unordered_map<size_t, std::vector<size_t>> gateCandidates;
     std::unordered_map<BEColourClass<ValueType>, std::vector<size_t>> beCandidates;
-    std::unordered_map<std::pair<ValueType, ValueType>, std::vector<size_t>> pdepCandidates;
+    std::unordered_map<size_t, std::vector<size_t>> pdepCandidates;
     std::unordered_map<size_t, std::vector<size_t>> restrictionCandidates;
 
     size_t nrGroups() const {
@@ -203,10 +223,9 @@ class DFTColouring {
     DFT<ValueType> const& dft;
     std::unordered_map<size_t, size_t> gateColour;
     std::unordered_map<size_t, BEColourClass<ValueType>> beColour;
-    std::unordered_map<size_t, std::pair<ValueType, ValueType>> depColour;
+    std::unordered_map<size_t, size_t> depColour;
     std::unordered_map<size_t, size_t> restrictionColour;
     GateGroupToHash gateColourizer;
-    RestrictionGroupToHash restrColourizer;
 
    public:
     DFTColouring(DFT<ValueType> const& ft) : dft(ft) {
@@ -270,12 +289,48 @@ class DFTColouring {
         switch (be->beType()) {
             case storm::dft::storage::elements::BEType::CONSTANT: {
                 auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
-                beColour[beConst->id()] = BEColourClass<ValueType>(beConst->beType(), beConst->failed(), beConst->nrParents());
+                beColour[beConst->id()] =
+                    BEColourClass<ValueType>(beConst->beType(), beConst->failed(), beConst->nrParents(), beConst->nrOutgoingDependencies(),
+                                             beConst->nrIngoingDependencies(), beConst->nrRestrictions());
+                break;
+            }
+            case storm::dft::storage::elements::BEType::PROBABILITY: {
+                auto beProb = std::static_pointer_cast<storm::dft::storage::elements::BEProbability<ValueType> const>(be);
+                beColour[beProb->id()] =
+                    BEColourClass<ValueType>(beProb->beType(), beProb->activeFailureProbability(), beProb->passiveFailureProbability(), beProb->nrParents(),
+                                             beProb->nrOutgoingDependencies(), beProb->nrIngoingDependencies(), beProb->nrRestrictions());
                 break;
             }
             case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                 auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
-                beColour[beExp->id()] = BEColourClass<ValueType>(beExp->beType(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
+                beColour[beExp->id()] = BEColourClass<ValueType>(beExp->beType(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents(),
+                                                                 beExp->nrOutgoingDependencies(), beExp->nrIngoingDependencies(), beExp->nrRestrictions());
+                break;
+            }
+            case storm::dft::storage::elements::BEType::ERLANG: {
+                auto beErlang = std::static_pointer_cast<storm::dft::storage::elements::BEErlang<ValueType> const>(be);
+                beColour[beErlang->id()] = BEColourClass<ValueType>(beErlang->beType(), beErlang->activeFailureRate(), beErlang->passiveFailureRate(),
+                                                                    beErlang->phases(), beErlang->nrParents(), beErlang->nrOutgoingDependencies(),
+                                                                    beErlang->nrIngoingDependencies(), beErlang->nrRestrictions());
+                break;
+            }
+            case storm::dft::storage::elements::BEType::LOGNORMAL: {
+                auto beLog = std::static_pointer_cast<storm::dft::storage::elements::BELogNormal<ValueType> const>(be);
+                beColour[beLog->id()] = BEColourClass<ValueType>(beLog->beType(), beLog->mean(), beLog->standardDeviation(), beLog->nrParents(),
+                                                                 beLog->nrOutgoingDependencies(), beLog->nrIngoingDependencies(), beLog->nrRestrictions());
+                break;
+            }
+            case storm::dft::storage::elements::BEType::WEIBULL: {
+                auto beWeibull = std::static_pointer_cast<storm::dft::storage::elements::BEWeibull<ValueType> const>(be);
+                beColour[beWeibull->id()] =
+                    BEColourClass<ValueType>(beWeibull->beType(), beWeibull->shape(), beWeibull->rate(), beWeibull->nrParents(),
+                                             beWeibull->nrOutgoingDependencies(), beWeibull->nrIngoingDependencies(), beWeibull->nrRestrictions());
+                break;
+            }
+            case storm::dft::storage::elements::BEType::SAMPLES: {
+                auto beSamples = std::static_pointer_cast<storm::dft::storage::elements::BESamples<ValueType> const>(be);
+                beColour[beSamples->id()] = BEColourClass<ValueType>(beSamples->beType(), beSamples->nrParents(), beSamples->nrOutgoingDependencies(),
+                                                                     beSamples->nrIngoingDependencies(), beSamples->nrRestrictions());
                 break;
             }
             default:
@@ -286,33 +341,21 @@ class DFTColouring {
 
     void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTGate<ValueType>> const& gate) {
         STORM_LOG_TRACE("Colour " << gate->id() << ": " << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << ".");
-        gateColour[gate->id()] = gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), 0, gate->rank());
+        gateColour[gate->id()] =
+            gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), gate->nrOutgoingDependencies(), gate->nrRestrictions(), gate->rank());
         STORM_LOG_TRACE("Coloured " << gate->id() << " with " << gateColour[gate->id()] << ".");
     }
 
     void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTDependency<ValueType>> const& dep) {
-        // TODO this can be improved for n-ary dependencies.
-        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be = dep->dependentEvents()[0];
-        switch (be->beType()) {
-            case storm::dft::storage::elements::BEType::CONSTANT: {
-                auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
-                depColour[dep->id()] = std::pair<ValueType, ValueType>(
-                    dep->probability(), beConst->failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
-                break;
-            }
-            case storm::dft::storage::elements::BEType::EXPONENTIAL: {
-                auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
-                depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
-                break;
-            }
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
-                break;
-        }
+        STORM_LOG_TRACE("Colour " << dep->id() << ": " << dep->type() << " " << (1 + dep->dependentEvents().size()) << " " << dep->rank() << ".");
+        depColour[dep->id()] = gateColourizer(dep->type(), (1 + dep->dependentEvents().size()), 0, 0, 0, dep->rank());
+        STORM_LOG_TRACE("Coloured " << dep->id() << " with " << restrictionColour[dep->id()] << ".");
     }
 
     void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTRestriction<ValueType>> const& restr) {
-        restrictionColour[restr->id()] = restrColourizer(restr->type(), restr->nrChildren(), restr->rank());
+        STORM_LOG_TRACE("Colour " << restr->id() << ": " << restr->type() << " " << restr->nrChildren() << " " << restr->rank() << ".");
+        restrictionColour[restr->id()] = gateColourizer(restr->type(), restr->nrChildren(), 0, 0, 0, restr->rank());
+        STORM_LOG_TRACE("Coloured " << restr->id() << " with " << restrictionColour[restr->id()] << ".");
     }
 };
 
@@ -470,117 +513,46 @@ class DFTIsomorphismCheck {
         return foundNext;
     }
 
-    /**
-     *
-     */
     bool check() const {
+        // Perform additional checks not yet covered by the colouring
         STORM_LOG_ASSERT(bijection.size() == bleft.size(), "No. of bijection elements do not match.");
-        // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
         for (auto const& indexpair : bijection) {
-            // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
             if (!dft.getElement(indexpair.first)->isTypeEqualTo(*dft.getElement(indexpair.second))) {
+                // In-depth type check failed, e.g. voting thresholds do not match
                 return false;
             }
             if (dft.getElement(indexpair.first)->isRelevant() || dft.getElement(indexpair.second)->isRelevant()) {
+                // Relevant events are not symmetric
                 return false;
             }
             if (dft.isGate(indexpair.first)) {
                 STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                 auto const& lGate = dft.getGate(indexpair.first);
                 auto const& rGate = dft.getGate(indexpair.second);
-                if (!lGate->isStaticElement()) {
-                    std::vector<size_t> childrenLeftMapped;
-                    for (auto const& child : lGate->children()) {
-                        if (bleft.has(child->id())) {
-                            childrenLeftMapped.push_back(bijection.at(child->id()));
-                        } else {
-                            // Indicate shared child which is not part of the symmetry
-                            // For dynamic gates the order is important
-                            childrenLeftMapped.push_back(-1);
-                        }
-                    }
-                    std::vector<size_t> childrenRight;
-                    for (auto const& child : rGate->children()) {
-                        if (bright.has(child->id())) {
-                            childrenRight.push_back(child->id());
-                        } else {
-                            // Indicate shared child which is not part of the symmetry
-                            // For dynamic gates the order is important
-                            childrenRight.push_back(-1);
-                        }
-                    }
-                    if (childrenLeftMapped != childrenRight) {
-                        return false;
-                    }
-                } else {
-                    std::set<size_t> childrenLeftMapped;
-                    for (auto const& child : lGate->children()) {
-                        if (bleft.has(child->id())) {
-                            childrenLeftMapped.insert(bijection.at(child->id()));
-                        }
-                    }
-                    std::set<size_t> childrenRight;
-                    for (auto const& child : rGate->children()) {
-                        if (bright.has(child->id())) {
-                            childrenRight.insert(child->id());
-                        }
-                    }
-                    if (childrenLeftMapped != childrenRight) {
-                        return false;
-                    }
+                // Compare children for gates
+                if (!checkChildren(lGate->children(), rGate->children(), !lGate->isStaticElement())) {
+                    return false;
                 }
-
             } else if (dft.isDependency(indexpair.first)) {
                 STORM_LOG_ASSERT(dft.isDependency(indexpair.second), "Element is no dependency.");
                 auto const& lDep = dft.getDependency(indexpair.first);
                 auto const& rDep = dft.getDependency(indexpair.second);
 
                 if (bijection.at(lDep->triggerEvent()->id()) != rDep->triggerEvent()->id()) {
+                    // Symmetric dependencies must have the same trigger event
                     return false;
                 }
-
-                std::set<size_t> dependenciesLeftMapped;
-                for (auto const& depEv : lDep->dependentEvents()) {
-                    if (bleft.has(depEv->id())) {
-                        dependenciesLeftMapped.insert(bijection.at(depEv->id()));
-                    }
-                }
-
-                std::set<size_t> dependenciesRight;
-                for (auto const& depEv : rDep->dependentEvents()) {
-                    if (bright.has(depEv->id())) {
-                        dependenciesRight.insert(depEv->id());
-                    }
-                }
-
-                if (dependenciesLeftMapped != dependenciesRight) {
+                if (!checkChildren(lDep->dependentEvents(), rDep->dependentEvents(), false)) {
+                    // Symmetric dependencies must have the same dependent events
                     return false;
                 }
             } else if (dft.isRestriction(indexpair.first)) {
                 STORM_LOG_ASSERT(dft.isRestriction(indexpair.second), "Element is no restriction.");
                 auto const& lRestr = dft.getRestriction(indexpair.first);
-                std::vector<size_t> childrenLeftMapped;
-                for (auto const& child : lRestr->children()) {
-                    if (bleft.has(child->id())) {
-                        childrenLeftMapped.push_back(bijection.at(child->id()));
-                    } else {
-                        // Indicate shared child which is not part of the symmetry
-                        // For dynamic gates the order is important
-                        childrenLeftMapped.push_back(-1);
-                    }
-                }
                 auto const& rRestr = dft.getRestriction(indexpair.second);
-                std::vector<size_t> childrenRight;
-                for (auto const& child : rRestr->children()) {
-                    if (bright.has(child->id())) {
-                        childrenRight.push_back(child->id());
-                    } else {
-                        // Indicate shared child which is not part of the symmetry
-                        // For dynamic gates the order is important
-                        childrenRight.push_back(-1);
-                    }
-                }
-                if (childrenLeftMapped != childrenRight) {
+                if (!checkChildren(lRestr->children(), rRestr->children(), lRestr->isSeqEnforcer())) {
+                    // Symmetric restrictions must have the same children
+                    // Order must be preserved for SEQ but not for MUTEX
                     return false;
                 }
             } else {
@@ -605,7 +577,7 @@ class DFTIsomorphismCheck {
             candidatesCompatible = false;
             return false;
         }
-        if (bleft.beCandidates.size() != bright.beCandidates.size()) {
+        if (bleft.pdepCandidates.size() != bright.pdepCandidates.size()) {
             candidatesCompatible = false;
             return false;
         }
@@ -676,6 +648,46 @@ class DFTIsomorphismCheck {
             ++it;
         }
     }
+
+    bool checkChildren(std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> const& left,
+                       std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> const& right, bool ensureOrder) const {
+        if (ensureOrder) {
+            // Observe order of entries
+            size_t mappedId;
+            size_t rightId;
+            for (size_t i = 0; i < left.size(); ++i) {
+                if (bleft.has(left[i]->id())) {
+                    mappedId = bijection.at(left[i]->id());
+                } else {
+                    mappedId = -1;
+                }
+                if (bright.has(right[i]->id())) {
+                    rightId = right[i]->id();
+                } else {
+                    rightId = -1;
+                }
+                if (mappedId != rightId) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            // Order is irrelevant
+            std::set<size_t> mappedIds;
+            std::set<size_t> rightIds;
+            for (auto const& l : left) {
+                if (bleft.has(l->id())) {
+                    mappedIds.insert(l->id());
+                }
+            }
+            for (auto const& r : right) {
+                if (bright.has(r->id())) {
+                    rightIds.insert(r->id());
+                }
+            }
+            return mappedIds != rightIds;
+        }
+    }
 };
 
 }  // namespace storage
@@ -696,11 +708,17 @@ struct hash<storm::dft::storage::BEColourClass<ValueType>> {
             case storm::dft::storage::elements::BEType::CONSTANT:
                 groupHash |= (static_cast<uint_fast64_t>(bcc.failed) & fortybitmask) << 8;
                 break;
+            case storm::dft::storage::elements::BEType::PROBABILITY:
             case storm::dft::storage::elements::BEType::EXPONENTIAL:
-                groupHash |= ((hasher(bcc.aRate) ^ hasher(bcc.pRate)) & fortybitmask) << 8;
+            case storm::dft::storage::elements::BEType::LOGNORMAL:
+            case storm::dft::storage::elements::BEType::WEIBULL:
+                groupHash |= ((hasher(bcc.valueA) ^ hasher(bcc.valueB)) & fortybitmask) << 8;
                 break;
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << bcc.type << "' is not known.");
+            case storm::dft::storage::elements::BEType::ERLANG:
+                groupHash |= ((hasher(bcc.valueA) ^ hasher(bcc.valueB) ^ static_cast<uint_fast64_t>(bcc.phases)) & fortybitmask) << 8;
+                break;
+            case storm::dft::storage::elements::BEType::SAMPLES:
+                // Samples have no dedicated hashing
                 break;
         }
         groupHash |= static_cast<uint_fast64_t>(bcc.nrParents) & eightbitmask;
@@ -708,11 +726,4 @@ struct hash<storm::dft::storage::BEColourClass<ValueType>> {
     }
 };
 
-template<typename ValueType>
-struct hash<std::pair<ValueType, ValueType>> {
-    size_t operator()(std::pair<ValueType, ValueType> const& p) const {
-        std::hash<ValueType> hasher;
-        return hasher(p.first) ^ hasher(p.second);
-    }
-};
 }  // namespace std

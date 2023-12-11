@@ -102,7 +102,7 @@ class DftModelCheckerTest : public ::testing::Test {
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(properties, relevantNames);
 
         // Perform model checking
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results =
@@ -117,6 +117,11 @@ class DftModelCheckerTest : public ::testing::Test {
 
     double analyzeReliability(std::string const& file, double bound) {
         std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
+        return analyze(file, property);
+    }
+
+    double analyzeReachability(std::string const& file) {
+        std::string property = "Pmin=? [F \"failed\"]";
         return analyze(file, property);
     }
 
@@ -241,15 +246,38 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     EXPECT_NEAR(result, 6, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
     EXPECT_EQ(result, storm::utility::infinity<double>());
-
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
-    EXPECT_NEAR(result, 1 / 2.0, this->precision());
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
     EXPECT_NEAR(result, 30000, this->precision());
+}
+
+TYPED_TEST(DftModelCheckerTest, Mutex) {
+    double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
+    EXPECT_NEAR(result, 1 / 2.0, this->precision());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft", 1.0);
+    EXPECT_NEAR(result, 0.8646647168, this->precisionReliability());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
+    EXPECT_NEAR(result, 1, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft", 1.0);
+    EXPECT_NEAR(result, 0, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
+    EXPECT_NEAR(result, 0, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft", 1.0);
+    EXPECT_NEAR(result, 0, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
+    EXPECT_NEAR(result, 0, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft", 1.0);
+    EXPECT_NEAR(result, 0.5842978146, this->precisionReliability());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
+    EXPECT_NEAR(result, 5 / 8.0, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, Symmetry) {

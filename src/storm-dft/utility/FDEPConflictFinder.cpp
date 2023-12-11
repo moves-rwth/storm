@@ -84,7 +84,6 @@ std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<storm::RationalFun
 }
 
 template class FDEPConflictFinder<double>;
-
 template class FDEPConflictFinder<storm::RationalFunction>;
 
 }  // namespace utility

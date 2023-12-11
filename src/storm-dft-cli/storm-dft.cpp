@@ -214,7 +214,7 @@ void processOptions() {
         // All events are relevant
         additionalRelevantEventNames = {"all"};
     }
-    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
+    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(props, additionalRelevantEventNames);
 
     // Analyze DFT
     dft = storm::dft::api::prepareForMarkovAnalysis<ValueType>(*dft);

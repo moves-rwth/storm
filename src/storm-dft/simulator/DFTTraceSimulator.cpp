@@ -19,7 +19,6 @@ void DFTTraceSimulator<ValueType>::setRandomNumberGenerator(boost::mt19937& rand
 template<typename ValueType>
 void DFTTraceSimulator<ValueType>::resetToInitial() {
     state = generator.createInitialState();
-    ;
 }
 
 template<typename ValueType>
@@ -46,28 +45,27 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
             STORM_LOG_WARN("Non-determinism present! We take the dependency with the lowest id");
         }
 
-        auto dependency = iterFailable.getFailBE(dft).second;
+        auto dependency = iterFailable.asDependency(dft);
+        bool successful = true;
         if (!dependency->isFDEP()) {
             // Flip a coin whether the PDEP is successful
             storm::utility::BernoulliDistributionGenerator probGenerator(dependency->probability());
-            bool successful = probGenerator.random(randomGenerator);
-            return std::make_tuple(iterFailable, 0, successful);
+            successful = probGenerator.random(randomGenerator);
         }
-        STORM_LOG_TRACE("Let dependency " << *dependency << " fail");
-        return std::make_tuple(iterFailable, 0, true);
+        STORM_LOG_TRACE("Let dependency " << *dependency << " " << (successful ? "successfully" : "unsuccessfully") << " fail");
+        return std::make_tuple(iterFailable, 0, successful);
     } else {
         // Consider all "normal" BE failures
         // Initialize with first BE
         storm::dft::storage::FailableElements::const_iterator nextFail = iterFailable;
-        double rate = state->getBERate(iterFailable.getFailBE(dft).first->id());
+        double rate = state->getBERate(nextFail.asBE(dft)->id());
         storm::utility::ExponentialDistributionGenerator rateGenerator(rate);
         double smallestTimebound = rateGenerator.random(randomGenerator);
         ++iterFailable;
 
         // Consider all other BEs and find the one which fails first
         for (; iterFailable != state->getFailableElements().end(); ++iterFailable) {
-            auto nextBE = iterFailable.getFailBE(dft).first;
-            rate = state->getBERate(nextBE->id());
+            rate = state->getBERate(iterFailable.asBE(dft)->id());
             rateGenerator = storm::utility::ExponentialDistributionGenerator(rate);
             double timebound = rateGenerator.random(randomGenerator);
             if (timebound < smallestTimebound) {
@@ -76,7 +74,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
                 smallestTimebound = timebound;
             }
         }
-        STORM_LOG_TRACE("Let BE " << *nextFail.getFailBE(dft).first << " fail after time " << smallestTimebound);
+        STORM_LOG_TRACE("Let BE " << *nextFail.asBE(dft) << " fail after time " << smallestTimebound);
         return std::make_tuple(nextFail, smallestTimebound, true);
     }
 }
@@ -88,10 +86,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
 
 template<typename ValueType>
 std::pair<SimulationResult, double> DFTTraceSimulator<ValueType>::randomStep() {
-    auto retTuple = this->randomNextFailure();
-    storm::dft::storage::FailableElements::const_iterator nextFailable = std::get<0>(retTuple);
-    double time = std::get<1>(retTuple);
-    bool successful = std::get<2>(retTuple);
+    auto [nextFailable, time, successful] = this->randomNextFailure();
     if (time < 0) {
         return std::make_pair(SimulationResult::UNSUCCESSFUL, -1);
     } else {
@@ -107,11 +102,15 @@ SimulationResult DFTTraceSimulator<ValueType>::step(storm::dft::storage::Failabl
         return SimulationResult::UNSUCCESSFUL;
     }
 
-    auto nextBEPair = nextFailElement.getFailBE(dft);
-    auto newState = generator.createSuccessorState(state, nextBEPair.first, nextBEPair.second, dependencySuccessful);
+    DFTStatePointer newState;
+    if (nextFailElement.isFailureDueToDependency()) {
+        newState = generator.createSuccessorState(state, nextFailElement.asDependency(dft), dependencySuccessful);
+    } else {
+        newState = generator.createSuccessorState(state, nextFailElement.asBE(dft));
+    }
 
     if (newState->isInvalid() || newState->isTransient()) {
-        STORM_LOG_TRACE("Step is invalid because new state " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
+        STORM_LOG_TRACE("Step is invalid because new state " << (newState->isInvalid() ? "is invalid." : "has transient fault."));
         return SimulationResult::INVALID;
     }
 
@@ -160,7 +159,7 @@ SimulationResult DFTTraceSimulator<ValueType>::simulateCompleteTrace(double time
 
         // Check whether time is up
         // Checking whether the time is up must be performed after checking if a state is invalid.
-        // Otherwise we would erroneously mark invalid traces as unsucessful.
+        // Otherwise we would erroneously mark invalid traces as unsuccessful.
         time += addTime;
         if (time > timebound) {
             STORM_LOG_TRACE("Time limit" << timebound << " exceeded: " << time);

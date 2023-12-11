@@ -5,11 +5,9 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/iota_n.h"
 #include "storm/utility/vector.h"
 
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/storage/DFTIsomorphism.h"
 #include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm::dft {
@@ -248,11 +246,19 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
 }
 
 template<typename ValueType>
-DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const {
+DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DftSymmetries const& symmetries) const {
     DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
-    // Generate pre- and post-set info for restrictions, and mutexes
     for (auto const& elem : mElements) {
+        // Check if BEs are immediately failed
+        if (elem->isBasicElement()) {
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(elem);
+            if ((be->beType() == storm::dft::storage::elements::BEType::CONSTANT && be->canFail()) ||
+                be->beType() == storm::dft::storage::elements::BEType::PROBABILITY) {
+                generationInfo.addImmediateFailedBE(be->id());
+            }
+        }
+        // Generate pre- and post-set info for restrictions, and mutexes
         if (!elem->isDependency() && !elem->isRestriction()) {
             // Ids of elements which are the direct predecessor in the list of children of a restriction
             std::vector<size_t> seqRestrictionPres;
@@ -305,15 +311,15 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
     std::queue<size_t> visitQueue;
     storm::storage::BitVector visited(nrElements(), false);
 
-    if (symmetries.groups.empty()) {
+    if (symmetries.nrSymmetries() == 0) {
         // Perform DFS for whole tree
         visitQueue.push(mTopLevelIndex);
         stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
     } else {
         // Generate information according to symmetries
-        for (size_t symmetryIndex : symmetries.sortedSymmetries) {
+        for (size_t symmetryIndex : symmetries) {
             STORM_LOG_ASSERT(!visited[symmetryIndex], "Element already considered for symmetry.");
-            auto const& symmetryGroup = symmetries.groups.at(symmetryIndex);
+            auto const& symmetryGroup = symmetries.getSymmetryGroup(symmetryIndex);
             STORM_LOG_ASSERT(!symmetryGroup.empty(), "No symmetry available.");
 
             // Insert all elements of first subtree of each symmetry
@@ -400,7 +406,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::stor
         }
     }
 
-    generationInfo.generateSymmetries(symmetries);
+    generationInfo.generateSymmetries();
 
     STORM_LOG_TRACE(generationInfo);
     STORM_LOG_ASSERT(stateIndex == mStateVectorSize, "Id incorrect.");
@@ -772,182 +778,6 @@ bool DFT<ValueType>::canHaveNondeterminism() const {
 }
 
 template<typename ValueType>
-DFTColouring<ValueType> DFT<ValueType>::colourDFT() const {
-    return DFTColouring<ValueType>(*this);
-}
-
-template<typename ValueType>
-std::map<size_t, size_t> DFT<ValueType>::findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const {
-    STORM_LOG_TRACE("Considering ids " << index1 << ", " << index2 << " for isomorphism.");
-    bool sharedSpareMode = false;
-    std::map<size_t, size_t> bijection;
-
-    if (getElement(index1)->isRelevant() || getElement(index2)->isRelevant()) {
-        // Relevant events need to be uniquely identified and cannot be symmetric.
-        return {};
-    }
-
-    if (isBasicElement(index1)) {
-        if (!isBasicElement(index2)) {
-            return {};
-        }
-        if (colouring.hasSameColour(index1, index2)) {
-            bijection[index1] = index2;
-            return bijection;
-        } else {
-            return {};
-        }
-    }
-
-    STORM_LOG_ASSERT(isGate(index1), "Element is no gate.");
-    STORM_LOG_ASSERT(isGate(index2), "Element is no gate.");
-    std::vector<size_t> isubdft1 = getGate(index1)->independentSubDft(false);
-    std::vector<size_t> isubdft2 = getGate(index2)->independentSubDft(false);
-    if (isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
-        if (isubdft1.empty() && isubdft2.empty() && sparesAsLeaves) {
-            // Check again for shared spares
-            sharedSpareMode = true;
-            isubdft1 = getGate(index1)->independentSubDft(false, true);
-            isubdft2 = getGate(index2)->independentSubDft(false, true);
-            if (isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
-                return {};
-            }
-        } else {
-            return {};
-        }
-    }
-    STORM_LOG_TRACE("Checking subdfts from " << index1 << ", " << index2 << " for isomorphism.");
-    auto LHS = colouring.colourSubdft(isubdft1);
-    auto RHS = colouring.colourSubdft(isubdft2);
-    auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
-
-    while (IsoCheck.findNextIsomorphism()) {
-        bijection = IsoCheck.getIsomorphism();
-        if (sharedSpareMode) {
-            bool bijectionSpareCompatible = true;
-            for (size_t elementId : isubdft1) {
-                if (getElement(elementId)->isSpareGate()) {
-                    std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType>> spareLeft =
-                        std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(mElements[elementId]);
-                    std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType>> spareRight =
-                        std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(mElements[bijection.at(elementId)]);
-
-                    if (spareLeft->nrChildren() != spareRight->nrChildren()) {
-                        bijectionSpareCompatible = false;
-                        break;
-                    }
-                    // Check bijection for spare children
-                    for (size_t i = 0; i < spareLeft->nrChildren(); ++i) {
-                        size_t childLeftId = spareLeft->children().at(i)->id();
-                        size_t childRightId = spareRight->children().at(i)->id();
-
-                        STORM_LOG_ASSERT(bijection.count(childLeftId) == 0, "Child already part of bijection.");
-                        if (childLeftId == childRightId) {
-                            // Ignore shared child
-                            continue;
-                        }
-
-                        // TODO generalize for more than one parent
-                        if (spareLeft->children().at(i)->nrParents() != 1 || spareRight->children().at(i)->nrParents() != 1) {
-                            bijectionSpareCompatible = false;
-                            break;
-                        }
-
-                        std::map<size_t, size_t> tmpBijection = findBijection(childLeftId, childRightId, colouring, false);
-                        if (!tmpBijection.empty()) {
-                            bijection.insert(tmpBijection.begin(), tmpBijection.end());
-                        } else {
-                            bijectionSpareCompatible = false;
-                            break;
-                        }
-                    }
-                    if (!bijectionSpareCompatible) {
-                        break;
-                    }
-                }
-            }
-            if (bijectionSpareCompatible) {
-                return bijection;
-            }
-        } else {
-            return bijection;
-        }
-    }  // end while
-    return {};
-}
-
-template<typename ValueType>
-DFTIndependentSymmetries DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
-    std::vector<size_t> vec;
-    vec.reserve(nrElements());
-    storm::utility::iota_n(std::back_inserter(vec), nrElements(), 0);
-    BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
-    std::map<size_t, std::vector<std::vector<size_t>>> res;
-
-    // Find symmetries for gates
-    for (auto const& colourClass : completeCategories.gateCandidates) {
-        findSymmetriesHelper(colourClass.second, colouring, res);
-    }
-
-    // Find symmetries for BEs
-    for (auto const& colourClass : completeCategories.beCandidates) {
-        findSymmetriesHelper(colourClass.second, colouring, res);
-    }
-
-    return DFTIndependentSymmetries(res);
-}
-
-template<typename ValueType>
-void DFT<ValueType>::findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring,
-                                          std::map<size_t, std::vector<std::vector<size_t>>>& result) const {
-    if (candidates.size() <= 0) {
-        return;
-    }
-
-    std::set<size_t> foundEqClassFor;
-    for (auto it1 = candidates.cbegin(); it1 != candidates.cend(); ++it1) {
-        std::vector<std::vector<size_t>> symClass;
-        if (foundEqClassFor.count(*it1) > 0) {
-            // This item is already in a class.
-            continue;
-        }
-        if (!getElement(*it1)->hasOnlyStaticParents()) {
-            continue;
-        }
-
-        std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndDependencyIds(*it1);
-        auto it2 = it1;
-        for (++it2; it2 != candidates.cend(); ++it2) {
-            if (!getElement(*it2)->hasOnlyStaticParents()) {
-                continue;
-            }
-
-            if (influencedElem1Ids == getSortedParentAndDependencyIds(*it2)) {
-                std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
-                if (!bijection.empty()) {
-                    STORM_LOG_TRACE("Subdfts are symmetric");
-                    foundEqClassFor.insert(*it2);
-                    if (symClass.empty()) {
-                        for (auto const& i : bijection) {
-                            symClass.push_back(std::vector<size_t>({i.first}));
-                        }
-                    }
-                    auto symClassIt = symClass.begin();
-                    for (auto const& i : bijection) {
-                        symClassIt->emplace_back(i.second);
-                        ++symClassIt;
-                    }
-                }
-            }
-        }
-
-        if (!symClass.empty()) {
-            result.emplace(*it1, symClass);
-        }
-    }
-}
-
-template<typename ValueType>
 std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
     for (auto const& e : mElements) {
         if (e->isGate() &&
@@ -977,28 +807,6 @@ std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
         }
     }
     return {};
-}
-
-template<typename ValueType>
-std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndDependencyIds(size_t index) const {
-    // Parents
-    std::vector<size_t> parents = getElement(index)->parentIds();
-    std::sort(parents.begin(), parents.end());
-    // Ingoing dependencies
-    std::vector<size_t> ingoingDeps;
-    if (isBasicElement(index)) {
-        for (auto const& dep : getBasicElement(index)->ingoingDependencies()) {
-            ingoingDeps.push_back(dep->id());
-        }
-        std::sort(ingoingDeps.begin(), ingoingDeps.end());
-    }
-    // Outgoing dependencies
-    std::vector<size_t> outgoingDeps;
-    for (auto const& dep : getElement(index)->outgoingDependencies()) {
-        outgoingDeps.push_back(dep->id());
-    }
-    std::sort(outgoingDeps.begin(), outgoingDeps.end());
-    return std::make_tuple(parents, ingoingDeps, outgoingDeps);
 }
 
 template<typename ValueType>

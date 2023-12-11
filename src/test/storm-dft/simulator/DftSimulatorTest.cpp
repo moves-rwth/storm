@@ -4,7 +4,7 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/DftSymmetries.h"
 
 namespace {
 
@@ -16,12 +16,11 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
     // Set relevant events
-    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>(*dft, {}, {});
+    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents({}, {});
     dft->setRelevantEvents(relevantEvents, false);
 
     // Find symmetries
-    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DftSymmetries symmetries;
     storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
 
     // Init random number generator
@@ -80,7 +79,7 @@ TEST(DftSimulatorTest, VotingUnreliability) {
 
 TEST(DftSimulatorTest, PandUnreliability) {
     double result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/pand.dft", 1, 10000);
-    EXPECT_NEAR(result, 0.03087312562, 0.01);
+    EXPECT_NEAR(result, 0.05434443602, 0.01);
 }
 
 TEST(DftSimulatorTest, PorUnreliability) {
