@@ -20,7 +20,7 @@ storm::json<storm::RationalNumber> readQvbsJsonFile(std::string const& filePath)
     storm::json<storm::RationalNumber> result;
     std::ifstream file;
     storm::utility::openFile(filePath, file);
-    result << file;
+    file >> result;
     storm::utility::closeFile(file);
     return result;
 }

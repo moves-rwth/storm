@@ -26,10 +26,6 @@ class GmmxxAdapter;
 class EigenAdapter;
 class StormAdapter;
 }  // namespace adapters
-namespace solver {
-template<typename T>
-class TopologicalCudaValueIterationMinMaxLinearEquationSolver;
-}
 }  // namespace storm
 
 namespace storm {
@@ -339,7 +335,6 @@ class SparseMatrix {
     friend class storm::adapters::GmmxxAdapter<ValueType>;
     friend class storm::adapters::EigenAdapter;
     friend class storm::adapters::StormAdapter;
-    friend class storm::solver::TopologicalCudaValueIterationMinMaxLinearEquationSolver<ValueType>;
     friend class SparseMatrixBuilder<ValueType>;
 
     typedef SparseMatrixIndexType index_type;

@@ -62,7 +62,7 @@ class DFTPor : public DFTGate<ValueType> {
                 if (state.hasFailed((*childIter)->id())) {
                     // Child has failed before first child
                     this->failsafe(state, queues);
-                    this->childrenDontCare(state, queues);
+                    this->childrenDontCare(queues);
                 }
             }
         }
@@ -73,7 +73,7 @@ class DFTPor : public DFTGate<ValueType> {
         // If first child is not failsafe, it could still fail.
         if (state.isFailsafe(this->children().front()->id())) {
             this->failsafe(state, queues);
-            this->childrenDontCare(state, queues);
+            this->childrenDontCare(queues);
         }
     }
 

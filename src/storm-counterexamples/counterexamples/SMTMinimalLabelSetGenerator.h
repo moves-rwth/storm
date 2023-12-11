@@ -14,6 +14,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"
@@ -32,7 +33,7 @@ namespace counterexamples {
  * Helper to avoid case disticinot between prism and jani
  * Returns the number of edges/commands in a symbolic model description.
  */
-size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
+inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) {
     if (descr.isJaniModel()) {
         return descr.asJaniModel().getNumberOfEdges();
     } else {

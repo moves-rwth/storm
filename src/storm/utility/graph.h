@@ -51,7 +51,7 @@ class Add;
 
 }  // namespace dd
 
-namespace abstraction {
+namespace storage {
 class ExplicitGameStrategyPair;
 }
 
@@ -283,10 +283,11 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
  * @param states The set of states for which to compute the scheduler that stays in this very set.
  * @param transitionMatrix The transition matrix.
  * @param scheduler The resulting scheduler. The scheduler is only set at the given states.
+ * @param rowFilter If given, the returned scheduler will only pick choices such that rowFilter is true for the corresponding matrixrow.
  */
 template<typename T>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler);
+                                     storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that chooses an action that has at least one successor in the
@@ -778,8 +779,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr);
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr);
 
 /*!
  * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -801,8 +801,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
 
 /*!

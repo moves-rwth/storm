@@ -67,13 +67,13 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
+    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
+    storm::storage::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
 

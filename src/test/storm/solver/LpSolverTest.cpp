@@ -32,6 +32,7 @@ class GlpkEnvironment {
     static const bool strictRelationSupport = true;
 };
 
+#ifdef STORM_HAVE_GUROBI
 class GurobiEnvironment {
    public:
     typedef double ValueType;
@@ -41,6 +42,7 @@ class GurobiEnvironment {
     static const bool IncrementalSupport = true;
     static const bool strictRelationSupport = true;
 };
+#endif
 
 class Z3Environment {
    public:
@@ -52,6 +54,7 @@ class Z3Environment {
     static const bool strictRelationSupport = true;
 };
 
+#ifdef STORM_HAVE_SOPLEX
 class SoplexEnvironment {
    public:
     typedef double ValueType;
@@ -71,6 +74,7 @@ class SoplexExactEnvironment {
     static const bool IncrementalSupport = false;
     static const bool strictRelationSupport = false;
 };
+#endif
 
 template<typename TestType>
 class LpSolverTest : public ::testing::Test {

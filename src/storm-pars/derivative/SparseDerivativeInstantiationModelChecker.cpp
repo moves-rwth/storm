@@ -9,9 +9,6 @@
 #include "logic/Formula.h"
 #include "modelchecker/results/CheckResult.h"
 #include "modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "settings/SettingsManager.h"
-#include "settings/modules/CoreSettings.h"
-#include "settings/modules/GeneralSettings.h"
 #include "solver/GmmxxLinearEquationSolver.h"
 #include "solver/SolverSelectionOptions.h"
 #include "solver/helper/SoundValueIterationHelper.h"
@@ -137,7 +134,6 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
 
     storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
 
-    auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     bool convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
 
     std::map<VariableType<FunctionType>, storage::SparseMatrix<FunctionType>> equationSystems;

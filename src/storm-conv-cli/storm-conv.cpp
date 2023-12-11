@@ -20,6 +20,7 @@
 #include "storm/storage/jani/Property.h"
 
 #include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/print.h"
 #include "storm/exceptions/OptionParserException.h"
 
 namespace storm {
@@ -27,19 +28,15 @@ namespace conv {
 
 void setUrgentOptions() {
     // Set the correct log level
-    if (storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>().isStdOutOutputEnabled()) {
-        storm::utility::setLogLevel(l3pp::LogLevel::OFF);
-    } else {
-        auto const& general = storm::settings::getModule<storm::settings::modules::ConversionGeneralSettings>();
-        if (general.isVerboseSet()) {
-            storm::utility::setLogLevel(l3pp::LogLevel::INFO);
-        }
-        if (general.isDebugOutputSet()) {
-            storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
-        }
-        if (general.isTraceOutputSet()) {
-            storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
-        }
+    auto const& general = storm::settings::getModule<storm::settings::modules::ConversionGeneralSettings>();
+    if (general.isVerboseSet()) {
+        storm::utility::setLogLevel(l3pp::LogLevel::INFO);
+    }
+    if (general.isDebugOutputSet()) {
+        storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
+    }
+    if (general.isTraceOutputSet()) {
+        storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
     }
 }
 
@@ -70,7 +67,7 @@ void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::ve
     std::string outputFilename = "";
     if (output.isJaniOutputFilenameSet()) {
         outputFilename = output.getJaniOutputFilename();
-    } else if (input.isPrismInputSet() && !output.isStdOutOutputEnabled()) {
+    } else if (input.isPrismInputSet()) {
         outputFilename = input.getPrismInputFilename();
         // Remove extension if present
         auto dotPos = outputFilename.rfind('.');
@@ -110,9 +107,6 @@ void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::ve
         STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
     }
 
-    if (output.isStdOutOutputEnabled()) {
-        storm::api::printJaniToStream(janiModelProperties.first, janiModelProperties.second, std::cout, jani.isCompactJsonSet());
-    }
     stopStopwatch(exportingTime);
 }
 
@@ -127,7 +121,7 @@ void processPrismInputPrismOutput(storm::prism::Program const& prismProg, std::v
     std::string outputFilename = "";
     if (output.isPrismOutputFilenameSet()) {
         outputFilename = output.getPrismOutputFilename();
-    } else if (input.isPrismInputSet() && !output.isStdOutOutputEnabled()) {
+    } else if (input.isPrismInputSet()) {
         outputFilename = input.getPrismInputFilename();
         // Remove extension if present
         auto dotPos = outputFilename.rfind('.');
@@ -156,9 +150,6 @@ void processPrismInputPrismOutput(storm::prism::Program const& prismProg, std::v
         STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
     }
 
-    if (output.isStdOutOutputEnabled()) {
-        storm::api::printPrismToStream(outputProgram, outputProperties, std::cout);
-    }
     stopStopwatch(exportingTime);
 }
 
@@ -211,7 +202,7 @@ void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector
     std::string outputFilename = "";
     if (output.isJaniOutputFilenameSet()) {
         outputFilename = output.getJaniOutputFilename();
-    } else if (input.isJaniInputSet() && !output.isStdOutOutputEnabled()) {
+    } else if (input.isJaniInputSet()) {
         outputFilename = input.getJaniInputFilename();
         // Remove extension if present
         auto dotPos = outputFilename.rfind('.');
@@ -246,9 +237,6 @@ void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector
         STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
     }
 
-    if (output.isStdOutOutputEnabled()) {
-        storm::api::printJaniToStream(transformedJaniModel, transformedProperties, std::cout, jani.isCompactJsonSet());
-    }
     stopStopwatch(exportingTime);
 }
 
@@ -345,9 +333,8 @@ bool parseOptions(const int argc, const char* argv[]) {
     }
 
     if (general.isVersionSet()) {
-        storm::cli::printVersion("storm-conv");
+        storm::cli::printVersion();
         result = false;
-        ;
     }
 
     return result;
@@ -359,19 +346,7 @@ bool parseOptions(const int argc, const char* argv[]) {
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
-
-        // Print header info only if output to sdtout is disabled
-        bool outputToStdOut = false;
-        for (int i = 1; i < argc; ++i) {
-            if (std::string(argv[i]) == "--" + storm::settings::modules::ConversionOutputSettings::stdoutOptionName) {
-                outputToStdOut = true;
-            }
-        }
-        if (outputToStdOut) {
-            storm::utility::setLogLevel(l3pp::LogLevel::OFF);
-        } else {
-            storm::cli::printHeader("Storm-conv", argc, argv);
-        }
+        storm::cli::printHeader("Storm-conv", argc, argv);
 
         storm::settings::initializeConvSettings("Storm-conv", "storm-conv");
         if (!parseOptions(argc, argv)) {

@@ -64,21 +64,20 @@ class DFTRestriction : public DFTChildren<ValueType> {
         return true;
     }
 
-    void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+    void extendSpareModule(std::set<size_t>&) const override {
         // Do nothing
     }
 
-    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
-                              storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>&, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>&) const override {
         return false;
     }
 
    protected:
-    void fail(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void fail(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>&) const override {
         state.markAsInvalid();
     }
 
-    void failsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void failsafe(storm::dft::storage::DFTState<ValueType>&, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>&) const override {
         // Do nothing
     }
 };

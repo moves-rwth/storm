@@ -58,7 +58,7 @@ class DFTPand : public DFTGate<ValueType> {
                 } else if (childOperationalBefore && state.hasFailed(child->id())) {
                     // Child failed before sibling -> failsafe
                     this->failsafe(state, queues);
-                    this->childrenDontCare(state, queues);
+                    this->childrenDontCare(queues);
                     return;
                 }
             }
@@ -74,7 +74,7 @@ class DFTPand : public DFTGate<ValueType> {
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {
             this->failsafe(state, queues);
-            this->childrenDontCare(state, queues);
+            this->childrenDontCare(queues);
         }
     }
 

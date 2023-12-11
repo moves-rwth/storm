@@ -128,7 +128,7 @@ class DFTChildren : public DFTElement<ValueType> {
 
     virtual std::string toString() const override {
         std::stringstream stream;
-        stream << "{" << this->name() << "} " << this->typestring() << "( ";
+        stream << "{" << this->name() << "} " << this->typestring() << "(";
         typename DFTElementVector::const_iterator it = mChildren.begin();
         stream << (*it)->name();
         ++it;

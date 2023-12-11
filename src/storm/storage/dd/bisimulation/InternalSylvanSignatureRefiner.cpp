@@ -203,7 +203,8 @@ static uint64_t sylvan_search_or_insert(uint64_t sig, uint64_t previous_block, I
             }
         } else if (a == NO_ELEMENT_MARKER) {
             if (cas(ptr, NO_ELEMENT_MARKER, sig)) {
-                c = ptr[2] = __sync_fetch_and_add(&refiner->nextFreeBlockIndex, 1);
+                ptr[2] = __sync_fetch_and_add(&refiner->nextFreeBlockIndex, 1);
+                c = ptr[2];
                 ptr[1] = previous_block;
                 return c;
             } else {

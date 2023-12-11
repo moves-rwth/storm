@@ -1,12 +1,11 @@
-#ifndef STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
-#define STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_
+#pragma once
 
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/MaximalEndComponent.h"
+#include "storm/utility/OptionalRef.h"
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
 
 /*!
  * This class represents the decomposition of a nondeterministic model into its maximal end components.
@@ -38,6 +37,7 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
     /*
      * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+     * If a state-action pair (aka choice) has a transition that leaves the subsystem, the entire state-action pair is ignored.
      *
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
@@ -48,6 +48,8 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
     /*
      * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
+     * If a state-action pair (aka choice) has a transition that leaves the subsystem, the entire state-action pair is ignored, independent of how the given
+     * 'choices' vector is set for that choice.
      *
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
@@ -96,19 +98,17 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
 
    private:
     /*!
-     * Performs the actual decomposition of the given subsystem in the given model into MECs. As a side-effect
-     * this stores the MECs found in the current decomposition.
+     * Performs the actual decomposition of the given subsystem in the given model into MECs. Stores the MECs found in the current decomposition.
      *
      * @param transitionMatrix The transition matrix representing the system whose subsystem to decompose into MECs.
      * @param backwardTransitions The reversed transition relation.
-     * @param states The states of the subsystem to decompose.
-     * @param choices The choices of the subsystem to decompose.
+     * @param states The states of the subsystem to decompose. If not given, all states are considered.
+     * @param choices The choices of the subsystem to decompose. If not given, all choices are considered.
+     *
      */
     void performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                 storm::storage::SparseMatrix<ValueType> backwardTransitions, storm::storage::BitVector const* states = nullptr,
-                                                 storm::storage::BitVector const* choices = nullptr);
+                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                 storm::OptionalRef<storm::storage::BitVector const> states = storm::NullRef,
+                                                 storm::OptionalRef<storm::storage::BitVector const> choices = storm::NullRef);
 };
-}  // namespace storage
-}  // namespace storm
-
-#endif /* STORM_STORAGE_MAXIMALENDCOMPONENTDECOMPOSITION_H_ */
+}  // namespace storm::storage

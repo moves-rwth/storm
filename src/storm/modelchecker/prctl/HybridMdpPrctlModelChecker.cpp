@@ -21,8 +21,6 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/FilteredRewardModel.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 

@@ -10,6 +10,7 @@ file(GLOB_RECURSE STORM_DFT_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-dft/*/*.h)
 
 # Create storm-dft.
 add_library(storm-dft SHARED ${STORM_DFT_SOURCES} ${STORM_DFT_HEADERS})
+target_precompile_headers(storm-dft REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-dft PROPERTIES DEFINE_SYMBOL "")

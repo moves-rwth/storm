@@ -40,7 +40,7 @@ bool DFTElement<ValueType>::checkDontCareAnymore(storm::dft::storage::DFTState<V
         }
     }
 
-    if (!mRestrictions.empty() && state.hasOperationalPostSeqElements(mId)) {
+    if (!mRestrictions.empty() && state.isEventRelevantInRestriction(mId)) {
         return false;
     }
 

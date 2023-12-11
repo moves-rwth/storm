@@ -10,6 +10,8 @@ file(GLOB_RECURSE STORM_CLI_UTIL_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-cli-uti
 
 # Create storm-cli-utilities.
 add_library(storm-cli-utilities SHARED ${STORM_CLI_UTIL_SOURCES} ${STORM_CLI_UTIL_HEADERS})
+target_precompile_headers(storm-cli-utilities REUSE_FROM storm)
+
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-cli-utilities PROPERTIES DEFINE_SYMBOL "")
@@ -17,7 +19,7 @@ set_target_properties(storm-cli-utilities PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-cli-utilities)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-cli-utilities PUBLIC storm storm-counterexamples storm-parsers storm-version-info)
+target_link_libraries(storm-cli-utilities PUBLIC storm storm-counterexamples storm-gamebased-ar storm-parsers storm-version-info)
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_CLI_UTIL_HEADERS})

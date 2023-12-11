@@ -40,14 +40,14 @@ FormulaParser::FormulaParser(storm::prism::Program& program)
     : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(program.getManager().getSharedPointer())) {}
 
 FormulaParser::FormulaParser(FormulaParser const& other) : FormulaParser(other.manager) {
-    other.identifiers_.for_each(
-        [=](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
+    other.grammar->getIdentifiers().for_each(
+        [this](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
 }
 
 FormulaParser& FormulaParser::operator=(FormulaParser const& other) {
     this->manager = other.manager;
     this->grammar = std::shared_ptr<FormulaParserGrammar>(new FormulaParserGrammar(this->manager));
-    other.identifiers_.for_each(
+    other.grammar->getIdentifiers().for_each(
         [=](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
     return *this;
 }
@@ -105,7 +105,6 @@ std::vector<storm::jani::Property> FormulaParser::parseFromString(std::string co
 
 void FormulaParser::addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression) {
     // Record the mapping and hand it over to the grammar.
-    this->identifiers_.add(identifier, expression);
     grammar->addIdentifierExpression(identifier, expression);
 }
 

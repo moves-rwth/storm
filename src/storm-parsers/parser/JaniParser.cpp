@@ -103,7 +103,7 @@ template<typename ValueType>
 void JaniParser<ValueType>::readFile(std::string const& path) {
     std::ifstream file;
     storm::utility::openFile(path, file);
-    parsedStructure << file;
+    file >> parsedStructure;
     storm::utility::closeFile(file);
 }
 
@@ -1332,8 +1332,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 assert(arguments.size() == 2);
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
-                // TODO implement
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "log operation is not yet implemented");
+                return storm::expressions::logarithm(arguments[0], arguments[1]);
             } else if (opstring == "aa") {
                 STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
                                 "Array access operator requires exactly one exp (at " + scope.description + ").");

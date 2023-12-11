@@ -28,7 +28,7 @@ class DFTExplorationHeuristic {
 
     virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;
 
-    virtual void setBounds(ValueType lowerBound, ValueType upperBound) {
+    virtual void setBounds(ValueType /*lowerBound*/, ValueType /*upperBound*/) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
     }
 

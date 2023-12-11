@@ -491,28 +491,7 @@ void processOptions() {
  */
 int main(const int argc, const char** argv) {
     // try {
-    storm::utility::setUp();
-    storm::cli::printHeader("Storm-pomdp", argc, argv);
-    storm::settings::initializePomdpSettings("Storm-POMDP", "storm-pomdp");
-
-    bool optionsCorrect = storm::cli::parseOptions(argc, argv);
-    if (!optionsCorrect) {
-        return -1;
-    }
-    storm::utility::Stopwatch totalTimer(true);
-    storm::cli::setUrgentOptions();
-
-    // Invoke storm-pomdp with obtained settings
-    storm::pomdp::cli::processOptions();
-
-    totalTimer.stop();
-    if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
-        storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
-    }
-
-    // All operations have now been performed, so we clean up everything and terminate.
-    storm::utility::cleanUp();
-    return 0;
+    return storm::cli::process("Storm-POMDP", "storm-pomdp", storm::settings::initializePomdpSettings, storm::pomdp::cli::processOptions, argc, argv);
     // } catch (storm::exceptions::BaseException const &exception) {
     //    STORM_LOG_ERROR("An exception caused Storm-pomdp to terminate. The message of the exception is: " << exception.what());
     //    return 1;

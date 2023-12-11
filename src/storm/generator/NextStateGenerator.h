@@ -84,7 +84,7 @@ class NextStateGenerator {
     NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options,
                        std::shared_ptr<ActionMask<ValueType, StateType>> const& = nullptr);
 
-    virtual ~NextStateGenerator() = default;
+    virtual ~NextStateGenerator();
 
     uint64_t getStateSize() const;
     virtual ModelType getModelType() const = 0;
@@ -92,6 +92,9 @@ class NextStateGenerator {
     virtual bool isDiscreteTimeModel() const = 0;
     virtual bool isPartiallyObservable() const = 0;
     virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
+
+    /// Initializes the out-of-bounds state and states with overlapping guards.
+    void initializeSpecialStates();
 
     /// Initializes a builder for state valuations by adding the appropriate variables.
     virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;

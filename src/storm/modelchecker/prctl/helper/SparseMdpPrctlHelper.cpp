@@ -815,7 +815,6 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType
     ModelCheckerHint const& hint) {
     // Reduce to reachability rewards
     if (goal.minimize()) {
-        STORM_LOG_ERROR_COND(!produceScheduler, "Can not produce scheduler for this property (functionality not implemented");
         // Identify the states from which no reward can be collected under some scheduler
         storm::storage::BitVector choicesWithoutReward = rewardModel.getChoicesWithZeroReward(transitionMatrix);
         storm::storage::BitVector statesWithZeroRewardChoice(transitionMatrix.getRowGroupCount(), false);
@@ -828,7 +827,12 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType
             storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions,
                                                         statesWithZeroRewardChoice, ~statesWithZeroRewardChoice, false, 0, choicesWithoutReward);
         rew0EStates.complement();
-        return computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0EStates, qualitative, false, hint);
+        auto result = computeReachabilityRewards(env, std::move(goal), transitionMatrix, backwardTransitions, rewardModel, rew0EStates, qualitative,
+                                                 produceScheduler, hint);
+        if (result.scheduler) {
+            storm::utility::graph::computeSchedulerStayingInStates(rew0EStates, transitionMatrix, *result.scheduler, choicesWithoutReward);
+        }
+        return result;
     } else {
         // Identify the states from which only states with zero reward are reachable.
         storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(transitionMatrix);

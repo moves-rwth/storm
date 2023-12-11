@@ -291,6 +291,12 @@ class Module : public LocatedInformation {
      */
     void createMissingInitialValues();
 
+    /**
+     * Auxiliary function for Program::replaceVariableInitializationByInitExpression
+     * Effect: All of the modules' variables are no longer initialized.
+     */
+    void removeVariableInitialization();
+
     /*
      * Gets the number of commands without a label
      */

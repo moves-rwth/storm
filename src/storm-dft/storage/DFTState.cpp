@@ -56,16 +56,17 @@ void DFTState<ValueType>::construct() {
         // Initialize currently failable BE
         if (mDft.isBasicElement(index) && isOperational(index) && !isEventDisabledViaRestriction(index)) {
             std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(index);
+            STORM_LOG_ASSERT(index == be->id(), "Ids do not match.");
             if (be->canFail()) {
                 switch (be->beType()) {
                     case storm::dft::storage::elements::BEType::CONSTANT:
-                        failableElements.addBE(be->id());
+                        failableElements.addBE(index);
                         STORM_LOG_TRACE("Currently failable: " << *be);
                         break;
                     case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                         if (!beExp->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
-                            failableElements.addBE(be->id());
+                            failableElements.addBE(index);
                             STORM_LOG_TRACE("Currently failable: " << *beExp);
                         }
                         break;
@@ -85,12 +86,14 @@ void DFTState<ValueType>::construct() {
 
     // Initialize failable dependencies
     for (size_t dependencyId : mDft.getDependencies()) {
-        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
-        STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
-        assert(dependency->dependentEvents().size() == 1);
-        if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
-            failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
-            STORM_LOG_TRACE("New dependency failure: " << *dependency);
+        if (getDependencyState(dependencyId) == DFTDependencyState::Passive) {
+            std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
+            STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
+            STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Only one dependent event is allowed.");
+            if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
+                failableElements.addDependency(dependencyId, mDft.isDependencyInConflict(dependencyId));
+                STORM_LOG_TRACE("New dependency failure: " << *dependency);
+            }
         }
     }
 
@@ -240,16 +243,18 @@ bool DFTState<ValueType>::updateFailableDependencies(size_t id) {
     bool addedFailableDependency = false;
     for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
         STORM_LOG_ASSERT(dependency->triggerEvent()->id() == id, "Ids do not match.");
-        STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Only one dependent event is allowed.");
-        if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
-            STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
-            // By assertion we have only one dependent event
-            // Check if restriction prevents failure of dependent event
-            if (!isEventDisabledViaRestriction(dependency->dependentEvents()[0]->id())) {
-                // Add dependency as possible failure
-                failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
-                STORM_LOG_TRACE("New dependency failure: " << *dependency);
-                addedFailableDependency = true;
+        if (getDependencyState(dependency->id()) == DFTDependencyState::Passive) {
+            STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Only one dependent event is allowed.");
+            if (getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
+                STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvents()[0]->id()), "Dependent event is failsafe.");
+                // By assertion we have only one dependent event
+                // Check if restriction prevents failure of dependent event
+                if (!isEventDisabledViaRestriction(dependency->dependentEvents()[0]->id())) {
+                    // Add dependency as possible failure
+                    failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
+                    STORM_LOG_TRACE("New dependency failure: " << *dependency);
+                    addedFailableDependency = true;
+                }
             }
         }
     }
@@ -336,28 +341,29 @@ ValueType DFTState<ValueType>::getBERate(size_t id) const {
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be,
-                                    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be) {
     STORM_LOG_ASSERT(!hasFailed(be->id()), "Element " << *be << " has already failed.");
-    if (dependency != nullptr) {
-        // Consider failure due to dependency
-        failableElements.removeDependency(dependency->id());
-        setDependencySuccessful(dependency->id());
-    } else {
-        // Consider "normal" failure
-        STORM_LOG_ASSERT(be->canFail(), "Element " << *be << " cannot fail.");
-    }
+    // Check if BE can fail on its own or is triggered by dependency
+    STORM_LOG_ASSERT(be->canFail() || std::any_of(be->ingoingDependencies().begin(), be->ingoingDependencies().end(),
+                                                  [this](std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType>> dep) {
+                                                      return this->dependencySuccessful(dep->id());
+                                                  }),
+                     "Element " << *be << " cannot fail.");
     // Set BE as failed
     setFailed(be->id());
     failableElements.removeBE(be->id());
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letDependencyTrigger(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency, bool successful) {
     STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
-    STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
     failableElements.removeDependency(dependency->id());
-    setDependencyUnsuccessful(dependency->id());
+    if (successful) {
+        setDependencySuccessful(dependency->id());
+    } else {
+        STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
+        setDependencyUnsuccessful(dependency->id());
+    }
 }
 
 template<typename ValueType>
@@ -469,11 +475,21 @@ bool DFTState<ValueType>::isEventDisabledViaRestriction(size_t id) const {
 }
 
 template<typename ValueType>
-bool DFTState<ValueType>::hasOperationalPostSeqElements(size_t id) const {
+bool DFTState<ValueType>::isEventRelevantInRestriction(size_t id) const {
     STORM_LOG_ASSERT(!mDft.isDependency(id), "Element is dependency.");
     STORM_LOG_ASSERT(!mDft.isRestriction(id), "Element is restriction.");
+
+    // First check sequence enforcer
     auto const& postIds = mStateGenerationInfo.seqRestrictionPostElements(id);
     for (size_t id : postIds) {
+        if (isOperational(id)) {
+            return true;
+        }
+    }
+
+    // Second check mutexes
+    auto const& mutexIds = mStateGenerationInfo.mutexRestrictionElements(id);
+    for (size_t id : mutexIds) {
         if (isOperational(id)) {
             return true;
         }

@@ -149,6 +149,43 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reachability) {
     EXPECT_EQ(0ull, scheduler2.getChoice(3).getDeterministicChoice());
 }
 
+TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, total_reward) {
+    typedef typename TestFixture::ValueType ValueType;
+
+    std::string formulasString = "Rmin=? [ C ];";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.nm", formulasString);
+    auto mdp = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(3ul, mdp->getNumberOfStates());
+    EXPECT_EQ(4ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(4ul, mdp->getNumberOfChoices());
+    ASSERT_EQ(mdp->getType(), storm::models::ModelType::Mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
+
+    {
+        auto result = checker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+        EXPECT_NEAR(this->parseNumber("0"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
+                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+        ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
+        storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+        EXPECT_TRUE(scheduler.isDeterministicScheduler());
+        EXPECT_TRUE(scheduler.isMemorylessScheduler());
+        EXPECT_TRUE(!scheduler.isPartialScheduler());
+
+        auto inducedModel = mdp->applyScheduler(scheduler);
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
+        auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
+        EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
+                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+    }
+}
+
 TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, lra) {
     typedef typename TestFixture::ValueType ValueType;
 

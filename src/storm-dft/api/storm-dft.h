@@ -144,19 +144,12 @@ bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool u
 /*!
  * Get relevant event ids from given relevant event names and labels in properties.
  *
- * @param dft DFT.
  * @param properties List of properties. All events occurring in a property are relevant.
  * @param additionalRelevantEventNames List of names of additional relevant events.
  * @return Relevant events.
  */
-template<typename ValueType>
-storm::dft::utility::RelevantEvents computeRelevantEvents(storm::dft::storage::DFT<ValueType> const& dft,
-                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                          std::vector<std::string> const& additionalRelevantEventNames) {
-    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
-    events.insertNamesFromProperties(properties.begin(), properties.end());
-    return events;
-}
+storm::dft::utility::RelevantEvents computeRelevantEvents(std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                                                          std::vector<std::string> const& additionalRelevantEventNames);
 
 /*!
  * Compute the exact or approximate analysis result of the given DFT according to the given properties.

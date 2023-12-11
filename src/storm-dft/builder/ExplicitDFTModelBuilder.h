@@ -16,7 +16,7 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/storage/BucketPriorityQueue.h"
 #include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/DftSymmetries.h"
 
 namespace storm::dft {
 namespace builder {
@@ -153,7 +153,7 @@ class ExplicitDFTModelBuilder {
      * @param dft DFT.
      * @param symmetries Symmetries in the dft.
      */
-    ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTIndependentSymmetries const& symmetries);
+    ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DftSymmetries const& symmetries);
 
     /*!
      * Build model from DFT.

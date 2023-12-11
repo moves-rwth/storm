@@ -240,7 +240,11 @@ std::string Expression::toString() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
-    stream << expression.getBaseExpression();
+    if (expression.isInitialized()) {
+        stream << expression.getBaseExpression();
+    } else {
+        stream << "__storm::notinitialized__";
+    }
     return stream;
 }
 
@@ -535,6 +539,13 @@ Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
 
 Expression modulo(Expression const& first, Expression const& second) {
     return first % second;
+}
+
+Expression logarithm(Expression const& first, Expression const& second) {
+    assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+    return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(
+        first.getBaseExpression().getManager(), first.getType().logarithm(second.getType()), first.getBaseExpressionPointer(),
+        second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Logarithm)));
 }
 
 Expression apply(std::vector<storm::expressions::Expression> const& expressions,

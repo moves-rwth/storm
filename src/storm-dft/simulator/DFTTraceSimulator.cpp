@@ -61,28 +61,27 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
             STORM_LOG_WARN("Non-determinism present! We take the dependency with the lowest id");
         }
 
-        auto dependency = iterFailable.getFailBE(dft).second;
+        auto dependency = iterFailable.asDependency(dft);
+        bool successful = true;
         if (!dependency->isFDEP()) {
             // Flip a coin whether the PDEP is successful
             storm::utility::BernoulliDistributionGenerator probGenerator(dependency->probability());
-            bool successful = probGenerator.random(randomGenerator);
-            return std::make_tuple(iterFailable, 0, successful);
+            successful = probGenerator.random(randomGenerator);
         }
-        STORM_LOG_TRACE("Let dependency " << *dependency << " fail");
-        return std::make_tuple(iterFailable, 0, true);
+        STORM_LOG_TRACE("Let dependency " << *dependency << " " << (successful ? "successfully" : "unsuccessfully") << " fail");
+        return std::make_tuple(iterFailable, 0, successful);
     } else {
         // Consider all "normal" BE failures
         // Initialize with first BE
         storm::dft::storage::FailableElements::const_iterator nextFail = iterFailable;
-        double rate = state->getBERate(iterFailable.getFailBE(dft).first->id());
+        double rate = state->getBERate(nextFail.asBE(dft)->id());
         storm::utility::ExponentialDistributionGenerator rateGenerator(rate);
         double smallestTimebound = rateGenerator.random(randomGenerator);
         ++iterFailable;
 
         // Consider all other BEs and find the one which fails first
         for (; iterFailable != state->getFailableElements().end(); ++iterFailable) {
-            auto nextBE = iterFailable.getFailBE(dft).first;
-            rate = state->getBERate(nextBE->id());
+            rate = state->getBERate(iterFailable.asBE(dft)->id());
             rateGenerator = storm::utility::ExponentialDistributionGenerator(rate);
             double timebound = rateGenerator.random(randomGenerator);
             if (timebound < smallestTimebound) {
@@ -91,7 +90,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
                 smallestTimebound = timebound;
             }
         }
-        STORM_LOG_TRACE("Let BE " << *nextFail.getFailBE(dft).first << " fail after time " << smallestTimebound);
+        STORM_LOG_TRACE("Let BE " << *nextFail.asBE(dft) << " fail after time " << smallestTimebound);
         return std::make_tuple(nextFail, smallestTimebound, true);
     }
 }
@@ -104,10 +103,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
 template<typename ValueType>
 SimulationStepResult DFTTraceSimulator<ValueType>::randomStep() {
     // Randomly generate next failure
-    auto retTuple = randomNextFailure();
-    storm::dft::storage::FailableElements::const_iterator nextFailable = std::get<0>(retTuple);
-    double addTime = std::get<1>(retTuple);
-    bool successfulDependency = std::get<2>(retTuple);
+    auto [nextFailable, addTime, successfulDependency] = this->randomNextFailure();
     if (addTime < 0) {
         // No next state can be reached, because no element can fail anymore.
         STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because no element can fail anymore");
@@ -130,14 +126,19 @@ SimulationStepResult DFTTraceSimulator<ValueType>::step(storm::dft::storage::Fai
         return SimulationStepResult::UNSUCCESSFUL;
     }
 
-    auto nextBEPair = nextFailElement.getFailBE(dft);
-    state = generator.createSuccessorState(state, nextBEPair.first, nextBEPair.second, dependencySuccessful);
+    DFTStatePointer newState;
+    if (nextFailElement.isFailureDueToDependency()) {
+        newState = generator.createSuccessorState(state, nextFailElement.asDependency(dft), dependencySuccessful);
+    } else {
+        newState = generator.createSuccessorState(state, nextFailElement.asBE(dft));
+    }
 
-    if (state->isInvalid() || state->isTransient()) {
-        STORM_LOG_TRACE("Step is invalid because new state " << (state->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
+    if (newState->isInvalid() || newState->isTransient()) {
+        STORM_LOG_TRACE("Step is invalid because new state " << (newState->isInvalid() ? "is invalid." : "has transient fault."));
         return SimulationStepResult::INVALID;
     }
 
+    state = newState;
     return SimulationStepResult::SUCCESSFUL;
 }
 

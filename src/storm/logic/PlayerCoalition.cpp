@@ -4,12 +4,18 @@
 namespace storm {
 namespace logic {
 
-PlayerCoalition::PlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> playerIds) : _playerIds(playerIds) {
+PlayerCoalition::PlayerCoalition(std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) : _playerIds(playerIds) {
     // Intentionally left empty.
 }
 
-std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& PlayerCoalition::getPlayers() const {
+std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& PlayerCoalition::getPlayers() const {
     return _playerIds;
+}
+
+template<typename T0, typename... Ts>
+std::ostream& operator<<(std::ostream& s, std::variant<T0, Ts...> const& v) {
+    std::visit([&](auto&& arg) { s << arg; }, v);
+    return s;
 }
 
 std::ostream& operator<<(std::ostream& stream, PlayerCoalition const& coalition) {

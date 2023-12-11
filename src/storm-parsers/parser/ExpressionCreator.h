@@ -68,8 +68,9 @@ class ExpressionCreator {
                                                         storm::expressions::Expression const& e2, bool& pass) const;
     storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType,
                                                         storm::expressions::Expression const& e2, bool& pass) const;
-    storm::expressions::Expression createPowerModuloExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType,
-                                                               storm::expressions::Expression const& e2, bool& pass) const;
+    storm::expressions::Expression createPowerModuloLogarithmExpression(storm::expressions::Expression const& e1,
+                                                                        storm::expressions::OperatorType const& operatorType,
+                                                                        storm::expressions::Expression const& e2, bool& pass) const;
     storm::expressions::Expression createUnaryExpression(std::vector<storm::expressions::OperatorType> const& operatorType,
                                                          storm::expressions::Expression const& e1, bool& pass) const;
     storm::expressions::Expression createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const;

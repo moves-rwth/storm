@@ -2,6 +2,8 @@
 
 #include "storm/adapters/EigenAdapter.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"

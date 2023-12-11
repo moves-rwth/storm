@@ -1,10 +1,8 @@
 #pragma once
 
-#include "storm/utility/macros.h"
-
 #include "storm-gspn/storage/gspn/GSPN.h"
-
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace gspn {

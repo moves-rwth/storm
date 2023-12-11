@@ -117,6 +117,9 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Bina
         case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Modulo:
             result = leftResult.mod(rightResult);
             break;
+        case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Logarithm:
+            result = leftResult.logxy(rightResult);
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate expression containing power operator.");
     }

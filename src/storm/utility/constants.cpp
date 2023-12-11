@@ -3,7 +3,6 @@
 #include <cmath>
 #include <type_traits>
 
-#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -135,24 +134,6 @@ ValueType simplify(ValueType value) {
     // In the general case, we don't do anything here, but merely return the value. If something else is
     // supposed to happen here, the templated function can be specialized for this particular type.
     return value;
-}
-
-template<typename IndexType, typename ValueType>
-storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
-    simplify(matrixEntry.getValue());
-    return matrixEntry;
-}
-
-template<typename IndexType, typename ValueType>
-storm::storage::MatrixEntry<IndexType, ValueType>& simplify(storm::storage::MatrixEntry<IndexType, ValueType>& matrixEntry) {
-    simplify(matrixEntry.getValue());
-    return matrixEntry;
-}
-
-template<typename IndexType, typename ValueType>
-storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry) {
-    simplify(matrixEntry.getValue());
-    return std::move(matrixEntry);
 }
 
 template<typename ValueType>
@@ -926,12 +907,6 @@ template bool isConstant(double const& value);
 template bool isInfinity(double const& value);
 template bool isInteger(double const& number);
 template double simplify(double value);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 template std::pair<double, double> minmax(std::vector<double> const&);
 template double minimum(std::vector<double> const&);
 template double maximum(std::vector<double> const&);
@@ -997,12 +972,6 @@ template bool isAlmostOne(storm::ClnRationalNumber const& value);
 template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
 template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
 template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber> simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber> matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>& matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>&& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::ClnRationalNumber>&& matrixEntry);
 template std::pair<storm::ClnRationalNumber, storm::ClnRationalNumber> minmax(std::map<uint64_t, storm::ClnRationalNumber> const&);
 template storm::ClnRationalNumber minimum(std::map<uint64_t, storm::ClnRationalNumber> const&);
 template storm::ClnRationalNumber maximum(std::map<uint64_t, storm::ClnRationalNumber> const&);
@@ -1028,12 +997,6 @@ template bool isAlmostOne(storm::GmpRationalNumber const& value);
 template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
 template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
 template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber> simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber> matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>& matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>&& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::GmpRationalNumber>&& matrixEntry);
 template storm::GmpRationalNumber minimum(std::map<uint64_t, storm::GmpRationalNumber> const&);
 template storm::GmpRationalNumber maximum(std::map<uint64_t, storm::GmpRationalNumber> const&);
 template storm::GmpRationalNumber minimum(std::vector<storm::GmpRationalNumber> const&);
@@ -1051,12 +1014,6 @@ template std::string to_string(storm::GmpRationalNumber const& value);
 // Instantiations for rational function.
 template RationalFunction one();
 template RationalFunction zero();
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>&& matrixEntry);
 
 // Instantiations for polynomials.
 template Polynomial one();

@@ -9,12 +9,12 @@ namespace modules {
 class GSPNSettings : public ModuleSettings {
    public:
     /*!
-     * Creates a new PGCL setting
+     * Creates a new GSPN setting
      */
     GSPNSettings();
 
     /**
-     * Retrievew whether the pgcl file option was set
+     * Retrievew whether the gspn file option was set
      */
     bool isGspnFileSet() const;
 
@@ -24,7 +24,7 @@ class GSPNSettings : public ModuleSettings {
     std::string getGspnFilename() const;
 
     /**
-     * Retrievew whether the pgcl file option was set
+     * Retrievew whether the capacities file option was set
      */
     bool isCapacitiesFileSet() const;
 
@@ -44,7 +44,7 @@ class GSPNSettings : public ModuleSettings {
     uint64_t getCapacity() const;
 
     /*!
-     * Retrieves whether the constants ption was set.
+     * Retrieves whether the constants option was set.
      */
     bool isConstantsSet() const;
 

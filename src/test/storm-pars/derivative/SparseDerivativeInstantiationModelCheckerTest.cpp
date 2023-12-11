@@ -1,6 +1,6 @@
-#include "test/storm_gtest.h"
 #include "carl/core/RationalFunction.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
@@ -9,13 +9,13 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/ValueParser.h"
@@ -26,82 +26,87 @@
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 namespace {
-    class RationalGmmxxEnvironment {
-    public:
-        typedef storm::RationalFunction ValueType;
-        typedef storm::RationalNumber ConstantType;
-        static storm::Environment createEnvironment() {
-            storm::Environment env;
-            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
-            return env;
-        }
-    };
-    class DoubleGmmxxEnvironment {
-    public:
-        typedef storm::RationalFunction ValueType;
-        typedef double ConstantType;
-        static storm::Environment createEnvironment() {
-            storm::Environment env;
-            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
-            return env;
-        }
-    };
-    class RationalEigenEnvironment {
-    public:
-        typedef storm::RationalFunction ValueType;
-        typedef storm::RationalNumber ConstantType;
-        static storm::Environment createEnvironment() {
-            storm::Environment env;
-            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
-            return env;
-        }
-    };
-    class DoubleEigenEnvironment {
-    public:
-        typedef storm::RationalFunction ValueType;
-        typedef double ConstantType;
-        static storm::Environment createEnvironment() {
-            storm::Environment env;
-            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
-            return env;
-        }
-    };
-    template<typename TestType>
-    class SparseDerivativeInstantiationModelCheckerTest : public ::testing::Test {
-    public:
-        typedef typename TestType::ValueType ValueType;
-        typedef typename TestType::ConstantType ConstantType;
-        template<typename ValueType>
-        using VariableType = typename storm::utility::parametric::VariableType<ValueType>::type;
-        template<typename ValueType>
-        using CoefficientType = typename storm::utility::parametric::CoefficientType<ValueType>::type;
-        template<typename ValueType>
-        using Instantiation = std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>>;
-        template<typename ValueType>
-        using ResultMap = std::map<VariableType<storm::RationalFunction>, ConstantType>;
-        SparseDerivativeInstantiationModelCheckerTest() : _environment(TestType::createEnvironment()) {}
-        storm::Environment const& env() const { return _environment; }
-        virtual void SetUp() { carl::VariablePool::getInstance().clear(); }
-        virtual void TearDown() { carl::VariablePool::getInstance().clear(); }
-        void testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc, std::vector<std::shared_ptr<const storm::logic::Formula>> formulas, storm::RationalFunction reachabilityFunction);
-    private:
-        storm::Environment _environment;
-    };
+class RationalGmmxxEnvironment {
+   public:
+    typedef storm::RationalFunction ValueType;
+    typedef storm::RationalNumber ConstantType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+        return env;
+    }
+};
+class DoubleGmmxxEnvironment {
+   public:
+    typedef storm::RationalFunction ValueType;
+    typedef double ConstantType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+        return env;
+    }
+};
+class RationalEigenEnvironment {
+   public:
+    typedef storm::RationalFunction ValueType;
+    typedef storm::RationalNumber ConstantType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
+        return env;
+    }
+};
+class DoubleEigenEnvironment {
+   public:
+    typedef storm::RationalFunction ValueType;
+    typedef double ConstantType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
+        return env;
+    }
+};
+template<typename TestType>
+class SparseDerivativeInstantiationModelCheckerTest : public ::testing::Test {
+   public:
+    typedef typename TestType::ValueType ValueType;
+    typedef typename TestType::ConstantType ConstantType;
+    template<typename ValueType>
+    using VariableType = typename storm::utility::parametric::VariableType<ValueType>::type;
+    template<typename ValueType>
+    using CoefficientType = typename storm::utility::parametric::CoefficientType<ValueType>::type;
+    template<typename ValueType>
+    using Instantiation = std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>>;
+    template<typename ValueType>
+    using ResultMap = std::map<VariableType<storm::RationalFunction>, ConstantType>;
+    SparseDerivativeInstantiationModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+    storm::Environment const& env() const {
+        return _environment;
+    }
+    virtual void SetUp() {
+        carl::VariablePool::getInstance().clear();
+    }
+    virtual void TearDown() {
+        carl::VariablePool::getInstance().clear();
+    }
+    void testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc,
+                   std::vector<std::shared_ptr<const storm::logic::Formula>> formulas, storm::RationalFunction reachabilityFunction);
 
-    typedef ::testing::Types<
-        RationalGmmxxEnvironment,
-        DoubleGmmxxEnvironment,
-        RationalEigenEnvironment,
-        DoubleEigenEnvironment
-    > TestingTypes;
-}
+   private:
+    storm::Environment _environment;
+};
+
+typedef ::testing::Types<RationalGmmxxEnvironment, DoubleGmmxxEnvironment, RationalEigenEnvironment, DoubleEigenEnvironment> TestingTypes;
+}  // namespace
 
 TYPED_TEST_SUITE(SparseDerivativeInstantiationModelCheckerTest, TestingTypes, );
 
 template<typename TestType>
-void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc, std::vector<std::shared_ptr<const storm::logic::Formula>> formulas, storm::RationalFunction reachabilityFunction) {
+void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc,
+                                                                        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas,
+                                                                        storm::RationalFunction reachabilityFunction) {
     auto formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-            formulas[0]->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
+        formulas[0]->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
 
     auto parameters = storm::models::sparse::getProbabilityParameters(*dtmc);
     storm::derivative::SparseDerivativeInstantiationModelChecker<storm::RationalFunction, typename TestType::ConstantType> derivativeModelChecker(*dtmc);
@@ -118,7 +123,8 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
     for (auto const& param : parameters) {
         std::vector<Instantiation<storm::RationalFunction>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (typename TestType::ConstantType x = storm::utility::convertNumber<ConstantType>(1e-6); x <= 1; x += (1 - storm::utility::convertNumber<ConstantType>(1e-6)) / 10) {
+            for (typename TestType::ConstantType x = storm::utility::convertNumber<ConstantType>(1e-6); x <= 1;
+                 x += (1 - storm::utility::convertNumber<ConstantType>(1e-6)) / 10) {
                 std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>> newMap(point);
                 newMap[param] = storm::utility::convertNumber<CoefficientType<storm::RationalFunction>>(x);
                 newInstantiations.push_back(newMap);
@@ -135,15 +141,15 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
         for (auto const& entry : instantiation) {
             auto parameter = entry.first;
             auto derivativeWrtParameter = derivatives[parameter];
-            typename TestType::ConstantType evaluatedDerivative = storm::utility::convertNumber<typename TestType::ConstantType>(derivativeWrtParameter.evaluate(instantiation));
+            typename TestType::ConstantType evaluatedDerivative =
+                storm::utility::convertNumber<typename TestType::ConstantType>(derivativeWrtParameter.evaluate(instantiation));
             resultMap[parameter] = evaluatedDerivative;
         }
         testCases[instantiation] = resultMap;
     }
-            
+
     auto checkTask = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
     derivativeModelChecker.specifyFormula(env(), checkTask);
-
 
     for (auto const& testCase : testCases) {
         Instantiation<ValueType> instantiation = testCase.first;
@@ -153,7 +159,8 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
             auto expectedResult = testCase.second.at(parameter);
 
             auto derivative = derivativeModelChecker.check(env(), instantiation, parameter);
-            ASSERT_NEAR(storm::utility::convertNumber<double>(derivative->getValueVector()[0]), storm::utility::convertNumber<double>(expectedResult), 1e-6) << instantiation;
+            ASSERT_NEAR(storm::utility::convertNumber<double>(derivative->getValueVector()[0]), storm::utility::convertNumber<double>(expectedResult), 1e-6)
+                << instantiation;
         }
     }
 }
@@ -162,13 +169,15 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
 TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/gradient1.pm";
     std::string formulaAsString = "Pmax=? [F s=2]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -179,7 +188,7 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
     carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
-    storm::RationalFunction reachabilityFunction = p * (storm::RationalFunction(1)-p);
+    storm::RationalFunction reachabilityFunction = p * (storm::RationalFunction(1) - p);
 
     this->testModel(dtmc, formulas, reachabilityFunction);
 }
@@ -188,13 +197,15 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
 TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/gradient2.pm";
     std::string formulaAsString = "Pmax=? [F s=2]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -216,13 +227,15 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple2) {
 TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Brp162) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "Pmax=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // We have to create the dtmc and formulas here, because we need its parameters to create the polynomial
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
@@ -237,9 +250,11 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Brp162) {
 
     // The term is ((pK)^16 * (pL)^16 * (pK^2*pL^2+(-3)*pK*pL+3)^16)/(1), so we're just going to create this here.
     auto firstTerm = pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK;
-    auto secondTerm = pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL; 
-    auto thirdTermUnpowed = pK*pK*pL*pL+(-3)*pK*pL+3;
-    auto thirdTerm = thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed;
+    auto secondTerm = pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL;
+    auto thirdTermUnpowed = pK * pK * pL * pL + (-3) * pK * pL + 3;
+    auto thirdTerm = thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed *
+                     thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed *
+                     thirdTermUnpowed * thirdTermUnpowed;
     storm::RationalFunction reachabilityFunction = firstTerm * secondTerm * thirdTerm;
 
     this->testModel(dtmc, formulas, reachabilityFunction);

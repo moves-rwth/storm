@@ -57,16 +57,27 @@ class DftNextStateGenerator {
     /*!
      * Create successor state from given state by letting the given BE fail next.
      *
-     * @param state Current state.
-     * @param failedBE BE which fails next.
-     * @param triggeringDependency Dependency which triggered the failure (or nullptr if BE failed on its own).
-     * @param dependencySuccessful Whether the triggering dependency was successful.
-     *              If the dependency is unsuccessful, failedBE does not fail and only the depedendy is marked as failed.
+     * @param origState Current state.
+     * @param be BE which fails next.
      *
      * @return Successor state.
      */
-    DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& failedBE,
-                                         std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>& triggeringDependency,
+    DFTStatePointer createSuccessorState(DFTStatePointer const origState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be) const;
+
+    /*!
+     * Create successor state from given state by triggering the given dependency.
+     * If triggering the dependency is successful, the dependent BE fails.
+     * If triggering the dependency is unsuccessful (in case of a PDEP), the dependent BE does not fail and only the dependency is marked as failed.
+     *
+     * @param origState Current state.
+     * @param dependency Dependency which triggers.
+     * @param dependencySuccessful Whether triggering the dependency was successful.
+     *
+     *
+     * @return Successor state.
+     */
+    DFTStatePointer createSuccessorState(DFTStatePointer const origState,
+                                         std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency,
                                          bool dependencySuccessful = true) const;
 
     /**
@@ -90,6 +101,7 @@ class DftNextStateGenerator {
    private:
     /*!
      * Explore current state and generate all successor states.
+     *
      * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
      * @param exploreDependencies Flag indicating whether failures due to dependencies or due to BEs should be explored.
      * @param takeFirstDependency If true, instead of exploring all possible orders of dependency failures, a fixed order is explored where always the first
@@ -98,6 +110,15 @@ class DftNextStateGenerator {
      */
     storm::generator::StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies,
                                                                        bool takeFirstDependency);
+
+    /*!
+     * Get Id for state and check whether state should be further explored.
+     *
+     * @param state Current state.
+     * @param stateToIdCallback Callback function which adds new state and returns the corresponding id.
+     * @return Pair of id for new state, and true iff state should not be further explored.
+     */
+    std::pair<StateType, bool> getNewStateId(DFTStatePointer state, StateToIdCallback const& stateToIdCallback) const;
 
     // The dft used for the generation of next states.
     storm::dft::storage::DFT<ValueType> const& mDft;

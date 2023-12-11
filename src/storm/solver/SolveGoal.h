@@ -134,7 +134,7 @@ std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearE
 
 template<typename MatrixType>
 std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> configureLinearEquationSolver(
-    Environment const& env, SolveGoal<storm::RationalFunction>&& goal, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& factory,
+    Environment const& env, SolveGoal<storm::RationalFunction>&&, storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const& factory,
     MatrixType&& matrix) {
     std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> solver = factory.create(env, std::forward<MatrixType>(matrix));
     return solver;

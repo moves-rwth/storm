@@ -16,7 +16,7 @@
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/DftModule.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/DftSymmetries.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
 namespace storm::dft {
@@ -45,10 +45,6 @@ struct DFTElementSort {
     }
 };
 
-// Forward declaration
-template<typename T>
-class DFTColouring;
-
 /**
  * Represents a Dynamic Fault Tree
  */
@@ -72,7 +68,6 @@ class DFT {
     std::map<size_t, storm::dft::storage::DftModule> mModules;
     std::vector<size_t> mDependencies;
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
-    std::vector<std::vector<size_t>> mSymmetries;
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
     mutable std::vector<size_t> mRelevantEvents;
     std::vector<bool> mDynamicBehavior;
@@ -81,7 +76,7 @@ class DFT {
    public:
     DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
 
-    DFTStateGenerationInfo buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const;
+    DFTStateGenerationInfo buildStateGenerationInfo(storm::dft::storage::DftSymmetries const& symmetries) const;
 
     size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
@@ -326,15 +321,6 @@ class DFT {
 
     std::string getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const;
 
-    DFTColouring<ValueType> colourDFT() const;
-
-    std::map<size_t, size_t> findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const;
-
-    DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
-
-    void findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring,
-                              std::map<size_t, std::vector<std::vector<size_t>>>& result) const;
-
     std::vector<size_t> immediateFailureCauses(size_t index) const;
 
     std::vector<size_t> findModularisationRewrite() const;
@@ -389,8 +375,6 @@ class DFT {
     std::string getRelevantEventsString() const;
 
    private:
-    std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
-
     bool elementIndicesCorrect() const {
         for (size_t i = 0; i < mElements.size(); ++i) {
             if (mElements[i]->id() != i)

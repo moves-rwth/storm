@@ -394,7 +394,8 @@ void DFTBuilder<ValueType>::topologicalVisit(DFTElementPointer const& element,
                 topologicalVisit(child, visited, visitedElements);
             }
         } else if (element->isDependency()) {
-            for (DFTBEPointer const& child : std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(element)->dependentEvents()) {
+            for (DFTElementPointer const& child :
+                 std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(element)->dependentEvents()) {
                 // Recursively visit all dependent children
                 topologicalVisit(child, visited, visitedElements);
             }

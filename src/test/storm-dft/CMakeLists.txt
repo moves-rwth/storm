@@ -17,6 +17,9 @@ foreach (testsuite api bdd simulator storage transformations)
 	  target_link_libraries(test-dft-${testsuite} storm-dft storm-parsers)
 	  target_link_libraries(test-dft-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
 
+	  # Reusing form any of the main storm tests will do here.
+	  target_precompile_headers(test-dft-${testsuite} REUSE_FROM test-builder)
+
 	  add_dependencies(test-dft-${testsuite} test-resources)
 	  add_test(NAME run-test-dft-${testsuite} COMMAND $<TARGET_FILE:test-dft-${testsuite}>)
       add_dependencies(tests test-dft-${testsuite})
