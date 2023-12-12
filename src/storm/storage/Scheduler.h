@@ -104,6 +104,10 @@ class Scheduler {
      * Retrieves the number of memory states this scheduler considers.
      */
     uint_fast64_t getNumberOfMemoryStates() const;
+    /*!
+     * Retrieves the number of model states this scheduler considers.
+     */
+    uint_fast64_t getNumberOfModelStates() const;
 
     /*!
      * Retrieves the memory structure associated with this scheduler

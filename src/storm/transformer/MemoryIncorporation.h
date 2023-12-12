@@ -5,6 +5,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/logic/MultiObjectiveFormula.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace transformer {
@@ -24,8 +25,8 @@ class MemoryIncorporation {
      * Incorporates memory that stores whether a 'goal' state has already been reached. This supports operatorformulas whose subformula is
      * a (bounded-) until formula, eventually formula, or a globally formula. Total reward formulas and cumulative reward formulas will be ignored.
      */
-    static std::shared_ptr<SparseModelType> incorporateGoalMemory(SparseModelType const& model,
-                                                                  std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
+    static std::tuple<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryProductReverseData> incorporateGoalMemory(
+        SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
 
     /*!
      * Incorporates a memory structure where the nondeterminism of the model decides which successor state to choose.

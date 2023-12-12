@@ -1,9 +1,11 @@
 #ifndef STORM_MODELCHECKER_EXPLICITPARETOCURVECHECKRESULT_H_
 #define STORM_MODELCHECKER_EXPLICITPARETOCURVECHECKRESULT_H_
 
+#include <map>
 #include <vector>
 
 #include "storm/modelchecker/results/ParetoCurveCheckResult.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm {
@@ -18,6 +20,11 @@ class ExplicitParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> 
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type const& overApproximation = nullptr);
     ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state,
                                    std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points,
+                                   typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation = nullptr,
+                                   typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation = nullptr);
+    ExplicitParetoCurveCheckResult(storm::storage::sparse::state_type const& state,
+                                   std::vector<typename ParetoCurveCheckResult<ValueType>::point_type>&& points,
+                                   std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>>&& schedulers,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation = nullptr,
                                    typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation = nullptr);
 
@@ -36,9 +43,19 @@ class ExplicitParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> 
 
     storm::storage::sparse::state_type const& getState() const;
 
+    virtual bool hasScheduler() const override;
+
+    void setSchedulers(std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers);
+
+    std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> const& getSchedulers() const;
+
+    std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>>& getSchedulers();
+
    private:
     // The state of the checked model to which the result applies
     storm::storage::sparse::state_type state;
+    // The corresponding strategies to reach each point in the pareto curve
+    std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers;
 };
 }  // namespace modelchecker
 }  // namespace storm

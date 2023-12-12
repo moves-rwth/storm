@@ -96,6 +96,7 @@ template class ParetoCurveCheckResult<double>;
 
 #ifdef STORM_HAVE_CARL
 template class ParetoCurveCheckResult<storm::RationalNumber>;
+template class ParetoCurveCheckResult<storm::RationalFunction>;
 #endif
 }  // namespace modelchecker
 }  // namespace storm

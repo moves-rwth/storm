@@ -7,6 +7,8 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -22,6 +24,9 @@ struct SparseMultiObjectivePreprocessorResult {
     // Original data
     storm::logic::MultiObjectiveFormula const& originalFormula;
     SparseModelType const& originalModel;
+
+    // Mapping of incorporated memory to model+memory
+    boost::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
     // The preprocessed model and objectives
     std::shared_ptr<SparseModelType> preprocessedModel;
