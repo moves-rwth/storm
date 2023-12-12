@@ -310,26 +310,6 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
     } else {
         wvChecker = nullptr;
     }
-    //    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-    //        storm::utility::Stopwatch sw(true);
-    //        STORM_PRINT_AND_LOG("#STATS " << model->getNumberOfStates() << " states in unfolded-model\n");
-    //        STORM_PRINT_AND_LOG("#STATS " << model->getNumberOfChoices() << " choices in unfolded-model\n");
-    //        STORM_PRINT_AND_LOG("#STATS " << model->getNumberOfTransitions() << " transitions in unfolded-model\n");
-    //        double log10numScheds = 0;
-    //        for (uint64_t state = 0; state < model->getNumberOfStates(); ++state) {
-    //            log10numScheds += storm::utility::log10<double>(model->getNumberOfChoices(state));
-    //        }
-    //        STORM_PRINT_AND_LOG("#STATS 10^" << log10numScheds << " memoryless deterministic schedulers in unfolded-model\n");
-    //        storm::storage::MaximalEndComponentDecomposition<ModelValueType> mecs(*model);
-    //        uint64_t mecStates = 0;
-    //        for (auto const& mec : mecs) {
-    //            mecStates += mec.size();
-    //        }
-    //        STORM_PRINT_AND_LOG("#STATS " << mecs.size() << " MECS in unfolded-model\n");
-    //        STORM_PRINT_AND_LOG("#STATS " << mecStates << " MEC States in unfolded-model\n");
-    //        sw.stop();
-    //        STORM_PRINT_AND_LOG("#STATS " << sw << " seconds for computing these statistics.\n");
-    //    }
 }
 
 template<class SparseModelType, typename GeometryValueType>
@@ -389,12 +369,6 @@ std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, 
                 storm::utility::vector::convertNumericVector<ModelValueType>(transformObjectiveValuesToOriginal(objectives, p.second.get())));
         }
     }
-    //    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-    //        STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points\n");
-    //        STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable areas\n");
-    //        STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable halfspaces\n");
-    //        STORM_PRINT_AND_LOG(lpChecker->getStatistics("#STATS "));
-    //    }
     return std::make_unique<storm::modelchecker::ExplicitParetoCurveCheckResult<ModelValueType>>(originalModelInitialState, std::move(paretoPoints), nullptr,
                                                                                                  nullptr);
 }

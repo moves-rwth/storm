@@ -60,10 +60,10 @@ ValueType VisitingTimesHelper<ValueType>::computeMecVisitsUpperBound(storm::stor
                                                                      storm::storage::SparseMatrix<ValueType> const& transitions,
                                                                      bool assumeOptimalTransitionProbabilities) {
     auto const one = storm::utility::one<ValueType>();
-    auto const l = computeMecTraversalLowerBound(mec, transitions, assumeOptimalTransitionProbabilities);
+    auto const traversalLowerBound = computeMecTraversalLowerBound(mec, transitions, assumeOptimalTransitionProbabilities);
     if (assumeOptimalTransitionProbabilities) {
         // We assume that the probability to go back to the MEC using an exiting choice is zero.
-        return one / l;
+        return one / traversalLowerBound;
     } else {
         // compute the largest probability to go back to the MEC when using an exiting choice
         storm::utility::Maximum<ValueType> q(storm::utility::zero<ValueType>());
@@ -81,7 +81,7 @@ ValueType VisitingTimesHelper<ValueType>::computeMecVisitsUpperBound(storm::stor
                 q &= choiceValue;
             }
         }
-        return one / (l * (one - *q));
+        return one / (traversalLowerBound * (one - *q));
     }
 }
 
