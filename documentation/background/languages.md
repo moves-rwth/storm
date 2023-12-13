@@ -39,10 +39,6 @@ The [GreatSPN editor](http://www.di.unito.it/~amparore/mc4cslta/editor.html){:ta
 Dynamic Fault Trees are given in the so-called [Galileo Format](https://www.cse.msu.edu/~cse870/Materials/FaultTolerant/manual-galileo.htm#Editing%20in%20the%20Textual%20View){:target="_blank"}.
 The format is a simple textual format naming the root of the tree and then lists all nodes of the tree, together with the children of each node. A [rich collection](https://github.com/moves-rwth/dft-examples){:target="_blank"} of examples is available.
 
-## cpGCL
-
-The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and pGCL {% cite HSM97 %} to also accommodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl){:target="_blank"}.
-
 ## Explicit
 
 In the spirit of [MRMC](http://www.mrmc-tool.org/){:target="_blank"}, Storm also supports input models specified in an explicit format. While the format closely resembles that of MRMC, it does not match exactly. Likewise, at the moment the model export of PRISM generates files that can be easily modified to be handled by Storm, but they still need to be adapted by hand.

@@ -43,12 +43,6 @@ Storm takes [many languages]({{ '/documentation/background/languages.html' | rel
         <td>storm-gspn-cli</td>
         <td><a href="running-storm.html#running-storm-on-gspns">Running Storm on GSPNs</a></td>
     </tr>
-    <tr>
-        <td><a href="{{ '/documentation/background/languages.html#cpgcl' | relative_url }}">pGCL</a></td>
-        <td>storm-pgcl</td>
-        <td>storm-pgcl-cli</td>
-        <td><a href="running-storm.html#running-storm-on-pgcl">Running Storm on pGCL</a></td>
-    </tr>
   </tbody>
 </table>
 
@@ -215,7 +209,7 @@ In case you also want to read the properties from the jani file, the option `--j
 
 #### Example 4 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
 
-Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in [pGCL]({{ '/documentation/background/languages.html#cpgcl' | relative_url }}) and has been translated to JANI by Storm's `storm-pgcl` binary. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
+Here, we are going to analyze a model of an algorithm that approximates $$\pi$$. It does so by repeated sampling according to a uniform distribution. While this model is a JANI model, the original model was written in the probabilistic guarded command language (pGCL) and has been translated to JANI. The JANI model and the original pGCL code is available from the [JANI models repository](https://github.com/ahartmanns/jani-models){:target="_blank"}.
 
 {% include includes/show_model.html name="original pGCL program" class="jani_approxpi_pgcl" path="jani/approx_pi_00100_010_full.pgcl" %}
 
@@ -231,7 +225,7 @@ $ storm --jani approx_pi_00100_010_full.jani --engine hybrid
 
 As we selected the *hybrid* engine, Storm builds the MDP in terms of a symbolic data structure ((MT)BDDs), hence the `(symbolic)` marker. For this representation, Storm also reports the sizes of the state and transition DDs in terms of the number of nodes.
 
-The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm (as all JANI models obtained from `storm-pgcl`, it has a transient Boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties):
+The algorithm uses a sampling-based technique to approximate $$\pi$$. More specifically, it repeatedly (100 times in this particular instance) samples points in a square and checks whether they are in a circle whose diameter is the edge length of the square (which is called a hit). From this, we can derive $$\pi \approx 4 \frac{hits}{100}$$ (for more details, we refer to [this explanation](https://theclevermachine.wordpress.com/tag/rejection-sampling/){:target="_blank"}). We are therefore interested in the expected number of hits until termination of the algorithm. The program has a transient Boolean variable `_ret0_` that marks termination of the pGCL program; this transient variable can be used as a label in properties:
 
 ```console
 $ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \"_ret0_\"]"
@@ -338,9 +332,3 @@ For additional command-line options see the help for GSPNs with:
 ```console
 $ storm-gspn --help gspn
 ```
-
-
-## Running Storm on pGCL
-
-{:.alert .alert-info}
-Coming soon.
