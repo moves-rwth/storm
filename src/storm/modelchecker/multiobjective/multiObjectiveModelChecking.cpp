@@ -2,6 +2,7 @@
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
+#include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsAchievabilityChecker.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
@@ -54,12 +55,18 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     switch (method) {
         case MultiObjectiveMethod::Pcaa: {
             if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
-                STORM_LOG_THROW(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto,
-                                storm::exceptions::NotImplementedException, "Currently, only Pareto queries with scheduler restrictions are implemented.");
-                auto explorer = DeterministicSchedsParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
-                result = explorer.check(env);
-                if (env.modelchecker().multi().isExportPlotSet()) {
-                    explorer.exportPlotOfCurrentApproximation(env);
+                if (preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability ||
+                    preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative) {
+                    auto achChecker = DeterministicSchedsAchievabilityChecker<SparseModelType, storm::RationalNumber>(preprocessorResult);
+                    result = achChecker.check(env);
+                } else {
+                    STORM_LOG_THROW(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto,
+                                    storm::exceptions::NotImplementedException, "The query type is not implemented with scheduler restrictions.");
+                    auto explorer = DeterministicSchedsParetoExplorer<SparseModelType, storm::RationalNumber>(preprocessorResult);
+                    result = explorer.check(env);
+                    if (env.modelchecker().multi().isExportPlotSet()) {
+                        explorer.exportPlotOfCurrentApproximation(env);
+                    }
                 }
             } else {
                 std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;

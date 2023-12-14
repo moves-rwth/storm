@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/Objective.h"
@@ -16,6 +17,10 @@ class Environment;
 namespace modelchecker {
 namespace multiobjective {
 
+/*!
+ * Represents the LP Encoding for achievability under simple strategies
+ * @see http://doi.org/10.18154/RWTH-2023-09669 Chapter 8.3 and 8.4
+ */
 template<typename ModelType, typename GeometryValueType>
 class DeterministicSchedsLpChecker {
    public:
@@ -32,9 +37,17 @@ class DeterministicSchedsLpChecker {
 
     /*!
      * Optimizes in the currently given direction
-     * @return some optimal point found in that direction.
+     *
+     * If there is a point in the given area, an achievable point p and a value v are returned such that
+     * p*w≈q*w≈v, where w is the weight vector and q is an (unknown) optimal point in the overapproximation.
+     * - if eps is present, the requirement is p*w ≤ q*w ≤ v and |p*w-v| ≤ |eps*w|, and
+     * - if eps is not present (i.e. empty), the default precision of the underlying LP solver is used.
+     * If there is no achievable point in the given area, the returned object remains uninitialized.
+     *
+     * @param eps if not empty, defines the precision requirement
+     *
      */
-    boost::optional<Point> check(storm::Environment const& env, Polytope overapproximation);
+    std::optional<std::pair<Point, GeometryValueType>> check(storm::Environment const& env, Polytope overapproximation, Point const& eps = {});
 
     /*!
      * Optimizes in the currently given direction, recursively checks for points in the given area.
@@ -53,7 +66,6 @@ class DeterministicSchedsLpChecker {
    private:
     void initialize(Environment const& env);
 
-    bool processEndComponents(std::vector<std::vector<storm::expressions::Expression>>& ecVars);
     void initializeLpModel(Environment const& env);
 
     // Builds the induced markov chain of the current model and checks whether the resulting value coincide with the result of the lp solver.
