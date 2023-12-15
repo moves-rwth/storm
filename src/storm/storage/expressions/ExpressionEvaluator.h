@@ -21,12 +21,6 @@ class ExpressionEvaluator<double> : public ExprtkExpressionEvaluator {
     ExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
 };
 
-template<>
-class ExpressionEvaluator<storm::Interval> : public ExprtkExpressionEvaluator {
-   public:
-    ExpressionEvaluator(storm::expressions::ExpressionManager const& manager);
-};
-
 template<typename RationalType>
 class ExpressionEvaluatorWithVariableToExpressionMap : public ExprtkExpressionEvaluatorBase<RationalType> {
    public:

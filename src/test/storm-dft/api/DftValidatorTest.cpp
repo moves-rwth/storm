@@ -3,6 +3,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-dft/api/storm-dft.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 namespace {
 
