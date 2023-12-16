@@ -2,12 +2,12 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cstddef>
 
 #include "storm-parsers/parser/ExpressionParser.h"
-#include "storm/utility/constants.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace parser {

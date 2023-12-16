@@ -2,6 +2,13 @@
 
 namespace storm::transformer {
 
+/**
+ * This class is a convenience transformer to add uncertainty.
+ * We currently support only one type of self-defined uncertainty, although additional types of uncertainty are imaginable.
+ * The transformer does maintain reward models, state labels, state valuations, choice labels and choice origins.
+ *
+ * @tparam ValueType
+ */
 template<typename ValueType>
 class AddUncertainty {
    public:

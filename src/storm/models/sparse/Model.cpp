@@ -675,7 +675,7 @@ bool Model<ValueType, RewardModelType>::hasUncertainty() const {
     if (!this->supportsUncertainty()) {
         return false;
     }
-    // Check for parameters
+    // Check for intervals
     for (auto const& entry : this->getTransitionMatrix()) {
         if (!storm::utility::isConstant(entry.getValue())) {
             return true;
@@ -700,7 +700,6 @@ std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardM
     return this->rewardModels;
 }
 
-#ifdef STORM_HAVE_CARL
 std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
     return storm::storage::getVariables(model.getTransitionMatrix());
 }
@@ -734,17 +733,13 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
-#endif
 
 template class Model<double>;
 template class Model<storm::Interval>;
 
-#ifdef STORM_HAVE_CARL
 template class Model<storm::RationalNumber>;
-
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Model<storm::RationalFunction>;
-#endif
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
