@@ -11,10 +11,7 @@ OverlappingGuardAnalyser::OverlappingGuardAnalyser(Program const& program, std::
 
 bool OverlappingGuardAnalyser::hasModuleWithInnerActionOverlap() {
     if (!initializedWithStateConstraints) {
-        std::vector<storm::expressions::Expression> expressions = program.getAllRangeExpressions();
-        if (!expressions.empty()) {
-            smtSolver->add(storm::expressions::conjunction(expressions));
-        }
+        smtSolver->add(storm::expressions::conjunction((program.getAllRangeExpressions())));
     }
 
     for (auto const& module : program.getModules()) {
