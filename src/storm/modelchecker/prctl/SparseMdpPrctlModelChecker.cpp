@@ -468,7 +468,7 @@ template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkQuantileFormula(
     Environment const& env, CheckTask<storm::logic::QuantileFormula, SolutionType> const& checkTask) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We have not yet implemented bounded until with intervals";
+        throw storm::exceptions::NotImplementedException() << "We have not yet implemented quantile formulas with intervals";
     } else {
         STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
                         "Computing quantiles is only supported for the initial states of a model.");
