@@ -38,7 +38,7 @@ void expectThrow(std::string const& path, std::string const& formulaString) {
     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
 
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
-    EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidArgumentException);
 }
 
 void checkModel(std::string const& path, std::string const& formulaString, double maxmin, double maxmax, double minmax, double minmin, bool produceScheduler) {
