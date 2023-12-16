@@ -36,11 +36,8 @@ template<typename T>
 storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
     storm::storage::BitVector result{initialStates.size()};
     for (uint64_t currentState : initialStates) {
-        uint64_t const rowGroupEnd = transitionMatrix.getRowGroupIndices()[currentState + 1];
-        for (uint64_t row = transitionMatrix.getRowGroupIndices()[currentState]; row < rowGroupEnd; ++row) {
-            for (auto const& successor : transitionMatrix.getRow(row)) {
-                result.set(successor.getColumn());
-            }
+        for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
+            result.set(successor.getColumn());
         }
     }
     return result;
