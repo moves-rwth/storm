@@ -453,7 +453,7 @@ template<class SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkLexObjectiveFormula(
     const Environment& env, const CheckTask<storm::logic::MultiObjectiveFormula, SolutionType>& checkTask) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We have not yet implemented bounded until with intervals";
+        throw storm::exceptions::NotImplementedException() << "We have not yet implemented lexicographic model checking with intervals";
     } else {
         auto formulaChecker = [&](storm::logic::Formula const& formula) {
             return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
