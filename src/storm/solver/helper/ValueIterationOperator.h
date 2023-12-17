@@ -291,7 +291,7 @@ class ValueIterationOperator {
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
             if constexpr (isPair<OperandType>::value) {
-                throw storm::exceptions::NotImplementedException() << "Value Iteration is not implemented with pairs and interval-models.";
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
             } else {
                 result += operand[*matrixColumnIt] * (matrixValueIt->lower());

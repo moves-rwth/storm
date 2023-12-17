@@ -154,7 +154,7 @@ std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFact
     EquationSolverType type = env.solver().getLinearEquationSolverType();
 
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We have not implemented interval-based linear equation solvers";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not implemented interval-based linear equation solvers");
     }
 
     // Adjust the solver type if none was specified and we want sound/exact computations

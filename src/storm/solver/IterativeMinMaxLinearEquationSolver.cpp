@@ -155,7 +155,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveInducedE
     Environment const& env, std::unique_ptr<LinearEquationSolver<ValueType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler,
     std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We did not implement solving induced equation systems for interval-based models.";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement solving induced equation systems for interval-based models.");
         // Implementing this requires linear equation systems with different value types and solution types (or some appropriate casting)
         return false;
     } else {
@@ -201,7 +201,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
     Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b,
     std::vector<storm::storage::sparse::state_type>&& initialPolicy) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We did not implement policy iteration for interval-based models.";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement policy iteration for interval-based models.");
         return false;
     } else {
         std::vector<storm::storage::sparse::state_type> scheduler = std::move(initialPolicy);
@@ -421,7 +421,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                           std::vector<SolutionType>& x,
                                                                                                           std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We did not implement optimistic value iteration for interval-based models.";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement optimistic value iteration for interval-based models.");
         return false;
     } else {
         if (!storm::utility::vector::hasNonZeroEntry(b)) {
@@ -569,7 +569,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                    std::vector<SolutionType>& x,
                                                                                                    std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "We did not implement intervaliteration for interval-based models";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement intervaliteration for interval-based models");
         return false;
     } else {
         setUpViOperator();
@@ -612,7 +612,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                      std::vector<SolutionType>& x,
                                                                                                      std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "SoundVI does not handle interval-based models";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SoundVI does not handle interval-based models");
         return false;
     } else {
         // Prepare the solution vectors and the helper.
@@ -664,7 +664,7 @@ template<typename ValueType, typename SolutionType>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquationsViToPi(Environment const& env, OptimizationDirection dir,
                                                                                         std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "ViToPi does not handle interval-based models";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "ViToPi does not handle interval-based models");
         return false;
     }
     // First create an (inprecise) vi solver to get a good initial strategy for the (potentially precise) policy iteration solver.
@@ -695,7 +695,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                 std::vector<SolutionType>& x,
                                                                                                 std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException() << "Rational search does not handle interval-based models";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational search does not handle interval-based models");
         return false;
     } else {
         // Set up two value iteration operators. One for exact and one for imprecise computations

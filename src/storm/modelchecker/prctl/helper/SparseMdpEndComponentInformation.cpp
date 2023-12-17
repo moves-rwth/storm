@@ -107,8 +107,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException()
-            << "We do not support the elimination of end components and the creation of an adequate equation system with interval models.";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
     std::vector<uint64_t> const& maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
@@ -249,8 +248,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        throw storm::exceptions::NotImplementedException()
-            << "We do not support the elimination of end components and the creation of an adequate equation system with interval models.";
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }
 
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
