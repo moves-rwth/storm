@@ -1035,7 +1035,7 @@ class SparseMatrix {
     bool isProbabilistic() const;
 
     /*!
-     * Checks whether each entry is positive (omitted entries are zero by default and thus not (strictly) positive)
+     * Checks whether each present entry is strictly positive (omitted entries are not considered).
      */
     bool hasOnlyPositiveEntries() const;
 

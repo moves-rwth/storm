@@ -485,9 +485,9 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
     return result;
 }
 
-template<typename T, typename SchedulerType>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<SchedulerType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
+                                     storm::storage::Scheduler<SchedulerValueType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
@@ -510,9 +510,9 @@ void computeSchedulerStayingInStates(storm::storage::BitVector const& states, st
     }
 }
 
-template<typename T, typename SchedulerType>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                              storm::storage::Scheduler<SchedulerType>& scheduler) {
+                                              storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
@@ -537,10 +537,10 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
     }
 }
 
-template<typename T, typename SchedulerType>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                   storm::storage::Scheduler<SchedulerType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
+                                   storm::storage::Scheduler<SchedulerValueType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     // Perform backwards DFS from psiStates and find a valid choice for each visited state.
 
     std::vector<uint_fast64_t> stack;
@@ -588,9 +588,9 @@ void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transi
     }
 }
 
-template<typename T, typename SchedulerType>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<SchedulerType>& scheduler) {
+                            storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     computeSchedulerStayingInStates(prob0EStates, transitionMatrix, scheduler);
 }
 
@@ -619,10 +619,10 @@ void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm
     computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, rewInfStates, trapStates, scheduler);
 }
 
-template<typename T, typename SchedulerType>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
                             storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerType>& scheduler,
+                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerValueType>& scheduler,
                             boost::optional<storm::storage::BitVector> const& rowFilter) {
     // set an arbitrary (valid) choice for the psi states.
     for (auto psiState : psiStates) {

@@ -286,7 +286,7 @@ template class MinMaxLinearEquationSolver<storm::RationalNumber>;
 template class MinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 template class GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 
-template class MinMaxLinearEquationSolver<storm::Interval, double>;  // Unclear whether this semantically makes sense.
+template class MinMaxLinearEquationSolver<storm::Interval, double>;
 template class MinMaxLinearEquationSolverFactory<storm::Interval, double>;
 template class GeneralMinMaxLinearEquationSolverFactory<storm::Interval, double>;
 }  // namespace storm::solver

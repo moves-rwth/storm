@@ -271,9 +271,6 @@ void extractValueAndSchedulerHint(SparseMdpHintType<SolutionType>& hintStorage, 
                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& maybeStates,
                                   boost::optional<storm::storage::BitVector> const& selectedChoices, ModelCheckerHint const& hint,
                                   bool skipECWithinMaybeStatesCheck) {
-    //    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-    //        throw storm::exceptions::NotImplementedException() << "We do not support extracting value/scheduler hints with interval models.";
-    //    } else {
     // Deal with scheduler hint.
     if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().hasSchedulerHint()) {
         if (hintStorage.hasSchedulerHint()) {
@@ -324,7 +321,6 @@ void extractValueAndSchedulerHint(SparseMdpHintType<SolutionType>& hintStorage, 
              .full())) {
         hintStorage.valueHint = storm::utility::vector::filterVector(hint.template asExplicitModelCheckerHint<SolutionType>().getResultHint(), maybeStates);
     }
-    // }
 }
 
 template<typename ValueType, typename SolutionType>

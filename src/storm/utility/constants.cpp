@@ -915,6 +915,12 @@ storm::RationalNumber convertNumber(storm::Interval const& number) {
 }
 
 template<>
+double convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return number.lower();
+}
+
+template<>
 storm::Interval abs(storm::Interval const& interval) {
     return interval.abs();
 }
