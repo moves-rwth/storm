@@ -16,16 +16,12 @@ AddUncertainty<ValueType>::AddUncertainty(std::shared_ptr<storm::models::sparse:
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType>::transform(double additiveUncertainty, double minimalTransitionProbability) {
-    storage::SparseMatrixBuilder<storm::Interval> newMatrixBuilder =
+    // we first build the matrix and later copy the row grouping.
+    auto newMatrixBuilder =
         storage::SparseMatrixBuilder<storm::Interval>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
-                                                      origModel->getTransitionMatrix().getNonzeroEntryCount());
-    // Build transition matrix.
+                                                      origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
+    // Build transition matrix (without row grouping)
     for (uint64_t state = 0; state < origModel->getNumberOfStates(); ++state) {
-        if (!origModel->getTransitionMatrix().hasTrivialRowGrouping()) {
-            uint64_t startOfRowGroup = origModel->getTransitionMatrix().getRowGroupIndices()[state];
-            newMatrixBuilder.newRowGroup(startOfRowGroup);
-        }
-
         for (auto row : origModel->getTransitionMatrix().getRowGroupIndices(state)) {
             for (auto const& entry : origModel->getTransitionMatrix().getRow(row)) {
                 newMatrixBuilder.addNextValue(row, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
@@ -34,6 +30,9 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
     }
 
     storm::storage::sparse::ModelComponents<storm::Interval> modelComponents(newMatrixBuilder.build(), origModel->getStateLabeling());
+    if (!origModel->getTransitionMatrix().hasTrivialRowGrouping()) {
+        modelComponents.transitionMatrix.setRowGroupIndices(origModel->getTransitionMatrix().getRowGroupIndices());
+    }
     // Change value type of standard reward model.
     std::unordered_map<std::string, models::sparse::StandardRewardModel<storm::Interval>> newRewardModels;
     for (auto const& rewModel : origModel->getRewardModels()) {
