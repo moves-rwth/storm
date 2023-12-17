@@ -1,10 +1,14 @@
 #pragma once
 
-#include <carl/formula/Formula.h>
 #include <type_traits>
 #include <unordered_set>
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
+
+namespace carl {
+template<typename V>
+class Formula;
+}
 
 namespace storm {
 namespace analysis {
@@ -45,6 +49,8 @@ class ConstraintCollector {
      * @param model The Model for which to create the constraints.
      */
     ConstraintCollector(storm::models::sparse::Model<ValueType> const& model);
+
+    ~ConstraintCollector();
 
     /*!
      * Returns the set of wellformed-ness constraints.

@@ -1,5 +1,7 @@
 
 #include "GraphConditions.h"
+
+#include <carl/formula/Formula.h>
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -14,6 +16,9 @@ template<typename ValueType>
 ConstraintCollector<ValueType>::ConstraintCollector(storm::models::sparse::Model<ValueType> const& model) {
     process(model);
 }
+
+template<typename ValueType>
+ConstraintCollector<ValueType>::~ConstraintCollector() = default;
 
 template<typename ValueType>
 std::unordered_set<typename ConstraintType<ValueType>::val> const& ConstraintCollector<ValueType>::getWellformedConstraints() const {
