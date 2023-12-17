@@ -23,7 +23,6 @@
 namespace storm {
 namespace solver {
 
-
 template<typename ValueType, typename SolutionType>
 IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::IterativeMinMaxLinearEquationSolver() : linearEquationSolverFactory(nullptr) {
     STORM_LOG_ASSERT(static_cast<bool>(std::is_same_v<storm::Interval, ValueType>),

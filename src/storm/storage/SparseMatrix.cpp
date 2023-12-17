@@ -1116,7 +1116,6 @@ std::vector<ValueType> SparseMatrix<ValueType>::getConstrainedRowGroupSumVector(
     return result;
 }
 
-
 template<typename ValueType>
 SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint,
                                                               storm::storage::BitVector const& columnConstraint, bool insertDiagonalElements,
