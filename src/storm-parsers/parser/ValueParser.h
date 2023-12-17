@@ -1,13 +1,18 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <type_traits>
 
 #include "storm/adapters/RationalFunctionForward.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
+namespace expressions {
+template<typename V>
+class ExpressionEvaluator;
+}
+
 namespace parser {
 class ExpressionParser;
 
