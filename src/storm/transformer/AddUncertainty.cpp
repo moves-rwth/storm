@@ -19,16 +19,11 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
     storage::SparseMatrixBuilder<storm::Interval> newMatrixBuilder =
         storage::SparseMatrixBuilder<storm::Interval>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
                                                       origModel->getTransitionMatrix().getNonzeroEntryCount());
+    // Build transition matrix.
     for (uint64_t state = 0; state < origModel->getNumberOfStates(); ++state) {
-        uint64_t startOfRowGroup;
-        uint64_t endOfRowGroup;
         if (!origModel->getTransitionMatrix().hasTrivialRowGrouping()) {
-            startOfRowGroup = origModel->getTransitionMatrix().getRowGroupIndices()[state];
-            endOfRowGroup = origModel->getTransitionMatrix().getRowGroupIndices()[state + 1];
+            uint64_t startOfRowGroup = origModel->getTransitionMatrix().getRowGroupIndices()[state];
             newMatrixBuilder.newRowGroup(startOfRowGroup);
-        } else {
-            startOfRowGroup = state;
-            endOfRowGroup = state + 1;
         }
 
         for (auto row : origModel->getTransitionMatrix().getRowGroupIndices(state)) {
@@ -37,7 +32,9 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
             }
         }
     }
+
     storm::storage::sparse::ModelComponents<storm::Interval> modelComponents(newMatrixBuilder.build(), origModel->getStateLabeling());
+    // Change value type of standard reward model.
     std::unordered_map<std::string, models::sparse::StandardRewardModel<storm::Interval>> newRewardModels;
     for (auto const& rewModel : origModel->getRewardModels()) {
         auto const& oldRewModel = rewModel.second;
@@ -54,7 +51,8 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
         newRewardModels.emplace(rewModel.first, std::move(newRewModel));
     }
 
-    modelComponents.rewardModels = newRewardModels;
+    // remaining model components.
+    modelComponents.rewardModels = std::move(newRewardModels);
     modelComponents.stateValuations = origModel->getOptionalStateValuations();
     modelComponents.choiceLabeling = origModel->getOptionalChoiceLabeling();
     modelComponents.choiceOrigins = origModel->getOptionalChoiceOrigins();
