@@ -31,7 +31,7 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
             endOfRowGroup = state + 1;
         }
 
-        for (uint64_t row = startOfRowGroup; row < endOfRowGroup; ++row) {
+        for (auto row : origModel->getTransitionMatrix().getRowGroupIndices(state)) {
             for (auto const& entry : origModel->getTransitionMatrix().getRow(row)) {
                 newMatrixBuilder.addNextValue(row, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
             }

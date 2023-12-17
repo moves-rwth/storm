@@ -23,7 +23,6 @@
 namespace storm {
 namespace solver {
 
-#undef STORM_MINMAX_DEBUG_EQUATION_SYSTEM
 
 template<typename ValueType, typename SolutionType>
 IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::IterativeMinMaxLinearEquationSolver() : linearEquationSolverFactory(nullptr) {
@@ -479,12 +478,6 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                                                                 std::vector<SolutionType>& x,
                                                                                                 std::vector<ValueType> const& b) const {
     setUpViOperator();
-#ifdef STORM_MINMAX_DEBUG_EQUATION_SYSTEM
-    std::cout << "Matrix A: " << *(this->A) << std::endl;
-    std::cout << "Vector b: " << storm::utility::vector::toString(b) << std::endl;
-    std::cout << "Optimization direction: " << dir << std::endl;
-#endif
-
     // By default, we can not provide any guarantee
     SolverGuarantee guarantee = SolverGuarantee::None;
 

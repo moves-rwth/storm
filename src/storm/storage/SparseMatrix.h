@@ -627,7 +627,8 @@ class SparseMatrix {
     void makeRowGroupingTrivial();
 
     /*!
-     * Returns the indices of the rows that belong to one of the selected row groups.
+     * Returns a bitvector representing the set of rows,
+     * with all indices set that correspond to one of the selected row groups.
      *
      * @param groups the selected row groups
      * @return a bit vector that is true at position i iff the row group of row i is selected.
@@ -699,14 +700,6 @@ class SparseMatrix {
      * @return The sum of the entries in the given row and columns.
      */
     value_type getConstrainedRowSum(index_type row, storm::storage::BitVector const& columns) const;
-
-    /*!
-     * Creates a BitVector of length nrRows with a set bit in position x if the x'th row is in the selected set of row groups.
-     *
-     * @param An indicator bit vector that selects the row groups
-     * @return The rows that correspond to the rowgroups
-     */
-    storm::storage::BitVector getCorrespondingRows(storm::storage::BitVector const& selectedRowGroups) const;
 
     /*!
      * Computes a vector whose i-th entry is the sum of the entries in the i-th selected row where only those

@@ -47,7 +47,7 @@ class ValueParser {
         std::unique_ptr<storm::expressions::ExpressionEvaluator<storm::RationalFunction>> evaluator;
         std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
     };
-    std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, ParametricData, nullptr_t> data;
+    std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, ParametricData, std::nullptr_t> data;
 };
 
 /*!

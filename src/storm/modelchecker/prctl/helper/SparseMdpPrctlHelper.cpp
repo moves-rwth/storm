@@ -613,11 +613,11 @@ void computeFixedPointSystemUntilProbabilities(storm::solver::SolveGoal<ValueTyp
         // TODO ctned: however, there is quite some bookkeeping involved in projecting the right vectors.
         // TODO ctned: Instead is likely easier to just do a pass and make a unique sink and a unique target state.
         // TODO ctned: If this is ever changed, extractSchedulerChoices must also be updated.
-        submatrix = transitionMatrix.filterEntries(transitionMatrix.getCorrespondingRows(qualitativeStateSets.maybeStates));
+        submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(qualitativeStateSets.maybeStates));
 
         // Prepare the right-hand side of the equation system. For entry i this corresponds to
         // the accumulated probability of going from state i to some state that has probability 1.
-        storm::utility::vector::setAllValues(b, transitionMatrix.getCorrespondingRows(qualitativeStateSets.statesWithProbability1));
+        storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(qualitativeStateSets.statesWithProbability1));
     } else {
         // First, we can eliminate the rows and columns from the original transition probability matrix for states
         // whose probabilities are already known.

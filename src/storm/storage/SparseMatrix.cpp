@@ -821,9 +821,7 @@ template<typename ValueType>
 storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
     storm::storage::BitVector res(this->getRowCount(), false);
     for (auto group : groupConstraint) {
-        for (auto row : this->getRowGroupIndices(group)) {
-            res.set(row, true);
-        }
+        res.setMultiple(rowGroupIndices.get()[group], getRowGroupSize(group));
     }
     return res;
 }
@@ -1118,14 +1116,6 @@ std::vector<ValueType> SparseMatrix<ValueType>::getConstrainedRowGroupSumVector(
     return result;
 }
 
-template<typename ValueType>
-BitVector SparseMatrix<ValueType>::getCorrespondingRows(BitVector const& selectedRowGroups) const {
-    BitVector result{this->getRowCount()};
-    for (auto const& selectedRowGroup : selectedRowGroups) {
-        result.setMultiple(rowGroupIndices.get()[selectedRowGroup], rowGroupIndices.get()[selectedRowGroup + 1] - rowGroupIndices.get()[selectedRowGroup]);
-    }
-    return result;
-}
 
 template<typename ValueType>
 SparseMatrix<ValueType> SparseMatrix<ValueType>::getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint,
