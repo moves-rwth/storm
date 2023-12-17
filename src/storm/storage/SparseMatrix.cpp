@@ -821,7 +821,7 @@ template<typename ValueType>
 storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
     storm::storage::BitVector res(this->getRowCount(), false);
     for (auto group : groupConstraint) {
-        res.setMultiple(rowGroupIndices.get()[group], getRowGroupSize(group));
+        res.setMultiple(getRowGroupIndices()[group], getRowGroupSize(group));
     }
     return res;
 }
