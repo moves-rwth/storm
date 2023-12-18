@@ -43,7 +43,7 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
             stateRewards = utility::vector::convertNumericVector<storm::Interval>(oldRewModel.getStateRewardVector());
         }
         if (oldRewModel.hasStateActionRewards()) {
-            stateActionRewards = utility::vector::convertNumericVector<storm::Interval>(oldRewModel.getStateRewardVector());
+            stateActionRewards = utility::vector::convertNumericVector<storm::Interval>(oldRewModel.getStateActionRewardVector());
         }
         STORM_LOG_THROW(oldRewModel.hasTransitionRewards(), exceptions::NotImplementedException, "Transition rewards are not supported.");
         models::sparse::StandardRewardModel<storm::Interval> newRewModel(stateRewards, stateActionRewards);
