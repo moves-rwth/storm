@@ -159,8 +159,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveInducedE
         // Implementing this requires linear equation systems with different value types and solution types (or some appropriate casting)
         return false;
     } else {
-        assert(subB.size() == x.size());
-        assert(this->linearEquationSolverFactory != nullptr);  // This can happen with the wrong constructor.
+        STORM_LOG_ASSERT(subB.size() == x.size(), "Sizes of subB and x do not coincide.");
+        STORM_LOG_ASSERT(this->linearEquationSolverFactory != nullptr, "Wrong constructor was called.");
 
         // Resolve the nondeterminism according to the given scheduler.
         bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
