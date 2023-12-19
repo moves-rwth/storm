@@ -95,4 +95,5 @@ TEST(DirectEncodingParserTest, IntervalDtmcTest) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     ASSERT_EQ(613, dtmc->getNumberOfStates());
+    EXPECT_TRUE(modelPtr->hasUncertainty());
 }
