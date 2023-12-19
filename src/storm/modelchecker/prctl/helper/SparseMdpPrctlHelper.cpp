@@ -570,7 +570,7 @@ void extractSchedulerChoices(storm::storage::Scheduler<SolutionType>& scheduler,
     } else {
         // See computeFixedPointSystemUntilProbabilities, where we create a different equation system.
         // Consequentially, we run a slightly different code here for interval-based models.
-        assert(maybeStates.size() == subChoices.size());
+        STORM_LOG_ASSERT(maybeStates.size() == subChoices.size(), "Sizes do not coincide.");
         for (auto maybeState : maybeStates) {
             scheduler.setChoice(subChoices[maybeState], maybeState);
         }
