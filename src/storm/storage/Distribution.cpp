@@ -220,7 +220,7 @@ template std::ostream& operator<<(std::ostream& out, Distribution<storm::Rationa
 template class Distribution<storm::RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalFunction> const& distribution);
 template class Distribution<storm::RationalFunction, uint64_t>;
-template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalFunction, uint_fast64_t> const& distribution);
+template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalFunction, uint64_t> const& distribution);
 
 template class Distribution<storm::Interval>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval> const& distribution);
