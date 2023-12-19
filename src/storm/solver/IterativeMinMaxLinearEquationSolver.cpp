@@ -327,7 +327,7 @@ MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<Value
 
     MinMaxLinearEquationSolverRequirements requirements;
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        assert(!needsLinEqSolver);
+        STORM_LOG_ASSERT(!needsLinEqSolver, "Intervals should not require a linear equation solver.");
         // nothing to be done;
     } else if (needsLinEqSolver) {
         requirements = MinMaxLinearEquationSolverRequirements(this->linearEquationSolverFactory->getRequirements(env));
