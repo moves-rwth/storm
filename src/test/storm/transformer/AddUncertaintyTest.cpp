@@ -15,6 +15,7 @@ TEST(AddUncertaintyTransformerTest, BrpTest) {
     auto uncertainModel = transformer.transform(0.01);
     EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
     EXPECT_EQ(uncertainModel->getNumberOfTransitions(), model->getNumberOfTransitions());
+    EXPECT_TRUE(uncertainModel->hasUncertainty());
 }
 
 TEST(AddUncertaintyTransformerTest, Coin22Test) {
