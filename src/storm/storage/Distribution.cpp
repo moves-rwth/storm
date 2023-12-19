@@ -225,7 +225,7 @@ template std::ostream& operator<<(std::ostream& out, Distribution<storm::Rationa
 template class Distribution<storm::Interval>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval> const& distribution);
 template class Distribution<storm::Interval, uint64_t>;
-template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval, uint_fast64_t> const& distribution);
+template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval, uint64_t> const& distribution);
 
 #endif
 }  // namespace storage
