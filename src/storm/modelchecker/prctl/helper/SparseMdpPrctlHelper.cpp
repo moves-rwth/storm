@@ -606,7 +606,7 @@ void computeFixedPointSystemUntilProbabilities(storm::solver::SolveGoal<ValueTyp
                                                storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& b) {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         // For non-interval based models, we can eliminate the rows and columns from the original transition probability matrix for states
-        // whose probabilities are already known... However, is information in the transition to those states.
+        // whose probabilities are already known... However, there is information in the transition to those states.
         // Thus, we cannot eliminate them all.
         // We can however drop all the outgoing transitions from these states.
         // TODO: we can drop more than those entries and actually remove many states (all but the ones reachable in one step from the maybe states),
