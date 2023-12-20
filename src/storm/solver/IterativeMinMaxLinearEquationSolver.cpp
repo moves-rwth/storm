@@ -203,9 +203,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement policy iteration for interval-based models.");
         return false;
-    } else {
-        std::vector<storm::storage::sparse::state_type> scheduler = std::move(initialPolicy);
-        // Get a vector for storing the right-hand side of the inner equation system.
+    }
+    std::vector<storm::storage::sparse::state_type> scheduler = std::move(initialPolicy);
+    // Get a vector for storing the right-hand side of the inner equation system.
         if (!auxiliaryRowGroupVector) {
             auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
         }
