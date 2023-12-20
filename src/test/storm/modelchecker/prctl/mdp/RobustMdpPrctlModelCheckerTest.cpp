@@ -92,8 +92,6 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
     auto mdp = modelPtr->as<storm::models::sparse::Mdp<double>>();
 
-    auto transformer = storm::transformer::AddUncertainty(modelPtr);
-    auto uncertainModel = transformer.transform(amountOfUncertainty);
     ASSERT_TRUE(formulas[0]->isProbabilityOperatorFormula());
     // These tests cases where written with max in mind.
     ASSERT_TRUE(formulas[0]->asProbabilityOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize);
@@ -107,10 +105,8 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
 
     storm::Environment envIntervals;
     envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-
-    std::shared_ptr<storm::models::sparse::Mdp<storm::Interval>> imdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
-    ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
-
+    auto transformer = storm::transformer::AddUncertainty(modelPtr);
+    auto imdp = transformer.transform(amountOfUncertainty)->as<storm::models::sparse::Mdp<storm::Interval>>();
     auto ichecker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*imdp);
     auto iresultMin = checker.check(env, task);
     double minValue = getQuantitativeResultAtInitialState(mdp, iresultMin);
@@ -141,6 +137,7 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }
 
-TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22maxmin) {
+TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
+    makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
 }

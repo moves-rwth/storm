@@ -59,7 +59,8 @@ namespace utility {
 namespace graph {
 
 /*!
- *
+ * Computes the states reachable in one step from the states indicated by the bitvector.
+ * Assumes that no zero entries exist in the transition matrix.
  */
 template<typename T>
 storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates);

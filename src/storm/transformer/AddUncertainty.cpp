@@ -21,14 +21,11 @@ std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType
         storage::SparseMatrixBuilder<storm::Interval>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
                                                       origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
     // Build transition matrix (without row grouping)
-    for (uint64_t state = 0; state < origModel->getNumberOfStates(); ++state) {
-        for (auto row : origModel->getTransitionMatrix().getRowGroupIndices(state)) {
-            for (auto const& entry : origModel->getTransitionMatrix().getRow(row)) {
-                newMatrixBuilder.addNextValue(row, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
-            }
+    for (uint64_t rowIndex = 0; rowIndex < origModel->getTransitionMatrix().getRowCount(); ++rowIndex) {
+        for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
+            newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
         }
     }
-
     storm::storage::sparse::ModelComponents<storm::Interval> modelComponents(newMatrixBuilder.build(), origModel->getStateLabeling());
     if (!origModel->getTransitionMatrix().hasTrivialRowGrouping()) {
         modelComponents.transitionMatrix.setRowGroupIndices(origModel->getTransitionMatrix().getRowGroupIndices());

@@ -81,6 +81,7 @@ void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& position
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
                                                                                                            << values.size() << ").");
@@ -100,7 +101,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
-    STORM_LOG_ASSERT(positions.size() >= vector.size(), "We cannot set positions that have not been initialized");
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
     for (auto position : positions) {
         vector[position] = value;
     }

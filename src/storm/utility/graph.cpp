@@ -37,6 +37,7 @@ storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> co
     storm::storage::BitVector result{initialStates.size()};
     for (uint64_t currentState : initialStates) {
         for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
+            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Matrix should not have zero entries.");
             result.set(successor.getColumn());
         }
     }
