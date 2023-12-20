@@ -232,12 +232,16 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT>
     std::pair<OpT1, OpT2> robustInitializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&, std::vector<OffT> const& offsets,
                                                  uint64_t offsetIndex) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+
         return {offsets[offsetIndex].upper(), offsets[offsetIndex].upper()};
     }
 
     template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT1, typename OffT2>
     std::pair<OpT1, OpT2> robustInitializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&,
                                                  std::pair<std::vector<OffT1> const*, OffT2> const& offsets, uint64_t offsetIndex) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+
         return {(*offsets.first)[offsetIndex], offsets.second};
     }
 
