@@ -15,85 +15,85 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
-namespace solver {
+namespace storm::solver {
 
-template<typename ValueType>
-MinMaxLinearEquationSolver<ValueType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction)
+template<typename ValueType, typename SolutionType>
+MinMaxLinearEquationSolver<ValueType, SolutionType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction)
     : direction(direction), trackScheduler(false), uniqueSolution(false), noEndComponents(false), cachingEnabled(false), requirementsChecked(false) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-MinMaxLinearEquationSolver<ValueType>::~MinMaxLinearEquationSolver() {
+template<typename ValueType, typename SolutionType>
+MinMaxLinearEquationSolver<ValueType, SolutionType>::~MinMaxLinearEquationSolver() {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::solveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x,
-                                                           std::vector<ValueType> const& b) const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environment const& env, OptimizationDirection d, std::vector<SolutionType>& x,
+                                                                         std::vector<ValueType> const& b) const {
     STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(),
                               "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements "
                               "as checked (if applicable).");
     return internalSolveEquations(env, d, x, b);
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environment const& env, std::vector<SolutionType>& x,
+                                                                         std::vector<ValueType> const& b) const {
     STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
     solveEquations(env, convert(this->direction), x, b);
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setOptimizationDirection(OptimizationDirection d) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setOptimizationDirection(OptimizationDirection d) {
     direction = convert(d);
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::unsetOptimizationDirection() {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::unsetOptimizationDirection() {
     direction = OptimizationDirectionSetting::Unset;
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setHasUniqueSolution(bool value) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setHasUniqueSolution(bool value) {
     uniqueSolution = value;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::hasUniqueSolution() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::hasUniqueSolution() const {
     return uniqueSolution || noEndComponents;
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setHasNoEndComponents(bool value) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setHasNoEndComponents(bool value) {
     noEndComponents = value;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::hasNoEndComponents() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::hasNoEndComponents() const {
     return noEndComponents;
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setTrackScheduler(bool trackScheduler) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setTrackScheduler(bool trackScheduler) {
     this->trackScheduler = trackScheduler;
     if (!this->trackScheduler) {
         schedulerChoices = boost::none;
     }
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::isTrackSchedulerSet() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isTrackSchedulerSet() const {
     return this->trackScheduler;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::hasScheduler() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::hasScheduler() const {
     return static_cast<bool>(schedulerChoices);
 }
 
-template<typename ValueType>
-storm::storage::Scheduler<ValueType> MinMaxLinearEquationSolver<ValueType>::computeScheduler() const {
+template<typename ValueType, typename SolutionType>
+storm::storage::Scheduler<ValueType> MinMaxLinearEquationSolver<ValueType, SolutionType>::computeScheduler() const {
     STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
     storm::storage::Scheduler<ValueType> result(schedulerChoices->size());
     uint_fast64_t state = 0;
@@ -104,14 +104,14 @@ storm::storage::Scheduler<ValueType> MinMaxLinearEquationSolver<ValueType>::comp
     return result;
 }
 
-template<typename ValueType>
-std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType>::getSchedulerChoices() const {
+template<typename ValueType, typename SolutionType>
+std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, SolutionType>::getSchedulerChoices() const {
     STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler choices, because they were not generated.");
     return schedulerChoices.get();
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setCachingEnabled(bool value) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setCachingEnabled(bool value) {
     if (cachingEnabled && !value) {
         // caching will be turned off. Hence we clear the cache at this point
         clearCache();
@@ -119,120 +119,139 @@ void MinMaxLinearEquationSolver<ValueType>::setCachingEnabled(bool value) {
     cachingEnabled = value;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::isCachingEnabled() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isCachingEnabled() const {
     return cachingEnabled;
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::clearCache() const {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache() const {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setInitialScheduler(std::vector<uint_fast64_t>&& choices) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setInitialScheduler(std::vector<uint_fast64_t>&& choices) {
     initialScheduler = std::move(choices);
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::hasInitialScheduler() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::hasInitialScheduler() const {
     return static_cast<bool>(initialScheduler);
 }
 
-template<typename ValueType>
-std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType>::getInitialScheduler() const {
+template<typename ValueType, typename SolutionType>
+std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, SolutionType>::getInitialScheduler() const {
     return initialScheduler.get();
 }
 
-template<typename ValueType>
-MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(
+template<typename ValueType, typename SolutionType>
+MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType, SolutionType>::getRequirements(
     Environment const&, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
     return MinMaxLinearEquationSolverRequirements();
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setRequirementsChecked(bool value) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setRequirementsChecked(bool value) {
     this->requirementsChecked = value;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolver<ValueType>::isRequirementsCheckedSet() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isRequirementsCheckedSet() const {
     return requirementsChecked;
 }
 
-template<class ValueType>
-void MinMaxLinearEquationSolver<ValueType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup) {
     STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed");
     this->choiceFixedForRowGroup = std::move(schedulerFixedForRowGroup);
 }
 
-template<typename ValueType>
-MinMaxLinearEquationSolverFactory<ValueType>::MinMaxLinearEquationSolverFactory() : requirementsChecked(false) {
+template<typename ValueType, typename SolutionType>
+MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::MinMaxLinearEquationSolverFactory() : requirementsChecked(false) {
     // Intentionally left empty
 }
 
-template<typename ValueType>
-void MinMaxLinearEquationSolverFactory<ValueType>::setRequirementsChecked(bool value) {
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::setRequirementsChecked(bool value) {
     this->requirementsChecked = value;
 }
 
-template<typename ValueType>
-bool MinMaxLinearEquationSolverFactory<ValueType>::isRequirementsCheckedSet() const {
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::isRequirementsCheckedSet() const {
     return this->requirementsChecked;
 }
 
-template<typename ValueType>
-MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType>::getRequirements(
+template<typename ValueType, typename SolutionType>
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyIsRobust(bool robust) {
+    this->robustUncertainty = robust;
+}
+
+template<typename ValueType, typename SolutionType>
+bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isUncertaintyRobust() const {
+    return this->robustUncertainty;
+}
+
+template<typename ValueType, typename SolutionType>
+MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getRequirements(
     Environment const& env, bool hasUniqueSolution, bool hasNoEndComponents, boost::optional<storm::solver::OptimizationDirection> const& direction,
     bool hasInitialScheduler, bool trackScheduler) const {
     // Create dummy solver and ask it for requirements.
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create(env);
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = this->create(env);
     solver->setTrackScheduler(trackScheduler);
     solver->setHasUniqueSolution(hasUniqueSolution);
     solver->setHasNoEndComponents(hasNoEndComponents);
     return solver->getRequirements(env, direction, hasInitialScheduler);
 }
 
-template<typename ValueType>
-std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(
+template<typename ValueType, typename SolutionType>
+std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create(
     Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const {
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create(env);
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = this->create(env);
     solver->setMatrix(matrix);
     return solver;
 }
 
-template<typename ValueType>
-std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(
+template<typename ValueType, typename SolutionType>
+std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create(
     Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const {
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> solver = this->create(env);
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = this->create(env);
     solver->setMatrix(std::move(matrix));
     return solver;
 }
 
-template<typename ValueType>
-GeneralMinMaxLinearEquationSolverFactory<ValueType>::GeneralMinMaxLinearEquationSolverFactory() : MinMaxLinearEquationSolverFactory<ValueType>() {
+template<typename ValueType, typename SolutionType>
+GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::GeneralMinMaxLinearEquationSolverFactory()
+    : MinMaxLinearEquationSolverFactory<ValueType, SolutionType>() {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
-    auto method = env.solver().minMax().getMethod();
-    if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
-        method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
-        method == MinMaxMethod::ViToPi) {
-        result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType>>(std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
-    } else if (method == MinMaxMethod::Topological) {
-        result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
-    } else if (method == MinMaxMethod::LinearProgramming) {
-        result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
-    } else if (method == MinMaxMethod::Acyclic) {
-        result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();
+template<typename ValueType, typename SolutionType>
+std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create(
+    Environment const& env) const {
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        // TODO: consider robust minMax solver methods and corresponding entries in the environment.
+        return std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>();
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
+        // TODO some minmax linear equation solvers only support SolutionType == ValueType.
+        auto method = env.solver().minMax().getMethod();
+        if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
+            method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
+            method == MinMaxMethod::ViToPi) {
+            result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>(
+                std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+        } else if (method == MinMaxMethod::Topological) {
+            result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
+        } else if (method == MinMaxMethod::LinearProgramming) {
+            result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
+        } else if (method == MinMaxMethod::Acyclic) {
+            result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
+        }
+        result->setRequirementsChecked(this->isRequirementsCheckedSet());
+        return result;
     }
-    result->setRequirementsChecked(this->isRequirementsCheckedSet());
-    return result;
 }
 
 template<>
@@ -263,10 +282,11 @@ template class MinMaxLinearEquationSolver<double>;
 template class MinMaxLinearEquationSolverFactory<double>;
 template class GeneralMinMaxLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class MinMaxLinearEquationSolver<storm::RationalNumber>;
 template class MinMaxLinearEquationSolverFactory<storm::RationalNumber>;
 template class GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
-#endif
-}  // namespace solver
-}  // namespace storm
+
+template class MinMaxLinearEquationSolver<storm::Interval, double>;
+template class MinMaxLinearEquationSolverFactory<storm::Interval, double>;
+template class GeneralMinMaxLinearEquationSolverFactory<storm::Interval, double>;
+}  // namespace storm::solver

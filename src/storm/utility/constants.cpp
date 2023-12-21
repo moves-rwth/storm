@@ -720,6 +720,11 @@ bool isConstant(storm::Polynomial const& a) {
 }
 
 template<>
+bool isConstant(storm::Interval const& a) {
+    return a.isPointInterval();
+}
+
+template<>
 bool isInfinity(storm::RationalFunction const& a) {
     // FIXME: this should be treated more properly.
     return a == infinity<storm::RationalFunction>();
@@ -893,6 +898,33 @@ double convertNumber(std::string const& value) {
     return convertNumber<double>(convertNumber<storm::RationalNumber>(value));
 }
 
+template<>
+storm::Interval convertNumber(double const& number) {
+    return storm::Interval(number);
+}
+
+template<>
+storm::Interval convertNumber(storm::RationalNumber const& n) {
+    return storm::Interval(convertNumber<double>(n));
+}
+
+template<>
+storm::RationalNumber convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return convertNumber<storm::RationalNumber>(number.lower());
+}
+
+template<>
+double convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return number.lower();
+}
+
+template<>
+storm::Interval abs(storm::Interval const& interval) {
+    return interval.abs();
+}
+
 // Explicit instantiations.
 
 // double
@@ -1015,6 +1047,8 @@ template std::string to_string(storm::GmpRationalNumber const& value);
 template RationalFunction one();
 template RationalFunction zero();
 
+template bool isNan(RationalFunction const&);
+
 // Instantiations for polynomials.
 template Polynomial one();
 template Polynomial zero();
@@ -1024,8 +1058,10 @@ template Interval one();
 template Interval zero();
 template bool isOne(Interval const& value);
 template bool isZero(Interval const& value);
-template bool isConstant(Interval const& value);
 template bool isInfinity(Interval const& value);
+template bool isAlmostZero(Interval const& value);
+
+template std::string to_string(storm::Interval const& value);
 #endif
 
 }  // namespace utility

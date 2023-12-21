@@ -170,14 +170,17 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
 template class MaximalEndComponentDecomposition<double>;
 template MaximalEndComponentDecomposition<double>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<double> const& model);
 
-#ifdef STORM_HAVE_CARL
 template class MaximalEndComponentDecomposition<storm::RationalNumber>;
 template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model);
 
+template class MaximalEndComponentDecomposition<storm::Interval>;
+template MaximalEndComponentDecomposition<storm::Interval>::MaximalEndComponentDecomposition(
+    storm::models::sparse::NondeterministicModel<storm::Interval> const& model);
+
 template class MaximalEndComponentDecomposition<storm::RationalFunction>;
 template MaximalEndComponentDecomposition<storm::RationalFunction>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model);
-#endif
+
 }  // namespace storage
 }  // namespace storm

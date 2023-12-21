@@ -558,6 +558,7 @@ template class SparseModelMemoryProduct<double>;
 template class SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class SparseModelMemoryProduct<storm::RationalNumber>;
 template class SparseModelMemoryProduct<storm::RationalFunction>;
+template class SparseModelMemoryProduct<storm::Interval>;
 
 }  // namespace storage
 }  // namespace storm

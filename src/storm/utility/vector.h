@@ -54,6 +54,24 @@ std::size_t findOrInsert(std::vector<T>& vector, T&& element) {
     return position;
 }
 
+template<typename T>
+void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& positions, T const& positiveValue = storm::utility::one<T>(),
+                  T const& negativeValue = storm::utility::zero<T>()) {
+    if (positions.getNumberOfSetBits() * 2 > positions.size()) {
+        vec.resize(positions.size(), positiveValue);
+        uint64_t index = positions.getNextUnsetIndex(0);
+        while (index < positions.size()) {
+            vec[index] = negativeValue;
+            index = positions.getNextUnsetIndex(index + 1);
+        }
+    } else {
+        vec.resize(positions.size(), negativeValue);
+        for (uint64_t index : positions) {
+            vec[index] = positiveValue;
+        }
+    }
+}
+
 /*!
  * Sets the provided values at the provided positions in the given vector.
  *
@@ -63,6 +81,7 @@ std::size_t findOrInsert(std::vector<T>& vector, T&& element) {
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
                                                                                                            << values.size() << ").");
@@ -74,6 +93,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
 
 /*!
  * Sets the provided value at the provided positions in the given vector.
+ * Note that the vector must be at least as long.
  *
  * @param vector The vector in which the value is to be set.
  * @param positions The positions at which the value is to be set.
@@ -81,6 +101,7 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  */
 template<class T>
 void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
     for (auto position : positions) {
         vector[position] = value;
     }
@@ -1271,6 +1292,21 @@ std::string toString(std::vector<ValueType> const& vector) {
     stream << " ]";
     return stream.str();
 }
+
+template<typename PT1, typename PT2>
+std::string toString(std::vector<std::pair<PT1, PT2>> const& vector) {
+    std::stringstream stream;
+    stream << "vector (" << vector.size() << ") [ ";
+    if (!vector.empty()) {
+        for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
+            stream << "{" << vector[i].first << "," << vector[i].second << "}, ";
+        }
+        stream << "{" << vector.back().first << "," << vector.back().second << "}";
+    }
+    stream << " ]";
+    return stream.str();
+}
+
 }  // namespace vector
 }  // namespace utility
 }  // namespace storm

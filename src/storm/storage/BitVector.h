@@ -473,6 +473,11 @@ class BitVector {
     void set(uint_fast64_t bitIndex, BitVector const& other);
 
     /*!
+     * Sets multiple bits to the given value.
+     */
+    void setMultiple(uint64_t bitIndex, uint64_t nrOfBits, bool newValue = true);
+
+    /*!
      * Apply a permutation of entries. That is, in row i, write the entry of row inversePermutation[i].
      * @param inversePermutation.
      * @return

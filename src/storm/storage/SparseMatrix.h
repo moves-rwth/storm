@@ -627,7 +627,8 @@ class SparseMatrix {
     void makeRowGroupingTrivial();
 
     /*!
-     * Returns the indices of the rows that belong to one of the selected row groups.
+     * Returns a bitvector representing the set of rows,
+     * with all indices set that correspond to one of the selected row groups.
      *
      * @param groups the selected row groups
      * @return a bit vector that is true at position i iff the row group of row i is selected.
@@ -684,14 +685,14 @@ class SparseMatrix {
      */
     void makeRowDirac(index_type row, index_type column, bool dropZeroEntries = false);
 
-    /*
+    /*!
      * Sums the entries in all rows.
      *
      * @return The vector of sums of the entries in the respective rows.
      */
     std::vector<ValueType> getRowSumVector() const;
 
-    /*
+    /*!
      * Sums the entries in the given row and columns.
      *
      * @param row The row whose entries to add.
@@ -1025,6 +1026,12 @@ class SparseMatrix {
      * Checks for each row whether it sums to one.
      */
     bool isProbabilistic() const;
+
+    /*!
+     * Checks whether each present entry is strictly positive (omitted entries are not considered).
+     */
+    bool hasOnlyPositiveEntries() const;
+
     /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
      * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.

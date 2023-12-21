@@ -9,8 +9,8 @@ class Environment;
 
 namespace solver {
 
-template<typename ValueType>
-class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
+template<typename ValueType, typename SolutionType = ValueType>
+class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType, SolutionType> {
    public:
     StandardMinMaxLinearEquationSolver();
     explicit StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);

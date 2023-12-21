@@ -342,4 +342,6 @@ std::vector<uint64_t> StronglyConnectedComponentDecomposition<ValueType>::comput
 template class StronglyConnectedComponentDecomposition<double>;
 template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
 template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
+template class StronglyConnectedComponentDecomposition<storm::Interval>;
+
 }  // namespace storm::storage

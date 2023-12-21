@@ -8,11 +8,9 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/TerminationCondition.h"
+#include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {
-
-template<typename ValueType, bool TrivialRowGrouping>
-class ValueIterationOperator;
 
 /*!
  * Implements sound value iteration

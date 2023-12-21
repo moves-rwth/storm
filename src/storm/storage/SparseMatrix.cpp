@@ -317,7 +317,8 @@ SparseMatrix<ValueType> SparseMatrixBuilder<ValueType>::build(index_type overrid
     if (rowCount > 0) {
         rowIndications.push_back(currentEntryCount);
     }
-    STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1, "Wrong sizes of vectors: " << rowCount << " != " << (rowIndications.size() - 1) << ".");
+    STORM_LOG_ASSERT(rowCount == rowIndications.size() - 1,
+                     "Wrong sizes of row indications vector: (Rowcount) " << rowCount << " != " << (rowIndications.size() - 1) << " (Vector).");
     uint_fast64_t columnCount = hasEntries ? highestColumn + 1 : 0;
     if (initialColumnCountSet && forceInitialDimensions) {
         STORM_LOG_THROW(columnCount <= initialColumnCount, storm::exceptions::InvalidStateException,
@@ -820,9 +821,7 @@ template<typename ValueType>
 storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
     storm::storage::BitVector res(this->getRowCount(), false);
     for (auto group : groupConstraint) {
-        for (auto row : this->getRowGroupIndices(group)) {
-            res.set(row, true);
-        }
+        res.setMultiple(getRowGroupIndices()[group], getRowGroupSize(group));
     }
     return res;
 }
@@ -2430,6 +2429,17 @@ bool SparseMatrix<ValueType>::isProbabilistic() const {
             if (comparator.isLess(entry.getValue(), storm::utility::zero<ValueType>())) {
                 return false;
             }
+        }
+    }
+    return true;
+}
+
+template<typename ValueType>
+bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
+    storm::utility::ConstantsComparator<ValueType> comparator;
+    for (auto const& entry : *this) {
+        if (!comparator.isLess(storm::utility::zero<ValueType>(), entry.getValue())) {
+            return false;
         }
     }
     return true;

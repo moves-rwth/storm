@@ -7,6 +7,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/irange.hpp>
 
+#include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"  // TODO
@@ -27,8 +28,9 @@ namespace solver::helper {
  * The application of the operator is heavily templated so that many different flavours of value iteration and related algorithms can be implemented using this.
  * @tparam ValueType The type of the matrix entries
  * @tparam TrivialRowGrouping True iff the underlying model is deterministic
+ * @tparam SolutionType The type of the operand entries. Default is ValueType, see ValueIterationOperatorForward.h
  */
-template<typename ValueType, bool TrivialRowGrouping>
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 class ValueIterationOperator {
    public:
     using IndexType = storm::storage::sparse::state_type;
@@ -90,17 +92,23 @@ class ValueIterationOperator {
      */
     template<typename OperandType, typename OffsetType, typename BackendType>
     bool apply(OperandType const& operandIn, OperandType& operandOut, OffsetType const& offsets, BackendType& backend) const {
+        // We assume in the normal apply case that we can just maximize.
+        return applyRobust<OptimizationDirection::Maximize>(operandIn, operandOut, offsets, backend);
+    }
+
+    template<OptimizationDirection RobustDir, typename OperandType, typename OffsetType, typename BackendType>
+    bool applyRobust(OperandType const& operandIn, OperandType& operandOut, OffsetType const& offsets, BackendType& backend) const {
         if (hasSkippedRows) {
             if (backwards) {
-                return apply<OperandType, OffsetType, BackendType, true, true>(operandOut, operandIn, offsets, backend);
+                return apply<OperandType, OffsetType, BackendType, true, true, RobustDir>(operandOut, operandIn, offsets, backend);
             } else {
-                return apply<OperandType, OffsetType, BackendType, false, true>(operandOut, operandIn, offsets, backend);
+                return apply<OperandType, OffsetType, BackendType, false, true, RobustDir>(operandOut, operandIn, offsets, backend);
             }
         } else {
             if (backwards) {
-                return apply<OperandType, OffsetType, BackendType, true, false>(operandOut, operandIn, offsets, backend);
+                return apply<OperandType, OffsetType, BackendType, true, false, RobustDir>(operandOut, operandIn, offsets, backend);
             } else {
-                return apply<OperandType, OffsetType, BackendType, false, false>(operandOut, operandIn, offsets, backend);
+                return apply<OperandType, OffsetType, BackendType, false, false, RobustDir>(operandOut, operandIn, offsets, backend);
             }
         }
     }
@@ -111,6 +119,11 @@ class ValueIterationOperator {
     template<typename OperandType, typename OffsetType, typename BackendType>
     bool applyInPlace(OperandType& operand, OffsetType const& offsets, BackendType& backend) const {
         return apply(operand, operand, offsets, backend);
+    }
+
+    template<OptimizationDirection RobustDir, typename OperandType, typename OffsetType, typename BackendType>
+    bool applyInPlaceRobust(OperandType& operand, OffsetType const& offsets, BackendType& backend) const {
+        return applyRobust<RobustDir>(operand, operand, offsets, backend);
     }
 
     /*!
@@ -138,7 +151,7 @@ class ValueIterationOperator {
      * @param initialValue optional initial value
      * @return a reference to the auxiliary vector
      */
-    std::vector<ValueType>& allocateAuxiliaryVector(uint64_t size, std::optional<ValueType> const& initialValue = {});
+    std::vector<SolutionType>& allocateAuxiliaryVector(uint64_t size, std::optional<SolutionType> const& initialValue = {});
 
     /*!
      * Clears the auxiliary vector, invalidating any references to it
@@ -150,7 +163,7 @@ class ValueIterationOperator {
      * Internal variant of `apply`
      * @note This and other apply methods are intentionally implemented in the header file as there are potentially many different BackendTypes
      */
-    template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows>
+    template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
         STORM_LOG_ASSERT(getSize(operandIn) == getSize(operandOut), "Input and Output Operands have different sizes.");
         auto const operandSize = getSize(operandIn);
@@ -163,17 +176,17 @@ class ValueIterationOperator {
             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
             //            STORM_LOG_ASSERT(matrixValueIt != matrixValues.end(), "VI Operator in invalid state.");
             if constexpr (TrivialRowGrouping) {
-                backend.firstRow(applyRow(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
+                backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
             } else {
                 IndexType rowIndex = (*rowGroupIndices)[groupIndex];
                 if constexpr (SkipIgnoredRows) {
                     rowIndex += skipMultipleIgnoredRows(matrixColumnIt, matrixValueIt);
                 }
-                backend.firstRow(applyRow(matrixColumnIt, matrixValueIt, operandIn, offsets, rowIndex), groupIndex, rowIndex);
+                backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, rowIndex), groupIndex, rowIndex);
                 while (*matrixColumnIt < StartOfRowGroupIndicator) {
                     ++rowIndex;
                     if (!SkipIgnoredRows || !skipIgnoredRow(matrixColumnIt, matrixValueIt)) {
-                        backend.nextRow(applyRow(matrixColumnIt, matrixValueIt, operandIn, offsets, rowIndex), groupIndex, rowIndex);
+                        backend.nextRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, rowIndex), groupIndex, rowIndex);
                     }
                 }
             }
@@ -211,12 +224,43 @@ class ValueIterationOperator {
         return {(*offsets.first)[offsetIndex], offsets.second};
     }
 
+    template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
+    OpT robustInitializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
+        return offsets[offsetIndex].upper();
+    }
+
+    template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT>
+    std::pair<OpT1, OpT2> robustInitializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&, std::vector<OffT> const& offsets,
+                                                 uint64_t offsetIndex) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+
+        return {offsets[offsetIndex].upper(), offsets[offsetIndex].upper()};
+    }
+
+    template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT1, typename OffT2>
+    std::pair<OpT1, OpT2> robustInitializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&,
+                                                 std::pair<std::vector<OffT1> const*, OffT2> const& offsets, uint64_t offsetIndex) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+
+        return {(*offsets.first)[offsetIndex], offsets.second};
+    }
+
     /*!
      * Computes the result for a single row and advances the given iterators to the end of the row
      */
-    template<typename OperandType, typename OffsetType>
+    template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRow(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                   OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
+        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+            return applyRowRobust<RobustDirection>(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
+        } else {
+            return applyRowStandard(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
+        }
+    }
+
+    template<typename OperandType, typename OffsetType>
+    auto applyRowStandard(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
+                          OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{initializeRowRes(operand, offsets, offsetIndex)};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
@@ -227,6 +271,55 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * (*matrixValueIt);
             }
         }
+        return result;
+    }
+
+    // Aux function for applyRowRobust
+    template<OptimizationDirection RobustDirection>
+    struct AuxCompare {
+        bool operator()(const std::pair<SolutionType, SolutionType>& a, const std::pair<SolutionType, SolutionType>& b) const {
+            if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+                return a.first > b.first;
+            } else {
+                return a.first < b.first;
+            }
+        }
+    };
+
+    template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
+    auto applyRowRobust(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
+                        OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
+        STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
+        auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
+        std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
+        SolutionType remainingValue{storm::utility::one<SolutionType>()};
+        for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+            if constexpr (isPair<OperandType>::value) {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+                // Notice the unclear semantics here in terms of how to order things.
+            } else {
+                result += operand[*matrixColumnIt] * (matrixValueIt->lower());
+            }
+            remainingValue -= matrixValueIt->lower();
+            if (!storm::utility::isZero(matrixValueIt->diameter())) {
+                tmp.emplace_back(operand[*matrixColumnIt], matrixValueIt->diameter());
+            }
+        }
+        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
+            return result;
+        }
+        AuxCompare<RobustDirection> compare;
+        std::sort(tmp.begin(), tmp.end(), compare);
+
+        for (auto const& valWidthPair : tmp) {
+            auto availableMass = std::min(valWidthPair.second, remainingValue);
+            result += availableMass * valWidthPair.first;
+            remainingValue -= availableMass;
+            if (storm::utility::isZero(remainingValue)) {
+                return result;
+            }
+        }
+        STORM_LOG_ASSERT(storm::utility::isZero(remainingValue), "Should be zero (all prob mass taken)");
         return result;
     }
 
@@ -307,7 +400,7 @@ class ValueIterationOperator {
     /*!
      * Storage for the auxiliary vector
      */
-    std::vector<ValueType> auxiliaryVector;
+    std::vector<SolutionType> auxiliaryVector;
 
     /*!
      * True, if an auxiliary vector exists

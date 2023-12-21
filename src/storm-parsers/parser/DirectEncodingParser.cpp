@@ -429,6 +429,7 @@ ValueType DirectEncodingParser<ValueType, RewardModelType>::parseValue(std::stri
 template class DirectEncodingParser<double>;
 template class DirectEncodingParser<storm::RationalNumber>;
 template class DirectEncodingParser<storm::RationalFunction>;
+template class DirectEncodingParser<storm::Interval>;
 
 }  // namespace parser
 }  // namespace storm

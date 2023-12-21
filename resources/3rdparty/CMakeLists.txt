@@ -294,7 +294,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "14.23")
+set(CARL_MINVERSION "14.26")
 set(CARL_C14VERSION "14")
 if (NOT STORM_FORCE_SHIPPED_CARL)
     if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")

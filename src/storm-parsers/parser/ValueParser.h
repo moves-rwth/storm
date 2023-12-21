@@ -1,12 +1,18 @@
-#ifndef STORM_PARSER_VALUEPARSER_H_
-#define STORM_PARSER_VALUEPARSER_H_
+#pragma once
 
-#include <boost/lexical_cast.hpp>
-#include "storm/exceptions/WrongFormatException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include <cstddef>
+#include <string>
+#include <type_traits>
+
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/constants.h"
+
 namespace storm {
+namespace expressions {
+template<typename V>
+class ExpressionEvaluator;
+}
+
 namespace parser {
 class ExpressionParser;
 
@@ -16,12 +22,6 @@ class ExpressionParser;
 template<typename ValueType>
 class ValueParser {
    public:
-    /*!
-     * Constructor.
-     */
-    ValueParser();
-    virtual ~ValueParser();
-
     /*!
      * Parse ValueType from string.
      *
@@ -39,10 +39,15 @@ class ValueParser {
     void addParameter(std::string const& parameter);
 
    private:
-    std::shared_ptr<storm::expressions::ExpressionManager> manager;
-    std::unique_ptr<storm::parser::ExpressionParser> parser;  // Pointer to avoid header include.
-    storm::expressions::ExpressionEvaluator<ValueType> evaluator;
-    std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+    struct ParametricData {
+        ParametricData();
+        ~ParametricData();
+        std::shared_ptr<storm::expressions::ExpressionManager> manager;
+        std::unique_ptr<storm::parser::ExpressionParser> parser;  // Pointer to avoid header include.
+        std::unique_ptr<storm::expressions::ExpressionEvaluator<storm::RationalFunction>> evaluator;
+        std::unordered_map<std::string, storm::expressions::Expression> identifierMapping;
+    };
+    std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, ParametricData, std::nullptr_t> data;
 };
 
 /*!
@@ -50,32 +55,20 @@ class ValueParser {
  *
  * @param value String containing the value.
  *
+ * @throws WrongFormatException if parsing is not successful
  * @return NumberType.
  */
 template<typename NumberType>
-inline NumberType parseNumber(std::string const& value) {
-    try {
-        return boost::lexical_cast<NumberType>(value);
-    } catch (boost::bad_lexical_cast&) {
-        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse value '" << value << "' into " << typeid(NumberType).name() << ".");
-    }
-}
+NumberType parseNumber(std::string const& value);
 
-template<>
-inline storm::RationalNumber parseNumber(std::string const& value) {
-    return storm::utility::convertNumber<storm::RationalNumber>(value);
-}
-
-template<>
-inline double parseNumber(std::string const& value) {
-    try {
-        return boost::lexical_cast<double>(value);
-    } catch (boost::bad_lexical_cast&) {
-        return storm::utility::convertNumber<double>(parseNumber<storm::RationalNumber>(value));
-    }
-}
+/*!
+ * Parse number from string.
+ * @param value String containing the value.
+ * @param result if parsing is successful, the parsed number is stored here
+ * @return whether parsing is successful.
+ */
+template<typename NumberType>
+bool parseNumber(std::string const& value, NumberType& result);
 
 }  // namespace parser
 }  // namespace storm
-
-#endif /* STORM_PARSER_VALUEPARSER_H_ */

@@ -531,6 +531,14 @@ void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
     }
 }
 
+void BitVector::setMultiple(uint64_t bitIndex, uint64_t nrOfBits, bool newValue) {
+    // TODO we may want to optimize this code for large nrs of bits.
+    uint64_t endPos = std::min(bitIndex + nrOfBits, bitCount);
+    for (uint64_t tmpIndex = bitIndex; tmpIndex < endPos; ++tmpIndex) {
+        set(tmpIndex, newValue);
+    }
+}
+
 storm::storage::BitVector BitVector::get(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
     uint64_t numberOfBuckets = numberOfBits >> 6;
     uint64_t index = bitIndex >> 6;

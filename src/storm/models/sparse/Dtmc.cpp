@@ -51,6 +51,7 @@ template class Dtmc<storm::RationalNumber>;
 
 template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Dtmc<storm::RationalFunction>;
+template class Dtmc<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models

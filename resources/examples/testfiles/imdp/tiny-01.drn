@@ -1,0 +1,20 @@
+@type: MDP
+@parameters
+
+@reward_models
+
+@nr_states
+3
+@nr_choices
+3
+@model
+state 0 init
+	action 0
+		1 : [0.4, 0.9]
+		2 : [0.5, 0.8]
+state 1 target
+	action 0
+		1 : [1, 1]
+state 2
+	action 0
+		2 : [1, 1]
