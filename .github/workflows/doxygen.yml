@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  BASE_IMG: "movesrwth/carl:ci-release"
+  BASE_IMG: "movesrwth/carl-storm:ci-release"
   STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
   STORM_BRANCH: "master"
   # github runners currently have two cores
