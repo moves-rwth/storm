@@ -13,7 +13,6 @@ class PlayerCoalition {
    public:
     PlayerCoalition() = default;
     PlayerCoalition(std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& playerIds);
-    PlayerCoalition(PlayerCoalition const& other) = default;
 
     std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& getPlayers() const;
 
