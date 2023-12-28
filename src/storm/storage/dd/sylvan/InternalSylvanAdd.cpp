@@ -424,7 +424,7 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, V
 
 #ifdef STORM_HAVE_CARL
 template<>
-InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t precision) const {
+InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t /*precision*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 #endif

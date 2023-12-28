@@ -409,10 +409,8 @@ void CommandAbstractor<DdType, ValueType>::recomputeCachedBddWithDecomposition()
 
     // multiply the results
     storm::dd::Bdd<DdType> resultBdd = getAbstractionInformation().getDdManager().getBddOne();
-    uint64_t blockIndex = 0;
     for (auto const& blockBdd : blockBdds) {
         resultBdd &= blockBdd;
-        ++blockIndex;
     }
 
     // If we did not explicitly enumerate the guard, we can construct it from the result BDD.

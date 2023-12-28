@@ -71,9 +71,8 @@ void GurobiEnvironment::initialize() {
     error = GRBsetdblparam(env, "IntFeasTol", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-
-    initialized = true;
 #endif
+    initialized = true;
 }
 
 void GurobiEnvironment::setOutput(bool set) {

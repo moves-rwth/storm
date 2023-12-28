@@ -498,10 +498,8 @@ std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) 
             }
         }
     }
-    auto i = 0;
     while (result.size() < numberOfStatesToSort) {
         result.push_back(numberOfStates);
-        ++i;
     }
     assert(result.size() == numberOfStatesToSort);
     return result;
