@@ -180,7 +180,7 @@ class StateValuationsBuilder {
     /*!
      * Creates the finalized state valuations object.
      */
-    StateValuations build(std::size_t totalStateCount);
+    StateValuations build();
 
     uint64_t getBooleanVarCount() const;
     uint64_t getIntegerVarCount() const;

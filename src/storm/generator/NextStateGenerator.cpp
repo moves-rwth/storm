@@ -168,7 +168,7 @@ storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>
         }
         valuationsBuilder.addState(observationEntry.second, std::move(booleanValues), std::move(integerValues), {}, std::move(observationLabelValues));
     }
-    return valuationsBuilder.build(observabilityMap.size());
+    return valuationsBuilder.build();
 }
 
 template<typename ValueType, typename StateType>
