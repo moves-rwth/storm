@@ -250,9 +250,9 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
 
     // Create an initial state restriction if there was an initial construct in the program.
     if (program.hasInitialConstruct()) {
-        janiModel.setInitialStatesRestriction(program.getInitialConstruct().getInitialStatesExpression());
+        janiModel.setInitialStatesRestriction(program.getInitialStatesExpression());
         // Variables in the initial state expression should be made global
-        std::set<storm::expressions::Variable> variables = program.getInitialConstruct().getInitialStatesExpression().getVariables();
+        std::set<storm::expressions::Variable> variables = program.getInitialStatesExpression().getVariables();
         for (auto const& variable : variables) {
             if (formulaToFunctionCallMap.count(variable) > 0) {
                 for (auto const& funVar : formulaToFunctionCallMap[variable].getVariables()) {
