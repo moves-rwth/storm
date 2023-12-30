@@ -25,9 +25,7 @@ class TimeBoundReference {
         assert(rewardName != "");  // Empty reward name is reserved.
     }
 
-    TimeBoundReference(TimeBoundReference const& other) = default;
-
-    TimeBoundType getType() const {
+    TimeBoundType const& getType() const {
         return type;
     }
 
