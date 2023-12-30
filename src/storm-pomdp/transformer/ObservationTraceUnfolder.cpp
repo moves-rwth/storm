@@ -177,7 +177,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     labeling.addLabel("init");
     labeling.addLabelToState("init", 0);
     components.stateLabeling = labeling;
-    components.stateValuations = svbuilder.build(components.transitionMatrix.getRowGroupCount());
+    components.stateValuations = svbuilder.build();
     return std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(components));
 }
 
