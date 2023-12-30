@@ -36,8 +36,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
-#include "storm-pars/transformer/ParametricTransformer.h"
-
 #include <typeinfo>
 
 namespace storm {
@@ -355,12 +353,6 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
             pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),
                                                                                        {formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)
                       ->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-            STORM_PRINT_AND_LOG(" done.\n");
-            pmc->printModelInformationToStream(std::cout);
-        }
-        if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
-            STORM_PRINT_AND_LOG("Ensuring constant rewards...");
-            pmc = storm::transformer::makeRewardsConstant(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
             STORM_PRINT_AND_LOG(" done.\n");
             pmc->printModelInformationToStream(std::cout);
         }

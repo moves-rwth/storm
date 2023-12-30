@@ -30,7 +30,6 @@ class ToParametricSettings : public ModuleSettings {
     bool isMecReductionSet() const;
     bool isTransformSimpleSet() const;
     bool isTransformBinarySet() const;
-    bool isConstantRewardsSet() const;
     bool allowPostSimplifications() const;
     std::string getFscApplicationTypeString() const;
 
