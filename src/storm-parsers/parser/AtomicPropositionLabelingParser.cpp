@@ -27,9 +27,9 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
     MappedFile file(filename.c_str());
     char const* buf = file.getData();
 
-    // First pass: Count the number of propositions.
+    // First pass: Check whether we find declaration and end.
+    // TODO this could be skipped.
     bool foundDecl = false, foundEnd = false;
-    uint_fast32_t proposition_count = 0;
     size_t cnt = 0;
 
     // Iterate over tokens until we hit #END or the end of the file.
@@ -51,7 +51,6 @@ storm::models::sparse::StateLabeling AtomicPropositionLabelingParser::parseAtomi
                 foundEnd = true;
                 break;
             }
-            proposition_count++;
         }
     }
 
