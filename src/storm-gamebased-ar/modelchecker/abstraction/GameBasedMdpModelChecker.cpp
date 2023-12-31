@@ -1747,14 +1747,6 @@ SymbolicQualitativeGameResultMinMax<Type> GameBasedMdpModelChecker<Type, ModelTy
     STORM_LOG_INFO("[" << player1Direction << ", " << storm::OptimizationDirection::Maximize << "]: " << result.prob0Max.player1States.getNonZeroCount()
                        << " 'no', " << result.prob1Max.player1States.getNonZeroCount() << " 'yes'.");
 
-    //            this->abstractor->exportToDot("lower_game" + std::to_string(iteration) + ".dot", result.prob1Max.getStates(),
-    //            (result.prob0Min.getPlayer1Strategy() && result.prob0Min.getPlayer2Strategy()) || (result.prob1Min.getPlayer1Strategy() &&
-    //            result.prob1Min.getPlayer2Strategy())); this->abstractor->exportToDot("upper_game" + std::to_string(iteration) + ".dot", targetStates,
-    //            (result.prob0Max.getPlayer1Strategy() && result.prob0Max.getPlayer2Strategy()) || (result.prob1Max.getPlayer1Strategy() &&
-    //            result.prob1Max.getPlayer2Strategy())); this->abstractor->exportToDot("lower_game" + std::to_string(iteration) + ".dot", targetStates,
-    //            game.getManager().getBddOne()); this->abstractor->exportToDot("upper_game" + std::to_string(iteration) + ".dot", targetStates,
-    //            game.getManager().getBddOne()); exit(-1);
-
     STORM_LOG_ASSERT(checkQualitativeStrategies(result, targetStates), "Qualitative strategies appear to be broken.");
     return result;
 }
