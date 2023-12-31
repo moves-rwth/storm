@@ -86,7 +86,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Pmax) {
     ValueType expected = this->parseNumber("7/10");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
 
-    EXPECT_EQ(1, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
+    EXPECT_EQ(1ul, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
     EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 0));
     EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result, 1), std::out_of_range);

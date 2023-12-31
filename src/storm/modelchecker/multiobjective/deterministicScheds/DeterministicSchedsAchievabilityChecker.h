@@ -20,7 +20,7 @@ class DeterministicSchedsObjectiveHelper;
 
 namespace preprocessing {
 template<typename SparseModelType>
-class SparseMultiObjectivePreprocessorResult;
+struct SparseMultiObjectivePreprocessorResult;
 }
 
 template<class SparseModelType, typename GeometryValueType>
