@@ -45,7 +45,7 @@ class SelfloopReductionDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::SelfloopReduction;
 };
@@ -63,7 +63,7 @@ class QualitativeReductionDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::QualitativeReduction;
 };
@@ -81,7 +81,7 @@ class PreprocessedDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::All;
 };
@@ -159,7 +159,7 @@ class DefaultDoubleOVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::None;
 };
@@ -177,7 +177,7 @@ class DefaultRationalPIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::None;
 };
@@ -195,7 +195,7 @@ class PreprocessedDefaultRationalPIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::All;
 };

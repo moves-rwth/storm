@@ -81,7 +81,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Pmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("7/10");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -97,7 +97,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Pmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("3/10");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -113,7 +113,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("7/10");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -129,7 +129,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Pmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("3/10");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -146,7 +146,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Rmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("29/50");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -162,7 +162,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_Rmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("19/50");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -178,7 +178,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("29/30");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -194,7 +194,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("19/30");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -210,7 +210,7 @@ TYPED_TEST(BeliefExplorationAPITest, maze2_Rmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("74/91");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -226,7 +226,7 @@ TYPED_TEST(BeliefExplorationAPITest, maze2_slippery_Rmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("80/91");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -242,7 +242,7 @@ TYPED_TEST(BeliefExplorationAPITest, refuel_Pmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("38/155");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -259,7 +259,7 @@ TYPED_TEST(BeliefExplorationAPITest, refuel_Pmin) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 100);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
     ValueType expected = this->parseNumber("0");
     EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
@@ -275,7 +275,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple2.prism", "Rmax=?[F \"goal\"]");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
-    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 10);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 10);
 
     ValueType expected = this->parseNumber("59040588757/103747000000");
     EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
@@ -290,7 +290,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
     std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2, 1}}, {{2, 1}}};
     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals, obs1vals};
 
-    result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 10, additionalVals);
+    result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 10, additionalVals);
 
     EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
 }
@@ -305,7 +305,7 @@ TYPED_TEST(BeliefExplorationAPITest, noHeuristicValues) {
     std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2, 1}}, {{2, 1}}};
     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals, obs1vals};
 
-    auto result = storm::pomdp::api::underapproximateWithoutHeuristicValues<ValueType>(this->env(), data.model, task, 10, additionalVals);
+    auto result = storm::pomdp::api::underapproximateWithoutHeuristicValues<ValueType>(data.model, task, 10, additionalVals);
 
     EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
 }

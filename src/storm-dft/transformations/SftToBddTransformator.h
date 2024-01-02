@@ -150,14 +150,14 @@ class SftToBddTransformator {
         if (gate->type() == storm::dft::storage::elements::DFTElementType::AND) {
             // used only in conjunctions therefore neutral element -> 1
             auto tmpBdd{sylvanBddManager->getOne()};
-            for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
+            for (auto const& child : gate->children()) {
                 tmpBdd &= translate(child);
             }
             return tmpBdd;
         } else if (gate->type() == storm::dft::storage::elements::DFTElementType::OR) {
             // used only in disjunctions therefore neutral element -> 0
             auto tmpBdd{sylvanBddManager->getZero()};
-            for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
+            for (auto const& child : gate->children()) {
                 tmpBdd |= translate(child);
             }
             return tmpBdd;
