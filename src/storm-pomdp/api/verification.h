@@ -8,7 +8,6 @@ namespace api {
 /**
  * Uses the belief exploration with cut-offs to under-approximate the given objective on a POMDP.
  * @tparam ValueType number type to be used
- * @param env the environment to use
  * @param pomdp the input pomdp to be checked
  * @param task the check task to be performed
  * @param sizeThreshold number of states up to which the belief MDP should be unfolded
@@ -18,8 +17,8 @@ namespace api {
  */
 template<typename ValueType>
 typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>>::Result underapproximateWithCutoffs(
-    storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,
+    std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+    uint64_t sizeThreshold,
     std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalPomdpStateValues =
         std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>>()) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false, true);
@@ -34,7 +33,6 @@ typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::m
  * Uses the belief exploration with cut-offs *without* the pre-processing to generate cut-off values to under-approximate the given objective on a POMDP.
  * Cut-off values need to be provided in the form of a vector of vectors representing finite memory schedulers.
  * @tparam ValueType number type to be used
- * @param env the environment to use
  * @param pomdp the input pomdp to be checked
  * @param task the check task to be performed
  * @param sizeThreshold number of states up to which the belief MDP should be unfolded
@@ -44,9 +42,8 @@ typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::m
  */
 template<typename ValueType>
 typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>>::Result underapproximateWithoutHeuristicValues(
-    storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,
-    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> pomdpStateValues) {
+    std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
+    uint64_t sizeThreshold, std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> pomdpStateValues) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false, true);
     options.skipHeuristicSchedulers = true;
     options.useClipping = false;
