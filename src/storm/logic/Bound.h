@@ -6,8 +6,6 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-/// TODO this inclusion is actually unpleasant, but cannot be avoided right now.
-#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace logic {
@@ -20,20 +18,7 @@ struct Bound {
     storm::expressions::Expression threshold;
 
     template<typename ValueType>
-    bool isSatisfied(ValueType const& compareValue) const {
-        ValueType thresholdAsValueType = storm::utility::convertNumber<ValueType>(threshold.evaluateAsRational());
-        switch (comparisonType) {
-            case ComparisonType::Greater:
-                return compareValue > thresholdAsValueType;
-            case ComparisonType::GreaterEqual:
-                return compareValue >= thresholdAsValueType;
-            case ComparisonType::Less:
-                return compareValue < thresholdAsValueType;
-            case ComparisonType::LessEqual:
-                return compareValue <= thresholdAsValueType;
-        }
-        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
-    }
+    bool isSatisfied(ValueType const& compareValue) const;
 
     bool isLowerBound() const {
         return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
