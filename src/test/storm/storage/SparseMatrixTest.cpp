@@ -353,7 +353,7 @@ TEST(SparseMatrix, rowGroupIndices) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = matrixBuilder.build());
 
-    EXPECT_EQ(4, matrix.getRowGroupCount());
+    EXPECT_EQ(4ul, matrix.getRowGroupCount());
     std::vector<storm::storage::SparseMatrixIndexType> expected, actual;
     expected.assign({0, 1});
     auto indices = matrix.getRowGroupIndices(0);
