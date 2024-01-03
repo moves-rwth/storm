@@ -388,8 +388,8 @@ endif()
 
 # Selection is based on (relatively extensive, but ad-hoc) compilation profiling in late 2023.
 # As changes mean recompilations of the complete code base, we only use std libraries and boost libraries here for now.
-SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>"
-		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>"
+SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"
+		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
 
 #############################################################
