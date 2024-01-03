@@ -190,41 +190,25 @@ Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm:
                                                                                            << indexToTypeMapping.at(nameIndexPair->second) << "'.");
         return Variable(this->getSharedPointer(), nameIndexPair->second);
     } else {
-        uint_fast64_t offset = 0;
-        if (auxiliary) {
-            if (variableType.isBooleanType()) {
-                offset = numberOfBooleanVariables++;
-            } else if (variableType.isIntegerType()) {
-                offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
-            } else if (variableType.isBitVectorType()) {
-                offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-            } else if (variableType.isRationalType()) {
-                offset = numberOfRationalVariables++;
-            } else if (variableType.isArrayType()) {
-                offset = numberOfArrayVariables++;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                                "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
-            }
+        uint64_t offset = 0;
+
+        if (variableType.isBooleanType()) {
+            offset = numberOfBooleanVariables++;
+        } else if (variableType.isIntegerType()) {
+            offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
+        } else if (variableType.isBitVectorType()) {
+            offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
+        } else if (variableType.isRationalType()) {
+            offset = numberOfRationalVariables++;
+        } else if (variableType.isArrayType()) {
+            offset = numberOfArrayVariables++;
         } else {
-            if (variableType.isBooleanType()) {
-                offset = numberOfBooleanVariables++;
-            } else if (variableType.isIntegerType()) {
-                offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
-            } else if (variableType.isBitVectorType()) {
-                offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-            } else if (variableType.isRationalType()) {
-                offset = numberOfRationalVariables++;
-            } else if (variableType.isArrayType()) {
-                offset = numberOfArrayVariables++;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                                "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
-            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
+                            "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
         }
 
         // Compute the index of the new variable.
-        uint_fast64_t newIndex = offset | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
+        uint64_t newIndex = offset | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
 
         // Properly insert the variable into the data structure.
         nameToIndexMapping[name] = newIndex;
@@ -322,7 +306,7 @@ Type const& ExpressionManager::getVariableType(uint_fast64_t index) const {
     return indexTypePair->second;
 }
 
-uint_fast64_t ExpressionManager::getOffset(uint_fast64_t index) const {
+uint64_t ExpressionManager::getOffset(uint64_t index) const {
     return index & offsetMask;
 }
 
