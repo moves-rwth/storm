@@ -6,6 +6,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 namespace storm {
 namespace logic {
@@ -19,6 +20,8 @@ struct Bound {
 
     template<typename ValueType>
     bool isSatisfied(ValueType const& compareValue) const;
+
+    storm::RationalNumber evaluateThresholdAsRational() const;
 
     bool isLowerBound() const {
         return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
