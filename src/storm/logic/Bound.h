@@ -1,12 +1,12 @@
 #ifndef STORM_LOGIC_BOUND_H_
 #define STORM_LOGIC_BOUND_H_
 
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/adapters/RationalNumberForward.h"
 
 namespace storm {
 namespace logic {
