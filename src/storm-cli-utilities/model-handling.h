@@ -441,7 +441,8 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
+std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
+                                                           storm::settings::modules::BuildSettings const& buildSettings) {
     storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
     options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
     options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
@@ -475,6 +476,10 @@ std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& 
 
     if (buildSettings.isAddOverlappingGuardsLabelSet()) {
         options.setAddOverlappingGuardsLabel(true);
+    }
+
+    if (ioSettings.isComputeExpectedVisitingTimesSet() || ioSettings.isComputeSteadyStateDistributionSet()) {
+        options.clearTerminalStates();
     }
 
     return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
@@ -513,7 +518,7 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         if (builderType == storm::builder::BuilderType::Dd) {
             result = buildModelDd<DdType, ValueType>(input);
         } else if (builderType == storm::builder::BuilderType::Explicit) {
-            result = buildModelSparse<ValueType>(input, buildSettings);
+            result = buildModelSparse<ValueType>(input, ioSettings, buildSettings);
         }
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
@@ -947,6 +952,10 @@ void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result
     }
 }
 
+using VerificationCallbackType = std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                                                 std::shared_ptr<storm::logic::Formula const> const& states)>;
+using PostprocessingCallbackType = std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)>;
+
 struct PostprocessingIdentity {
     void operator()(std::unique_ptr<storm::modelchecker::CheckResult> const&) {
         // Intentionally left empty.
@@ -954,41 +963,91 @@ struct PostprocessingIdentity {
 };
 
 template<typename ValueType>
-void verifyProperties(
-    SymbolicInput const& input,
-    std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                                    std::shared_ptr<storm::logic::Formula const> const& states)> const& verificationCallback,
-    std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
+std::unique_ptr<storm::modelchecker::CheckResult> verifyProperty(std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                 std::shared_ptr<storm::logic::Formula const> const& statesFilter,
+                                                                 VerificationCallbackType const& verificationCallback) {
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
+
+    try {
+        if (transformationSettings.isChainEliminationSet() && !storm::transformer::NonMarkovianChainTransformer<ValueType>::preservesFormula(*formula)) {
+            STORM_LOG_WARN("Property is not preserved by elimination of non-markovian states.");
+        } else if (transformationSettings.isToDiscreteTimeModelSet()) {
+            auto transformedFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*formula);
+            auto transformedStatesFilter = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*statesFilter);
+            if (transformedFormula && transformedStatesFilter) {
+                return verificationCallback(transformedFormula, transformedStatesFilter);
+            } else {
+                STORM_LOG_WARN("Property is not preserved by transformation to discrete time model.");
+            }
+        } else {
+            return verificationCallback(formula, statesFilter);
+        }
+    } catch (storm::exceptions::BaseException const& ex) {
+        STORM_LOG_WARN("Cannot handle property: " << ex.what());
+    }
+    return nullptr;
+}
+
+template<typename ValueType>
+void verifyProperties(SymbolicInput const& input, VerificationCallbackType const& verificationCallback,
+                      PostprocessingCallbackType const& postprocessingCallback = PostprocessingIdentity()) {
     auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
     for (auto const& property : properties) {
         printModelCheckingProperty(property);
-        bool ignored = false;
         storm::utility::Stopwatch watch(true);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-        try {
-            auto rawFormula = property.getRawFormula();
-            if (transformationSettings.isChainEliminationSet() && !storm::transformer::NonMarkovianChainTransformer<ValueType>::preservesFormula(*rawFormula)) {
-                STORM_LOG_WARN("Property is not preserved by elimination of non-markovian states.");
-                ignored = true;
-            } else if (transformationSettings.isToDiscreteTimeModelSet()) {
-                auto propertyFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*property.getRawFormula());
-                auto filterFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*property.getFilter().getStatesFormula());
-                if (propertyFormula && filterFormula) {
-                    result = verificationCallback(propertyFormula, filterFormula);
-                } else {
-                    ignored = true;
-                }
-            } else {
-                result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
-            }
-        } catch (storm::exceptions::BaseException const& ex) {
-            STORM_LOG_WARN("Cannot handle property: " << ex.what());
-        }
+        auto result = verifyProperty<ValueType>(property.getRawFormula(), property.getFilter().getStatesFormula(), verificationCallback);
         watch.stop();
-        if (!ignored) {
+        if (result) {
             postprocessingCallback(result);
-            printResult<ValueType>(result, property, &watch);
+        }
+        printResult<ValueType>(result, property, &watch);
+    }
+}
+
+template<typename ValueType>
+void computeStateValues(std::string const& description, std::function<std::unique_ptr<storm::modelchecker::CheckResult>()> const& computationCallback,
+                        SymbolicInput const& input, VerificationCallbackType const& verificationCallback,
+                        PostprocessingCallbackType const& postprocessingCallback = PostprocessingIdentity()) {
+    storm::utility::Stopwatch watch(true);
+    STORM_PRINT("\nComputing " << description << " ...\n");
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    try {
+        result = computationCallback();
+    } catch (storm::exceptions::BaseException const& ex) {
+        STORM_LOG_ERROR("Cannot compute " << description << ": " << ex.what());
+    }
+    if (!result) {
+        STORM_LOG_ERROR("Computation had no result.");
+        return;
+    }
+    watch.stop();
+    // Potentially filter result
+    if (input.properties.empty()) {
+        postprocessingCallback(result);
+        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
+        STORM_PRINT("Time for model checking: " << watch << ".\n");
+    } else {
+        auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
+        for (auto const& property : properties) {
+            if (!property.getRawFormula()->hasQualitativeResult()) {
+                STORM_LOG_ERROR("Property " << property.getRawFormula() << " can not be used for filtering states as it does not have a qualitative result.");
+                continue;
+            }
+            STORM_LOG_WARN_COND(property.getFilter().isDefault(), "Ignoring filter of property " << property << " as those are unsupported in this context.");
+
+            printModelCheckingProperty(property);
+            storm::utility::Stopwatch propertyWatch(true);
+            auto propertyFilter = verifyProperty<ValueType>(property.getRawFormula(), storm::logic::Formula::getTrueFormula(), verificationCallback);
+            propertyWatch.stop();
+            propertyWatch.add(watch);
+
+            if (propertyFilter) {
+                std::unique_ptr<storm::modelchecker::CheckResult> filteredResult = result->clone();
+                filteredResult->filter(propertyFilter->asQualitativeCheckResult());
+                postprocessingCallback(filteredResult);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *filteredResult << '\n');
+                STORM_PRINT("Time for model checking: " << propertyWatch << ".\n");
+            }
         }
     }
 }
@@ -1110,7 +1169,7 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
-        } else {
+        } else if (!states->isTrueFormula()) {
             filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, storm::api::createTask<ValueType>(states, false));
         }
         if (result && filter) {
@@ -1158,32 +1217,20 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         }
         ++exportCount;
     };
-    verifyProperties<ValueType>(input, verificationCallback, postprocessingCallback);
+    if (!(ioSettings.isComputeSteadyStateDistributionSet() || ioSettings.isComputeExpectedVisitingTimesSet())) {
+        verifyProperties<ValueType>(input, verificationCallback, postprocessingCallback);
+    }
     if (ioSettings.isComputeSteadyStateDistributionSet()) {
-        storm::utility::Stopwatch watch(true);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-        try {
-            result = storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel);
-        } catch (storm::exceptions::BaseException const& ex) {
-            STORM_LOG_WARN("Cannot compute steady-state probabilities: " << ex.what());
-        }
-        watch.stop();
-        postprocessingCallback(result);
-        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
-        STORM_PRINT("Time for model checking: " << watch << ".\n");
+        computeStateValues<ValueType>(
+            "steady-state probabilities",
+            [&mpi, &sparseModel]() { return storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
+            verificationCallback, postprocessingCallback);
     }
     if (ioSettings.isComputeExpectedVisitingTimesSet()) {
-        storm::utility::Stopwatch watch(true);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-        try {
-            result = storm::api::computeExpectedVisitingTimesWithSparseEngine<ValueType>(mpi.env, sparseModel);
-        } catch (storm::exceptions::BaseException const& ex) {
-            STORM_LOG_WARN("Cannot compute expected visiting times: " << ex.what());
-        }
-        watch.stop();
-        postprocessingCallback(result);
-        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
-        STORM_PRINT("Time for model checking: " << watch << ".\n");
+        computeStateValues<ValueType>(
+            "expected visiting times",
+            [&mpi, &sparseModel]() { return storm::api::computeExpectedVisitingTimesWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
+            verificationCallback, postprocessingCallback);
     }
 }
 
@@ -1201,7 +1248,7 @@ void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& mod
             if (filterForInitialStates) {
                 filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(),
                                                                                                        symbolicModel->getInitialStates());
-            } else {
+            } else if (!states->isTrueFormula()) {
                 filter = storm::api::verifyWithHybridEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(states, false));
             }
             if (result && filter) {
@@ -1226,7 +1273,7 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, 
             if (filterForInitialStates) {
                 filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(),
                                                                                                        symbolicModel->getInitialStates());
-            } else {
+            } else if (!states->isTrueFormula()) {
                 filter = storm::api::verifyWithDdEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(states, false));
             }
             if (result && filter) {
