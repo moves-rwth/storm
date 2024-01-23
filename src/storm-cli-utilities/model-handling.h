@@ -440,8 +440,8 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
                                                              !buildSettings.isApplyNoMaximumProgressAssumptionSet());
 }
 
-inline storm::builder::BuilderOptions createBuildOptionsSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
-                                                               storm::settings::modules::BuildSettings const& buildSettings) {
+inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(SymbolicInput const& input) {
+    auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
     options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
     options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
@@ -477,6 +477,7 @@ inline storm::builder::BuilderOptions createBuildOptionsSparse(SymbolicInput con
         options.setAddOverlappingGuardsLabel(true);
     }
 
+    auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     if (ioSettings.isComputeExpectedVisitingTimesSet() || ioSettings.isComputeSteadyStateDistributionSet()) {
         options.clearTerminalStates();
     }
@@ -514,20 +515,19 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
                                                      ModelProcessingInformation const& mpi) {
     storm::utility::Stopwatch modelBuildingWatch(true);
 
-    auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     std::shared_ptr<storm::models::ModelBase> result;
     if (input.model) {
         auto builderType = storm::utility::getBuilderType(mpi.engine);
         if (builderType == storm::builder::BuilderType::Dd) {
             result = buildModelDd<DdType, ValueType>(input);
         } else if (builderType == storm::builder::BuilderType::Explicit) {
-            auto options = createBuildOptionsSparse(input, ioSettings, buildSettings);
+            auto options = createBuildOptionsSparseFromSettings(input);
             result = buildModelSparse<ValueType>(input, options);
         }
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
-        result = buildModelExplicit<ValueType>(ioSettings, buildSettings);
+        result = buildModelExplicit<ValueType>(ioSettings, storm::settings::getModule<storm::settings::modules::BuildSettings>());
     }
 
     modelBuildingWatch.stop();
