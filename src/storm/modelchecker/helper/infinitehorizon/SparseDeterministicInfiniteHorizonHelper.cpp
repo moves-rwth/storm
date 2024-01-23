@@ -283,6 +283,7 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBsccEVTs(
     Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
+    //  Computes steady state distributions by computing EVTs on a slightly modified system. See https://arxiv.org/abs/2401.10638 for more information.
     storm::storage::BitVector bsccAsBitVector(this->_transitionMatrix.getColumnCount(), false);
     bsccAsBitVector.set(bscc.begin(), bscc.end(), true);
 
@@ -749,6 +750,7 @@ template<typename ValueType>
 std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeBsccReachabilityProbabilitiesEVTs(
     Environment const& env, ValueGetter const& initialDistributionGetter) {
     // Get the expected number of times we visit each non-BSCC state
+    // See  https://arxiv.org/abs/2401.10638 for more information.
     // We deliberately exclude the exit rates here as we want to make this computation on the induced DTMC to get the expected number of times
     // that a successor state is chosen probabilistically.
     auto visittimesHelper = SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);

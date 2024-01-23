@@ -15,6 +15,7 @@ namespace helper {
 
 /*!
  * Helper class for computing for each state the expected number of times to visit that state assuming a given initial distribution.
+ * @see https://arxiv.org/abs/2401.10638 for theoretical background of this.
  * @tparam ValueType the type a value can have
  */
 template<typename ValueType>
