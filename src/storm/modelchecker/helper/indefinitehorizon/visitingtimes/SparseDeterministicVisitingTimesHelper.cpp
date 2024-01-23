@@ -392,7 +392,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
             if (maxNumInc != 0) {
                 // As the maximal number of incoming transitions is greater than one, adjustment is necessary.
                 // For this, we need the number of SCCs in the longest SCC chain -1, i.e., sccDecomposition->getMaxSccDepth() -1
-                for (int i = 1; i < sccDecomposition->getMaxSccDepth(); i++) {
+                for (uint64_t i = 1; i < sccDecomposition->getMaxSccDepth(); i++) {
                     scale = scale + storm::utility::pow(storm::utility::convertNumber<storm::RationalNumber>(maxNumInc), i) *
                                         storm::utility::convertNumber<storm::RationalNumber>(boundEVT);
                 }
