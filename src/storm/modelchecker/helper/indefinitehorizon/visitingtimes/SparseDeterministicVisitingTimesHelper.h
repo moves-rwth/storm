@@ -5,6 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/utility/OptionalRef.h"
 
 namespace storm {
 class Environment;
@@ -154,12 +155,12 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
                                                    std::vector<ValueType> const& stateValues) const;
 
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
-    std::vector<ValueType> const* exitRates;
+    storm::OptionalRef<std::vector<ValueType> const> exitRates;
 
-    storm::storage::SparseMatrix<ValueType> const* backwardTransitions;
+    storm::OptionalRef<storm::storage::SparseMatrix<ValueType> const> backwardTransitions;
     std::unique_ptr<storm::storage::SparseMatrix<ValueType>> computedBackwardTransitions;
 
-    storm::storage::StronglyConnectedComponentDecomposition<ValueType> const* sccDecomposition;
+    storm::OptionalRef<storm::storage::StronglyConnectedComponentDecomposition<ValueType> const> sccDecomposition;
     std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> computedSccDecomposition;
 
     storm::storage::BitVector nonBsccStates;

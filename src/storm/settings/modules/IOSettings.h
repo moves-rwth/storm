@@ -5,8 +5,8 @@
 
 #include "storm-config.h"
 #include "storm/builder/ExplorationOrder.h"
-#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/io/ModelExportFormat.h"
+#include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {

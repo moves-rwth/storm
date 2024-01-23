@@ -6,10 +6,9 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
+#include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 
 namespace storm {
-
-enum class SteadyStateDistributionAlgorithm { Automatic, EquationSystem, ExpectedVisitingTimes, Classic };
 
 // Forward declare subenvironments
 class MultiObjectiveModelCheckerEnvironment;

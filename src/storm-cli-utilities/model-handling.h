@@ -440,8 +440,8 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
                                                              !buildSettings.isApplyNoMaximumProgressAssumptionSet());
 }
 
-storm::builder::BuilderOptions createBuildOptionsSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
-                                                        storm::settings::modules::BuildSettings const& buildSettings) {
+inline storm::builder::BuilderOptions createBuildOptionsSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
+                                                               storm::settings::modules::BuildSettings const& buildSettings) {
     storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
     options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
     options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
