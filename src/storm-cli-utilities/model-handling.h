@@ -440,9 +440,8 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
                                                              !buildSettings.isApplyNoMaximumProgressAssumptionSet());
 }
 
-template<typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
-                                                           storm::settings::modules::BuildSettings const& buildSettings) {
+storm::builder::BuilderOptions createBuildOptionsSparse(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
+                                                        storm::settings::modules::BuildSettings const& buildSettings) {
     storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
     options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
     options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
@@ -481,7 +480,11 @@ std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& 
     if (ioSettings.isComputeExpectedVisitingTimesSet() || ioSettings.isComputeSteadyStateDistributionSet()) {
         options.clearTerminalStates();
     }
+    return options;
+}
 
+template<typename ValueType>
+std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::builder::BuilderOptions const& options) {
     return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
 }
 
@@ -518,7 +521,8 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         if (builderType == storm::builder::BuilderType::Dd) {
             result = buildModelDd<DdType, ValueType>(input);
         } else if (builderType == storm::builder::BuilderType::Explicit) {
-            result = buildModelSparse<ValueType>(input, ioSettings, buildSettings);
+            auto options = createBuildOptionsSparse(input, ioSettings, buildSettings);
+            result = buildModelSparse<ValueType>(input, options);
         }
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
@@ -962,6 +966,12 @@ struct PostprocessingIdentity {
     }
 };
 
+/*!
+ * Verifies the given formula plus a filter formula to identify relevant states and warns the user in case of issues
+ * @param formula the formula to check
+ * @param statesFilter a second formula that identifies the relevant states (needs to be qualitative)
+ * @param verificationCallback Function to perform the actual verification task for a given formula plus a filter formula to identify relevant states
+ */
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyProperty(std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                  std::shared_ptr<storm::logic::Formula const> const& statesFilter,
@@ -975,11 +985,13 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyProperty(std::shared_ptr
             auto transformedFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*formula);
             auto transformedStatesFilter = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*statesFilter);
             if (transformedFormula && transformedStatesFilter) {
+                // invoke verification algorithm on transformed formulas
                 return verificationCallback(transformedFormula, transformedStatesFilter);
             } else {
                 STORM_LOG_WARN("Property is not preserved by transformation to discrete time model.");
             }
         } else {
+            // invoke verification algorithm on given formulas
             return verificationCallback(formula, statesFilter);
         }
     } catch (storm::exceptions::BaseException const& ex) {
@@ -988,6 +1000,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyProperty(std::shared_ptr
     return nullptr;
 }
 
+/*!
+ * Verifies all (potentially preprocessed) properties given in `input`.
+ * @param input Where the properties are read from
+ * @param verificationCallback Function to perform the actual verification task for a given formula plus a filter formula to identify relevant states
+ * @param postprocessingCallback Function that processes the verification result, such as e.g. output to a file
+ */
 template<typename ValueType>
 void verifyProperties(SymbolicInput const& input, VerificationCallbackType const& verificationCallback,
                       PostprocessingCallbackType const& postprocessingCallback = PostprocessingIdentity()) {
@@ -1004,10 +1022,20 @@ void verifyProperties(SymbolicInput const& input, VerificationCallbackType const
     }
 }
 
+/*!
+ * Computes values for each state (such as the steady-state probability distribution).
+ * If one or more formulas are given, they serve as filter to identify which states are relevant.
+ * @param description A string description of what is to be computed used for sensible command line output.
+ * @param computationCallback A function that performs the actual computation of the state values
+ * @param input Where the properties are read from
+ * @param verificationCallback Function to perform the actual verification task for a given formula plus a filter formula to identify relevant states
+ * @param postprocessingCallback Function that processes the verification result, such as e.g. output to a file
+ */
 template<typename ValueType>
 void computeStateValues(std::string const& description, std::function<std::unique_ptr<storm::modelchecker::CheckResult>()> const& computationCallback,
                         SymbolicInput const& input, VerificationCallbackType const& verificationCallback,
                         PostprocessingCallbackType const& postprocessingCallback = PostprocessingIdentity()) {
+    // First compute the state values for all the states by invoking the computationCallback
     storm::utility::Stopwatch watch(true);
     STORM_PRINT("\nComputing " << description << " ...\n");
     std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -1021,20 +1049,24 @@ void computeStateValues(std::string const& description, std::function<std::uniqu
         return;
     }
     watch.stop();
-    // Potentially filter result
+    // Now process the (potentially filtered) result
     if (input.properties.empty()) {
+        // Do not apply any filtering, consider result for *all* states
         postprocessingCallback(result);
         STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
         STORM_PRINT("Time for model checking: " << watch << ".\n");
     } else {
+        // Each property identifies a subset of states to which we restrict (aka filter) the state-value result to
         auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
         for (auto const& property : properties) {
+            // As the property serves as filter, it should (a) be qualitative and should (b) not consider a filter itself.
             if (!property.getRawFormula()->hasQualitativeResult()) {
                 STORM_LOG_ERROR("Property " << property.getRawFormula() << " can not be used for filtering states as it does not have a qualitative result.");
                 continue;
             }
             STORM_LOG_WARN_COND(property.getFilter().isDefault(), "Ignoring filter of property " << property << " as those are unsupported in this context.");
 
+            // Invoke verification algorithm on filtering property
             printModelCheckingProperty(property);
             storm::utility::Stopwatch propertyWatch(true);
             auto propertyFilter = verifyProperty<ValueType>(property.getRawFormula(), storm::logic::Formula::getTrueFormula(), verificationCallback);
@@ -1042,6 +1074,7 @@ void computeStateValues(std::string const& description, std::function<std::uniqu
             propertyWatch.add(watch);
 
             if (propertyFilter) {
+                // Filter and process result
                 std::unique_ptr<storm::modelchecker::CheckResult> filteredResult = result->clone();
                 filteredResult->filter(propertyFilter->asQualitativeCheckResult());
                 postprocessingCallback(filteredResult);
@@ -1169,7 +1202,7 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
-        } else if (!states->isTrueFormula()) {
+        } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
             filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, storm::api::createTask<ValueType>(states, false));
         }
         if (result && filter) {
@@ -1248,7 +1281,7 @@ void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& mod
             if (filterForInitialStates) {
                 filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(),
                                                                                                        symbolicModel->getInitialStates());
-            } else if (!states->isTrueFormula()) {
+            } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
                 filter = storm::api::verifyWithHybridEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(states, false));
             }
             if (result && filter) {
@@ -1273,7 +1306,7 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, 
             if (filterForInitialStates) {
                 filter = std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<DdType>>(symbolicModel->getReachableStates(),
                                                                                                        symbolicModel->getInitialStates());
-            } else if (!states->isTrueFormula()) {
+            } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
                 filter = storm::api::verifyWithDdEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(states, false));
             }
             if (result && filter) {
