@@ -146,6 +146,13 @@ TEST(ExplicitJaniModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/sync.nm");
+    janiModel = program.toJani().substituteConstantsFunctions();
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(5ul, model->getNumberOfStates());
+    EXPECT_EQ(24ul, model->getNumberOfTransitions());
+    EXPECT_EQ(12ul, model->getNumberOfChoices());
 }
 
 TEST(ExplicitJaniModelBuilderTest, Ma) {
