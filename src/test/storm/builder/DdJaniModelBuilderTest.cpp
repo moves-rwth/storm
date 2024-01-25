@@ -222,6 +222,17 @@ TEST(DdJaniModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(37ul, mdp->getNumberOfStates());
     EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/sync.nm");
+    janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    model = builder.build(janiModel);
+
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+
+    EXPECT_EQ(5ul, mdp->getNumberOfStates());
+    EXPECT_EQ(24ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(12ul, mdp->getNumberOfChoices());
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
@@ -291,6 +302,17 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(37ul, mdp->getNumberOfStates());
     EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+
+    modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/sync.nm");
+    janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
+    model = builder.build(janiModel);
+
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+
+    EXPECT_EQ(5ul, mdp->getNumberOfStates());
+    EXPECT_EQ(24ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(12ul, mdp->getNumberOfChoices());
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
