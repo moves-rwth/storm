@@ -172,6 +172,10 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
     return da;
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    (void)formula;
+    (void)model;
+    (void)extracted;
+    (void)acceptanceConditions;
 #endif
 }
 

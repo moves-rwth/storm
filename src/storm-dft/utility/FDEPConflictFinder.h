@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include <vector>
 #include "storm-dft/storage/DFT.h"

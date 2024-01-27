@@ -1,5 +1,3 @@
-#pragma
-
 #include "SymmetryFinder.h"
 
 #include "storm-dft/storage/DFTIsomorphism.h"
