@@ -6,6 +6,7 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
+#include "storm/utility/threads.h"
 
 namespace storm {
 namespace settings {
@@ -39,7 +40,15 @@ bool SylvanSettings::isNumberOfThreadsSet() const {
 }
 
 uint_fast64_t SylvanSettings::getNumberOfThreads() const {
-    return this->getOption(threadCountOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
+    uint64_t numThreads = std::max(1u, storm::utility::getNumberOfThreads());
+    if (isNumberOfThreadsSet()) {
+        auto numberFromSettings = this->getOption(threadCountOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
+        STORM_LOG_WARN_COND(numberFromSettings <= numThreads, "Setting the number of sylvan threads to "
+                                                                  << numberFromSettings << " which exceeds the recommended number for your system ("
+                                                                  << numThreads << ").");
+        numThreads = numberFromSettings;
+    }
+    return numThreads;
 }
 
 }  // namespace modules

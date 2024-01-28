@@ -45,6 +45,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/Qvbs.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
@@ -1423,6 +1424,8 @@ void processInputWithValueType(SymbolicInput const& input, ModelProcessingInform
         processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, mpi);
     } else {
         STORM_LOG_ASSERT(mpi.ddType == storm::dd::DdType::Sylvan, "Unknown DD library.");
+        STORM_PRINT_AND_LOG("Using Sylvan with " << storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads()
+                                                 << " parallel threads.\n");
         if (mpi.buildValueType == mpi.verificationValueType) {
             processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, mpi);
         } else {

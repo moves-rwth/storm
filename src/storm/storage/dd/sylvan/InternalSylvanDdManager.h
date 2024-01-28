@@ -38,6 +38,8 @@ class InternalDdManager<DdType::Sylvan> {
      */
     ~InternalDdManager();
 
+    static std::size_t getNumberOfThreads(std::size_t numberFromSettings = 0);
+
     /*!
      * Retrieves a BDD representing the constant one function.
      *
