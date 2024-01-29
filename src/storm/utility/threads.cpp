@@ -16,7 +16,7 @@ uint tryReadFromSlurm() {
         char* end;
         auto i = std::strtoul(val, &end, 10);
         if (val != end) {
-            STORM_LOG_WARN("Detected thread limitation via Slurm (max. " << i << " threads.");
+            STORM_LOG_WARN("Detected thread limitation via Slurm (max. " << i << " threads.)");
             return static_cast<uint>(i);
         }
     }
@@ -40,7 +40,7 @@ uint tryReadFromCgroups() {
             double period = std::strtod(pos1, &pos2);
             if (pos1 != pos2 && period > 0.0) {
                 auto res = static_cast<uint>(std::ceil(quota / period));
-                STORM_LOG_WARN("Detected thread limitation via cgroup (max. " << res << " threads, quota=" << quota << ", period=" << period << ".");
+                STORM_LOG_WARN("Detected thread limitation via cgroup (max. " << res << " threads, quota=" << quota << ", period=" << period << ").");
                 return res;
             }
         }

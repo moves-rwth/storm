@@ -436,6 +436,10 @@ inline std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasT
 
 template<storm::dd::DdType DdType, typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
+    if (DdType == storm::dd::DdType::Sylvan) {
+        auto numThreads = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads();
+        STORM_PRINT_AND_LOG("Using Sylvan with " << numThreads << " parallel threads.\n");
+    }
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), buildSettings.isBuildFullModelSet(),
                                                              !buildSettings.isApplyNoMaximumProgressAssumptionSet());
@@ -1424,8 +1428,6 @@ void processInputWithValueType(SymbolicInput const& input, ModelProcessingInform
         processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, mpi);
     } else {
         STORM_LOG_ASSERT(mpi.ddType == storm::dd::DdType::Sylvan, "Unknown DD library.");
-        STORM_PRINT_AND_LOG("Using Sylvan with " << storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads()
-                                                 << " parallel threads.\n");
         if (mpi.buildValueType == mpi.verificationValueType) {
             processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, mpi);
         } else {
