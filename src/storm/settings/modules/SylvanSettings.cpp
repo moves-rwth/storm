@@ -40,15 +40,25 @@ bool SylvanSettings::isNumberOfThreadsSet() const {
 }
 
 uint_fast64_t SylvanSettings::getNumberOfThreads() const {
-    uint64_t numThreads = std::max(1u, storm::utility::getNumberOfThreads());
     if (isNumberOfThreadsSet()) {
         auto numberFromSettings = this->getOption(threadCountOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
-        STORM_LOG_WARN_COND(numberFromSettings <= numThreads, "Setting the number of sylvan threads to "
-                                                                  << numberFromSettings << " which exceeds the recommended number for your system ("
-                                                                  << numThreads << ").");
-        numThreads = numberFromSettings;
+        if (numberFromSettings != 0u) {
+            return numberFromSettings;
+        }
     }
-    return numThreads;
+    // Automatic detection
+    return std::max(1u, storm::utility::getNumberOfThreads());
+}
+
+bool SylvanSettings::check() const {
+    if (isNumberOfThreadsSet()) {
+        auto const autoDetectThreads = std::max(1u, storm::utility::getNumberOfThreads());
+        auto const numberFromSettings = getNumberOfThreads();
+        STORM_LOG_WARN_COND(numberFromSettings <= autoDetectThreads, "Setting the number of sylvan threads to "
+                                                                         << numberFromSettings << " which exceeds the recommended number for your system ("
+                                                                         << autoDetectThreads << ").");
+    }
+    return true;
 }
 
 }  // namespace modules
