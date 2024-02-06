@@ -19,7 +19,7 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                 storm::settings::ArgumentBuilder::createIntegerArgument("splitting-threshold", "The threshold for splitting, should be an integer > 0").build())
             .build());
 
-    std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
+    std::vector<std::string> engines = {"pl", "exactpl", "validatingpl", "robustpl"};
     this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines))
@@ -46,6 +46,8 @@ storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionChec
         result = storm::modelchecker::RegionCheckEngine::ExactParameterLifting;
     } else if (engineString == "validatingpl") {
         result = storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting;
+    } else if (engineString == "robustpl") {
+        result = storm::modelchecker::RegionCheckEngine::RobustParameterLifting;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown region check engine '" << engineString << "'.");
     }

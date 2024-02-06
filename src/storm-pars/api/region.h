@@ -10,6 +10,7 @@
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
@@ -159,6 +160,7 @@ std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initial
     // Obtain the region model checker
     std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
     if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
+        // TODO if robust use robust
         checker = std::make_shared<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
         checker->setUseMonotonicity(monotonicitySetting.useMonotonicity);
         checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
@@ -175,6 +177,34 @@ std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initial
     }
 
     checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
+
+    return checker;
+}
+
+template<typename ParametricType>
+std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeRobustParameterLiftingRegionModelChecker(
+    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
+    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool allowModelSimplification = true) {
+    std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
+
+    // Treat continuous time models
+    if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+        STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
+        std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector{task.getFormula().asSharedPointer()};
+        consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
+        STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp),
+                        storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
+    }
+
+    // Obtain the region model checker
+    std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
+    if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
+        checker = std::make_shared<storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, double>>();
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform robust parameter lifting on the provided model type.");
+    }
+
+    checker->specify(env, consideredModel, task, false, allowModelSimplification);
 
     return checker;
 }
@@ -236,6 +266,8 @@ std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRe
             STORM_LOG_WARN_COND(preconditionsValidated, "Preconditions are checked anyway by a valicating model checker...");
             return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task, generateSplitEstimates,
                                                                                                     allowModelSimplification);
+        case storm::modelchecker::RegionCheckEngine::RobustParameterLifting:
+            return initializeRobustParameterLiftingRegionModelChecker<ValueType>(env, model, task, allowModelSimplification);
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
     }

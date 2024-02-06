@@ -1,0 +1,96 @@
+#pragma once
+
+#include <boost/optional.hpp>
+#include <memory>
+#include <vector>
+
+#include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
+#include "storm-pars/transformer/RobustParameterLifter.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/Scheduler.h"
+
+namespace storm {
+namespace modelchecker {
+
+template<typename SparseModelType, typename ConstantType>
+class SparseRobustDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
+   public:
+    typedef typename SparseModelType::ValueType ValueType;
+
+    typedef typename RegionModelChecker<ValueType>::VariableType VariableType;
+    typedef typename storm::storage::ParameterRegion<ValueType>::CoefficientType CoefficientType;
+
+    SparseRobustDtmcParameterLiftingModelChecker();
+    SparseRobustDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<storm::Interval, double>>&& solverFactory);
+    virtual ~SparseRobustDtmcParameterLiftingModelChecker() = default;
+
+    virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
+                           CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
+
+    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
+                         CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool generateRegionSplitEstimates = false,
+                         bool allowModelSimplification = true) override;
+    void specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel,
+                          CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification);
+
+    boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
+    boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
+
+    virtual bool isRegionSplitEstimateSupported() const override;
+    virtual std::map<VariableType, double> getRegionSplitEstimate() const override;
+
+    void setMaxSplitDimensions(uint64_t) override;
+    void resetMaxSplitDimensions() override;
+
+   protected:
+    virtual void specifyBoundedUntilFormula(const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) override;
+    virtual void specifyUntilFormula(Environment const& env, CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) override;
+    virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
+    virtual void specifyCumulativeRewardFormula(const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
+
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() override;
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT() override;
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO() override;
+
+    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(
+        Environment const& env, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
+        std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) override;
+
+    // void computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices,
+    //                                  storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+
+    virtual void reset() override;
+
+    virtual void splitSmart(storm::storage::ParameterRegion<ValueType>& region, std::vector<storm::storage::ParameterRegion<ValueType>>& regionVector,
+                            storm::analysis::MonotonicityResult<VariableType>& monRes, bool splitForExtremum) const override;
+
+   private:
+    storm::storage::BitVector maybeStates;
+    std::vector<ConstantType> resultsForNonMaybeStates;
+    boost::optional<uint_fast64_t> stepBound;
+
+    std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
+    std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
+    std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerVIO;
+
+    std::unique_ptr<storm::transformer::RobustParameterLifter<ValueType, ConstantType>> parameterLifter;
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<storm::Interval, double>> solverFactory;
+    bool solvingRequiresUpperRewardBounds;
+
+    // Results from the most recent solver call.
+    boost::optional<std::vector<uint_fast64_t>> minSchedChoices, maxSchedChoices;
+    std::vector<ConstantType> x;
+    boost::optional<ConstantType> lowerResultBound, upperResultBound;
+
+    bool regionSplitEstimationsEnabled;
+    std::map<VariableType, double> regionSplitEstimates;
+    uint64_t maxSplitDimensions;
+
+    // Used for monotonicity
+    bool useRegionSplitEstimates;
+};
+}  // namespace modelchecker
+}  // namespace storm

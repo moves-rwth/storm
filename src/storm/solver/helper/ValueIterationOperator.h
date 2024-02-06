@@ -11,6 +11,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"  // TODO
+#include "utility/constants.h"
 
 namespace storm {
 class Environment;
@@ -167,7 +168,9 @@ class ValueIterationOperator {
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
         STORM_LOG_ASSERT(getSize(operandIn) == getSize(operandOut), "Input and Output Operands have different sizes.");
         auto const operandSize = getSize(operandIn);
-        STORM_LOG_ASSERT(TrivialRowGrouping || rowGroupIndices->size() == operandSize + 1, "Dimension mismatch");
+        STORM_LOG_ASSERT(
+            TrivialRowGrouping || rowGroupIndices->size() == operandSize + 1,
+            "Number of rowGroupIndices (" << rowGroupIndices << " ) does not match size of the operand vector plus one (" << operandSize + 1 << ")");
         backend.startNewIteration();
         auto matrixValueIt = matrixValues.cbegin();
         auto matrixColumnIt = matrixColumns.cbegin();
@@ -319,7 +322,7 @@ class ValueIterationOperator {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isZero(remainingValue), "Should be zero (all prob mass taken)");
+        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);
         return result;
     }
 
