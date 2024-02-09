@@ -45,6 +45,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
+#include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/Qvbs.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
@@ -435,6 +436,10 @@ inline std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasT
 
 template<storm::dd::DdType DdType, typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
+    if (DdType == storm::dd::DdType::Sylvan) {
+        auto numThreads = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads();
+        STORM_PRINT_AND_LOG("Using Sylvan with " << numThreads << " parallel threads.\n");
+    }
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), buildSettings.isBuildFullModelSet(),
                                                              !buildSettings.isApplyNoMaximumProgressAssumptionSet());
