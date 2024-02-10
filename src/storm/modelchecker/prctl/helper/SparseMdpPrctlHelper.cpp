@@ -759,7 +759,14 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
             } else {
                 // Set values of resulting vector according to result.
-                storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                if constexpr (!std::is_same_v<ValueType, storm::Interval>) {
+                    // For non-interval models, we only operated on the maybe states, and we must recover the qualitative values for the other state.
+                    storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                } else {
+                    // For interval models, the result for maybe states indeed also holds values for all qualitative states.
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                    result = resultForMaybeStates.getValues();
+                }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(),
                                                                                                        qualitativeStateSets.maybeStates);
