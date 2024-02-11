@@ -1,0 +1,18 @@
+// Exported by storm
+// Original model type: MDP
+@type: MDP
+@nr_states
+3
+@nr_choices
+3
+@model
+state 0 target
+    action 0
+        0 : [1, 1]
+state 1
+    action 0
+        1 : [1, 1]
+state 2 init
+    action 0
+        0 : [0.3, 0.4]
+        1 : [0.4, 0.9]
