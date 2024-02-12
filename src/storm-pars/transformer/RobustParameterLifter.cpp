@@ -1,7 +1,9 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include <_types/_uint64_t.h>
+#include <cmath>
 #include <memory>
 #include <optional>
+#include <set>
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 
@@ -11,6 +13,7 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/vector.h"
 #include "utility/constants.h"
+#include "utility/logging.h"
 #include "utility/macros.h"
 
 namespace storm {
@@ -147,7 +150,8 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
 template<typename ParametricType, typename ConstantType>
 boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<typename storm::utility::parametric::CoefficientType<ParametricType>::type,
                                                                              typename storm::utility::parametric::CoefficientType<ParametricType>::type>>>
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::recursiveDecompose(RawPolynomial polynomial, VariableType parameter, bool firstIteration) {
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::recursiveDecompose(RawPolynomial polynomial, VariableType parameter,
+                                                                                                 bool firstIteration) {
     auto parameterPol = RawPolynomial(parameter);
     auto oneMinusParameter = RawPolynomial(1) - parameterPol;
     if (polynomial.isConstant()) {
@@ -155,23 +159,20 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
                               std::make_pair(utility::convertNumber<CoefficientType>(polynomial.constantPart()), utility::zero<CoefficientType>()));
     }
     auto byOneMinusP = polynomial.divideBy(oneMinusParameter);
-    if (byOneMinusP.remainder.isZero()) {
+    if (byOneMinusP.remainder.isZero() && byOneMinusP.quotient > storm::utility::zero<CoefficientType>()) {
         auto recursiveResult = recursiveDecompose(byOneMinusP.quotient, parameter, false);
         if (recursiveResult) {
             return std::make_pair(std::make_pair(recursiveResult->first.first, recursiveResult->first.second + 1), recursiveResult->second);
         }
     }
     auto byP = polynomial.divideBy(parameterPol);
-    if (byP.remainder.isZero()) {
+    if (byP.remainder.isZero() && byP.quotient > storm::utility::zero<CoefficientType>()) {
         auto recursiveResult = recursiveDecompose(byP.quotient, parameter, false);
         if (recursiveResult) {
             return std::make_pair(std::make_pair(recursiveResult->first.first + 1, recursiveResult->first.second), recursiveResult->second);
         }
     }
-    if (!firstIteration) {
-        return boost::none;
-    }
-    if (byOneMinusP.remainder.isConstant()) {
+    if (firstIteration && byOneMinusP.remainder.isConstant() && byOneMinusP.quotient > storm::utility::zero<CoefficientType>()) {
         auto rem1 = utility::convertNumber<CoefficientType>(byOneMinusP.remainder.constantPart());
         auto recursiveResult = recursiveDecompose(byOneMinusP.quotient, parameter, false);
         if (recursiveResult) {
@@ -180,7 +181,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
                                   std::pair<CoefficientType, CoefficientType>(recursiveResult->second.first, rem1));
         }
     }
-    if (byP.remainder.isConstant()) {
+    if (firstIteration && byP.remainder.isConstant() && byP.quotient > storm::utility::zero<CoefficientType>()) {
         auto rem2 = utility::convertNumber<CoefficientType>(byP.remainder.constantPart());
         auto recursiveResult = recursiveDecompose(byP.quotient, parameter, false);
         if (recursiveResult) {
@@ -191,7 +192,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
     }
     return boost::none;
 }
-
 
 // template<typename ParametricType, typename ConstantType>
 // boost::optional<std::pair<std::pair<uint64_t, uint64_t>, typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
@@ -218,76 +218,160 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
 //     return boost::none;
 // }
 
+
+template<typename ParametricType, typename ConstantType>
+std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cubicEquationZeroes(RawPolynomial polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    // Polynomial is a*p^3 + b*p^2 + c*p + d
+
+    // Recover factors from polynomial
+    CoefficientType a = utility::zero<CoefficientType>(), b = a, c = a, d = a;
+    utility::convertNumber<ConstantType>(a);
+    for (auto const& term : polynomial.getTerms()) {
+        STORM_LOG_ASSERT(term.getNrVariables() <= 1, "No terms with more than one variable allowed but " << term << " has " << term.getNrVariables());
+        if (!term.isConstant() && term.getSingleVariable() != parameter) {
+            continue;
+        }
+        CoefficientType coefficient = term.coeff();
+        STORM_LOG_ASSERT(term.tdeg() < 4, "Transitions are only allowed to have a maximum degree of four.");
+        switch (term.tdeg()) {
+        case 0:
+            d = coefficient;
+            break;
+        case 1:
+            c = coefficient;
+            break;
+        case 2:
+            b = coefficient;
+            break;
+        case 3:
+            a = coefficient;
+            break;
+        }
+    }
+    // Translated from https://stackoverflow.com/questions/27176423/function-to-solve-cubic-equation-analytically
+
+    // Quadratic case
+    if (utility::isZero(a)) {
+        a = b;
+        b = c;
+        c = d;
+        // Linear case
+        if (utility::isZero(a)) {
+            a = b;
+            b = c;
+            // Constant case
+            if (utility::isZero(a)) {
+                return {};
+            }
+            return {-b / a};
+        }
+
+        CoefficientType D = b * b - 4 * a * c;
+        if (utility::isZero(D)) {
+            return {-b / (2 * a)};
+        } else if (D > 0) {
+            return {(-b + utility::sqrt(D)) / (2 * a), (-b - utility::sqrt(D)) / (2 * a)};
+        }
+        return {};
+    }
+    std::set<CoefficientType> roots;
+
+    // Convert to depressed cubic t^3+pt+q = 0 (subst x = t - b/3a)
+    CoefficientType p = (3 * a * c - b * b) / (3 * a * a);
+    CoefficientType q = (2 * b * b * b - 9 * a * b * c + 27 * a * a * d) / (27 * a * a * a);
+    double pDouble = utility::convertNumber<ConstantType>(p);
+    double qDouble = utility::convertNumber<ConstantType>(q);
+
+    if (utility::isZero(p)) {  // p = 0 -> t^3 = -q -> t = -q^1/3
+        roots = {CoefficientType(std::cbrt(-qDouble))};
+    } else if (utility::isZero(q)) {  // q = 0 -> t^3 + pt = 0 -> t(t^2+p)=0
+        roots = {0};
+        if (p < 0) {
+            roots.emplace(utility::sqrt(-pDouble));
+            roots.emplace(-utility::sqrt(-pDouble));
+        }
+    } else {
+        // These are all coefficients (we also plug the values into RationalFunctions later), i.e., they are rational numbers,
+        // but some of these operations are strictly real, so we convert to double and back (i.e., approximate).
+        CoefficientType D = q * q / 4 + p * p * p / 27;
+        if (utility::isZero(D)) {  // D = 0 -> two roots
+            roots = {-1.5 * q / p, 3 * q / p};
+        } else if (D > 0) {  // Only one real root
+            double Ddouble = utility::convertNumber<ConstantType>(D);
+            CoefficientType u = utility::convertNumber<CoefficientType>(std::cbrt(-qDouble / 2 - utility::sqrt(Ddouble)));
+            roots = {u - p / (3 * u)};
+        } else {  // D < 0, three roots, but needs to use complex numbers/trigonometric solution
+            double u = 2 * utility::sqrt(-pDouble / 3);
+            double t = std::acos(3 * qDouble / pDouble / u) / 3;  // D < 0 implies p < 0 and acos argument in [-1..1]
+            double k = 2 * M_PI / 3;
+
+            roots = {
+                utility::convertNumber<CoefficientType>(u * std::cos(t)),
+                utility::convertNumber<CoefficientType>(u * std::cos(t - k)),
+                utility::convertNumber<CoefficientType>(u * std::cos(t - 2 * k))
+            };
+        }
+    }
+    return roots;
+}
+
 template<typename ParametricType, typename ConstantType>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(RationalFunction transition) : transition(transition) {
     std::set<VariableType> occurringVariables;
     storm::utility::parametric::gatherOccurringVariables(transition, occurringVariables);
 
-    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions of the form sum_i (c_i * p_i^a * (1-p_i)^b) + d.");
+    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions with constant denominators.");
 
     transition.simplify();
+
     auto constantPart = transition.constantPart();
 
     CoefficientType denominator = transition.denominator().constantPart();
 
     auto nominator = RawPolynomial(transition.nominator());
 
-    CoefficientType offset = utility::zero<CoefficientType>();
-
     std::map<VariableType, RawPolynomial> termsPerParameter;
 
-    // Collect terms and add them together
-    for (auto const& term : nominator.getTerms()) {
-        if (term.isConstant()) {
-            STORM_LOG_ASSERT(utility::isZero(offset), "Transition has two offsets? " << transition);
-            offset = utility::convertNumber<CoefficientType>(RawPolynomial(term).constantPart());
-            continue;
+    for (auto const& p : occurringVariables) {
+        this->extrema[p] = {};
+        auto const derivative = RawPolynomial(transition.derivative(p).nominator());
+        // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
+        auto zeroes = cubicEquationZeroes(derivative, p);
+        for (auto const& zero : zeroes) {
+            if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
+                this->extrema[p].emplace(zero);
+            }
         }
-
-        std::set<VariableType> variables;
-        term.gatherVariables(variables);
-        STORM_LOG_ASSERT(variables.size() == 1, "There may only be a single variable in each term of each transition, but the term "
-                                                    << term << " has " << term.getNrVariables() << ".");
-        auto const p = *variables.begin();
-
-        if (termsPerParameter.count(p)) {
-            termsPerParameter[p] = termsPerParameter[p] + RawPolynomial(term);
-        } else {
-            termsPerParameter[p] = RawPolynomial(term);
-        }
-    }
-
-    for (auto const& entry : termsPerParameter) {
-        auto const& p = entry.first;
-        auto const& term = entry.second;
-
-        auto resultForParameter = recursiveDecompose(term, p);
-
-        uint64_t a = resultForParameter->first.first;
-        uint64_t b = resultForParameter->first.second;
-        CoefficientType constant = resultForParameter->second.first / denominator;
-        offset += resultForParameter->second.second;
-
-        // Term is constant * p^a * (1-p)^b
         this->parameters.emplace(p);
-        this->aAndB.emplace(p, std::make_pair(a, b));
-        this->constants.emplace(p, utility::convertNumber<ConstantType>(constant));
 
-        auto cleanedTerm = term / constant;
+        // auto resultForParameter = recursiveDecompose(term, p);
 
-        // The maximum of the polynomial part lies at a / (a + b), so compute that
-        // It is corrected for constant and offset later, not now
-        CoefficientType maximumCoeff;
-        if (a != 0 || b != 0) {
-            maximumCoeff = utility::convertNumber<CoefficientType>(a) / utility::convertNumber<CoefficientType>(a + b);
-        } else {
-            maximumCoeff = utility::zero<CoefficientType>();
-        }
-        ConstantType maximum = utility::convertNumber<ConstantType>(maximumCoeff);
+        // STORM_LOG_ASSERT(resultForParameter, "Polynomial cannot be decomposed: " << transition << std::endl);
 
-        std::map<VariableType, CoefficientType> substitution;
-        substitution.emplace(p, maximumCoeff);
-        this->maximum.emplace(p, std::make_pair(maximum, utility::convertNumber<ConstantType>(cleanedTerm.evaluate(substitution))));
+        // uint64_t a = resultForParameter->first.first;
+        // uint64_t b = resultForParameter->first.second;
+        // CoefficientType constant = resultForParameter->second.first / denominator;
+
+        // // Term is constant * p^a * (1-p)^b
+        // this->aAndB.emplace(p, std::make_pair(a, b));
+        // this->constants.emplace(p, utility::convertNumber<ConstantType>(constant));
+
+        // auto cleanedTerm = term / constant;
+
+        // // The maximum of the polynomial part lies at a / (a + b), so compute that
+        // // It is corrected for constant and offset later, not now
+        // CoefficientType maximumCoeff;
+        // if (a != 0 || b != 0) {
+        //     maximumCoeff = utility::convertNumber<CoefficientType>(a) / utility::convertNumber<CoefficientType>(a + b);
+        // } else {
+        //     maximumCoeff = utility::zero<CoefficientType>();
+        // }
+        // ConstantType maximum = utility::convertNumber<ConstantType>(maximumCoeff);
+
+        // std::map<VariableType, CoefficientType> substitution;
+        // substitution.emplace(p, maximumCoeff);
+        // this->maximum.emplace(p, std::make_pair(maximum, utility::convertNumber<ConstantType>(cleanedTerm.evaluate(substitution))));
     }
 }
 
@@ -318,26 +402,9 @@ RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::Rob
 }
 
 template<typename ParametricType, typename ConstantType>
-std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, ConstantType> const&
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getConstants() const {
-    return this->constants;
-}
-
-template<typename ParametricType, typename ConstantType>
-ConstantType const& RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getOffset() const {
-    return this->offset;
-}
-
-template<typename ParametricType, typename ConstantType>
-std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, std::pair<uint64_t, uint64_t>> const&
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getAandB() const {
-    return this->aAndB;
-}
-
-template<typename ParametricType, typename ConstantType>
-std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, std::pair<ConstantType, ConstantType>> const&
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getMaximum() const {
-    return this->maximum;
+std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>> const&
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getExtrema() const {
+    return this->extrema;
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -364,84 +431,50 @@ void RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
         RationalFunction const& transition = abstrValuation.getTransition();
 
-        // We sometimes need to compute function values. This is a cache for the transition evaluated at the lower boundary of the region, because we can re-use
-        // that.
-        std::optional<CoefficientType> lowerValueFunction;
-
         // We first figure out the positions of the lower and upper bounds per parameter
         // Lower/upper bound of every parameter is independent because the transitions are sums of terms with one parameter each
         // At the end, we compute the value
-        std::map<VariableType, CoefficientType> lowerBounds;
-        std::map<VariableType, CoefficientType> upperBounds;
-        for (auto const& p : abstrValuation.getParameters()) {
-            CoefficientType lowerPCoeff = region.getLowerBoundary(p);
-            CoefficientType upperPCoeff = region.getUpperBoundary(p);
+        std::map<VariableType, CoefficientType> lowerPositions;
+        std::map<VariableType, CoefficientType> upperPositions;
 
+        for (auto const& p : abstrValuation.getParameters()) {
             CoefficientType lowerP = region.getLowerBoundary(p);
             CoefficientType upperP = region.getUpperBoundary(p);
 
-            CoefficientType maximumPos = abstrValuation.getMaximum().at(p).first;
-            CoefficientType constant = abstrValuation.getConstants().at(p);
-
-            CoefficientType minPosP;
-            CoefficientType maxPosP;
-
-            if (lowerP <= maximumPos && upperP >= maximumPos) {
-                // Case 1: The valuation embraces the maximum of the function.
-                // Lower (upper) bound is the minimum of left and right (we need to compute that)
-                // Upper (lower) bound is the maximum itself (we already know that)
-
-                // We need to figure out whether the upper or lower bound is the extremum, for that we need the values
-                auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
-                // This is cached, because it is the same for each parameter
-                if (!lowerValueFunction) {
-                    lowerValueFunction = abstrValuation.getTransition().evaluate(instantiation);
-                }
-                // We set only p to the upper value and keep the rest the same
-                instantiation[p] = upperP;
-                CoefficientType upperValueFunctionP = abstrValuation.getTransition().evaluate(instantiation);
-                if (constant > utility::zero<CoefficientType>()) {
-                    // Parabola points up
-                    maxPosP = maximumPos;
-                    if (upperValueFunctionP > lowerValueFunction) {
-                        minPosP = upperP;
-                    } else {
-                        minPosP = lowerP;
-                    }
-                } else {
-                    // Parabola points down
-                    minPosP = maximumPos;
-                    if (upperValueFunctionP > lowerValueFunction) {
-                        maxPosP = upperP;
-                    } else {
-                        maxPosP = lowerP;
-                    }
-                }
-            } else {
-                // Case 2: The valuation is completely on the right / left of the maximum => monotone decreasing / increasing
-                bool isOnLeft = lowerP <= maximumPos && upperP <= maximumPos;
-                bool isOnRight = lowerP >= maximumPos && upperP >= maximumPos;
-
-                bool parabolaPointsUp = constant > utility::zero<CoefficientType>();
-
-                if ((isOnRight && parabolaPointsUp) || (isOnLeft && !parabolaPointsUp)) {
-                    maxPosP = lowerP;
-                    minPosP = upperP;
-                } else if ((isOnLeft && parabolaPointsUp) || (isOnRight && !parabolaPointsUp)) {
-                    minPosP = lowerP;
-                    maxPosP = upperP;
-                } else {
-                    STORM_LOG_ERROR("This case should never happen!! I made a mistake!");
+            std::set<CoefficientType> potentialExtrema = {lowerP, upperP};
+            for (auto const& maximum : abstrValuation.getExtrema().at(p)) {
+                if (maximum >= lowerP && maximum <= upperP) {
+                    potentialExtrema.emplace(maximum);
                 }
             }
 
-            lowerBounds.emplace(p, minPosP);
-            upperBounds.emplace(p, maxPosP);
+            CoefficientType minPosP;
+            CoefficientType maxPosP;
+            CoefficientType maxValue = utility::zero<CoefficientType>();
+            CoefficientType minValue = utility::one<CoefficientType>();
+
+            auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
+
+            for (auto const& potentialExtremum : potentialExtrema) {
+                instantiation[p] = potentialExtremum;
+                auto value = abstrValuation.getTransition().evaluate(instantiation);
+                if (value > maxValue) {
+                    maxValue = value;
+                    maxPosP = potentialExtremum;
+                }
+                if (value < minValue) {
+                    minValue = value;
+                    minPosP = potentialExtremum;
+                }
+            }
+
+            lowerPositions[p] = minPosP;
+            upperPositions[p] = maxPosP;
         }
 
         // Compute function values at left and right ends
-        ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerBounds));
-        ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperBounds));
+        ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
+        ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
 
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
 

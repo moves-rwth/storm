@@ -1,4 +1,5 @@
 #include "TimeTravelling.h"
+#include <_types/_uint64_t.h>
 #include <carl/core/Variable.h>
 #include <carl/core/VariablePool.h>
 #include <algorithm>
@@ -13,6 +14,7 @@
 #include <string>
 #include <vector>
 #include "adapters/RationalFunctionAdapter.h"
+#include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberAdapter.h"
 #include "logic/UntilFormula.h"
 #include "modelchecker/CheckTask.h"
@@ -377,6 +379,284 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
     }
 
     return newDTMC;
+}
+
+models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                               modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
+    models::sparse::Dtmc<RationalFunction> dtmc(model);
+    storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
+    uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
+
+    auto allParameters = storm::models::sparse::getAllParameters(dtmc);
+
+    std::set<std::string> labelsInFormula;
+    for (auto const& atomicLabelFormula : checkTask.getFormula().getAtomicLabelFormulas()) {
+        labelsInFormula.emplace(atomicLabelFormula->getLabel());
+    }
+
+    models::sparse::StateLabeling runningLabeling(dtmc.getStateLabeling());
+
+    // Check the reward model - do not touch states with rewards
+    boost::optional<std::vector<RationalFunction>> stateRewardVector;
+    boost::optional<std::string> stateRewardName;
+    if (checkTask.getFormula().isRewardOperatorFormula()) {
+        if (checkTask.isRewardModelSet()) {
+            dtmc.reduceToStateBasedRewards();
+            stateRewardVector = dtmc.getRewardModel(checkTask.getRewardModel()).getStateRewardVector();
+            stateRewardName = checkTask.getRewardModel();
+        } else {
+            dtmc.reduceToStateBasedRewards();
+            stateRewardVector = dtmc.getRewardModel("").getStateRewardVector();
+            stateRewardName = dtmc.getUniqueRewardModelName();
+        }
+    }
+
+    auto topologicalOrdering = utility::graph::getTopologicalSort<RationalFunction>(transitionMatrix, {initialState});
+    auto flexibleMatrix = storage::FlexibleSparseMatrix<RationalFunction>(transitionMatrix);
+
+    // Initialize counting
+    std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>> treeStates;
+    std::map<RationalFunctionVariable, std::set<uint64_t>> workingSets;
+
+    auto backwardsTransitions = flexibleMatrix.createSparseMatrix().transpose(true);
+    // Count number of parameter occurences per state
+    for (uint64_t row = 0; row < flexibleMatrix.getRowCount(); row++) {
+        for (auto const& entry : flexibleMatrix.getRow(row)) {
+            if (entry.getValue().isConstant()) {
+                continue;
+            }
+            STORM_LOG_ERROR_COND(entry.getValue().gatherVariables().size() == 1, "Flip minimization only supports transitions with a single parameter.");
+            auto parameter = *entry.getValue().gatherVariables().begin();
+            auto cache = entry.getValue().nominatorAsPolynomial().pCache();
+            workingSets[parameter].emplace(row);
+            treeStates[parameter][row].emplace(row);
+        }
+    }
+
+    // To prevent infinite unrolling of parametric loops
+    // We have already reordered with these as root
+    std::set<std::pair<RationalFunctionVariable, std::set<uint64_t>>> alreadyReorderedWrt;
+
+    std::stack<uint_fast64_t> topologicalOrderingQueue;
+    topologicalOrdering = utility::graph::getTopologicalSort<RationalFunction>(transitionMatrix, {initialState});
+    for (auto rit = topologicalOrdering.begin(); rit != topologicalOrdering.end(); ++rit) {
+        topologicalOrderingQueue.push(*rit);
+    }
+
+    // Identify reachable states - not reachable states do not have do be big-stepped
+    storage::BitVector trueVector(transitionMatrix.getRowCount(), true);
+    storage::BitVector falseVector(transitionMatrix.getRowCount(), false);
+    storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
+    initialStates.set(initialState, true);
+    storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
+
+    updateTreeStates(treeStates, workingSets, flexibleMatrix, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
+
+    while (!topologicalOrderingQueue.empty()) {
+        auto state = topologicalOrderingQueue.top();
+        topologicalOrderingQueue.pop();
+
+        if (!reachableStates.get(state)) {
+            continue;
+        }
+
+        std::set<uint_fast64_t> oneStepColumns;
+        std::optional<carl::Variable> parameter;
+        for (auto const& oneStep : flexibleMatrix.getRow(state)) {
+            if (!oneStep.getValue().isConstant()) {
+                auto variables = oneStep.getValue().gatherVariables();
+                STORM_LOG_ERROR_COND(variables.size() == 1, "Multivariate polynomials not allowed!");
+                if (!parameter) {
+                    parameter = *variables.begin();
+                } else {
+                    STORM_LOG_ERROR_COND(*parameter == *variables.begin(), "Multivariate transitions not allowed!");
+                }
+                if (treeStates[*parameter].count(oneStep.getColumn()) && treeStates.at(*parameter).at(oneStep.getColumn()).size() >= 1) {
+                    oneStepColumns.emplace(oneStep.getColumn());
+                }
+            }
+        }
+
+        if (oneStepColumns.size() == 0) {
+            continue;
+        }
+
+        // Do big-step lifting from here
+        // Just follow the treeStates and eliminate transitions
+
+        auto parameterMap = treeStates.at(*parameter);
+
+        std::cout << "BigStep " << topologicalOrderingQueue.size() << " ";
+
+        struct searchingPath {
+            std::vector<uint_fast64_t> path;
+            RationalFunction probability;
+        };
+
+        // We enumerate all paths starting in `state` and eventually reaching our goals
+        std::vector<searchingPath> searchingPaths;
+        std::vector<searchingPath> donePaths;
+
+        searchingPaths.push_back(searchingPath{{state}, utility::one<RationalFunction>()});
+
+        while (!searchingPaths.empty()) {
+            std::vector<searchingPath> newPaths;
+            for (auto const& path : searchingPaths) {
+                for (auto const& entry : flexibleMatrix.getRow(path.path.back())) {
+                    // Continue searching if we can still reach a parameter
+                    bool continueSearching = !parameterMap[entry.getColumn()].empty();
+
+                    // Also continue searching if there is only a transition with a one coming up, we can skip that                    
+                    // This is nice because we can possibly combine more transitions later
+                    bool onlyHasOne = flexibleMatrix.getRow(entry.getColumn()).size() == 1 && flexibleMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
+                    continueSearching |= onlyHasOne;
+
+                    // Stop if we have encountered a loop
+                    continueSearching &= std::find(path.path.begin(), path.path.end(), entry.getColumn()) == path.path.end();
+                    // Don't mess with rewards for now (TODO for later)
+                    continueSearching &= !(stateRewardVector && !stateRewardVector->at(entry.getColumn()).isZero());
+                    // Stop if degree gets too large
+                    // TODO make this degree configurable
+                    continueSearching &= path.probability.nominator().totalDegree() < 4;
+
+                    std::vector<uint_fast64_t> pathCopy = path.path;
+                    pathCopy.push_back(entry.getColumn());
+                    searchingPath newPath{pathCopy, path.probability * entry.getValue()};
+
+                    if (continueSearching) {
+                        newPaths.push_back(newPath);
+                    } else {
+                        donePaths.push_back(newPath);
+                    }
+                }
+            }
+            searchingPaths = newPaths;
+        }
+
+        std::cout << donePaths.size() << std::endl;
+
+        flexibleMatrix.getRow(state) = std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>>();
+        std::map<uint64_t, RationalFunction> insertThese;
+        for (auto const& path : donePaths) {
+            uint64_t target = path.path.back();
+            if (insertThese.count(target)) {
+                insertThese[target] += path.probability;
+            } else {
+                insertThese[target] = path.probability;
+            }
+        }
+        for (auto const& entry : insertThese) {
+            flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
+        }
+    }
+    transitionMatrix = flexibleMatrix.createSparseMatrix();
+
+    // Delete states
+    {
+        storage::BitVector trueVector(transitionMatrix.getRowCount(), true);
+        storage::BitVector falseVector(transitionMatrix.getRowCount(), false);
+        storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
+        initialStates.set(initialState, true);
+        storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
+        transitionMatrix = transitionMatrix.getSubmatrix(false, reachableStates, reachableStates);
+        runningLabeling = runningLabeling.getSubLabeling(reachableStates);
+        uint_fast64_t newInitialState = 0;
+        for (uint_fast64_t i = 0; i < initialState; i++) {
+            if (reachableStates.get(i)) {
+                newInitialState++;
+            }
+        }
+        initialState = newInitialState;
+        if (stateRewardVector) {
+            std::vector<RationalFunction> newStateRewardVector;
+            for (uint_fast64_t i = 0; i < stateRewardVector->size(); i++) {
+                if (reachableStates.get(i)) {
+                    newStateRewardVector.push_back(stateRewardVector->at(i));
+                } else {
+                    STORM_LOG_ERROR_COND(stateRewardVector->at(i).isZero(), "Deleted non-zero reward.");
+                }
+            }
+            stateRewardVector = newStateRewardVector;
+        }
+    }
+
+    models::sparse::Dtmc<RationalFunction> newDTMC(transitionMatrix, runningLabeling);
+
+    storage::BitVector newInitialStates(transitionMatrix.getRowCount());
+    newInitialStates.set(initialState, true);
+    newDTMC.setInitialStates(newInitialStates);
+
+    if (stateRewardVector) {
+        models::sparse::StandardRewardModel<RationalFunction> newRewardModel(*stateRewardVector);
+        newDTMC.addRewardModel(*stateRewardName, newRewardModel);
+    }
+
+    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(), "Internal error: resulting matrix not probabilistic!");
+
+    return newDTMC;
+}
+
+// We are duplicating transitions to new states because of this problem:
+//
+// The big step lifter needs transitions that are of the form c * p^a * (1-p)^b * d
+// The time traveller generally provides these, except when there are multiple
+// of these transitions pointing from the same state to the same state
+// Then these need to be summed, and the a and b information gets lost
+// Thus we create new states in the middle such that we preserve this format of transition
+storage::FlexibleSparseMatrix<RationalFunction> TimeTravelling::duplicateTransitionsOntoNewStates(storage::FlexibleSparseMatrix<RationalFunction> const& matrix,
+                                                                                                  uint_fast64_t row) {
+    auto const entries = matrix.getRow(row);
+
+    std::map<uint_fast64_t, storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>, std::less<uint_fast64_t>> existingEntries;
+
+    std::map<std::pair<uint_fast64_t, RationalFunction>, uint_fast64_t> addedFunctionToEntry;
+
+    // Vector consists of states that we go to with probability one
+    std::vector<uint_fast64_t> additionalRows;
+
+    uint_fast64_t newRowIndex = matrix.getRowCount();
+
+    for (auto const& entry : entries) {
+        if (existingEntries.count(entry.getColumn())) {
+            // Join states that have both the same value and the same target (TODO: constants should also not change this)
+            if (addedFunctionToEntry.count(entry.getColumnValuePair())) {
+                uint_fast64_t target = addedFunctionToEntry[entry.getColumnValuePair()];
+                existingEntries[target].setValue(existingEntries[target].getValue() + entry.getValue());
+            } else {
+                existingEntries[newRowIndex] = storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRowIndex, entry.getValue());
+                addedFunctionToEntry[entry.getColumnValuePair()] = newRowIndex;
+                additionalRows.push_back(entry.getColumn());
+                newRowIndex++;
+            }
+        } else {
+            existingEntries[entry.getColumn()] = entry;
+            addedFunctionToEntry[entry.getColumnValuePair()] = entry.getColumn();
+        }
+    }
+
+    std::vector<storm::storage::MatrixEntry<uint_fast64_t, RationalFunction>> newEntries;
+    for (auto const& pair : existingEntries) {
+        newEntries.push_back(pair.second);
+    }
+
+    storage::FlexibleSparseMatrix<RationalFunction> newMatrix;
+    if (newRowIndex > matrix.getRowCount()) {
+        storage::SparseMatrixBuilder<RationalFunction> builder;
+        newMatrix = storage::FlexibleSparseMatrix<RationalFunction>(builder.build(newRowIndex, newRowIndex, 0));
+        for (uint_fast64_t row = 0; row < matrix.getRowCount(); row++) {
+            newMatrix.getRow(row) = matrix.getRow(row);
+        }
+        for (uint_fast64_t row = matrix.getRowCount(); row < newRowIndex; row++) {
+            newMatrix.getRow(row).push_back(
+                storage::MatrixEntry<uint_fast64_t, RationalFunction>(additionalRows[row - matrix.getRowCount()], utility::one<RationalFunction>()));
+        }
+    } else {
+        newMatrix = storage::FlexibleSparseMatrix<RationalFunction>(matrix);
+    }
+
+    newMatrix.getRow(row) = newEntries;
+
+    return newMatrix;
 }
 
 std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravelling::joinDuplicateTransitions(

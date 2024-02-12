@@ -29,6 +29,16 @@ class TimeTravelling {
     models::sparse::Dtmc<RationalFunction> timeTravel(models::sparse::Dtmc<RationalFunction> const& model,
                                                       modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
+    /**
+     * Perform big-step on the given model and the given checkTask.
+     *
+     * @param model A pMC.
+     * @param checkTask A property (probability or reward) on the pMC.
+     * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
+     */
+    models::sparse::Dtmc<RationalFunction> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
+
    private:
     /**
      * updateTreeStates updates the `treeStates` map on the given states.
@@ -48,6 +58,9 @@ class TimeTravelling {
                           std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets, storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                           const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                           const models::sparse::StateLabeling stateLabelling, const std::set<std::string> labelsInFormula);
+
+    storage::FlexibleSparseMatrix<RationalFunction> duplicateTransitionsOntoNewStates(storage::FlexibleSparseMatrix<RationalFunction> const& matrix,
+                                                                                      uint_fast64_t row);
 
     /**
      * extendStateLabeling extends the given state labeling to newly created states. It will set the new labels to the labels on the given state.

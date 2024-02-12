@@ -3,16 +3,18 @@
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalNumberAdapter.h"
 #include "environment/Environment.h"
+#include "environment/solver/SolverEnvironment.h"
 #include "modelchecker/CheckTask.h"
 #include "modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "models/sparse/Model.h"
 #include "solver/OptimizationDirection.h"
+#include "solver/SolverSelectionOptions.h"
 #include "storage/bisimulation/BisimulationType.h"
 #include "storage/prism/Program.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-parsers/api/model_descriptions.h"
@@ -44,7 +46,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::TimeTravelling timeTravelling;
-    auto timeTravelledDtmc = timeTravelling.timeTravel(*dtmc, checkTask);
+    auto timeTravelledDtmc = timeTravelling.bigStep(*dtmc, checkTask);
 
     storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
     modelChecker.specifyFormula(checkTask);
@@ -71,6 +73,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     }
 
     storm::Environment env;
+    env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native, false);
     for (auto const& instantiation : testInstantiations) {
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
         auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
@@ -79,11 +82,11 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> pla;
+    storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> pla;
     pla.specify(env, dtmc, checkTask);
     auto resultPLA = pla.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaTT;
+    storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaTT;
     auto sharedDtmc = std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(timeTravelledDtmc);
     plaTT.specify(env, sharedDtmc, checkTask);
     auto resultPLATT = plaTT.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);

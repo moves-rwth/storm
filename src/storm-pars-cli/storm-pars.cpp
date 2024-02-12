@@ -235,7 +235,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
         result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-            tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
+            tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
         result.changed = true;
     }
 

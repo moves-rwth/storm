@@ -94,30 +94,20 @@ class RobustParameterLifter {
 
         storm::RationalFunction const& getTransition() const;
 
-        std::map<VariableType, ConstantType> const& getConstants() const;
+        std::map<VariableType, std::set<CoefficientType>> const& getExtrema() const;
 
-        ConstantType const& getOffset() const;
-
-        std::map<VariableType, std::pair<uint64_t, uint64_t>> const& getAandB() const;
-
-        std::map<VariableType, std::pair<ConstantType, ConstantType>> const& getMaximum() const;
+        std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
        private:
-        boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<CoefficientType, CoefficientType>>> recursiveDecompose(RawPolynomial polynomial, VariableType parameter, bool firstIteration = true);
-
+        boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<CoefficientType, CoefficientType>>> recursiveDecompose(
+            RawPolynomial polynomial, VariableType parameter, bool firstIteration = true);
 
         std::set<VariableType> parameters;
 
-        // The following vectors are indexed by the same indices
         storm::RationalFunction const transition;
-        // Every transition of a robust valuation is at its core p^a (1-p)^b - these are a and b
-        std::map<VariableType, std::pair<uint64_t, uint64_t>> aAndB;
-        // constants (so x * ...) and offset (... + y)
-        std::map<VariableType, ConstantType> constants;
-        ConstantType offset;
 
-        // Position and value of the maximum of each of the functions
-        std::map<VariableType, std::pair<ConstantType, ConstantType>> maximum;
+        // Position and value of the extrema of each of the functions
+        std::map<VariableType, std::set<CoefficientType>> extrema;
     };
 
     /*!

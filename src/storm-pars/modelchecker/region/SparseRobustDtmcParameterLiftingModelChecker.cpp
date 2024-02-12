@@ -269,8 +269,6 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
 template<typename SparseModelType, typename ConstantType>
 void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(
     const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) {
-    // TODO
-    STORM_LOG_ERROR("Not implemented yet");
     // Obtain the stepBound
     stepBound = checkTask.getFormula().getBound().evaluateAsInt();
     if (checkTask.getFormula().isBoundStrict()) {
@@ -292,8 +290,11 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
         checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
     std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
-    parameterLifter = std::make_unique<storm::transformer::RobustParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b,
-                                                                                                           maybeStates, maybeStates, true);
+    auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
+    auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
+    storm::storage::BitVector allTrue(maybeStates.size(), true);
+
+    parameterLifter = std::make_unique<storm::transformer::RobustParameterLifter<ValueType, ConstantType>>(filteredMatrix, b, allTrue, allTrue, true);
 
     // We only know a lower bound for the result
     lowerResultBound = storm::utility::zero<ConstantType>();
@@ -380,11 +381,6 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         }
         solver->setTrackScheduler(true);
 
-        if (storm::solver::minimize(dirForParameters) && minSchedChoices)
-            solver->setInitialScheduler(std::move(minSchedChoices.get()));
-        if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
-            solver->setInitialScheduler(std::move(maxSchedChoices.get()));
-
         if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
             // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
             std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
@@ -413,14 +409,7 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         // }
     }
 
-    // Get the result for the complete model (including maybestates)
-    std::vector<ConstantType> result = resultsForNonMaybeStates;
-    auto maybeStateResIt = x.begin();
-    for (auto const& maybeState : maybeStates) {
-        result[maybeState] = *maybeStateResIt;
-        ++maybeStateResIt;
-    }
-    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
+    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(x));
 }
 
 // template<typename SparseModelType, typename ConstantType>
