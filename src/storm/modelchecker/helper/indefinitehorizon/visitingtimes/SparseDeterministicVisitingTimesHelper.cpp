@@ -296,7 +296,7 @@ storm::Environment SparseDeterministicVisitingTimesHelper<ValueType>::getEnviron
     auto prec = newEnv.solver().getPrecisionOfLinearEquationSolver(newEnv.solver().getLinearEquationSolverType());
     if (prec.first.is_initialized()) {
         STORM_LOG_INFO("Precision for EVTs computation: " << storm::utility::convertNumber<double>(prec.first.get()) << " (exact: " << prec.first.get() << ")"
-                                                       << '\n');
+                                                          << '\n');
     }
 
     return newEnv;
