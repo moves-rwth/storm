@@ -1,4 +1,5 @@
 #include "storm-pars/settings/modules/ParametricSettings.h"
+#include <_types/_uint64_t.h>
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
@@ -19,7 +20,7 @@ const std::string exportResultOptionName = "resultfile";
 const std::string transformContinuousOptionName = "transformcontinuous";
 const std::string transformContinuousShortOptionName = "tc";
 const std::string useMonotonicityName = "use-monotonicity";
-const std::string timeTravellingEnabledName = "time-travel";
+const std::string bigStepEnabledName = "big-step";
 const std::string linearToSimpleEnabledName = "linear-to-simple";
 
 ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
@@ -39,9 +40,19 @@ ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                         .setShortName(transformContinuousShortOptionName)
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, timeTravellingEnabledName, false, "Enabled time travelling (flip transitions to improve PLA bounds).")
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.")
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
+                                         "horizon",
+                                         "How big the steps are, i.e., the maximum degree of the polynomials in the big-stepped model. Set to one if you want "
+                                         "to use standard PLA, set to a maximum of 4 if you want to use Robust PLA")
+                                         .setDefaultValueUnsignedInteger(4)
+                                         .makeOptional()
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument("time-travel", "Enable time-travelling")
+                                         .setDefaultValueBoolean(true)
+                                         .makeOptional()
+                                         .build())
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, linearToSimpleEnabledName, false,
                                                    "Converts linear (constant * parameter) transitions to simple (only constant or parameter) transitions.")
                         .build());
@@ -73,8 +84,16 @@ pars::utility::ParametricMode ParametricSettings::getOperationMode() const {
     return *mode;
 }
 
+bool ParametricSettings::isBigStepEnabled() const {
+    return this->getOption(bigStepEnabledName).getHasOptionBeenSet();
+}
+
 bool ParametricSettings::isTimeTravellingEnabled() const {
-    return this->getOption(timeTravellingEnabledName).getHasOptionBeenSet();
+    return this->getOption(bigStepEnabledName).getArgumentByName("time-travel").getValueAsBoolean();
+}
+
+uint64_t ParametricSettings::getBigStepHorizon() const {
+    return this->getOption(bigStepEnabledName).getArgumentByName("horizon").getValueAsUnsignedInteger();
 }
 
 bool ParametricSettings::isLinearToSimpleEnabled() const {

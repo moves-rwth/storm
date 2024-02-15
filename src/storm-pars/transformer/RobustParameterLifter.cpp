@@ -218,10 +218,10 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
 //     return boost::none;
 // }
 
-
 template<typename ParametricType, typename ConstantType>
 std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cubicEquationZeroes(RawPolynomial polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cubicEquationZeroes(
+    RawPolynomial polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     // Polynomial is a*p^3 + b*p^2 + c*p + d
 
     // Recover factors from polynomial
@@ -235,18 +235,18 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
         CoefficientType coefficient = term.coeff();
         STORM_LOG_ASSERT(term.tdeg() < 4, "Transitions are only allowed to have a maximum degree of four.");
         switch (term.tdeg()) {
-        case 0:
-            d = coefficient;
-            break;
-        case 1:
-            c = coefficient;
-            break;
-        case 2:
-            b = coefficient;
-            break;
-        case 3:
-            a = coefficient;
-            break;
+            case 0:
+                d = coefficient;
+                break;
+            case 1:
+                c = coefficient;
+                break;
+            case 2:
+                b = coefficient;
+                break;
+            case 3:
+                a = coefficient;
+                break;
         }
     }
     // Translated from https://stackoverflow.com/questions/27176423/function-to-solve-cubic-equation-analytically
@@ -306,11 +306,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
             double t = std::acos(3 * qDouble / pDouble / u) / 3;  // D < 0 implies p < 0 and acos argument in [-1..1]
             double k = 2 * M_PI / 3;
 
-            roots = {
-                utility::convertNumber<CoefficientType>(u * std::cos(t)),
-                utility::convertNumber<CoefficientType>(u * std::cos(t - k)),
-                utility::convertNumber<CoefficientType>(u * std::cos(t - 2 * k))
-            };
+            roots = {utility::convertNumber<CoefficientType>(u * std::cos(t)), utility::convertNumber<CoefficientType>(u * std::cos(t - k)),
+                     utility::convertNumber<CoefficientType>(u * std::cos(t - 2 * k))};
         }
     }
     return roots;
@@ -334,6 +331,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::Ro
     std::map<VariableType, RawPolynomial> termsPerParameter;
 
     for (auto const& p : occurringVariables) {
+        STORM_LOG_ASSERT(transition.nominator().totalDegree() <= 4,
+                         "Degree of all polynomials needs to be <=4 for robust PLA, but the degree of " << transition << " is larger");
         this->extrema[p] = {};
         auto const derivative = RawPolynomial(transition.derivative(p).nominator());
         // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
@@ -402,7 +401,8 @@ RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::Rob
 }
 
 template<typename ParametricType, typename ConstantType>
-std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>> const&
+std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType,
+         std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>> const&
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getExtrema() const {
     return this->extrema;
 }

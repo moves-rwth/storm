@@ -19,25 +19,19 @@ class TimeTravelling {
      * The parametric reachability probability for the given check task will be the same in the time-travelled and in the original model.
      */
     TimeTravelling() = default;
-    /**
-     * Perform time-travelling on the given model and the given checkTask.
-     *
-     * @param model A pMC.
-     * @param checkTask A property (probability or reward) on the pMC.
-     * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
-     */
-    models::sparse::Dtmc<RationalFunction> timeTravel(models::sparse::Dtmc<RationalFunction> const& model,
-                                                      modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
     /**
      * Perform big-step on the given model and the given checkTask.
      *
      * @param model A pMC.
      * @param checkTask A property (probability or reward) on the pMC.
+     * @param horizon How big to step: maximal degree of the resulting polynomials.
+     * @param timeTravel Whether to time-travel, i.e., add new states to consolidate similar transitions.
      * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
      */
     models::sparse::Dtmc<RationalFunction> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
+                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon = 4,
+                                                   bool timeTravel = true);
 
    private:
     /**
@@ -49,18 +43,18 @@ class TimeTravelling {
      * @param treeStates The tree states map to update.
      * @param workingSets Where to start the search. When creating the tree states map: set this to all states with parametric transitions.
      * @param flexibleMatrix The flexible matrix of the pMC.
+     * @param flexibleMatrix The transposed flexibleMatrix.
      * @param allParameters The set of all parameters of the pMC.
      * @param stateRewardVector The state reward vector of the pMC.
      * @param stateLabelling The state labelling of the pMC.
      * @param labelsInFormula The labels that occur in the property.
      */
     void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                          std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets, storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                          const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-                          const models::sparse::StateLabeling stateLabelling, const std::set<std::string> labelsInFormula);
-
-    storage::FlexibleSparseMatrix<RationalFunction> duplicateTransitionsOntoNewStates(storage::FlexibleSparseMatrix<RationalFunction> const& matrix,
-                                                                                      uint_fast64_t row);
+                          std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
+                          const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                          const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions, const std::set<carl::Variable>& allParameters,
+                          const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling,
+                          const std::set<std::string> labelsInFormula);
 
     /**
      * extendStateLabeling extends the given state labeling to newly created states. It will set the new labels to the labels on the given state.
@@ -82,25 +76,6 @@ class TimeTravelling {
      */
     std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> joinDuplicateTransitions(
         std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries);
-    /**
-     * A preprocessing for time-travelling. It collapses the constant
-     * transitions from a state into a single number that directly goes to the
-     * next parametric transitions.
-     *
-     * @param state Root for the algorithm.
-     * @param matrix FlexibleMatrix of the pMC.
-     * @param alreadyVisited Recursive argument, set this to the empty map.
-     * @param treeStates The tree states (see updateTreeStates).
-     * @param allParameters The set of all parameters of the pMC.
-     * @param stateRewardVector The state reward vector of the pMC.
-     * @param stateLabelling The state labeling of the pMC.
-     * @param labelsInFormula The labels in the formula.
-     * @return false (returns true in recursive cases)
-     */
-    bool collapseConstantTransitions(uint64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint64_t, bool>& alreadyVisited,
-                                     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                                     const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-                                     const models::sparse::StateLabeling stateLabelling, const std::set<std::string> labelsInFormula);
 };
 
 }  // namespace transformer

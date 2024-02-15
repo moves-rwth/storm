@@ -230,12 +230,13 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         result.changed = true;
     }
 
-    if (parametricSettings.isTimeTravellingEnabled()) {
+    if (parametricSettings.isBigStepEnabled()) {
         transformer::TimeTravelling tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
         result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-            tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
+            tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask, parametricSettings.getBigStepHorizon(),
+                       parametricSettings.isTimeTravellingEnabled()));
         result.changed = true;
     }
 

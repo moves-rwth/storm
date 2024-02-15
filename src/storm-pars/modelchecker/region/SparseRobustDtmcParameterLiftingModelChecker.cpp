@@ -1,9 +1,13 @@
 #include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
 
+#include "environment/Environment.h"
+#include "environment/solver/SolverEnvironment.h"
+#include "solver/SolverSelectionOptions.h"
 #include "storage/BitVector.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -85,16 +89,22 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
 
     regionSplitEstimationsEnabled = generateRegionSplitEstimates;
 
+    Environment newEnv(env);
+    if (newEnv.solver().minMax().isMethodSetFromDefault()) {
+        STORM_LOG_INFO("Selecting ValueIteration as MinMax method for interval-based models.");
+        newEnv.solver().minMax().setMethod(solver::MinMaxMethod::ValueIteration, false);
+    }
+
     if (skipModelSimplification) {
         this->parametricModel = parametricModel;
-        this->specifyFormula(env, checkTask);
+        this->specifyFormula(newEnv, checkTask);
     } else {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
         if (!simplifier.simplify(checkTask.getFormula())) {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         }
         this->parametricModel = simplifier.getSimplifiedModel();
-        this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+        this->specifyFormula(newEnv, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
     }
 }
 
