@@ -1,4 +1,5 @@
 #pragma once
+#include <_types/_uint64_t.h>
 #include <functional>
 #include <optional>
 #include <utility>
@@ -7,6 +8,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/irange.hpp>
 
+#include "solver/OptimizationDirection.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
@@ -294,32 +296,87 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
+
+        // Special case: there are only two non-zero entries. In this case, we are not allocating.
+        uint64_t rowsSeen = 0;
+        SolutionType value1;
+        SolutionType diameter1;
+        SolutionType value2;
+        SolutionType diameter2;
+
+        // General case: there are more than two non-zero entries.
+        std::unique_ptr<std::vector<std::pair<SolutionType, SolutionType>>> tmp = nullptr; // TODO this reallocation is too costly.
+
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+            // The upper() and lower() calls seem to be really expensive
+            auto const lower = matrixValueIt->lower();
+            auto const upper = matrixValueIt->upper();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
             } else {
-                result += operand[*matrixColumnIt] * (matrixValueIt->lower());
+                result += operand[*matrixColumnIt] * lower;
             }
-            remainingValue -= matrixValueIt->lower();
-            if (!storm::utility::isZero(matrixValueIt->diameter())) {
-                tmp.emplace_back(operand[*matrixColumnIt], matrixValueIt->diameter());
+            remainingValue -= lower;
+            const SolutionType diameter = upper - lower;
+            if (!storm::utility::isAlmostZero(diameter)) {
+                ++rowsSeen;
+                if (rowsSeen == 1) {
+                    value1 = operand[*matrixColumnIt];
+                    diameter1 = diameter;
+                } else if (rowsSeen == 2) {
+                    value2 = operand[*matrixColumnIt];
+                    diameter2 = diameter;
+                } else if (rowsSeen == 3) {
+                    tmp = std::make_unique<std::vector<std::pair<SolutionType, SolutionType>>>();
+                    tmp->emplace_back(value1, diameter1);
+                    tmp->emplace_back(value2, diameter2);
+                    tmp->emplace_back(operand[*matrixColumnIt], diameter);
+                } else {
+                    tmp->emplace_back(operand[*matrixColumnIt], diameter);
+                }
             }
         }
-        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
+        if (storm::utility::isAlmostZero(remainingValue) || storm::utility::isAlmostOne(remainingValue)) {
             return result;
         }
-        AuxCompare<RobustDirection> compare;
-        std::sort(tmp.begin(), tmp.end(), compare);
 
-        for (auto const& valWidthPair : tmp) {
-            auto availableMass = std::min(valWidthPair.second, remainingValue);
-            result += availableMass * valWidthPair.first;
-            remainingValue -= availableMass;
-            if (storm::utility::isZero(remainingValue)) {
-                return result;
+        STORM_LOG_ASSERT(rowsSeen > 1, "More than one rows should have been seen.");
+
+        AuxCompare<RobustDirection> compare;
+        if (rowsSeen == 2) {
+            if ((RobustDirection == OptimizationDirection::Maximize && value1 > value2) || (RobustDirection == OptimizationDirection::Minimize && value2 > value1)) {
+                auto availableMass = std::min(diameter1, remainingValue);
+                result += availableMass * value1;
+                remainingValue -= availableMass;
+                if (storm::utility::isAlmostZero(remainingValue)) {
+                    return result;
+                }
+                availableMass = std::min(diameter2, remainingValue);
+                result += availableMass * value2;
+                remainingValue -= availableMass;
+            } else {
+                auto availableMass = std::min(diameter2, remainingValue);
+                result += availableMass * value2;
+                remainingValue -= availableMass;
+                if (storm::utility::isAlmostZero(remainingValue)) {
+                    return result;
+                }
+                availableMass = std::min(diameter1, remainingValue);
+                result += availableMass * value1;
+                remainingValue -= availableMass;
+            }
+        } else {
+            std::sort(tmp->begin(), tmp->end(), compare);
+
+            for (auto const& valWidthPair : *tmp) {
+                auto availableMass = std::min(valWidthPair.second, remainingValue);
+                result += availableMass * valWidthPair.first;
+                remainingValue -= availableMass;
+                if (storm::utility::isAlmostZero(remainingValue)) {
+                    return result;
+                }
             }
         }
         STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);

@@ -74,10 +74,12 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     auto backwardsTransitions = storage::FlexibleSparseMatrix<RationalFunction>(transitionMatrix.transpose());
 
     // Initialize counting
+    // Tree states: parameter p -> state s -> set of reachable states from s by constant transition that have a p-transition
     std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>> treeStates;
-    std::map<RationalFunctionVariable, std::set<uint64_t>> workingSets;
+    // Tree states need updating for these sets and variables
+    std::map<RationalFunctionVariable, std::set<uint64_t>> treeStatesNeedUpdate;
 
-    // Count number of parameter occurences per state
+    // Initialize treeStates and treeStatesNeedUpdate
     for (uint64_t row = 0; row < flexibleMatrix.getRowCount(); row++) {
         for (auto const& entry : flexibleMatrix.getRow(row)) {
             if (entry.getValue().isConstant()) {
@@ -85,29 +87,30 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             }
             STORM_LOG_ERROR_COND(entry.getValue().gatherVariables().size() == 1, "Flip minimization only supports transitions with a single parameter.");
             auto parameter = *entry.getValue().gatherVariables().begin();
-            auto cache = entry.getValue().nominatorAsPolynomial().pCache();
-            workingSets[parameter].emplace(row);
+            treeStatesNeedUpdate[parameter].emplace(row);
             treeStates[parameter][row].emplace(row);
         }
     }
+    updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
 
     // To prevent infinite unrolling of parametric loops:
     // We have already reordered with these as leaves, don't reorder with these as leaves again
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>> alreadyReorderedWrt;
 
+    // We will traverse the model according to the topological ordering
     std::stack<uint_fast64_t> topologicalOrderingStack;
     topologicalOrdering = utility::graph::getTopologicalSort<RationalFunction>(transitionMatrix, {initialState});
     for (auto rit = topologicalOrdering.begin(); rit != topologicalOrdering.end(); ++rit) {
         topologicalOrderingStack.push(*rit);
     }
 
-    updateTreeStates(treeStates, workingSets, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
-
     // Identify reachable states - not reachable states do not have do be big-stepped
-    storage::BitVector trueVector(transitionMatrix.getRowCount(), true);
-    storage::BitVector falseVector(transitionMatrix.getRowCount(), false);
+    const storage::BitVector trueVector(transitionMatrix.getRowCount(), true);
+    const storage::BitVector falseVector(transitionMatrix.getRowCount(), false);
     storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
     initialStates.set(initialState, true);
+
+    // We will update these dynamically
     storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
 
     while (!topologicalOrderingStack.empty()) {
@@ -118,6 +121,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             continue;
         }
 
+        // The parameters we can do big-step w.r.t.
         std::set<carl::Variable> bigStepParameters;
         for (auto const& oneStep : flexibleMatrix.getRow(state)) {
             for (auto const& parameter : allParameters) {
@@ -128,7 +132,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         }
 
         // Do big-step lifting from here
-        // Just follow the treeStates and eliminate transitions
+        // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
             auto parameterMap = treeStates.at(parameter);
 
@@ -269,7 +273,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                             backwardsTransitions.getRow(path.path.back())
                                 .push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRow, path.probability / sum));
                             for (auto const& p : allParameters) {
-                                workingSets[p].emplace(path.path.back());
+                                treeStatesNeedUpdate[p].emplace(path.path.back());
                             }
                             // std::cout << "With: " << path.probability / sum << " to " << path.path.back() << std::endl;
                             backwardsTransitions.getRow(path.path.back()) = joinDuplicateTransitions(backwardsTransitions.getRow(path.path.back()));
@@ -305,7 +309,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             for (auto const& path : insertPaths) {
                 uint64_t target = path.path.back();
                 for (auto const& p : allParameters) {
-                    workingSets[p].emplace(target);
+                    treeStatesNeedUpdate[p].emplace(target);
                 }
                 if (insertThese.count(target)) {
                     insertThese[target] += path.probability;
@@ -358,7 +362,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                         }
                     }
                 }
-                updateTreeStates(treeStates, workingSets, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling,
+                updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling,
                                  labelsInFormula);
             }
         }
@@ -385,6 +389,11 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
         initialStates.set(initialState, true);
         storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
+        // for (auto const& i = 0) {
+        //     if (!newReachableStates.get(i)) {
+        //         std::cout << "M"
+        //     }
+        // }
         transitionMatrix = transitionMatrix.getSubmatrix(false, reachableStates, reachableStates);
         runningLabeling = runningLabeling.getSubLabeling(reachableStates);
         uint_fast64_t newInitialState = 0;
