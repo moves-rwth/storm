@@ -9,16 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       # apply the formatting twice as a workaround for a clang-format bug
-      - uses: DoozyX/clang-format-lint-action@v0.16.2
+      - uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: './src'
-          clangFormatVersion: 16
+          clangFormatVersion: 17
           style: file
           inplace: True
-      - uses: DoozyX/clang-format-lint-action@v0.16.2
+      - uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: './src'
-          clangFormatVersion: 16
+          clangFormatVersion: 17
           style: file
           inplace: True
       - name: Commit Formatting
