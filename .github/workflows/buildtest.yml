@@ -130,7 +130,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Git describe
         id: ghd
-        uses: proudust/gh-describe@v1
+        uses: proudust/gh-describe@v2
       - name: Set static Storm version
         run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
       - name: Build storm from Dockerfile
