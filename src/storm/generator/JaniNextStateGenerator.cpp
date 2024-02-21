@@ -68,6 +68,8 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     }
     STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
                     "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
+    // Simplify the system compositions so that we can exclude the case where automata appear in the composition multiple times.
+    this->model.simplifyComposition();
 
     // Get the reward expressions to be build. Also find out whether there is a non-trivial one.
     bool hasNonTrivialRewardExpressions = false;
@@ -852,7 +854,8 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
     uint64_t numDestinations = 1;
     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
         if (this->getOptions().isBuildChoiceOriginsSet()) {
-            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
+            auto automatonIndex = model.getAutomatonIndex(parallelAutomata[edgeCombination[i].first].get().getName());
+            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
         }
         storm::jani::Edge const& edge = *iteratorList[i]->second;
         lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
@@ -1069,6 +1072,7 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                                                                 automatonIndex, state, stateToIdCallback));
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
+                        auto modelAutomatonIndex = model.getAutomatonIndex(parallelAutomata[automatonIndex].get().getName());
                         EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(automatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
                     }
