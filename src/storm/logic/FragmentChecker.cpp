@@ -340,5 +340,35 @@ boost::any FragmentChecker::visit(HOAPathFormula const& f, boost::any const& dat
     }
     return result;
 }
+
+boost::any FragmentChecker::visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+
+    bool result = inherited.getSpecification().areDiscountedCumulativeRewardFormulasAllowed();
+    result = result && (!f.isMultiDimensional() || inherited.getSpecification().areMultiDimensionalCumulativeRewardFormulasAllowed());
+    result = result && (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
+    for (uint64_t i = 0; i < f.getDimension(); ++i) {
+        auto tbr = f.getTimeBoundReference(i);
+        if (tbr.isStepBound()) {
+            result = result && inherited.getSpecification().areStepBoundedCumulativeRewardFormulasAllowed();
+        } else if (tbr.isTimeBound()) {
+            result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
+        } else {
+            assert(tbr.isRewardBound());
+            result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
+            if (tbr.hasRewardAccumulation()) {
+                result = result && inherited.getSpecification().isRewardAccumulationAllowed();
+            }
+        }
+    }
+    return result;
+}
+
+boost::any FragmentChecker::visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    bool result = (!f.hasRewardAccumulation() || inherited.getSpecification().isRewardAccumulationAllowed());
+    result = result && inherited.getSpecification().areDiscountedTotalRewardFormulasAllowed();
+    return result;
+}
 }  // namespace logic
 }  // namespace storm
