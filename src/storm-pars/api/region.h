@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
@@ -387,7 +388,7 @@ void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckRes
     std::ofstream filestream;
     storm::utility::openFile(filename, filestream);
     for (auto const& res : regionCheckResult->getRegionResults()) {
-        if (!onlyConclusiveResults || res.second == storm::modelchecker::RegionResult::AllViolated || res.second == storm::modelchecker::RegionResult::AllSat) {
+        if (!onlyConclusiveResults || res.second == storm::modelchecker::RegionResult::AllViolated || res.second == storm::modelchecker::RegionResult::AllSat || res.second == storm::modelchecker::RegionResult::AllIllDefined) {
             filestream << res.second << ": " << res.first << '\n';
         }
     }

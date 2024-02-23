@@ -64,6 +64,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
     auto fractionOfUndiscoveredArea = storm::utility::one<CoefficientType>();
     auto fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
     auto fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
+    auto fractionOfAllIllDefinedArea = storm::utility::zero<CoefficientType>();
     numberOfRegionsKnownThroughMonotonicity = 0;
 
     // The resulting (sub-)regions
@@ -115,6 +116,11 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
             case RegionResult::AllViolated:
                 fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                 fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
+                result.push_back(std::move(unprocessedRegions.front()));
+                break;
+            case RegionResult::AllIllDefined:
+                fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
+                fractionOfAllIllDefinedArea += currentRegion.area() / areaOfParameterSpace;
                 result.push_back(std::move(unprocessedRegions.front()));
                 break;
             default:
@@ -229,7 +235,12 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
                 fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                 fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
                 STORM_LOG_INFO("Region " << unprocessedRegions.front() << " is AllViolated");
-
+                result.push_back(std::move(unprocessedRegions.front()));
+                break;
+            case RegionResult::AllIllDefined:
+                fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
+                fractionOfAllIllDefinedArea += currentRegion.area() / areaOfParameterSpace;
+                STORM_LOG_INFO("Region " << unprocessedRegions.front() << " is AllIllDefined");
                 result.push_back(std::move(unprocessedRegions.front()));
                 break;
             default:

@@ -297,18 +297,20 @@ class ValueIterationOperator {
         std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+            auto const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
             } else {
-                result += operand[*matrixColumnIt] * (matrixValueIt->lower());
+                result += operand[*matrixColumnIt] * lower;
             }
-            remainingValue -= matrixValueIt->lower();
-            if (!storm::utility::isZero(matrixValueIt->diameter())) {
-                tmp.emplace_back(operand[*matrixColumnIt], matrixValueIt->diameter());
+            remainingValue -= lower;
+            auto const diameter = matrixValueIt->upper() - lower;
+            if (!storm::utility::isZero(diameter)) {
+                tmp.emplace_back(operand[*matrixColumnIt], diameter);
             }
         }
-        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
+        if (storm::utility::isAlmostZero(remainingValue) || storm::utility::isAlmostOne(remainingValue)) {
             return result;
         }
         AuxCompare<RobustDirection> compare;

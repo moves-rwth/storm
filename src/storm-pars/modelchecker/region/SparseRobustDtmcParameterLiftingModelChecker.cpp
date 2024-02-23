@@ -358,6 +358,10 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
     }
     parameterLifter->specifyRegion(region, dirForParameters);
 
+    if (parameterLifter->isCurrentRegionAllIllDefined()) {
+        return nullptr;
+    }
+
     if (stepBound) {
         // assert(*stepBound > 0);
         // x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
@@ -410,6 +414,8 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         }
 
         // Invoke the solver
+        std::cout << parameterLifter->getMatrix() << std::endl;
+        std::cout << parameterLifter->getVector() << std::endl;
         x.resize(parameterLifter->getVector().size(), storm::utility::zero<ConstantType>());
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
         // if (storm::solver::minimize(dirForParameters)) {

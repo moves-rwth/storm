@@ -74,6 +74,9 @@ class RobustParameterLifter {
     // Returns the resulting vector. Should only be called AFTER specifying a region
     std::vector<Interval> const& getVector() const;
 
+    // Returns whether the curent region is all ill-defined.
+    bool isCurrentRegionAllIllDefined() const;
+
    private:
     /*
      * We minimize the number of function evaluations by only calling evaluate() once for each unique pair of function and valuation.
@@ -125,7 +128,7 @@ class RobustParameterLifter {
          */
         Interval& add(RobustAbstractValuation const& valuation);
 
-        void evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region,
+        bool evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region,
                                         storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
 
        private:
@@ -151,6 +154,8 @@ class RobustParameterLifter {
     std::vector<uint64_t> oldToNewColumnIndexMapping;  // Mapping from old to new columnIndex
     std::vector<uint64_t> oldToNewRowIndexMapping;     // Mapping from old to new columnIndex
     std::vector<uint64_t> rowGroupToStateNumber;       // Mapping from new to old columnIndex
+
+    bool currentRegionAllIllDefined = false;
 
     std::vector<Interval> vector;
     std::vector<std::pair<typename std::vector<Interval>::iterator, Interval&>> vectorAssignment;  // Connection of vector entries with placeholders

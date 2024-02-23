@@ -85,10 +85,10 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             if (entry.getValue().isConstant()) {
                 continue;
             }
-            STORM_LOG_ERROR_COND(entry.getValue().gatherVariables().size() == 1, "Flip minimization only supports transitions with a single parameter.");
-            auto parameter = *entry.getValue().gatherVariables().begin();
-            treeStatesNeedUpdate[parameter].emplace(row);
-            treeStates[parameter][row].emplace(row);
+            for (auto const& parameter : entry.getValue().gatherVariables()) {
+                treeStatesNeedUpdate[parameter].emplace(row);
+                treeStates[parameter][row].emplace(row);
+            }
         }
     }
     updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
@@ -136,7 +136,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         for (auto const& parameter : bigStepParameters) {
             auto parameterMap = treeStates.at(parameter);
 
-            // std::cout << "BigStep " << state << std::endl;
+            STORM_LOG_INFO("BigStep " << state);
 
             struct searchingPath {
                 std::vector<uint_fast64_t> path;
@@ -254,7 +254,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
 
                         doneTimeTravelling = true;
 
-                        // std::cout << "Time travellable transitions with " << entry.first.first << " and " << entry.first.second << std::endl;
+                        STORM_LOG_INFO("Time travellable transitions with " << entry.first.first << " and " << entry.first.second);
                         RationalFunction sum = utility::zero<RationalFunction>();
                         for (auto const& path : entry.second) {
                             sum += path.probability;
@@ -275,7 +275,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                             for (auto const& p : allParameters) {
                                 treeStatesNeedUpdate[p].emplace(path.path.back());
                             }
-                            // std::cout << "With: " << path.probability / sum << " to " << path.path.back() << std::endl;
+                            STORM_LOG_INFO("With: " << path.probability / sum << " to " << path.path.back());
                             backwardsTransitions.getRow(path.path.back()) = joinDuplicateTransitions(backwardsTransitions.getRow(path.path.back()));
                         }
                         flexibleMatrix.getRow(newRow) = joinDuplicateTransitions(flexibleMatrix.getRow(newRow));

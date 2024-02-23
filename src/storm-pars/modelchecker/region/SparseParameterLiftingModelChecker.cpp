@@ -1,9 +1,12 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
 #include <storm-pars/analysis/MonotonicityChecker.h>
-#include <boost/container/flat_set.hpp>
 #include <queue>
+#include <type_traits>
 
+#include "adapters/RationalFunctionForward.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -16,6 +19,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -74,16 +78,33 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
 
     // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
     if (hypothesis == RegionResultHypothesis::Unknown && result == RegionResult::Unknown) {
-        result = getInstantiationChecker()
-                         .check(env, region.getCenterPoint())
-                         ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
-                     ? RegionResult::CenterSat
-                     : RegionResult::CenterViolated;
+        auto evaluateHere = region.getCenterPoint();
+        // Support Dtmcs with ill-defined centers
+        if (std::is_same<SparseModelType, models::sparse::Dtmc<RationalFunction>>::value) {
+            utility::ModelInstantiator<SparseModelType, models::sparse::Dtmc<ConstantType>> modelInstantiator(*this->parametricModel);
+            if (!modelInstantiator.instantiate(evaluateHere).getTransitionMatrix().isProbabilistic()) {
+                result = RegionResult::CenterIllDefined;
+            } else {
+                result = getInstantiationChecker()
+                                .check(env, region.getCenterPoint())
+                                ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
+                            ? RegionResult::CenterSat
+                            : RegionResult::CenterViolated;
+            }
+        } else {
+            result = getInstantiationChecker()
+                            .check(env, region.getCenterPoint())
+                            ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
+                        ? RegionResult::CenterSat
+                        : RegionResult::CenterViolated;
+        }
     }
 
     bool existsSat = (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat);
     bool existsViolated =
         (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated);
+    bool existsIllDefined =
+        (result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined);
 
     // Here we check on global monotonicity
     if (localMonotonicityResult != nullptr && localMonotonicityResult->isDone()) {
@@ -150,6 +171,12 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
                                                                                   ? storm::solver::OptimizationDirection::Minimize
                                                                                   : storm::solver::OptimizationDirection::Maximize;
         auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
+        if (!checkResult) {
+            // It is possible that existsSat but all points in region are undefined because all regions are delimited with <=.
+            // The satisfiable point is on the edge of the region.
+            STORM_LOG_ASSERT(result != RegionResult::CenterSat, "The center in region " << region << " is sat but model checker says all is ill-defined.");
+            return RegionResult::AllIllDefined;
+        }
         if (checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
             result = RegionResult::AllSat;
         } else if (sampleVerticesOfRegion) {
@@ -161,10 +188,35 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
                                                                                   ? storm::solver::OptimizationDirection::Maximize
                                                                                   : storm::solver::OptimizationDirection::Minimize;
         auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
+        if (!checkResult) {
+            STORM_LOG_ASSERT(result != RegionResult::CenterViolated, "The center in region " << region << " is violated but model checker says all is ill-defined.");
+            return RegionResult::AllIllDefined;
+        }
         if (!checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
             result = RegionResult::AllViolated;
         } else if (sampleVerticesOfRegion) {
             result = sampleVertices(env, region, result);
+        }
+    } else if (existsIllDefined) {
+        // Try to show either AllSat or AllViolated:
+        storm::solver::OptimizationDirection parameterOptimizationDirectionAllSat = isLowerBound(this->currentCheckTask->getBound().comparisonType)
+                                                                                  ? storm::solver::OptimizationDirection::Minimize
+                                                                                  : storm::solver::OptimizationDirection::Maximize;
+        auto checkResultAllSat = this->check(env, region, parameterOptimizationDirectionAllSat, localMonotonicityResult);
+        if (!checkResultAllSat) {
+            result = RegionResult::AllIllDefined;
+        } else if (checkResultAllSat->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+            result = RegionResult::AllSat;
+        } else {
+            storm::solver::OptimizationDirection parameterOptimizationDirectionAllViolated = isLowerBound(this->currentCheckTask->getBound().comparisonType)
+                                                                                    ? storm::solver::OptimizationDirection::Maximize
+                                                                                    : storm::solver::OptimizationDirection::Minimize;
+            auto checkResultAllViolated = this->check(env, region, parameterOptimizationDirectionAllViolated, localMonotonicityResult);
+            if (!checkResultAllViolated) {
+                result = RegionResult::AllIllDefined;
+            } if (!checkResultAllViolated->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                result = RegionResult::AllViolated;
+            }
         }
     } else {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "When analyzing a region, an invalid initial result was given: " << initialResult);
@@ -216,6 +268,9 @@ std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType,
     std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>>
         localMonotonicityResult) {
     auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters, localMonotonicityResult);
+    if (!quantitativeResult) {
+        return nullptr;
+    }
     lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
     if (currentCheckTask->getFormula().hasQuantitativeResult()) {
         return quantitativeResult;

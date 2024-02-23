@@ -7,6 +7,9 @@
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 
+#include "environment/Environment.h"
+#include "settings/SettingsManager.h"
+#include "settings/modules/GeneralSettings.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -130,7 +133,9 @@ template<typename ParametricType, typename ConstantType>
 void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region,
                                                                         storm::solver::OptimizationDirection const& dirForParameters) {
     // write the evaluation result of each function,evaluation pair into the placeholders
-    functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
+    this->currentRegionAllIllDefined = functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
+
+    // TODO Return if currentRegionAllIllDefined? Or write to matrix?
 
     // apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
     for (auto& assignment : matrixAssignment) {
@@ -385,6 +390,11 @@ std::vector<Interval> const& RobustParameterLifter<ParametricType, ConstantType>
 }
 
 template<typename ParametricType, typename ConstantType>
+bool RobustParameterLifter<ParametricType, ConstantType>::isCurrentRegionAllIllDefined() const {
+    return currentRegionAllIllDefined;
+}
+
+template<typename ParametricType, typename ConstantType>
 bool RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::operator==(RobustAbstractValuation const& other) const {
     return this->transition == other.transition;
 }
@@ -423,7 +433,7 @@ Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuation
 }
 
 template<typename ParametricType, typename ConstantType>
-void RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(
+bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
     for (auto& collectedFunctionValuationPlaceholder : collectedValuations) {
         RobustAbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first;
@@ -450,8 +460,8 @@ void RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
             CoefficientType minPosP;
             CoefficientType maxPosP;
-            CoefficientType maxValue = utility::zero<CoefficientType>();
-            CoefficientType minValue = utility::one<CoefficientType>();
+            CoefficientType minValue = utility::infinity<CoefficientType>();
+            CoefficientType maxValue = -utility::infinity<CoefficientType>();
 
             auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
 
@@ -466,9 +476,11 @@ void RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     minValue = value;
                     minPosP = potentialExtremum;
                 }
+                std::cout << potentialExtremum << ", " << instantiation << ", " << value << std::endl;
             }
 
             lowerPositions[p] = minPosP;
+            std::cout << "upperPositions at " << p << " is " << maxPosP << std::endl;
             upperPositions[p] = maxPosP;
         }
 
@@ -476,10 +488,27 @@ void RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
         ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
 
+        std::cout << lowerPositions << std::endl;
+        std::cout << upperPositions << std::endl;
+
+        bool graphPresering = true;
+        const ConstantType epsilon =
+            graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) : utility::zero<ConstantType>();
+        // We want to check in the realm of feasible instantiations, even if our not our entire parameter space if feasible
+        lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
+        upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
+
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+
+        if (utility::isAlmostZero(lowerBound - upperBound)) {
+            // Current region is ill-defined
+            return true;
+        }
 
         placeholder = Interval(lowerBound, upperBound);
     }
+
+    return false;
 }
 
 template class RobustParameterLifter<storm::RationalFunction, double>;
