@@ -27,6 +27,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "utility/Stopwatch.h"
 #include "utility/constants.h"
 #include "utility/logging.h"
 
@@ -101,7 +102,7 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
     } else {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
         if (!simplifier.simplify(checkTask.getFormula())) {
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successful.");
         }
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(newEnv, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
@@ -265,7 +266,7 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
 
     // The solution of the min-max equation system will always be unique (assuming graph-preserving instantiations, every induced DTMC has the same graph
     // structure).
-    auto req = solverFactory->getRequirements(env, true, true, boost::none, false);
+    auto req = solverFactory->getRequirements(env, true, true, boost::none, false, false);
     req.clearLowerBounds();
     if (req.upperBounds()) {
         solvingRequiresUpperRewardBounds = true;
@@ -393,14 +394,14 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
             //     solver->setUpperBound(baier.computeUpperBound());
             // }
         }
-        solver->setTrackScheduler(true);
 
-        if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
+        // if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
+        if (this->currentCheckTask->isBoundSet()) {
             // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
             std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
             storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet()
-                                                                      ? this->parametricModel->getInitialStates() % maybeStates
-                                                                      : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                                                                      ? this->parametricModel->getInitialStates()
+                                                                      : storm::storage::BitVector(this->parametricModel->getNumberOfStates(), true);
             if (storm::solver::minimize(dirForParameters)) {
                 // Terminate if the value for ALL relevant states is already below the threshold
                 termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>>(
@@ -414,10 +415,11 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         }
 
         // Invoke the solver
-        std::cout << parameterLifter->getMatrix() << std::endl;
-        std::cout << parameterLifter->getVector() << std::endl;
         x.resize(parameterLifter->getVector().size(), storm::utility::zero<ConstantType>());
+        utility::Stopwatch stopwatch;
+        stopwatch.start();
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
+        stopwatch.stop();
         // if (storm::solver::minimize(dirForParameters)) {
         //     minSchedChoices = solver->getSchedulerChoices();
         // } else {

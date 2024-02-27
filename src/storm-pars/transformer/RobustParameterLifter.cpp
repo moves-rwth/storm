@@ -476,11 +476,9 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     minValue = value;
                     minPosP = potentialExtremum;
                 }
-                std::cout << potentialExtremum << ", " << instantiation << ", " << value << std::endl;
             }
 
             lowerPositions[p] = minPosP;
-            std::cout << "upperPositions at " << p << " is " << maxPosP << std::endl;
             upperPositions[p] = maxPosP;
         }
 
@@ -488,22 +486,21 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
         ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
 
-        std::cout << lowerPositions << std::endl;
-        std::cout << upperPositions << std::endl;
-
         bool graphPresering = true;
         const ConstantType epsilon =
             graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) : utility::zero<ConstantType>();
+        
+
+        if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
+            // Current region is entirely ill-defined (partially ill-defined is fine:)
+            return true;
+        }
+
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space if feasible
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
 
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
-
-        if (utility::isAlmostZero(lowerBound - upperBound)) {
-            // Current region is ill-defined
-            return true;
-        }
 
         placeholder = Interval(lowerBound, upperBound);
     }

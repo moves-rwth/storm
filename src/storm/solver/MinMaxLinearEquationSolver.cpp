@@ -231,7 +231,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
     std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         // TODO: consider robust minMax solver methods and corresponding entries in the environment.
-        result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>();
+        result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, true>>();
         result->setRequirementsChecked(this->isRequirementsCheckedSet());
         return result;
     } else {

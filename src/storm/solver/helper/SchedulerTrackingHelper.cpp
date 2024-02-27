@@ -6,11 +6,11 @@
 
 namespace storm::solver::helper {
 
-template<typename ValueType, storm::OptimizationDirection Dir>
+template<typename ValueType, storm::OptimizationDirection Dir, bool TrivialRowGrouping>
 class SchedulerTrackingBackend {
    public:
     SchedulerTrackingBackend(std::vector<uint64_t>& schedulerStorage,
-                             std::vector<typename ValueIterationOperator<ValueType, false>::IndexType> const& rowGroupIndices, bool applyUpdates)
+                             std::vector<typename ValueIterationOperator<ValueType, TrivialRowGrouping>::IndexType> const& rowGroupIndices, bool applyUpdates)
         : schedulerStorage(schedulerStorage), applyUpdates(applyUpdates), rowGroupIndices(rowGroupIndices) {
         // intentionally empty
     }
@@ -66,18 +66,18 @@ class SchedulerTrackingBackend {
     uint64_t currChoice;
 };
 
-template<typename ValueType, typename SolutionType>
-SchedulerTrackingHelper<ValueType, SolutionType>::SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, false, SolutionType>> viOperator)
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
+SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator)
     : viOperator(viOperator) {
     // Intentionally left empty
 }
 
-template<typename ValueType, typename SolutionType>
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 template<storm::OptimizationDirection Dir, storm::OptimizationDirection RobustDir>
-bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
                                                                         std::vector<uint64_t>& schedulerStorage, std::vector<SolutionType>* operandOut) const {
     bool const applyUpdates = operandOut != nullptr;
-    SchedulerTrackingBackend<SolutionType, Dir> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
+    SchedulerTrackingBackend<SolutionType, Dir, TrivialRowGrouping> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
     if (applyUpdates) {
         return viOperator->template applyRobust<RobustDir>(*operandOut, operandIn, offsets, backend);
     } else {
@@ -85,8 +85,8 @@ bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vec
     }
 }
 
-template<typename ValueType, typename SolutionType>
-bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
+template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
                                                                         storm::OptimizationDirection const& dir, std::vector<uint64_t>& schedulerStorage,
                                                                         bool robust, std::vector<SolutionType>* operandOut) const {
     if (maximize(dir)) {
@@ -109,5 +109,6 @@ bool SchedulerTrackingHelper<ValueType, SolutionType>::computeScheduler(std::vec
 template class SchedulerTrackingHelper<double>;
 template class SchedulerTrackingHelper<storm::RationalNumber>;
 template class SchedulerTrackingHelper<storm::Interval, double>;
+template class SchedulerTrackingHelper<storm::Interval, double, true>;
 
 }  // namespace storm::solver::helper

@@ -10,13 +10,13 @@ namespace storm::solver::helper {
 /*!
  * Helper class to extract optimal scheduler choices from a MinMax equation system solution
  */
-template<typename ValueType, typename SolutionType = ValueType>
+template<typename ValueType, typename SolutionType = ValueType, bool TrivialRowGrouping = false>
 class SchedulerTrackingHelper {
    public:
     /*!
      * Initializes this helper with the given value iteration operator
      */
-    SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, false, SolutionType>> viOperator);
+    SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator);
 
     /*!
      * Computes the optimal choices from the given solution.
@@ -44,7 +44,7 @@ class SchedulerTrackingHelper {
                           std::vector<SolutionType>* operandOut) const;
 
    private:
-    std::shared_ptr<ValueIterationOperator<ValueType, false, SolutionType>> viOperator;
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;
 };
 
 }  // namespace storm::solver::helper

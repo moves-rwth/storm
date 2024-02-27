@@ -1,5 +1,6 @@
 #pragma once
 
+#include <variant>
 #include "storm/solver/MultiplicationStyle.h"
 
 #include "storm/utility/NumberTraits.h"
@@ -17,7 +18,7 @@ class Environment;
 
 namespace solver {
 
-template<typename ValueType, typename SolutionType = ValueType>
+template<typename ValueType, typename SolutionType = ValueType, bool TrivialRowGrouping = false>
 class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType, SolutionType> {
    public:
     IterativeMinMaxLinearEquationSolver();
@@ -68,7 +69,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
 
     // possibly cached data
-    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, false, SolutionType>> viOperator;
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;
     mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;  // A.rowGroupCount() entries
 };
 
