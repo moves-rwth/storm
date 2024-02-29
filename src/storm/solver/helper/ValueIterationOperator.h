@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <functional>
 #include <optional>
 #include <utility>
@@ -292,9 +293,13 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRowRobust(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
-        STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
+                            STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
+
+        static AuxCompare<RobustDirection> cmp;
+        static std::vector<std::pair<SolutionType, SolutionType>> tmp;
+        tmp.clear();
+
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
             auto const lower = matrixValueIt->lower();
@@ -306,21 +311,21 @@ class ValueIterationOperator {
             }
             remainingValue -= lower;
             auto const diameter = matrixValueIt->upper() - lower;
-            if (!storm::utility::isZero(diameter)) {
+            if (!storm::utility::isAlmostZero(diameter)) {
                 tmp.emplace_back(operand[*matrixColumnIt], diameter);
             }
         }
         if (storm::utility::isAlmostZero(remainingValue) || storm::utility::isAlmostOne(remainingValue)) {
             return result;
         }
-        AuxCompare<RobustDirection> compare;
-        std::sort(tmp.begin(), tmp.end(), compare);
 
-        for (auto const& valWidthPair : tmp) {
-            auto availableMass = std::min(valWidthPair.second, remainingValue);
-            result += availableMass * valWidthPair.first;
+        std::sort(tmp.begin(), tmp.end(), cmp);
+
+        for (auto const& pair : tmp) {
+            auto availableMass = std::min(pair.second, remainingValue);
+            result += availableMass * pair.first;
             remainingValue -= availableMass;
-            if (storm::utility::isZero(remainingValue)) {
+            if (storm::utility::isAlmostZero(remainingValue)) {
                 return result;
             }
         }
