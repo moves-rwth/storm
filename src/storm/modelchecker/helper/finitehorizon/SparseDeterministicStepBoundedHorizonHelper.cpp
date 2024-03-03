@@ -27,7 +27,6 @@ SparseDeterministicStepBoundedHorizonHelper<ValueType>::SparseDeterministicStepB
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicStepBoundedHorizonHelper<ValueType>::compute(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
                                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                       storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                        storm::storage::BitVector const& phiStates,
                                                                                        storm::storage::BitVector const& psiStates, uint64_t lowerBound,
                                                                                        uint64_t upperBound, ModelCheckerHint const& hint) {
@@ -40,6 +39,7 @@ std::vector<ValueType> SparseDeterministicStepBoundedHorizonHelper<ValueType>::c
     if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
         maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
     } else {
+        auto backwardTransitions = transitionMatrix.transpose(true);
         maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, upperBound);
         if (lowerBound == 0) {
             maybeStates &= ~psiStates;
