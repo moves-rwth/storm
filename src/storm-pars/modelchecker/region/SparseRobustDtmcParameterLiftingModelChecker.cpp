@@ -427,7 +427,7 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         // }
     }
 
-    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(x));
+    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(x);
 }
 
 // template<typename SparseModelType, typename ConstantType>
