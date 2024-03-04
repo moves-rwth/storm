@@ -166,7 +166,8 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepBound) {
     // Only compute the result if the model has at least one reward this->getModel().
-    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                    "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
 
     // Perform the matrix-vector multiplication.
     storm::solver::GeneralSymbolicLinearEquationSolverFactory<DdType, ValueType> linearEquationSolverFactory;
