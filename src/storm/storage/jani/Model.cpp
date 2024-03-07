@@ -1137,6 +1137,7 @@ Model& Model::substituteConstantsInPlace() {
 
 Model Model::substituteConstants() const {
     Model result(*this);
+    result.replaceUnassignedVariablesWithConstants();
     result.substituteConstantsInPlace();
     return result;
 }

@@ -12,9 +12,19 @@
 #include "storm/utility/cli.h"
 #include "test/storm_gtest.h"
 
+namespace {
+
+storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesDir, bool prismCompatability = false) {
+    storm::storage::SymbolicModelDescription modelDescription =
+        storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/" + pathInTestResourcesDir, prismCompatability);
+    auto m = modelDescription.toJani().preprocess().asJaniModel();
+    auto unsupportedFeatures = m.restrictToFeatures(storm::generator::JaniNextStateGenerator<double>::getSupportedJaniFeatures());
+    EXPECT_TRUE(unsupportedFeatures.empty()) << "Model '" << pathInTestResourcesDir << "' uses unsupported feature(s) " << unsupportedFeatures.toString();
+    return m;
+}
+
 TEST(ExplicitJaniModelBuilderTest, Dtmc) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/dtmc/die.pm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
@@ -30,34 +40,29 @@ TEST(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/dtmc/brp-16-2.pm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/dtmc/crowds-5-5.pm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/dtmc/leader-3-5.pm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/nand-5-2.pm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/dtmc/nand-5-2.pm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 }
 
 TEST(ExplicitJaniModelBuilderTest, pdtmc) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/pdtmc/parametric_die.pm");
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model =
         storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
@@ -69,86 +74,73 @@ TEST(ExplicitJaniModelBuilderTest, pdtmc) {
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/pdtmc/brp16_2.pm");
     model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
 }
 
 TEST(ExplicitJaniModelBuilderTest, Ctmc) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/ctmc/cluster2.sm", true);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ctmc/embedded2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ctmc/polling2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ctmc/fms2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ctmc/tandem5.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(66ul, model->getNumberOfStates());
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
 
 TEST(ExplicitJaniModelBuilderTest, Mdp) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/mdp/two_dice.nm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/leader3.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(364ul, model->getNumberOfStates());
     EXPECT_EQ(654ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/coin2-2.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(272ul, model->getNumberOfStates());
     EXPECT_EQ(492ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/csma2-2.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/csma2-2.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1038ul, model->getNumberOfStates());
     EXPECT_EQ(1282ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/firewire3-0.5.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(4093ul, model->getNumberOfStates());
     EXPECT_EQ(5585ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-2.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/wlan0-2-2.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/sync.nm");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/mdp/sync.nm");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(24ul, model->getNumberOfTransitions());
@@ -156,8 +148,7 @@ TEST(ExplicitJaniModelBuilderTest, Mdp) {
 }
 
 TEST(ExplicitJaniModelBuilderTest, Ma) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/simple.ma");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/ma/simple.ma");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
@@ -165,16 +156,14 @@ TEST(ExplicitJaniModelBuilderTest, Ma) {
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(4ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/hybrid_states.ma");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ma/hybrid_states.ma");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(13ul, model->getNumberOfTransitions());
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(5ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 
-    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma");
-    janiModel = program.toJani().substituteConstantsFunctions();
+    janiModel = getJaniModelFromPrism("/ma/stream2.ma");
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(14ul, model->getNumberOfTransitions());
@@ -192,8 +181,7 @@ TEST(ExplicitJaniModelBuilderTest, Ma) {
 }
 
 TEST(ExplicitJaniModelBuilderTest, FailComposition) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
+    auto janiModel = getJaniModelFromPrism("/mdp/system_composition.nm");
 
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
@@ -212,3 +200,4 @@ TEST(ExplicitJaniModelBuilderTest, enumerateInitial) {
     EXPECT_EQ(145ul, model->getNumberOfTransitions());
     EXPECT_EQ(72ul, model->getInitialStates().getNumberOfSetBits());
 }
+}  // namespace
