@@ -62,6 +62,11 @@ class ParameterRegion {
     CoefficientType area() const;
 
     /*!
+     * Returns if the given point is in this region
+     */
+    bool contains(Valuation const& point) const;
+
+    /*!
      * Splits the region at the given point and inserts the resulting subregions at the end of the given vector.
      * It is assumed that the point lies within this region.
      * Subregions with area()==0 are not inserted in the vector.

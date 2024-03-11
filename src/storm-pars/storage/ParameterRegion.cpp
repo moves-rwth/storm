@@ -166,6 +166,19 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
 }
 
 template<typename ParametricType>
+bool ParameterRegion<ParametricType>::contains(Valuation const& point) const {
+    for (auto const& variable : this->variables) {
+        STORM_LOG_ASSERT(point.count(variable) > 0,
+                         "Tried to check if a point is in a region, but the point does not contain a value for variable " << variable);
+        auto pointEntry = point.find(variable)->second;
+        if (pointEntry < this->getLowerBoundary(variable) || pointEntry > this->getUpperBoundary(variable)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<typename ParametricType>
 void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const {
     return split(splittingPoint, regionVector, variables);
 }
