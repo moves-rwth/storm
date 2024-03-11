@@ -1,6 +1,8 @@
+#include <_types/_uint64_t.h>
 #include <functional>
 #include <limits>
 
+#include "solver/LinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -19,34 +21,29 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "utility/constants.h"
 #include "utility/logging.h"
 
 namespace storm {
 namespace solver {
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::IterativeMinMaxLinearEquationSolver() : linearEquationSolverFactory(nullptr) {
-    STORM_LOG_ASSERT(static_cast<bool>(std::is_same_v<storm::Interval, ValueType>),
-                     "Only for interval models");  // This constructor is only meant for intervals where we can not pass a good factory yet.
-}
-
-template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::IterativeMinMaxLinearEquationSolver(
-    std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory)
+    std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory)
     : linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
     // Intentionally left empty
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::IterativeMinMaxLinearEquationSolver(
-    storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory)
+    storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory)
     : StandardMinMaxLinearEquationSolver<ValueType, SolutionType>(A), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
     // Intentionally left empty.
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::IterativeMinMaxLinearEquationSolver(
-    storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory)
+    storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory)
     : StandardMinMaxLinearEquationSolver<ValueType, SolutionType>(std::move(A)), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
     // Intentionally left empty.
 }
@@ -137,32 +134,121 @@ template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b,
                                                                                     OptimizationDirection const& dir, bool updateX, bool robust) const {
     if constexpr (TrivialRowGrouping) {
-        STORM_LOG_ERROR("Cannot extract a scheduler because row grouping is trivial.");
-        return;
-    }
-    // Make sure that storage for scheduler choices is available
-    if (!this->schedulerChoices) {
-        this->schedulerChoices = std::vector<uint64_t>(x.size(), 0);
+        // Create robust scheduler index if it doesn't exist yet
+        if (!this->robustSchedulerIndex) {
+            this->robustSchedulerIndex = std::vector<uint64_t>(x.size(), 0);
+        } else {
+            this->robustSchedulerIndex->resize(x.size(), 0);
+        }
+        uint64_t numSchedulerChoices = 0;
+        for (uint64_t row = 0; row < this->A->getRowCount(); ++row) {
+            this->robustSchedulerIndex->at(row) = numSchedulerChoices;
+            numSchedulerChoices += this->A->getRow(row).getNumberOfEntries();
+        }
+        // Make sure that storage for scheduler choices is available
+        if (!this->schedulerChoices) {
+            this->schedulerChoices = std::vector<uint64_t>(numSchedulerChoices, 0);
+        } else {
+            this->schedulerChoices->resize(numSchedulerChoices, 0);
+        }
     } else {
-        this->schedulerChoices->resize(x.size(), 0);
+        // Make sure that storage for scheduler choices is available
+        if (!this->schedulerChoices) {
+            this->schedulerChoices = std::vector<uint64_t>(x.size(), 0);
+        } else {
+            this->schedulerChoices->resize(x.size(), 0);
+        }
     }
+
     // Set the correct choices.
     STORM_LOG_WARN_COND(viOperator, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
     if (!viOperator) {
         setUpViOperator();
     }
     storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping> schedHelper(viOperator);
-    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr);
+    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveInducedEquationSystem(
-    Environment const& env, std::unique_ptr<LinearEquationSolver<ValueType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler,
+    Environment const& env, std::unique_ptr<LinearEquationSolver<SolutionType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler,
     std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement solving induced equation systems for interval-based models.");
-        // Implementing this requires linear equation systems with different value types and solution types (or some appropriate casting)
-        return false;
+        if constexpr (std::is_same_v<SolutionType, storm::Interval> || !TrivialRowGrouping) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement solving induced equation systems for interval-based models outside of robust VI.");
+            // Implementing this requires linear equation systems with different value types and solution types (or some appropriate casting)
+            return false;
+        }
+        STORM_LOG_ASSERT(subB.size() == x.size(), "Sizes of subB and x do not coincide.");
+        STORM_LOG_ASSERT(this->linearEquationSolverFactory != nullptr, "Wrong constructor was called.");
+
+        bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
+
+        storm::storage::SparseMatrixBuilder<SolutionType> newMatrixBuilder(this->A->getRowCount(), this->A->getColumnCount(), this->A->getEntryCount());
+
+        // Robust VI scheduler is an order, compute the correct values for this order
+        auto schedulerIterator = scheduler.begin();
+        for (uint64_t rowIndex = 0; rowIndex < this->A->getRowCount(); rowIndex++) {
+            auto const& row = this->A->getRow(rowIndex);
+
+            static std::vector<SolutionType> tmp;
+            tmp.clear();
+
+            SolutionType probLeft = storm::utility::one<SolutionType>();
+
+            for (auto const& entry : row) {
+                tmp.push_back(entry.getValue().lower());
+                probLeft -= entry.getValue().lower();
+            }
+
+            auto const& rowIter = row.begin();
+            for (uint64_t i = 0; i < row.getNumberOfEntries(); i++, schedulerIterator++) {
+                if (!utility::isZero(probLeft)) {
+                    auto const& entry = rowIter[*schedulerIterator];
+                    auto const diameter = entry.getValue().upper() - entry.getValue().lower();
+                    auto const value = utility::min(probLeft, diameter);
+                    tmp[*schedulerIterator] += value;
+                    probLeft -= value;
+                } else {
+                    // Intentionally left empty: advance schedulerIterator to end of row
+                }
+            }
+
+            for (uint64_t i = 0; i < row.getNumberOfEntries(); i++) {
+                auto const& entry = rowIter[i];
+                newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), tmp[i]);
+            }
+        }
+        STORM_LOG_ASSERT(schedulerIterator == scheduler.end(), "Offset issue in scheduler?");
+
+        subB = originalB;
+        // TODO vectors with nontrivial intervals?
+        std::vector<SolutionType> b;
+        for (auto const& entry : subB) {
+            STORM_LOG_ASSERT(entry.lower() == entry.upper(), "We currently only support zero-diameter vector b here.");
+            b.push_back(entry.lower());
+        }
+
+        auto const submatrix = newMatrixBuilder.build();
+        // std::cout << submatrix << std::endl;
+        // std::cout << "b =";
+        // for (auto const& entry : b) {
+        //     std::cout << entry << " ";
+        // }
+        // std::cout << std::endl;
+
+        // Check whether the linear equation solver is already initialized
+        if (!linearEquationSolver) {
+            // Initialize the equation solver
+            linearEquationSolver = this->linearEquationSolverFactory->create(env, std::move(submatrix));
+            linearEquationSolver->setBoundsFromOtherSolver(*this);
+            linearEquationSolver->setCachingEnabled(true);
+        } else {
+            // If the equation solver is already initialized, it suffices to update the matrix
+            linearEquationSolver->setMatrix(std::move(submatrix));
+        }
+        // Solve the equation system for the 'DTMC' and return true upon success
+        return linearEquationSolver->solveEquations(env, x, b);
     } else {
         STORM_LOG_ASSERT(subB.size() == x.size(), "Sizes of subB and x do not coincide.");
         STORM_LOG_ASSERT(this->linearEquationSolverFactory != nullptr, "Wrong constructor was called.");
@@ -176,6 +262,13 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
             submatrix.convertToEquationSystem();
         }
         storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), originalB);
+
+        // std::cout << submatrix << std::endl;
+        // std::cout << "b =";
+        // for (auto const& entry : subB) {
+        //     std::cout << entry << " ";
+        // }
+        // std::cout << std::endl;
 
         // Check whether the linear equation solver is already initialized
         if (!linearEquationSolver) {
@@ -490,7 +583,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
             auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
         }
         // Solve the equation system induced by the initial scheduler.
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSolver;
+        std::unique_ptr<storm::solver::LinearEquationSolver<SolutionType>> linEqSolver;
         // The linear equation solver should be at least as precise as this solver
         std::unique_ptr<storm::Environment> environmentOfSolverStorage;
         auto precOfSolver = env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType());
@@ -545,6 +638,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
                               storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
                               env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
     this->reportStatus(status, numIterations);
+
+    std::cout << numIterations << " iterations" << std::endl;
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {

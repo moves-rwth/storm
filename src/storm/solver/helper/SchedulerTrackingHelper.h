@@ -1,11 +1,66 @@
 #pragma once
+#include <_types/_uint64_t.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {
+
+template<typename ValueType, storm::OptimizationDirection Dir, bool TrivialRowGrouping>
+class RobustSchedulerTrackingBackend {
+   public:
+    RobustSchedulerTrackingBackend(std::vector<uint64_t>& schedulerStorage,
+                             std::vector<uint64_t> const& robustIndices,
+                             bool applyUpdates)
+        : schedulerStorage(schedulerStorage), robustIndices(robustIndices), applyUpdates(applyUpdates) {
+        // intentionally empty
+    }
+    void startNewIteration() {
+        isConverged = true;
+    }
+
+    void processRow(ValueType&& value, uint64_t row, std::vector<std::pair<ValueType, std::pair<ValueType, uint64_t>>>&& info) {
+        currStart = robustIndices[row];
+        for (uint64_t i = 0; i < info.size(); ++i) {
+            isConverged &= schedulerStorage[currStart + i] == info[i].second.second;
+            schedulerStorage[currStart + i] = info[i].second.second;
+        }
+        best = value;
+    }
+
+    void applyUpdate(ValueType& currValue, uint64_t rowGroup) {
+        if (applyUpdates) {
+            currValue = best;
+        }
+    }
+
+    void endOfIteration() const {}
+
+    bool converged() const {
+        return isConverged;
+    }
+
+    bool constexpr abort() const {
+        return false;
+    }
+
+   private:
+    std::vector<uint64_t>& schedulerStorage;
+    std::vector<uint64_t> const& robustIndices;
+
+    ValueType best;
+
+    uint64_t currStart;
+
+    bool const applyUpdates;
+
+    bool isConverged;
+
+    std::vector<std::pair<uint64_t, ValueType>> currValues;
+};
 
 /*!
  * Helper class to extract optimal scheduler choices from a MinMax equation system solution
@@ -33,7 +88,8 @@ class SchedulerTrackingHelper {
      * group i
      */
     bool computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets, storm::OptimizationDirection const& dir,
-                          std::vector<uint64_t>& schedulerStorage, bool robust, std::vector<SolutionType>* operandOut = nullptr) const;
+                          std::vector<uint64_t>& schedulerStorage, bool robust, std::vector<SolutionType>* operandOut = nullptr,
+                          boost::optional<std::vector<uint64_t>> const& robustIndices = boost::none) const;
 
    private:
     /*!
@@ -41,7 +97,7 @@ class SchedulerTrackingHelper {
      */
     template<storm::OptimizationDirection Dir, storm::OptimizationDirection RobustDir>
     bool computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets, std::vector<uint64_t>& schedulerStorage,
-                          std::vector<SolutionType>* operandOut) const;
+                          std::vector<SolutionType>* operandOut, boost::optional<std::vector<uint64_t>> const& robustIndices = boost::none) const;
 
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;

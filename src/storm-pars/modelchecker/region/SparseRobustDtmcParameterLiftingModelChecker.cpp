@@ -354,6 +354,7 @@ template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
     Environment const& env, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
     std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
+
     if (maybeStates.empty()) {
         return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
     }
@@ -395,8 +396,14 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
             // }
         }
 
-        // if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
-        if (this->currentCheckTask->isBoundSet()) {
+        if (storm::solver::minimize(dirForParameters) && minSchedChoices) {
+            solver->setInitialScheduler(std::move(minSchedChoices.get()));
+        }
+        if (storm::solver::maximize(dirForParameters) && maxSchedChoices) {
+            solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+        }
+
+        if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
             // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
             std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
             storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet()
@@ -414,17 +421,21 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
             solver->setTerminationCondition(std::move(termCond));
         }
 
+        solver->setTrackScheduler(true);
+
         // Invoke the solver
+
         x.resize(parameterLifter->getVector().size(), storm::utility::zero<ConstantType>());
         utility::Stopwatch stopwatch;
         stopwatch.start();
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
         stopwatch.stop();
-        // if (storm::solver::minimize(dirForParameters)) {
-        //     minSchedChoices = solver->getSchedulerChoices();
-        // } else {
-        //     maxSchedChoices = solver->getSchedulerChoices();
-        // }
+        auto robustSchedulerIndex = solver->getRobustSchedulerIndex();
+        if (storm::solver::minimize(dirForParameters)) {
+            minSchedChoices = solver->getSchedulerChoices();
+        } else {
+            maxSchedChoices = solver->getSchedulerChoices();
+        }
     }
 
     return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(x);
@@ -523,34 +534,20 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
 
 template<typename SparseModelType, typename ConstantType>
 boost::optional<storm::storage::Scheduler<ConstantType>> SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMinScheduler() {
-    if (!minSchedChoices) {
-        return boost::none;
-    }
-
-    storm::storage::Scheduler<ConstantType> result(minSchedChoices->size());
-    uint_fast64_t state = 0;
-    for (auto const& schedulerChoice : minSchedChoices.get()) {
-        result.setChoice(schedulerChoice, state);
-        ++state;
-    }
-
-    return result;
+    STORM_LOG_ERROR("Not implemented");
+    return boost::none;
 }
 
 template<typename SparseModelType, typename ConstantType>
 boost::optional<storm::storage::Scheduler<ConstantType>> SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentMaxScheduler() {
-    if (!maxSchedChoices) {
-        return boost::none;
-    }
-
-    storm::storage::Scheduler<ConstantType> result(maxSchedChoices->size());
-    uint_fast64_t state = 0;
-    for (auto const& schedulerChoice : maxSchedChoices.get()) {
-        result.setChoice(schedulerChoice, state);
-        ++state;
-    }
-
-    return result;
+    STORM_LOG_ERROR("Not implemented");
+    return boost::none;
+    // storm::storage::Scheduler<ConstantType> result(maxSchedChoices->size());
+    // uint_fast64_t state = 0;
+    // for (auto const& schedulerChoice : maxSchedChoices) {
+    //     result.setChoice(schedulerChoice, state);
+    //     ++state;
+    // }
 }
 
 template<typename SparseModelType, typename ConstantType>

@@ -1,4 +1,5 @@
 #pragma once
+#include <_types/_uint64_t.h>
 #include <algorithm>
 #include <functional>
 #include <optional>
@@ -8,6 +9,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/irange.hpp>
 
+#include "solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
@@ -180,7 +182,15 @@ class ValueIterationOperator {
             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
             //            STORM_LOG_ASSERT(matrixValueIt != matrixValues.end(), "VI Operator in invalid state.");
             if constexpr (TrivialRowGrouping) {
-                backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
+                // Ugly special case
+                // TODO how to export robustOrder to backend?
+                if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
+                    // Intentionally different method name
+                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, std::move(robustOrder));
+                } else {
+                    // Generic nextRow interface
+                    backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
+                }
             } else {
                 IndexType rowIndex = (*rowGroupIndices)[groupIndex];
                 if constexpr (SkipIgnoredRows) {
@@ -281,7 +291,7 @@ class ValueIterationOperator {
     // Aux function for applyRowRobust
     template<OptimizationDirection RobustDirection>
     struct AuxCompare {
-        bool operator()(const std::pair<SolutionType, SolutionType>& a, const std::pair<SolutionType, SolutionType>& b) const {
+        bool operator()(const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& a, const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& b) const {
             if constexpr (RobustDirection == OptimizationDirection::Maximize) {
                 return a.first > b.first;
             } else {
@@ -296,12 +306,11 @@ class ValueIterationOperator {
                             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
-        static AuxCompare<RobustDirection> cmp;
-        static std::vector<std::pair<SolutionType, SolutionType>> tmp;
-        tmp.clear();
+        robustOrder.clear();
 
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
-        for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+        uint64_t orderCounter = 0;
+        for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
             auto const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
@@ -311,18 +320,19 @@ class ValueIterationOperator {
             }
             remainingValue -= lower;
             auto const diameter = matrixValueIt->upper() - lower;
-            if (!storm::utility::isAlmostZero(diameter)) {
-                tmp.emplace_back(operand[*matrixColumnIt], diameter);
+            if (!storm::utility::isZero(diameter)) {
+                robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
-        if (storm::utility::isAlmostZero(remainingValue) || storm::utility::isAlmostOne(remainingValue)) {
+        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
             return result;
         }
 
-        std::sort(tmp.begin(), tmp.end(), cmp);
+        static AuxCompare<RobustDirection> cmp;
+        std::sort(robustOrder.begin(), robustOrder.end(), cmp);
 
-        for (auto const& pair : tmp) {
-            auto availableMass = std::min(pair.second, remainingValue);
+        for (auto const& pair : robustOrder) {
+            auto availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isAlmostZero(remainingValue)) {
@@ -411,6 +421,11 @@ class ValueIterationOperator {
      * Storage for the auxiliary vector
      */
     std::vector<SolutionType> auxiliaryVector;
+
+    /*!
+     * Robust order if robust value iteration used
+     */
+    mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
 
     /*!
      * True, if an auxiliary vector exists

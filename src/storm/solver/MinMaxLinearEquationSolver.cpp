@@ -1,6 +1,7 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
 #include <cstdint>
+#include <memory>
 
 #include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
@@ -108,6 +109,12 @@ template<typename ValueType, typename SolutionType>
 std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, SolutionType>::getSchedulerChoices() const {
     STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler choices, because they were not generated.");
     return schedulerChoices.get();
+}
+
+template<typename ValueType, typename SolutionType>
+std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, SolutionType>::getRobustSchedulerIndex() const {
+    STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve robust index into scheduler choices, because they were not generated.");
+    return robustSchedulerIndex.get();
 }
 
 template<typename ValueType, typename SolutionType>
@@ -231,7 +238,9 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
     std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         // TODO: consider robust minMax solver methods and corresponding entries in the environment.
-        result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, true>>();
+        result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, true>>(
+            std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>()
+        );
         result->setRequirementsChecked(this->isRequirementsCheckedSet());
         return result;
     } else {
@@ -241,11 +250,11 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
             method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
             method == MinMaxMethod::ViToPi) {
             result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>(
-                std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
+                std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>());
         } else if (method == MinMaxMethod::Topological) {
             result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
         } else if (method == MinMaxMethod::LinearProgramming) {
-            result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
+            result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<SolutionType>());
         } else if (method == MinMaxMethod::Acyclic) {
             result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();
         } else {

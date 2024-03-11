@@ -21,12 +21,11 @@ namespace solver {
 template<typename ValueType, typename SolutionType = ValueType, bool TrivialRowGrouping = false>
 class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType, SolutionType> {
    public:
-    IterativeMinMaxLinearEquationSolver();
-    IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+    IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory);
     IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A,
-                                        std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+                                        std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory);
     IterativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A,
-                                        std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+                                        std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory);
 
     virtual bool internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x,
                                         std::vector<ValueType> const& b) const override;
@@ -40,7 +39,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
    private:
     MinMaxMethod getMethod(Environment const& env, bool isExactMode) const;
 
-    bool solveInducedEquationSystem(Environment const& env, std::unique_ptr<LinearEquationSolver<ValueType>>& linearEquationSolver,
+    bool solveInducedEquationSystem(Environment const& env, std::unique_ptr<LinearEquationSolver<SolutionType>>& linearEquationSolver,
                                     std::vector<uint64_t> const& scheduler, std::vector<SolutionType>& x, std::vector<ValueType>& subB,
                                     std::vector<ValueType> const& originalB) const;
     bool solveEquationsPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const;
@@ -66,7 +65,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     void createLinearEquationSolver(Environment const& env) const;
 
     /// The factory used to obtain linear equation solvers.
-    std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+    std::unique_ptr<LinearEquationSolverFactory<SolutionType>> linearEquationSolverFactory;
 
     // possibly cached data
     mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;

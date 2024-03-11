@@ -15,6 +15,7 @@ module test
 	
 endmodule
 
+label "target" = s=4;
 // Dot output:
 //digraph model {
 //	0 [ label = "0: {init}" ];
