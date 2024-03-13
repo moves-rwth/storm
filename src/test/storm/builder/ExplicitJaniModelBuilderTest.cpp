@@ -59,6 +59,11 @@ TEST(ExplicitJaniModelBuilderTest, Dtmc) {
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/rates.jani").first;
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(6ul, model->getNumberOfTransitions());
 }
 
 TEST(ExplicitJaniModelBuilderTest, pdtmc) {

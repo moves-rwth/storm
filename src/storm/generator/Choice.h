@@ -18,7 +18,7 @@ namespace generator {
 template<typename ValueType, typename StateType = uint32_t>
 struct Choice {
    public:
-    Choice(uint_fast64_t actionIndex = 0, bool markovian = false);
+    Choice(uint_fast64_t actionIndex = 0, bool rate = false);
 
     Choice(Choice const& other) = default;
     Choice& operator=(Choice const& other) = default;
@@ -27,6 +27,7 @@ struct Choice {
 
     /*!
      * Adds the given choice to the current one.
+     * @pre The type of the choices match, i.e., either both have a rate or none.
      */
     void add(Choice const& other);
 
@@ -157,6 +158,12 @@ struct Choice {
     void addProbability(StateType const& state, ValueType const& value);
 
     /*!
+     * Normalizes the underlying distribution such that getTotalMass() is 1 afterwards.
+     * @pre The total mass is not zero.
+     */
+    void normalizeDistribution();
+
+    /*!
      * Adds the given value to the reward associated with this choice.
      */
     void addReward(ValueType const& value);
@@ -172,9 +179,11 @@ struct Choice {
     std::vector<ValueType> const& getRewards() const;
 
     /*!
-     * Retrieves whether the choice is Markovian.
+     * Retrieves whether the choice has a rate.
+     * For continuous time models, this means that the choice is Markovian.
+     * For DTMCs, this means that the choice is weighted
      */
-    bool isMarkovian() const;
+    bool hasRate() const;
 
     /*!
      * Retrieves the size of the distribution associated with this choice.
@@ -187,8 +196,8 @@ struct Choice {
     void reserve(std::size_t const& size);
 
    private:
-    // A flag indicating whether this choice is Markovian or not.
-    bool markovian;
+    // A flag indicating whether this choice has a rate or not.
+    bool rate;
 
     // The action index associated with this choice.
     uint_fast64_t actionIndex;

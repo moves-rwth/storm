@@ -13,14 +13,14 @@ namespace storm {
 namespace generator {
 
 template<typename ValueType, typename StateType>
-Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian)
-    : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), rewards(), labels() {
+Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool hasRate)
+    : rate(hasRate), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), rewards(), labels() {
     // Intentionally left empty.
 }
 
 template<typename ValueType, typename StateType>
 void Choice<ValueType, StateType>::add(Choice const& other) {
-    STORM_LOG_THROW(this->markovian == other.markovian, storm::exceptions::InvalidOperationException, "Type of choices do not match.");
+    STORM_LOG_THROW(this->rate == other.rate, storm::exceptions::InvalidOperationException, "Type of choices do not match.");
     STORM_LOG_THROW(this->actionIndex == other.actionIndex, storm::exceptions::InvalidOperationException, "Action index of choices do not match.");
     STORM_LOG_THROW(this->rewards.size() == other.rewards.size(), storm::exceptions::InvalidOperationException, "Reward value sizes of choices do not match.");
 
@@ -161,6 +161,15 @@ void Choice<ValueType, StateType>::addProbability(StateType const& state, ValueT
 }
 
 template<typename ValueType, typename StateType>
+void Choice<ValueType, StateType>::normalizeDistribution() {
+    STORM_LOG_ASSERT(!storm::utility::isZero(totalMass), "Normalizing a distribution with total mass 0 is not allowed.");
+    for (auto& entry : distribution) {
+        entry.second /= totalMass;
+    }
+    totalMass = storm::utility::one<ValueType>();
+}
+
+template<typename ValueType, typename StateType>
 void Choice<ValueType, StateType>::addReward(ValueType const& value) {
     rewards.push_back(value);
 }
@@ -176,8 +185,8 @@ std::vector<ValueType> const& Choice<ValueType, StateType>::getRewards() const {
 }
 
 template<typename ValueType, typename StateType>
-bool Choice<ValueType, StateType>::isMarkovian() const {
-    return markovian;
+bool Choice<ValueType, StateType>::hasRate() const {
+    return rate;
 }
 
 template<typename ValueType, typename StateType>

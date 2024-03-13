@@ -329,6 +329,17 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
             STORM_LOG_THROW(
                 !automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException,
                 "Cannot build symbolic model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
+            // Check if edge rates only appear in continuous time models (rates for DTMCs are currently unsupported)
+            for (auto const& edge : automaton.getEdges()) {
+                if (edge.hasRate()) {
+                    STORM_LOG_THROW((this->model.getModelType() == storm::jani::ModelType::CTMC || this->model.getModelType() == storm::jani::ModelType::MA),
+                                    storm::exceptions::InvalidArgumentException,
+                                    "Edge rates for symbolic model building are only supported for continuous time models (CTMC or MA).");
+                } else {
+                    STORM_LOG_THROW(this->model.getModelType() != storm::jani::ModelType::CTMC, storm::exceptions::InvalidArgumentException,
+                                    "CTMC model requires rate on every edge.");
+                }
+            }
         }
 
         // Based on this assumption, we create the variables.
@@ -1724,9 +1735,9 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
         std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
         bool overlappingGuards = false;
         for (auto const& edgeDd : edgeDds) {
-            STORM_LOG_THROW(
+            STORM_LOG_ASSERT(
                 (this->model.getModelType() == storm::jani::ModelType::CTMC || this->model.getModelType() == storm::jani::ModelType::MA) == edgeDd.isMarkovian,
-                storm::exceptions::WrongFormatException, "Unexpected edge type.");
+                "Unexpected edge type.");
 
             // Check for overlapping guards.
             overlappingGuards = !(edgeDd.guard && allGuards).isZero();

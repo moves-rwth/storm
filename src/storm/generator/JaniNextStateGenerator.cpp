@@ -679,46 +679,41 @@ StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>
         return result;
     }
 
-    // If the model is a deterministic model, we need to fuse the choices into one.
-    if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
-        Choice<ValueType> globalChoice;
-
+    // If the model is a deterministic model, we might need to normalize the probabilities and/or fuse multiple choices into one.
+    if (this->getModelType() == ModelType::DTMC && totalNumberOfChoices == 1) {
+        if (auto& choice = allChoices.front(); choice.hasRate() && !this->comparator.isOne(choice.getTotalMass())) {
+            choice.normalizeDistribution();
+        }
+    } else if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
+        // Fuse together multiple choices into one.
         if (this->options.isAddOverlappingGuardLabelSet()) {
             this->overlappingGuardStates->push_back(stateToIdCallback(*this->state));
         }
 
-        // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
-        // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
-
-        // Iterate over all choices and combine the probabilities/rates into one choice.
+        ValueType totalProbabilityMass = storm::utility::zero<ValueType>();
         for (auto const& choice : allChoices) {
-            for (auto const& stateProbabilityPair : choice) {
-                if (this->isDiscreteTimeModel()) {
-                    globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second / totalNumberOfChoices);
-                } else {
-                    globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second);
-                }
-            }
-
-            if (hasStateActionRewards && !this->isDiscreteTimeModel()) {
-                totalExitRate += choice.getTotalMass();
-            }
+            totalProbabilityMass += choice.hasRate() ? choice.getTotalMass() : storm::utility::one<ValueType>();
         }
+        bool const normalizeProbabilities = this->isDiscreteTimeModel() && !storm::utility::isOne(totalProbabilityMass);
 
+        Choice<ValueType> globalChoice(0, getModelType() == ModelType::CTMC);  // the global choice shall have a rate iff this is a CTMC
+        // Iterate over all choices and combine the probabilities/rates, rewards, and origins into one choice.
         std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
         for (auto const& choice : allChoices) {
-            if (hasStateActionRewards) {
-                for (uint_fast64_t rewardVariableIndex = 0; rewardVariableIndex < rewardExpressions.size(); ++rewardVariableIndex) {
-                    stateActionRewards[rewardVariableIndex] += choice.getRewards()[rewardVariableIndex] * choice.getTotalMass() / totalExitRate;
-                }
+            for (auto const& [state, prob] : choice) {
+                ValueType const normalizedProb = normalizeProbabilities ? prob / totalProbabilityMass : prob;
+                globalChoice.addProbability(state, normalizedProb);
             }
-
+            if (hasStateActionRewards) {
+                storm::utility::vector::addScaledVector(stateActionRewards, choice.getRewards(), choice.getTotalMass() / totalProbabilityMass);
+            }
             if (this->options.isBuildChoiceOriginsSet() && choice.hasOriginData()) {
                 globalChoice.addOriginData(choice.getOriginData());
             }
         }
         globalChoice.addRewards(std::move(stateActionRewards));
+        STORM_LOG_ASSERT(!normalizeProbabilities || this->comparator.isOne(globalChoice.getTotalMass()),
+                         "The total mass of the global choice is not 1. It is " << globalChoice.getTotalMass() << " instead.");
 
         // Move the newly fused choice in place.
         allChoices.clear();
@@ -764,7 +759,6 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
     }
 
     // Iterate over all updates of the current command.
-    ValueType probabilitySum = storm::utility::zero<ValueType>();
     for (auto const& destination : edge.getDestinations()) {
         ValueType probability = this->evaluator->asRational(destination.getProbability());
 
@@ -820,10 +814,6 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
             // Update the choice by adding the probability/target state to it.
             probability = exitRate ? exitRate.get() * probability : probability;
             choice.addProbability(stateIndex, probability);
-
-            if (this->options.isExplorationChecksSet()) {
-                probabilitySum += probability;
-            }
         }
     }
 
@@ -832,8 +822,8 @@ Choice<ValueType> JaniNextStateGenerator<ValueType, StateType>::expandNonSynchro
 
     if (this->options.isExplorationChecksSet()) {
         // Check that the resulting distribution is in fact a distribution.
-        STORM_LOG_THROW(!this->isDiscreteTimeModel() || (!storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum)),
-                        storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+        STORM_LOG_THROW(choice.hasRate() || (!storm::utility::isConstant(choice.getTotalMass()) || this->comparator.isOne(choice.getTotalMass())),
+                        storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << choice.getTotalMass() << ").");
     }
 
     return choice;
@@ -980,15 +970,17 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         EdgeIndexSet edgeIndices;
         std::vector<ValueType> stateActionRewards(rewardExpressions.size(), storm::utility::zero<ValueType>());
-        // old version without assignment levels generateSynchronizedDistribution(state, storm::utility::one<ValueType>(), 0, edgeCombination, iteratorList,
-        // distribution, stateActionRewards, edgeIndices, stateToIdCallback);
         generateSynchronizedDistribution(state, edgeCombination, iteratorList, distribution, stateActionRewards, edgeIndices, stateToIdCallback);
         distribution.compress();
+
+        // Determine if the edge combination has a rate. The jani-spec disallows rates in synchronizing edges for nondeterministic models.
+        bool const hasRate =
+            isDeterministicModel() && std::any_of(iteratorList.begin(), iteratorList.end(), [](auto const& it) { return it->second->hasRate(); });
 
         // At this point, we applied all commands of the current command combination and newTargetStates
         // contains all target states and their respective probabilities. That means we are now ready to
         // add the choice to the list of transitions.
-        newChoices.emplace_back(outputActionIndex);
+        newChoices.emplace_back(outputActionIndex, hasRate);
 
         // Now create the actual distribution.
         Choice<ValueType>& choice = newChoices.back();
@@ -1002,21 +994,16 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         choice.addRewards(std::move(stateActionRewards));
 
         // Add the probabilities/rates to the newly created choice.
-        ValueType probabilitySum = storm::utility::zero<ValueType>();
         choice.reserve(std::distance(distribution.begin(), distribution.end()));
         for (auto const& stateProbability : distribution) {
             choice.addProbability(stateProbability.getState(), stateProbability.getValue());
-
-            if (this->options.isExplorationChecksSet()) {
-                probabilitySum += stateProbability.getValue();
-            }
         }
 
         if (this->options.isExplorationChecksSet()) {
             // Check that the resulting distribution is in fact a distribution.
-            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+            STORM_LOG_THROW(hasRate || !this->comparator.isConstant(choice.getTotalMass()) || this->comparator.isOne(choice.getTotalMass()),
                             storm::exceptions::WrongFormatException,
-                            "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
+                            "Sum of update probabilities do not sum to one for some edge (actually sum to " << choice.getTotalMass() << ").");
         }
 
         // Now, check whether there is one more command combination to consider.

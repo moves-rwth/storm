@@ -269,7 +269,7 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
                         stateAndChoiceInformationBuilder.addStatePlayerIndication(choice.getPlayerIndex(), currentRowGroup);
                     }
                 }
-                if (stateAndChoiceInformationBuilder.isBuildMarkovianStates() && choice.isMarkovian()) {
+                if (stateAndChoiceInformationBuilder.isBuildMarkovianStates() && choice.hasRate()) {
                     stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
                 }
 

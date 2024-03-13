@@ -178,7 +178,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
             // For Markovian states, the Markovian choice has to be the first one in the resulting transition matrix.
             bool markovianChoiceFound = false;
             for (auto const& choice : behavior) {
-                if (choice.isMarkovian()) {
+                if (choice.hasRate()) {
                     STORM_LOG_THROW(!markovianChoiceFound, storm::exceptions::WrongFormatException,
                                     "Multiple Markovian choices defined for state " << state << ".");
                     markovianChoiceFound = true;
@@ -206,7 +206,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
         }
         // Now add all probabilistic choices.
         for (auto const& choice : behavior) {
-            if (!choice.isMarkovian()) {
+            if (!choice.hasRate()) {
                 if (!choice.getRewards().empty()) {
                     assert(choice.getRewards().size() == 1);
                     actionRewards.value()[row] = choice.getRewards().front();
