@@ -368,14 +368,14 @@ std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelT
 
             bool useMinimize = storm::solver::minimize(dirForParameters);
             if (useMinimize && !minSchedChoices) {
-                minSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
+                minSchedChoices = std::vector<uint64_t>(parameterLifter->getRowGroupCount(), 0);
             }
             if (!useMinimize && !maxSchedChoices) {
-                maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
+                maxSchedChoices = std::vector<uint64_t>(parameterLifter->getRowGroupCount(), 0);
             }
 
             auto const& occuringVariables = parameterLifter->getOccurringVariablesAtState();
-            for (uint_fast64_t state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
+            for (uint64_t state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
                 auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
                 auto& variables = occuringVariables.at(oldStateNumber);
                 // point at which we start with rows for this state
@@ -466,7 +466,7 @@ std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelT
 
 template<typename SparseModelType, typename ConstantType>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(
-    std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices,
+    std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
     storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
     std::map<VariableType, double> deltaLower, deltaUpper;
     for (auto const& p : region.getVariables()) {
@@ -562,7 +562,7 @@ boost::optional<storm::storage::Scheduler<ConstantType>> SparseDtmcParameterLift
     }
 
     storm::storage::Scheduler<ConstantType> result(minSchedChoices->size());
-    uint_fast64_t state = 0;
+    uint64_t state = 0;
     for (auto const& schedulerChoice : minSchedChoices.get()) {
         result.setChoice(schedulerChoice, state);
         ++state;
@@ -578,7 +578,7 @@ boost::optional<storm::storage::Scheduler<ConstantType>> SparseDtmcParameterLift
     }
 
     storm::storage::Scheduler<ConstantType> result(maxSchedChoices->size());
-    uint_fast64_t state = 0;
+    uint64_t state = 0;
     for (auto const& schedulerChoice : maxSchedChoices.get()) {
         result.setChoice(schedulerChoice, state);
         ++state;

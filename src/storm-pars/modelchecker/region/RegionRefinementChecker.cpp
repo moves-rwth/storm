@@ -78,13 +78,26 @@ bool RegionRefinementChecker<ParametricType>::canHandle(std::shared_ptr<storm::m
 template<typename ParametricType>
 void RegionRefinementChecker<ParametricType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                      std::shared_ptr<RegionSplittingStrategy> splittingStrategy,
+                                                      detail::RegionSplittingStrategy splittingStrategy,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
                                                       bool allowModelSimplifications) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
-    this->regionSplittingStrategy = splittingStrategy ? splittingStrategy : std::make_shared<RegionSplittingStrategy>();
-    // TODO:  ask the region checker to provide the estimates as requested in the splittingStrategy
-    regionChecker->specify(env, parametricModel, checkTask, monotonicityBackend, allowModelSimplifications);
+    this->regionSplittingStrategy = std::move(splittingStrategy);
+    // Potentially determine the kind of region split estimate to generate
+    if (regionSplittingStrategy.heuristic == detail::RegionSplittingStrategy::Heuristic::EstimateBased) {
+        if (regionSplittingStrategy.estimateKind.has_value()) {
+            STORM_LOG_THROW(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value()),
+                            storm::exceptions::NotSupportedException, "The specified region split estimate kind is not supported by the region model checker.");
+        } else {
+            regionSplittingStrategy.estimateKind = regionChecker->getDefaultRegionSplitEstimateKind();
+            STORM_LOG_ASSERT(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value()),
+                             "The region model checker does not support its default region split estimate kind.");
+        }
+    } else {
+        regionSplittingStrategy.estimateKind = std::nullopt;  // do not compute estimates
+    }
+
+    regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications);
 }
 
 template<typename T>
@@ -173,7 +186,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
         }
         monotonicityBackend.updateMonotonicity(currentRegion.annotatedRegion);
 
-        currentRegion.result = analyzeRegion(env, currentRegion, hypothesis, currentRegion.result, false);
+        currentRegion.result = regionChecker->analyzeRegion(env, currentRegion, hypothesis);
 
         if (currentRegion.result == RegionResult::AllSat) {
             progress.addAllSatArea(currentRegion.area());
@@ -231,8 +244,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
     monotonicityBackend.initializeMonotonicity(
         unprocessedRegions.top());  // TODO might need information on whether we min or max. Maybe use monDepth parameter?
 
-    auto [value, valuation] = regionChecker->getGoodInitialPoint(env, unprocessedRegions.top(), dir,
-                                                                 monotonicityBackend);  // TODO: Maybe use initial value specified by user
+    auto [value, valuation] = regionChecker->getAndEvaluateGoodPoint(env, unprocessedRegions.top(), dir);
     if (boundInvariant && !boundInvariant.value().isSatisfied(value.get())) {
         return {value, valuation};
     }
@@ -262,7 +274,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         // Compute the bound for this region (unless the known bound is already too weak)
         if (!currentBound || isStrictlyBetterValue(currentBound.value())) {
             // Improve over-approximation of extremal value (within this region)
-            currentBound = getBoundAtInitialState(env, currentRegion, dir);
+            currentBound = regionChecker->getBoundAtInitState(env, currentRegion, dir);
             // TODO: Cache results as bounds for monotonicity
         }
 
@@ -271,8 +283,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
             monotonicityBackend.updateMonotonicity(currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
-            auto [currValue, currValuation] = regionChecker->getGoodPoint(env, currentRegion, dir,
-                                                                          monotonicityBackend);  // TODO: Maybe use initial value specified by user
+            auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterValue(currValue)) {
                 value = currValue;
                 valuation = currValuation;
@@ -322,7 +333,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariables(
     detail::AnnotatedRegion<ParametricType> const& region, Context context) const {
-    // TODO: Use the splitting strategy, monotonicity, context, ...
+    // TODO: Use the splitting strategy, monotonicity, context, ... as in splitSmart
     return region.getVariables();
 }
 

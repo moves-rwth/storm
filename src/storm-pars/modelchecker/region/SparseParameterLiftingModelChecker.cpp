@@ -238,7 +238,8 @@ std::unique_ptr<QuantitativeCheckResult<ConstantType>> SparseParameterLiftingMod
 }
 
 template<typename SparseModelType, typename ConstantType>
-typename SparseModelType::ValueType SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtInitState(
+typename SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::CoefficientType
+SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtInitState(
     Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region,
     storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,

@@ -5,7 +5,7 @@
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
-#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
+#include "storm-pars/modelchecker/region/detail/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
@@ -33,7 +33,7 @@ class RegionRefinementChecker {
     bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, std::shared_ptr<RegionSplittingStrategy> splittingStrategy = {},
+                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, detail::RegionSplittingStrategy splittingStrategy = {},
                  std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true);
 
     /*!
@@ -83,7 +83,7 @@ class RegionRefinementChecker {
 
     std::unique_ptr<RegionModelChecker<ParametricType>> regionChecker;
     std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend;
-    std::shared_ptr<RegionSplittingStrategy> regionSplittingStrategy;
+    detail::RegionSplittingStrategy regionSplittingStrategy;
 };
 
 }  // namespace modelchecker

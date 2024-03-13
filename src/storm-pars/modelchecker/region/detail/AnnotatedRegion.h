@@ -55,6 +55,13 @@ struct AnnotatedRegion {
                     }
                 }
             }
+            if (globalMonotonicity && !r.globalMonotonicity) {
+                if (allowDeleteAnnotationsOfThis && globalMonotonicity.use_count() == 1) {
+                    r.globalMonotonicity = globalMonotonicity;
+                } else {
+                    r.globalMonotonicity = globalMonotonicity->copy();
+                }
+            }
 
             if (knownLowerValueBound && (!r.knownLowerValueBound || *knownLowerValueBound > *r.knownLowerValueBound)) {
                 r.knownLowerValueBound = knownLowerValueBound;
@@ -85,6 +92,7 @@ struct AnnotatedRegion {
 
     std::shared_ptr<storm::analysis::Order> stateOrder{nullptr};
     std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult{nullptr};
+    std::shared_ptr<storm::analysis::MonotonicityResult<VariableType>> globalMonotonicity{nullptr};
 
     std::optional<typename Region::CoefficientType> knownLowerValueBound;  // Lower bound on the value of the region
     std::optional<typename Region::CoefficientType> knownUpperValueBound;  // Upper bound on the value of the region

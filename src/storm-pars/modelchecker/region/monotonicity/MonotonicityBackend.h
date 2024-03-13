@@ -23,12 +23,14 @@ class MonotonicityBackend {
      */
     void setMonotoneParameters(std::set<VariableType> const& monotoneIncreasingParameters, std::set<VariableType> const& monotoneDecreasingParameters);
 
-    virtual std::map<VariableType, Monotonicity> computeGlobalMonotonicityInRegion(storm::storage::ParameterRegion<ParametricType> const& region) = 0;
+    virtual std::map<VariableType, Monotonicity> computeGlobalMonotonicityInRegion(storm::storage::ParameterRegion<ParametricType> const& region);
 
     virtual void initializeMonotonicity(detail::AnnotatedRegion<ParametricType> const& region);
 
     virtual void updateMonotonicity(detail::AnnotatedRegion<ParametricType> const& region);
-    
+
+    virtual bool interactsWithRegionModelChecker() const;
+
    private:
     std::set<VariableType> increasingParameters;
     std::set<VariableType> decreasingParameters;
