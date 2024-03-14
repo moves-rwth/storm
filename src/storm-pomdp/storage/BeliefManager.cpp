@@ -1,7 +1,8 @@
 #include "storm-pomdp/storage/BeliefManager.h"
 
-#include "solver/GlpkLpSolver.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/solver/GlpkLpSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"

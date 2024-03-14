@@ -1,5 +1,6 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/modelchecker/csl/helper/HybridMarkovAutomatonCslHelper.h"

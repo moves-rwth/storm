@@ -13,7 +13,7 @@ namespace internal {
 inline uint64_t getComponentElementState(typename storm::storage::StronglyConnectedComponent::value_type const& element) {
     return element;
 }
-inline uint64_t getComponentElementChoiceCount(typename storm::storage::StronglyConnectedComponent::value_type const& element) {
+inline constexpr uint64_t getComponentElementChoiceCount(typename storm::storage::StronglyConnectedComponent::value_type const& /*element*/) {
     return 1;
 }  // Assumes deterministic model!
 inline uint64_t const* getComponentElementChoicesBegin(typename storm::storage::StronglyConnectedComponent::value_type const& element) {

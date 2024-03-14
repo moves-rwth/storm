@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/macros.h"
 

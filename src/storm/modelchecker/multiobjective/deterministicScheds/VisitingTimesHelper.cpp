@@ -1,5 +1,6 @@
 #include "storm/modelchecker/multiobjective/deterministicScheds/VisitingTimesHelper.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
