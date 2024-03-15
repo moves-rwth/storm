@@ -1,11 +1,11 @@
 #ifndef STORM_GENERATOR_CHOICE_H_
 #define STORM_GENERATOR_CHOICE_H_
 
+#include <any>
 #include <cstdint>
 #include <functional>
 #include <set>
 
-#include <boost/any.hpp>
 #include <boost/optional.hpp>
 
 #include "storm/storage/Distribution.h"
@@ -125,7 +125,7 @@ struct Choice {
     /*!
      * Adds the given data that specifies the origin of this choice w.r.t. the model specification
      */
-    void addOriginData(boost::any const& data);
+    void addOriginData(std::any const& data);
 
     /*!
      * Returns whether there is origin data defined for this choice
@@ -135,7 +135,7 @@ struct Choice {
     /*!
      * Returns the origin data associated with this choice.
      */
-    boost::any const& getOriginData() const;
+    std::any const& getOriginData() const;
 
     /*!
      * Retrieves the index of the action of this choice.
@@ -203,7 +203,7 @@ struct Choice {
     std::vector<ValueType> rewards;
 
     // The data that stores what part of the model specification induced this choice
-    boost::optional<boost::any> originData;
+    boost::optional<std::any> originData;
 
     // The labels of this choice
     boost::optional<std::set<std::string>> labels;

@@ -619,7 +619,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             // Remember the choice origin only if we were asked to.
             if (this->options.isBuildChoiceOriginsSet()) {
                 CommandSet commandIndex{command.getGlobalIndex()};
-                choice.addOriginData(boost::any(std::move(commandIndex)));
+                choice.addOriginData(std::any(std::move(commandIndex)));
             }
 
             // Iterate over all updates of the current command.
@@ -755,7 +755,7 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
                     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                         commandIndices.insert(iteratorList[i]->get().getGlobalIndex());
                     }
-                    choice.addOriginData(boost::any(std::move(commandIndices)));
+                    choice.addOriginData(std::any(std::move(commandIndices)));
                 }
 
                 // Add the probabilities/rates to the newly created choice.
@@ -872,7 +872,7 @@ storm::builder::RewardModelInformation PrismNextStateGenerator<ValueType, StateT
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<ValueType, StateType>::generateChoiceOrigins(
-    std::vector<boost::any>& dataForChoiceOrigins) const {
+    std::vector<std::any>& dataForChoiceOrigins) const {
     if (!this->getOptions().isBuildChoiceOriginsSet()) {
         return nullptr;
     }
@@ -885,11 +885,11 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> PrismNextStateGenerator<V
     STORM_LOG_ASSERT(storm::storage::sparse::ChoiceOrigins::getIdentifierForChoicesWithNoOrigin() == 0, "The no origin identifier is assumed to be zero");
     commandSetToIdentifierMap.insert(std::make_pair(CommandSet(), 0));
     uint_fast64_t currentIdentifier = 1;
-    for (boost::any& originData : dataForChoiceOrigins) {
-        STORM_LOG_ASSERT(originData.empty() || boost::any_cast<CommandSet>(&originData) != nullptr,
+    for (std::any& originData : dataForChoiceOrigins) {
+        STORM_LOG_ASSERT(!originData.has_value() || std::any_cast<CommandSet>(&originData) != nullptr,
                          "Origin data has unexpected type: " << originData.type().name() << ".");
 
-        CommandSet currentCommandSet = originData.empty() ? CommandSet() : boost::any_cast<CommandSet>(std::move(originData));
+        CommandSet currentCommandSet = !originData.has_value() ? CommandSet() : std::any_cast<CommandSet>(std::move(originData));
         auto insertionRes = commandSetToIdentifierMap.insert(std::make_pair(std::move(currentCommandSet), currentIdentifier));
         identifiers.push_back(insertionRes.first->second);
         if (insertionRes.second) {

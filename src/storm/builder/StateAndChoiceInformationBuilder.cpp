@@ -42,7 +42,7 @@ bool StateAndChoiceInformationBuilder::isBuildChoiceOrigins() const {
     return _buildChoiceOrigins;
 }
 
-void StateAndChoiceInformationBuilder::addChoiceOriginData(boost::any const& originData, uint_fast64_t choiceIndex) {
+void StateAndChoiceInformationBuilder::addChoiceOriginData(std::any const& originData, uint_fast64_t choiceIndex) {
     STORM_LOG_ASSERT(_buildChoiceOrigins, "Building ChoiceOrigins was not enabled.");
     STORM_LOG_ASSERT(_dataOfChoiceOrigins.size() <= choiceIndex, "Unexpected choice index. Apparently, the choice indices are provided in an incorrect order.");
     if (_dataOfChoiceOrigins.size() != choiceIndex) {
@@ -51,7 +51,7 @@ void StateAndChoiceInformationBuilder::addChoiceOriginData(boost::any const& ori
     _dataOfChoiceOrigins.push_back(originData);
 }
 
-std::vector<boost::any> StateAndChoiceInformationBuilder::buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices) {
+std::vector<std::any> StateAndChoiceInformationBuilder::buildDataOfChoiceOrigins(uint_fast64_t totalNumberOfChoices) {
     STORM_LOG_ASSERT(_buildChoiceOrigins, "Building ChoiceOrigins was not enabled.");
     _dataOfChoiceOrigins.resize(totalNumberOfChoices);
     _dataOfChoiceOrigins.shrink_to_fit();

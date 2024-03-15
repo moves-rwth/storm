@@ -113,16 +113,16 @@ storm::storage::PlayerIndex const& Choice<ValueType, StateType>::getPlayerIndex(
 }
 
 template<typename ValueType, typename StateType>
-void Choice<ValueType, StateType>::addOriginData(boost::any const& data) {
-    if (!this->originData || this->originData->empty()) {
+void Choice<ValueType, StateType>::addOriginData(std::any const& data) {
+    if (!this->originData || !this->originData->has_value()) {
         this->originData = data;
     } else {
-        if (!data.empty()) {
+        if (data.has_value()) {
             // Reaching this point means that the both the existing and the given data are non-empty
 
-            auto existingDataAsIndexSet = boost::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&this->originData.get());
+            auto existingDataAsIndexSet = std::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&this->originData.get());
             if (existingDataAsIndexSet != nullptr) {
-                auto givenDataAsIndexSet = boost::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&data);
+                auto givenDataAsIndexSet = std::any_cast<storm::storage::FlatSet<uint_fast64_t>>(&data);
                 STORM_LOG_THROW(givenDataAsIndexSet != nullptr, storm::exceptions::InvalidOperationException,
                                 "Types of existing and given choice origin data do not match.");
                 existingDataAsIndexSet->insert(givenDataAsIndexSet->begin(), givenDataAsIndexSet->end());
@@ -140,7 +140,7 @@ bool Choice<ValueType, StateType>::hasOriginData() const {
 }
 
 template<typename ValueType, typename StateType>
-boost::any const& Choice<ValueType, StateType>::getOriginData() const {
+std::any const& Choice<ValueType, StateType>::getOriginData() const {
     return originData.get();
 }
 
