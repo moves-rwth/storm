@@ -42,8 +42,8 @@ class SparseParametricModelSimplifier {
 
     /**
      * Set whether to skip constant deterministic state elimination (i.e. for robust PLA, where it returns unfavourable MCs).
-     * 
-     * @param skipConstantDeterministicStateElimination 
+     *
+     * @param skipConstantDeterministicStateElimination
      */
     void setSkipConstantDeterministicStateElimination(bool skipConstantDeterministicStateElimination);
 
@@ -70,9 +70,8 @@ class SparseParametricModelSimplifier {
      * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
      * Labelings of eliminated states will be lost
      */
-    std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,
-                                                                            storm::storage::BitVector const& consideredStates,
-                                                                            boost::optional<std::string> const& rewardModelName = boost::none);
+    std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates,
+                                                                          boost::optional<std::string> const& rewardModelName = boost::none);
 
     SparseModelType const& originalModel;
 

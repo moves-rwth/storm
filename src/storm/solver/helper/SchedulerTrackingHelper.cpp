@@ -12,8 +12,7 @@ template<typename ValueType, storm::OptimizationDirection Dir>
 class SchedulerTrackingBackend {
    public:
     SchedulerTrackingBackend(std::vector<uint64_t>& schedulerStorage,
-                             std::vector<typename ValueIterationOperator<ValueType, false>::IndexType> const& rowGroupIndices,
-                             bool applyUpdates)
+                             std::vector<typename ValueIterationOperator<ValueType, false>::IndexType> const& rowGroupIndices, bool applyUpdates)
         : schedulerStorage(schedulerStorage), applyUpdates(applyUpdates), rowGroupIndices(rowGroupIndices) {
         // intentionally empty
     }
@@ -69,18 +68,20 @@ class SchedulerTrackingBackend {
     uint64_t currChoice;
 };
 
-
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::SchedulerTrackingHelper(std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator)
+SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::SchedulerTrackingHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator)
     : viOperator(viOperator) {
     // Intentionally left empty
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 template<storm::OptimizationDirection Dir, storm::OptimizationDirection RobustDir>
-bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
-                                                                        std::vector<uint64_t>& schedulerStorage, std::vector<SolutionType>* operandOut,
-                                                                        boost::optional<std::vector<uint64_t>> const& robustIndices) const {
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn,
+                                                                                            std::vector<ValueType> const& offsets,
+                                                                                            std::vector<uint64_t>& schedulerStorage,
+                                                                                            std::vector<SolutionType>* operandOut,
+                                                                                            boost::optional<std::vector<uint64_t>> const& robustIndices) const {
     bool const applyUpdates = operandOut != nullptr;
     if constexpr (TrivialRowGrouping && std::is_same<SolutionType, double>::value) {
         STORM_LOG_ASSERT(robustIndices, "Tracking scheduler with trivial row grouping but no robust indices => there is no scheduler.");
@@ -92,7 +93,7 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
         }
     } else {
         STORM_LOG_WARN_COND(!robustIndices, "Only tracking nondeterminism, not ordering of intervals.");
-    SchedulerTrackingBackend<SolutionType, Dir> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
+        SchedulerTrackingBackend<SolutionType, Dir> backend(schedulerStorage, viOperator->getRowGroupIndices(), applyUpdates);
         if (applyUpdates) {
             return viOperator->template applyRobust<RobustDir>(*operandOut, operandIn, offsets, backend);
         } else {
@@ -102,11 +103,12 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets,
-                                                                        storm::OptimizationDirection const& dir, std::vector<uint64_t>& schedulerStorage,
-                                                                        bool robust, std::vector<SolutionType>* operandOut,
-                                                                        boost::optional<std::vector<uint64_t>> const& robustIndices
-                                                                        ) const {
+bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::computeScheduler(std::vector<SolutionType>& operandIn,
+                                                                                            std::vector<ValueType> const& offsets,
+                                                                                            storm::OptimizationDirection const& dir,
+                                                                                            std::vector<uint64_t>& schedulerStorage, bool robust,
+                                                                                            std::vector<SolutionType>* operandOut,
+                                                                                            boost::optional<std::vector<uint64_t>> const& robustIndices) const {
     // TODO is this correct??? only for "antagonistic" robust uncertainty??
     if (maximize(dir)) {
         if (robust && !TrivialRowGrouping) {
@@ -118,9 +120,11 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
         }
     } else {
         if (robust && !TrivialRowGrouping) {
-            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage, operandOut, robustIndices);
+            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage, operandOut,
+                                                                                                             robustIndices);
         } else {
-            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage, operandOut, robustIndices);
+            return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage, operandOut,
+                                                                                                             robustIndices);
         }
     }
 }

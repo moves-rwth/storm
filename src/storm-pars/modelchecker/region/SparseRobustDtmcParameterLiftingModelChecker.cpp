@@ -366,7 +366,6 @@ template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
     Environment const& env, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
     std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
-
     if (maybeStates.empty()) {
         return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
     }

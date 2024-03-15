@@ -12,9 +12,7 @@ namespace storm::solver::helper {
 template<typename ValueType, storm::OptimizationDirection Dir, bool TrivialRowGrouping>
 class RobustSchedulerTrackingBackend {
    public:
-    RobustSchedulerTrackingBackend(std::vector<uint64_t>& schedulerStorage,
-                             std::vector<uint64_t> const& robustIndices,
-                             bool applyUpdates)
+    RobustSchedulerTrackingBackend(std::vector<uint64_t>& schedulerStorage, std::vector<uint64_t> const& robustIndices, bool applyUpdates)
         : schedulerStorage(schedulerStorage), robustIndices(robustIndices), applyUpdates(applyUpdates) {
         // intentionally empty
     }

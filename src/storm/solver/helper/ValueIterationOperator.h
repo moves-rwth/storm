@@ -291,7 +291,8 @@ class ValueIterationOperator {
     // Aux function for applyRowRobust
     template<OptimizationDirection RobustDirection>
     struct AuxCompare {
-        bool operator()(const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& a, const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& b) const {
+        bool operator()(const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& a,
+                        const std::pair<SolutionType, std::pair<SolutionType, uint64_t>>& b) const {
             if constexpr (RobustDirection == OptimizationDirection::Maximize) {
                 return a.first > b.first;
             } else {
@@ -303,7 +304,7 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRowRobust(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
-                            STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
+        STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
         robustOrder.clear();

@@ -113,7 +113,8 @@ std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, Solution
 
 template<typename ValueType, typename SolutionType>
 std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType, SolutionType>::getRobustSchedulerIndex() const {
-    STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException, "Cannot retrieve robust index into scheduler choices, because they were not generated.");
+    STORM_LOG_THROW(hasScheduler(), storm::exceptions::IllegalFunctionCallException,
+                    "Cannot retrieve robust index into scheduler choices, because they were not generated.");
     return robustSchedulerIndex.get();
 }
 
@@ -239,8 +240,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         // TODO: consider robust minMax solver methods and corresponding entries in the environment.
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, true>>(
-            std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>()
-        );
+            std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>());
         result->setRequirementsChecked(this->isRequirementsCheckedSet());
         return result;
     } else {

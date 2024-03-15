@@ -488,8 +488,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
         bool graphPresering = true;
         const ConstantType epsilon =
-            graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) : utility::zero<ConstantType>();
-        
+            graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+                           : utility::zero<ConstantType>();
 
         if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
             // Current region is entirely ill-defined (partially ill-defined is fine:)

@@ -86,25 +86,24 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
                 result = RegionResult::CenterIllDefined;
             } else {
                 result = getInstantiationChecker()
-                                .check(env, region.getCenterPoint())
-                                ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
-                            ? RegionResult::CenterSat
-                            : RegionResult::CenterViolated;
+                                 .check(env, region.getCenterPoint())
+                                 ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
+                             ? RegionResult::CenterSat
+                             : RegionResult::CenterViolated;
             }
         } else {
             result = getInstantiationChecker()
-                            .check(env, region.getCenterPoint())
-                            ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
-                        ? RegionResult::CenterSat
-                        : RegionResult::CenterViolated;
+                             .check(env, region.getCenterPoint())
+                             ->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]
+                         ? RegionResult::CenterSat
+                         : RegionResult::CenterViolated;
         }
     }
 
     bool existsSat = (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat);
     bool existsViolated =
         (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated);
-    bool existsIllDefined =
-        (result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined);
+    bool existsIllDefined = (result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined);
 
     // Here we check on global monotonicity
     if (localMonotonicityResult != nullptr && localMonotonicityResult->isDone()) {
@@ -189,7 +188,8 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
                                                                                   : storm::solver::OptimizationDirection::Minimize;
         auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
         if (!checkResult) {
-            STORM_LOG_ASSERT(result != RegionResult::CenterViolated, "The center in region " << region << " is violated but model checker says all is ill-defined.");
+            STORM_LOG_ASSERT(result != RegionResult::CenterViolated,
+                             "The center in region " << region << " is violated but model checker says all is ill-defined.");
             return RegionResult::AllIllDefined;
         }
         if (!checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
@@ -200,8 +200,8 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     } else if (existsIllDefined) {
         // Try to show either AllSat or AllViolated:
         storm::solver::OptimizationDirection parameterOptimizationDirectionAllSat = isLowerBound(this->currentCheckTask->getBound().comparisonType)
-                                                                                  ? storm::solver::OptimizationDirection::Minimize
-                                                                                  : storm::solver::OptimizationDirection::Maximize;
+                                                                                        ? storm::solver::OptimizationDirection::Minimize
+                                                                                        : storm::solver::OptimizationDirection::Maximize;
         auto checkResultAllSat = this->check(env, region, parameterOptimizationDirectionAllSat, localMonotonicityResult);
         if (!checkResultAllSat) {
             result = RegionResult::AllIllDefined;
@@ -209,12 +209,13 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
             result = RegionResult::AllSat;
         } else {
             storm::solver::OptimizationDirection parameterOptimizationDirectionAllViolated = isLowerBound(this->currentCheckTask->getBound().comparisonType)
-                                                                                    ? storm::solver::OptimizationDirection::Maximize
-                                                                                    : storm::solver::OptimizationDirection::Minimize;
+                                                                                                 ? storm::solver::OptimizationDirection::Maximize
+                                                                                                 : storm::solver::OptimizationDirection::Minimize;
             auto checkResultAllViolated = this->check(env, region, parameterOptimizationDirectionAllViolated, localMonotonicityResult);
             if (!checkResultAllViolated) {
                 result = RegionResult::AllIllDefined;
-            } if (!checkResultAllViolated->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+            }
+            if (!checkResultAllViolated->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                 result = RegionResult::AllViolated;
             }
         }
@@ -271,7 +272,7 @@ std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType,
     if (!quantitativeResult) {
         return nullptr;
     }
-lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+    lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
     if (currentCheckTask->getFormula().hasQuantitativeResult()) {
         return quantitativeResult;
     } else {

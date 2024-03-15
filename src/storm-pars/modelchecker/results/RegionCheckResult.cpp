@@ -86,7 +86,7 @@ std::ostream& RegionCheckResult<ValueType>::writeCondensedToStream(std::ostream&
     auto one = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
     out << "  Fraction of satisfied area: " << satPercent << "%\n";
     out << "Fraction of unsatisfied area: " << unsatPercent << "%\n";
-    if (illDefinedPercent > 0 ) {
+    if (illDefinedPercent > 0) {
         out << "Fraction of ill-defined area: " << illDefinedPercent << "%\n";
     }
     out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent - illDefinedPercent) << "%\n";

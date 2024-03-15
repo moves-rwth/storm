@@ -83,7 +83,8 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, Trivia
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::internalSolveEquations(Environment const& env, OptimizationDirection dir,
-                                                                                          std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
+                                                                                                              std::vector<SolutionType>& x,
+                                                                                                              std::vector<ValueType> const& b) const {
     bool result = false;
     switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
         case MinMaxMethod::ValueIteration:
@@ -131,8 +132,10 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b,
-                                                                                    OptimizationDirection const& dir, bool updateX, bool robust) const {
+void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::extractScheduler(std::vector<SolutionType>& x,
+                                                                                                        std::vector<ValueType> const& b,
+                                                                                                        OptimizationDirection const& dir, bool updateX,
+                                                                                                        bool robust) const {
     if constexpr (TrivialRowGrouping) {
         // Create robust scheduler index if it doesn't exist yet
         if (!this->robustSchedulerIndex) {
@@ -175,7 +178,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
     std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         if constexpr (std::is_same_v<SolutionType, storm::Interval> || !TrivialRowGrouping) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement solving induced equation systems for interval-based models outside of robust VI.");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                            "We did not implement solving induced equation systems for interval-based models outside of robust VI.");
             // Implementing this requires linear equation systems with different value types and solution types (or some appropriate casting)
             return false;
         }
@@ -286,9 +290,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsPolicyIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                 std::vector<SolutionType>& x,
-                                                                                                 std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsPolicyIteration(Environment const& env,
+                                                                                                                     OptimizationDirection dir,
+                                                                                                                     std::vector<SolutionType>& x,
+                                                                                                                     std::vector<ValueType> const& b) const {
     std::vector<storm::storage::sparse::state_type> scheduler =
         this->hasInitialScheduler() ? this->getInitialScheduler() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
     return performPolicyIteration(env, dir, x, b, std::move(scheduler));
@@ -404,7 +409,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::valueImproved(OptimizationDirection dir, ValueType const& value1,
-                                                                                 ValueType const& value2) const {
+                                                                                                     ValueType const& value2) const {
     if (dir == OptimizationDirection::Minimize) {
         return value2 < value1;
     } else {
@@ -515,9 +520,8 @@ ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vec
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                          std::vector<SolutionType>& x,
-                                                                                                          std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsOptimisticValueIteration(
+    Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement optimistic value iteration for interval-based models.");
         return false;
@@ -571,9 +575,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                std::vector<SolutionType>& x,
-                                                                                                std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsValueIteration(Environment const& env,
+                                                                                                                    OptimizationDirection dir,
+                                                                                                                    std::vector<SolutionType>& x,
+                                                                                                                    std::vector<ValueType> const& b) const {
     setUpViOperator();
     // By default, we can not provide any guarantee
     SolverGuarantee guarantee = SolverGuarantee::None;
@@ -665,9 +670,10 @@ void preserveOldRelevantValues(std::vector<ValueType> const& allValues, storm::s
  * Model Checker: Interval Iteration for Markov Decision Processes, CAV 2017).
  */
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsIntervalIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                   std::vector<SolutionType>& x,
-                                                                                                   std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsIntervalIteration(Environment const& env,
+                                                                                                                       OptimizationDirection dir,
+                                                                                                                       std::vector<SolutionType>& x,
+                                                                                                                       std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement intervaliteration for interval-based models");
         return false;
@@ -708,9 +714,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                     std::vector<SolutionType>& x,
-                                                                                                     std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsSoundValueIteration(
+    Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "SoundVI does not handle interval-based models");
         return false;
@@ -762,7 +767,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsViToPi(Environment const& env, OptimizationDirection dir,
-                                                                                        std::vector<SolutionType>& x, std::vector<ValueType> const& b) const {
+                                                                                                            std::vector<SolutionType>& x,
+                                                                                                            std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "ViToPi does not handle interval-based models");
         return false;
@@ -791,9 +797,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 }
 
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
-bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir,
-                                                                                                std::vector<SolutionType>& x,
-                                                                                                std::vector<ValueType> const& b) const {
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveEquationsRationalSearch(Environment const& env,
+                                                                                                                    OptimizationDirection dir,
+                                                                                                                    std::vector<SolutionType>& x,
+                                                                                                                    std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Rational search does not handle interval-based models");
         return false;

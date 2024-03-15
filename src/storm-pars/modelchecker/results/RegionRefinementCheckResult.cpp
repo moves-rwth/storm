@@ -74,7 +74,8 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
                 bool currRegionComplete = false;
                 CoefficientType coveredArea = storm::utility::zero<CoefficientType>();
                 for (auto const& r : this->getRegionResults()) {
-                    if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated && r.second != storm::modelchecker::RegionResult::AllIllDefined) {
+                    if (r.second != storm::modelchecker::RegionResult::AllSat && r.second != storm::modelchecker::RegionResult::AllViolated &&
+                        r.second != storm::modelchecker::RegionResult::AllIllDefined) {
                         continue;
                     }
                     CoefficientType interesctionSizeY = std::min(yUpper, r.first.getUpperBoundary(y)) - std::max(yLower, r.first.getLowerBoundary(y));
