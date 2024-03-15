@@ -55,7 +55,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
 
-    const uint64_t originalNumStates = dtmc.getNumberOfStates();
+    uint64_t originalNumStates = dtmc.getNumberOfStates();
 
     auto allParameters = storm::models::sparse::getAllParameters(dtmc);
 
@@ -104,11 +104,12 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             }
         }
     }
-    updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
+    updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector, runningLabeling,
+                     labelsInFormula);
 
     // To prevent infinite unrolling of parametric loops:
     // We have already reordered with these as leaves, don't reorder with these as leaves again
-    std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>> alreadyReorderedWrt;
+    std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>> alreadyTimeTravelledToThis;
 
     // We will traverse the model according to the topological ordering
     std::stack<uint_fast64_t> topologicalOrderingStack;
@@ -123,7 +124,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
     initialStates.set(initialState, true);
 
-    // We will update these dynamically
+    // We will compute the reachable states once in the beginning but update them dynamically
     storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
 
     while (!topologicalOrderingStack.empty()) {
@@ -135,7 +136,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         }
 
         // The parameters we can do big-step w.r.t. (if horizon > 1)
-        std::set<carl::Variable> bigStepParameters;
+        std::set<RationalFunctionVariable> bigStepParameters;
         if (horizon > 1) {
             for (auto const& oneStep : flexibleMatrix.getRow(state)) {
                 for (auto const& parameter : allParameters) {
@@ -147,7 +148,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         }
 
         // The parameters we can do time-travelling w.r.t. (perhaps without big-stepping. time-travelling is always done after big-stepping as well)
-        std::set<carl::Variable> timeTravelParameters;
+        std::set<RationalFunctionVariable> timeTravelParameters;
         if (timeTravellingEnabled) {
             std::set<RationalFunction> occuringBranches;
             for (auto const& oneStep : flexibleMatrix.getRow(state)) {
@@ -171,256 +172,34 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             }
         }
 
-        std::set<carl::Variable> doSomethingParameters;
+        std::set<RationalFunctionVariable> doSomethingParameters;
         doSomethingParameters.insert(bigStepParameters.begin(), bigStepParameters.end());
         doSomethingParameters.insert(timeTravelParameters.begin(), timeTravelParameters.end());
 
         // Do big-step lifting from here
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : doSomethingParameters) {
-            auto parameterMap = treeStates.at(parameter);
-
-            STORM_LOG_INFO("BigStep " << state);
-
-            struct searchingPath {
-                std::vector<uint_fast64_t> path;
-                RationalFunction probability;
-            };
-
-            // We enumerate all paths starting in `state` and eventually reaching our goals
-            std::vector<searchingPath> searchingPaths;
-            std::vector<searchingPath> donePaths;
-            std::vector<uint64_t> visitedStates;
-
-            searchingPaths.push_back(searchingPath{{state}, utility::one<RationalFunction>()});
-
-            while (!searchingPaths.empty()) {
-                std::vector<searchingPath> newPaths;
-                for (auto const& path : searchingPaths) {
-                    auto const bigStepState = path.path.back();
-                    auto const row = flexibleMatrix.getRow(bigStepState);
-
-                    bool bigStepThisRow = true;
-                    // Stop here if degree gets too large
-                    for (auto const& entry : row) {
-                        // Stop if degree gets too large
-                        auto const newProbability = path.probability * entry.getValue();
-                        auto const derivative = newProbability.nominator().derivative(parameter);
-
-                        if (newProbability.nominator().totalDegree() > horizon || !(derivative.isConstant() || derivative.isUnivariate()) ||
-                            (!derivative.isConstant() && derivative.getSingleVariable() != parameter)) {
-                            // We cannot do this big-step at all
-                            donePaths.push_back(path);
-                            bigStepThisRow = false;
-                            break;
-                        }
-                    }
-
-                    if (!bigStepThisRow) {
-                        continue;
-                    }
-
-                    visitedStates.push_back(bigStepState);
-
-                    for (auto const& entry : row) {
-                        // Continue searching if we can still reach a parameter
-                        bool continueSearching = !parameterMap[entry.getColumn()].empty();
-
-                        // Also continue searching if there is only a transition with a one coming up, we can skip that
-                        // This is nice because we can possibly combine more transitions later
-                        bool onlyHasOne = flexibleMatrix.getRow(entry.getColumn()).size() == 1 &&
-                                          flexibleMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
-                        continueSearching |= onlyHasOne;
-
-                        // Stop if we have encountered a loop
-                        continueSearching &= std::find(path.path.begin(), path.path.end(), entry.getColumn()) == path.path.end();
-                        // Don't mess with rewards for now (TODO for later)
-                        continueSearching &= !(stateRewardVector && !stateRewardVector->at(entry.getColumn()).isZero());
-
-                        auto const newProbability = path.probability * entry.getValue();
-                        std::vector<uint_fast64_t> pathCopy = path.path;
-                        pathCopy.push_back(entry.getColumn());
-                        searchingPath newPath{pathCopy, newProbability};
-
-                        if (continueSearching) {
-                            newPaths.push_back(newPath);
-                        } else {
-                            donePaths.push_back(newPath);
-                        }
-                    }
-                }
-                searchingPaths = newPaths;
-            }
+            // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
+            auto const result = findBigStepPaths(state, parameter, horizon, flexibleMatrix, treeStates, stateRewardVector);
+            auto paths = result.first;
+            auto const visitedStates = result.second;
 
             bool doneTimeTravelling = false;
-            const uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
+            uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            // Final map of paths, will already get filled up with all constant paths
-            std::vector<searchingPath> insertPaths;
-            if (!timeTravellingEnabled) {
-                insertPaths = donePaths;
-            } else {
-                // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
-                std::map<RationalFunction, std::vector<searchingPath>> parametricTransitions;
-
-                for (auto const& path : donePaths) {
-                    auto const variables = path.probability.gatherVariables();
-                    // TODO can only time-travel single-variate transitions
-                    if (variables.size() == 1) {
-                        auto const variable = *variables.begin();
-
-                        bool foundMatchingTransition = false;
-                        for (auto& branch : parametricTransitions) {
-                            if (areTimeTravellable(path.probability, branch.first)) {
-                                branch.second.push_back(path);
-                                foundMatchingTransition = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatchingTransition) {
-                            parametricTransitions[path.probability] = {path};
-                        }
-                    } else {
-                        insertPaths.push_back(path);
-                    }
-                }
-
-                for (auto const& entry : parametricTransitions) {
-                    if (entry.second.size() > 1) {
-                        // The set of target states of the paths that we maybe want to time-travel
-                        std::set<uint64_t> targetStates;
-                        for (auto const& path : entry.second) {
-                            if (path.path.back() < originalNumStates) {
-                                targetStates.emplace(path.path.back());
-                            }
-                        }
-                        if (alreadyReorderedWrt[parameter].count(targetStates) || targetStates.size() == 1) {
-                            // We already reordered w.r.t. these target states. We're not going to time-travel again,
-                            // so just enter the paths into insertPaths.
-                            for (auto const& path : entry.second) {
-                                insertPaths.push_back(path);
-                            }
-                            continue;
-                        }
-                        alreadyReorderedWrt[parameter].insert(targetStates);
-
-                        doneTimeTravelling = true;
-
-                        STORM_LOG_INFO("Time travellable transitions with " << entry.first);
-
-                        RationalFunction sum = utility::zero<RationalFunction>();
-                        for (auto const& path : entry.second) {
-                            sum += path.probability;
-                        }
-
-                        // // TODO If the new branch's probability divided by our sum is non-constant I currently don't know how to handle this.
-                        // // Check if this is the case, and if yes, warn about it and abort this particular time-travelling.
-                        // bool skipBecauseInterminglingConstants = false;
-                        // for (auto const& path : entry.second) {
-                        //     if (!(path.probability / sum).isConstant()) {
-                        //         STORM_LOG_WARN("Time travelling (partly) not possible on state " << state << " because of intermingling constants.");
-                        //         // Insert original paths into final model because we aren't time-travelling here
-                        //         for (auto const& path : entry.second) {
-                        //             insertPaths.push_back(path);
-                        //         }
-                        //         skipBecauseInterminglingConstants = true;
-                        //         break;
-                        //     }
-                        // }
-                        // if (skipBecauseInterminglingConstants) {
-                        //     continue;
-                        // }
-
-                        doneTimeTravelling = true;
-
-                        // Create the new state that our parametric transitions will start in
-                        uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
-                        STORM_LOG_ASSERT(newRow == backwardsTransitions.insertNewRowsAtEnd(1), "Internal error: Drifting matrix and backwardsTransitions.");
-
-                        // Sum of parametric transitions goes to new row
-                        insertPaths.push_back(searchingPath{{newRow}, sum});
-
-                        // Write outgoing transitions from new row directly into the flexible matrix
-                        for (auto const& path : entry.second) {
-                            auto const thisProb = path.probability / sum;
-
-                            // TODO: Should probably be handled.
-                            STORM_LOG_ASSERT(thisProb.isConstant(), "Non-constant probability in sum.");
-
-                            // Forward
-                            flexibleMatrix.getRow(newRow).push_back(
-                                storage::MatrixEntry<uint_fast64_t, RationalFunction>(path.path.back(), thisProb));
-                            // Backward
-                            backwardsTransitions.getRow(path.path.back())
-                                .push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRow, thisProb));
-                            // Update tree-states here
-                            for (auto const& p : allParameters) {
-                                treeStatesNeedUpdate[p].emplace(path.path.back());
-                            }
-                            STORM_LOG_INFO("With: " << path.probability / sum << " to " << path.path.back());
-                            // Join duplicate transitions backwards (need to do this for all rows we come from)
-                            backwardsTransitions.getRow(path.path.back()) = joinDuplicateTransitions(backwardsTransitions.getRow(path.path.back()));
-                        }
-                        // Join duplicate transitions forwards (only need to do this for row we go to)
-                        flexibleMatrix.getRow(newRow) = joinDuplicateTransitions(flexibleMatrix.getRow(newRow));
-                    } else {
-                        for (auto const& path : entry.second) {
-                            insertPaths.push_back(path);
-                        }
-                    }
+            if (timeTravellingEnabled) {
+                auto const timeTravelledPaths = findTimeTravelling(paths, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
+                                                                   treeStatesNeedUpdate, originalNumStates);
+                if (timeTravelledPaths) {
+                    paths = *timeTravelledPaths;
                 }
             }
 
-            // Now make modifications concerning the root state of the big-step
+            // Put paths into matrix
+            eliminateTransitionsAccordingToPaths(state, paths, flexibleMatrix, backwardsTransitions, treeStatesNeedUpdate);
 
-            // Delete old transitions - backwards
-            for (auto const& deletingTransition : flexibleMatrix.getRow(state)) {
-                auto row = backwardsTransitions.getRow(deletingTransition.getColumn());
-                auto it = row.begin();
-                while (it != row.end()) {
-                    if (it->getColumn() == state) {
-                        it = row.erase(it);
-                    } else {
-                        it++;
-                    }
-                }
-            }
-            // Delete old transitions - forwards
-            flexibleMatrix.getRow(state) = std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>>();
-
-            // Insert new transitions
-            std::map<uint64_t, RationalFunction> insertThese;
-            for (auto const& path : insertPaths) {
-                uint64_t target = path.path.back();
-                for (auto const& p : allParameters) {
-                    treeStatesNeedUpdate[p].emplace(target);
-                }
-                if (insertThese.count(target)) {
-                    insertThese[target] += path.probability;
-                } else {
-                    insertThese[target] = path.probability;
-                }
-            }
-            for (auto const& entry : insertThese) {
-                // We know that neither no transition state <-> entry.first exist because we've erased them
-                flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
-                backwardsTransitions.getRow(entry.first).push_back(storm::storage::MatrixEntry(state, entry.second));
-            }
-
-            // Look if one of our visitedStates has become unreachable
-            // i.e. all of its predecessors are unreachable
-            for (auto const& visitedState : visitedStates) {
-                bool isUnreachable = true;
-                for (auto const& entry : backwardsTransitions.getRow(visitedState)) {
-                    if (reachableStates.get(entry.getColumn())) {
-                        isUnreachable = false;
-                        break;
-                    }
-                }
-                if (isUnreachable) {
-                    reachableStates.set(visitedState, false);
-                }
-            }
+            // Dynamically update unreachable states
+            updateUnreachableStates(reachableStates, visitedStates, backwardsTransitions);
 
             if (doneTimeTravelling) {
                 uint64_t newMatrixSize = flexibleMatrix.getRowCount();
@@ -433,7 +212,6 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                     reachableStates.resize(newMatrixSize, true);
 
                     for (uint64_t i = oldMatrixSize; i < newMatrixSize; i++) {
-                        // Next consider the new states
                         topologicalOrderingStack.push(i);
                         // New states have zero reward
                         if (stateRewardVector) {
@@ -459,6 +237,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         newnewDTMC.getTransitionMatrix().isProbabilistic();
 #endif
     }
+
     transitionMatrix = flexibleMatrix.createSparseMatrix();
 
     // Delete states
@@ -507,6 +286,255 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     return newDTMC;
 }
 
+std::pair<std::vector<searchingPath>, std::vector<uint64_t>> findBigStepPaths(
+    uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
+    // We enumerate all paths starting in `state` and eventually reaching our goals
+    std::vector<searchingPath> searchingPaths;
+    std::vector<searchingPath> donePaths;
+    std::vector<uint64_t> visitedStates;
+
+    searchingPaths.push_back(searchingPath{{start}, utility::one<RationalFunction>()});
+
+    while (!searchingPaths.empty()) {
+        std::vector<searchingPath> newPaths;
+        for (auto const& path : searchingPaths) {
+            auto const bigStepState = path.path.back();
+            auto const row = flexibleMatrix.getRow(bigStepState);
+
+            bool bigStepThisRow = true;
+
+            for (auto const& entry : row) {
+                // Stop if degree gets too large
+                auto const newProbability = path.probability * entry.getValue();
+                auto const derivative = newProbability.nominator().derivative(parameter);
+
+                if (newProbability.nominator().totalDegree() > horizon || !(derivative.isConstant() || derivative.isUnivariate()) ||
+                    (!derivative.isConstant() && derivative.getSingleVariable() != parameter)) {
+                    // We cannot do this big-step at all
+                    donePaths.push_back(path);
+                    bigStepThisRow = false;
+                    break;
+                }
+            }
+
+            if (!bigStepThisRow) {
+                continue;
+            }
+
+            visitedStates.push_back(bigStepState);
+
+            for (auto const& entry : row) {
+                // Continue searching if we can still reach a parameter
+                bool continueSearching = !treeStates.at(parameter).at(entry.getColumn()).empty();
+
+                // Also continue searching if there is only a transition with a one coming up, we can skip that
+                // This is nice because we can possibly combine more transitions later
+                bool onlyHasOne = flexibleMatrix.getRow(entry.getColumn()).size() == 1 &&
+                                  flexibleMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
+                continueSearching |= onlyHasOne;
+
+                // Stop if we have encountered a loop
+                continueSearching &= std::find(path.path.begin(), path.path.end(), entry.getColumn()) == path.path.end();
+                // Don't mess with rewards for now (TODO for later)
+                continueSearching &= !(stateRewardVector && !stateRewardVector->at(entry.getColumn()).isZero());
+
+                auto const newProbability = path.probability * entry.getValue();
+                std::vector<uint_fast64_t> pathCopy = path.path;
+                pathCopy.push_back(entry.getColumn());
+                searchingPath newPath{pathCopy, newProbability};
+
+                if (continueSearching) {
+                    newPaths.push_back(newPath);
+                } else {
+                    donePaths.push_back(newPath);
+                }
+            }
+        }
+        searchingPaths = newPaths;
+    }
+    return std::make_pair(donePaths, visitedStates);
+}
+
+std::optional<std::vector<searchingPath>> TimeTravelling::findTimeTravelling(
+    const std::vector<searchingPath> bigStepPaths, const RationalFunctionVariable& parameter, storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+    std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
+    std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t originalNumStates) {
+    bool doneTimeTravelling = false;
+    std::vector<searchingPath> insertPaths;
+    // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
+    std::map<RationalFunction, std::vector<searchingPath>> parametricTransitions;
+
+    for (auto const& path : bigStepPaths) {
+        auto const variables = path.probability.gatherVariables();
+        // TODO can only time-travel single-variate transitions
+        if (variables.size() == 1) {
+            auto const variable = *variables.begin();
+
+            bool foundMatchingTransition = false;
+            for (auto& branch : parametricTransitions) {
+                if (areTimeTravellable(path.probability, branch.first)) {
+                    branch.second.push_back(path);
+                    foundMatchingTransition = true;
+                    break;
+                }
+            }
+            if (!foundMatchingTransition) {
+                parametricTransitions[path.probability] = {path};
+            }
+        } else {
+            insertPaths.push_back(path);
+        }
+    }
+
+    for (auto const& entry : parametricTransitions) {
+        if (entry.second.size() > 1) {
+            // The set of target states of the paths that we maybe want to time-travel
+            std::set<uint64_t> targetStates;
+            for (auto const& path : entry.second) {
+                if (path.path.back() < originalNumStates) {
+                    targetStates.emplace(path.path.back());
+                }
+            }
+            if (alreadyTimeTravelledToThis[parameter].count(targetStates) || targetStates.size() == 1) {
+                // We already reordered w.r.t. these target states. We're not going to time-travel again,
+                // so just enter the paths into insertPaths.
+                for (auto const& path : entry.second) {
+                    insertPaths.push_back(path);
+                }
+                continue;
+            }
+            alreadyTimeTravelledToThis[parameter].insert(targetStates);
+
+            doneTimeTravelling = true;
+
+            STORM_LOG_INFO("Time travellable transitions with " << entry.first);
+
+            RationalFunction sum = utility::zero<RationalFunction>();
+            for (auto const& path : entry.second) {
+                sum += path.probability;
+            }
+
+            // // TODO If the new branch's probability divided by our sum is non-constant I currently don't know how to handle this.
+            // // Check if this is the case, and if yes, warn about it and abort this particular time-travelling.
+            // bool skipBecauseInterminglingConstants = false;
+            // for (auto const& path : entry.second) {
+            //     if (!(path.probability / sum).isConstant()) {
+            //         STORM_LOG_WARN("Time travelling (partly) not possible on state " << state << " because of intermingling constants.");
+            //         // Insert original paths into final model because we aren't time-travelling here
+            //         for (auto const& path : entry.second) {
+            //             insertPaths.push_back(path);
+            //         }
+            //         skipBecauseInterminglingConstants = true;
+            //         break;
+            //     }
+            // }
+            // if (skipBecauseInterminglingConstants) {
+            //     continue;
+            // }
+
+            doneTimeTravelling = true;
+
+            // Create the new state that our parametric transitions will start in
+            uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
+            STORM_LOG_ASSERT(newRow == backwardsFlexibleMatrix.insertNewRowsAtEnd(1), "Internal error: Drifting matrix and backwardsTransitions.");
+
+            // Sum of parametric transitions goes to new row
+            insertPaths.push_back(searchingPath{{newRow}, sum});
+
+            // Write outgoing transitions from new row directly into the flexible matrix
+            for (auto const& path : entry.second) {
+                auto const thisProb = path.probability / sum;
+
+                // TODO: Should probably be handled.
+                STORM_LOG_ASSERT(thisProb.isConstant(), "Non-constant probability in sum.");
+
+                // Forward
+                flexibleMatrix.getRow(newRow).push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(path.path.back(), thisProb));
+                // Backward
+                backwardsFlexibleMatrix.getRow(path.path.back()).push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRow, thisProb));
+                // Update tree-states here
+                for (auto& entry : treeStatesNeedUpdate) {
+                    entry.second.emplace(path.path.back());
+                }
+                STORM_LOG_INFO("With: " << path.probability / sum << " to " << path.path.back());
+                // Join duplicate transitions backwards (need to do this for all rows we come from)
+                backwardsFlexibleMatrix.getRow(path.path.back()) = joinDuplicateTransitions(backwardsFlexibleMatrix.getRow(path.path.back()));
+            }
+            // Join duplicate transitions forwards (only need to do this for row we go to)
+            flexibleMatrix.getRow(newRow) = joinDuplicateTransitions(flexibleMatrix.getRow(newRow));
+        } else {
+            for (auto const& path : entry.second) {
+                insertPaths.push_back(path);
+            }
+        }
+    }
+
+    if (doneTimeTravelling) {
+        return insertPaths;
+    }
+    return std::nullopt;
+}
+
+void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<searchingPath> paths,
+                                     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                     storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix, storage::BitVector& reachableStates,
+                                     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+    // Delete old transitions - backwards
+    for (auto const& deletingTransition : flexibleMatrix.getRow(state)) {
+        auto row = backwardsFlexibleMatrix.getRow(deletingTransition.getColumn());
+        auto it = row.begin();
+        while (it != row.end()) {
+            if (it->getColumn() == state) {
+                it = row.erase(it);
+            } else {
+                it++;
+            }
+        }
+    }
+    // Delete old transitions - forwards
+    flexibleMatrix.getRow(state) = std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>>();
+
+    // Insert new transitions
+    std::map<uint64_t, RationalFunction> insertThese;
+    for (auto const& path : paths) {
+        uint64_t target = path.path.back();
+        for (auto& entry : treeStatesNeedUpdate) {
+            entry.second.emplace(target);
+        }
+        if (insertThese.count(target)) {
+            insertThese[target] += path.probability;
+        } else {
+            insertThese[target] = path.probability;
+        }
+    }
+    for (auto const& entry : insertThese) {
+        // We know that neither no transition state <-> entry.first exist because we've erased them
+        flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
+        backwardsFlexibleMatrix.getRow(entry.first).push_back(storm::storage::MatrixEntry(state, entry.second));
+    }
+}
+
+void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
+                                             storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix) {
+    // Look if one of our visitedStates has become unreachable
+    // i.e. all of its predecessors are unreachable
+    for (auto const& visitedState : statesMaybeUnreachable) {
+        bool isUnreachable = true;
+        for (auto const& entry : backwardsFlexibleMatrix.getRow(visitedState)) {
+            if (reachableStates.get(entry.getColumn())) {
+                isUnreachable = false;
+                break;
+            }
+        }
+        if (isUnreachable) {
+            reachableStates.set(visitedState, false);
+        }
+    }
+}
+
 std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravelling::joinDuplicateTransitions(
     std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries) {
     std::vector<uint64_t> keyOrder;
@@ -527,7 +555,7 @@ std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravell
 }
 
 models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
-                                                                  uint64_t stateWithLabels, const std::set<std::string> labelsInFormula) {
+                                                                  uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula) {
     models::sparse::StateLabeling newLabels(newSize);
     for (auto const& label : oldLabeling.getLabels()) {
         newLabels.addLabel(label);
@@ -563,7 +591,7 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
                                       std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                                       const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                       const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
-                                      const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+                                      const std::set<RationalFunctionVariable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                                       const models::sparse::StateLabeling stateLabeling, const std::set<std::string> labelsInFormula) {
     for (auto const& parameter : allParameters) {
         std::set<uint64_t> workingSet = workingSets[parameter];
