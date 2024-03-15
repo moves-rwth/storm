@@ -186,7 +186,7 @@ class ValueIterationOperator {
                 // TODO how to export robustOrder to backend?
                 if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
                     // Intentionally different method name
-                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, std::move(robustOrder));
+                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, robustOrder);
                 } else {
                     // Generic nextRow interface
                     backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
@@ -335,7 +335,7 @@ class ValueIterationOperator {
             auto availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
-            if (storm::utility::isAlmostZero(remainingValue)) {
+            if (storm::utility::isZero(remainingValue)) {
                 return result;
             }
         }

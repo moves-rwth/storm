@@ -271,7 +271,7 @@ std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType,
     if (!quantitativeResult) {
         return nullptr;
     }
-    lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
     if (currentCheckTask->getFormula().hasQuantitativeResult()) {
         return quantitativeResult;
     } else {

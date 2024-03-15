@@ -1,4 +1,5 @@
 #include "storm-pars/transformer/SparseParametricModelSimplifier.h"
+#include <memory>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -104,6 +105,10 @@ bool SparseParametricModelSimplifier<SparseModelType>::simplifyForCumulativeRewa
 template<typename SparseModelType>
 std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(
     SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName) {
+    if (this->skipConstantDeterministicStateElimination) {
+        return std::make_shared<SparseModelType>(model.getTransitionMatrix(), model.getStateLabeling(), model.getRewardModels());
+    }
+
     storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
 
     // get the action-based reward values
@@ -151,6 +156,16 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
     }
 
     return std::make_shared<SparseModelType>(std::move(newTransitionMatrix), model.getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
+}
+
+template<typename SparseModelType>
+void SparseParametricModelSimplifier<SparseModelType>::setSkipConstantDeterministicStateElimination(bool skipConstantDeterministicStateElimination) {
+    this->skipConstantDeterministicStateElimination = skipConstantDeterministicStateElimination;
+}
+
+template<typename SparseModelType>
+bool SparseParametricModelSimplifier<SparseModelType>::isSkipConstantDeterministicStateEliminationSet() const {
+    return this->skipConstantDeterministicStateElimination;
 }
 
 template class SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>;

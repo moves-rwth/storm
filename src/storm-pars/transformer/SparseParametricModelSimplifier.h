@@ -40,6 +40,18 @@ class SparseParametricModelSimplifier {
      */
     std::shared_ptr<storm::logic::Formula const> getSimplifiedFormula() const;
 
+    /**
+     * Set whether to skip constant deterministic state elimination (i.e. for robust PLA, where it returns unfavourable MCs).
+     * 
+     * @param skipConstantDeterministicStateElimination 
+     */
+    void setSkipConstantDeterministicStateElimination(bool skipConstantDeterministicStateElimination);
+
+    /**
+     * Whether this SparseParametricDtmcSimplifier skips constant deterministic state elimination.
+     */
+    bool isSkipConstantDeterministicStateEliminationSet() const;
+
    protected:
     // Perform the simplification for the corresponding formula type
     virtual bool simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
@@ -58,14 +70,15 @@ class SparseParametricModelSimplifier {
      * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
      * Labelings of eliminated states will be lost
      */
-    static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,
-                                                                                 storm::storage::BitVector const& consideredStates,
-                                                                                 boost::optional<std::string> const& rewardModelName = boost::none);
+    std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,
+                                                                            storm::storage::BitVector const& consideredStates,
+                                                                            boost::optional<std::string> const& rewardModelName = boost::none);
 
     SparseModelType const& originalModel;
 
     std::shared_ptr<SparseModelType> simplifiedModel;
     std::shared_ptr<storm::logic::Formula const> simplifiedFormula;
+    bool skipConstantDeterministicStateElimination = true;
 };
 }  // namespace transformer
 }  // namespace storm

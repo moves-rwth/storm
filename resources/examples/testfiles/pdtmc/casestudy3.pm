@@ -1,7 +1,6 @@
 dtmc
 
 const double p;
-const double q;
 
 module test
 
@@ -11,12 +10,10 @@ module test
 	[] s=0 -> p*(1-p) : (s'=1) + (1-p*(1-p)) : (s'=2);
 	[] s=1 -> p : (s'=3) + (1-p) : (s'=4);
 	[] s=2 -> 0.5*p : (s'=3) + (1-0.5*p) : (s'=4);
-	[] s=3 -> 0.5 : (s'=3);
-	[] s=4 -> q : (s'=0) + 1-q : (s'=5);
-	[] s=5 -> 1 : (s'=5);
+	[] s=3 -> 1 : (s'=3);
+	[] s=4 -> 1 : (s'=4);
 	
 endmodule
-label "target" = s=4;
 
 // Dot output:
 //digraph model {

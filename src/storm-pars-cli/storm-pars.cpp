@@ -377,9 +377,10 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
+    // TODO Why was allowModelSimplification false here?
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
         model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, false, monotonicitySettings, monThresh);
+        storm::modelchecker::RegionResultHypothesis::Unknown, true, monotonicitySettings, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

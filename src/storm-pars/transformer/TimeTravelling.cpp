@@ -2,6 +2,7 @@
 #include <_types/_uint64_t.h>
 #include <carl/core/Variable.h>
 #include <carl/core/VariablePool.h>
+#include <sys/types.h>
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -37,12 +38,24 @@
 namespace storm {
 namespace transformer {
 
+bool areTimeTravellable(RationalFunction transition1, RationalFunction transition2) {
+    if (transition1.isConstant() || transition2.isConstant()) {
+        return false;
+    }
+    // TODO "constant parts" are not filtered out here, because we don't know how to handle them.
+    // so if a transition is 0.5(1-p) + c we have lost.
+    auto const dividing = transition1 / transition2;
+    return dividing.isConstant() && dividing.constantPart() > utility::zero<RationalFunctionCoefficient>();
+}
+
 models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::Dtmc<RationalFunction> const& model,
                                                                modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon,
                                                                bool timeTravellingEnabled) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
+
+    const uint64_t originalNumStates = dtmc.getNumberOfStates();
 
     auto allParameters = storm::models::sparse::getAllParameters(dtmc);
 
@@ -121,19 +134,50 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             continue;
         }
 
-        // The parameters we can do big-step w.r.t.
+        // The parameters we can do big-step w.r.t. (if horizon > 1)
         std::set<carl::Variable> bigStepParameters;
-        for (auto const& oneStep : flexibleMatrix.getRow(state)) {
-            for (auto const& parameter : allParameters) {
-                if (treeStates[parameter].count(oneStep.getColumn()) && treeStates.at(parameter).at(oneStep.getColumn()).size() >= 1) {
-                    bigStepParameters.emplace(parameter);
+        if (horizon > 1) {
+            for (auto const& oneStep : flexibleMatrix.getRow(state)) {
+                for (auto const& parameter : allParameters) {
+                    if (treeStates[parameter].count(oneStep.getColumn()) && treeStates.at(parameter).at(oneStep.getColumn()).size() >= 1) {
+                        bigStepParameters.emplace(parameter);
+                    }
                 }
             }
         }
 
+        // The parameters we can do time-travelling w.r.t. (perhaps without big-stepping. time-travelling is always done after big-stepping as well)
+        std::set<carl::Variable> timeTravelParameters;
+        if (timeTravellingEnabled) {
+            std::set<RationalFunction> occuringBranches;
+            for (auto const& oneStep : flexibleMatrix.getRow(state)) {
+                auto const variables = oneStep.getValue().gatherVariables();
+                // TODO can only time-travel single-variate transitions
+                if (variables.size() == 1) {
+                    auto const variable = *variables.begin();
+
+                    bool foundMatchingTransition = false;
+                    for (auto const& branch : occuringBranches) {
+                        if (areTimeTravellable(oneStep.getValue(), branch)) {
+                            timeTravelParameters.emplace(variable);
+                            foundMatchingTransition = true;
+                            break;
+                        }
+                    }
+                    if (!foundMatchingTransition) {
+                        occuringBranches.emplace(oneStep.getValue());
+                    }
+                }
+            }
+        }
+
+        std::set<carl::Variable> doSomethingParameters;
+        doSomethingParameters.insert(bigStepParameters.begin(), bigStepParameters.end());
+        doSomethingParameters.insert(timeTravelParameters.begin(), timeTravelParameters.end());
+
         // Do big-step lifting from here
         // Follow the treeStates and eliminate transitions
-        for (auto const& parameter : bigStepParameters) {
+        for (auto const& parameter : doSomethingParameters) {
             auto parameterMap = treeStates.at(parameter);
 
             STORM_LOG_INFO("BigStep " << state);
@@ -216,19 +260,25 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             if (!timeTravellingEnabled) {
                 insertPaths = donePaths;
             } else {
-                // Time Travelling: For transitions that have the same derivative w.r.t. their variable, join them into one transition leading into new state
-                std::map<std::pair<RationalFunctionVariable, RationalFunction>, std::vector<searchingPath>> parametricTransitions;
+                // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
+                std::map<RationalFunction, std::vector<searchingPath>> parametricTransitions;
 
                 for (auto const& path : donePaths) {
                     auto const variables = path.probability.gatherVariables();
                     // TODO can only time-travel single-variate transitions
                     if (variables.size() == 1) {
                         auto const variable = *variables.begin();
-                        auto pair = std::make_pair(variable, path.probability.derivative(variable));
-                        if (parametricTransitions.count(pair)) {
-                            parametricTransitions[pair].push_back(path);
-                        } else {
-                            parametricTransitions[pair] = {path};
+
+                        bool foundMatchingTransition = false;
+                        for (auto& branch : parametricTransitions) {
+                            if (areTimeTravellable(path.probability, branch.first)) {
+                                branch.second.push_back(path);
+                                foundMatchingTransition = true;
+                                break;
+                            }
+                        }
+                        if (!foundMatchingTransition) {
+                            parametricTransitions[path.probability] = {path};
                         }
                     } else {
                         insertPaths.push_back(path);
@@ -240,7 +290,9 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                         // The set of target states of the paths that we maybe want to time-travel
                         std::set<uint64_t> targetStates;
                         for (auto const& path : entry.second) {
-                            targetStates.emplace(path.path.back());
+                            if (path.path.back() < originalNumStates) {
+                                targetStates.emplace(path.path.back());
+                            }
                         }
                         if (alreadyReorderedWrt[parameter].count(targetStates) || targetStates.size() == 1) {
                             // We already reordered w.r.t. these target states. We're not going to time-travel again,
@@ -254,30 +306,62 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
 
                         doneTimeTravelling = true;
 
-                        STORM_LOG_INFO("Time travellable transitions with " << entry.first.first << " and " << entry.first.second);
+                        STORM_LOG_INFO("Time travellable transitions with " << entry.first);
+
                         RationalFunction sum = utility::zero<RationalFunction>();
                         for (auto const& path : entry.second) {
                             sum += path.probability;
                         }
 
-                        // std::cout << "Sum: " << sum << std::endl;
+                        // // TODO If the new branch's probability divided by our sum is non-constant I currently don't know how to handle this.
+                        // // Check if this is the case, and if yes, warn about it and abort this particular time-travelling.
+                        // bool skipBecauseInterminglingConstants = false;
+                        // for (auto const& path : entry.second) {
+                        //     if (!(path.probability / sum).isConstant()) {
+                        //         STORM_LOG_WARN("Time travelling (partly) not possible on state " << state << " because of intermingling constants.");
+                        //         // Insert original paths into final model because we aren't time-travelling here
+                        //         for (auto const& path : entry.second) {
+                        //             insertPaths.push_back(path);
+                        //         }
+                        //         skipBecauseInterminglingConstants = true;
+                        //         break;
+                        //     }
+                        // }
+                        // if (skipBecauseInterminglingConstants) {
+                        //     continue;
+                        // }
 
+                        doneTimeTravelling = true;
+
+                        // Create the new state that our parametric transitions will start in
                         uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
                         STORM_LOG_ASSERT(newRow == backwardsTransitions.insertNewRowsAtEnd(1), "Internal error: Drifting matrix and backwardsTransitions.");
 
+                        // Sum of parametric transitions goes to new row
                         insertPaths.push_back(searchingPath{{newRow}, sum});
 
+                        // Write outgoing transitions from new row directly into the flexible matrix
                         for (auto const& path : entry.second) {
+                            auto const thisProb = path.probability / sum;
+
+                            // TODO: Should probably be handled.
+                            STORM_LOG_ASSERT(thisProb.isConstant(), "Non-constant probability in sum.");
+
+                            // Forward
                             flexibleMatrix.getRow(newRow).push_back(
-                                storage::MatrixEntry<uint_fast64_t, RationalFunction>(path.path.back(), path.probability / sum));
+                                storage::MatrixEntry<uint_fast64_t, RationalFunction>(path.path.back(), thisProb));
+                            // Backward
                             backwardsTransitions.getRow(path.path.back())
-                                .push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRow, path.probability / sum));
+                                .push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(newRow, thisProb));
+                            // Update tree-states here
                             for (auto const& p : allParameters) {
                                 treeStatesNeedUpdate[p].emplace(path.path.back());
                             }
                             STORM_LOG_INFO("With: " << path.probability / sum << " to " << path.path.back());
+                            // Join duplicate transitions backwards (need to do this for all rows we come from)
                             backwardsTransitions.getRow(path.path.back()) = joinDuplicateTransitions(backwardsTransitions.getRow(path.path.back()));
                         }
+                        // Join duplicate transitions forwards (only need to do this for row we go to)
                         flexibleMatrix.getRow(newRow) = joinDuplicateTransitions(flexibleMatrix.getRow(newRow));
                     } else {
                         for (auto const& path : entry.second) {
@@ -334,15 +418,10 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
                     }
                 }
                 if (isUnreachable) {
-                    // std::cout << visitedState << " has become unreachable" << std::endl;
                     reachableStates.set(visitedState, false);
                 }
             }
 
-            // std::sort(flexibleMatrix.getRow(state).begin(), flexibleMatrix.getRow(state).end(),
-            //           [](const storage::MatrixEntry<uint64_t, RationalFunction>& a, const storage::MatrixEntry<uint64_t, RationalFunction>& b) -> bool {
-            //               return a.getColumn() > b.getColumn();
-            //           });
             if (doneTimeTravelling) {
                 uint64_t newMatrixSize = flexibleMatrix.getRowCount();
                 if (newMatrixSize > oldMatrixSize) {
@@ -389,11 +468,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         storage::BitVector initialStates(transitionMatrix.getRowCount(), false);
         initialStates.set(initialState, true);
         storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
-        // for (auto const& i = 0) {
-        //     if (!newReachableStates.get(i)) {
-        //         std::cout << "M"
-        //     }
-        // }
+
         transitionMatrix = transitionMatrix.getSubmatrix(false, reachableStates, reachableStates);
         runningLabeling = runningLabeling.getSubLabeling(reachableStates);
         uint_fast64_t newInitialState = 0;

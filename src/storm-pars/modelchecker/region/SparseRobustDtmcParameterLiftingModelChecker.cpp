@@ -6,6 +6,7 @@
 #include "storage/BitVector.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
+#include "storm-pars/transformer/TimeTravelling.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -30,6 +31,7 @@
 #include "utility/Stopwatch.h"
 #include "utility/constants.h"
 #include "utility/logging.h"
+#include "utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -101,11 +103,12 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
         this->specifyFormula(newEnv, checkTask);
     } else {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
+        simplifier.setSkipConstantDeterministicStateElimination(true);
         if (!simplifier.simplify(checkTask.getFormula())) {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successful.");
         }
         this->parametricModel = simplifier.getSimplifiedModel();
-        this->specifyFormula(newEnv, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+        this->specifyFormula(newEnv, checkTask);
     }
 }
 
@@ -197,7 +200,12 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
         // Create the vector of one-step probabilities to go to target states.
         // See SparseMdpPrctlHelper.cpp function "computeFixedPointSystemUntilProbabilities"
         std::vector<ValueType> target(this->parametricModel->getNumberOfStates(), storm::utility::zero<ValueType>());
+
         storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ValueType>());
+        for (auto const& entry : target) {
+            STORM_LOG_ERROR_COND(entry.isConstant(), "Non-constant entry in target vector.");
+        }
+
         auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
         auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
         storm::storage::BitVector allTrue(maybeStates.size(), true);
@@ -254,6 +262,10 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
             checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
 
         std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
+
+        for (auto const& entry : b) {
+            STORM_LOG_ERROR_COND(entry.isConstant(), "Non-constant entry in reward vector.");
+        }
 
         auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
         auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
@@ -429,6 +441,7 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         utility::Stopwatch stopwatch;
         stopwatch.start();
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
+
         stopwatch.stop();
         auto robustSchedulerIndex = solver->getRobustSchedulerIndex();
         if (storm::solver::minimize(dirForParameters)) {
