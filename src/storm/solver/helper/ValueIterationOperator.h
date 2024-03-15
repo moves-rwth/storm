@@ -291,35 +291,41 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
+        static std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
+        robustOrder.clear();
+
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+            auto const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
             } else {
-                result += operand[*matrixColumnIt] * (matrixValueIt->lower());
+                result += operand[*matrixColumnIt] * lower;
             }
-            remainingValue -= matrixValueIt->lower();
-            if (!storm::utility::isZero(matrixValueIt->diameter())) {
-                tmp.emplace_back(operand[*matrixColumnIt], matrixValueIt->diameter());
+            remainingValue -= lower;
+            // TODO Float rounding modes are not respecting optimization direction here, is this an issue?
+            auto const diameter = matrixValueIt->upper() - lower;
+            if (!storm::utility::isZero(diameter)) {
+                robustOrder.emplace_back(operand[*matrixColumnIt], diameter);
             }
         }
         if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
             return result;
         }
-        AuxCompare<RobustDirection> compare;
-        std::sort(tmp.begin(), tmp.end(), compare);
 
-        for (auto const& valWidthPair : tmp) {
-            auto availableMass = std::min(valWidthPair.second, remainingValue);
-            result += availableMass * valWidthPair.first;
+        static AuxCompare<RobustDirection> cmp;
+        std::sort(robustOrder.begin(), robustOrder.end(), cmp);
+
+        for (auto const& pair : robustOrder) {
+            auto availableMass = std::min(pair.second, remainingValue);
+            result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isZero(remainingValue)) {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isZero(remainingValue), "Should be zero (all prob mass taken)");
+        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);
         return result;
     }
 
