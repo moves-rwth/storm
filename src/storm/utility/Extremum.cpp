@@ -133,7 +133,14 @@ void Extremum<Dir, ValueType>::reset() {
 
 template class Extremum<storm::OptimizationDirection::Minimize, double>;
 template class Extremum<storm::OptimizationDirection::Maximize, double>;
-template class Extremum<storm::OptimizationDirection::Minimize, storm::RationalNumber>;
-template class Extremum<storm::OptimizationDirection::Maximize, storm::RationalNumber>;
+
+#if defined(STORM_HAVE_CLN)
+template class Extremum<storm::OptimizationDirection::Minimize, storm::ClnRationalNumber>;
+template class Extremum<storm::OptimizationDirection::Maximize, storm::ClnRationalNumber>;
+#endif
+#if defined(STORM_HAVE_GMP)
+template class Extremum<storm::OptimizationDirection::Minimize, storm::GmpRationalNumber>;
+template class Extremum<storm::OptimizationDirection::Maximize, storm::GmpRationalNumber>;
+#endif
 
 }  // namespace storm::utility

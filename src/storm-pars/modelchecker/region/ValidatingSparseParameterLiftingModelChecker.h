@@ -69,7 +69,8 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
     /*!
      * Returns whether this region model checker can work together with the given monotonicity backend.
      */
-    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend) const override;
+    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
+                                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
 
    private:
     static constexpr bool IsMDP = std::is_same_v<SparseModelType, storm::models::sparse::Mdp<ParametricType>>;

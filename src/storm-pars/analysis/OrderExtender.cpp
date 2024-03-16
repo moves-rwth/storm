@@ -30,7 +30,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sp
 }
 
 template<typename ValueType, typename ConstantType>
-OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates,
+OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates,
                                                       storm::storage::SparseMatrix<ValueType> matrix)
     : monotonicityChecker(MonotonicityChecker<ValueType>(matrix)) {
     this->matrix = matrix;
@@ -43,12 +43,12 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector*
     this->numberOfStates = matrix.getColumnCount();
     std::vector<uint64_t> firstStates;
 
-    storm::storage::BitVector subStates(topStates->size(), true);
-    for (auto state : *topStates) {
+    storm::storage::BitVector subStates(topStates.size(), true);
+    for (auto state : topStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
-    for (auto state : *bottomStates) {
+    for (auto state : bottomStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
@@ -142,7 +142,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
             decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
         }
         auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-        bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+        bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
         // Build stateMap
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {

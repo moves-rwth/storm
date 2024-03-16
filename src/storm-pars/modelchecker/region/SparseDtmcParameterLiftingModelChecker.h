@@ -15,6 +15,9 @@
 namespace storm {
 namespace modelchecker {
 
+template<typename ParametricType, typename ConstantType>
+class OrderBasedMonotonicityBackend;
+
 template<typename SparseModelType, typename ConstantType>
 class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
    public:
@@ -38,11 +41,13 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
 
-    virtual bool isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind) const override;
-    virtual detail::RegionSplitEstimateKind getDefaultRegionSplitEstimateKind() const override;
-    virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType>& relevantParameters) const override;
+    virtual bool isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind,
+                                                    CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
+    virtual detail::RegionSplitEstimateKind getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
+    virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType> const& relevantParameters) const override;
 
-    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend) const override;
+    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
+                                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
 
    protected:
     virtual void specifyBoundedUntilFormula(const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) override;
@@ -64,6 +69,15 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual void reset() override;
 
    private:
+    void computeSchedulerDeltaSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
+                                             storm::storage::ParameterRegion<ParametricType> const& region,
+                                             storm::solver::OptimizationDirection const& dirForParameters);
+
+    bool isOrderBasedMonotonicityBackend() const;
+    OrderBasedMonotonicityBackend<ParametricType, ConstantType>& getOrderBasedMonotonicityBackend();
+
+    bool isValueDeltaRegionSplitEstimates() const;
+
     storm::storage::BitVector maybeStates;
     std::vector<ConstantType> resultsForNonMaybeStates;
     std::optional<uint64_t> stepBound;

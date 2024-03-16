@@ -106,6 +106,16 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
 }
 
 template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(VariableType const& variable) const {
+    return (getLowerBoundary(variable) + getUpperBoundary(variable)) / 2;
+}
+
+template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(const std::string varName) const {
+    return (getLowerBoundary(varName) + getUpperBoundary(varName)) / 2;
+}
+
+template<typename ParametricType>
 typename ParameterRegion<ParametricType>::Valuation const& ParameterRegion<ParametricType>::getUpperBoundaries() const {
     return upperBoundaries;
 }
@@ -151,7 +161,7 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getCenterPoint() const {
     Valuation result;
     for (auto const& variable : this->variables) {
-        result.insert(typename Valuation::value_type(variable, (this->getLowerBoundary(variable) + this->getUpperBoundary(variable)) / 2));
+        result.emplace(variable, getCenter(variable));
     }
     return result;
 }

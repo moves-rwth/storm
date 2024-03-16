@@ -32,6 +32,8 @@ class ParameterRegion {
     CoefficientType const& getUpperBoundary(const std::string varName) const;
     CoefficientType getDifference(const std::string varName) const;
     CoefficientType getDifference(VariableType const& variable) const;
+    CoefficientType getCenter(const std::string varName) const;
+    CoefficientType getCenter(VariableType const& variable) const;
     Valuation const& getLowerBoundaries() const;
     Valuation const& getUpperBoundaries() const;
 

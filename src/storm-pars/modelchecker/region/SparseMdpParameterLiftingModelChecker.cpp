@@ -62,8 +62,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
                                                                                    std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
                                                                                    bool allowModelSimplifications) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
-    this->specifySplitEstimates(generateRegionSplitEstimates);
-    this->specifyMonotonicity(monotonicityBackend);
+    this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
+    this->specifyMonotonicity(monotonicityBackend, checkTask);
     auto mdp = parametricModel->template as<SparseModelType>();
     reset();
 
@@ -297,7 +297,8 @@ SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstant
 }
 
 template<typename SparseModelType, typename ConstantType>
-bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend) const {
+bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMonotonicitySupported(
+    MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const&) const {
     // Currently, we do not support any interaction with the monotonicity backend
     return backend.interactsWithRegionModelChecker();
 }

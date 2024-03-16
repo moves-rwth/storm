@@ -38,8 +38,8 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
     std::optional<detail::RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
     bool allowModelSimplifications) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
-    this->specifySplitEstimates(generateRegionSplitEstimates);
-    this->specifyMonotonicity(monotonicityBackend);
+    this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
+    this->specifyMonotonicity(monotonicityBackend, checkTask);
 
     auto specifyUnderlyingCheckers = [&](auto pm, auto const& ct) {
         // TODO: Check if we can just take split estimates from the imprecise checker?
@@ -132,9 +132,10 @@ ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, Pre
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 bool ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::isMonotonicitySupported(
-    MonotonicityBackend<ParametricType> const& backend) const {
+    MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     // Currently, we do not support any interaction with the monotonicity backend
-    return backend.interactsWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend) && preciseChecker.isMonotonicitySupported(backend);
+    return backend.interactsWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend, checkTask) &&
+           preciseChecker.isMonotonicitySupported(backend, checkTask);
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>

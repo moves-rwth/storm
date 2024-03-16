@@ -86,11 +86,11 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
     // Potentially determine the kind of region split estimate to generate
     if (regionSplittingStrategy.heuristic == detail::RegionSplittingStrategy::Heuristic::EstimateBased) {
         if (regionSplittingStrategy.estimateKind.has_value()) {
-            STORM_LOG_THROW(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value()),
+            STORM_LOG_THROW(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value(), checkTask),
                             storm::exceptions::NotSupportedException, "The specified region split estimate kind is not supported by the region model checker.");
         } else {
-            regionSplittingStrategy.estimateKind = regionChecker->getDefaultRegionSplitEstimateKind();
-            STORM_LOG_ASSERT(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value()),
+            regionSplittingStrategy.estimateKind = regionChecker->getDefaultRegionSplitEstimateKind(checkTask);
+            STORM_LOG_ASSERT(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value(), checkTask),
                              "The region model checker does not support its default region split estimate kind.");
         }
     } else {
@@ -244,9 +244,10 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
     monotonicityBackend.initializeMonotonicity(
         unprocessedRegions.top());  // TODO might need information on whether we min or max. Maybe use monDepth parameter?
 
-    auto [value, valuation] = regionChecker->getAndEvaluateGoodPoint(env, unprocessedRegions.top(), dir);
+    auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, unprocessedRegions.top(), dir);
+    auto& value = valueValuation.first;
     if (boundInvariant && !boundInvariant.value().isSatisfied(value.get())) {
-        return {value, valuation};
+        return valueValuation;
     }
 
     // Helper functions to check if a given result is better than the currently known result
@@ -285,10 +286,9 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             monotonicityBackend.updateMonotonicity(currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterValue(currValue)) {
-                value = currValue;
-                valuation = currValuation;
+                valueValuation = {currValue, currValuation};
                 if (boundInvariant && !boundInvariant.value().isSatisfied(value.get())) {
-                    return {value, valuation};
+                    return valueValuation;
                 }
             }
         }
@@ -311,7 +311,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
 
     STORM_LOG_INFO("Region partitioning for extremal value terminated after analyzing "
                    << numOfAnalyzedRegions << " regions.\n\t" << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.");
-    return {value, valuation};
+    return valueValuation;
 }
 
 template<typename ParametricType>

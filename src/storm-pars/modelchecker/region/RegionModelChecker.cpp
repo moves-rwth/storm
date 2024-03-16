@@ -38,12 +38,14 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionMo
 }
 
 template<typename ParametricType>
-detail::RegionSplitEstimateKind RegionModelChecker<ParametricType>::getDefaultRegionSplitEstimateKind() const {
+detail::RegionSplitEstimateKind RegionModelChecker<ParametricType>::getDefaultRegionSplitEstimateKind(
+    CheckTask<storm::logic::Formula, ParametricType> const&) const {
     return detail::RegionSplitEstimateKind::Distance;
 }
 
 template<typename ParametricType>
-bool RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind) const {
+bool RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind,
+                                                                            CheckTask<storm::logic::Formula, ParametricType> const&) const {
     return kind == detail::RegionSplitEstimateKind::Distance;
 }
 
@@ -54,7 +56,7 @@ std::optional<detail::RegionSplitEstimateKind> RegionModelChecker<ParametricType
 
 template<typename ParametricType>
 std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> RegionModelChecker<ParametricType>::obtainRegionSplitEstimates(
-    std::set<VariableType>& relevantParameters) const {
+    std::set<VariableType> const& relevantParameters) const {
     STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.has_value(), "Unable to obtain region split estimates because they wre not requested.");
     STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == detail::RegionSplitEstimateKind::Distance,
                      "requested region split estimate kind not supported");
@@ -68,15 +70,17 @@ std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> Region
 }
 
 template<typename ParametricType>
-void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<detail::RegionSplitEstimateKind> splitEstimates) {
-    STORM_LOG_ASSERT(!splitEstimates.has_value() || isRegionSplitEstimateKindSupported(splitEstimates.value()),
+void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<detail::RegionSplitEstimateKind> splitEstimates,
+                                                               [[maybe_unused]] CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
+    STORM_LOG_ASSERT(!splitEstimates.has_value() || isRegionSplitEstimateKindSupported(splitEstimates.value(), checkTask),
                      "specified region split estimate kind not supported");
     specifiedRegionSplitEstimateKind = splitEstimates;
 }
 
 template<typename ParametricType>
-void RegionModelChecker<ParametricType>::specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend) {
-    STORM_LOG_ASSERT(!backend || isMonotonicitySupported(*backend), "specified monotonicity backend not supported");
+void RegionModelChecker<ParametricType>::specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend,
+                                                             CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
+    STORM_LOG_ASSERT(!backend || isMonotonicitySupported(*backend, checkTask), "specified monotonicity backend not supported");
     monotonicityBackend = backend;
 }
 

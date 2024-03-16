@@ -38,7 +38,7 @@ class Order {
      * @param numberOfStates Maximum number of states in order.
      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
      */
-    Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
+    Order(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates, uint_fast64_t numberOfStates,
           storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
 
     /*!

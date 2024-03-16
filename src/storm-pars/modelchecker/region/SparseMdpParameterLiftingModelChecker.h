@@ -42,7 +42,8 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     /*!
      * Returns whether this region model checker can work together with the given monotonicity backend.
      */
-    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend) const override;
+    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
+                                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
 
    protected:
     virtual void specifyBoundedUntilFormula(const CheckTask<storm::logic::BoundedUntilFormula, ConstantType>& checkTask) override;

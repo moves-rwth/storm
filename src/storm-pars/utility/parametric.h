@@ -38,6 +38,11 @@ struct CoefficientType<storm::RationalFunction> {
 #endif
 
 template<typename FunctionType>
+using VariableType_t = typename VariableType<FunctionType>::type;
+template<typename FunctionType>
+using CoefficientType_t = typename CoefficientType<FunctionType>::type;
+
+template<typename FunctionType>
 using Valuation = std::map<typename VariableType<FunctionType>::type, typename CoefficientType<FunctionType>::type>;
 
 /*!

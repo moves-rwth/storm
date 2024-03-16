@@ -67,7 +67,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, detail::AnnotatedRegion<ParametricType> const& region,
+    std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
                                                                     storm::solver::OptimizationDirection const& dirForParameters);
 
     /*!
@@ -97,6 +97,9 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
 
    protected:
     void specifyFormula(Environment const& env, CheckTask<storm::logic::Formula, ParametricType> const& checkTask);
+
+    bool hasUniqueInitialState() const;
+    uint64_t getUniqueInitialState() const;
 
     // Resets all data that correspond to the currently defined property.
     virtual void reset() = 0;

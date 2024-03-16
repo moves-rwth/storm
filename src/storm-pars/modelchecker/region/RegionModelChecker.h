@@ -87,12 +87,13 @@ class RegionModelChecker {
     /*!
      * @return the default kind of region split estimate that this region model checker generates.
      */
-    virtual detail::RegionSplitEstimateKind getDefaultRegionSplitEstimateKind() const;
+    virtual detail::RegionSplitEstimateKind getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     /*!
      * @return true if this can generate region split estimates of the given kind.
      */
-    virtual bool isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind) const;
+    virtual bool isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind,
+                                                    CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     /*!
      * @return the kind of region split estimation that was selected in the last call to `specify` (if any)
@@ -105,16 +106,19 @@ class RegionModelChecker {
      * @pre the last call to `specify` must have set `generateRegionSplitEstimates` to a non-empty value and either `analyzeRegion` or `getBoundAtInitState`
      * must have been called before.
      */
-    virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType>& relevantParameters) const;
+    virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType> const& relevantParameters) const;
 
     /*!
      * Returns whether this region model checker can work together with the given monotonicity backend.
      */
-    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend) const = 0;
+    virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
+                                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
 
    protected:
-    virtual void specifySplitEstimates(std::optional<detail::RegionSplitEstimateKind> splitEstimates);
-    virtual void specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend);
+    virtual void specifySplitEstimates(std::optional<detail::RegionSplitEstimateKind> splitEstimates,
+                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask);
+    virtual void specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend,
+                                     CheckTask<storm::logic::Formula, ParametricType> const& checkTask);
 
     std::optional<storm::storage::ParameterRegion<ParametricType>> lastCheckedRegion;
     std::optional<detail::RegionSplitEstimateKind> specifiedRegionSplitEstimateKind;

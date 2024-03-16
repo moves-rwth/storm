@@ -39,7 +39,7 @@ class OrderExtender {
      * @param bottomStates The bottom states of the order.
      * @param matrix The matrix of the considered model.
      */
-    OrderExtender(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
+    OrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
     /*!
      * Creates an order based on the given formula.
