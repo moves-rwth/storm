@@ -10,18 +10,18 @@
 #include "storm/utility/Extremum.h"
 #include "storm/utility/OptionalRef.h"
 
-namespace storm::modelchecker::detail {
+namespace storm::modelchecker {
 template<typename ParametricType>
 struct AnnotatedRegion {
     using Region = storm::storage::ParameterRegion<ParametricType>;
     using VariableType = typename Region::VariableType;
     using CoefficientType = typename Region::CoefficientType;
 
-    AnnotatedRegion(Region const& region) : region(region) {
+    explicit AnnotatedRegion(Region const& region) : region(region) {
         // Intentionally left empty
     }
 
-    void propagateAnnotationsToSubregions(std::vector<AnnotatedRegion<ParametricType>>& subRegions, bool allowDeleteAnnotationsOfThis) {
+    void propagateAnnotationsToSubregions(bool allowDeleteAnnotationsOfThis) {
         for (auto& r : subRegions) {
             if (result == storm::modelchecker::RegionResult::AllSat || result == storm::modelchecker::RegionResult::AllViolated) {
                 r.result = result;
@@ -33,33 +33,56 @@ struct AnnotatedRegion {
             if (r.refinementDepth == 0) {
                 r.refinementDepth = refinementDepth + 1;
             }
-
-            if (auto defaultMono = getDefaultMonotonicityAnnotation(); defaultMono.has_value()) {
-                propagateMonotonicityAnnotationsToSubregions(subRegions, *defaultMono, allowDeleteAnnotationsOfThis);
-            } else if (auto orderMono = getOrderBasedMonotonicityAnnotation(); orderMono.has_value()) {
-                propagateMonotonicityAnnotationsToSubregions(subRegions, *orderMono, allowDeleteAnnotationsOfThis);
-            } else {
-                STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
-            }
-
-            if (knownLowerValueBound && (!r.knownLowerValueBound || *knownLowerValueBound > *r.knownLowerValueBound)) {
-                r.knownLowerValueBound = knownLowerValueBound;
-            }
-            if (knownUpperValueBound && (!r.knownUpperValueBound || *knownUpperValueBound < *r.knownUpperValueBound)) {
-                r.knownUpperValueBound = knownUpperValueBound;
-            }
+            r.knownLowerValueBound &= knownLowerValueBound;
+            r.knownUpperValueBound &= knownUpperValueBound;
+        }
+        if (auto defaultMono = getDefaultMonotonicityAnnotation(); defaultMono.has_value()) {
+            propagateMonotonicityAnnotationsToSubregions(*defaultMono, allowDeleteAnnotationsOfThis);
+        } else if (auto orderMono = getOrderBasedMonotonicityAnnotation(); orderMono.has_value()) {
+            propagateMonotonicityAnnotationsToSubregions(*orderMono, allowDeleteAnnotationsOfThis);
+        } else {
+            STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
         }
     }
 
     void splitAndPropagate(typename Region::Valuation const& splittingPoint, std::set<VariableType> const& consideredVariable,
-                           bool allowDeleteAnnotationsOfThis, std::vector<AnnotatedRegion<ParametricType>>& outputVector) const {
-        std::vector<storm::storage::ParameterRegion<ParametricType>> subRegions;
-        region.split(splittingPoint, subRegions, consideredVariable);
-        outputVector.reserve(subRegions.size());
-        for (auto& newRegion : subRegions) {
-            outputVector.emplace_back(newRegion);
+                           bool allowDeleteAnnotationsOfThis) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> subRegionsWithoutAnnotations;
+        region.split(splittingPoint, subRegionsWithoutAnnotations, consideredVariable);
+        subRegions.reserve(subRegionsWithoutAnnotations.size());
+        for (auto& newRegion : subRegionsWithoutAnnotations) {
+            subRegions.emplace_back(newRegion);
         }
-        propagateAnnotationsToSubregions(outputVector, allowDeleteAnnotationsOfThis);
+        propagateAnnotationsToSubregions(allowDeleteAnnotationsOfThis);
+    }
+
+    void splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, bool allowDeleteAnnotationsOfThis) {
+        STORM_LOG_ASSERT(subRegions.empty(), "Region assumed to be a leaf.");
+        splitAndPropagate(region.getCenterPoint(), splittingVariables, allowDeleteAnnotationsOfThis);
+    }
+
+    std::vector<AnnotatedRegion<ParametricType>> subRegions;  /// The subRegions of this region
+
+    void postOrderTraverseSubRegions(std::function<void(AnnotatedRegion<ParametricType>&)> const& visitor) {
+        for (auto& child : subRegions) {
+            child.postOrderTraverseSubRegions(visitor);
+        }
+        visitor(*this);
+    }
+
+    void preOrderTraverseSubRegions(std::function<void(AnnotatedRegion<ParametricType>&)> const& visitor) {
+        visitor(*this);
+        for (auto& child : subRegions) {
+            child.preOrderTraverseSubRegions(visitor);
+        }
+    }
+
+    uint64_t getMaxDepthOfSubRegions() const {
+        uint64_t max{0u};
+        for (auto const& child : subRegions) {
+            max = std::max(max, child.getMaxDepthOfSubRegions() + 1);
+        }
+        return max;
     }
 
     Region const region;  /// The region this is an annotation for
@@ -106,6 +129,20 @@ struct AnnotatedRegion {
         return storm::NullRef;
     }
 
+    storm::OptionalRef<storm::analysis::MonotonicityResult<VariableType> const> getGlobalMonotonicityResult() const {
+        storm::OptionalRef<storm::analysis::MonotonicityResult<VariableType> const> result;
+        if (auto defaultMono = getDefaultMonotonicityAnnotation(); defaultMono.has_value() && defaultMono->globalMonotonicity) {
+            result.reset(*defaultMono->globalMonotonicity);
+        } else if (auto orderMono = getOrderBasedMonotonicityAnnotation(); orderMono.has_value() && orderMono->localMonotonicityResult) {
+            if (auto globalRes = orderMono->localMonotonicityResult->getGlobalMonotonicityResult()) {
+                result.reset(*globalRes);
+            }
+        } else {
+            STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
+        }
+        return result;
+    }
+
     storm::utility::Maximum<CoefficientType> knownLowerValueBound;  // Maximal known lower bound on the value of the region
     storm::utility::Minimum<CoefficientType> knownUpperValueBound;  // Minimal known upper bound on the value of the region
 
@@ -117,11 +154,11 @@ struct AnnotatedRegion {
             return orderMono->stateOrder != nullptr || orderMono->localMonotonicityResult != nullptr;
         } else {
             STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
+            return false;
         }
     }
 
-    static void propagateMonotonicityAnnotationsToSubregions(std::vector<AnnotatedRegion<ParametricType>>& subRegions,
-                                                             DefaultMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
+    void propagateMonotonicityAnnotationsToSubregions(DefaultMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
         if (parentAnnotation.globalMonotonicity) {
             bool const parentDone = parentAnnotation.globalMonotonicity->isDone();
             for (auto& r : subRegions) {
@@ -137,8 +174,7 @@ struct AnnotatedRegion {
         }
     }
 
-    static void propagateMonotonicityAnnotationsToSubregions(std::vector<AnnotatedRegion<ParametricType>>& subRegions,
-                                                             OrderBasedMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
+    void propagateMonotonicityAnnotationsToSubregions(OrderBasedMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
         if (parentAnnotation.stateOrder) {
             STORM_LOG_ASSERT(parentAnnotation.localMonotonicityResult, "Local monotonicity result must be set iff state order is set");
             bool const stateOrderDone = parentAnnotation.stateOrder->getDoneBuilding();
@@ -172,4 +208,4 @@ struct AnnotatedRegion {
         }
     }
 };
-}  // namespace storm::modelchecker::detail
+}  // namespace storm::modelchecker

@@ -6,10 +6,12 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/utility/OptionalRef.h"
 
 #include "storm-pars/analysis/MonotonicityChecker.h"
 #include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
+#include "storm-pars/transformer/ParameterLifter.h"
 
 namespace storm::transformer {
 template<typename ParametricType, typename ConstantType>
@@ -30,12 +32,13 @@ class SparseDtmcParameterLiftingModelChecker;
 template<typename ParametricType, typename ConstantType>
 class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType> {
    public:
-    using CoefficientType = MonotonicityBackend<ParametricType>::CoefficientType;
-    using VariableType = MonotonicityBackend<ParametricType>::VariableType;
-    using Valuation = MonotonicityBackend<ParametricType>::Valuation;
-    using MonotonicityKind = MonotonicityBackend<ParametricType>::MonotonicityKind;
+    using CoefficientType = typename MonotonicityBackend<ParametricType>::CoefficientType;
+    using VariableType = typename MonotonicityBackend<ParametricType>::VariableType;
+    using Valuation = typename MonotonicityBackend<ParametricType>::Valuation;
+    using MonotonicityKind = typename MonotonicityBackend<ParametricType>::MonotonicityKind;
 
-    friend class SparseDtmcParameterLiftingModelChecker<ParametricType, ConstantType>;
+    template<typename ModelType, typename ConstantType2>
+    friend class SparseDtmcParameterLiftingModelChecker;
 
     OrderBasedMonotonicityBackend(bool useOnlyGlobal = false, bool useBounds = false);
     virtual ~OrderBasedMonotonicityBackend() = default;
@@ -46,32 +49,39 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
     virtual bool requiresInteractionWithRegionModelChecker() const override;
 
     /*!
+     * Returns whether additional model simplifications are recommended when using this backend.
+     * @note this returns false since the underlying monotonicity checker already does simplifications
+     * TODO: investigate this claim
+     */
+    virtual bool recommendModelSimplifications() const override;
+
+    /*!
      * Initializes the monotonicity information for the given region.
      * Overwrites all present monotonicity annotations in the given region.
      */
-    virtual void initializeMonotonicity(detail::AnnotatedRegion<ParametricType>& region) override;
+    virtual void initializeMonotonicity(AnnotatedRegion<ParametricType>& region) override;
 
     /*!
      * Updates the monotonicity information for the given region.
      * Assumes that some monotonicity information is already present (potentially inherited from a parent region) and potentially sharpens the results for the
      * given region.
      */
-    virtual void updateMonotonicity(detail::AnnotatedRegion<ParametricType>& region) override;
+    virtual void updateMonotonicity(AnnotatedRegion<ParametricType>& region) override;
 
     /*!
      * Returns an optimistic approximation of the monotonicity of the parameters in this region.
      * This means that the returned monotonicity does not necessarily hold, but there is "sufficient hope" that it does.
      */
-    virtual std::map<VariableType, MonotonicityKind> getOptimisticMonotonicityApproximation(detail::AnnotatedRegion<ParametricType> const& region) override;
+    virtual std::map<VariableType, MonotonicityKind> getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) override;
 
    private:
     // Interaction with SparseDtmcParameterLiftingModelChecker:
+    void registerParameterLifterReference(storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter);
     void initializeMonotonicityChecker(storm::storage::SparseMatrix<ParametricType> const& parametricTransitionMatrix);
     void initializeOrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates,
-                                 storm::storage::SparseMatrix<ParametricType> const& parametricTransitionMatrix, );
-    storm::storage::BitVector getChoicesToFixForPLASolver(detail::AnnotatedRegion<ParametricType> const& region,
-                                                          storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter,
-                                                          storm::OptimizationDirection dir, std::vector<uint64_t>& schedulerChoices);
+                                 storm::storage::SparseMatrix<ParametricType> const& parametricTransitionMatrix);
+    storm::storage::BitVector getChoicesToFixForPLASolver(AnnotatedRegion<ParametricType> const& region, storm::OptimizationDirection dir,
+                                                          std::vector<uint64_t>& schedulerChoices);
 
    private:
     bool const useOnlyGlobal;
@@ -80,6 +90,7 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
     std::optional<storm::analysis::OrderExtender<ParametricType, ConstantType>> orderExtender;
     std::optional<storm::analysis::MonotonicityChecker<ParametricType>> monotonicityChecker;
     std::set<VariableType> possibleMonotoneParameters;
+    storm::OptionalRef<storm::transformer::ParameterLifter<ParametricType, ConstantType> const> parameterLifterRef;
 };
 
 }  // namespace storm::modelchecker

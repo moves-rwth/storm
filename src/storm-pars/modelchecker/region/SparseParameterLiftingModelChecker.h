@@ -37,7 +37,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param hypothesis if not 'unknown', the region checker only tries to show the hypothesis
      * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
      */
-    virtual RegionResult analyzeRegion(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual RegionResult analyzeRegion(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                        RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown,
                                        bool sampleVerticesOfRegion = false) override;
 
@@ -55,7 +55,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param dirForParameters  The optimization direction for the parameter choices. If this is, e.g., minimize, then the returned result will be a lower bound
      for all results induced by the parameter evaluations inside the region.
      */
-    std::unique_ptr<CheckResult> check(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    std::unique_ptr<CheckResult> check(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                        storm::solver::OptimizationDirection const& dirForParameters);
 
     /*!
@@ -67,7 +67,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                     storm::solver::OptimizationDirection const& dirForParameters);
 
     /*!
@@ -78,7 +78,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    virtual CoefficientType getBoundAtInitState(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual CoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                 storm::solver::OptimizationDirection const& dirForParameters) override;
 
     /*!
@@ -89,7 +89,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
      * @param dirForParameters whether the heuristic tries to find a point with a high or low value
      * @return a pair of the value at the initial state and the point at which the value was computed
      */
-    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                           storm::solver::OptimizationDirection const& dirForParameters) override;
 
     SparseModelType const& getConsideredParametricModel() const;
@@ -114,7 +114,7 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT();
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO();
 
-    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                    storm::solver::OptimizationDirection const& dirForParameters) = 0;
 
     std::shared_ptr<SparseModelType> parametricModel;

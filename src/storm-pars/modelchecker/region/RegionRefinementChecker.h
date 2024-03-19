@@ -5,7 +5,7 @@
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
-#include "storm-pars/modelchecker/region/detail/RegionSplittingStrategy.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
@@ -27,13 +27,13 @@ class RegionRefinementChecker {
     using VariableType = typename storm::storage::ParameterRegion<ParametricType>::VariableType;
     using Valuation = typename storm::storage::ParameterRegion<ParametricType>::Valuation;
 
-    RegionRefinementChecker(RegionModelChecker<ParametricType>&& regionChecker);
+    RegionRefinementChecker(std::unique_ptr<RegionModelChecker<ParametricType>>&& regionChecker);
     ~RegionRefinementChecker() = default;
 
     bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, detail::RegionSplittingStrategy splittingStrategy = {},
+                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, RegionSplittingStrategy splittingStrategy = {},
                  std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true);
 
     /*!
@@ -68,7 +68,7 @@ class RegionRefinementChecker {
      * @return
      */
     std::pair<CoefficientType, Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                               storm::solver::OptimizationDirection const& dir, CoefficientType const& precision,
+                                                               storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
                                                                bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant = std::nullopt);
 
     /*!
@@ -79,11 +79,11 @@ class RegionRefinementChecker {
 
    private:
     enum class Context { Partitioning, ExtremalValue };
-    std::set<VariableType> getSplittingVariables(detail::AnnotatedRegion<ParametricType> const& region, Context context) const;
+    std::set<VariableType> getSplittingVariables(AnnotatedRegion<ParametricType> const& region, Context context) const;
 
     std::unique_ptr<RegionModelChecker<ParametricType>> regionChecker;
     std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend;
-    detail::RegionSplittingStrategy regionSplittingStrategy;
+    RegionSplittingStrategy regionSplittingStrategy;
 };
 
 }  // namespace modelchecker

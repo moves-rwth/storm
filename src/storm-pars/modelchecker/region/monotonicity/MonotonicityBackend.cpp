@@ -11,8 +11,8 @@ void MonotonicityBackend<ParametricType>::setMonotoneParameter(VariableType cons
 }
 
 template<typename ParametricType>
-void MonotonicityBackend<ParametricType>::initializeMonotonicity(detail::AnnotatedRegion<ParametricType>& region) {
-    typename detail::AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation annotation;
+void MonotonicityBackend<ParametricType>::initializeMonotonicity(AnnotatedRegion<ParametricType>& region) {
+    typename AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation annotation;
     annotation.globalMonotonicity = std::make_shared<storm::analysis::MonotonicityResult<VariableType>>();
     bool allMonotone = true;
     for (auto const& parameter : region.region.getVariables()) {
@@ -29,7 +29,7 @@ void MonotonicityBackend<ParametricType>::initializeMonotonicity(detail::Annotat
 }
 
 template<typename ParametricType>
-void MonotonicityBackend<ParametricType>::updateMonotonicity(detail::AnnotatedRegion<ParametricType>&) {
+void MonotonicityBackend<ParametricType>::updateMonotonicity(AnnotatedRegion<ParametricType>&) {
     // Nothing to do here
 }
 
@@ -39,17 +39,24 @@ bool MonotonicityBackend<ParametricType>::requiresInteractionWithRegionModelChec
 }
 
 template<typename ParametricType>
+bool MonotonicityBackend<ParametricType>::recommendModelSimplifications() const {
+    return true;
+}
+
+template<typename ParametricType>
 std::map<typename MonotonicityBackend<ParametricType>::VariableType, typename MonotonicityBackend<ParametricType>::MonotonicityKind>
-MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(detail::AnnotatedRegion<ParametricType> const& region) {
+MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
     auto annotatedResult = region.getDefaultMonotonicityAnnotation();
-    STORML_LOG_ASSERT(annotatedResult.has_value() && annotatedResult->globalMonotonicity, "Default monotonicity annotation with a result must be present.");
+    STORM_LOG_ASSERT(annotatedResult.has_value() && annotatedResult->globalMonotonicity, "Default monotonicity annotation with a result must be present.");
     std::map<VariableType, MonotonicityKind> result;
     for (auto const& parameter : region.region.getVariables()) {
-        if (auto monRes = region.globalMonotonicity->getMonotonicity(parameter); storm::analysis::isMonotone(monRes)) {
+        if (auto monRes = annotatedResult->globalMonotonicity->getMonotonicity(parameter); storm::analysis::isMonotone(monRes)) {
             result.emplace(parameter, monRes);
         }
     }
     return result;
 }
+
+template class MonotonicityBackend<storm::RationalFunction>;
 
 }  // namespace storm::modelchecker

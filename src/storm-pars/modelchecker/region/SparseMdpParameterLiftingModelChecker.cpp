@@ -58,7 +58,7 @@ template<typename SparseModelType, typename ConstantType>
 void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env,
                                                                                    std::shared_ptr<storm::models::ModelBase> parametricModel,
                                                                                    CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                                                   std::optional<detail::RegionSplitEstimateKind> generateRegionSplitEstimates,
+                                                                                   std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates,
                                                                                    std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
                                                                                    bool allowModelSimplifications) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
@@ -300,12 +300,12 @@ template<typename SparseModelType, typename ConstantType>
 bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMonotonicitySupported(
     MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const&) const {
     // Currently, we do not support any interaction with the monotonicity backend
-    return backend.interactsWithRegionModelChecker();
+    return !backend.requiresInteractionWithRegionModelChecker();
 }
 
 template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<CheckResult> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     if (maybeStates.empty()) {
         return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
     }
@@ -453,5 +453,4 @@ std::optional<storm::storage::Scheduler<ConstantType>> SparseMdpParameterLifting
 
 template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
-}  // namespace modelchecker
 }  // namespace storm::modelchecker

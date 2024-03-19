@@ -687,12 +687,14 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
         }
         STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
-        plaModelChecker.specify(env, model, checkTask.get(), false, false);
+        bool const allowModelSimplification = false;  // make sure that the results align with the input model
+        plaModelChecker.specify(env, model, checkTask.get(), std::nullopt, nullptr, allowModelSimplification);
 
+        storm::modelchecker::AnnotatedRegion<ValueType> annotatedRegion{region};
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck =
-            plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
-            plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         minValuesInit = minCheck.getValueVector();
         maxValuesInit = maxCheck.getValueVector();
         assert(minValuesInit->size() == numberOfStates);

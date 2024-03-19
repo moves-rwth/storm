@@ -21,6 +21,24 @@
 namespace storm::modelchecker {
 
 template<typename ParametricType>
+RegionResult RegionModelChecker<ParametricType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
+                                                               RegionResultHypothesis const& hypothesis, bool sampleVerticesOfRegion) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "analyzeRegion not implemented");  // TODO: CHeck
+    AnnotatedRegion<ParametricType> annotatedRegion{region};
+    monotonicityBackend->initializeMonotonicity(annotatedRegion);
+    return analyzeRegion(env, annotatedRegion, hypothesis, sampleVerticesOfRegion);
+}
+
+template<typename ParametricType>
+typename RegionModelChecker<ParametricType>::CoefficientType RegionModelChecker<ParametricType>::getBoundAtInitState(
+    Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "analyzeRegion not implemented");  // TODO: CHeck
+    AnnotatedRegion<ParametricType> annotatedRegion{region};
+    monotonicityBackend->initializeMonotonicity(annotatedRegion);
+    return getBoundAtInitState(env, annotatedRegion, dirForParameters);
+}
+
+template<typename ParametricType>
 std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionModelChecker<ParametricType>::analyzeRegions(
     Environment const& env, std::vector<storm::storage::ParameterRegion<ParametricType>> const& regions, std::vector<RegionResultHypothesis> const& hypotheses,
     bool sampleVerticesOfRegion) {
@@ -29,28 +47,26 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ParametricType>> RegionMo
     std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, storm::modelchecker::RegionResult>> result;
     auto hypothesisIt = hypotheses.begin();
     for (auto const& region : regions) {
-        detail::AnnotatedRegion<ParametricType> annotatedRegion(region);
-        storm::modelchecker::RegionResult regionRes = analyzeRegion(env, annotatedRegion, *hypothesisIt, sampleVerticesOfRegion);
-        result.emplace_back(annotatedRegion.region, regionRes);
+        storm::modelchecker::RegionResult regionRes = analyzeRegion(env, region, *hypothesisIt, sampleVerticesOfRegion);
+        result.emplace_back(region, regionRes);
         ++hypothesisIt;
     }
     return std::make_unique<storm::modelchecker::RegionCheckResult<ParametricType>>(std::move(result));
 }
 
 template<typename ParametricType>
-detail::RegionSplitEstimateKind RegionModelChecker<ParametricType>::getDefaultRegionSplitEstimateKind(
-    CheckTask<storm::logic::Formula, ParametricType> const&) const {
-    return detail::RegionSplitEstimateKind::Distance;
+RegionSplitEstimateKind RegionModelChecker<ParametricType>::getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const&) const {
+    return RegionSplitEstimateKind::Distance;
 }
 
 template<typename ParametricType>
-bool RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind,
+bool RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(RegionSplitEstimateKind kind,
                                                                             CheckTask<storm::logic::Formula, ParametricType> const&) const {
-    return kind == detail::RegionSplitEstimateKind::Distance;
+    return kind == RegionSplitEstimateKind::Distance;
 }
 
 template<typename ParametricType>
-std::optional<detail::RegionSplitEstimateKind> RegionModelChecker<ParametricType>::getSpecifiedRegionSplitEstimateKind() const {
+std::optional<RegionSplitEstimateKind> RegionModelChecker<ParametricType>::getSpecifiedRegionSplitEstimateKind() const {
     return specifiedRegionSplitEstimateKind;
 }
 
@@ -58,8 +74,7 @@ template<typename ParametricType>
 std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> RegionModelChecker<ParametricType>::obtainRegionSplitEstimates(
     std::set<VariableType> const& relevantParameters) const {
     STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.has_value(), "Unable to obtain region split estimates because they wre not requested.");
-    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == detail::RegionSplitEstimateKind::Distance,
-                     "requested region split estimate kind not supported");
+    STORM_LOG_ASSERT(specifiedRegionSplitEstimateKind.value() == RegionSplitEstimateKind::Distance, "requested region split estimate kind not supported");
     STORM_LOG_ASSERT(lastCheckedRegion.has_value(), "Unable to obtain region split estimates because no region was checked.");
     std::vector<CoefficientType> result;
     result.reserve(relevantParameters.size());
@@ -70,7 +85,7 @@ std::vector<typename RegionModelChecker<ParametricType>::CoefficientType> Region
 }
 
 template<typename ParametricType>
-void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<detail::RegionSplitEstimateKind> splitEstimates,
+void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<RegionSplitEstimateKind> splitEstimates,
                                                                [[maybe_unused]] CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
     STORM_LOG_ASSERT(!splitEstimates.has_value() || isRegionSplitEstimateKindSupported(splitEstimates.value(), checkTask),
                      "specified region split estimate kind not supported");

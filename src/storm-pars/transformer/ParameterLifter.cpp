@@ -239,7 +239,7 @@ ParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() co
 }
 
 template<typename ParametricType, typename ConstantType>
-std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>>
+std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>> const&
 ParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable() const {
     return occuringStatesAtVariable;
 }

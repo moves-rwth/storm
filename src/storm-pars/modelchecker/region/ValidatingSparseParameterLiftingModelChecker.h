@@ -28,7 +28,7 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
 
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<detail::RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
                          std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true) override;
 
     /*!
@@ -40,7 +40,7 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
      * @param hypothesis if not 'unknown', the region checker only tries to show the hypothesis
      * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
      */
-    virtual RegionResult analyzeRegion(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual RegionResult analyzeRegion(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                        RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown,
                                        bool sampleVerticesOfRegion = false) override;
 
@@ -52,7 +52,7 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    virtual CoefficientType getBoundAtInitState(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual CoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                 storm::solver::OptimizationDirection const& dirForParameters) override;
 
     /*!
@@ -63,7 +63,7 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
      * @param dirForParameters whether the heuristic tries to find a point with a high or low value
      * @return a pair of the value at the initial state and the point at which the value was computed
      */
-    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                           storm::solver::OptimizationDirection const& dirForParameters) override;
 
     /*!

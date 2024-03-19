@@ -35,7 +35,7 @@ bool ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::specify(
     Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-    std::optional<detail::RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
+    std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
     bool allowModelSimplifications) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
@@ -71,8 +71,10 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
-RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, RegionResultHypothesis const& hypothesis, bool sampleVerticesOfRegion) {
+RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(Environment const& env,
+                                                                                                                      AnnotatedRegion<ParametricType>& region,
+                                                                                                                      RegionResultHypothesis const& hypothesis,
+                                                                                                                      bool sampleVerticesOfRegion) {
     // Do not add annotations from the potentiallty imprecise model checker
     auto impreciseAnnotatedRegion = region;
     RegionResult currentResult = impreciseChecker.analyzeRegion(env, impreciseAnnotatedRegion, hypothesis, false);
@@ -109,7 +111,7 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
     }
 
     if (sampleVerticesOfRegion && currentResult != RegionResult::AllSat && currentResult != RegionResult::AllViolated) {
-        currentResult = preciseChecker.sampleVertices(env, region, currentResult);
+        currentResult = preciseChecker.sampleVertices(env, region.region, currentResult);
     }
 
     return currentResult;
@@ -118,7 +120,7 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getBoundAtInitState(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     return preciseChecker.getBoundAtInitState(env, region, dirForParameters);
 }
 
@@ -126,7 +128,7 @@ template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 std::pair<typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType,
           typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::Valuation>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getAndEvaluateGoodPoint(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     return preciseChecker.getAndEvaluateGoodPoint(env, region, dirForParameters);
 }
 
@@ -134,7 +136,7 @@ template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 bool ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::isMonotonicitySupported(
     MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     // Currently, we do not support any interaction with the monotonicity backend
-    return backend.interactsWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend, checkTask) &&
+    return backend.requiresInteractionWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend, checkTask) &&
            preciseChecker.isMonotonicitySupported(backend, checkTask);
 }
 

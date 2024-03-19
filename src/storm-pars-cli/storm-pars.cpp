@@ -356,7 +356,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
 
     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
-    boost::optional<uint64_t> optionalDepthLimit;
+    std::optional<uint64_t> optionalDepthLimit;
     if (partitionSettings.isDepthLimitSet()) {
         optionalDepthLimit = partitionSettings.getDepthLimit();
     }

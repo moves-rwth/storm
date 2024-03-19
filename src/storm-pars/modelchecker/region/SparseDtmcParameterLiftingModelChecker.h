@@ -35,15 +35,15 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
 
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<detail::RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
                          std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true) override;
 
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
 
-    virtual bool isRegionSplitEstimateKindSupported(detail::RegionSplitEstimateKind kind,
+    virtual bool isRegionSplitEstimateKindSupported(RegionSplitEstimateKind kind,
                                                     CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
-    virtual detail::RegionSplitEstimateKind getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
+    virtual RegionSplitEstimateKind getDefaultRegionSplitEstimateKind(CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const override;
     virtual std::vector<CoefficientType> obtainRegionSplitEstimates(std::set<VariableType> const& relevantParameters) const override;
 
     virtual bool isMonotonicitySupported(MonotonicityBackend<ParametricType> const& backend,
@@ -59,7 +59,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT() override;
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO() override;
 
-    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                    storm::solver::OptimizationDirection const& dirForParameters) override;
 
     void computeStateValueDeltaRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,

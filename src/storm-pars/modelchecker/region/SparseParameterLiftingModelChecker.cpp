@@ -82,8 +82,7 @@ auto getOptimalValuationForMonotonicity(RegionType const& region,
 }
 
 template<typename SparseModelType, typename ConstantType>
-RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env,
-                                                                                              detail::AnnotatedRegion<ParametricType>& region,
+RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                                               RegionResultHypothesis const& hypothesis,
                                                                                               bool sampleVerticesOfRegion) {
     STORM_LOG_THROW(this->currentCheckTask->isOnlyInitialStatesRelevantSet(), storm::exceptions::NotSupportedException,
@@ -116,8 +115,9 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     auto const dirToCheck = existsSat ? dirForSat : storm::solver::invert(dirForSat);
 
     // Try solving through global monotonicity
-    if (region.globalMonotonicity && region.globalMonotonicity->isDone() && region.globalMonotonicity->isAllMonotonicity()) {
-        auto const valuation = getOptimalValuationForMonotonicity(region.region, region.globalMonotonicity->getMonotonicityResult(), dirToCheck);
+    if (auto globalMonotonicity = region.getGlobalMonotonicityResult();
+        globalMonotonicity.has_value() && globalMonotonicity->isDone() && globalMonotonicity->isAllMonotonicity()) {
+        auto const valuation = getOptimalValuationForMonotonicity(region.region, globalMonotonicity->getMonotonicityResult(), dirToCheck);
         STORM_LOG_ASSERT(valuation.size() == region.region.getVariables().size(), "Not all parameters seem to be monotonic.");
         auto& checker = existsSat ? getInstantiationCheckerSAT() : getInstantiationCheckerVIO();
         bool const monCheckResult = checker.check(env, valuation)->asExplicitQualitativeCheckResult()[getUniqueInitialState()];
@@ -190,7 +190,7 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
 
 template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters);
     if (hasUniqueInitialState()) {  // TODO: Maybe do this within 'computeQuantitativeValue? At least ensure this is also set for 'getBound' and
                                     // 'getBoundAtInitState' and when in analyze region things are inferred from monotonicity
@@ -214,7 +214,7 @@ std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType,
 
 template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<QuantitativeCheckResult<ConstantType>> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBound(
-    Environment const& env, detail::AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_WARN_COND(this->currentCheckTask->getFormula().hasQuantitativeResult(), "Computing quantitative bounds for a qualitative formula...");
     return std::make_unique<ExplicitQuantitativeCheckResult<ConstantType>>(
         std::move(computeQuantitativeValues(env, region, dirForParameters)->template asExplicitQuantitativeCheckResult<ConstantType>()));
@@ -222,7 +222,7 @@ std::unique_ptr<QuantitativeCheckResult<ConstantType>> SparseParameterLiftingMod
 
 template<typename SparseModelType, typename ConstantType>
 typename SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::CoefficientType
-SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtInitState(Environment const& env, detail::AnnotatedRegion<ParametricType>& region,
+SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                                        storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_THROW(hasUniqueInitialState(), storm::exceptions::NotSupportedException,
                     "Getting a bound at the initial state requires a model with a single initial state.");
@@ -288,8 +288,7 @@ void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyC
 template<typename SparseModelType, typename ConstantType>
 std::pair<typename SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::CoefficientType,
           typename SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::Valuation>
-SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getAndEvaluateGoodPoint(Environment const& env,
-                                                                                           detail::AnnotatedRegion<ParametricType>& region,
+SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                                            OptimizationDirection const& dirForParameters) {
     // Take region boundaries for parameters that are known to be monotonic or where there is hope for monotonicity
     auto point = getOptimalValuationForMonotonicity(region.region, this->monotonicityBackend->getOptimisticMonotonicityApproximation(region), dirForParameters);

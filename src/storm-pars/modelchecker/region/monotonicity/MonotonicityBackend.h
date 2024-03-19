@@ -2,7 +2,7 @@
 
 #include <set>
 #include "storm-pars/analysis/MonotonicityKind.h"
-#include "storm-pars/modelchecker/region/detail/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
 
@@ -18,7 +18,7 @@ class MonotonicityBackend {
 
     MonotonicityBackend() = default;
     virtual ~MonotonicityBackend() = default;
-    
+
     /*!
      * Sets parameters that are assumed to be monotone throughout the analysis.
      * Previously specified parameters are overwritten.
@@ -36,23 +36,30 @@ class MonotonicityBackend {
     virtual bool requiresInteractionWithRegionModelChecker() const;
 
     /*!
+     * Returns whether additional model simplifications are recommended when using this backend.
+     * @note this returns true in the base class, but might return false in derived classes.
+     */
+    virtual bool recommendModelSimplifications() const;
+
+    /*!
      * Initializes the monotonicity information for the given region.
      * Overwrites all present monotonicity annotations in the given region.
      */
-    virtual void initializeMonotonicity(detail::AnnotatedRegion<ParametricType>& region);
+    virtual void initializeMonotonicity(AnnotatedRegion<ParametricType>& region);
 
     /*!
      * Updates the monotonicity information for the given region.
      * Assumes that some monotonicity information is already present (potentially inherited from a parent region) and potentially sharpens the results for the
      * given region.
      */
-    virtual void updateMonotonicity(detail::AnnotatedRegion<ParametricType>& region);
+    virtual void updateMonotonicity(AnnotatedRegion<ParametricType>& region);
+    virtual void updateMonotonicityForSplitting(AnnotatedRegion<ParametricType>& region){};
 
     /*!
      * Returns an optimistic approximation of the monotonicity of the parameters in this region.
      * This means that the returned monotonicity does not necessarily hold, but there is "sufficient hope" that it does.
      */
-    virtual std::map<VariableType, MonotonicityKind> getOptimisticMonotonicityApproximation(detail::AnnotatedRegion<ParametricType> const& region);
+    virtual std::map<VariableType, MonotonicityKind> getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region);
 
    private:
     std::map<VariableType, MonotonicityKind> globallyKnownMonotonicityInformation;

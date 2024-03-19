@@ -2,71 +2,18 @@
 
 #include <queue>
 
-#include "storm-pars/modelchecker/region/detail/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm/utility/ProgressMeasurement.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::modelchecker {
 
 template<typename ParametricType>
-struct RegionTree {
-    using Region = storm::storage::ParameterRegion<ParametricType>;
-    using AnnotatedRegion = detail::AnnotatedRegion<ParametricType>;
-    using VariableType = typename Region::VariableType;
-
-    RegionTree(Region const& region) : annotatedRegion(region) {
-        // Intentionally left empty
-    }
-
-    AnnotatedRegion annotatedRegion;                   /// The (annotated) region at this node of the tree
-    std::vector<RegionTree<ParametricType>> children;  /// The children of this node
-
-    void postOrderTraverse(std::function<void(RegionTree<ParametricType>&)> const& visitor) {
-        for (auto& child : children) {
-            child.postOrderTraverse(visitor);
-        }
-        visitor(*this);
-    }
-
-    void preOrderTraverse(std::function<void(RegionTree<ParametricType>&)> const& visitor) {
-        visitor(*this);
-        for (auto& child : children) {
-            child.preOrderTraverse(visitor);
-        }
-    }
-
-    void propagateAnnotations(bool allowDeleteAnnotationsFromInnerNodes) {
-        preOrderTraverse([allowDeleteAnnotationsFromInnerNodes](auto& node) {
-            node.annotatedRegion.propagateAnnotationsToSubregions(node.children, allowDeleteAnnotationsFromInnerNodes);
-        });
-    }
-
-    void splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, bool allowDeleteAnnotationsOfThis) {
-        STORM_LOG_ASSERT(children.empty(), "Cannot split a non-leaf node.");
-        std::vector<AnnotatedRegion const&> splitResult;
-        annotatedRegion.splitAndPropagate(annotatedRegion.region.getCenterPoint(), splittingVariables, allowDeleteAnnotationsOfThis, splitResult);
-        for (auto const& region : splitResult) {
-            children.emplace_back(region);
-        }
-    }
-
-    uint64_t getDepth() const {
-        if (children.empty()) {
-            return 0u;
-        } else {
-            uint64_t max = 0;
-            for (auto const& child : children) {
-                max = std::max(max, child.getDepth());
-            }
-            return 1 + max;
-        }
-    }
-};
-
-template<typename ParametricType>
-RegionRefinementChecker<ParametricType>::RegionRefinementChecker(RegionModelChecker<ParametricType>&& regionChecker) {
-    this->regionChecker = std::make_unique<RegionModelChecker<ParametricType>>(std::move(regionChecker));
+RegionRefinementChecker<ParametricType>::RegionRefinementChecker(std::unique_ptr<RegionModelChecker<ParametricType>>&& regionChecker) {
+    STORM_LOG_ASSERT(regionChecker != nullptr, "The region model checker must not be null.");
+    this->regionChecker = std::move(regionChecker);
 }
 
 template<typename ParametricType>
@@ -78,13 +25,13 @@ bool RegionRefinementChecker<ParametricType>::canHandle(std::shared_ptr<storm::m
 template<typename ParametricType>
 void RegionRefinementChecker<ParametricType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                      detail::RegionSplittingStrategy splittingStrategy,
+                                                      RegionSplittingStrategy splittingStrategy,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
                                                       bool allowModelSimplifications) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
     // Potentially determine the kind of region split estimate to generate
-    if (regionSplittingStrategy.heuristic == detail::RegionSplittingStrategy::Heuristic::EstimateBased) {
+    if (regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::EstimateBased) {
         if (regionSplittingStrategy.estimateKind.has_value()) {
             STORM_LOG_THROW(regionChecker->isRegionSplitEstimateKindSupported(regionSplittingStrategy.estimateKind.value(), checkTask),
                             storm::exceptions::NotSupportedException, "The specified region split estimate kind is not supported by the region model checker.");
@@ -130,11 +77,11 @@ class PartitioningProgress {
     }
 
     void addAllSatArea(T const& area) {
-        fractionOfAllSatArea += addDiscoveredArea(area, true);
+        fractionOfAllSatArea += addDiscoveredArea(area);
     }
 
     void addAllViolatedArea(T const& area) {
-        fractionOfAllViolatedArea += addDiscoveredArea(area, false);
+        fractionOfAllViolatedArea += addDiscoveredArea(area);
     }
 
    private:
@@ -159,63 +106,62 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
     auto progress = PartitioningProgress<CoefficientType>(
         region.area(), storm::utility::convertNumber<CoefficientType>(coverageThreshold.value_or(storm::utility::zero<ParametricType>())));
 
-    // All considered (sub)-regions
-    RegionTree<ParametricType> regionTreeRoot(region);
+    // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
+    AnnotatedRegion<ParametricType> rootRegion(region);
 
     // FIFO queue storing the current leafs of the region tree with neither allSat nor allViolated
     // As we currently split regions in the center, a FIFO queue will ensure that regions with a larger area are processed first.
-    std::queue<std::reference_wrapper<RegionTree<ParametricType>>> unprocessedRegions;
-    unprocessedRegions.emplace(regionTreeRoot);
+    std::queue<std::reference_wrapper<AnnotatedRegion<ParametricType>>> unprocessedRegions;
+    unprocessedRegions.emplace(rootRegion);
 
     uint64_t numOfAnalyzedRegions{0u};
     bool monotonicityInitialized{false};
 
     // Region Refinement Loop
     while (!progress.isCoverageThresholdReached() && !unprocessedRegions.empty()) {
-        auto& currentRegionTreeNode = unprocessedRegions.front().get();
-        auto& currentRegion = currentRegionTreeNode.region;
+        auto& currentRegion = unprocessedRegions.front().get();
         STORM_LOG_TRACE("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentRegion.refinementDepth << "; "
                                              << progress.getUndiscoveredPercentage() << "% still unknown; " << unprocessedRegions.size()
                                              << " regions unprocessed).");
+        unprocessedRegions.pop();  // can pop already here, since the rootRegion has ownership.
         ++numOfAnalyzedRegions;
 
         if (!monotonicityInitialized && currentRegion.refinementDepth >= monThresh) {
             monotonicityInitialized = true;
-            monotonicityBackend.initializeMonotonicity(regionTreeRoot.region);
-            regionTreeRoot.propagateAnnotations(true);
+            monotonicityBackend->initializeMonotonicity(currentRegion);
+            rootRegion.propagateAnnotationsToSubregions(true);
         }
-        monotonicityBackend.updateMonotonicity(currentRegion.annotatedRegion);
+        monotonicityBackend->updateMonotonicity(currentRegion);
 
         currentRegion.result = regionChecker->analyzeRegion(env, currentRegion, hypothesis);
 
         if (currentRegion.result == RegionResult::AllSat) {
-            progress.addAllSatArea(currentRegion.area());
+            progress.addAllSatArea(currentRegion.region.area());
         } else if (currentRegion.result == RegionResult::AllViolated) {
-            progress.addAllViolatedArea(currentRegion.area());
+            progress.addAllViolatedArea(currentRegion.region.area());
         } else {
             // Split the region as long as the desired refinement depth is not reached.
             if (!depthThreshold || currentRegion.refinementDepth < depthThreshold.value()) {
-                currentRegionTreeNode.splitLeafNodeAtCenter(getSplittingVariables(currentRegion, Context::Partitioning), true);
-                for (auto& child : currentRegionTreeNode.children) {
+                currentRegion.splitLeafNodeAtCenter(getSplittingVariables(currentRegion, Context::Partitioning), true);
+                for (auto& child : currentRegion.subRegions) {
                     unprocessedRegions.emplace(child);
                 }
             }
         }
-        unprocessedRegions.pop();
     }
 
     // Prepare result
     uint64_t numberOfRegionsKnownThroughMonotonicity{0};
     std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> result;
-    regionTreeRoot.postOrderTraverse([&result, &numberOfRegionsKnownThroughMonotonicity](auto& node) {
-        if (node.children.empty()) {
-            if (node.annotatedRegion.resultKnownThroughMonotonicity) {
+    rootRegion.postOrderTraverseSubRegions([&result, &numberOfRegionsKnownThroughMonotonicity](auto& node) {
+        if (node.subRegions.empty()) {
+            if (node.resultKnownThroughMonotonicity) {
                 ++numberOfRegionsKnownThroughMonotonicity;
             }
-            result.emplace_back(node.annotatedRegion.region, node.annotatedRegion.result);
+            result.emplace_back(node.region, node.result);
         }
     });
-    auto const maxDepth = regionTreeRoot.getDepth();
+    auto const maxDepth = rootRegion.getMaxDepthOfSubRegions();
     STORM_LOG_INFO("Region partitioning terminated after analyzing " << numOfAnalyzedRegions << " regions.\n\t" << numberOfRegionsKnownThroughMonotonicity
                                                                      << " regions known through monotonicity.\n\tMaximum refinement depth: " << maxDepth
                                                                      << ".\n\t" << progress.getUndiscoveredPercentage()
@@ -228,36 +174,43 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 template<typename ParametricType>
 std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
 RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                              storm::solver::OptimizationDirection const& dir, CoefficientType const& precision,
+                                                              storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
                                                               bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
     auto progress = PartitioningProgress<CoefficientType>(region.area());
 
+    // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
+    AnnotatedRegion<ParametricType> rootRegion(region);
+
     // Priority Queue storing the regions that still need to be processed. Regions with a "good" bound are processed first
-    auto cmp =
-        storm::solver::minimize(dir)
-            ? [](detail::AnnotatedRegion<ParametricType> const& lhs,
-                 detail::AnnotatedRegion<ParametricType> const& rhs) { return *lhs.knownLowerValueBound > rhs.knownLowerValueBound; }
-            : [](detail::AnnotatedRegion<ParametricType> const& lhs, detail::AnnotatedRegion<ParametricType> const& rhs) { return lhs.bound < rhs.bound; };
-    std::priority_queue<detail::AnnotatedRegion<ParametricType>, std::vector<detail::AnnotatedRegion<ParametricType>>, decltype(cmp)> unprocessedRegions(cmp);
-    unprocessedRegions.emplace(region);
+    auto cmp = storm::solver::minimize(dir) ? [](AnnotatedRegion<ParametricType> const& lhs,
+                                                 AnnotatedRegion<ParametricType> const& rhs) { return *lhs.knownLowerValueBound > *rhs.knownLowerValueBound; }
+                                            : [](AnnotatedRegion<ParametricType> const& lhs, AnnotatedRegion<ParametricType> const& rhs) {
+                                                  return *lhs.knownUpperValueBound < *rhs.knownUpperValueBound;
+                                              };
+    std::priority_queue<std::reference_wrapper<AnnotatedRegion<ParametricType>>, std::vector<std::reference_wrapper<AnnotatedRegion<ParametricType>>>,
+                        decltype(cmp)>
+        unprocessedRegions(cmp);
+    unprocessedRegions.push(rootRegion);
 
-    monotonicityBackend.initializeMonotonicity(
-        unprocessedRegions.top());  // TODO might need information on whether we min or max. Maybe use monDepth parameter?
-
-    auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, unprocessedRegions.top(), dir);
+    // Handle initial region
+    AnnotatedRegion<ParametricType> initialRegion(region);
+    monotonicityBackend->initializeMonotonicity(initialRegion);  // TODO might need information on whether we min or max. Maybe use monDepth parameter?
+    auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, initialRegion, dir);
     auto& value = valueValuation.first;
-    if (boundInvariant && !boundInvariant.value().isSatisfied(value.get())) {
+    if (boundInvariant && !boundInvariant.value().isSatisfied(value)) {
         return valueValuation;
     }
 
+    // Handle input precision
+    STORM_LOG_THROW(storm::utility::isConstant(precision), storm::exceptions::InvalidArgumentException,
+                    "Precision must be a constant value. Got " << precision << " instead.");
+    CoefficientType convertedPrecision = storm::utility::convertNumber<CoefficientType>(precision);
+
     // Helper functions to check if a given result is better than the currently known result
     auto isBetterValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
-    auto isStrictlyBetterValue = [&value, &dir, &precision, &absolutePrecision](auto const& newValue) {
-        if (storm::solver::minimize(dir)) {
-            return newValue < (absolutePrecision ? value - precision : value * (1 - precision));
-        } else {
-            return newValue > (absolutePrecision ? value + precision : value * (1 + precision));
-        }
+    auto isStrictlyBetterValue = [&value, &dir, &convertedPrecision, &absolutePrecision](auto const& newValue) {
+        CoefficientType const usedPrecision = convertedPrecision * (absolutePrecision ? storm::utility::one<CoefficientType>() : value);
+        return storm::solver::minimize(dir) ? newValue < value - usedPrecision : newValue > value + usedPrecision;
     };
 
     // TODO: maybe we can skip the loop if things are already known to be fully monotonic
@@ -265,17 +218,24 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
     // Region Refinement Loop
     uint64_t numOfAnalyzedRegions{0u};
     while (!unprocessedRegions.empty()) {
-        auto& currentRegion = unprocessedRegions.top();
-        auto& currentBound = storm::solver::minimize(dir) ? currentRegion.knownLowerValueBound : currentRegion.knownUpperValueBound;
+        auto& currentRegion = unprocessedRegions.top().get();
+        auto currentBound =
+            storm::solver::minimize(dir) ? currentRegion.knownLowerValueBound.getOptionalValue() : currentRegion.knownUpperValueBound.getOptionalValue();
         STORM_LOG_TRACE("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentRegion.refinementDepth << "; "
                                              << progress.getUndiscoveredPercentage() << "% still unknown; " << unprocessedRegions.size()
                                              << " regions unprocessed). Best known value: " << value << ".");
+        unprocessedRegions.pop();  // can pop already here, since the rootRegion has ownership.
         ++numOfAnalyzedRegions;
 
         // Compute the bound for this region (unless the known bound is already too weak)
         if (!currentBound || isStrictlyBetterValue(currentBound.value())) {
             // Improve over-approximation of extremal value (within this region)
             currentBound = regionChecker->getBoundAtInitState(env, currentRegion, dir);
+            if (storm::solver::minimize(dir)) {
+                currentRegion.knownLowerValueBound &= *currentBound;
+            } else {
+                currentRegion.knownUpperValueBound &= *currentBound;
+            }
             // TODO: Cache results as bounds for monotonicity
         }
 
@@ -283,11 +243,11 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         if (isStrictlyBetterValue(currentBound.value())) {
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
-            monotonicityBackend.updateMonotonicity(currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
+            monotonicityBackend->updateMonotonicity(currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterValue(currValue)) {
                 valueValuation = {currValue, currValuation};
-                if (boundInvariant && !boundInvariant.value().isSatisfied(value.get())) {
+                if (boundInvariant && !boundInvariant.value().isSatisfied(value)) {
                     return valueValuation;
                 }
             }
@@ -295,18 +255,14 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
 
         // Trigger region-splitting if over- and under-approximation are still too far apart
         if (isStrictlyBetterValue(currentBound.value())) {
-            monotonicityBackend.updateMonotonicityForSplitting(currentRegion);  // TODO: not sure if it is necessary like this?
-
-            std::vector<detail::AnnotatedRegion<ParametricType> const&> splitResult;
-            currentRegion.splitAndPropagate(currentRegion.region.getCenterPoint(), getSplittingVariables(currentRegion, Context::ExtremalValue), true,
-                                            splitResult);
-            for (auto const& region : splitResult) {
-                unprocessedRegions.emplace(region);
+            monotonicityBackend->updateMonotonicityForSplitting(currentRegion);  // TODO: not sure if it is necessary like this?
+            currentRegion.splitLeafNodeAtCenter(getSplittingVariables(currentRegion, Context::ExtremalValue), true);
+            for (auto& child : currentRegion.subRegions) {
+                unprocessedRegions.emplace(child);
             }
         } else {
             progress.addDiscoveredArea(currentRegion.region.area());
         }
-        unprocessedRegions.pop();  // Pop at the end of the loop to ensure that references remain valid
     }
 
     STORM_LOG_INFO("Region partitioning for extremal value terminated after analyzing "
@@ -332,9 +288,10 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariables(
-    detail::AnnotatedRegion<ParametricType> const& region, Context context) const {
+    AnnotatedRegion<ParametricType> const& region, Context context) const {
     // TODO: Use the splitting strategy, monotonicity, context, ... as in splitSmart
-    return region.getVariables();
+    return region.region.getVariables();
 }
 
+template class RegionRefinementChecker<storm::RationalFunction>;
 }  // namespace storm::modelchecker
