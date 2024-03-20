@@ -214,7 +214,8 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtIni
                                                                                        storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_THROW(hasUniqueInitialState(), storm::exceptions::NotSupportedException,
                     "Getting a bound at the initial state requires a model with a single initial state.");
-    return computeQuantitativeValues(env, region, dirForParameters).at(getUniqueInitialState());
+    auto result = computeQuantitativeValues(env, region, dirForParameters).at(getUniqueInitialState());
+    return storm::utility::isInfinity(result) ? storm::utility::infinity<CoefficientType>() : storm::utility::convertNumber<CoefficientType>(result);
 }
 
 template<typename SparseModelType, typename ConstantType>
