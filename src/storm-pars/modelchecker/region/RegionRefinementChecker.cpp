@@ -128,10 +128,10 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 
         if (!monotonicityInitialized && currentRegion.refinementDepth >= monThresh) {
             monotonicityInitialized = true;
-            monotonicityBackend->initializeMonotonicity(currentRegion);
+            monotonicityBackend->initializeMonotonicity(env, currentRegion);
             rootRegion.propagateAnnotationsToSubregions(true);
         }
-        monotonicityBackend->updateMonotonicity(currentRegion);
+        monotonicityBackend->updateMonotonicity(env, currentRegion);
 
         currentRegion.result = regionChecker->analyzeRegion(env, currentRegion, hypothesis);
 
@@ -142,6 +142,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
         } else {
             // Split the region as long as the desired refinement depth is not reached.
             if (!depthThreshold || currentRegion.refinementDepth < depthThreshold.value()) {
+                monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
                 currentRegion.splitLeafNodeAtCenter(getSplittingVariables(currentRegion, Context::Partitioning), true);
                 for (auto& child : currentRegion.subRegions) {
                     unprocessedRegions.emplace(child);
@@ -192,12 +193,14 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         unprocessedRegions(cmp);
     unprocessedRegions.push(rootRegion);
 
-    // Handle initial region
-    AnnotatedRegion<ParametricType> initialRegion(region);
-    monotonicityBackend->initializeMonotonicity(initialRegion);  // TODO might need information on whether we min or max. Maybe use monDepth parameter?
-    auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, initialRegion, dir);
+    // Initialize Monotonicity
+    monotonicityBackend->initializeMonotonicity(env, rootRegion);
+    // TODO: Catch and handle the easy case where parameters are already known to be monotone
+
+    // Initialize result
+    auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, rootRegion, dir);
     auto& value = valueValuation.first;
-    if (boundInvariant && !boundInvariant.value().isSatisfied(value)) {
+    if (boundInvariant && !boundInvariant->isSatisfied(value)) {
         return valueValuation;
     }
 
@@ -207,13 +210,11 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
     CoefficientType convertedPrecision = storm::utility::convertNumber<CoefficientType>(precision);
 
     // Helper functions to check if a given result is better than the currently known result
-    auto isBetterValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
-    auto isStrictlyBetterValue = [&value, &dir, &convertedPrecision, &absolutePrecision](auto const& newValue) {
+    auto isBetterThanValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
+    auto isStrictlyBetterThanValue = [&value, &dir, &convertedPrecision, &absolutePrecision](auto const& newValue) {
         CoefficientType const usedPrecision = convertedPrecision * (absolutePrecision ? storm::utility::one<CoefficientType>() : value);
         return storm::solver::minimize(dir) ? newValue < value - usedPrecision : newValue > value + usedPrecision;
     };
-
-    // TODO: maybe we can skip the loop if things are already known to be fully monotonic
 
     // Region Refinement Loop
     uint64_t numOfAnalyzedRegions{0u};
@@ -228,7 +229,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         ++numOfAnalyzedRegions;
 
         // Compute the bound for this region (unless the known bound is already too weak)
-        if (!currentBound || isStrictlyBetterValue(currentBound.value())) {
+        if (!currentBound || isStrictlyBetterThanValue(currentBound.value())) {
             // Improve over-approximation of extremal value (within this region)
             currentBound = regionChecker->getBoundAtInitState(env, currentRegion, dir);
             if (storm::solver::minimize(dir)) {
@@ -240,22 +241,23 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         }
 
         // Process the region if the bound is promising
-        if (isStrictlyBetterValue(currentBound.value())) {
+        if (isStrictlyBetterThanValue(currentBound.value())) {
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
-            monotonicityBackend->updateMonotonicity(currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
+            monotonicityBackend->updateMonotonicity(env,
+                                                    currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
-            if (isBetterValue(currValue)) {
+            if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
-                if (boundInvariant && !boundInvariant.value().isSatisfied(value)) {
+                if (boundInvariant && !boundInvariant->isSatisfied(value)) {
                     return valueValuation;
                 }
             }
         }
 
         // Trigger region-splitting if over- and under-approximation are still too far apart
-        if (isStrictlyBetterValue(currentBound.value())) {
-            monotonicityBackend->updateMonotonicityForSplitting(currentRegion);  // TODO: not sure if it is necessary like this?
+        if (isStrictlyBetterThanValue(currentBound.value())) {
+            monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
             currentRegion.splitLeafNodeAtCenter(getSplittingVariables(currentRegion, Context::ExtremalValue), true);
             for (auto& child : currentRegion.subRegions) {
                 unprocessedRegions.emplace(child);
@@ -282,8 +284,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
     auto res = computeExtremalValue(env, region, dir, storm::utility::zero<ParametricType>(), false, bound).first;
     STORM_LOG_DEBUG("Reported extremal value " << res);
     // TODO use termination bound instead of initial value?
-    return storm::solver::minimize(dir) ? storm::utility::convertNumber<CoefficientType>(res) >= valueToCheck
-                                        : storm::utility::convertNumber<CoefficientType>(res) <= valueToCheck;
+    return storm::solver::minimize(dir) ? res >= valueToCheck : res <= valueToCheck;
 }
 
 template<typename ParametricType>

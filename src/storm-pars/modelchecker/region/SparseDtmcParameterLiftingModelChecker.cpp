@@ -76,7 +76,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::spec
     if (isOrderBasedMonotonicityBackend()) {
         STORM_LOG_WARN_COND(!(allowModelSimplifications),
                             "Allowing model simplification when using monotonicity is not useful, as for monotonicity checking model simplification is done as "
-                            "preprocessing");  // TODO: Find out where preprocessing for monotonicity is done
+                            "preprocessing");  // TODO: Find out where this preprocessing for monotonicity is done
         getOrderBasedMonotonicityBackend().initializeMonotonicityChecker(dtmc->getTransitionMatrix());
     }
 
@@ -94,7 +94,11 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::spec
         this->specifyFormula(env, checkTask);
     }
     if (isOrderBasedMonotonicityBackend()) {
-        getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);
+        getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);  // TODO: maybe not necessary
+        getOrderBasedMonotonicityBackend().registerPLABoundFunction(
+            [this](storm::Environment const& env, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
+                return this->computeQuantitativeValues(env, region, dir);  // sets known value bounds within the region
+            });
     }
 }
 
@@ -329,10 +333,11 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstan
 }
 
 template<typename SparseModelType, typename ConstantType>
-std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
+std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     if (maybeStates.empty()) {
-        return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
+        this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
+        return resultsForNonMaybeStates;
     }
     parameterLifter->specifyRegion(region.region, dirForParameters);
 
@@ -425,7 +430,8 @@ std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelT
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
-    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
+    this->updateKnownValueBoundInRegion(region, dirForParameters, result);
+    return result;
 }
 
 template<typename SparseModelType, typename ConstantType>

@@ -23,18 +23,16 @@ namespace storm::modelchecker {
 template<typename ParametricType>
 RegionResult RegionModelChecker<ParametricType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
                                                                RegionResultHypothesis const& hypothesis, bool sampleVerticesOfRegion) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "analyzeRegion not implemented");  // TODO: CHeck
     AnnotatedRegion<ParametricType> annotatedRegion{region};
-    monotonicityBackend->initializeMonotonicity(annotatedRegion);
+    monotonicityBackend->initializeMonotonicity(env, annotatedRegion);
     return analyzeRegion(env, annotatedRegion, hypothesis, sampleVerticesOfRegion);
 }
 
 template<typename ParametricType>
 typename RegionModelChecker<ParametricType>::CoefficientType RegionModelChecker<ParametricType>::getBoundAtInitState(
     Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "analyzeRegion not implemented");  // TODO: CHeck
     AnnotatedRegion<ParametricType> annotatedRegion{region};
-    monotonicityBackend->initializeMonotonicity(annotatedRegion);
+    monotonicityBackend->initializeMonotonicity(env, annotatedRegion);
     return getBoundAtInitState(env, annotatedRegion, dirForParameters);
 }
 
@@ -89,14 +87,17 @@ void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<Reg
                                                                [[maybe_unused]] CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
     STORM_LOG_ASSERT(!splitEstimates.has_value() || isRegionSplitEstimateKindSupported(splitEstimates.value(), checkTask),
                      "specified region split estimate kind not supported");
-    specifiedRegionSplitEstimateKind = splitEstimates;
 }
 
 template<typename ParametricType>
 void RegionModelChecker<ParametricType>::specifyMonotonicity(std::shared_ptr<MonotonicityBackend<ParametricType>> backend,
                                                              CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
-    STORM_LOG_ASSERT(!backend || isMonotonicitySupported(*backend, checkTask), "specified monotonicity backend not supported");
-    monotonicityBackend = backend;
+    if (backend) {
+        STORM_LOG_ASSERT(isMonotonicitySupported(*backend, checkTask), "specified monotonicity backend not supported");
+        monotonicityBackend = backend;
+    } else {
+        monotonicityBackend = std::make_shared<MonotonicityBackend<ParametricType>>();
+    }
 }
 
 template class RegionModelChecker<storm::RationalFunction>;

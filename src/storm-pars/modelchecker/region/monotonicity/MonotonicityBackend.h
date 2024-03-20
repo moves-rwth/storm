@@ -6,6 +6,10 @@
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
 
+namespace storm {
+class Environment;
+}
+
 namespace storm::modelchecker {
 
 template<typename ParametricType>
@@ -45,15 +49,19 @@ class MonotonicityBackend {
      * Initializes the monotonicity information for the given region.
      * Overwrites all present monotonicity annotations in the given region.
      */
-    virtual void initializeMonotonicity(AnnotatedRegion<ParametricType>& region);
+    virtual void initializeMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region);
 
     /*!
      * Updates the monotonicity information for the given region.
      * Assumes that some monotonicity information is already present (potentially inherited from a parent region) and potentially sharpens the results for the
      * given region.
      */
-    virtual void updateMonotonicity(AnnotatedRegion<ParametricType>& region);
-    virtual void updateMonotonicityForSplitting(AnnotatedRegion<ParametricType>& region){};
+    virtual void updateMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region);
+
+    /*!
+     * Updates the monotonicity information for the given region right before splitting it.
+     */
+    virtual void updateMonotonicityBeforeSplitting(storm::Environment const& env, AnnotatedRegion<ParametricType>& region);
 
     /*!
      * Returns an optimistic approximation of the monotonicity of the parameters in this region.
@@ -61,7 +69,7 @@ class MonotonicityBackend {
      */
     virtual std::map<VariableType, MonotonicityKind> getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region);
 
-   private:
+   protected:
     std::map<VariableType, MonotonicityKind> globallyKnownMonotonicityInformation;
 };
 

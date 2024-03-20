@@ -136,7 +136,7 @@ template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 bool ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::isMonotonicitySupported(
     MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     // Currently, we do not support any interaction with the monotonicity backend
-    return backend.requiresInteractionWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend, checkTask) &&
+    return !backend.requiresInteractionWithRegionModelChecker() && impreciseChecker.isMonotonicitySupported(backend, checkTask) &&
            preciseChecker.isMonotonicitySupported(backend, checkTask);
 }
 

@@ -59,14 +59,19 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
      * Initializes the monotonicity information for the given region.
      * Overwrites all present monotonicity annotations in the given region.
      */
-    virtual void initializeMonotonicity(AnnotatedRegion<ParametricType>& region) override;
+    virtual void initializeMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region) override;
 
     /*!
      * Updates the monotonicity information for the given region.
      * Assumes that some monotonicity information is already present (potentially inherited from a parent region) and potentially sharpens the results for the
      * given region.
      */
-    virtual void updateMonotonicity(AnnotatedRegion<ParametricType>& region) override;
+    virtual void updateMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region) override;
+
+    /*!
+     * Updates the monotonicity information for the given region right before splitting it.
+     */
+    virtual void updateMonotonicityBeforeSplitting(storm::Environment const& env, AnnotatedRegion<ParametricType>& region) override;
 
     /*!
      * Returns an optimistic approximation of the monotonicity of the parameters in this region.
@@ -77,6 +82,8 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
    private:
     // Interaction with SparseDtmcParameterLiftingModelChecker:
     void registerParameterLifterReference(storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter);
+    void registerPLABoundFunction(
+        std::function<std::vector<ConstantType>(storm::Environment const&, AnnotatedRegion<ParametricType>&, storm::OptimizationDirection)> fun);
     void initializeMonotonicityChecker(storm::storage::SparseMatrix<ParametricType> const& parametricTransitionMatrix);
     void initializeOrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates,
                                  storm::storage::SparseMatrix<ParametricType> const& parametricTransitionMatrix);
@@ -91,6 +98,7 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
     std::optional<storm::analysis::MonotonicityChecker<ParametricType>> monotonicityChecker;
     std::set<VariableType> possibleMonotoneParameters;
     storm::OptionalRef<storm::transformer::ParameterLifter<ParametricType, ConstantType> const> parameterLifterRef;
+    std::function<std::vector<ConstantType>(storm::Environment const&, AnnotatedRegion<ParametricType>&, storm::OptimizationDirection)> plaBoundFunction;
 };
 
 }  // namespace storm::modelchecker

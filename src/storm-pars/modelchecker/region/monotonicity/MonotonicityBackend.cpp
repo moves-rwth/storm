@@ -11,7 +11,7 @@ void MonotonicityBackend<ParametricType>::setMonotoneParameter(VariableType cons
 }
 
 template<typename ParametricType>
-void MonotonicityBackend<ParametricType>::initializeMonotonicity(AnnotatedRegion<ParametricType>& region) {
+void MonotonicityBackend<ParametricType>::initializeMonotonicity(storm::Environment const&, AnnotatedRegion<ParametricType>& region) {
     typename AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation annotation;
     annotation.globalMonotonicity = std::make_shared<storm::analysis::MonotonicityResult<VariableType>>();
     bool allMonotone = true;
@@ -29,7 +29,13 @@ void MonotonicityBackend<ParametricType>::initializeMonotonicity(AnnotatedRegion
 }
 
 template<typename ParametricType>
-void MonotonicityBackend<ParametricType>::updateMonotonicity(AnnotatedRegion<ParametricType>&) {
+void MonotonicityBackend<ParametricType>::updateMonotonicity(storm::Environment const&, AnnotatedRegion<ParametricType>&) {
+    // Nothing to do.
+    // Be aware of potential side effects since monotonicity annotations might be shared among sub-regions.
+}
+
+template<typename ParametricType>
+void MonotonicityBackend<ParametricType>::updateMonotonicityBeforeSplitting(storm::Environment const&, AnnotatedRegion<ParametricType>&) {
     // Nothing to do here
 }
 

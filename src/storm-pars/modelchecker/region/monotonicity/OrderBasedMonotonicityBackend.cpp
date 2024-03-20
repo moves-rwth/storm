@@ -22,24 +22,25 @@ std::shared_ptr<storm::analysis::Order> extendOrder(storm::analysis::OrderExtend
 }
 
 template<typename ParametricType, typename ConstantType>
-void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, storm::analysis::Order& order,
-                                   storm::analysis::LocalMonotonicityResult<ParametricType>& localMonotonicityResult,
-                                   storm::analysis::MonotonicityChecker<ParametricType>& monotonicityChecker,
-                                   storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter) {
-    auto state = order.getNextDoneState(-1);
-    auto const& variablesAtState = parameterLifter.getOccurringVariablesAtState();
-    while (state != order.getNumberOfStates()) {
-        if (localMonotonicityResult->getMonotonicity(state) == nullptr) {
+void extendLocalMonotonicityResult(
+    storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> const& order,
+    storm::analysis::LocalMonotonicityResult<typename storm::storage::ParameterRegion<ParametricType>::VariableType>& localMonotonicityResult,
+    storm::analysis::MonotonicityChecker<ParametricType>& monotonicityChecker,
+    storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter) {
+    auto state = order->getNextDoneState(-1);
+    auto const& variablesAtState = parameterLifter.getOccurringVariablesAtState();  // TODO: this might be possivle via the OrderExtender as well
+    while (state != order->getNumberOfStates()) {
+        if (localMonotonicityResult.getMonotonicity(state) == nullptr) {
             auto variables = variablesAtState[state];
-            if (variables.size() == 0 || order.isBottomState(state) || order.isTopState(state)) {
-                localMonotonicityResult->setConstant(state);
+            if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
+                localMonotonicityResult.setConstant(state);
             } else {
                 for (auto const& var : variables) {
-                    auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                    auto monotonicity = localMonotonicityResult.getMonotonicity(state, var);
                     if (!storm::analysis::isMonotone(monotonicity)) {
                         monotonicity = monotonicityChecker.checkLocalMonotonicity(order, state, var, region);
                         if (storm::analysis::isMonotone(monotonicity)) {
-                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                            localMonotonicityResult.setMonotonicity(state, var, monotonicity);
                         } else {
                             // TODO: Skip for now?
                         }
@@ -47,7 +48,7 @@ void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricTyp
                 }
             }
         }
-        state = order.getNextDoneState(state);
+        state = order->getNextDoneState(state);
     }
     auto const& statesAtVariable = parameterLifter.getOccuringStatesAtVariable();
     bool allDone = true;
@@ -56,7 +57,7 @@ void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricTyp
         auto var = entry.first;
         bool done = true;
         for (auto const& state : states) {
-            done &= order.contains(state) && localMonotonicityResult->getMonotonicity(state, var) != storm::analysis::MonotonicityKind::Unknown;
+            done &= order->contains(state) && localMonotonicityResult.getMonotonicity(state, var) != storm::analysis::MonotonicityKind::Unknown;
             if (!done) {
                 break;
             }
@@ -64,16 +65,16 @@ void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricTyp
 
         allDone &= done;
         if (done) {
-            localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
+            localMonotonicityResult.getGlobalMonotonicityResult()->setDoneForVar(var);
         }
     }
     if (allDone) {
-        localMonotonicityResult->setDone();
-        while (order.existsNextState()) {
+        localMonotonicityResult.setDone();
+        while (order->existsNextState()) {
             // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
-            order.add(order.getNextStateNumber().second);
+            order->add(order->getNextStateNumber().second);
         }
-        assert(order.getDoneBuilding());
+        assert(order->getDoneBuilding());
     }
 }
 }  // namespace detail
@@ -95,23 +96,70 @@ bool OrderBasedMonotonicityBackend<ParametricType, ConstantType>::recommendModel
 }
 
 template<typename ParametricType, typename ConstantType>
-void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMonotonicity(AnnotatedRegion<ParametricType>& region) {
-    // TODO: Implement
+void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMonotonicity(storm::Environment const& env,
+                                                                                         AnnotatedRegion<ParametricType>& region) {
+    if (useBounds) {
+        STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
+        orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
+        orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
+    }
+    typename AnnotatedRegion<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
+    annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
+    annotation.localMonotonicityResult = std::make_shared<storm::analysis::LocalMonotonicityResult<VariableType>>(annotation.stateOrder->getNumberOfStates());
 
-    /* From extendlocalMOnotonicityResult
-    if (!localMonotonicityResult->isFixedParametersSet()) {
-        for (auto& var : this->monotoneIncrParameters.get()) {
-            localMonotonicityResult->setMonotoneIncreasing(var);
-        }
-        for (auto& var : this->monotoneDecrParameters.get()) {
-            localMonotonicityResult->setMonotoneDecreasing(var);
-        }
-    }*/
+    for (auto& [var, kind] : this->globallyKnownMonotonicityInformation) {
+        if (kind == MonotonicityKind::Incr || kind == MonotonicityKind::Constant)
+            annotation.localMonotonicityResult->setMonotoneIncreasing(var);
+        else if (kind == MonotonicityKind::Decr)
+            annotation.localMonotonicityResult->setMonotoneDecreasing(var);
+    }
+
+    detail::extendLocalMonotonicityResult(region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,
+                                          *this->parameterLifterRef);
+    region.monotonicityAnnotation = annotation;
 }
 
 template<typename ParametricType, typename ConstantType>
-void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotonicity(AnnotatedRegion<ParametricType>& region) {
-    // TODO: Implement
+void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region) {
+    auto annotation = region.getOrderBasedMonotonicityAnnotation();
+    STORM_LOG_ASSERT(annotation.has_value(), "Order-based monotonicity annotation must be present.");
+    // Find out if we need to copy the order as it might be shared among subregions.
+    // Copy order only if it will potentially change and if it is shared with another region
+    bool const changeOrder = !annotation->stateOrder->getDoneBuilding() && orderExtender->isHope(annotation->stateOrder);
+    if (changeOrder && annotation->stateOrder.use_count() > 1) {
+        // TODO: Check if this check correctly avoids unnecessary copies
+        // TODO: orderExtender currently uses shared_ptr<Order> which likely interferes with the use_count() > 1 check above
+        auto newOrder = annotation->stateOrder->copy();
+        orderExtender->setUnknownStates(annotation->stateOrder, newOrder);
+        orderExtender->copyMinMax(annotation->stateOrder, newOrder);
+        annotation->stateOrder = newOrder;
+    }
+    if (changeOrder) {
+        detail::extendOrder(*this->orderExtender, annotation->stateOrder, region.region);
+    }
+    // Similarly handle local monotonicity result
+    bool const changeLocalMonotonicity = changeOrder && !annotation->localMonotonicityResult->isDone();
+    if (changeLocalMonotonicity && annotation->localMonotonicityResult.use_count() > 1) {
+        // TODO: Check if this check correctly avoids unnecessary copies
+        annotation->localMonotonicityResult = annotation->localMonotonicityResult->copy();
+    }
+    if (changeLocalMonotonicity) {
+        detail::extendLocalMonotonicityResult(region.region, annotation->stateOrder, *annotation->localMonotonicityResult, *this->monotonicityChecker,
+                                              *this->parameterLifterRef);
+    }
+}
+
+template<typename ParametricType, typename ConstantType>
+void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotonicityBeforeSplitting(storm::Environment const& env,
+                                                                                                    AnnotatedRegion<ParametricType>& region) {
+    auto annotation = region.getOrderBasedMonotonicityAnnotation();
+    STORM_LOG_ASSERT(annotation.has_value(), "Order-based monotonicity annotation must be present.");
+    if (useBounds && !annotation->stateOrder->getDoneBuilding()) {
+        STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
+        // TODO: Can re-use bounds from performed PLA call before splitting is triggered. Maybe allow some caching in the PLA checker?
+        orderExtender->setMinMaxValues(annotation->stateOrder, plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize),
+                                       plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
+    }
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -138,6 +186,12 @@ template<typename ParametricType, typename ConstantType>
 void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::registerParameterLifterReference(
     storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter) {
     this->parameterLifterRef.reset(parameterLifter);
+}
+
+template<typename ParametricType, typename ConstantType>
+void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::registerPLABoundFunction(
+    std::function<std::vector<ConstantType>(storm::Environment const&, AnnotatedRegion<ParametricType>&, storm::OptimizationDirection)> fun) {
+    this->plaBoundFunction = fun;
 }
 
 template<typename ParametricType, typename ConstantType>

@@ -114,8 +114,11 @@ class SparseParameterLiftingModelChecker : public RegionModelChecker<typename Sp
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT();
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO();
 
-    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                                   storm::solver::OptimizationDirection const& dirForParameters) = 0;
+    virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                storm::solver::OptimizationDirection const& dirForParameters) = 0;
+
+    void updateKnownValueBoundInRegion(AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection dir,
+                                       std::vector<ConstantType> const& newValues);
 
     std::shared_ptr<SparseModelType> parametricModel;
     std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;

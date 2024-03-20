@@ -33,15 +33,14 @@ struct AnnotatedRegion {
             if (r.refinementDepth == 0) {
                 r.refinementDepth = refinementDepth + 1;
             }
+            r.monotonicityAnnotation =
+                monotonicityAnnotation;  // Potentially shared for all subregions! Creating actual copies is handled via the monotonicity backend
             r.knownLowerValueBound &= knownLowerValueBound;
             r.knownUpperValueBound &= knownUpperValueBound;
         }
-        if (auto defaultMono = getDefaultMonotonicityAnnotation(); defaultMono.has_value()) {
-            propagateMonotonicityAnnotationsToSubregions(*defaultMono, allowDeleteAnnotationsOfThis);
-        } else if (auto orderMono = getOrderBasedMonotonicityAnnotation(); orderMono.has_value()) {
-            propagateMonotonicityAnnotationsToSubregions(*orderMono, allowDeleteAnnotationsOfThis);
-        } else {
-            STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
+        if (allowDeleteAnnotationsOfThis) {
+            // Delete annotations that are memory intensive
+            monotonicityAnnotation.template emplace<0>();
         }
     }
 
@@ -143,6 +142,14 @@ struct AnnotatedRegion {
         return result;
     }
 
+    bool updateValueBound(CoefficientType const& newValue, storm::OptimizationDirection dir) {
+        if (minimize(dir)) {
+            return knownLowerValueBound &= newValue;
+        } else {
+            return knownUpperValueBound &= newValue;
+        }
+    }
+
     storm::utility::Maximum<CoefficientType> knownLowerValueBound;  // Maximal known lower bound on the value of the region
     storm::utility::Minimum<CoefficientType> knownUpperValueBound;  // Minimal known upper bound on the value of the region
 
@@ -155,56 +162,6 @@ struct AnnotatedRegion {
         } else {
             STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
             return false;
-        }
-    }
-
-    void propagateMonotonicityAnnotationsToSubregions(DefaultMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
-        if (parentAnnotation.globalMonotonicity) {
-            bool const parentDone = parentAnnotation.globalMonotonicity->isDone();
-            for (auto& r : subRegions) {
-                if (!r.monotonicityAnnotationsInitialized()) {
-                    // Share ownership with parent if done or Transfer ownership from parent if possible. Otherwise copy
-                    if (parentDone || (allowDeleteAnnotationsOfThis && parentAnnotation.globalMonotonicity.use_count() == 1)) {
-                        r.monotonicityAnnotation = parentAnnotation;
-                    } else {
-                        r.monotonicityAnnotation = DefaultMonotonicityAnnotation{parentAnnotation.globalMonotonicity->copy()};
-                    }
-                }
-            }
-        }
-    }
-
-    void propagateMonotonicityAnnotationsToSubregions(OrderBasedMonotonicityAnnotation& parentAnnotation, bool allowDeleteAnnotationsOfThis) {
-        if (parentAnnotation.stateOrder) {
-            STORM_LOG_ASSERT(parentAnnotation.localMonotonicityResult, "Local monotonicity result must be set iff state order is set");
-            bool const stateOrderDone = parentAnnotation.stateOrder->getDoneBuilding();
-            bool const localMonotonicityResultDone = stateOrderDone && parentAnnotation.localMonotonicityResult->isDone();
-            for (auto& r : subRegions) {
-                if (!r.monotonicityAnnotationsInitialized()) {
-                    // Propagate order and local monotonicity.
-                    // If they are done, they will not change anymore and ownership is shared among the subregions. If they are not done, we copy them.
-                    // However, if the data is not used anywhere else, we might transfer ownership from parent to (first) child instead to avoid one unnecessary
-                    // copy.
-                    if (allowDeleteAnnotationsOfThis && parentAnnotation.stateOrder.use_count() == 1 &&
-                        parentAnnotation.localMonotonicityResult.use_count() == 1) {
-                        // Transfer ownership to avoid one unnecessary copy
-                        r.monotonicityAnnotation = parentAnnotation;
-                    } else {
-                        OrderBasedMonotonicityAnnotation newAnnotation;
-                        if (stateOrderDone) {
-                            // Share ownership of order and (potentially) local monotonicity
-                            newAnnotation.stateOrder = parentAnnotation.stateOrder;
-                            newAnnotation.localMonotonicityResult =
-                                localMonotonicityResultDone ? parentAnnotation.localMonotonicityResult : parentAnnotation.localMonotonicityResult->copy();
-                        } else {
-                            // Copy both
-                            newAnnotation.stateOrder = parentAnnotation.stateOrder->copy();  // TODO: Or copyOrder(order)?
-                            newAnnotation.localMonotonicityResult = parentAnnotation.localMonotonicityResult->copy();
-                        }
-                        r.monotonicityAnnotation = std::move(newAnnotation);
-                    }
-                }
-            }
         }
     }
 };

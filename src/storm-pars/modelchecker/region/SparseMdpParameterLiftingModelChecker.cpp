@@ -304,10 +304,11 @@ bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMon
 }
 
 template<typename SparseModelType, typename ConstantType>
-std::unique_ptr<CheckResult> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
+std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     if (maybeStates.empty()) {
-        return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
+        this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
+        return resultsForNonMaybeStates;
     }
 
     parameterLifter->specifyRegion(region.region, dirForParameters);
@@ -369,8 +370,8 @@ std::unique_ptr<CheckResult> SparseMdpParameterLiftingModelChecker<SparseModelTy
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
-
-    return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(result));
+    this->updateKnownValueBoundInRegion(region, dirForParameters, result);
+    return result;
 }
 
 template<typename SparseModelType, typename ConstantType>

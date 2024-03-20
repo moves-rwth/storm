@@ -59,8 +59,8 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT() override;
     virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO() override;
 
-    virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                                   storm::solver::OptimizationDirection const& dirForParameters) override;
+    virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                storm::solver::OptimizationDirection const& dirForParameters) override;
 
     void computeStateValueDeltaRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
                                                     storm::storage::ParameterRegion<ParametricType> const& region,

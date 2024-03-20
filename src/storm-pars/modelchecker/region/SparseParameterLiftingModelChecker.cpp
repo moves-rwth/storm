@@ -192,23 +192,12 @@ template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters);
-    if (hasUniqueInitialState()) {  // TODO: Maybe do this within 'computeQuantitativeValue? At least ensure this is also set for 'getBound' and
-                                    // 'getBoundAtInitState' and when in analyze region things are inferred from monotonicity
-        // Update known value bounds
-        CoefficientType initStateValue = storm::utility::convertNumber<CoefficientType>(
-            quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()]);
-        if (minimize(dirForParameters)) {
-            region.knownLowerValueBound &= initStateValue;
-        } else {
-            region.knownUpperValueBound &= initStateValue;
-        }
-    }
+    auto quantitativeCheckResult = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(std::move(quantitativeResult));
     if (currentCheckTask->getFormula().hasQuantitativeResult()) {
-        return quantitativeResult;
+        return quantitativeCheckResult;
     } else {
-        return quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(
-            this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(),
-            this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
+        return quantitativeCheckResult->compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(),
+                                                            this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
     }
 }
 
@@ -216,8 +205,7 @@ template<typename SparseModelType, typename ConstantType>
 std::unique_ptr<QuantitativeCheckResult<ConstantType>> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBound(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_WARN_COND(this->currentCheckTask->getFormula().hasQuantitativeResult(), "Computing quantitative bounds for a qualitative formula...");
-    return std::make_unique<ExplicitQuantitativeCheckResult<ConstantType>>(
-        std::move(computeQuantitativeValues(env, region, dirForParameters)->template asExplicitQuantitativeCheckResult<ConstantType>()));
+    return std::make_unique<ExplicitQuantitativeCheckResult<ConstantType>>(computeQuantitativeValues(env, region, dirForParameters));
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -226,8 +214,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getBoundAtIni
                                                                                        storm::solver::OptimizationDirection const& dirForParameters) {
     STORM_LOG_THROW(hasUniqueInitialState(), storm::exceptions::NotSupportedException,
                     "Getting a bound at the initial state requires a model with a single initial state.");
-    return storm::utility::convertNumber<CoefficientType>(
-        getBound(env, region, dirForParameters)->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()]);
+    return computeQuantitativeValues(env, region, dirForParameters).at(getUniqueInitialState());
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -299,6 +286,19 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getAndEvaluat
     auto value = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[getUniqueInitialState()];
 
     return std::make_pair(storm::utility::convertNumber<CoefficientType>(value), std::move(point));
+}
+
+template<typename SparseModelType, typename ConstantType>
+void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::updateKnownValueBoundInRegion(AnnotatedRegion<ParametricType>& region,
+                                                                                                      storm::solver::OptimizationDirection dir,
+                                                                                                      std::vector<ConstantType> const& newValues) {
+    if (hasUniqueInitialState()) {
+        // Catch the infinity case since conversion might fail otherwise
+        auto const& newValue = newValues.at(getUniqueInitialState());
+        CoefficientType convertedValue =
+            storm::utility::isInfinity(newValue) ? storm::utility::infinity<CoefficientType>() : storm::utility::convertNumber<CoefficientType>(newValue);
+        region.updateValueBound(convertedValue, dir);
+    }
 }
 
 template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

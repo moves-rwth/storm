@@ -703,8 +703,8 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues,
-                                                             std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues,
+                                                             std::vector<ConstantType>&& maxValues) {
     assert(minValues.size() == numberOfStates);
     assert(maxValues.size() == numberOfStates);
     usePLA[order] = true;
@@ -724,7 +724,7 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Ord
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
+void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues) {
     assert(minValues.size() == numberOfStates);
     auto& maxValues = this->maxValues[order];
     usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
@@ -745,7 +745,7 @@ void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order>
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& maxValues) {
     assert(maxValues.size() == numberOfStates);
     usePLA[order] = this->minValues.find(order) != this->minValues.end();
     auto& minValues = this->minValues[order];
@@ -765,13 +765,13 @@ void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order>
     this->maxValues[order] = std::move(maxValues);  // maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 }
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>& minValues) {
+void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>&& minValues) {
     assert(minValues.size() == numberOfStates);
     this->minValuesInit = std::move(minValues);
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>&& maxValues) {
     assert(maxValues.size() == numberOfStates);
     this->maxValuesInit = std::move(maxValues);  // maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 }
