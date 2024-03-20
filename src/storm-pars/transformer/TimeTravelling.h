@@ -14,19 +14,19 @@
 namespace storm {
 namespace transformer {
 
-/**
- * Path through the pMC.
- *
- * @var path States of the path.
- * @var probability Cumulated probability of the path.
- */
-struct searchingPath {
-    std::vector<uint_fast64_t> path;
-    RationalFunction probability;
-};
-
 class TimeTravelling {
    public:
+    /**
+     * Path through the pMC.
+     *
+     * @var path States of the path.
+     * @var probability Cumulated probability of the path.
+     */
+    struct searchingPath {
+        std::vector<uint_fast64_t> path;
+        RationalFunction probability;
+    };
+
     /**
      * This class re-orders parameteric transitions of a pMC so bounds computed by Parameter Lifting will eventually be better.
      * The parametric reachability probability for the given check task will be the same in the time-travelled and in the original model.
@@ -42,9 +42,9 @@ class TimeTravelling {
      * @param timeTravel Whether to time-travel, i.e., add new states to consolidate similar transitions.
      * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
      */
-    static models::sparse::Dtmc<RationalFunction> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                          modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon = 4,
-                                                          bool timeTravel = true);
+    models::sparse::Dtmc<RationalFunction> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon = 4,
+                                                   bool timeTravel = true);
 
    private:
     /**
@@ -59,8 +59,7 @@ class TimeTravelling {
      * @return std::pair<std::vector<searchingPath>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
     static std::pair<std::vector<searchingPath>, std::vector<uint64_t>> findBigStepPaths(
-        uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon,
-        const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+        uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
 
@@ -85,21 +84,22 @@ class TimeTravelling {
 
     /**
      * Actually eliminate transitions in flexibleMatrix and backwardFlexibleMatrix according to the paths we found and want to eliminate.
-     * 
+     *
      * @param state The root state for the paths.
      * @param paths The paths.
      * @param flexibleMatrix The flexible matrix (modifies this!)
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    static void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<searchingPath> paths,
-                                                storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
+    static void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<TimeTravelling::searchingPath> paths,
+                                                     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                     storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                     storage::BitVector& reachableStates,
+                                                     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
 
     /**
      * Updates which states are unreachable after the previous transformation without needing a model checking procedure.
-     * 
+     *
      * @param reachableStates Reachable states to the best of our knowledge (modifies this!)
      * @param statesMaybeUnreachable States that may have become unreachable (= the visited states during the big step search, modifies this!)
      * @param backwardsFlexibleMatrix The backwards flexible matrix in which to look for predecessors.
@@ -125,7 +125,8 @@ class TimeTravelling {
     static void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                                  std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                                  const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                 const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions, const std::set<RationalFunctionVariable>& allParameters,
+                                 const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
+                                 const std::set<RationalFunctionVariable>& allParameters,
                                  const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling,
                                  const std::set<std::string> labelsInFormula);
 
