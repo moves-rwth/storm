@@ -411,18 +411,21 @@ class ValueIterationOperator {
      */
     bool auxiliaryVectorUsedExternally{false};
 
-    template<typename ApplyValueType>
+    // Due to a GCC bug we have to add this dummy template type here
+    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
+    template<typename ApplyValueType, typename Dummy>
     struct ApplyCache{};
 
-    template<>
-    struct ApplyCache<storm::Interval> {
+    template<typename Dummy>
+    struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
+        Dummy x;
     };
 
     /*!
      * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
      */
-    ApplyCache<ValueType> applyCache;
+    ApplyCache<ValueType, int> applyCache;
 
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector
