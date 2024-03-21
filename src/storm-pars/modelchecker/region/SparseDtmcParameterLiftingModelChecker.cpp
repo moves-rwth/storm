@@ -478,13 +478,13 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::comp
                         }
                     }
                 }
-                auto optimal = storm::utility::convertNumber<double>(stateResults[optimalChoice]);
-                auto diff = optimal - storm::utility::convertNumber<double>(bestValue);
+                auto const& optimal = stateResults[optimalChoice];
+                auto diff = storm::utility::abs<ConstantType>(optimal - storm::utility::convertNumber<ConstantType>(bestValue));
                 if (foundBestValue) {
                     if (checkUpperParameters) {
-                        deltaLower[p] += std::abs(diff);
+                        deltaLower[p] += diff;
                     } else {
-                        deltaUpper[p] += std::abs(diff);
+                        deltaUpper[p] += diff;
                     }
                 }
             }
