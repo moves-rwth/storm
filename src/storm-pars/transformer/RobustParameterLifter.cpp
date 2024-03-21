@@ -197,31 +197,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
     return boost::none;
 }
 
-// template<typename ParametricType, typename ConstantType>
-// boost::optional<std::pair<std::pair<uint64_t, uint64_t>, typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
-// RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::recursiveDecompose(RawPolynomial polynomial, VariableType parameter) {
-//     auto parameterPol = RawPolynomial(parameter);
-//     auto oneMinusParameter = RawPolynomial(1) - parameterPol;
-//     if (polynomial.isConstant()) {
-//         return std::make_pair(std::make_pair((uint64_t)0, (uint64_t)0), utility::convertNumber<CoefficientType>(polynomial.constantPart()));
-//     }
-//     auto byOneMinusP = polynomial.divideBy(oneMinusParameter);
-//     if (byOneMinusP.remainder.isZero()) {
-//         auto recursiveResult = recursiveDecompose(byOneMinusP.quotient, parameter);
-//         if (recursiveResult) {
-//             return std::make_pair(std::make_pair(recursiveResult->first.first, recursiveResult->first.second + 1), recursiveResult->second);
-//         }
-//     }
-//     auto byP = polynomial.divideBy(parameterPol);
-//     if (byP.remainder.isZero()) {
-//         auto recursiveResult = recursiveDecompose(byP.quotient, parameter);
-//         if (recursiveResult) {
-//             return std::make_pair(std::make_pair(recursiveResult->first.first + 1, recursiveResult->first.second), recursiveResult->second);
-//         }
-//     }
-//     return boost::none;
-// }
-
 template<typename ParametricType, typename ConstantType>
 std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cubicEquationZeroes(
@@ -288,19 +263,19 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
     double qDouble = utility::convertNumber<ConstantType>(q);
 
     if (utility::isZero(p)) {  // p = 0 -> t^3 = -q -> t = -q^1/3
-        roots = {CoefficientType(std::cbrt(-qDouble))};
+        roots = {utility::convertNumber<CoefficientType>(std::cbrt(-qDouble))};
     } else if (utility::isZero(q)) {  // q = 0 -> t^3 + pt = 0 -> t(t^2+p)=0
         roots = {0};
         if (p < 0) {
-            roots.emplace(utility::sqrt(-pDouble));
-            roots.emplace(-utility::sqrt(-pDouble));
+            roots.emplace(utility::convertNumber<CoefficientType>(utility::sqrt(-pDouble)));
+            roots.emplace(utility::convertNumber<CoefficientType>(-utility::sqrt(-pDouble)));
         }
     } else {
         // These are all coefficients (we also plug the values into RationalFunctions later), i.e., they are rational numbers,
         // but some of these operations are strictly real, so we convert to double and back (i.e., approximate).
         CoefficientType D = q * q / 4 + p * p * p / 27;
         if (utility::isZero(D)) {  // D = 0 -> two roots
-            roots = {-1.5 * q / p, 3 * q / p};
+            roots = {-3 * q / (p * 2), 3 * q / p};
         } else if (D > 0) {  // Only one real root
             double Ddouble = utility::convertNumber<ConstantType>(D);
             CoefficientType u = utility::convertNumber<CoefficientType>(std::cbrt(-qDouble / 2 - utility::sqrt(Ddouble)));
@@ -314,6 +289,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
                      utility::convertNumber<CoefficientType>(u * std::cos(t - 2 * k))};
         }
     }
+
     return roots;
 }
 
@@ -347,34 +323,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::Ro
             }
         }
         this->parameters.emplace(p);
-
-        // auto resultForParameter = recursiveDecompose(term, p);
-
-        // STORM_LOG_ASSERT(resultForParameter, "Polynomial cannot be decomposed: " << transition << std::endl);
-
-        // uint64_t a = resultForParameter->first.first;
-        // uint64_t b = resultForParameter->first.second;
-        // CoefficientType constant = resultForParameter->second.first / denominator;
-
-        // // Term is constant * p^a * (1-p)^b
-        // this->aAndB.emplace(p, std::make_pair(a, b));
-        // this->constants.emplace(p, utility::convertNumber<ConstantType>(constant));
-
-        // auto cleanedTerm = term / constant;
-
-        // // The maximum of the polynomial part lies at a / (a + b), so compute that
-        // // It is corrected for constant and offset later, not now
-        // CoefficientType maximumCoeff;
-        // if (a != 0 || b != 0) {
-        //     maximumCoeff = utility::convertNumber<CoefficientType>(a) / utility::convertNumber<CoefficientType>(a + b);
-        // } else {
-        //     maximumCoeff = utility::zero<CoefficientType>();
-        // }
-        // ConstantType maximum = utility::convertNumber<ConstantType>(maximumCoeff);
-
-        // std::map<VariableType, CoefficientType> substitution;
-        // substitution.emplace(p, maximumCoeff);
-        // this->maximum.emplace(p, std::make_pair(maximum, utility::convertNumber<ConstantType>(cleanedTerm.evaluate(substitution))));
     }
 }
 
