@@ -414,12 +414,11 @@ class ValueIterationOperator {
     // Due to a GCC bug we have to add this dummy template type here
     // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
     template<typename ApplyValueType, typename Dummy>
-    struct ApplyCache{};
+    struct ApplyCache {};
 
     template<typename Dummy>
     struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
-        Dummy x;
     };
 
     /*!
