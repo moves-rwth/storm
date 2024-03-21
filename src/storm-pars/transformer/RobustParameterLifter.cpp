@@ -1,5 +1,4 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
-#include <_types/_uint64_t.h>
 #include <cmath>
 #include <memory>
 #include <optional>

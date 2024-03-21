@@ -1,5 +1,4 @@
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
-#include <_types/_uint64_t.h>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationOperator.h"

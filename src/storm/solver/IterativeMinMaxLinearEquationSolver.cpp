@@ -1,4 +1,3 @@
-#include <_types/_uint64_t.h>
 #include <functional>
 #include <limits>
 
@@ -643,8 +642,6 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
                               storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
                               env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
     this->reportStatus(status, numIterations);
-
-    std::cout << numIterations << " iterations" << std::endl;
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {
