@@ -291,8 +291,8 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        static std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
-        robustOrder.clear();
+        AuxCompare<RobustDirection> compare;
+        applyCache.robustOrder.clear();
 
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
@@ -304,20 +304,18 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * lower;
             }
             remainingValue -= lower;
-            // TODO Float rounding modes are not respecting optimization direction here, is this an issue?
             auto const diameter = matrixValueIt->upper() - lower;
             if (!storm::utility::isZero(diameter)) {
-                robustOrder.emplace_back(operand[*matrixColumnIt], diameter);
+                applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], diameter);
             }
         }
         if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
             return result;
         }
 
-        static AuxCompare<RobustDirection> cmp;
-        std::sort(robustOrder.begin(), robustOrder.end(), cmp);
+        std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), compare);
 
-        for (auto const& pair : robustOrder) {
+        for (auto const& pair : applyCache.robustOrder) {
             auto availableMass = std::min(pair.second, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
@@ -412,6 +410,19 @@ class ValueIterationOperator {
      * True, if an auxiliary vector exists
      */
     bool auxiliaryVectorUsedExternally{false};
+
+    template<typename ApplyValueType>
+    struct ApplyCache{};
+
+    template<>
+    struct ApplyCache<storm::Interval> {
+        mutable std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
+    };
+
+    /*!
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     */
+    ApplyCache<ValueType> applyCache;
 
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector
