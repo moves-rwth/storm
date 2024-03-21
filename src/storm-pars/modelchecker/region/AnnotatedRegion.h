@@ -136,8 +136,6 @@ struct AnnotatedRegion {
             if (auto globalRes = orderMono->localMonotonicityResult->getGlobalMonotonicityResult()) {
                 result.reset(*globalRes);
             }
-        } else {
-            STORM_LOG_ASSERT(false, "Unknown monotonicity annotation type.");
         }
         return result;
     }

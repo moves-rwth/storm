@@ -52,12 +52,12 @@ bool MonotonicityBackend<ParametricType>::recommendModelSimplifications() const 
 template<typename ParametricType>
 std::map<typename MonotonicityBackend<ParametricType>::VariableType, typename MonotonicityBackend<ParametricType>::MonotonicityKind>
 MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
-    auto annotatedResult = region.getDefaultMonotonicityAnnotation();
-    STORM_LOG_ASSERT(annotatedResult.has_value() && annotatedResult->globalMonotonicity, "Default monotonicity annotation with a result must be present.");
     std::map<VariableType, MonotonicityKind> result;
-    for (auto const& parameter : region.region.getVariables()) {
-        if (auto monRes = annotatedResult->globalMonotonicity->getMonotonicity(parameter); storm::analysis::isMonotone(monRes)) {
-            result.emplace(parameter, monRes);
+    if (auto globalMonotonicity = region.getGlobalMonotonicityResult(); globalMonotonicity.has_value()) {
+        for (auto const& parameter : region.region.getVariables()) {
+            if (auto monRes = globalMonotonicity->getMonotonicity(parameter); storm::analysis::isMonotone(monRes)) {
+                result.emplace(parameter, monRes);
+            }
         }
     }
     return result;

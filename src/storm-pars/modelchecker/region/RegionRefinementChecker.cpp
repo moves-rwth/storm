@@ -128,10 +128,15 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 
         if (!monotonicityInitialized && currentRegion.refinementDepth >= monThresh) {
             monotonicityInitialized = true;
-            monotonicityBackend->initializeMonotonicity(env, currentRegion);
-            rootRegion.propagateAnnotationsToSubregions(true);
+            monotonicityBackend->initializeMonotonicity(env, rootRegion);
+            // Propagate monotonicity (unless the currentRegion is the root)
+            if (currentRegion.refinementDepth > 0) {
+                rootRegion.propagateAnnotationsToSubregions(true);
+            }
         }
-        monotonicityBackend->updateMonotonicity(env, currentRegion);
+        if (monotonicityInitialized) {
+            monotonicityBackend->updateMonotonicity(env, currentRegion);
+        }
 
         currentRegion.result = regionChecker->analyzeRegion(env, currentRegion, hypothesis);
 

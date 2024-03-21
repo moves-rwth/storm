@@ -166,7 +166,8 @@ template<typename ParametricType, typename ConstantType>
 std::map<typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::VariableType,
          typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::MonotonicityKind>
 OrderBasedMonotonicityBackend<ParametricType, ConstantType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
-    // TODO: implement
+    // TODO: Implement this so that it respects possibleMonotoneParameters?
+    return MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(region);
 }
 
 template<typename ParametricType, typename ConstantType>
