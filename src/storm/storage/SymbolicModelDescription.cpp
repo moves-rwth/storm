@@ -167,7 +167,9 @@ SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const&
 SymbolicModelDescription SymbolicModelDescription::preprocess(
     std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
     if (this->isJaniModel()) {
-        storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstantsFunctions();
+        storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstants();
+        // We intentionally do not eliminate function expressions in jani models at this point because that would also remove the function
+        // declarations from the model. However, those might still be needed to, e.g., process properties that refer to functions.
         return SymbolicModelDescription(preparedModel);
     } else if (this->isPrismProgram()) {
         return SymbolicModelDescription(

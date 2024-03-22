@@ -828,8 +828,8 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support instantenous rewards with interval models.");
     } else {
         // Only compute the result if the model has a state-based reward this->getModel().
-        STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-
+        STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                        "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
         // Initialize result to state rewards of the this->getModel().
         std::vector<SolutionType> result(rewardModel.getStateRewardVector());
 
