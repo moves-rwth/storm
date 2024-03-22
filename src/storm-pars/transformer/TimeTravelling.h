@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <set>
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalFunctionForward.h"
@@ -18,12 +20,23 @@ class TimeTravelling {
     /**
      * Path through the pMC.
      *
-     * @var path States of the path.
-     * @var probability Cumulated probability of the path.
+     * @var prefix Pointer to the previous path element.
+     * @var state Last state of the path.
+     * @var transition Last transition of the path.
+     * @var probability Probability to start.
      */
     struct searchingPath {
-        std::vector<uint_fast64_t> path;
-        RationalFunction probability;
+        const std::shared_ptr<searchingPath> prefix;
+        const uint64_t state;
+        const RationalFunction transition;
+        const RationalFunction probability;
+        searchingPath(std::shared_ptr<searchingPath> prefix, uint64_t state, RationalFunction transition, RationalFunction probability)
+            : prefix(prefix), state(state), transition(transition), probability(probability) {
+            // Intentionally left empty.
+        }
+        bool stateInPath(uint64_t s) {
+            return state == s || (prefix && prefix->stateInPath(s));
+        }
     };
 
     /**
@@ -55,9 +68,9 @@ class TimeTravelling {
      * @param flexibleMatrix Matrix of the pMC.
      * @param treeStates Tree states (see updateTreeStates).
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
-     * @return std::pair<std::vector<searchingPath>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
+     * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
-    static std::pair<std::vector<searchingPath>, std::vector<uint64_t>> findBigStepPaths(
+    static std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> findBigStepPaths(
         uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
@@ -73,10 +86,10 @@ class TimeTravelling {
      * @param alreadyTimeTravelledToThis Map of stuff we already time-travelled w.r.t. (modifies this!)
      * @param treeStatesNeedUpdate Map of the tree states that need updating (modifies this!)
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
-     * @return std::optional<std::vector<searchingPath>>
+     * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    static std::optional<std::vector<searchingPath>> findTimeTravelling(
-        const std::vector<searchingPath> bigStepPaths, const RationalFunctionVariable& parameter,
+    static std::optional<std::vector<std::shared_ptr<searchingPath>>> findTimeTravelling(
+        const std::vector<std::shared_ptr<searchingPath>> bigStepPaths, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
         std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t originalNumStates);
@@ -90,7 +103,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    static void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<TimeTravelling::searchingPath> paths,
+    static void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<std::shared_ptr<TimeTravelling::searchingPath>> paths,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,
@@ -119,15 +132,13 @@ class TimeTravelling {
      * @param allParameters The set of all parameters of the pMC.
      * @param stateRewardVector The state reward vector of the pMC.
      * @param stateLabelling The state labelling of the pMC.
-     * @param labelsInFormula The labels that occur in the property.
      */
     static void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                                  std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                                  const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                  const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
                                  const std::set<RationalFunctionVariable>& allParameters,
-                                 const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling,
-                                 const std::set<std::string> labelsInFormula);
+                                 const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling);
 
     /**
      * extendStateLabeling extends the given state labeling to newly created states. It will set the new labels to the labels on the given state.

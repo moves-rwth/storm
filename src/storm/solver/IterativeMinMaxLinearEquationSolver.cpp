@@ -175,8 +175,7 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveInducedEquationSystem(
     Environment const& env, std::unique_ptr<LinearEquationSolver<SolutionType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler,
-    std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB,
-    OptimizationDirection dir) const {
+    std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB, OptimizationDirection dir) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         if constexpr (std::is_same_v<SolutionType, storm::Interval> || !TrivialRowGrouping) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
