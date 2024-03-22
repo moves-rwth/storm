@@ -4,11 +4,8 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <cstdint>
-#include <cstdlib>
-#include <fstream>
-#include <functional>
+
 #include <map>
-#include <queue>
 #include <set>
 #include <stack>
 #include <string>
@@ -16,17 +13,14 @@
 #include <vector>
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberAdapter.h"
-#include "logic/UntilFormula.h"
+
 #include "modelchecker/CheckTask.h"
 #include "models/sparse/Dtmc.h"
 #include "models/sparse/StandardRewardModel.h"
 #include "models/sparse/StateLabeling.h"
-#include "solver/stateelimination/StateEliminator.h"
 #include "storage/BitVector.h"
 #include "storage/FlexibleSparseMatrix.h"
 #include "storage/SparseMatrix.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "utility/constants.h"
 #include "utility/graph.h"
 #include "utility/logging.h"

@@ -263,10 +263,6 @@ void SparseRobustDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>
 
         std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
-        for (auto const& entry : b) {
-            STORM_LOG_ERROR_COND(entry.isConstant(), "Non-constant entry in reward vector.");
-        }
-
         auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
         auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
         storm::storage::BitVector allTrue(maybeStates.size(), true);

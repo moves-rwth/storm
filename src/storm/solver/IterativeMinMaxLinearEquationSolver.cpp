@@ -2,6 +2,7 @@
 #include <limits>
 
 #include "solver/LinearEquationSolver.h"
+#include "solver/OptimizationDirection.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -174,7 +175,8 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
 template<typename ValueType, typename SolutionType, bool TrivialRowGrouping>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrouping>::solveInducedEquationSystem(
     Environment const& env, std::unique_ptr<LinearEquationSolver<SolutionType>>& linearEquationSolver, std::vector<uint64_t> const& scheduler,
-    std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB) const {
+    std::vector<SolutionType>& x, std::vector<ValueType>& subB, std::vector<ValueType> const& originalB,
+    OptimizationDirection dir) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         if constexpr (std::is_same_v<SolutionType, storm::Interval> || !TrivialRowGrouping) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
@@ -225,20 +227,17 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
         STORM_LOG_ASSERT(schedulerIterator == scheduler.end(), "Offset issue in scheduler?");
 
         subB = originalB;
-        // TODO vectors with nontrivial intervals?
+
         std::vector<SolutionType> b;
         for (auto const& entry : subB) {
-            STORM_LOG_ASSERT(entry.lower() == entry.upper(), "We currently only support zero-diameter vector b here.");
-            b.push_back(entry.lower());
+            if (dir == OptimizationDirection::Maximize) {
+                b.push_back(entry.upper());
+            } else {
+                b.push_back(entry.lower());
+            }
         }
 
         auto const submatrix = newMatrixBuilder.build();
-        // std::cout << submatrix << std::endl;
-        // std::cout << "b =";
-        // for (auto const& entry : b) {
-        //     std::cout << entry << " ";
-        // }
-        // std::cout << std::endl;
 
         // Check whether the linear equation solver is already initialized
         if (!linearEquationSolver) {
@@ -265,13 +264,6 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
             submatrix.convertToEquationSystem();
         }
         storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), originalB);
-
-        // std::cout << submatrix << std::endl;
-        // std::cout << "b =";
-        // for (auto const& entry : subB) {
-        //     std::cout << entry << " ";
-        // }
-        // std::cout << std::endl;
 
         // Check whether the linear equation solver is already initialized
         if (!linearEquationSolver) {
@@ -341,7 +333,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
         this->startMeasureProgress();
         do {
             // Solve the equation system for the 'DTMC'.
-            solveInducedEquationSystem(environmentOfSolver, solver, scheduler, x, subB, b);
+            solveInducedEquationSystem(environmentOfSolver, solver, scheduler, x, subB, b, dir);
 
             // Go through the multiplication result and see whether we can improve any of the choices.
             bool schedulerImproved = false;
@@ -609,7 +601,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
         }
         storm::Environment const& environmentOfSolver = environmentOfSolverStorage ? *environmentOfSolverStorage : env;
 
-        solveInducedEquationSystem(environmentOfSolver, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b);
+        solveInducedEquationSystem(environmentOfSolver, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b, dir);
         // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
         // always less-or-equal (greater-or-equal) than the actual solution.
         guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;

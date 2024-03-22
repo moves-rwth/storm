@@ -1,6 +1,7 @@
 #pragma once
 
 #include <variant>
+#include "solver/OptimizationDirection.h"
 #include "storm/solver/MultiplicationStyle.h"
 
 #include "storm/utility/NumberTraits.h"
@@ -41,7 +42,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
 
     bool solveInducedEquationSystem(Environment const& env, std::unique_ptr<LinearEquationSolver<SolutionType>>& linearEquationSolver,
                                     std::vector<uint64_t> const& scheduler, std::vector<SolutionType>& x, std::vector<ValueType>& subB,
-                                    std::vector<ValueType> const& originalB) const;
+                                    std::vector<ValueType> const& originalB, OptimizationDirection dir) const;
     bool solveEquationsPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const;
     bool performPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<SolutionType>& x, std::vector<ValueType> const& b,
                                 std::vector<storm::storage::sparse::state_type>&& initialPolicy) const;

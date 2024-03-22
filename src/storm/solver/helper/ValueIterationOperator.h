@@ -8,6 +8,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/irange.hpp>
 
+#include "solver/OptimizationDirection.h"
 #include "solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
@@ -239,7 +240,11 @@ class ValueIterationOperator {
 
     template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
     OpT robustInitializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
-        return offsets[offsetIndex].upper();
+        if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+            return offsets[offsetIndex].upper();
+        } else {
+            return offsets[offsetIndex].lower();
+        }
     }
 
     template<OptimizationDirection RobustDirection, typename OpT1, typename OpT2, typename OffT>

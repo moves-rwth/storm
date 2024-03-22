@@ -1,9 +1,6 @@
 #include "storm-pars/transformer/ParameterLifter.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/vector.h"
 
 namespace storm {
 namespace transformer {
