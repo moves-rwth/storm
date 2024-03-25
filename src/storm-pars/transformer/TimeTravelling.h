@@ -113,7 +113,7 @@ class TimeTravelling {
      * Updates which states are unreachable after the previous transformation without needing a model checking procedure.
      *
      * @param reachableStates Reachable states to the best of our knowledge (modifies this!)
-     * @param statesMaybeUnreachable States that may have become unreachable (= the visited states during the big step search, modifies this!)
+     * @param statesMaybeUnreachable States that may have become unreachable (= the visited states during the big step search)
      * @param backwardsFlexibleMatrix The backwards flexible matrix in which to look for predecessors.
      */
     static void updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
