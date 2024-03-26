@@ -199,13 +199,23 @@ find_package(Z3 QUIET)
 # Z3 Defines
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
-
 if(Z3_FOUND)
-    # Get the z3 version by compiling and running a simple program
-    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${STORM_3RDPARTY_SOURCE_DIR}/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
-    if (version_compile_result AND version_run_result EQUAL 0)
-        if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
-            set(Z3_VERSION "${CMAKE_MATCH_1}")
+    if(EXISTS "${Z3_INCLUDE_DIR}/z3_version.h")
+        # Parse z3 version from version file
+        file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_MAJOR REGEX "^#define[\t ]+Z3_MAJOR_VERSION .*")
+        file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_MINOR REGEX "^#define[\t ]+Z3_MINOR_VERSION .*")
+        file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_PATCH REGEX "^#define[\t ]+Z3_BUILD_NUMBER .*")
+        string(REGEX MATCH "[0-9]+$" Z3_VERSION_MAJOR "${Z3_VERSION_MAJOR}")
+        string(REGEX MATCH "[0-9]+$" Z3_VERSION_MINOR "${Z3_VERSION_MINOR}")
+        string(REGEX MATCH "[0-9]+$" Z3_VERSION_PATCH "${Z3_VERSION_PATCH}")
+        set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
+    else()
+        # Get the z3 version by compiling and running a simple program
+        try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${STORM_3RDPARTY_SOURCE_DIR}/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
+        if (version_compile_result AND version_run_result EQUAL 0)
+            if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
+                set(Z3_VERSION "${CMAKE_MATCH_1}")
+            endif()
         endif()
     endif()
 
