@@ -442,8 +442,6 @@ std::optional<std::vector<std::shared_ptr<TimeTravelling::searchingPath>>> TimeT
             uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
             uint64_t newRowBackwards = backwardsFlexibleMatrix.insertNewRowsAtEnd(1);
             STORM_LOG_ASSERT(newRow == newRowBackwards, "Internal error: Drifting matrix and backwardsTransitions.");
-            std::cout << "Row count of flexible matrix after inserting: " << flexibleMatrix.getRowCount() << std::endl;
-            std::cout << "Row count of backwards flexible matrix after inserting: " << backwardsFlexibleMatrix.getRowCount() << std::endl;
 
             // Sum of parametric transitions goes to new row
             insertPaths.push_back(std::make_shared<TimeTravelling::searchingPath>(nullptr, newRow, sum, sum));
@@ -488,7 +486,6 @@ void TimeTravelling::eliminateTransitionsAccordingToPaths(uint64_t state, const 
                                                           storage::BitVector& reachableStates,
                                                           std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
     // Delete old transitions - backwards
-    std::cout << "1" << std::endl;
     for (auto const& deletingTransition : flexibleMatrix.getRow(state)) {
         auto row = backwardsFlexibleMatrix.getRow(deletingTransition.getColumn());
         auto it = row.begin();
@@ -500,11 +497,9 @@ void TimeTravelling::eliminateTransitionsAccordingToPaths(uint64_t state, const 
             }
         }
     }
-    std::cout << "2" << std::endl;
     // Delete old transitions - forwards
     flexibleMatrix.getRow(state) = std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>>();
 
-    std::cout << "3" << std::endl;
     // Insert new transitions
     std::map<uint64_t, RationalFunction> insertThese;
     for (auto const& path : paths) {
@@ -518,19 +513,11 @@ void TimeTravelling::eliminateTransitionsAccordingToPaths(uint64_t state, const 
             insertThese[target] = path->probability;
         }
     }
-    std::cout << "4" << std::endl;
-    std::cout << flexibleMatrix.getRowCount() << std::endl;
-    std::cout << backwardsFlexibleMatrix.getRowCount() << std::endl;
     for (auto const& entry : insertThese) {
-        std::cout << state << std::endl;
-        std::cout << entry.first << std::endl;
-        std::cout << flexibleMatrix.getRow(state) << std::endl;
-        std::cout << backwardsFlexibleMatrix.getRow(state) << std::endl;
         // We know that neither no transition state <-> entry.first exist because we've erased them
         flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
         backwardsFlexibleMatrix.getRow(entry.first).push_back(storm::storage::MatrixEntry(state, entry.second));
     }
-    std::cout << "done" << std::endl;
 }
 
 void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,

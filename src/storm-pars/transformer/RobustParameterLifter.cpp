@@ -1,15 +1,25 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
+#include <carl/core/VariablePool.h>
 #include <cmath>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
+#include <type_traits>
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 
 #include "environment/Environment.h"
+#include "modelchecker/results/CheckResult.h"
 #include "settings/SettingsManager.h"
 #include "settings/modules/GeneralSettings.h"
+#include "solver/SmtSolver.h"
+#include "solver/SmtlibSmtSolver.h"
+#include "solver/Z3SmtSolver.h"
+#include "storage/expressions/Expression.h"
+#include "storage/expressions/RationalFunctionToExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -17,6 +27,7 @@
 #include "utility/constants.h"
 #include "utility/logging.h"
 #include "utility/macros.h"
+#include "utility/solver.h"
 
 namespace storm {
 namespace transformer {
@@ -199,8 +210,81 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::re
 
 template<typename ParametricType, typename ConstantType>
 std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
+    RationalFunction polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    if (polynomial.isConstant()) {
+        return {};
+    }
+    STORM_LOG_ERROR_COND(polynomial.gatherVariables().size() == 1, "Multi-variate polynomials currently not supported");
+
+    std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+
+    utility::solver::Z3SmtSolverFactory factory;
+    auto smtSolver = factory.create(*expressionManager);
+
+    expressions::RationalFunctionToExpression<RationalFunction> rfte(expressionManager);
+
+    auto expression = rfte.toExpression(polynomial) == expressionManager->rational(0);
+
+    auto variables = expressionManager->getVariables();
+    expressions::Expression exprBounds = expressionManager->boolean(true);
+    for (auto const& var : variables) {
+        exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
+    }
+
+    // Precision for exclusion of already found zeroes (see comment below)
+    auto precision = expressionManager->rational(RationalNumber(1) / RationalNumber(1e8));
+
+    smtSolver->setTimeout(100);
+
+    smtSolver->add(exprBounds);
+    smtSolver->add(expression);
+
+    std::set<CoefficientType> zeroes = {};
+
+    while (true) {
+        auto checkResult = smtSolver->check();
+
+        if (checkResult == solver::SmtSolver::CheckResult::Sat) {
+            auto model = smtSolver->getModel();
+
+            STORM_LOG_ERROR_COND(variables.size() == 1, "Should be one variable.");
+            if (variables.size() != 1) {
+                return {};
+            }
+            auto const var = *variables.begin();
+
+            double value = model->getRationalValue(var);
+            // Add new constraint so we search for the next zero in the polynomial
+
+            // The best way to get the next zero would be to put the model back into the constraints as !model
+            // If it is expressed as a root of a polynomial, this works exactly
+            // This solution is approximate though, because we don't have a flexible enough interface to the SMT solver
+            auto val = expressionManager->rational(value);
+
+            auto exprNextZero = !((var > val - precision) && (var < val + precision));
+
+            zeroes.emplace(utility::convertNumber<CoefficientType>(value));
+            smtSolver->add(exprNextZero);
+        } else if (checkResult != solver::SmtSolver::CheckResult::Unsat) {
+            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver");
+            break;
+        } else {
+            // Unsat => found all zeroes :)
+            break;
+        }
+    }
+    return zeroes;
+}
+
+template<typename ParametricType, typename ConstantType>
+std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cubicEquationZeroes(
     RawPolynomial polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    if (polynomial.isConstant()) {
+        return {};
+    }
+    STORM_LOG_ERROR_COND(polynomial.gatherVariables().size() == 1, "Multi-variate polynomials currently not supported");
     // Polynomial is a*p^3 + b*p^2 + c*p + d
 
     // Recover factors from polynomial
@@ -295,34 +379,12 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
 
 template<typename ParametricType, typename ConstantType>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(RationalFunction transition) : transition(transition) {
+    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions with constant denominators.");
+    transition.simplify();
     std::set<VariableType> occurringVariables;
     storm::utility::parametric::gatherOccurringVariables(transition, occurringVariables);
-
-    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions with constant denominators.");
-
-    transition.simplify();
-
-    auto constantPart = transition.constantPart();
-
-    CoefficientType denominator = transition.denominator().constantPart();
-
-    auto nominator = RawPolynomial(transition.nominator());
-
-    std::map<VariableType, RawPolynomial> termsPerParameter;
-
-    for (auto const& p : occurringVariables) {
-        STORM_LOG_ASSERT(transition.nominator().totalDegree() <= 4,
-                         "Degree of all polynomials needs to be <=4 for robust PLA, but the degree of " << transition << " is larger");
-        this->extrema[p] = {};
-        auto const derivative = RawPolynomial(transition.derivative(p).nominator());
-        // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
-        auto zeroes = cubicEquationZeroes(derivative, p);
-        for (auto const& zero : zeroes) {
-            if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
-                this->extrema[p].emplace(zero);
-            }
-        }
-        this->parameters.emplace(p);
+    for (auto const& var : occurringVariables) {
+        parameters.emplace(var);
     }
 }
 
@@ -358,10 +420,37 @@ RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::Rob
 }
 
 template<typename ParametricType, typename ConstantType>
+void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initializeExtrema() {
+    if (this->extrema) {
+        // Extrema already initialized
+        return;
+    }
+    this->extrema = std::map<VariableType, std::set<CoefficientType>>();
+    for (auto const& p : parameters) {
+        (*this->extrema)[p] = {};
+        auto const derivative = RationalFunction(transition.derivative(p).nominator());
+        // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
+
+        std::set<CoefficientType> zeroes;
+        // Find zeroes with straight-forward method for degrees <=4, find them with SMT for degrees above that
+        if (derivative.nominator().totalDegree() <= 4) {
+            zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
+        } else {
+            zeroes = zeroesSMT(derivative, p);
+        }
+        for (auto const& zero : zeroes) {
+            if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
+                this->extrema->at(p).emplace(zero);
+            }
+        }
+    }
+}
+
+template<typename ParametricType, typename ConstantType>
 std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType,
          std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>> const&
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getExtrema() const {
-    return this->extrema;
+    return *this->extrema;
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -372,7 +461,11 @@ std::size_t RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractV
 }
 
 template<typename ParametricType, typename ConstantType>
-Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(RobustAbstractValuation const& valuation) {
+Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(RobustAbstractValuation& valuation) {
+    // If no valuation like this is present in the collectedValuations, initialize the extrema
+    if (!collectedValuations.count(valuation)) {
+        valuation.initializeExtrema();
+    }
     // insert the function and the valuation
     // Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
     auto insertionRes = collectedValuations.insert(std::pair<RobustAbstractValuation, Interval>(std::move(valuation), storm::Interval(0, 1)));
@@ -382,7 +475,7 @@ Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuation
 template<typename ParametricType, typename ConstantType>
 bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
-    for (auto& collectedFunctionValuationPlaceholder : collectedValuations) {
+    for (auto& collectedFunctionValuationPlaceholder : this->collectedValuations) {
         RobustAbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first;
         Interval& placeholder = collectedFunctionValuationPlaceholder.second;
 

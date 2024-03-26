@@ -97,9 +97,13 @@ class RobustParameterLifter {
 
         storm::RationalFunction const& getTransition() const;
 
+        void initializeExtrema();
+
         std::map<VariableType, std::set<CoefficientType>> const& getExtrema() const;
 
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
+
+        std::set<CoefficientType> zeroesSMT(RationalFunction polynomial, VariableType parameter);
 
        private:
         boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<CoefficientType, CoefficientType>>> recursiveDecompose(
@@ -110,7 +114,7 @@ class RobustParameterLifter {
         storm::RationalFunction const transition;
 
         // Position and value of the extrema of each of the functions
-        std::map<VariableType, std::set<CoefficientType>> extrema;
+        std::optional<std::map<VariableType, std::set<CoefficientType>>> extrema;
     };
 
     /*!
@@ -126,7 +130,7 @@ class RobustParameterLifter {
          * Adds the provided function and valuation.
          * Returns a reference to a placeholder in which the evaluation result will be written upon calling evaluateCollectedFunctions)
          */
-        Interval& add(RobustAbstractValuation const& valuation);
+        Interval& add(RobustAbstractValuation& valuation);
 
         bool evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region,
                                         storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
