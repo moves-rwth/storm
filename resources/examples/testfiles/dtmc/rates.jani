@@ -1,0 +1,133 @@
+{
+  "jani-version": 1,
+  "name": "dtmc-weight-test",
+  "type": "dtmc",
+  "comment": "",
+  "features": [
+    "derived-operators"
+  ],
+  "constants": [],
+  "variables": [],
+  "functions": [],
+  "restrict-initial": {
+    "exp": true,
+    "comment": ""
+  },
+  "automata": [
+    {
+      "name": "aut",
+      "comment": "",
+      "variables": [],
+      "restrict-initial": {
+        "exp": true,
+        "comment": ""
+      },
+      "initial-locations": [
+        "l0"
+      ],
+      "locations": [
+        {
+          "name": "l0",
+          "comment": "",
+          "transient-values": []
+        },
+        {
+          "name": "l1",
+          "comment": "",
+          "transient-values": []
+        },
+        {
+          "name": "l2",
+          "comment": "",
+          "transient-values": []
+        }
+      ],
+      "edges": [
+          {
+            "location": "l0",
+            "rate": {
+              "exp": 2
+            },
+            "guard": {
+              "exp": true
+            },
+            "destinations": [
+              {
+                "location": "l0",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.3
+                }
+              },
+              {
+                "location": "l1",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.7
+                }
+              }
+            ]
+          },
+          {
+            "location": "l1",
+            "rate": {
+              "exp": 3
+            },
+            "guard": {
+              "exp": true
+            },
+            "destinations": [
+              {
+                "location": "l0",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.4
+                }
+              },
+              {
+                "location": "l1",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.6
+                }
+              }
+            ]
+          },
+          {
+            "location": "l1",
+            "rate": {
+              "exp": 7
+            },
+            "guard": {
+              "exp": true
+            },
+            "destinations": [
+              {
+                "location": "l1",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.9
+                }
+              },
+              {
+                "location": "l2",
+                "assignments": [],
+                "probability": {
+                  "exp": 0.1
+                }
+              }
+            ]
+          }
+      ]
+    }
+  ],
+  "system": {
+    "elements": [
+      {
+        "automaton": "aut"
+      }
+    ],
+    "syncs": []
+  },
+  "actions": []
+}

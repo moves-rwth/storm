@@ -260,7 +260,7 @@ void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueTy
         for (uint_fast64_t index = 0; index + numberOfChoicesToDelete < result.getNumberOfChoices();) {
             Choice<ValueType>& choice = result.getChoices()[index];
 
-            if (choice.isMarkovian()) {
+            if (choice.hasRate()) {
                 if (foundPreviousMarkovianChoice) {
                     // If there was a previous Markovian choice, we need to sum them. Note that we can assume
                     // that the previous Markovian choice is the very first one in the choices vector.

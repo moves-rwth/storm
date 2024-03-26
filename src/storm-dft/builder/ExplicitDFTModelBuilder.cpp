@@ -149,7 +149,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
             matrixBuilder.setRemapping(0);
             STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
             matrixBuilder.newRowGroup();
-            setMarkovian(behavior.begin()->isMarkovian());
+            setMarkovian(behavior.begin()->hasRate());
 
             // Now add self loop.
             // TODO: maybe use general method.
@@ -418,7 +418,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
             storm::generator::StateBehavior<ValueType, StateType> behavior =
                 generator.expand(std::bind(&ExplicitDFTModelBuilder::getOrAddStateIndex, this, std::placeholders::_1));
             STORM_LOG_ASSERT(!behavior.empty(), "Behavior is empty.");
-            setMarkovian(behavior.begin()->isMarkovian());
+            setMarkovian(behavior.begin()->hasRate());
 
             // Now add all choices.
             for (auto const& choice : behavior) {
