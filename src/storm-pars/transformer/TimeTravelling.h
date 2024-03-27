@@ -1,19 +1,34 @@
 #pragma once
 
+#include <_types/_uint64_t.h>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <set>
+#include <unordered_map>
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalFunctionForward.h"
+#include "adapters/RationalNumberForward.h"
 #include "modelchecker/CheckTask.h"
 #include "models/sparse/Dtmc.h"
 #include "models/sparse/StateLabeling.h"
 #include "storage/FlexibleSparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
+#include "utility/constants.h"
 
 namespace storm {
 namespace transformer {
+
+/**
+ * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
+ * 
+ * @tparam T 
+ */
+template<typename T>
+using Counter = std::unordered_map<T, uint64_t>;
+
+template<typename T>
+using ProbCounter = std::unordered_map<T, RationalNumber>;
 
 class TimeTravelling {
    public:
@@ -26,16 +41,24 @@ class TimeTravelling {
      * @var probability Probability to start.
      */
     struct searchingPath {
-        const std::shared_ptr<searchingPath> prefix;
         const uint64_t state;
-        const RationalFunction transition;
-        const RationalFunction probability;
-        searchingPath(std::shared_ptr<searchingPath> prefix, uint64_t state, RationalFunction transition, RationalFunction probability)
-            : prefix(prefix), state(state), transition(transition), probability(probability) {
+        std::vector<std::pair<RationalFunction, std::shared_ptr<searchingPath>>> prefixes;
+        std::optional<ProbCounter<Counter<RationalFunction>>> timeTravellingHints;
+        RationalFunction probability;
+        searchingPath(uint64_t state)
+            : state(state), probability(utility::zero<RationalFunction>()) {
             // Intentionally left empty.
         }
         bool stateInPath(uint64_t s) {
-            return state == s || (prefix && prefix->stateInPath(s));
+            if (state == s) {
+                return true;
+            }
+            for (auto const& prefix : prefixes) {
+                if (prefix.second->stateInPath(s)) {
+                    return true;
+                }
+            }
+            return false;
         }
     };
 
@@ -88,7 +111,7 @@ class TimeTravelling {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    static std::optional<std::vector<std::shared_ptr<searchingPath>>> findTimeTravelling(
+    static std::optional<std::vector<std::pair<uint64_t, RationalFunction>>> findTimeTravelling(
         const std::vector<std::shared_ptr<searchingPath>> bigStepPaths, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
@@ -103,7 +126,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    static void eliminateTransitionsAccordingToPaths(uint64_t state, const std::vector<std::shared_ptr<TimeTravelling::searchingPath>> paths,
+    static void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, RationalFunction>> transitions,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,
