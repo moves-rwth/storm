@@ -235,7 +235,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     // Precision for exclusion of already found zeroes (see comment below)
     auto precision = expressionManager->rational(RationalNumber(1) / RationalNumber(1e8));
 
-    smtSolver->setTimeout(100);
+    smtSolver->setTimeout(500);
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);
@@ -255,19 +255,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
             auto const var = *variables.begin();
 
             double value = model->getRationalValue(var);
+
             // Add new constraint so we search for the next zero in the polynomial
-
-            // The best way to get the next zero would be to put the model back into the constraints as !model
-            // If it is expressed as a root of a polynomial, this works exactly
-            // This solution is approximate though, because we don't have a flexible enough interface to the SMT solver
-            auto val = expressionManager->rational(value);
-
-            auto exprNextZero = !((var > val - precision) && (var < val + precision));
-
-            zeroes.emplace(utility::convertNumber<CoefficientType>(value));
-            smtSolver->add(exprNextZero);
+            // Get another model (or unsat)
+            // For some reason, this only really works when we then make a new 
+            smtSolver->addNotCurrentModel();
         } else if (checkResult == solver::SmtSolver::CheckResult::Unknown) {
-            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver. Expression: " << smtSolver->getSmtLibString());
+            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver. SMTLib string: " << smtSolver->getSmtLibString());
             break;
         } else {
             // Unsat => found all zeroes :)
