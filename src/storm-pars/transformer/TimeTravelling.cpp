@@ -71,7 +71,7 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(
                         continueSearching |= onlyHasOne;
 
                         // Don't mess with rewards
-                        continueSearching &= !(stateRewardVector && !stateRewardVector->at(state).isZero());
+                        continueSearching &= !(stateRewardVector && !stateRewardVector->at(entry.getColumn()).isZero());
 
                         if (continueSearching) {
                             tmpStack.push_back(entry.getColumn());
@@ -418,12 +418,7 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
     for (auto const& [factors, transitions] : parametricTransitions) {
         const auto listOfConstants = transitions;
 
-        utility::Stopwatch stopwatch;
-        std::cout << "Computing polynomial from factorization" << std::endl;
-        stopwatch.start();
         auto parametricPart = polynomialFromFactorization(factors, parameter);
-        stopwatch.stop();
-        std::cout << "Computed " << parametricPart << " in " << stopwatch << std::endl;
 
         if (transitions.size() > 1) {
             // The set of target states of the paths that we maybe want to time-travel
@@ -519,6 +514,7 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
 
     // Insert new transitions
     std::map<uint64_t, RationalFunction> insertThese;
+    std::cout << "Summing up transitions" << std::endl;
     for (auto const& [target, probability] : transitions) {
         for (auto& entry : treeStatesNeedUpdate) {
             entry.second.emplace(target);
@@ -529,6 +525,7 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
             insertThese[target] = probability;
         }
     }
+    std::cout << "Done summing up" << std::endl;
     for (auto const& entry : insertThese) {
         // We know that neither no transition state <-> entry.first exist because we've erased them
         flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
