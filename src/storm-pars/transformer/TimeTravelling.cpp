@@ -613,7 +613,7 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
                     continue;
                 }
                 for (auto const& entry : backwardsTransitions.getRow(row)) {
-                    if (entry.getValue().isConstant() && stateLabeling.getLabelsOfState(entry.getColumn()) == stateLabeling.getLabelsOfState(row)) {
+                    if (entry.getValue().isConstant()) {
                         // If the set of tree states at the current position is a subset of the set of
                         // tree states of the parent state, we've reached some loop. Then we can stop.
                         bool isSubset = true;
@@ -629,7 +629,9 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
                         for (auto const& state : treeStates.at(parameter).at(row)) {
                             treeStates.at(parameter).at(entry.getColumn()).emplace(state);
                         }
-                        newWorkingSet.emplace(entry.getColumn());
+                        if (stateLabeling.getLabelsOfState(entry.getColumn()) == stateLabeling.getLabelsOfState(row)) {
+                            newWorkingSet.emplace(entry.getColumn());
+                        }
                     }
                 }
             }
