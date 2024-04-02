@@ -6,6 +6,7 @@
 #include <optional>
 #include <set>
 #include <unordered_map>
+#include <vector>
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
@@ -28,14 +29,14 @@ namespace transformer {
 class TimeTravelling {
    public:
     struct stateAnnotation {
-        std::unordered_map<RationalFunction, std::pair<std::vector<uint64_t>, RationalNumber>> annotation;
+        std::map<std::vector<uint64_t>, RationalNumber> annotation;
         stateAnnotation() {
             // Intentionally left empty.
         }
-        RationalFunction getProbability() const {
+        RationalFunction getProbability(TimeTravelling const& timeTravelling, RationalFunctionVariable parameter) const {
             RationalFunction prob = utility::zero<RationalFunction>();
-            for (auto const& [func, info] : this->annotation) {
-                prob += func * info.second;
+            for (auto const& [info, constant] : this->annotation) {
+                prob += timeTravelling.polynomialFromFactorization(info, parameter) * constant;
             }
             return prob;
         }
@@ -61,13 +62,30 @@ class TimeTravelling {
                                                    bool timeTravel = true);
 
    private:
-    std::map<RationalFunction, uint64_t> rationalFunctionCache;
 
-    uint64_t lookUpInCache(RationalFunction f) {
-        if (!rationalFunctionCache.count(f)) {
-            rationalFunctionCache[f] = rationalFunctionCache.size();
+    std::map<RationalFunctionVariable, std::vector<RationalFunction>> rationalFunctionCache;
+
+    uint64_t lookUpInCache(RationalFunction f, RationalFunctionVariable p) {
+        for (uint64_t i = 0; i < rationalFunctionCache[p].size(); i++) {
+            if (rationalFunctionCache.at(p)[i] == f) {
+                return i;
+            }
         }
-        return rationalFunctionCache.at(f);
+        rationalFunctionCache.at(p).push_back(f);
+        return rationalFunctionCache.at(p).size() - 1;
+    }
+
+    RationalFunction polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
+        static std::map<RationalFunctionVariable, std::map<std::vector<uint64_t>, RationalFunction>> fromFactorizationCache;
+        if (fromFactorizationCache[p].count(factorization)) {
+            return fromFactorizationCache.at(p).at(factorization);
+        }
+        RationalFunction polynomial = utility::one<RationalFunction>();
+        for (uint64_t i = 0; i < factorization.size(); i++) {
+            polynomial *= utility::pow(rationalFunctionCache.at(p)[i], factorization[i]);
+        }
+        fromFactorizationCache.at(p)[factorization] = polynomial;
+        return polynomial;
     }
 
     /**
@@ -103,7 +121,7 @@ class TimeTravelling {
         const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
-        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t originalNumStates);
+        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates);
 
     /**
      * Actually eliminate transitions in flexibleMatrix and backwardFlexibleMatrix according to the paths we found and want to eliminate.

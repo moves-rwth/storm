@@ -27,6 +27,7 @@
 #include "storage/BitVector.h"
 #include "storage/FlexibleSparseMatrix.h"
 #include "storage/SparseMatrix.h"
+#include "utility/Stopwatch.h"
 #include "utility/constants.h"
 #include "utility/graph.h"
 #include "utility/logging.h"
@@ -36,17 +37,6 @@
 
 namespace storm {
 namespace transformer {
-
-bool areTimeTravellable(RationalFunction transition1, RationalFunction transition2) {
-    if (transition1.isConstant() || transition2.isConstant()) {
-        return false;
-    }
-    // TODO "constant parts" are not filtered out here, because we don't know how to handle them.
-    // so if a transition is 0.5(1-p) + c we have lost.
-    auto const dividing = transition1 / transition2;
-    return dividing.isConstant() && dividing.constantPart() > utility::zero<RationalFunctionCoefficient>();
-}
-
 
 std::pair<storage::BitVector, storage::BitVector> findSubgraph(
         const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
@@ -225,28 +215,16 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
             auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, horizon, flexibleMatrix, treeStates, stateRewardVector);
 
-            for (auto const& [state, annotation] : bottomAnnotations) {
-                std::cout << "State " << state << std::endl;
-                for (auto const& [function, description] : annotation.annotation) {
-                    std::cout << function << ": " << description.second << std::endl;
-                    std::cout << "Factors: ";
-                    for (auto const& f : description.first) {
-                        std::cout << f << " ";
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
             bool doneTimeTravelling = false;
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
             std::vector<std::pair<uint64_t, RationalFunction>> transitions;
             if (timeTravellingEnabled) {
                 transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
-                                                                   treeStatesNeedUpdate, originalNumStates);
+                                                                   treeStatesNeedUpdate, state, originalNumStates);
             } else {
                 for (auto const& [state, annotation] : bottomAnnotations) {
-                    transitions.emplace_back(state, annotation.getProbability());
+                    transitions.emplace_back(state, annotation.getProbability(*this, parameter));
                 }
             }
 
@@ -361,7 +339,7 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
     std::set<uint64_t> activeStates = {start};
 
     annotations[start] = TimeTravelling::stateAnnotation();
-    annotations[start].annotation[utility::one<RationalFunction>()] = std::make_pair(std::vector<uint64_t>(), utility::one<RationalNumber>());
+    annotations[start].annotation[std::vector<uint64_t>()] = utility::one<RationalNumber>();
 
     while (!activeStates.empty()) {
         std::set<uint64_t> nextActiveStates;
@@ -372,26 +350,26 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
                 auto const transition = entry.getValue();
 
                 auto& targetAnnotation = annotations[goToState].annotation;
-                for (auto const& [polynomial, counter] : annotations[state].annotation) {
+                for (auto const& [info, constant] : annotations[state].annotation) {
                     if (transition.isConstant()) {
                         // We've seen no more instances of any parametric transition, we just update the constant value
-                        if (!targetAnnotation.count(polynomial)) {
-                            targetAnnotation[polynomial] = std::make_pair(counter.first, utility::zero<RationalNumber>());
+                        if (!targetAnnotation.count(info)) {
+                            targetAnnotation[info] = utility::zero<RationalNumber>();
                         }
-                        targetAnnotation[polynomial].second += counter.second * transition.constantPart();
+                        targetAnnotation[info] += constant * transition.constantPart();
                     } else {
-                        auto const newPolynomial = polynomial * transition;
-                        if (targetAnnotation.count(newPolynomial)) {
-                            targetAnnotation.at(newPolynomial).second += counter.second;
-                        } else {
-                            auto newCounter = counter;
+                        // We've seen a parametric transition, add that into the counter
+                        auto newCounter = info;
+                        auto const cacheNum = lookUpInCache(transition, parameter);
+                        while (newCounter.size() <= cacheNum) {
+                            newCounter.push_back(0);
+                        }
+                        newCounter[cacheNum]++;
+                        if (targetAnnotation.count(newCounter)) {
                             // We've seen one more instance of this transition
-                            auto const cacheNum = lookUpInCache(transition);
-                            while (newCounter.first.size() <= cacheNum) {
-                                newCounter.first.push_back(0);
-                            }
-                            newCounter.first[cacheNum]++;
-                            targetAnnotation[newPolynomial] = newCounter;
+                            targetAnnotation.at(newCounter) += constant;
+                        } else {
+                            targetAnnotation[newCounter] = constant;
                         }
                     }
                     if (subtree.get(goToState) && !bottomStates.get(goToState)) {
@@ -415,19 +393,19 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
     const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
-    std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t originalNumStates) {
+    std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates) {
     bool doneTimeTravelling = false;
 
     // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
-    std::map<std::vector<uint64_t>, std::pair<RationalFunction, std::map<uint64_t, RationalNumber>>> parametricTransitions;
+    std::map<std::vector<uint64_t>, std::map<uint64_t, RationalNumber>> parametricTransitions;
 
     for (auto const& [state, annotation] : bigStepAnnotations) {
-        for (auto const& [function, info] : annotation.annotation) {
-            auto const& [factors, constantToThisState] = info;
-            if (!parametricTransitions.count(factors)) {
-                parametricTransitions[factors] = std::make_pair(function, std::map<uint64_t, RationalNumber>());
+        for (auto const& [info, constant] : annotation.annotation) {
+            if (!parametricTransitions.count(info)) {
+                parametricTransitions[info] = std::map<uint64_t, RationalNumber>();
             }
-            parametricTransitions[factors].second[state] = constantToThisState;
+            STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists");
+            parametricTransitions.at(info)[state] = constant;
         }
     }
 
@@ -438,28 +416,35 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
     std::unordered_set<uint64_t> affectedStates;
 
     for (auto const& [factors, transitions] : parametricTransitions) {
-        const auto [parametricPart, listOfConstants] = transitions;
+        const auto listOfConstants = transitions;
 
-        if (transitions.second.size() > 1) {
+        utility::Stopwatch stopwatch;
+        std::cout << "Computing polynomial from factorization" << std::endl;
+        stopwatch.start();
+        auto parametricPart = polynomialFromFactorization(factors, parameter);
+        stopwatch.stop();
+        std::cout << "Computed " << parametricPart << " in " << stopwatch << std::endl;
+
+        if (transitions.size() > 1) {
             // The set of target states of the paths that we maybe want to time-travel
             std::set<uint64_t> targetStates;
 
             // All of these states are affected by time-travelling
-            for (auto const& [state, info] : transitions.second) {
+            for (auto const& [state, info] : transitions) {
                 affectedStates.emplace(state);
                 if (state < originalNumStates) {
                     targetStates.emplace(state);
                 }
             }
 
-            // if (alreadyTimeTravelledToThis[parameter].count(targetStates) || targetStates.size() == 1) {
-            //     // We already reordered w.r.t. these target states. We're not going to time-travel again,
-            //     // so just enter the paths into insertPaths.
-            //     for (auto const& [toState, withConstant] : listOfConstants) {
-            //         insertTransitions.emplace_back(toState, parametricPart * withConstant);
-            //     }
-            //     continue;
-            // }
+            if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
+                // We already reordered w.r.t. these target states. We're not going to time-travel again,
+                // so just enter the paths into insertPaths.
+                for (auto const& [toState, withConstant] : listOfConstants) {
+                    insertTransitions.emplace_back(toState, parametricPart * withConstant);
+                }
+                continue;
+            }
             alreadyTimeTravelledToThis[parameter].insert(targetStates);
 
             doneTimeTravelling = true;
