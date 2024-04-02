@@ -12,6 +12,7 @@
 #include "modelchecker/CheckTask.h"
 #include "models/sparse/Dtmc.h"
 #include "models/sparse/StateLabeling.h"
+#include "storage/BitVector.h"
 #include "storage/FlexibleSparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
 #include "utility/constants.h"
@@ -24,41 +25,19 @@ namespace transformer {
  * 
  * @tparam T 
  */
-template<typename T>
-using Counter = std::unordered_map<T, uint64_t>;
-
-template<typename T>
-using ProbCounter = std::unordered_map<T, RationalNumber>;
-
 class TimeTravelling {
    public:
-    /**
-     * Path through the pMC.
-     *
-     * @var prefix Pointer to the previous path element.
-     * @var state Last state of the path.
-     * @var transition Last transition of the path.
-     * @var probability Probability to start.
-     */
-    struct searchingPath {
-        const uint64_t state;
-        std::vector<std::pair<RationalFunction, std::shared_ptr<searchingPath>>> prefixes;
-        std::optional<ProbCounter<Counter<RationalFunction>>> timeTravellingHints;
-        RationalFunction probability;
-        searchingPath(uint64_t state)
-            : state(state), probability(utility::zero<RationalFunction>()) {
+    struct stateAnnotation {
+        std::unordered_map<RationalFunction, std::pair<std::vector<uint64_t>, RationalNumber>> annotation;
+        stateAnnotation() {
             // Intentionally left empty.
         }
-        bool stateInPath(uint64_t s) {
-            if (state == s) {
-                return true;
+        RationalFunction getProbability() const {
+            RationalFunction prob = utility::zero<RationalFunction>();
+            for (auto const& [func, info] : this->annotation) {
+                prob += func * info.second;
             }
-            for (auto const& prefix : prefixes) {
-                if (prefix.second->stateInPath(s)) {
-                    return true;
-                }
-            }
-            return false;
+            return prob;
         }
     };
 
@@ -82,6 +61,15 @@ class TimeTravelling {
                                                    bool timeTravel = true);
 
    private:
+    std::map<RationalFunction, uint64_t> rationalFunctionCache;
+
+    uint64_t lookUpInCache(RationalFunction f) {
+        if (!rationalFunctionCache.count(f)) {
+            rationalFunctionCache[f] = rationalFunctionCache.size();
+        }
+        return rationalFunctionCache.at(f);
+    }
+
     /**
      * Find the paths we can big-step from this state using this parameter and this horizon.
      *
@@ -93,7 +81,7 @@ class TimeTravelling {
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
      * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
-    static std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> findBigStepPaths(
+    std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint64_t>> bigStepBFS(
         uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
@@ -111,8 +99,8 @@ class TimeTravelling {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    static std::optional<std::vector<std::pair<uint64_t, RationalFunction>>> findTimeTravelling(
-        const std::vector<std::shared_ptr<searchingPath>> bigStepPaths, const RationalFunctionVariable& parameter,
+    std::vector<std::pair<uint64_t, RationalFunction>> findTimeTravelling(
+        const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
         std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t originalNumStates);
@@ -126,7 +114,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    static void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, RationalFunction>> transitions,
+    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, RationalFunction>> transitions,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,
@@ -139,8 +127,8 @@ class TimeTravelling {
      * @param statesMaybeUnreachable States that may have become unreachable (= the visited states during the big step search)
      * @param backwardsFlexibleMatrix The backwards flexible matrix in which to look for predecessors.
      */
-    static void updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
-                                        storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix);
+    void updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
+                                        storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState);
 
     /**
      * updateTreeStates updates the `treeStates` map on the given states.
@@ -156,7 +144,7 @@ class TimeTravelling {
      * @param stateRewardVector The state reward vector of the pMC.
      * @param stateLabelling The state labelling of the pMC.
      */
-    static void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+    void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                                  std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                                  const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                  const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
@@ -173,7 +161,7 @@ class TimeTravelling {
      * @param labelsInFormula The labels that occur in the property.
      * @return models::sparse::StateLabeling
      */
-    static models::sparse::StateLabeling extendStateLabeling(const models::sparse::StateLabeling& oldLabeling, uint64_t oldSize, uint64_t newSize,
+    models::sparse::StateLabeling extendStateLabeling(const models::sparse::StateLabeling& oldLabeling, uint64_t oldSize, uint64_t newSize,
                                                              uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula);
     /**
      * Sums duplicate transitions in a vector of MatrixEntries into one MatrixEntry.
@@ -181,7 +169,7 @@ class TimeTravelling {
      * @param entries
      * @return std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>>
      */
-    static std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> joinDuplicateTransitions(
+    std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> joinDuplicateTransitions(
         std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries);
 };
 

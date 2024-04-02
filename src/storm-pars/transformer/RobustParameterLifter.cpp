@@ -266,8 +266,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 
             zeroes.emplace(utility::convertNumber<CoefficientType>(value));
             smtSolver->add(exprNextZero);
-        } else if (checkResult != solver::SmtSolver::CheckResult::Unsat) {
-            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver");
+        } else if (checkResult == solver::SmtSolver::CheckResult::Unknown) {
+            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver. Expression: " << smtSolver->getSmtLibString());
             break;
         } else {
             // Unsat => found all zeroes :)
@@ -432,8 +432,8 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
         // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
 
         std::set<CoefficientType> zeroes;
-        // Find zeroes with straight-forward method for degrees <=4, find them with SMT for degrees above that
-        if (derivative.nominator().totalDegree() <= 4) {
+        // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
+        if (derivative.nominator().totalDegree() < 4) {
             zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
         } else {
             zeroes = zeroesSMT(derivative, p);
