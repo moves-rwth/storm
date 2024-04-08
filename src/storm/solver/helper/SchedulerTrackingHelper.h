@@ -19,7 +19,7 @@ class RobustSchedulerTrackingBackend {
         isConverged = true;
     }
 
-    void processRow(ValueType&& value, uint64_t row, std::vector<std::pair<ValueType, std::pair<ValueType, uint64_t>>> const& info) {
+    void processRobustRow(ValueType&& value, uint64_t row, std::vector<std::pair<ValueType, std::pair<ValueType, uint64_t>>> const& info) {
         currStart = robustIndices[row];
         for (uint64_t i = 0; i < info.size(); ++i) {
             isConverged &= schedulerStorage[currStart + i] == info[i].second.second;

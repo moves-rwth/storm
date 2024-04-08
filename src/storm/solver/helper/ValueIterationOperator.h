@@ -186,7 +186,7 @@ class ValueIterationOperator {
                 // TODO how to export robustOrder to backend?
                 if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
                     // Intentionally different method name
-                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, applyCache.robustOrder);
+                    backend.processRobustRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, applyCache.robustOrder);
                 } else {
                     // Generic nextRow interface
                     backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
