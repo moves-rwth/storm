@@ -2,6 +2,7 @@
 #include <_types/_uint64_t.h>
 #include <carl/core/Variable.h>
 #include <carl/core/VariablePool.h>
+#include <carl/core/rootfinder/RootFinder.h>
 #include <sys/types.h>
 #include <algorithm>
 #include <cstdint>
@@ -33,7 +34,7 @@
 #include "utility/logging.h"
 #include "utility/macros.h"
 
-#define WRITE_DTMCS 0
+#define WRITE_DTMCS 1
 
 namespace storm {
 namespace transformer {

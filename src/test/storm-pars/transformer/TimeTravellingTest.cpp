@@ -43,11 +43,11 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Weak)
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::TimeTravelling timeTravelling;
-    auto timeTravelledDtmc = timeTravelling.bigStep(*dtmc, checkTask, 2);
+    auto timeTravelledDtmc = timeTravelling.bigStep(*dtmc, checkTask, 4);
 
     storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
     modelChecker.specifyFormula(checkTask);
