@@ -101,13 +101,12 @@ class RobustParameterLifter {
 
         std::map<VariableType, std::set<CoefficientType>> const& getExtrema() const;
 
+       private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
-        std::set<CoefficientType> zeroesSMT(RationalFunction polynomial, VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesSMT(RationalFunction polynomial, VariableType parameter);
 
-       private:
-        boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<CoefficientType, CoefficientType>>> recursiveDecompose(
-            RawPolynomial polynomial, VariableType parameter, bool firstIteration = true);
+        std::optional<std::set<CoefficientType>> zeroesCarl(RationalFunction polynomial, VariableType parameter);
 
         std::set<VariableType> parameters;
 

@@ -1,7 +1,11 @@
 #include "TimeTravelling.h"
 #include <_types/_uint64_t.h>
+#include <carl/core/FactorizedPolynomial.h>
+#include <carl/core/MultivariatePolynomial.h>
+#include <carl/core/RationalFunction.h>
 #include <carl/core/Variable.h>
 #include <carl/core/VariablePool.h>
+#include <carl/core/polynomialfunctions/Factorization.h>
 #include <carl/core/rootfinder/RootFinder.h>
 #include <sys/types.h>
 #include <algorithm>
@@ -34,7 +38,7 @@
 #include "utility/logging.h"
 #include "utility/macros.h"
 
-#define WRITE_DTMCS 1
+#define WRITE_DTMCS 0
 
 namespace storm {
 namespace transformer {
@@ -157,12 +161,15 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     // Initialize treeStates and treeStatesNeedUpdate
     for (uint64_t row = 0; row < flexibleMatrix.getRowCount(); row++) {
         for (auto const& entry : flexibleMatrix.getRow(row)) {
-            if (entry.getValue().isConstant()) {
-                continue;
-            }
-            for (auto const& parameter : entry.getValue().gatherVariables()) {
-                treeStatesNeedUpdate[parameter].emplace(row);
-                treeStates[parameter][row].emplace(row);
+            if (!entry.getValue().isConstant()) {
+                if (!this->rawPolynomialCache) {
+                    // So we can create new FactorizedPolynomials later
+                    this->rawPolynomialCache = entry.getValue().nominator().pCache();
+                }
+                for (auto const& parameter : entry.getValue().gatherVariables()) {
+                    treeStatesNeedUpdate[parameter].emplace(row);
+                    treeStates[parameter][row].emplace(row);
+                }
             }
         }
     }
@@ -219,7 +226,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             bool doneTimeTravelling = false;
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, RationalFunction>> transitions;
+            std::vector<std::pair<uint64_t, UniPoly>> transitions;
             if (timeTravellingEnabled) {
                 transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
                                                                    treeStatesNeedUpdate, state, originalNumStates);
@@ -330,12 +337,6 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
     // We need this to later determine which states are now unreachable
     std::vector<uint64_t> visitedStatesInBFSOrder;
 
-    std::cout << "Subtree starting at " << start << std::endl;
-    for (auto const& state : subtree) {
-        std::cout << state << " ";
-    }
-    std::cout << std::endl;
-
     std::map<uint64_t, TimeTravelling::stateAnnotation> annotations;
     std::set<uint64_t> activeStates = {start};
 
@@ -361,7 +362,13 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
                     } else {
                         // We've seen a parametric transition, add that into the counter
                         auto newCounter = info;
-                        auto const cacheNum = lookUpInCache(transition, parameter);
+
+                        STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has " << transition.denominator() << " in transition " << transition);
+                        auto nominator = transition.nominator();
+                        UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+                        nominatorAsUnivariate /= transition.denominator().coefficient();
+
+                        auto const cacheNum = lookUpInCache(nominatorAsUnivariate, parameter);
                         while (newCounter.size() <= cacheNum) {
                             newCounter.push_back(0);
                         }
@@ -390,7 +397,7 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
     return std::make_pair(annotations, visitedStatesInBFSOrder);
 }
 
-std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTravelling(
+std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
     const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
@@ -411,7 +418,7 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
     }
 
     // These are the transitions that we are actually going to insert (that the function will return).
-    std::vector<std::pair<uint64_t, RationalFunction>> insertTransitions;
+    std::vector<std::pair<uint64_t, UniPoly>> insertTransitions;
     
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
@@ -445,11 +452,11 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
 
             doneTimeTravelling = true;
 
-            RationalFunction constantPart = utility::zero<RationalFunction>();
+            RationalNumber constantPart = utility::zero<RationalNumber>();
             for (auto const& [state, transition] : listOfConstants) {
                 constantPart += transition;
             }
-            RationalFunction sum = parametricPart * constantPart;
+            UniPoly sum = UniPoly(parametricPart) * constantPart;
 
             STORM_LOG_INFO("Time travellable transitions with " << sum << std::endl);
 
@@ -483,7 +490,7 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
         } else {
             auto const [state, probability] = *listOfConstants.begin();
 
-            RationalFunction sum = parametricPart * probability;
+            UniPoly sum = UniPoly(parametricPart) * probability;
             insertTransitions.emplace_back(state, sum);
         }
     }
@@ -491,7 +498,7 @@ std::vector<std::pair<uint64_t, RationalFunction>> TimeTravelling::findTimeTrave
     return insertTransitions;
 }
 
-void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, RationalFunction>> transitions,
+void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, UniPoly>> transitions,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                           storage::BitVector& reachableStates,
@@ -514,23 +521,25 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix().transpose().transpose(), "");
 
     // Insert new transitions
-    std::map<uint64_t, RationalFunction> insertThese;
-    std::cout << "Summing up transitions" << std::endl;
+    std::map<uint64_t, UniPoly> insertThese;
     for (auto const& [target, probability] : transitions) {
         for (auto& entry : treeStatesNeedUpdate) {
             entry.second.emplace(target);
         }
         if (insertThese.count(target)) {
-            insertThese[target] += probability;
+            insertThese.at(target) += probability;
         } else {
-            insertThese[target] = probability;
+            insertThese.emplace(target, probability);
         }
     }
-    std::cout << "Done summing up" << std::endl;
-    for (auto const& entry : insertThese) {
+    for (auto const& [state2, uniProbability] : insertThese) {
+        auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(uniProbability);
+        auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
+        auto probability = RationalFunction(multiNominator);
+
         // We know that neither no transition state <-> entry.first exist because we've erased them
-        flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(entry.first, entry.second));
-        backwardsFlexibleMatrix.getRow(entry.first).push_back(storm::storage::MatrixEntry(state, entry.second));
+        flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(state2, probability));
+        backwardsFlexibleMatrix.getRow(state2).push_back(storm::storage::MatrixEntry(state, probability));
     }
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
 }

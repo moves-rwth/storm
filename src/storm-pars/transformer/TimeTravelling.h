@@ -1,6 +1,9 @@
 #pragma once
 
 #include <_types/_uint64_t.h>
+#include <carl/core/UnivariatePolynomial.h>
+#include <carl/numbers/constants.h>
+#include <carl/util/Cache.h>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -8,6 +11,7 @@
 #include <unordered_map>
 #include <vector>
 #include "adapters/RationalFunctionAdapter.h"
+#include "adapters/RationalFunctionAdapter_Private.h"
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 #include "modelchecker/CheckTask.h"
@@ -21,6 +25,8 @@
 namespace storm {
 namespace transformer {
 
+using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
+
 /**
  * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
  * 
@@ -33,8 +39,8 @@ class TimeTravelling {
         stateAnnotation() {
             // Intentionally left empty.
         }
-        RationalFunction getProbability(TimeTravelling const& timeTravelling, RationalFunctionVariable parameter) const {
-            RationalFunction prob = utility::zero<RationalFunction>();
+        UniPoly getProbability(TimeTravelling const& timeTravelling, RationalFunctionVariable parameter) const {
+            UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
             for (auto const& [info, constant] : this->annotation) {
                 prob += timeTravelling.polynomialFromFactorization(info, parameter) * constant;
             }
@@ -63,9 +69,9 @@ class TimeTravelling {
 
    private:
 
-    std::map<RationalFunctionVariable, std::vector<RationalFunction>> rationalFunctionCache;
+    std::map<RationalFunctionVariable, std::vector<UniPoly>> rationalFunctionCache;
 
-    uint64_t lookUpInCache(RationalFunction f, RationalFunctionVariable p) {
+    uint64_t lookUpInCache(UniPoly f, RationalFunctionVariable p) {
         for (uint64_t i = 0; i < rationalFunctionCache[p].size(); i++) {
             if (rationalFunctionCache.at(p)[i] == f) {
                 return i;
@@ -75,16 +81,20 @@ class TimeTravelling {
         return rationalFunctionCache.at(p).size() - 1;
     }
 
-    RationalFunction polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
-        static std::map<RationalFunctionVariable, std::map<std::vector<uint64_t>, RationalFunction>> fromFactorizationCache;
+    UniPoly polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
+        // This method keeps its own backwards cache, but only looks into the rationalFunctionCache constly
+        static std::map<RationalFunctionVariable, std::map<std::vector<uint64_t>, UniPoly>> fromFactorizationCache;
         if (fromFactorizationCache[p].count(factorization)) {
             return fromFactorizationCache.at(p).at(factorization);
         }
-        RationalFunction polynomial = utility::one<RationalFunction>();
+        UniPoly polynomial = UniPoly(p);
+        polynomial = polynomial.one();
         for (uint64_t i = 0; i < factorization.size(); i++) {
-            polynomial *= utility::pow(rationalFunctionCache.at(p)[i], factorization[i]);
+            for (uint64_t j = 0; j < factorization[i]; j++) {
+                polynomial *= rationalFunctionCache.at(p)[i];
+            }
         }
-        fromFactorizationCache.at(p)[factorization] = polynomial;
+        fromFactorizationCache.at(p).emplace(factorization, polynomial);
         return polynomial;
     }
 
@@ -117,7 +127,7 @@ class TimeTravelling {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    std::vector<std::pair<uint64_t, RationalFunction>> findTimeTravelling(
+    std::vector<std::pair<uint64_t, UniPoly>> findTimeTravelling(
         const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
@@ -132,7 +142,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, RationalFunction>> transitions,
+    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, UniPoly>> transitions,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,
@@ -189,6 +199,8 @@ class TimeTravelling {
      */
     std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> joinDuplicateTransitions(
         std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries);
+
+    std::shared_ptr<RawPolynomialCache> rawPolynomialCache;
 };
 
 }  // namespace transformer

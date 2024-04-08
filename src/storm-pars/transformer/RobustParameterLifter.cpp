@@ -1,5 +1,8 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include <carl/core/VariablePool.h>
+#include <carl/core/rootfinder/IncrementalRootFinder.h>
+#include <carl/core/rootfinder/RootFinder.h>
+#include <carl/formula/model/ran/RealAlgebraicNumber.h>
 #include <cmath>
 #include <map>
 #include <memory>
@@ -163,53 +166,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
 }
 
 template<typename ParametricType, typename ConstantType>
-boost::optional<std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::pair<typename storm::utility::parametric::CoefficientType<ParametricType>::type,
-                                                                             typename storm::utility::parametric::CoefficientType<ParametricType>::type>>>
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::recursiveDecompose(RawPolynomial polynomial, VariableType parameter,
-                                                                                                 bool firstIteration) {
-    auto parameterPol = RawPolynomial(parameter);
-    auto oneMinusParameter = RawPolynomial(1) - parameterPol;
-    if (polynomial.isConstant()) {
-        return std::make_pair(std::make_pair((uint64_t)0, (uint64_t)0),
-                              std::make_pair(utility::convertNumber<CoefficientType>(polynomial.constantPart()), utility::zero<CoefficientType>()));
-    }
-    auto byOneMinusP = polynomial.divideBy(oneMinusParameter);
-    if (byOneMinusP.remainder.isZero() && byOneMinusP.quotient > storm::utility::zero<CoefficientType>()) {
-        auto recursiveResult = recursiveDecompose(byOneMinusP.quotient, parameter, false);
-        if (recursiveResult) {
-            return std::make_pair(std::make_pair(recursiveResult->first.first, recursiveResult->first.second + 1), recursiveResult->second);
-        }
-    }
-    auto byP = polynomial.divideBy(parameterPol);
-    if (byP.remainder.isZero() && byP.quotient > storm::utility::zero<CoefficientType>()) {
-        auto recursiveResult = recursiveDecompose(byP.quotient, parameter, false);
-        if (recursiveResult) {
-            return std::make_pair(std::make_pair(recursiveResult->first.first + 1, recursiveResult->first.second), recursiveResult->second);
-        }
-    }
-    if (firstIteration && byOneMinusP.remainder.isConstant() && byOneMinusP.quotient > storm::utility::zero<CoefficientType>()) {
-        auto rem1 = utility::convertNumber<CoefficientType>(byOneMinusP.remainder.constantPart());
-        auto recursiveResult = recursiveDecompose(byOneMinusP.quotient, parameter, false);
-        if (recursiveResult) {
-            STORM_LOG_ASSERT(recursiveResult->second.second == 0, "");
-            return std::make_pair(std::make_pair(recursiveResult->first.first, recursiveResult->first.second + 1),
-                                  std::pair<CoefficientType, CoefficientType>(recursiveResult->second.first, rem1));
-        }
-    }
-    if (firstIteration && byP.remainder.isConstant() && byP.quotient > storm::utility::zero<CoefficientType>()) {
-        auto rem2 = utility::convertNumber<CoefficientType>(byP.remainder.constantPart());
-        auto recursiveResult = recursiveDecompose(byP.quotient, parameter, false);
-        if (recursiveResult) {
-            STORM_LOG_ASSERT(recursiveResult->second.second == 0, "");
-            return std::make_pair(std::make_pair(recursiveResult->first.first + 1, recursiveResult->first.second),
-                                  std::pair<CoefficientType, CoefficientType>(recursiveResult->second.first, rem2));
-        }
-    }
-    return boost::none;
-}
-
-template<typename ParametricType, typename ConstantType>
-std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
+std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
     RationalFunction polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     if (polynomial.isConstant()) {
@@ -232,9 +189,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    // Precision for exclusion of already found zeroes (see comment below)
-    auto precision = expressionManager->rational(RationalNumber(1) / RationalNumber(1e8));
-
     smtSolver->setTimeout(500);
 
     smtSolver->add(exprBounds);
@@ -256,12 +210,14 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 
             double value = model->getRationalValue(var);
 
+            zeroes.emplace(RationalFunctionCoefficient(value));
+
             // Add new constraint so we search for the next zero in the polynomial
             // Get another model (or unsat)
             // For some reason, this only really works when we then make a new 
             smtSolver->addNotCurrentModel();
         } else if (checkResult == solver::SmtSolver::CheckResult::Unknown) {
-            STORM_LOG_ERROR("Failed to find zero or absence of zero in polynomial " << polynomial << " using SMT solver. SMTLib string: " << smtSolver->getSmtLibString());
+            return std::nullopt;
             break;
         } else {
             // Unsat => found all zeroes :)
@@ -270,6 +226,32 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     }
     return zeroes;
 }
+
+template<typename ParametricType, typename ConstantType>
+std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesCarl(
+        RationalFunction polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    STORM_LOG_ASSERT(polynomial.denominator().isConstant(), "Denominator of polynomial is not constant.");
+    auto univariate = polynomial.nominator().toUnivariatePolynomial();
+    univariate /= polynomial.denominator().coefficient();
+    std::cout << "Roots of " << polynomial << std::endl;
+    auto const& carlRoots = carl::rootfinder::realRoots(univariate, carl::rootfinder::SplittingStrategy::DEFAULT, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
+    std::set<CoefficientType> zeroes = {};
+    for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
+        CoefficientType rootCoefficient;
+        if (root.isNumeric()) {
+            rootCoefficient = CoefficientType(root.value());
+        } else {
+            // TODO incorrect
+            rootCoefficient = CoefficientType(root.lower());
+        }
+        zeroes.emplace(rootCoefficient);
+        std::cout << rootCoefficient << " ";
+    }
+    std::cout << std::endl;
+    return zeroes;
+}
+
 
 template<typename ParametricType, typename ConstantType>
 std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
@@ -425,14 +407,18 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
         auto const derivative = RationalFunction(transition.derivative(p).nominator());
         // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
 
-        std::set<CoefficientType> zeroes;
+        std::optional<std::set<CoefficientType>> zeroes;
         // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
         if (derivative.nominator().totalDegree() < 4) {
             zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
         } else {
             zeroes = zeroesSMT(derivative, p);
+            if (!zeroes) {
+                zeroes = zeroesCarl(derivative, p);
+            }
         }
-        for (auto const& zero : zeroes) {
+        STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
+        for (auto const& zero : *zeroes) {
             if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
                 this->extrema->at(p).emplace(zero);
             }
