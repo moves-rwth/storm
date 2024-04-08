@@ -186,7 +186,7 @@ class ValueIterationOperator {
                 // TODO how to export robustOrder to backend?
                 if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
                     // Intentionally different method name
-                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, robustOrder);
+                    backend.processRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, applyCache.robustOrder);
                 } else {
                     // Generic nextRow interface
                     backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
@@ -310,8 +310,7 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-
-        robustOrder.clear();
+        applyCache.robustOrder.clear();
 
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         uint64_t orderCounter = 0;
@@ -326,7 +325,7 @@ class ValueIterationOperator {
             remainingValue -= lower;
             auto const diameter = matrixValueIt->upper() - lower;
             if (!storm::utility::isZero(diameter)) {
-                robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
+                applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
         if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
@@ -334,9 +333,9 @@ class ValueIterationOperator {
         }
 
         static AuxCompare<RobustDirection> cmp;
-        std::sort(robustOrder.begin(), robustOrder.end(), cmp);
+        std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), cmp);
 
-        for (auto const& pair : robustOrder) {
+        for (auto const& pair : applyCache.robustOrder) {
             auto availableMass = std::min(pair.second.first, remainingValue);
             result += availableMass * pair.first;
             remainingValue -= availableMass;
@@ -428,14 +427,24 @@ class ValueIterationOperator {
     std::vector<SolutionType> auxiliaryVector;
 
     /*!
-     * Robust order if robust value iteration used
-     */
-    mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
-
-    /*!
      * True, if an auxiliary vector exists
      */
     bool auxiliaryVectorUsedExternally{false};
+
+    // Due to a GCC bug we have to add this dummy template type here
+    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
+    template<typename ApplyValueType, typename Dummy>
+    struct ApplyCache {};
+
+    template<typename Dummy>
+    struct ApplyCache<storm::Interval, Dummy> {
+        mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
+    };
+
+    /*!
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     */
+    ApplyCache<ValueType, int> applyCache;
 
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector
