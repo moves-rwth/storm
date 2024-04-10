@@ -1,14 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <variant>
-
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityAnnotation.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/OptionalRef.h"
 
 namespace storm::modelchecker {
 template<typename ParametricType>
@@ -41,22 +36,7 @@ struct AnnotatedRegion {
     storm::modelchecker::RegionResult result{storm::modelchecker::RegionResult::Unknown};  /// The result of the analysis of this region
     bool resultKnownThroughMonotonicity{false};                                            /// Whether the result is known through monotonicity
 
-    struct DefaultMonotonicityAnnotation {
-        std::shared_ptr<storm::analysis::MonotonicityResult<VariableType>> globalMonotonicity{nullptr};
-    };
-    struct OrderBasedMonotonicityAnnotation {
-        std::shared_ptr<storm::analysis::Order> stateOrder{nullptr};
-        std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult{nullptr};
-    };
-    std::variant<DefaultMonotonicityAnnotation, OrderBasedMonotonicityAnnotation> monotonicityAnnotation;
-
-    storm::OptionalRef<DefaultMonotonicityAnnotation> getDefaultMonotonicityAnnotation();
-    storm::OptionalRef<DefaultMonotonicityAnnotation const> getDefaultMonotonicityAnnotation() const;
-
-    storm::OptionalRef<OrderBasedMonotonicityAnnotation> getOrderBasedMonotonicityAnnotation();
-    storm::OptionalRef<OrderBasedMonotonicityAnnotation const> getOrderBasedMonotonicityAnnotation() const;
-
-    storm::OptionalRef<storm::analysis::MonotonicityResult<VariableType> const> getGlobalMonotonicityResult() const;
+    storm::modelchecker::MonotonicityAnnotation<ParametricType> monotonicityAnnotation;  /// what is known about this region in terms of monotonicity
 
     bool updateValueBound(CoefficientType const& newValue, storm::OptimizationDirection dir);
 

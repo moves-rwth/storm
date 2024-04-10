@@ -108,7 +108,7 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     auto const dirToCheck = existsSat ? dirForSat : storm::solver::invert(dirForSat);
 
     // Try solving through global monotonicity
-    if (auto globalMonotonicity = region.getGlobalMonotonicityResult();
+    if (auto globalMonotonicity = region.monotonicityAnnotation.getGlobalMonotonicityResult();
         globalMonotonicity.has_value() && globalMonotonicity->isDone() && globalMonotonicity->isAllMonotonicity()) {
         auto const valuation = getOptimalValuationForMonotonicity(region.region, globalMonotonicity->getMonotonicityResult(), dirToCheck);
         STORM_LOG_ASSERT(valuation.size() == region.region.getVariables().size(), "Not all parameters seem to be monotonic.");

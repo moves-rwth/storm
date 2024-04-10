@@ -103,7 +103,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
         orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
         orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
     }
-    typename AnnotatedRegion<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
+    typename MonotonicityAnnotation<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
     annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
     annotation.localMonotonicityResult = std::make_shared<storm::analysis::LocalMonotonicityResult<VariableType>>(annotation.stateOrder->getNumberOfStates());
 
@@ -116,12 +116,12 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
 
     detail::extendLocalMonotonicityResult(region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,
                                           *this->parameterLifterRef);
-    region.monotonicityAnnotation = annotation;
+    region.monotonicityAnnotation.data = annotation;
 }
 
 template<typename ParametricType, typename ConstantType>
 void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotonicity(storm::Environment const& env, AnnotatedRegion<ParametricType>& region) {
-    auto annotation = region.getOrderBasedMonotonicityAnnotation();
+    auto annotation = region.monotonicityAnnotation.getOrderBasedMonotonicityAnnotation();
     STORM_LOG_ASSERT(annotation.has_value(), "Order-based monotonicity annotation must be present.");
     // Find out if we need to copy the order as it might be shared among subregions.
     // Copy order only if it will potentially change and if it is shared with another region
@@ -152,7 +152,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
 template<typename ParametricType, typename ConstantType>
 void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotonicityBeforeSplitting(storm::Environment const& env,
                                                                                                     AnnotatedRegion<ParametricType>& region) {
-    auto annotation = region.getOrderBasedMonotonicityAnnotation();
+    auto annotation = region.monotonicityAnnotation.getOrderBasedMonotonicityAnnotation();
     STORM_LOG_ASSERT(annotation.has_value(), "Order-based monotonicity annotation must be present.");
     if (useBounds && !annotation->stateOrder->getDoneBuilding()) {
         STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
@@ -205,7 +205,7 @@ storm::storage::BitVector OrderBasedMonotonicityBackend<ParametricType, Constant
     }
     STORM_LOG_ASSERT(parameterLifterRef.has_value(), "Parameter lifter reference not initialized.");
 
-    auto monotonicityAnnotation = region.getOrderBasedMonotonicityAnnotation();
+    auto monotonicityAnnotation = region.monotonicityAnnotation.getOrderBasedMonotonicityAnnotation();
     STORM_LOG_ASSERT(monotonicityAnnotation.has_value() && monotonicityAnnotation->localMonotonicityResult != nullptr,
                      "Order-based monotonicity annotation must be present.");
     auto const& localMonotonicityResult = *monotonicityAnnotation->localMonotonicityResult;

@@ -37,7 +37,7 @@ void AnnotatedRegion<ParametricType>::propagateAnnotationsToSubregions(bool allo
     }
     if (allowDeleteAnnotationsOfThis) {
         // Delete annotations that are memory intensive
-        monotonicityAnnotation.template emplace<0>();
+        monotonicityAnnotation = {};
     }
 }
 
@@ -82,56 +82,6 @@ uint64_t AnnotatedRegion<ParametricType>::getMaxDepthOfSubRegions() const {
         max = std::max(max, child.getMaxDepthOfSubRegions() + 1);
     }
     return max;
-}
-
-template<typename ParametricType>
-storm::OptionalRef<typename AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation>
-AnnotatedRegion<ParametricType>::getDefaultMonotonicityAnnotation() {
-    if (auto* mono = std::get_if<DefaultMonotonicityAnnotation>(&monotonicityAnnotation)) {
-        return *mono;
-    }
-    return storm::NullRef;
-}
-
-template<typename ParametricType>
-storm::OptionalRef<typename AnnotatedRegion<ParametricType>::OrderBasedMonotonicityAnnotation>
-AnnotatedRegion<ParametricType>::getOrderBasedMonotonicityAnnotation() {
-    if (auto* mono = std::get_if<OrderBasedMonotonicityAnnotation>(&monotonicityAnnotation)) {
-        return *mono;
-    }
-    return storm::NullRef;
-}
-
-template<typename ParametricType>
-storm::OptionalRef<typename AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation const>
-AnnotatedRegion<ParametricType>::getDefaultMonotonicityAnnotation() const {
-    if (auto const* mono = std::get_if<DefaultMonotonicityAnnotation>(&monotonicityAnnotation)) {
-        return *mono;
-    }
-    return storm::NullRef;
-}
-
-template<typename ParametricType>
-storm::OptionalRef<typename AnnotatedRegion<ParametricType>::OrderBasedMonotonicityAnnotation const>
-AnnotatedRegion<ParametricType>::getOrderBasedMonotonicityAnnotation() const {
-    if (auto const* mono = std::get_if<OrderBasedMonotonicityAnnotation>(&monotonicityAnnotation)) {
-        return *mono;
-    }
-    return storm::NullRef;
-}
-
-template<typename ParametricType>
-storm::OptionalRef<storm::analysis::MonotonicityResult<typename AnnotatedRegion<ParametricType>::VariableType> const>
-AnnotatedRegion<ParametricType>::getGlobalMonotonicityResult() const {
-    storm::OptionalRef<storm::analysis::MonotonicityResult<VariableType> const> result;
-    if (auto defaultMono = getDefaultMonotonicityAnnotation(); defaultMono.has_value() && defaultMono->globalMonotonicity) {
-        result.reset(*defaultMono->globalMonotonicity);
-    } else if (auto orderMono = getOrderBasedMonotonicityAnnotation(); orderMono.has_value() && orderMono->localMonotonicityResult) {
-        if (auto globalRes = orderMono->localMonotonicityResult->getGlobalMonotonicityResult()) {
-            result.reset(*globalRes);
-        }
-    }
-    return result;
 }
 
 template<typename ParametricType>

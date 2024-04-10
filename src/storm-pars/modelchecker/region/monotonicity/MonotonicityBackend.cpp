@@ -12,7 +12,7 @@ void MonotonicityBackend<ParametricType>::setMonotoneParameter(VariableType cons
 
 template<typename ParametricType>
 void MonotonicityBackend<ParametricType>::initializeMonotonicity(storm::Environment const&, AnnotatedRegion<ParametricType>& region) {
-    typename AnnotatedRegion<ParametricType>::DefaultMonotonicityAnnotation annotation;
+    typename MonotonicityAnnotation<ParametricType>::DefaultMonotonicityAnnotation annotation;
     annotation.globalMonotonicity = std::make_shared<storm::analysis::MonotonicityResult<VariableType>>();
     bool allMonotone = true;
     for (auto const& parameter : region.region.getVariables()) {
@@ -25,7 +25,7 @@ void MonotonicityBackend<ParametricType>::initializeMonotonicity(storm::Environm
     }
     annotation.globalMonotonicity->setAllMonotonicity(allMonotone);
     annotation.globalMonotonicity->setDone();
-    region.monotonicityAnnotation = annotation;
+    region.monotonicityAnnotation.data = annotation;
 }
 
 template<typename ParametricType>
@@ -53,7 +53,7 @@ template<typename ParametricType>
 std::map<typename MonotonicityBackend<ParametricType>::VariableType, typename MonotonicityBackend<ParametricType>::MonotonicityKind>
 MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
     std::map<VariableType, MonotonicityKind> result;
-    if (auto globalMonotonicity = region.getGlobalMonotonicityResult(); globalMonotonicity.has_value()) {
+    if (auto globalMonotonicity = region.monotonicityAnnotation.getGlobalMonotonicityResult(); globalMonotonicity.has_value()) {
         for (auto const& parameter : region.region.getVariables()) {
             if (auto monRes = globalMonotonicity->getMonotonicity(parameter); storm::analysis::isMonotone(monRes)) {
                 result.emplace(parameter, monRes);
