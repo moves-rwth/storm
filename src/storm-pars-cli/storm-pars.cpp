@@ -234,9 +234,9 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         transformer::TimeTravelling tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
-        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-            tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask, parametricSettings.getBigStepHorizon(),
-                       parametricSettings.isTimeTravellingEnabled()));
+        auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);
+        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
+        // TODO Do something with saved annotations
         result.changed = true;
     }
 

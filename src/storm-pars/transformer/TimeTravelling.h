@@ -31,6 +31,13 @@ namespace transformer {
 using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
 
 struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>> {
+    /**
+     * Look up the index of this polynomial in the cache. If it doesn't exist, adds it to the cache.
+     * 
+     * @param f The polynomial.
+     * @param p The main parameter of the polynomial.
+     * @return uint64_t The index of the polynomial.
+     */
     uint64_t lookUpInCache(UniPoly f, RationalFunctionVariable p) {
         for (uint64_t i = 0; i < (*this)[p].size(); i++) {
             if (this->at(p)[i] == f) {
@@ -41,6 +48,13 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
         return this->at(p).size() - 1;
     }
 
+    /**
+     * @brief Computes a univariate polynomial from a factorization.
+     * 
+     * @param factorization The factorization (a vector of exponents, indices = position in cache).
+     * @param p The parameter.
+     * @return UniPoly The univariate polynomial.
+     */
     UniPoly polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
         UniPoly polynomial = UniPoly(p);
         polynomial = polynomial.one();
@@ -54,8 +68,6 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
 };
 
 struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
-    // Annotation(Annotation& other) = default;
-    // Annotation(Annotation const& other) = default;
     Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) : parameter(parameter), polynomialCache(polynomialCache) {
         // Intentionally left empty
     }
@@ -139,6 +151,11 @@ struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
         }
     }
 
+    /**
+     * @brief Get the probability of this annotation as a univariate polynomial (which isn't factorized).
+     * 
+     * @return UniPoly The probability.
+     */
     UniPoly getProbability() const {
         UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
         std::vector<RationalFunction> vector;
@@ -147,6 +164,43 @@ struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
         }
         return prob;
     }
+
+    /**
+     * Evaluate the polynomial represented by this annotation on an interval.
+     * 
+     * @return Interval The resulting interval.
+     */
+    Interval evaluateOnInterval(Interval inputInterval) {
+        Interval sumOfTerms(0.0, 0.0);
+        for (auto const& [info, constant] : *this) {
+            Interval outerMult(1.0, 1.0);
+            for (uint64_t i = 0; i < info.size(); i++) {
+                auto polynomial = this->polynomialCache->at(parameter)[i];
+                // Evaluate the inner polynomial by its coefficients
+                auto coefficients = polynomial.coefficients();
+                Interval innerSum(0.0, 0.0);
+                for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
+                    if (exponent != 0) {
+                        innerSum += carl::pow(inputInterval, exponent) * utility::convertNumber<double>(coefficients[exponent]);
+                    } else {
+                        innerSum += utility::convertNumber<double>(coefficients[exponent]);
+                    }
+                }
+                // Inner polynomial ^ exponent
+                outerMult *= carl::pow(innerSum, info[i]);
+            }
+            sumOfTerms += outerMult * utility::convertNumber<double>(constant);
+        }
+        return sumOfTerms;
+    }
+
+    RationalFunctionVariable getParameter() const {
+        return parameter;
+    }
+
+    // std::set<RationalFunction> evaluateDerivativeOnInterval(Interval i) {
+    // }
+
     friend std::ostream& operator<<(std::ostream& os, const Annotation& annotation);
 
    private:
@@ -159,11 +213,19 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
     while (iterator != annotation.end()) {
         auto const& factors = iterator->first;
         auto const& constant = iterator->second;
+        std::cout << constant << " * (";
+        bool alreadyPrintedFactor = false;
         for (uint64_t i = 0; i < factors.size(); i++) {
             if (factors[i] > 0) {
+                if (alreadyPrintedFactor) {
+                    os << "*";
+                } else {
+                    alreadyPrintedFactor = true;
+                }
                 os << "(" << annotation.polynomialCache->at(annotation.parameter)[i] << ")" << "^" << factors[i];
             }
         }
+        std::cout << ")";
         iterator++;
         if (iterator != annotation.end()) {
             os << " + ";
@@ -192,30 +254,25 @@ class TimeTravelling {
      *
      * @param model A pMC.
      * @param checkTask A property (probability or reward) on the pMC.
-     * @param horizon How big to step: maximal degree of the resulting polynomials.
-     * @param timeTravel Whether to time-travel, i.e., add new states to consolidate similar transitions.
      * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
      */
-    models::sparse::Dtmc<RationalFunction> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon = 4,
-                                                   bool timeTravel = true);
+    std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
+    static std::map<UniPoly, Annotation> lastSavedAnnotations;
    private:
-
-
     /**
-     * Find the paths we can big-step from this state using this parameter and this horizon.
+     * Find the paths we can big-step from this state using this parameter.
      *
      * @param start Root state of search.
      * @param parameter Parameter w.r.t. which we search.
-     * @param horizon How big to step: maximal degree of the resulting polynomials.
      * @param flexibleMatrix Matrix of the pMC.
      * @param treeStates Tree states (see updateTreeStates).
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
      * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
     std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> bigStepBFS(
-        uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+        uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
 
@@ -247,7 +304,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+    std::map<UniPoly, Annotation> replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,

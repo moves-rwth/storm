@@ -110,9 +110,8 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(
     return std::make_pair(exploredStates, bottomStates);
 }
 
-models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                               modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask, uint64_t horizon,
-                                                               bool timeTravellingEnabled) {
+std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> TimeTravelling::bigStep(models::sparse::Dtmc<RationalFunction> const& model,
+                                                               modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
@@ -195,6 +194,9 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     // We will compute the reachable states once in the beginning but update them dynamically
     storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
 
+    // We will return these stored annotations to help find the zeroes
+    std::map<UniPoly, Annotation> storedAnnotations;
+
 #if WRITE_DTMCS
     uint64_t writeDtmcCounter = 0;
 #endif
@@ -207,13 +209,10 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             continue;
         }
 
-        // The parameters we can do big-step w.r.t. (if horizon > 1)
         std::set<RationalFunctionVariable> bigStepParameters;
-        if (horizon > 1) {
-            for (auto const& parameter : allParameters) {
-                if (treeStates[parameter].count(state) && treeStates.at(parameter).at(state).size() >= 1) {
-                    bigStepParameters.emplace(parameter);
-                }
+        for (auto const& parameter : allParameters) {
+            if (treeStates[parameter].count(state) && treeStates.at(parameter).at(state).size() >= 1) {
+                bigStepParameters.emplace(parameter);
             }
         }
 
@@ -221,23 +220,22 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
-            auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, horizon, flexibleMatrix, treeStates, stateRewardVector);
+            auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, flexibleMatrix, treeStates, stateRewardVector);
 
             bool doneTimeTravelling = false;
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, Annotation>> transitions;
-            if (timeTravellingEnabled) {
-                transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
+            std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
                                                                    treeStatesNeedUpdate, state, originalNumStates);
-            } else {
-                for (auto const& [state, annotation] : bottomAnnotations) {
-                    transitions.emplace_back(state, annotation);
-                }
-            }
+            // for (auto const& [state, annotation] : bottomAnnotations) {
+            //     transitions.emplace_back(state, annotation);
+            // }
 
             // Put paths into matrix
-            replaceWithNewTransitions(state, transitions, flexibleMatrix, backwardsTransitions, reachableStates, treeStatesNeedUpdate);
+            auto newStoredAnnotations = replaceWithNewTransitions(state, transitions, flexibleMatrix, backwardsTransitions, reachableStates, treeStatesNeedUpdate);
+            for (auto const& entry : newStoredAnnotations) {
+                storedAnnotations.emplace(entry);
+            }
 
             // Dynamically update unreachable states
             updateUnreachableStates(reachableStates, visitedStates, backwardsTransitions, initialState);
@@ -323,11 +321,16 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
 
     STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(), "Internal error: resulting matrix not probabilistic!");
 
-    return newDTMC;
+    lastSavedAnnotations.clear();
+    for (auto const& entry : storedAnnotations) {
+        lastSavedAnnotations.emplace(entry);
+    }
+
+    return std::make_pair(newDTMC, storedAnnotations);
 }
 
 std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling::bigStepBFS(
-    uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
     const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
     
@@ -494,11 +497,13 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
     return insertTransitions;
 }
 
-void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                           storage::BitVector& reachableStates,
                                                           std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+    std::map<UniPoly, Annotation> storedAnnotations;
+
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
     // Delete old transitions - backwards
     for (auto const& deletingTransition : flexibleMatrix.getRow(state)) {
@@ -530,6 +535,7 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
     }
     for (auto const& [state2, annotation] : insertThese) {
         auto uniProbability = annotation.getProbability();
+        storedAnnotations.emplace(uniProbability, std::move(annotation));
         auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(uniProbability);
         auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
         auto probability = RationalFunction(multiNominator);
@@ -539,6 +545,7 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
         backwardsFlexibleMatrix.getRow(state2).push_back(storm::storage::MatrixEntry(state, probability));
     }
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
+    return storedAnnotations;
 }
 
 void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,

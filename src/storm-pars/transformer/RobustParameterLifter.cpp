@@ -1,4 +1,5 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
+#include <_types/_uint64_t.h>
 #include <carl/core/VariablePool.h>
 #include <carl/core/rootfinder/IncrementalRootFinder.h>
 #include <carl/core/rootfinder/RootFinder.h>
@@ -22,6 +23,7 @@
 #include "storage/expressions/Expression.h"
 #include "storage/expressions/RationalFunctionToExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -31,6 +33,8 @@
 #include "utility/logging.h"
 #include "utility/macros.h"
 #include "utility/solver.h"
+
+std::map<storm::transformer::UniPoly, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
 
 namespace storm {
 namespace transformer {
@@ -397,41 +401,41 @@ RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::Rob
 
 template<typename ParametricType, typename ConstantType>
 void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initializeExtrema() {
-    if (this->extrema) {
-        // Extrema already initialized
-        return;
-    }
-    this->extrema = std::map<VariableType, std::set<CoefficientType>>();
-    std::cout << "Transition: " << transition << std::endl;
-    for (auto const& p : parameters) {
+    // if (this->extrema) {
+    //     // Extrema already initialized
+    //     return;
+    // }
+    // this->extrema = std::map<VariableType, std::set<CoefficientType>>();
+    // std::cout << "Transition: " << transition << std::endl;
 
-        std::cout << "Some values: ";
-        for (auto i = 0; i <= 100; i++) {
-            std::cout << transition.evaluate({{p, RationalNumber(i) / RationalNumber(100)}}) << " ";
-        }
-        std::cout << std::endl;
+    // for (auto const& p : parameters) {
+    //     // std::cout << "Some values: ";
+    //     // for (auto i = 0; i <= 100; i++) {
+    //     //     std::cout << transition.evaluate({{p, RationalNumber(i) / RationalNumber(100)}}) << " ";
+    //     // }
+    //     // std::cout << std::endl;
 
-        (*this->extrema)[p] = {};
-        auto const derivative = RationalFunction(transition.derivative(p).nominator());
-        // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
+    //     (*this->extrema)[p] = {};
+    //     auto const derivative = RationalFunction(transition.derivative(p).nominator());
+    //     // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
 
-        std::optional<std::set<CoefficientType>> zeroes;
-        // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
-        if (derivative.nominator().totalDegree() < 4) {
-            zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
-        } else {
-            zeroes = zeroesSMT(derivative, p);
-            if (!zeroes) {
-                zeroes = zeroesCarl(derivative, p);
-            }
-        }
-        STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
-        for (auto const& zero : *zeroes) {
-            if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
-                this->extrema->at(p).emplace(zero);
-            }
-        }
-    }
+    //     std::optional<std::set<CoefficientType>> zeroes;
+    //     // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
+    //     if (derivative.nominator().totalDegree() < 4) {
+    //         zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
+    //     } else {
+    //         zeroes = zeroesSMT(derivative, p);
+    //         if (!zeroes) {
+    //             zeroes = zeroesCarl(derivative, p);
+    //         }
+    //     }
+    //     STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
+    //     for (auto const& zero : *zeroes) {
+    //         if (zero >= utility::zero<CoefficientType>() && zero <= utility::one<CoefficientType>()) {
+    //             this->extrema->at(p).emplace(zero);
+    //         }
+    //     }
+    // }
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -469,68 +473,98 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
         RationalFunction const& transition = abstrValuation.getTransition();
 
-        // We first figure out the positions of the lower and upper bounds per parameter
-        // Lower/upper bound of every parameter is independent because the transitions are sums of terms with one parameter each
-        // At the end, we compute the value
-        std::map<VariableType, CoefficientType> lowerPositions;
-        std::map<VariableType, CoefficientType> upperPositions;
+        auto nominator = transition.nominator();
+        auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+        // Constant denominator is now distributed in the factors, not in the denominator of the rational function
+        nominatorAsUnivariate /= transition.denominator().coefficient();
 
-        for (auto const& p : abstrValuation.getParameters()) {
-            CoefficientType lowerP = region.getLowerBoundary(p);
-            CoefficientType upperP = region.getUpperBoundary(p);
+        // TODO pass this this through arguments
+        Annotation annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
 
-            std::set<CoefficientType> potentialExtrema = {lowerP, upperP};
-            for (auto const& maximum : abstrValuation.getExtrema().at(p)) {
-                if (maximum >= lowerP && maximum <= upperP) {
-                    potentialExtrema.emplace(maximum);
-                }
+        Interval interval = Interval(region.getLowerBoundary(annotation.getParameter()), region.getUpperBoundary(annotation.getParameter()));
+        double width = interval.upper() - interval.lower();
+
+        double minLower = 1.0;
+        double maxUpper = 0.0;
+
+        const float fraction = 0.01;
+        for (float start = 0; start < 1; start += fraction) {
+            Interval subInterval = Interval(interval.lower() + width * start, interval.lower() + width * (start + fraction));
+            auto result = annotation.evaluateOnInterval(subInterval);
+            if (result.lower() < minLower) {
+                minLower = result.lower();
             }
-
-            CoefficientType minPosP;
-            CoefficientType maxPosP;
-            CoefficientType minValue = utility::infinity<CoefficientType>();
-            CoefficientType maxValue = -utility::infinity<CoefficientType>();
-
-            auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
-
-            for (auto const& potentialExtremum : potentialExtrema) {
-                instantiation[p] = potentialExtremum;
-                auto value = abstrValuation.getTransition().evaluate(instantiation);
-                if (value > maxValue) {
-                    maxValue = value;
-                    maxPosP = potentialExtremum;
-                }
-                if (value < minValue) {
-                    minValue = value;
-                    minPosP = potentialExtremum;
-                }
+            if (result.upper() > maxUpper) {
+                maxUpper = result.upper();
             }
-
-            lowerPositions[p] = minPosP;
-            upperPositions[p] = maxPosP;
         }
 
-        // Compute function values at left and right ends
-        ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
-        ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
+        placeholder = Interval(minLower, maxUpper);
 
-        bool graphPresering = true;
-        const ConstantType epsilon =
-            graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-                           : utility::zero<ConstantType>();
+        // std::cout << "Bound on: " << annotation << " on interval " << interval << ": " << placeholder << std::endl;
 
-        if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
-            // Current region is entirely ill-defined (partially ill-defined is fine:)
-            return true;
-        }
+        // // We first figure out the positions of the lower and upper bounds per parameter
+        // // Lower/upper bound of every parameter is independent because the transitions are sums of terms with one parameter each
+        // // At the end, we compute the value
+        // std::map<VariableType, CoefficientType> lowerPositions;
+        // std::map<VariableType, CoefficientType> upperPositions;
 
-        // We want to check in the realm of feasible instantiations, even if our not our entire parameter space if feasible
-        lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
-        upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
+        // for (auto const& p : abstrValuation.getParameters()) {
+        //     CoefficientType lowerP = region.getLowerBoundary(p);
+        //     CoefficientType upperP = region.getUpperBoundary(p);
 
-        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+        //     std::set<CoefficientType> potentialExtrema = {lowerP, upperP};
+        //     for (auto const& maximum : abstrValuation.getExtrema().at(p)) {
+        //         if (maximum >= lowerP && maximum <= upperP) {
+        //             potentialExtrema.emplace(maximum);
+        //         }
+        //     }
 
-        placeholder = Interval(lowerBound, upperBound);
+        //     CoefficientType minPosP;
+        //     CoefficientType maxPosP;
+        //     CoefficientType minValue = utility::infinity<CoefficientType>();
+        //     CoefficientType maxValue = -utility::infinity<CoefficientType>();
+
+        //     auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
+
+        //     for (auto const& potentialExtremum : potentialExtrema) {
+        //         instantiation[p] = potentialExtremum;
+        //         auto value = abstrValuation.getTransition().evaluate(instantiation);
+        //         if (value > maxValue) {
+        //             maxValue = value;
+        //             maxPosP = potentialExtremum;
+        //         }
+        //         if (value < minValue) {
+        //             minValue = value;
+        //             minPosP = potentialExtremum;
+        //         }
+        //     }
+
+        //     lowerPositions[p] = minPosP;
+        //     upperPositions[p] = maxPosP;
+        // }
+
+        // // Compute function values at left and right ends
+        // ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
+        // ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
+
+        // bool graphPresering = true;
+        // const ConstantType epsilon =
+        //     graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+        //                    : utility::zero<ConstantType>();
+
+        // if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
+        //     // Current region is entirely ill-defined (partially ill-defined is fine:)
+        //     return true;
+        // }
+
+        // // We want to check in the realm of feasible instantiations, even if our not our entire parameter space if feasible
+        // lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
+        // upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
+
+        // STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+
+        // placeholder = Interval(lowerBound, upperBound);
     }
 
     return false;
