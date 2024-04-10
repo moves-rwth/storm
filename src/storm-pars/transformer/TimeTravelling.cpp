@@ -226,13 +226,13 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
             bool doneTimeTravelling = false;
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, UniPoly>> transitions;
+            std::vector<std::pair<uint64_t, Annotation>> transitions;
             if (timeTravellingEnabled) {
                 transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
                                                                    treeStatesNeedUpdate, state, originalNumStates);
             } else {
                 for (auto const& [state, annotation] : bottomAnnotations) {
-                    transitions.emplace_back(state, annotation.getProbability(*this, parameter));
+                    transitions.emplace_back(state, annotation);
                 }
             }
 
@@ -326,7 +326,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::bigStep(models::sparse::D
     return newDTMC;
 }
 
-std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint64_t>> TimeTravelling::bigStepBFS(
+std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling::bigStepBFS(
     uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
     const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
@@ -337,11 +337,15 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
     // We need this to later determine which states are now unreachable
     std::vector<uint64_t> visitedStatesInBFSOrder;
 
-    std::map<uint64_t, TimeTravelling::stateAnnotation> annotations;
+    // We iterate over these annotations
+    std::map<uint64_t, Annotation> annotations;
+
+    // Set of active states in BFS
     std::set<uint64_t> activeStates = {start};
 
-    annotations[start] = TimeTravelling::stateAnnotation();
-    annotations[start].annotation[std::vector<uint64_t>()] = utility::one<RationalNumber>();
+    annotations.emplace(start, Annotation(parameter, polynomialCache));
+    // We go with probability one from the start to the start
+    annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalNumber>();
 
     while (!activeStates.empty()) {
         std::set<uint64_t> nextActiveStates;
@@ -351,38 +355,28 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
                 auto const goToState = entry.getColumn();
                 auto const transition = entry.getValue();
 
-                auto& targetAnnotation = annotations[goToState].annotation;
-                for (auto const& [info, constant] : annotations[state].annotation) {
-                    if (transition.isConstant()) {
-                        // We've seen no more instances of any parametric transition, we just update the constant value
-                        if (!targetAnnotation.count(info)) {
-                            targetAnnotation[info] = utility::zero<RationalNumber>();
-                        }
-                        targetAnnotation[info] += constant * transition.constantPart();
-                    } else {
-                        // We've seen a parametric transition, add that into the counter
-                        auto newCounter = info;
+                if (!annotations.count(goToState)) {
+                    annotations.emplace(goToState, Annotation(parameter, polynomialCache));
+                }
+                // We add stuff to this annotation
+                auto& targetAnnotation = annotations.at(goToState);
 
-                        STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has " << transition.denominator() << " in transition " << transition);
-                        auto nominator = transition.nominator();
-                        UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-                        nominatorAsUnivariate /= transition.denominator().coefficient();
+                // The core of this big-step algorithm: "value-iterating" on our annotation.
+                if (transition.isConstant()) {
+                    targetAnnotation.addAnnotationTimesConstant(annotations.at(state), transition.constantPart());
+                } else {
+                    // Read transition from DTMC, convert to univariate polynomial
+                    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has " << transition.denominator() << " in transition " << transition);
+                    auto nominator = transition.nominator();
+                    UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+                    // Constant denominator is now distributed in the factors, not in the denominator of the rational function
+                    nominatorAsUnivariate /= transition.denominator().coefficient();
+                    targetAnnotation.addAnnotationTimesPolynomial(annotations.at(state), nominatorAsUnivariate);
+                }
 
-                        auto const cacheNum = lookUpInCache(nominatorAsUnivariate, parameter);
-                        while (newCounter.size() <= cacheNum) {
-                            newCounter.push_back(0);
-                        }
-                        newCounter[cacheNum]++;
-                        if (targetAnnotation.count(newCounter)) {
-                            // We've seen one more instance of this transition
-                            targetAnnotation.at(newCounter) += constant;
-                        } else {
-                            targetAnnotation[newCounter] = constant;
-                        }
-                    }
-                    if (subtree.get(goToState) && !bottomStates.get(goToState)) {
-                        nextActiveStates.emplace(goToState);
-                    }
+                // Continue BFS
+                if (subtree.get(goToState) && !bottomStates.get(goToState)) {
+                    nextActiveStates.emplace(goToState);
                 }
             }
         }
@@ -397,8 +391,8 @@ std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint6
     return std::make_pair(annotations, visitedStatesInBFSOrder);
 }
 
-std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
-    const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
+std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
+    const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates) {
@@ -408,7 +402,7 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
     std::map<std::vector<uint64_t>, std::map<uint64_t, RationalNumber>> parametricTransitions;
 
     for (auto const& [state, annotation] : bigStepAnnotations) {
-        for (auto const& [info, constant] : annotation.annotation) {
+        for (auto const& [info, constant] : annotation) {
             if (!parametricTransitions.count(info)) {
                 parametricTransitions[info] = std::map<uint64_t, RationalNumber>();
             }
@@ -418,16 +412,12 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
     }
 
     // These are the transitions that we are actually going to insert (that the function will return).
-    std::vector<std::pair<uint64_t, UniPoly>> insertTransitions;
+    std::vector<std::pair<uint64_t, Annotation>> insertTransitions;
     
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
 
     for (auto const& [factors, transitions] : parametricTransitions) {
-        const auto listOfConstants = transitions;
-
-        auto parametricPart = polynomialFromFactorization(factors, parameter);
-
         if (transitions.size() > 1) {
             // The set of target states of the paths that we maybe want to time-travel
             std::set<uint64_t> targetStates;
@@ -443,8 +433,10 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
             if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
                 // We already reordered w.r.t. these target states. We're not going to time-travel again,
                 // so just enter the paths into insertPaths.
-                for (auto const& [toState, withConstant] : listOfConstants) {
-                    insertTransitions.emplace_back(toState, parametricPart * withConstant);
+                for (auto const& [toState, withConstant] : transitions) {
+                    Annotation newAnnotation(parameter, polynomialCache);
+                    newAnnotation[factors] = withConstant;
+                    insertTransitions.emplace_back(toState, newAnnotation);
                 }
                 continue;
             }
@@ -452,13 +444,15 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
 
             doneTimeTravelling = true;
 
+            Annotation newAnnotation(parameter, polynomialCache);
+
             RationalNumber constantPart = utility::zero<RationalNumber>();
-            for (auto const& [state, transition] : listOfConstants) {
+            for (auto const& [state, transition] : transitions) {
                 constantPart += transition;
             }
-            UniPoly sum = UniPoly(parametricPart) * constantPart;
+            newAnnotation[factors] = constantPart;
 
-            STORM_LOG_INFO("Time travellable transitions with " << sum << std::endl);
+            STORM_LOG_INFO("Time travellable transitions with " << newAnnotation << std::endl);
 
             doneTimeTravelling = true;
 
@@ -468,10 +462,10 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
             STORM_LOG_ASSERT(newRow == newRowBackwards, "Internal error: Drifting matrix and backwardsTransitions.");
 
             // Sum of parametric transitions goes to new row
-            insertTransitions.emplace_back(newRow, sum);
+            insertTransitions.emplace_back(newRow, newAnnotation);
 
             // Write outgoing transitions from new row directly into the flexible matrix
-            for (auto const& [state, thisProb] : listOfConstants) {
+            for (auto const& [state, thisProb] : transitions) {
                 const RationalFunction probAsFunction = RationalFunction(thisProb) / constantPart;
                 // Forward
                 flexibleMatrix.getRow(newRow).push_back(storage::MatrixEntry<uint_fast64_t, RationalFunction>(state, probAsFunction));
@@ -488,17 +482,19 @@ std::vector<std::pair<uint64_t, UniPoly>> TimeTravelling::findTimeTravelling(
             // Join duplicate transitions forwards (only need to do this for row we go to)
             flexibleMatrix.getRow(newRow) = joinDuplicateTransitions(flexibleMatrix.getRow(newRow));
         } else {
-            auto const [state, probability] = *listOfConstants.begin();
+            auto const [state, probability] = *transitions.begin();
 
-            UniPoly sum = UniPoly(parametricPart) * probability;
-            insertTransitions.emplace_back(state, sum);
+            Annotation newAnnotation(parameter, polynomialCache);
+            newAnnotation[factors] = probability;
+
+            insertTransitions.emplace_back(state, newAnnotation);
         }
     }
 
     return insertTransitions;
 }
 
-void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, UniPoly>> transitions,
+void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                           storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                           storage::BitVector& reachableStates,
@@ -521,7 +517,7 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix().transpose().transpose(), "");
 
     // Insert new transitions
-    std::map<uint64_t, UniPoly> insertThese;
+    std::map<uint64_t, Annotation> insertThese;
     for (auto const& [target, probability] : transitions) {
         for (auto& entry : treeStatesNeedUpdate) {
             entry.second.emplace(target);
@@ -532,7 +528,8 @@ void TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector
             insertThese.emplace(target, probability);
         }
     }
-    for (auto const& [state2, uniProbability] : insertThese) {
+    for (auto const& [state2, annotation] : insertThese) {
+        auto uniProbability = annotation.getProbability();
         auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(uniProbability);
         auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
         auto probability = RationalFunction(multiNominator);

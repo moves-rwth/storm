@@ -1,6 +1,8 @@
 #pragma once
 
 #include <_types/_uint64_t.h>
+#include <carl/core/FactorizedPolynomial.h>
+#include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/UnivariatePolynomial.h>
 #include <carl/numbers/constants.h>
 #include <carl/util/Cache.h>
@@ -21,11 +23,154 @@
 #include "storage/FlexibleSparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
 #include "utility/constants.h"
+#include "utility/macros.h"
 
 namespace storm {
 namespace transformer {
 
 using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
+
+struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>> {
+    uint64_t lookUpInCache(UniPoly f, RationalFunctionVariable p) {
+        for (uint64_t i = 0; i < (*this)[p].size(); i++) {
+            if (this->at(p)[i] == f) {
+                return i;
+            }
+        }
+        this->at(p).push_back(f);
+        return this->at(p).size() - 1;
+    }
+
+    UniPoly polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
+        UniPoly polynomial = UniPoly(p);
+        polynomial = polynomial.one();
+        for (uint64_t i = 0; i < factorization.size(); i++) {
+            for (uint64_t j = 0; j < factorization[i]; j++) {
+                polynomial *= this->at(p)[i];
+            }
+        }
+        return polynomial;
+    }
+};
+
+struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
+    // Annotation(Annotation& other) = default;
+    // Annotation(Annotation const& other) = default;
+    Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) : parameter(parameter), polynomialCache(polynomialCache) {
+        // Intentionally left empty
+    }
+
+    /**
+     * Add another annotation to this annotation.
+     * 
+     * @param other The other annotation.
+     */
+    void operator+=(const Annotation other) {
+        STORM_LOG_ASSERT(other.parameter == this->parameter, "Can only add annotations with equal parameters.");
+        for (auto const& [factors, number] : other) {
+            if (this->count(factors)) {
+                this->at(factors) += number;
+            } else {
+                this->emplace(factors, number);
+            }
+        }
+    }
+
+    /**
+     * Multiply this annotation with a rational number.
+     * 
+     * @param n The rational number.
+     */
+    void operator*=(RationalNumber n) {
+        for (auto& [factors, number] : *this) {
+            number *= n;
+        }
+    }
+
+    /**
+     * Multiply this annotation with a rational number to get a new annotation.
+     * 
+     * @param n The rational number.
+     */
+    Annotation operator*(RationalNumber n) const {
+        Annotation annotationCopy(*this);
+        annotationCopy *= n;
+        return annotationCopy;
+    }
+
+    /**
+     * Adds another annotation times a constant to this annotation.
+     * 
+     * @param other The other annotation.
+     * @param timesConstant The constant.
+     */
+    void addAnnotationTimesConstant(Annotation const& other, RationalNumber timesConstant) {
+        for (auto const& [info, constant] : other) {
+            if (!this->count(info)) {
+                this->emplace(info, utility::zero<RationalNumber>());
+            }
+            this->at(info) += constant * timesConstant;
+        }
+    }
+
+    /**
+     * Adds another annotation times a polynomial to this annotation.
+     * 
+     * @param other The other annotation.
+     * @param polynomial The polynomial.
+     * @param parameter The parameter in the polynomial.
+     */
+    void addAnnotationTimesPolynomial(Annotation const& other, UniPoly polynomial) {
+        for (auto const& [info, constant] : other) {
+            // Copy array
+            auto newCounter = info;
+
+            // Write new polynomial into array
+            auto const cacheNum = this->polynomialCache->lookUpInCache(polynomial, parameter);
+            while (newCounter.size() <= cacheNum) {
+                newCounter.push_back(0);
+            }
+            newCounter[cacheNum]++;
+
+            if (!this->count(newCounter)) {
+                this->emplace(newCounter, utility::zero<RationalNumber>());
+            }
+            this->at(newCounter) += constant;
+        }
+    }
+
+    UniPoly getProbability() const {
+        UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
+        std::vector<RationalFunction> vector;
+        for (auto const& [info, constant] : *this) {
+            prob += polynomialCache->polynomialFromFactorization(info, parameter) * constant;
+        }
+        return prob;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Annotation& annotation);
+
+   private:
+    const RationalFunctionVariable parameter;
+    const std::shared_ptr<PolynomialCache> polynomialCache;
+};
+
+inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
+    auto iterator = annotation.begin();
+    while (iterator != annotation.end()) {
+        auto const& factors = iterator->first;
+        auto const& constant = iterator->second;
+        for (uint64_t i = 0; i < factors.size(); i++) {
+            if (factors[i] > 0) {
+                os << "(" << annotation.polynomialCache->at(annotation.parameter)[i] << ")" << "^" << factors[i];
+            }
+        }
+        iterator++;
+        if (iterator != annotation.end()) {
+            os << " + ";
+        }
+    }
+    return os;
+}
 
 /**
  * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
@@ -34,25 +179,13 @@ using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
  */
 class TimeTravelling {
    public:
-    struct stateAnnotation {
-        std::map<std::vector<uint64_t>, RationalNumber> annotation;
-        stateAnnotation() {
-            // Intentionally left empty.
-        }
-        UniPoly getProbability(TimeTravelling const& timeTravelling, RationalFunctionVariable parameter) const {
-            UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
-            for (auto const& [info, constant] : this->annotation) {
-                prob += timeTravelling.polynomialFromFactorization(info, parameter) * constant;
-            }
-            return prob;
-        }
-    };
-
     /**
      * This class re-orders parameteric transitions of a pMC so bounds computed by Parameter Lifting will eventually be better.
      * The parametric reachability probability for the given check task will be the same in the time-travelled and in the original model.
      */
-    TimeTravelling() = default;
+    TimeTravelling() : polynomialCache(std::make_shared<PolynomialCache>()) {
+        // Intentionally left empty
+    }
 
     /**
      * Perform big-step on the given model and the given checkTask.
@@ -69,34 +202,6 @@ class TimeTravelling {
 
    private:
 
-    std::map<RationalFunctionVariable, std::vector<UniPoly>> rationalFunctionCache;
-
-    uint64_t lookUpInCache(UniPoly f, RationalFunctionVariable p) {
-        for (uint64_t i = 0; i < rationalFunctionCache[p].size(); i++) {
-            if (rationalFunctionCache.at(p)[i] == f) {
-                return i;
-            }
-        }
-        rationalFunctionCache.at(p).push_back(f);
-        return rationalFunctionCache.at(p).size() - 1;
-    }
-
-    UniPoly polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
-        // This method keeps its own backwards cache, but only looks into the rationalFunctionCache constly
-        static std::map<RationalFunctionVariable, std::map<std::vector<uint64_t>, UniPoly>> fromFactorizationCache;
-        if (fromFactorizationCache[p].count(factorization)) {
-            return fromFactorizationCache.at(p).at(factorization);
-        }
-        UniPoly polynomial = UniPoly(p);
-        polynomial = polynomial.one();
-        for (uint64_t i = 0; i < factorization.size(); i++) {
-            for (uint64_t j = 0; j < factorization[i]; j++) {
-                polynomial *= rationalFunctionCache.at(p)[i];
-            }
-        }
-        fromFactorizationCache.at(p).emplace(factorization, polynomial);
-        return polynomial;
-    }
 
     /**
      * Find the paths we can big-step from this state using this parameter and this horizon.
@@ -109,7 +214,7 @@ class TimeTravelling {
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
      * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
-    std::pair<std::map<uint64_t, TimeTravelling::stateAnnotation>, std::vector<uint64_t>> bigStepBFS(
+    std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> bigStepBFS(
         uint64_t start, const RationalFunctionVariable& parameter, uint64_t horizon, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
@@ -127,8 +232,8 @@ class TimeTravelling {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    std::vector<std::pair<uint64_t, UniPoly>> findTimeTravelling(
-        const std::map<uint64_t, TimeTravelling::stateAnnotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
+    std::vector<std::pair<uint64_t, Annotation>> findTimeTravelling(
+        const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
         std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates);
@@ -142,7 +247,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix (modifies this!)
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
-    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, UniPoly>> transitions,
+    void replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                      storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                      storage::BitVector& reachableStates,
@@ -201,6 +306,8 @@ class TimeTravelling {
         std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries);
 
     std::shared_ptr<RawPolynomialCache> rawPolynomialCache;
+
+    const std::shared_ptr<PolynomialCache> polynomialCache;
 };
 
 }  // namespace transformer

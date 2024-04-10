@@ -402,7 +402,15 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
         return;
     }
     this->extrema = std::map<VariableType, std::set<CoefficientType>>();
+    std::cout << "Transition: " << transition << std::endl;
     for (auto const& p : parameters) {
+
+        std::cout << "Some values: ";
+        for (auto i = 0; i <= 100; i++) {
+            std::cout << transition.evaluate({{p, RationalNumber(i) / RationalNumber(100)}}) << " ";
+        }
+        std::cout << std::endl;
+
         (*this->extrema)[p] = {};
         auto const derivative = RationalFunction(transition.derivative(p).nominator());
         // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
