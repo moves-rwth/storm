@@ -7,7 +7,6 @@
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
@@ -57,7 +56,6 @@ class RegionRefinementChecker {
      * The returned value v corresponds to the value at the returned valuation.
      * The actual maximum (minimum) lies in the interval [v, v'] ([v', v])
      * where v' is based on the precision. (With absolute precision, v' = v +/- precision).
-     * TODO: Check documentation, which was incomplete.
      *
      * @param env
      * @param region The region in which to optimize

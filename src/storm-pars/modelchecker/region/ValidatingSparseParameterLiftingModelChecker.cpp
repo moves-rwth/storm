@@ -42,7 +42,7 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
     this->specifyMonotonicity(monotonicityBackend, checkTask);
 
     auto specifyUnderlyingCheckers = [&](auto pm, auto const& ct) {
-        // TODO: Check if we can just take split estimates from the imprecise checker?
+        // TODO: Consider taking split estimates from the imprecise checker?
         // Do not perform simplification (again) in the underlying model checkers
         impreciseChecker.specify(env, pm, ct, std::nullopt, monotonicityBackend, false);
         preciseChecker.specify(env, pm, ct, std::nullopt, monotonicityBackend, false);

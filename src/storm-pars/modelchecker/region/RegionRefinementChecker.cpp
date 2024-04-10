@@ -200,7 +200,6 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
 
     // Initialize Monotonicity
     monotonicityBackend->initializeMonotonicity(env, rootRegion);
-    // TODO: Catch and handle the easy case where parameters are already known to be monotone
 
     // Initialize result
     auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, rootRegion, dir);
@@ -233,6 +232,8 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         unprocessedRegions.pop();  // can pop already here, since the rootRegion has ownership.
         ++numOfAnalyzedRegions;
 
+        monotonicityBackend->updateMonotonicity(env, currentRegion);
+
         // Compute the bound for this region (unless the known bound is already too weak)
         if (!currentBound || isStrictlyBetterThanValue(currentBound.value())) {
             // Improve over-approximation of extremal value (within this region)
@@ -242,15 +243,12 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             } else {
                 currentRegion.knownUpperValueBound &= *currentBound;
             }
-            // TODO: Cache results as bounds for monotonicity
         }
 
         // Process the region if the bound is promising
         if (isStrictlyBetterThanValue(currentBound.value())) {
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
-            monotonicityBackend->updateMonotonicity(env,
-                                                    currentRegion);  // TODO: Why is this done after analysis here and before analysis in partitioning mode?
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
@@ -295,7 +293,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariables(
     AnnotatedRegion<ParametricType> const& region, Context context) const {
-    // TODO: Use the splitting strategy, monotonicity, context, ... as in splitSmart
+    // TODO: Use the splitting strategy, monotonicity, context, ... as in old splitSmart implementation?
     return region.region.getVariables();
 }
 

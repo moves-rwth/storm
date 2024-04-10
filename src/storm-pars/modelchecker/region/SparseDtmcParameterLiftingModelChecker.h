@@ -7,7 +7,6 @@
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/ParameterLifter.h"
-#include "storm/logic/FragmentSpecification.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"

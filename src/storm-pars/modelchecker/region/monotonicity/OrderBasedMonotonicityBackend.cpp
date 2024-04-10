@@ -28,7 +28,7 @@ void extendLocalMonotonicityResult(
     storm::analysis::MonotonicityChecker<ParametricType>& monotonicityChecker,
     storm::transformer::ParameterLifter<ParametricType, ConstantType> const& parameterLifter) {
     auto state = order->getNextDoneState(-1);
-    auto const& variablesAtState = parameterLifter.getOccurringVariablesAtState();  // TODO: this might be possivle via the OrderExtender as well
+    auto const& variablesAtState = parameterLifter.getOccurringVariablesAtState();  // TODO: this might be possible via the OrderExtender as well
     while (state != order->getNumberOfStates()) {
         if (localMonotonicityResult.getMonotonicity(state) == nullptr) {
             auto variables = variablesAtState[state];
@@ -127,8 +127,8 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
     // Copy order only if it will potentially change and if it is shared with another region
     bool const changeOrder = !annotation->stateOrder->getDoneBuilding() && orderExtender->isHope(annotation->stateOrder);
     if (changeOrder && annotation->stateOrder.use_count() > 1) {
-        // TODO: Check if this check correctly avoids unnecessary copies
         // TODO: orderExtender currently uses shared_ptr<Order> which likely interferes with the use_count() > 1 check above
+        // TODO: Make sure that only annotated regions own the order
         auto newOrder = annotation->stateOrder->copy();
         orderExtender->setUnknownStates(annotation->stateOrder, newOrder);
         orderExtender->copyMinMax(annotation->stateOrder, newOrder);
@@ -140,7 +140,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
     // Similarly handle local monotonicity result
     bool const changeLocalMonotonicity = changeOrder && !annotation->localMonotonicityResult->isDone();
     if (changeLocalMonotonicity && annotation->localMonotonicityResult.use_count() > 1) {
-        // TODO: Check if this check correctly avoids unnecessary copies
+        // TODO: Make sure that only annotated regions own the localMonotonicityResult
         annotation->localMonotonicityResult = annotation->localMonotonicityResult->copy();
     }
     if (changeLocalMonotonicity) {
@@ -166,7 +166,9 @@ template<typename ParametricType, typename ConstantType>
 std::map<typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::VariableType,
          typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::MonotonicityKind>
 OrderBasedMonotonicityBackend<ParametricType, ConstantType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
-    // TODO: Implement this so that it respects possibleMonotoneParameters?
+    // TODO: Old implementation had checkForPossibleMonotonicity to determine this based on samples. Consider re-adding that.
+    // https://github.com/moves-rwth/storm/blob/5c89b2d1051b3abdbb8659101d60331c680b7050/src/storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.cpp#L622
+    // For now, we just do this based on known global monotonicity.
     return MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(region);
 }
 

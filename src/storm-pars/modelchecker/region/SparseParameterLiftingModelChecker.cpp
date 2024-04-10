@@ -1,20 +1,13 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
-#include <storm-pars/analysis/MonotonicityChecker.h>
-#include <boost/container/flat_set.hpp>
-#include <queue>
-
+#include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/vector.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {

@@ -4,6 +4,7 @@
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -13,12 +14,9 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
@@ -94,7 +92,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::spec
         this->specifyFormula(env, checkTask);
     }
     if (isOrderBasedMonotonicityBackend()) {
-        getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);  // TODO: maybe not necessary
+        getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);
         getOrderBasedMonotonicityBackend().registerPLABoundFunction(
             [this](storm::Environment const& env, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
                 return this->computeQuantitativeValues(env, region, dir);  // sets known value bounds within the region
@@ -494,7 +492,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::comp
 
     cachedRegionSplitEstimates.clear();
     for (auto const& p : region.getVariables()) {
-        // TODO: previously, the reginSplitEstimates were only used in splitting, if at least one parameter is possibly monotone. Why?
+        // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
 
         if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
             cachedRegionSplitEstimates.emplace(p, minDelta);
@@ -509,13 +507,15 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::rese
     resultsForNonMaybeStates.clear();
     stepBound = std::nullopt;
     instantiationChecker = nullptr;
+    instantiationCheckerSAT = nullptr;
+    instantiationCheckerVIO = nullptr;
     parameterLifter = nullptr;
     minSchedChoices = std::nullopt;
     maxSchedChoices = std::nullopt;
     x.clear();
     lowerResultBound = std::nullopt;
     upperResultBound = std::nullopt;
-    // TODO: is this complete?
+    cachedRegionSplitEstimates.clear();
 }
 
 template<typename ConstantType>
@@ -551,7 +551,6 @@ bool supportsStateValueDeltaEstimates(storm::logic::Formula const& f) {
 }
 
 bool supportsOrderBasedMonotonicity(storm::logic::Formula const& f) {
-    // TODO: is this accurate?
     if (f.isProbabilityOperatorFormula()) {
         auto const& sub = f.asProbabilityOperatorFormula().getSubformula();
         return sub.isUntilFormula() || sub.isEventuallyFormula() || sub.isBoundedUntilFormula();
@@ -589,7 +588,8 @@ template<typename SparseModelType, typename ConstantType>
 bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::isMonotonicitySupported(
     MonotonicityBackend<ParametricType> const& backend, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     if (backend.requiresInteractionWithRegionModelChecker()) {
-        return dynamic_cast<OrderBasedMonotonicityBackend<ParametricType, ConstantType> const*>(&backend) != nullptr;
+        return dynamic_cast<OrderBasedMonotonicityBackend<ParametricType, ConstantType> const*>(&backend) != nullptr &&
+               supportsOrderBasedMonotonicity(checkTask.getFormula());
     } else {
         return true;
     }

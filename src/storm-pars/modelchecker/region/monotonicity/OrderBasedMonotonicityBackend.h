@@ -51,7 +51,6 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
     /*!
      * Returns whether additional model simplifications are recommended when using this backend.
      * @note this returns false since the underlying monotonicity checker already does simplifications
-     * TODO: investigate this claim
      */
     virtual bool recommendModelSimplifications() const override;
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
@@ -12,6 +11,9 @@
 
 namespace storm {
 namespace modelchecker {
+
+template<typename SparseModelType, typename ConstantType>
+class SparseInstantiationModelChecker;
 
 /*!
  * Class to approximately check a formula on a parametric model for all parameter valuations within a region
