@@ -73,8 +73,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::spec
     auto dtmc = parametricModel->template as<SparseModelType>();
     if (isOrderBasedMonotonicityBackend()) {
         STORM_LOG_WARN_COND(!(allowModelSimplifications),
-                            "Allowing model simplification when using monotonicity is not useful, as for monotonicity checking model simplification is done as "
-                            "preprocessing");  // TODO: Find out where this preprocessing for monotonicity is done
+                            "Allowing model simplification when using order-based monotonicity is not useful, as for order-based monotonicity checking model "
+                            "simplification is done as preprocessing");  // TODO: Find out where this preprocessing for monotonicity is done
         getOrderBasedMonotonicityBackend().initializeMonotonicityChecker(dtmc->getTransitionMatrix());
     }
 

@@ -59,7 +59,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector 
     }
 
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-    this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+    this->bottomTopOrder = std::make_shared<Order>(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted));
 
     // Build stateMap
     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
@@ -142,7 +142,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
             decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
         }
         auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-        bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+        bottomTopOrder = std::make_shared<Order>(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted));
 
         // Build stateMap
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {

@@ -260,7 +260,10 @@ std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRe
     auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(engine, model->getType());
     auto monotonicityBackend =
         initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
-    allowModelSimplification = allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
+    if (allowModelSimplification) {
+        allowModelSimplification = monotonicityBackend->recommendModelSimplifications();
+        STORM_LOG_WARN_COND(allowModelSimplification, "Model simplification is disabled because the monotonicity algorithm does not recommend it.");
+    }
     regionChecker->specify(env, consideredModel, task, std::nullopt, std::move(monotonicityBackend), allowModelSimplification);
     return regionChecker;
 }

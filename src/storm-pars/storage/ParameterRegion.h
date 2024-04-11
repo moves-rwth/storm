@@ -64,7 +64,7 @@ class ParameterRegion {
     CoefficientType area() const;
 
     /*!
-     * Returns if the given point is in this region
+     * Returns whether the given point is in this region
      */
     bool contains(Valuation const& point) const;
 
