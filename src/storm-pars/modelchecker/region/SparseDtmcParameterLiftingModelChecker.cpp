@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 

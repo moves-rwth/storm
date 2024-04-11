@@ -3,6 +3,9 @@
 #include <queue>
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/RegionModelChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
+
 #include "storm/utility/ProgressMeasurement.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"

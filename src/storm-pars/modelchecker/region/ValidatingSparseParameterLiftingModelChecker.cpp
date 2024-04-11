@@ -1,5 +1,7 @@
 #include "storm-pars/modelchecker/region/ValidatingSparseParameterLiftingModelChecker.h"
 
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

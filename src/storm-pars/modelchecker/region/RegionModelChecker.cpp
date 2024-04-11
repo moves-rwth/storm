@@ -1,22 +1,10 @@
-#include <queue>
-#include <sstream>
 #include <vector>
 
-#include "storm-pars/analysis/OrderExtender.cpp"
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
-
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/utility/Stopwatch.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::modelchecker {
 

@@ -2,8 +2,6 @@
 
 #include <set>
 #include "storm-pars/analysis/MonotonicityKind.h"
-#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
 
 namespace storm {
@@ -11,6 +9,9 @@ class Environment;
 }
 
 namespace storm::modelchecker {
+
+template<typename ParametricType>
+struct AnnotatedRegion;
 
 template<typename ParametricType>
 class MonotonicityBackend {

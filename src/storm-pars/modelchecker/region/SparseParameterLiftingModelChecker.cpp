@@ -1,6 +1,8 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"

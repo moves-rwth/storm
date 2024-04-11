@@ -1,17 +1,12 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/OrderExtender.h"
-#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
-#include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
 #include "storm/modelchecker/CheckTask.h"
@@ -24,6 +19,11 @@ class Environment;
 namespace modelchecker {
 
 // TODO type names are inconsistent and all over the place
+template<typename ParametricType>
+struct AnnotatedRegion;
+template<typename ParametricType>
+class MonotonicityBackend;
+
 template<typename ParametricType>
 class RegionModelChecker {
    public:

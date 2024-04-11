@@ -1,15 +1,5 @@
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 
-#include <memory>
-#include <variant>
-
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/modelchecker/region/RegionResult.h"
-#include "storm-pars/storage/ParameterRegion.h"
-#include "storm/utility/Extremum.h"
-#include "storm/utility/OptionalRef.h"
-
 namespace storm::modelchecker {
 
 template<typename ParametricType>
@@ -93,6 +83,6 @@ bool AnnotatedRegion<ParametricType>::updateValueBound(CoefficientType const& ne
     }
 }
 
-template class AnnotatedRegion<storm::RationalFunction>;
+template struct AnnotatedRegion<storm::RationalFunction>;
 
 }  // namespace storm::modelchecker

@@ -2,11 +2,9 @@
 
 #include <memory>
 
-#include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
@@ -18,6 +16,15 @@ namespace storm {
 class Environment;
 
 namespace modelchecker {
+
+template<typename ParametricType>
+struct AnnotatedRegion;
+
+template<typename ParametricType>
+class RegionModelChecker;
+
+template<typename ParametricType>
+class MonotonicityBackend;
 
 template<typename ParametricType>
 class RegionRefinementChecker {

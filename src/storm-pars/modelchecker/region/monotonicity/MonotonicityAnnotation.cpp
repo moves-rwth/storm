@@ -57,5 +57,5 @@ MonotonicityAnnotation<ParametricType>::getGlobalMonotonicityResult() const {
     return result;
 }
 
-template class MonotonicityAnnotation<storm::RationalFunction>;
+template struct MonotonicityAnnotation<storm::RationalFunction>;
 }  // namespace storm::modelchecker
