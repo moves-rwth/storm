@@ -39,6 +39,7 @@ const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-gua
 const std::string noSimplifyOptionName = "no-simplify";
 const std::string bitsForUnboundedVariablesOptionName = "int-bits";
 const std::string performLocationElimination = "location-elimination";
+const std::string explorationStateLimitOptionName = "state-limit";
 
 BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false,
@@ -114,6 +115,12 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueUnsignedInteger(10000)
                                          .makeOptional()
                                          .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, explorationStateLimitOptionName, false,
+                                                   "Potentially stopped exploration once the specified number of states is exceeded.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "states to explore before stopping.").build())
                         .build());
 }
 
@@ -206,6 +213,15 @@ uint64_t BuildSettings::getLocationEliminationLocationHeuristic() const {
 uint64_t BuildSettings::getLocationEliminationEdgesHeuristic() const {
     return this->getOption(performLocationElimination).getArgumentByName("edges-heuristic").getValueAsUnsignedInteger();
 }
+
+bool BuildSettings::isExplorationStateLimitSet() const {
+    return this->getOption(explorationStateLimitOptionName).getHasOptionBeenSet();
+}
+
+uint64_t BuildSettings::getExplorationStateLimit() const {
+    return this->getOption(explorationStateLimitOptionName).getArgumentByName("number").getValueAsUnsignedInteger();
+}
+
 }  // namespace modules
 
 }  // namespace settings

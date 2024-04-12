@@ -123,7 +123,8 @@ class NextStateGenerator {
 
     virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                        std::vector<StateType> const& initialStateIndices = {},
-                                                       std::vector<StateType> const& deadlockStateIndices = {}) = 0;
+                                                       std::vector<StateType> const& deadlockStateIndices = {},
+                                                       std::vector<StateType> const& unexploredStateIndices = {}) = 0;
 
     NextStateGeneratorOptions const& getOptions() const;
 
@@ -144,6 +145,7 @@ class NextStateGenerator {
      */
     storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices,
+                                               std::vector<StateType> const& unexploredStateIndices,
                                                std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
 
     /*!

@@ -174,7 +174,8 @@ storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(
     storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices,
-    std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
+    std::vector<StateType> const& deadlockStateIndices, std::vector<StateType> const& unexploredStateIndices,
+    std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
     labelsAndExpressions.insert(labelsAndExpressions.end(), this->options.getExpressionLabels().begin(), this->options.getExpressionLabels().end());
 
     // Make the labels unique.
@@ -220,6 +221,12 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
         result.addLabel("deadlock");
         for (auto index : deadlockStateIndices) {
             result.addLabelToState("deadlock", index);
+        }
+    }
+    if (!result.containsLabel("unexplored") && !unexploredStateIndices.empty()) {
+        result.addLabel("unexplored");
+        for (auto index : unexploredStateIndices) {
+            result.addLabelToState("unexplored", index);
         }
     }
 
