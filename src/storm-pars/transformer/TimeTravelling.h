@@ -4,6 +4,7 @@
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/UnivariatePolynomial.h>
+#include <carl/formula/model/ran/RealAlgebraicNumber.h>
 #include <carl/numbers/constants.h>
 #include <carl/util/Cache.h>
 #include <cstdint>
@@ -38,7 +39,7 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
      * @param p The main parameter of the polynomial.
      * @return uint64_t The index of the polynomial.
      */
-    uint64_t lookUpInCache(UniPoly f, RationalFunctionVariable p) {
+    uint64_t lookUpInCache(UniPoly const& f, RationalFunctionVariable const& p) {
         for (uint64_t i = 0; i < (*this)[p].size(); i++) {
             if (this->at(p)[i] == f) {
                 return i;
@@ -55,7 +56,7 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
      * @param p The parameter.
      * @return UniPoly The univariate polynomial.
      */
-    UniPoly polynomialFromFactorization(std::vector<uint64_t> factorization, RationalFunctionVariable p) const {
+    UniPoly polynomialFromFactorization(std::vector<uint64_t> const& factorization, RationalFunctionVariable const& p) const {
         UniPoly polynomial = UniPoly(p);
         polynomial = polynomial.one();
         for (uint64_t i = 0; i < factorization.size(); i++) {
@@ -64,6 +65,24 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
             }
         }
         return polynomial;
+    }
+
+    /**
+     * @brief Computes a rational function from a factorization.
+     * 
+     * @param factorization The factorization (a vector of exponents, indices = position in cache).
+     * @param cache the rational function cache.
+     * @param p The parameter.
+     * @return RationalFunction The rational function.
+     */
+    RationalFunction rationalFunctionFromFactorization(std::vector<uint64_t> const& factorization, std::shared_ptr<RawPolynomialCache> const& cache, RationalFunctionVariable const& p) const {
+        RationalFunction function = utility::one<RationalFunction>();
+        for (uint64_t i = 0; i < factorization.size(); i++) {
+            for (uint64_t j = 0; j < factorization[i]; j++) {
+                function *= RationalFunction(carl::FactorizedPolynomial(carl::MultivariatePolynomial(this->at(p)[i]), cache));
+            }
+        }
+        return function;
     }
 };
 
@@ -158,11 +177,37 @@ struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
      */
     UniPoly getProbability() const {
         UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
-        std::vector<RationalFunction> vector;
         for (auto const& [info, constant] : *this) {
             prob += polynomialCache->polynomialFromFactorization(info, parameter) * constant;
         }
         return prob;
+    }
+
+    /**
+     * @brief Get all of the terms of the UniPoly.
+     * 
+     * @return std::vector<UniPoly> The terms.
+     */
+    std::vector<UniPoly> getTerms() const {
+        std::vector<UniPoly> terms;
+        for (auto const& [info, constant] : *this) {
+            terms.push_back(polynomialCache->polynomialFromFactorization(info, parameter) * constant);
+        }
+        return terms;
+    }
+
+    /**
+     * @brief Get all of the terms as rational functions.
+     * 
+     * @param cache The RawPolynomialCache.
+     * @return std::vector<RationalFunction> The terms.
+     */
+    std::vector<RationalFunction> getTermsRationalFunction(std::shared_ptr<RawPolynomialCache> const& cache) const {
+        std::vector<RationalFunction> terms;
+        for (auto const& [info, constant] : *this) {
+            terms.push_back(polynomialCache->rationalFunctionFromFactorization(info, cache, parameter) * constant);
+        }
+        return terms;
     }
 
     /**

@@ -9,6 +9,7 @@
 #include "adapters/RationalNumberForward.h"
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
@@ -99,21 +100,29 @@ class RobustParameterLifter {
 
         void initializeExtrema();
 
-        std::map<VariableType, std::set<CoefficientType>> const& getExtrema() const;
+        std::optional<std::map<VariableType, std::set<CoefficientType>>> const& getExtrema() const;
+        std::optional<std::map<UniPoly, std::set<double>>> const& getExtremaAnnotations() const;
 
        private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
-        std::optional<std::set<CoefficientType>> zeroesSMT(RationalFunction polynomial, VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesSMT(std::vector<UniPoly> polynomial,
+            std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
+            VariableType parameter);
 
-        std::optional<std::set<CoefficientType>> zeroesCarl(RationalFunction polynomial, VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesCarl(UniPoly polynomial, VariableType parameter);
 
         std::set<VariableType> parameters;
 
         storm::RationalFunction const transition;
 
+        bool hasAnnotation;
+    
         // Position and value of the extrema of each of the functions
         std::optional<std::map<VariableType, std::set<CoefficientType>>> extrema;
+
+        // extrema could not be computed but we have annotations => extrema of all terms (then do interval arithmetic)
+        std::optional<std::map<UniPoly, std::set<double>>> extremaAnnotations;
     };
 
     /*!
