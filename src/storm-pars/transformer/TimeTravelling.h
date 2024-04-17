@@ -86,7 +86,8 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
     }
 };
 
-struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
+class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
+   public:
     Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) : parameter(parameter), polynomialCache(polynomialCache) {
         // Intentionally left empty
     }
@@ -215,42 +216,116 @@ struct Annotation : std::map<std::vector<uint64_t>, RationalNumber> {
      * 
      * @return Interval The resulting interval.
      */
-    Interval evaluateOnInterval(Interval inputInterval) {
-        Interval sumOfTerms(0.0, 0.0);
+    template<typename Number>
+    Number evaluate(Number input) const {
+        Number sumOfTerms = utility::zero<Number>();
         for (auto const& [info, constant] : *this) {
-            Interval outerMult(1.0, 1.0);
+            Number outerMult = utility::one<Number>();
             for (uint64_t i = 0; i < info.size(); i++) {
                 auto polynomial = this->polynomialCache->at(parameter)[i];
                 // Evaluate the inner polynomial by its coefficients
                 auto coefficients = polynomial.coefficients();
-                Interval innerSum(0.0, 0.0);
+                Number innerSum = utility::zero<Number>();
                 for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
                     if (exponent != 0) {
-                        innerSum += carl::pow(inputInterval, exponent) * utility::convertNumber<double>(coefficients[exponent]);
+                        innerSum += carl::pow(input, exponent) * utility::convertNumber<double>(coefficients[exponent]);
                     } else {
-                        innerSum += utility::convertNumber<double>(coefficients[exponent]);
+                        innerSum += utility::convertNumber<Number>(coefficients[exponent]);
                     }
                 }
                 // Inner polynomial ^ exponent
                 outerMult *= carl::pow(innerSum, info[i]);
             }
-            sumOfTerms += outerMult * utility::convertNumber<double>(constant);
+            sumOfTerms += outerMult * utility::convertNumber<Number>(constant);
         }
         return sumOfTerms;
+    }
+
+    Interval evaluateOnIntervalMidpoint(Interval input) const {
+        Interval boundsHere = evaluate<Interval>(input);
+        if (!derivativeOfThis) {
+            return boundsHere;
+        } else {
+            Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpoint(input);
+            double maxSlope = utility::abs(boundDerivative.upper());
+            double fMid = evaluate<double>(input.center());
+            double fMin = fMid - (input.diameter() / 2) * maxSlope;
+            double fMax = fMid + (input.diameter() / 2) * maxSlope;
+            return Interval(utility::max(fMin, boundsHere.lower()), utility::min(fMax, boundsHere.upper()));
+        }
     }
 
     RationalFunctionVariable getParameter() const {
         return parameter;
     }
 
-    // std::set<RationalFunction> evaluateDerivativeOnInterval(Interval i) {
-    // }
+    void computeDerivative(uint64_t nth) {
+        if (nth == 0) {
+            return;
+        }
+        derivativeOfThis = std::make_unique<Annotation>(this->parameter, this->polynomialCache);
+        for (auto const& [info, constant] : *this) {
+            // Product rule
+            for (uint64_t i = 0; i < polynomialCache->at(parameter).size(); i++) {
+                if (info[i] == 0) {
+                    continue;
+                }
+
+                std::vector<uint64_t> insert(info);
+                insert[i]--;
+
+                RationalNumber newConstant = constant;
+                newConstant += utility::convertNumber<RationalNumber>(i);
+
+                auto polynomial = polynomialCache->at(parameter).at(i);
+                auto derivative = polynomial.derivative();
+                if (derivative.isConstant()) {
+                    newConstant *= derivative.constantPart();
+                } else {
+                    uint64_t derivativeIndex = this->polynomialCache->lookUpInCache(derivative, parameter);
+                    while (insert.size() <= derivativeIndex) {
+                        insert.push_back(0);
+                    }
+                    insert[derivativeIndex]++;
+                }
+                derivativeOfThis->emplace(insert, constant);
+            }
+        }
+        derivativeOfThis->computeDerivative(nth - 1);
+    }
+
+    // If our factors are p and 1-p, we can read off the zeroes of the first derivative of all terms
+    // These are *not* the zeroes of the derivative of this annotation
+    std::optional<std::vector<double>> zeroesOfDerivativeOfTerms() {
+        // Check if cache is indeed p and 1-p
+        auto cacheHere = this->polynomialCache->at(this->parameter);
+        if (cacheHere.empty() || cacheHere.size() > 2) {
+            return std::nullopt;
+        }
+        auto const pPoly = UniPoly(parameter, {1, 0});
+        auto const oneMinusPPoly = UniPoly(parameter, {-1, 1});
+        // TODO finish this
+
+        // for now
+        return std::nullopt;
+    }
+
+    uint64_t maxDegree() const {
+        uint64_t maxDegree = 0;
+        for (auto const& [info, constant] : *this) {
+            if (!info.empty()) {
+                maxDegree = std::max(maxDegree, *std::max_element(info.begin(), info.end()));
+            }
+        }
+        return maxDegree;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const Annotation& annotation);
 
    private:
     const RationalFunctionVariable parameter;
     const std::shared_ptr<PolynomialCache> polynomialCache;
+    std::shared_ptr<Annotation> derivativeOfThis;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {

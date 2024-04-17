@@ -7,12 +7,14 @@
 #include <carl/core/rootfinder/RootFinder.h>
 #include <carl/formula/model/ran/RealAlgebraicNumber.h>
 #include <carl/thom/ThomRootFinder.h>
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <type_traits>
+#include <vector>
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 
@@ -245,7 +247,6 @@ template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesCarl(
         UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
-    std::cout << "Roots of " << polynomial << std::endl;
     auto const& carlRoots = carl::rootfinder::realRoots(polynomial, carl::rootfinder::SplittingStrategy::DEFAULT, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
@@ -257,9 +258,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
             rootCoefficient = CoefficientType(root.lower());
         }
         zeroes.emplace(rootCoefficient);
-        std::cout << rootCoefficient << " ";
     }
-    std::cout << std::endl;
     return zeroes;
 }
 
@@ -407,58 +406,78 @@ RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::Rob
 }
 
 template<typename ParametricType, typename ConstantType>
-void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initializeExtrema() {
-    // Compute all zeroes
-
-    if (this->extrema || this->extremaAnnotations) {
+std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initialize() {
+    // TODO This function is a mess
+    if (this->extrema || this->annotation) {
         // Extrema already initialized
-        return;
+        return std::nullopt;
     }
 
-    if (!TimeTravelling::lastSavedAnnotations.empty()) {
-        this->hasAnnotation = true;
+    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+    // Constant denominator is now distributed in the factors, not in the denominator of the rational function
+    nominatorAsUnivariate /= transition.denominator().coefficient();
+    if (TimeTravelling::lastSavedAnnotations.count(nominatorAsUnivariate)) {
+        auto& annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
 
-        // There is an annotation for this transition:
-        auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-        // Constant denominator is now distributed in the factors, not in the denominator of the rational function
-        nominatorAsUnivariate /= transition.denominator().coefficient();
-        auto const& annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
+        this->annotation.emplace(annotation);
 
         auto const& terms = annotation.getTerms();
 
-        std::vector<UniPoly> derivatives;
-        for (auto const& term : terms) {
-            auto const& derivative = term.derivative();
-            derivatives.push_back(derivative);
-        }
-
         // Try to find all zeroes of all derivatives with the SMT solver.
         // TODO: Are we even using that this is a sum of terms?
-        auto smtResult = zeroesSMT(derivatives, this->transition.nominator().pCache(), annotation.getParameter());
+
+        std::optional<std::set<CoefficientType>> carlResult;
+
+        if (terms.size() < 5) {
+            carlResult = zeroesCarl(annotation.getProbability().derivative(), annotation.getParameter());
+        }
         
-        if (smtResult) {
-            // Hooray, we found the zeroes with the SMT solver.
+        if (carlResult) {
+            // Hooray, we found the zeroes with the SMT solver / CARL
             this->extrema = std::map<VariableType, std::set<CoefficientType>>();
             (*this->extrema)[annotation.getParameter()];
-            for (auto const& zero : *smtResult) {
+            for (auto const& zero : *carlResult) {
                 (*this->extrema).at(annotation.getParameter()).emplace(utility::convertNumber<CoefficientType>(zero));
             }
         } else {
-            std::cout << "Have to find zeroes in terms for " << annotation << std::endl;
-            // We can find the zeroes of the terms of the annotation.
-            this->extremaAnnotations = std::map<UniPoly, std::set<double>>();
-            for (uint64_t i = 0; i < terms.size(); i++) {
-                auto const& term = terms[i];
-                auto const& derivative = derivatives[i];
-                auto const& zeroes = zeroesSMT({derivative}, this->transition.nominator().pCache(), annotation.getParameter());
-                STORM_LOG_ERROR_COND(zeroes, "Could not find zeroes of " << derivative << ".");
+            // TODO make evaluation depth configurable? 4 is a nice value I think
+            annotation.computeDerivative(4);
 
-                for (auto const& zero : *zeroes) {
-                    (*this->extremaAnnotations)[term].emplace(utility::convertNumber<double>(zero));
+            // Compute bounds on initial split points
+            std::vector<double> splitPoints;
+            splitPoints.push_back(0.0);
+            // Sometimes we can read off zeroes of the first derivative terms, those are nice split points
+            // Otherwise just uniform distribution
+            if (auto const& zeroes = annotation.zeroesOfDerivativeOfTerms()) {
+                splitPoints = *zeroes;
+            } else {
+                // Heuristic number of split points
+                uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t) 20);
+                for (uint64_t i = 0; i < numSplitPoints; i++) {
+                    splitPoints.push_back(((double) i) / ((double) numSplitPoints));
                 }
             }
-        }
+            splitPoints.push_back(1.0);
+            std::sort(splitPoints.begin(), splitPoints.end());
 
+            // Compute input intervals
+            std::vector<Interval> regions;
+            for (uint64_t i = 0; i < splitPoints.size() - 1; i++) {
+                if (splitPoints[i] == splitPoints[i + 1]) {
+                    continue;
+                }
+                regions.push_back(Interval(splitPoints[i], splitPoints[i + 1]));
+            }
+
+            // Compute region results using interval arithmatic
+
+            std::vector<std::pair<Interval, Interval>> regionsAndBounds;
+            for (auto const& region : regions) {
+                Interval result = annotation.evaluateOnIntervalMidpoint(region);
+                regionsAndBounds.emplace_back(region, result);
+            }
+            return regionsAndBounds;
+        }
     } else {
         this->extrema = std::map<VariableType, std::set<CoefficientType>>();
 
@@ -490,6 +509,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             }
         }
     }
+    return std::nullopt;
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -500,9 +520,9 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ge
 }
 
 template<typename ParametricType, typename ConstantType>
-std::optional<std::map<UniPoly, std::set<double>>> const&
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getExtremaAnnotations() const {
-    return this->extremaAnnotations;
+std::optional<Annotation> const&
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getAnnotation() const {
+    return this->annotation;
 }
 
 template<typename ParametricType, typename ConstantType>
@@ -516,7 +536,10 @@ template<typename ParametricType, typename ConstantType>
 Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(RobustAbstractValuation& valuation) {
     // If no valuation like this is present in the collectedValuations, initialize the extrema
     if (!collectedValuations.count(valuation)) {
-        valuation.initializeExtrema();
+        auto result = valuation.initialize();
+        if (result) {
+            this->regionsAndBounds.emplace(valuation, *result);
+        }
     }
     // insert the function and the valuation
     // Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
@@ -539,12 +562,12 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
 
         for (auto const& potentialExtremum : potentialExtrema) {
             // TODO use double or rational number for storage?
-            auto value = poly.evaluate(utility::convertNumber<RationalNumber>(potentialExtremum));
+            auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalNumber>(potentialExtremum)));
             if (value > maxValue) {
-                maxValue = utility::convertNumber<double>(value);
+                maxValue = value;
             }
             if (value < minValue) {
-                minValue = utility::convertNumber<double>(value);
+                minValue = value;
             }
         }
         sumOfTerms += Interval(minValue, maxValue);
@@ -555,10 +578,8 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
 template<typename ParametricType, typename ConstantType>
 bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
-    for (auto& collectedFunctionValuationPlaceholder : this->collectedValuations) {
-        RobustAbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first;
-        Interval& placeholder = collectedFunctionValuationPlaceholder.second;
-
+    std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
+    for (auto& [abstrValuation, placeholder] : collectedValuations) {
         RationalFunction const& transition = abstrValuation.getTransition();
 
         if (abstrValuation.getExtrema()) {
@@ -627,41 +648,81 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
             placeholder = Interval(lowerBound, upperBound);
         } else {
-            // We do not know the extrema of this abstract valuation but the extrema of all terms
-            STORM_LOG_ERROR_COND(abstrValuation.getExtremaAnnotations(), "Abstract valuation has neither extrema nor extrema on terms of annotations.");
+            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes");
+            auto& regionsAndBounds = this->regionsAndBounds.at(abstrValuation);
+            auto const& annotation = *abstrValuation.getAnnotation();
 
-            auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-            // Constant denominator is now distributed in the factors, not in the denominator of the rational function
-            nominatorAsUnivariate /= transition.denominator().coefficient();
-
-            // TODO pass this this through arguments
-            Annotation annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
-
-            Interval interval = Interval(region.getLowerBoundary(annotation.getParameter()), region.getUpperBoundary(annotation.getParameter()));
-            double width = interval.upper() - interval.lower();
-
-            double minLower = 1.0;
-            double maxUpper = 0.0;
-
-            const float fraction = 0.01;
-            for (float start = 0; start < 1; start += fraction) {
-                Interval subInterval = Interval(interval.lower() + width * start, interval.lower() + width * (start + fraction));
-                auto result = evaluateExtremaAnnotations(*abstrValuation.getExtremaAnnotations(), subInterval);
-                if (result.lower() < minLower) {
-                    minLower = result.lower();
+            auto plaRegion = Interval(region.getLowerBoundary(annotation.getParameter()), region.getUpperBoundary(annotation.getParameter()));
+            
+            double min;
+            double max;
+            bool refine = false;
+            do {
+                min = 1.0;
+                max = 0.0;
+                std::vector<uint64_t> regionsInPLARegion;
+                for (uint64_t i = 0; i < regionsAndBounds.size(); i++) {
+                    auto const& [region, bound] = regionsAndBounds[i];
+                    if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
+                        if (regionsInPLARegion.empty()) {
+                            continue;
+                        } else {
+                            // Regions are sorted => we've walked past the interesting part
+                            break;
+                        }
+                    }
+                    min = utility::min(min, bound.lower());
+                    max = utility::max(max, bound.upper());
+                    regionsInPLARegion.push_back(i);
                 }
-                if (result.upper() > maxUpper) {
-                    maxUpper = result.upper();
+
+                // TODO make this configurable
+                uint64_t regionsRefine = 10;
+                refine = regionsInPLARegion.size() < regionsRefine;
+                if (refine) {
+                    std::vector<Interval> newIntervals;
+                    auto diameter = plaRegion.diameter();
+                    // Add start (old regions might be larger than currently considered region)
+                    if (regionsAndBounds[regionsInPLARegion.front()].first.lower() < plaRegion.lower()) {
+                        newIntervals.push_back(Interval(regionsAndBounds[regionsInPLARegion.front()].first.lower(), plaRegion.lower()));
+                    }
+                    // Split up considered region
+                    for (uint64_t i = 0; i < regionsRefine; i++) {
+                        newIntervals.push_back(Interval(
+                            plaRegion.lower() + ((double) i / (double) regionsRefine) * diameter, 
+                            plaRegion.lower() + ((double) (i+1) / (double) regionsRefine) * diameter
+                            ));
+                    }
+                    // Add end
+                    if (regionsAndBounds[regionsInPLARegion.back()].first.upper() > plaRegion.upper()) {
+                        newIntervals.push_back(Interval(plaRegion.upper(), regionsAndBounds[regionsInPLARegion.back()].first.upper()));
+                    }
+                    // Remember everything that comes after what we changed
+                    std::vector<std::pair<Interval, Interval>> regionsAndBoundsAfter;
+                    for (uint64_t i = *regionsInPLARegion.end(); i < regionsAndBounds.size(); i++) {
+                        regionsAndBoundsAfter.push_back(regionsAndBounds[i]);
+                    }
+                    // Remove previous results
+                    regionsAndBounds.erase(regionsAndBounds.begin() + *regionsInPLARegion.begin(), regionsAndBounds.end());
+
+                    std::vector<Interval> evaluatedIntervals;
+                    // Compute region results using interval arithmatic
+                    for (auto const& region : newIntervals) {
+                        regionsAndBounds.emplace_back(region, annotation.evaluateOnIntervalMidpoint(region));
+                    }
+                    // Emplace back remembered stuff
+                    for (auto const& item : regionsAndBoundsAfter) {
+                        regionsAndBounds.emplace_back(item);
+                    }
                 }
-            }
+            } while (refine);
 
-            placeholder = Interval(minLower, maxUpper);
-
-            std::cout << "Found bounds on " << annotation << std::endl;
-            std::cout << placeholder << std::endl;
+            placeholder = Interval(min, max);
         }
     }
-
+    for (auto& key : insertThese) {
+        this->collectedValuations.insert(std::move(insertThese.extract(key.first)));
+    }
     return false;
 }
 

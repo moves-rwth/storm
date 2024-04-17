@@ -98,10 +98,11 @@ class RobustParameterLifter {
 
         storm::RationalFunction const& getTransition() const;
 
-        void initializeExtrema();
+        std::optional<std::vector<std::pair<Interval, Interval>>> initialize();
 
         std::optional<std::map<VariableType, std::set<CoefficientType>>> const& getExtrema() const;
-        std::optional<std::map<UniPoly, std::set<double>>> const& getExtremaAnnotations() const;
+
+        std::optional<Annotation> const& getAnnotation() const;
 
        private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
@@ -115,14 +116,12 @@ class RobustParameterLifter {
         std::set<VariableType> parameters;
 
         storm::RationalFunction const transition;
-
-        bool hasAnnotation;
     
-        // Position and value of the extrema of each of the functions
+        // position and value of the extrema of each of the functions (if computable)
         std::optional<std::map<VariableType, std::set<CoefficientType>>> extrema;
 
-        // extrema could not be computed but we have annotations => extrema of all terms (then do interval arithmetic)
-        std::optional<std::map<UniPoly, std::set<double>>> extremaAnnotations;
+        // extrema could not be computed => use interval arithmetic
+        std::optional<Annotation> annotation;
     };
 
     /*!
@@ -153,6 +152,9 @@ class RobustParameterLifter {
 
         // Stores the collected functions with the valuations together with a placeholder for the result.
         std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> collectedValuations;
+        // Stores regions and bounds for abstract evaluations that use them
+        // We store this here because we cannot change the existing robustabstractvaluations in collectedValuations
+        std::unordered_map<RobustAbstractValuation, std::vector<std::pair<Interval, Interval>>, RobustAbstractValuationHash> regionsAndBounds;
     };
 
     FunctionValuationCollector functionValuationCollector;
