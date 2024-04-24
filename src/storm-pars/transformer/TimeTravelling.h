@@ -1,6 +1,5 @@
 #pragma once
 
-#include <_types/_uint64_t.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/UnivariatePolynomial.h>
@@ -34,7 +33,7 @@ using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
 struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>> {
     /**
      * Look up the index of this polynomial in the cache. If it doesn't exist, adds it to the cache.
-     * 
+     *
      * @param f The polynomial.
      * @param p The main parameter of the polynomial.
      * @return uint64_t The index of the polynomial.
@@ -51,12 +50,17 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
 
     /**
      * @brief Computes a univariate polynomial from a factorization.
-     * 
+     *
      * @param factorization The factorization (a vector of exponents, indices = position in cache).
      * @param p The parameter.
      * @return UniPoly The univariate polynomial.
      */
     UniPoly polynomialFromFactorization(std::vector<uint64_t> const& factorization, RationalFunctionVariable const& p) const {
+        static std::map<std::pair<std::vector<uint64_t>, RationalFunctionVariable>, UniPoly> localCache;
+        auto key = std::make_pair(factorization, p);
+        if (localCache.count(key)) {
+            return localCache.at(key);
+        }
         UniPoly polynomial = UniPoly(p);
         polynomial = polynomial.one();
         for (uint64_t i = 0; i < factorization.size(); i++) {
@@ -64,25 +68,8 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
                 polynomial *= this->at(p)[i];
             }
         }
+        localCache.emplace(key, polynomial);
         return polynomial;
-    }
-
-    /**
-     * @brief Computes a rational function from a factorization.
-     * 
-     * @param factorization The factorization (a vector of exponents, indices = position in cache).
-     * @param cache the rational function cache.
-     * @param p The parameter.
-     * @return RationalFunction The rational function.
-     */
-    RationalFunction rationalFunctionFromFactorization(std::vector<uint64_t> const& factorization, std::shared_ptr<RawPolynomialCache> const& cache, RationalFunctionVariable const& p) const {
-        RationalFunction function = utility::one<RationalFunction>();
-        for (uint64_t i = 0; i < factorization.size(); i++) {
-            for (uint64_t j = 0; j < factorization[i]; j++) {
-                function *= RationalFunction(carl::FactorizedPolynomial(carl::MultivariatePolynomial(this->at(p)[i]), cache));
-            }
-        }
-        return function;
     }
 };
 
@@ -94,7 +81,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * Add another annotation to this annotation.
-     * 
+     *
      * @param other The other annotation.
      */
     void operator+=(const Annotation other) {
@@ -110,7 +97,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * Multiply this annotation with a rational number.
-     * 
+     *
      * @param n The rational number.
      */
     void operator*=(RationalNumber n) {
@@ -121,7 +108,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * Multiply this annotation with a rational number to get a new annotation.
-     * 
+     *
      * @param n The rational number.
      */
     Annotation operator*(RationalNumber n) const {
@@ -132,7 +119,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * Adds another annotation times a constant to this annotation.
-     * 
+     *
      * @param other The other annotation.
      * @param timesConstant The constant.
      */
@@ -147,7 +134,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * Adds another annotation times a polynomial to this annotation.
-     * 
+     *
      * @param other The other annotation.
      * @param polynomial The polynomial.
      * @param parameter The parameter in the polynomial.
@@ -173,11 +160,11 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * @brief Get the probability of this annotation as a univariate polynomial (which isn't factorized).
-     * 
+     *
      * @return UniPoly The probability.
      */
     UniPoly getProbability() const {
-        UniPoly prob = UniPoly(parameter); // Creates a zero polynomial
+        UniPoly prob = UniPoly(parameter);  // Creates a zero polynomial
         for (auto const& [info, constant] : *this) {
             prob += polynomialCache->polynomialFromFactorization(info, parameter) * constant;
         }
@@ -186,7 +173,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
 
     /**
      * @brief Get all of the terms of the UniPoly.
-     * 
+     *
      * @return std::vector<UniPoly> The terms.
      */
     std::vector<UniPoly> getTerms() const {
@@ -198,22 +185,8 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
     }
 
     /**
-     * @brief Get all of the terms as rational functions.
-     * 
-     * @param cache The RawPolynomialCache.
-     * @return std::vector<RationalFunction> The terms.
-     */
-    std::vector<RationalFunction> getTermsRationalFunction(std::shared_ptr<RawPolynomialCache> const& cache) const {
-        std::vector<RationalFunction> terms;
-        for (auto const& [info, constant] : *this) {
-            terms.push_back(polynomialCache->rationalFunctionFromFactorization(info, cache, parameter) * constant);
-        }
-        return terms;
-    }
-
-    /**
      * Evaluate the polynomial represented by this annotation on an interval.
-     * 
+     *
      * @return Interval The resulting interval.
      */
     template<typename Number>
@@ -241,12 +214,12 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
         return sumOfTerms;
     }
 
-    Interval evaluateOnIntervalMidpoint(Interval input) const {
+    Interval evaluateOnIntervalMidpointTheorem(Interval input) const {
         Interval boundsHere = evaluate<Interval>(input);
         if (!derivativeOfThis) {
             return boundsHere;
         } else {
-            Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpoint(input);
+            Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input);
             double maxSlope = utility::abs(boundDerivative.upper());
             double fMid = evaluate<double>(input.center());
             double fMin = fMid - (input.diameter() / 2) * maxSlope;
@@ -263,10 +236,13 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
         if (nth == 0) {
             return;
         }
-        derivativeOfThis = std::make_unique<Annotation>(this->parameter, this->polynomialCache);
+        derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
         for (auto const& [info, constant] : *this) {
             // Product rule
             for (uint64_t i = 0; i < polynomialCache->at(parameter).size(); i++) {
+                if (info.size() <= i) {
+                    break;
+                }
                 if (info[i] == 0) {
                     continue;
                 }
@@ -356,8 +332,8 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
 
 /**
  * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
- * 
- * @tparam T 
+ *
+ * @tparam T
  */
 class TimeTravelling {
    public:
@@ -376,10 +352,11 @@ class TimeTravelling {
      * @param checkTask A property (probability or reward) on the pMC.
      * @return models::sparse::Dtmc<RationalFunction> The time-travelled pMC.
      */
-    std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                   modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
+    std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> bigStep(
+        models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
     static std::map<UniPoly, Annotation> lastSavedAnnotations;
+
    private:
     /**
      * Find the paths we can big-step from this state using this parameter.
@@ -425,10 +402,10 @@ class TimeTravelling {
      * @param treeStatesNeedUpdate The map of tree states that need updating (modifies this!)
      */
     std::map<UniPoly, Annotation> replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                     storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                     storage::BitVector& reachableStates,
-                                                     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
+                                                            storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                            storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                            storage::BitVector& reachableStates,
+                                                            std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate);
 
     /**
      * Updates which states are unreachable after the previous transformation without needing a model checking procedure.
@@ -438,7 +415,7 @@ class TimeTravelling {
      * @param backwardsFlexibleMatrix The backwards flexible matrix in which to look for predecessors.
      */
     void updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
-                                        storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState);
+                                 storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState);
 
     /**
      * updateTreeStates updates the `treeStates` map on the given states.
@@ -455,11 +432,10 @@ class TimeTravelling {
      * @param stateLabelling The state labelling of the pMC.
      */
     void updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                                 std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
-                                 const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                 const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
-                                 const std::set<RationalFunctionVariable>& allParameters,
-                                 const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling);
+                          std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
+                          const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                          const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions, const std::set<RationalFunctionVariable>& allParameters,
+                          const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const models::sparse::StateLabeling stateLabelling);
 
     /**
      * extendStateLabeling extends the given state labeling to newly created states. It will set the new labels to the labels on the given state.
@@ -472,7 +448,7 @@ class TimeTravelling {
      * @return models::sparse::StateLabeling
      */
     models::sparse::StateLabeling extendStateLabeling(const models::sparse::StateLabeling& oldLabeling, uint64_t oldSize, uint64_t newSize,
-                                                             uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula);
+                                                      uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula);
     /**
      * Sums duplicate transitions in a vector of MatrixEntries into one MatrixEntry.
      *

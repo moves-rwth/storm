@@ -86,7 +86,7 @@ class RobustParameterLifter {
 
     class RobustAbstractValuation {
        public:
-        RobustAbstractValuation(RationalFunction transition);
+        RobustAbstractValuation(storm::RationalFunction transition);
         RobustAbstractValuation(RobustAbstractValuation const& other) = default;
         bool operator==(RobustAbstractValuation const& other) const;
 
@@ -107,16 +107,15 @@ class RobustParameterLifter {
        private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
-        std::optional<std::set<CoefficientType>> zeroesSMT(std::vector<UniPoly> polynomial,
-            std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
-            VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesSMT(std::vector<UniPoly> polynomial, std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
+                                                           VariableType parameter);
 
         std::optional<std::set<CoefficientType>> zeroesCarl(UniPoly polynomial, VariableType parameter);
 
         std::set<VariableType> parameters;
 
         storm::RationalFunction const transition;
-    
+
         // position and value of the extrema of each of the functions (if computable)
         std::optional<std::map<VariableType, std::set<CoefficientType>>> extrema;
 

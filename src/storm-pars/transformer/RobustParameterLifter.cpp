@@ -1,5 +1,4 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
-#include <_types/_uint64_t.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/VariablePool.h>
@@ -44,7 +43,7 @@ std::map<storm::transformer::UniPoly, storm::transformer::Annotation> storm::tra
 namespace storm {
 namespace transformer {
 
-typedef storm::utility::parametric::CoefficientType<RationalFunction>::type CoefficientType;
+typedef storm::utility::parametric::CoefficientType<storm::RationalFunction>::type CoefficientType;
 
 template<typename ParametricType, typename ConstantType>
 RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix,
@@ -177,8 +176,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
 template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
-    std::vector<UniPoly> polynomials,
-    std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
+    std::vector<UniPoly> polynomials, std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
     typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     if (polynomials.size() == 0 || (polynomials.size() == 1 && polynomials.begin()->isConstant())) {
         return std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>();
@@ -188,13 +186,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     utility::solver::Z3SmtSolverFactory factory;
     auto smtSolver = factory.create(*expressionManager);
 
-    expressions::RationalFunctionToExpression<RationalFunction> rfte(expressionManager);
+    expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
     auto expression = expressionManager->rational(0);
     for (auto const& summand : polynomials) {
         auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(summand);
         auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
-        expression = expression + rfte.toExpression(RationalFunction(multiNominator));
+        expression = expression + rfte.toExpression(storm::RationalFunction(multiNominator));
     }
     expression = expression == expressionManager->rational(0);
 
@@ -226,11 +224,11 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 
             double value = model->getRationalValue(var);
 
-            zeroes.emplace(RationalFunctionCoefficient(value));
+            zeroes.emplace(utility::convertNumber<CoefficientType>(value));
 
             // Add new constraint so we search for the next zero in the polynomial
             // Get another model (or unsat)
-            // For some reason, this only really works when we then make a new 
+            // For some reason, this only really works when we then make a new
             smtSolver->addNotCurrentModel();
         } else if (checkResult == solver::SmtSolver::CheckResult::Unknown) {
             return std::nullopt;
@@ -246,8 +244,10 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesCarl(
-        UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
-    auto const& carlRoots = carl::rootfinder::realRoots(polynomial, carl::rootfinder::SplittingStrategy::DEFAULT, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
+    UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    CoefficientType c;
+    auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(polynomial,
+                                                        carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
         CoefficientType rootCoefficient;
@@ -261,7 +261,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     }
     return zeroes;
 }
-
 
 template<typename ParametricType, typename ConstantType>
 std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>
@@ -364,7 +363,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
 }
 
 template<typename ParametricType, typename ConstantType>
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(RationalFunction transition) : transition(transition) {
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(storm::RationalFunction transition) : transition(transition) {
     STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions with constant denominators.");
     transition.simplify();
     std::set<VariableType> occurringVariables;
@@ -401,7 +400,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ge
 }
 
 template<typename ParametricType, typename ConstantType>
-RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getTransition() const {
+storm::RationalFunction const& RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getTransition() const {
     return this->transition;
 }
 
@@ -413,13 +412,11 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
         return std::nullopt;
     }
 
-    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial().template convert<RationalNumber>();
     // Constant denominator is now distributed in the factors, not in the denominator of the rational function
     nominatorAsUnivariate /= transition.denominator().coefficient();
     if (TimeTravelling::lastSavedAnnotations.count(nominatorAsUnivariate)) {
         auto& annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
-
-        this->annotation.emplace(annotation);
 
         auto const& terms = annotation.getTerms();
 
@@ -431,7 +428,7 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
         if (terms.size() < 5) {
             carlResult = zeroesCarl(annotation.getProbability().derivative(), annotation.getParameter());
         }
-        
+
         if (carlResult) {
             // Hooray, we found the zeroes with the SMT solver / CARL
             this->extrema = std::map<VariableType, std::set<CoefficientType>>();
@@ -439,8 +436,10 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
             for (auto const& zero : *carlResult) {
                 (*this->extrema).at(annotation.getParameter()).emplace(utility::convertNumber<CoefficientType>(zero));
             }
+            this->annotation.emplace(annotation);
+            return std::nullopt;
         } else {
-            // TODO make evaluation depth configurable? 4 is a nice value I think
+            // TODO make evaluation depth configurable
             annotation.computeDerivative(4);
 
             // Compute bounds on initial split points
@@ -452,9 +451,9 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
                 splitPoints = *zeroes;
             } else {
                 // Heuristic number of split points
-                uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t) 20);
+                uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t)20);
                 for (uint64_t i = 0; i < numSplitPoints; i++) {
-                    splitPoints.push_back(((double) i) / ((double) numSplitPoints));
+                    splitPoints.push_back(((double)i) / ((double)numSplitPoints));
                 }
             }
             splitPoints.push_back(1.0);
@@ -473,20 +472,26 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
 
             std::vector<std::pair<Interval, Interval>> regionsAndBounds;
             for (auto const& region : regions) {
-                Interval result = annotation.evaluateOnIntervalMidpoint(region);
+                Interval result = annotation.evaluateOnIntervalMidpointTheorem(region);
                 regionsAndBounds.emplace_back(region, result);
             }
+
+            this->annotation.emplace(annotation);
             return regionsAndBounds;
         }
     } else {
         this->extrema = std::map<VariableType, std::set<CoefficientType>>();
 
-        for (auto const& p : parameters) {
+        for (auto const& p : transition.gatherVariables()) {
             (*this->extrema)[p] = {};
 
             auto const& derivative = transition.derivative(p);
 
-            // There is an annotation for this transition:
+            if (derivative.isConstant()) {
+                continue;
+            }
+
+            // There is no annotation for this transition:
             auto nominatorAsUnivariate = derivative.nominator().toUnivariatePolynomial();
             // Constant denominator is now distributed in the factors, not in the denominator of the rational function
             nominatorAsUnivariate /= derivative.denominator().coefficient();
@@ -508,20 +513,19 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
                 }
             }
         }
+        return std::nullopt;
     }
-    return std::nullopt;
 }
 
 template<typename ParametricType, typename ConstantType>
 std::optional<std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType,
-         std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>> const&
+                       std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>> const&
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getExtrema() const {
     return this->extrema;
 }
 
 template<typename ParametricType, typename ConstantType>
-std::optional<Annotation> const&
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getAnnotation() const {
+std::optional<Annotation> const& RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getAnnotation() const {
     return this->annotation;
 }
 
@@ -580,21 +584,27 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
     std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
     for (auto& [abstrValuation, placeholder] : collectedValuations) {
-        RationalFunction const& transition = abstrValuation.getTransition();
+        storm::RationalFunction const& transition = abstrValuation.getTransition();
+
+        // Results of our computations go here, we use different methods
+        ConstantType lowerBound = utility::infinity<ConstantType>();
+        ConstantType upperBound = -utility::infinity<ConstantType>();
 
         if (abstrValuation.getExtrema()) {
             // We know the extrema of this abstract valuation => we can get the exact bounds easily
 
-            // We first figure out the positions of the lower and upper bounds per parameter
-            // Lower/upper bound of every parameter is independent because the transitions are sums of terms with one parameter each
-            // At the end, we compute the value
-            std::map<VariableType, CoefficientType> lowerPositions;
-            std::map<VariableType, CoefficientType> upperPositions;
+            // If an annotation exists:
+            // Evaluating the annotation is cheaper than evaluating the RationalFunction, which isn't prime-factorized
+            // If no annotation exists:
+            // The RationalFunction is hopefully prime-factorized
+            auto const& maybeAnnotation = abstrValuation.getAnnotation();
 
-            for (auto const& p : abstrValuation.getParameters()) {
+            if (maybeAnnotation) {
+                // We only have one parameter and can evaluate the annotation directly
+                auto p = maybeAnnotation->getParameter();
+
                 CoefficientType lowerP = region.getLowerBoundary(p);
                 CoefficientType upperP = region.getUpperBoundary(p);
-
                 std::set<CoefficientType> potentialExtrema = {lowerP, upperP};
                 for (auto const& maximum : abstrValuation.getExtrema()->at(p)) {
                     if (maximum >= lowerP && maximum <= upperP) {
@@ -602,64 +612,80 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                 }
 
-                CoefficientType minPosP;
-                CoefficientType maxPosP;
-                CoefficientType minValue = utility::infinity<CoefficientType>();
-                CoefficientType maxValue = -utility::infinity<CoefficientType>();
-
-                auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
-
                 for (auto const& potentialExtremum : potentialExtrema) {
-                    instantiation[p] = potentialExtremum;
-                    auto value = abstrValuation.getTransition().evaluate(instantiation);
-                    if (value > maxValue) {
-                        maxValue = value;
-                        maxPosP = potentialExtremum;
+                    // Possible optimization: evaluate all transitions together, keeping track of intermediate results
+                    auto value = maybeAnnotation->evaluate(utility::convertNumber<double>(potentialExtremum));
+                    if (value > upperBound) {
+                        upperBound = value;
                     }
-                    if (value < minValue) {
-                        minValue = value;
-                        minPosP = potentialExtremum;
+                    if (value < lowerBound) {
+                        lowerBound = value;
                     }
                 }
+            } else {
+                // We may have multiple parameters, but the derivatives w.r.t. each parameter only contain that parameter
+                // We first figure out the positions of the lower and upper bounds per parameter
+                // Lower/upper bound of every parameter is independent because the transitions are sums of terms with one parameter each
+                // At the end, we compute the value
+                std::map<VariableType, CoefficientType> lowerPositions;
+                std::map<VariableType, CoefficientType> upperPositions;
 
-                lowerPositions[p] = minPosP;
-                upperPositions[p] = maxPosP;
+                for (auto const& p : abstrValuation.getParameters()) {
+                    CoefficientType lowerP = region.getLowerBoundary(p);
+                    CoefficientType upperP = region.getUpperBoundary(p);
+
+                    std::set<CoefficientType> potentialExtrema = {lowerP, upperP};
+                    for (auto const& maximum : abstrValuation.getExtrema()->at(p)) {
+                        if (maximum >= lowerP && maximum <= upperP) {
+                            potentialExtrema.emplace(maximum);
+                        }
+                    }
+
+                    CoefficientType minPosP;
+                    CoefficientType maxPosP;
+                    CoefficientType minValue = utility::infinity<CoefficientType>();
+                    CoefficientType maxValue = -utility::infinity<CoefficientType>();
+
+                    auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
+
+                    for (auto const& potentialExtremum : potentialExtrema) {
+                        // We modify the instantiation to have value potentialExtremum at p, keeping other parameters the same
+                        instantiation[p] = potentialExtremum;
+                        auto value = abstrValuation.getTransition().evaluate(instantiation);
+                        if (value > maxValue) {
+                            maxValue = value;
+                            maxPosP = potentialExtremum;
+                        }
+                        if (value < minValue) {
+                            minValue = value;
+                            minPosP = potentialExtremum;
+                        }
+                    }
+
+                    lowerPositions[p] = minPosP;
+                    upperPositions[p] = maxPosP;
+                }
+
+                // Compute function values at left and right ends
+                lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
+                upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
             }
-
-            // Compute function values at left and right ends
-            ConstantType lowerBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(lowerPositions));
-            ConstantType upperBound = utility::convertNumber<ConstantType>(abstrValuation.getTransition().evaluate(upperPositions));
-
-            bool graphPresering = true;
-            const ConstantType epsilon =
-                graphPresering ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-                            : utility::zero<ConstantType>();
 
             if (upperBound < utility::zero<ConstantType>() || lowerBound > utility::one<ConstantType>()) {
                 // Current region is entirely ill-defined (partially ill-defined is fine:)
                 return true;
             }
-
-            // We want to check in the realm of feasible instantiations, even if our not our entire parameter space if feasible
-            lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
-            upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
-
-            STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
-
-            placeholder = Interval(lowerBound, upperBound);
         } else {
             STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes");
             auto& regionsAndBounds = this->regionsAndBounds.at(abstrValuation);
             auto const& annotation = *abstrValuation.getAnnotation();
 
             auto plaRegion = Interval(region.getLowerBoundary(annotation.getParameter()), region.getUpperBoundary(annotation.getParameter()));
-            
-            double min;
-            double max;
+
             bool refine = false;
             do {
-                min = 1.0;
-                max = 0.0;
+                lowerBound = 1.0;
+                upperBound = 0.0;
                 std::vector<uint64_t> regionsInPLARegion;
                 for (uint64_t i = 0; i < regionsAndBounds.size(); i++) {
                     auto const& [region, bound] = regionsAndBounds[i];
@@ -671,8 +697,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                             break;
                         }
                     }
-                    min = utility::min(min, bound.lower());
-                    max = utility::max(max, bound.upper());
+                    lowerBound = utility::min(lowerBound, bound.lower());
+                    upperBound = utility::max(upperBound, bound.upper());
                     regionsInPLARegion.push_back(i);
                 }
 
@@ -688,10 +714,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                     // Split up considered region
                     for (uint64_t i = 0; i < regionsRefine; i++) {
-                        newIntervals.push_back(Interval(
-                            plaRegion.lower() + ((double) i / (double) regionsRefine) * diameter, 
-                            plaRegion.lower() + ((double) (i+1) / (double) regionsRefine) * diameter
-                            ));
+                        newIntervals.push_back(Interval(plaRegion.lower() + ((double)i / (double)regionsRefine) * diameter,
+                                                        plaRegion.lower() + ((double)(i + 1) / (double)regionsRefine) * diameter));
                     }
                     // Add end
                     if (regionsAndBounds[regionsInPLARegion.back()].first.upper() > plaRegion.upper()) {
@@ -699,16 +723,16 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                     // Remember everything that comes after what we changed
                     std::vector<std::pair<Interval, Interval>> regionsAndBoundsAfter;
-                    for (uint64_t i = *regionsInPLARegion.end(); i < regionsAndBounds.size(); i++) {
+                    for (uint64_t i = regionsInPLARegion.back(); i < regionsAndBounds.size(); i++) {
                         regionsAndBoundsAfter.push_back(regionsAndBounds[i]);
                     }
                     // Remove previous results
                     regionsAndBounds.erase(regionsAndBounds.begin() + *regionsInPLARegion.begin(), regionsAndBounds.end());
 
                     std::vector<Interval> evaluatedIntervals;
-                    // Compute region results using interval arithmatic
+                    // Compute region results using interval arithmetic
                     for (auto const& region : newIntervals) {
-                        regionsAndBounds.emplace_back(region, annotation.evaluateOnIntervalMidpoint(region));
+                        regionsAndBounds.emplace_back(region, annotation.evaluateOnIntervalMidpointTheorem(region));
                     }
                     // Emplace back remembered stuff
                     for (auto const& item : regionsAndBoundsAfter) {
@@ -716,9 +740,19 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                 }
             } while (refine);
-
-            placeholder = Interval(min, max);
         }
+
+        bool graphPreserving = true;
+        const ConstantType epsilon =
+            graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+                            : utility::zero<ConstantType>();
+        // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
+        lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
+        upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
+
+        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+
+        placeholder = Interval(lowerBound, upperBound);
     }
     for (auto& key : insertThese) {
         this->collectedValuations.insert(std::move(insertThese.extract(key.first)));

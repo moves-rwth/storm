@@ -40,13 +40,6 @@ ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.")
-                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
-                                         "horizon",
-                                         "How big the steps are, i.e., the maximum degree of the polynomials in the big-stepped model. Set to one if you want "
-                                         "to use standard PLA, set to a maximum of 4 if you want to use Robust PLA")
-                                         .setDefaultValueUnsignedInteger(4)
-                                         .makeOptional()
-                                         .build())
                         .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument("time-travel", "Enable time-travelling")
                                          .setDefaultValueBoolean(true)
                                          .makeOptional()

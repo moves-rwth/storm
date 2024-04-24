@@ -126,7 +126,7 @@ void Z3SmtSolver::addNotCurrentModel() {
 #ifdef STORM_HAVE_Z3
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
-    
+
     auto currentModel = this->solver->get_model();
     z3::expr notThisModel = currentModel.ctx().bool_val(true);
     for (auto const& variable : this->getManager().getVariables()) {

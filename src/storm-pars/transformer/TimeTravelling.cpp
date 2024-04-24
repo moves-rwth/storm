@@ -1,5 +1,4 @@
 #include "TimeTravelling.h"
-#include <_types/_uint64_t.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
@@ -43,13 +42,11 @@
 namespace storm {
 namespace transformer {
 
-std::pair<storage::BitVector, storage::BitVector> findSubgraph(
-        const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
-        const uint64_t root,
-        const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-        const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-        const RationalFunctionVariable parameter
-    ) {
+std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
+                                                               const uint64_t root,
+                                                               const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+                                                               const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+                                                               const RationalFunctionVariable parameter) {
     storm::storage::BitVector exploredStates(transitionMatrix.getRowCount(), false);
     storm::storage::BitVector bottomStates(transitionMatrix.getRowCount(), false);
 
@@ -65,14 +62,16 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(
             bool isAcyclic = true;
             for (auto const& entry : transitionMatrix.getRow(state)) {
                 if (!storm::utility::isZero(entry.getValue())) {
-                    STORM_LOG_ASSERT(entry.getValue().isConstant() || (entry.getValue().gatherVariables().size() == 1 && *entry.getValue().gatherVariables().begin() == parameter), "Called findSubgraph with incorrect parameter.");
+                    STORM_LOG_ASSERT(entry.getValue().isConstant() ||
+                                         (entry.getValue().gatherVariables().size() == 1 && *entry.getValue().gatherVariables().begin() == parameter),
+                                     "Called findSubgraph with incorrect parameter.");
                     if (!exploredStates.get(entry.getColumn())) {
                         bool continueSearching = treeStates.at(parameter).count(entry.getColumn()) && !treeStates.at(parameter).at(entry.getColumn()).empty();
 
                         // Also continue searching if there is only a transition with a one coming up, we can skip that
                         // This is nice because we can possibly combine more transitions later
                         bool onlyHasOne = transitionMatrix.getRow(entry.getColumn()).size() == 1 &&
-                                            transitionMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
+                                          transitionMatrix.getRow(entry.getColumn()).begin()->getValue() == utility::one<RationalFunction>();
                         continueSearching |= onlyHasOne;
 
                         // Don't mess with rewards
@@ -110,8 +109,8 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(
     return std::make_pair(exploredStates, bottomStates);
 }
 
-std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> TimeTravelling::bigStep(models::sparse::Dtmc<RationalFunction> const& model,
-                                                               modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
+std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> TimeTravelling::bigStep(
+    models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
@@ -225,14 +224,15 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             bool doneTimeTravelling = false;
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis,
-                                                                   treeStatesNeedUpdate, state, originalNumStates);
+            std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(
+                bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis, treeStatesNeedUpdate, state, originalNumStates);
             // for (auto const& [state, annotation] : bottomAnnotations) {
             //     transitions.emplace_back(state, annotation);
             // }
 
             // Put paths into matrix
-            auto newStoredAnnotations = replaceWithNewTransitions(state, transitions, flexibleMatrix, backwardsTransitions, reachableStates, treeStatesNeedUpdate);
+            auto newStoredAnnotations =
+                replaceWithNewTransitions(state, transitions, flexibleMatrix, backwardsTransitions, reachableStates, treeStatesNeedUpdate);
             for (auto const& entry : newStoredAnnotations) {
                 storedAnnotations.emplace(entry);
             }
@@ -257,14 +257,15 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                     }
                 }
                 updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector,
-                                    runningLabelingTreeStates);
+                                 runningLabelingTreeStates);
             }
         }
 
         // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsTransitions.createSparseMatrix(), "");
 
 #if WRITE_DTMCS
-        models::sparse::Dtmc<RationalFunction> newnewDTMC(flexibleMatrix.createSparseMatrix().getSubmatrix(false, reachableStates, reachableStates), runningLabeling.getSubLabeling(reachableStates));
+        models::sparse::Dtmc<RationalFunction> newnewDTMC(flexibleMatrix.createSparseMatrix().getSubmatrix(false, reachableStates, reachableStates),
+                                                          runningLabeling.getSubLabeling(reachableStates));
         if (stateRewardVector) {
             models::sparse::StandardRewardModel<RationalFunction> newRewardModel(*stateRewardVector);
         }
@@ -333,7 +334,6 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
     uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
     const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
-    
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
     auto const [subtree, bottomStates] = findSubgraph(flexibleMatrix, start, treeStates, stateRewardVector, parameter);
 
@@ -369,7 +369,8 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                     targetAnnotation.addAnnotationTimesConstant(annotations.at(state), transition.constantPart());
                 } else {
                     // Read transition from DTMC, convert to univariate polynomial
-                    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has " << transition.denominator() << " in transition " << transition);
+                    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
+                                                                                    << transition.denominator() << " in transition " << transition);
                     auto nominator = transition.nominator();
                     UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
                     // Constant denominator is now distributed in the factors, not in the denominator of the rational function
@@ -416,7 +417,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
     // These are the transitions that we are actually going to insert (that the function will return).
     std::vector<std::pair<uint64_t, Annotation>> insertTransitions;
-    
+
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
 
@@ -498,10 +499,10 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 }
 
 std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                          storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                          storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                          storage::BitVector& reachableStates,
-                                                          std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+                                                                        storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                                        storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                                        storage::BitVector& reachableStates,
+                                                                        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
     std::map<UniPoly, Annotation> storedAnnotations;
 
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
@@ -536,7 +537,7 @@ std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t
     for (auto const& [state2, annotation] : insertThese) {
         auto uniProbability = annotation.getProbability();
         storedAnnotations.emplace(uniProbability, std::move(annotation));
-        auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(uniProbability);
+        auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniProbability);
         auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
         auto probability = RationalFunction(multiNominator);
 
@@ -549,8 +550,7 @@ std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t
 }
 
 void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
-                                             storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix,
-                                             uint64_t initialState) {
+                                             storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState) {
     // Look if one of our visitedStates has become unreachable
     // i.e. all of its predecessors are unreachable
     for (auto const& visitedState : statesMaybeUnreachable) {
