@@ -36,6 +36,12 @@ storm::expressions::OperatorType UnaryNumericalFunctionExpression::getOperator()
         case OperatorType::Ceil:
             result = storm::expressions::OperatorType::Ceil;
             break;
+        case OperatorType::Cos:
+            result = storm::expressions::OperatorType::Cos;
+            break;
+        case OperatorType::Sin:
+            result = storm::expressions::OperatorType::Sin;
+            break;
     }
     return result;
 }
@@ -78,6 +84,12 @@ double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valua
         case OperatorType::Ceil:
             result = std::ceil(result);
             break;
+        case OperatorType::Cos:
+            result = std::cos(result);
+            break;
+        case OperatorType::Sin:
+            result = std::sin(result);
+            break;
     }
     return result;
 }
@@ -96,6 +108,11 @@ std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify
                 case OperatorType::Floor:
                 case OperatorType::Ceil:
                     break;
+                case OperatorType::Cos:
+                case OperatorType::Sin:
+                    // The operands expect a real value. Raise an exception
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot apply cos or sin to an integer value.");
+                    break;
             }
             return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
         } else {
@@ -112,6 +129,12 @@ std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify
                 case OperatorType::Ceil:
                     value = storm::utility::ceil(value);
                     convertToInteger = true;
+                    break;
+                case OperatorType::Cos:
+                    value = storm::utility::cos(value);
+                    break;
+                case OperatorType::Sin:
+                    value = storm::utility::sin(value);
                     break;
             }
             if (convertToInteger) {
@@ -148,6 +171,12 @@ void UnaryNumericalFunctionExpression::printToStream(std::ostream& stream) const
             break;
         case OperatorType::Ceil:
             stream << "ceil(";
+            break;
+        case OperatorType::Cos:
+            stream << "cos(";
+            break;
+        case OperatorType::Sin:
+            stream << "sin(";
             break;
     }
     stream << *this->getOperand() << ")";

@@ -116,6 +116,7 @@ class Type {
     Type modulo(Type const& other) const;
     Type logarithm(Type const& other) const;
     Type power(Type const& other, bool allowIntegerType = false) const;
+    Type trigonometric() const;
     Type logicalConnective(Type const& other) const;
     Type logicalConnective() const;
     Type numericalComparison(Type const& other) const;

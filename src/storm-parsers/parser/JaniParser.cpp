@@ -47,8 +47,8 @@ template<typename ValueType>
 const bool JaniParser<ValueType>::defaultVariableTransient = false;
 const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
 template<typename ValueType>
-const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"sin",  "cos",  "tan",   "cot",   "sec",   "csc",   "asin", "acos",
-                                                                         "atan", "acot", "asec",  "acsc",  "sinh",  "cosh",  "tanh", "coth",
+const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"tan",  "cot",  "sec",   "csc",   "asin",  "acos",  "atan",
+                                                                         "acot", "asec", "acsc",  "sinh",  "cosh",  "tanh",  "coth",
                                                                          "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
 template<typename ValueType>
@@ -1333,6 +1333,16 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::logarithm(arguments[0], arguments[1]);
+            } else if (opstring == "cos") {
+                arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                assert(arguments.size() == 1);
+                ensureNumericalType(arguments[0], opstring, 0, scope.description);
+                return storm::expressions::cos(arguments[0]);
+            } else if (opstring == "sin") {
+                arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                assert(arguments.size() == 1);
+                ensureNumericalType(arguments[0], opstring, 0, scope.description);
+                return storm::expressions::sin(arguments[0]);
             } else if (opstring == "aa") {
                 STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
                                 "Array access operator requires exactly one exp (at " + scope.description + ").");
@@ -1430,6 +1440,16 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                     return storm::expressions::Expression();
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in " << scope.description << ".");
+            }
+        }
+        if (expressionStructure.count("constant") == 1) {
+            // Convert constants to a numeric value (only PI and Euler number, as in Jani specification)
+            const std::string constantStr = getString<ValueType>(expressionStructure.at("constant"), scope.description);
+            if (constantStr == "π") {
+                return expressionManager->rational(M_PI);
+            }
+            if (constantStr == "e") {
+                return expressionManager->rational(std::exp(1.0));
             }
         }
         STORM_LOG_THROW(

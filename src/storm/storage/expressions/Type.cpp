@@ -236,6 +236,11 @@ Type Type::power(Type const& other, bool allowIntegerType) const {
     }
 }
 
+Type Type::trigonometric() const {
+    STORM_LOG_THROW(this->isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operand.");
+    return this->getManager().getRationalType();
+}
+
 Type Type::logicalConnective(Type const& other) const {
     STORM_LOG_THROW(this->isBooleanType() && other.isBooleanType(), storm::exceptions::InvalidTypeException, "Operator requires boolean operands.");
     return *this;

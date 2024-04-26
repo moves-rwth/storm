@@ -548,6 +548,18 @@ Expression logarithm(Expression const& first, Expression const& second) {
         second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Logarithm)));
 }
 
+Expression cos(Expression const& first) {
+    return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(),
+                                                                                           first.getType().trigonometric(), first.getBaseExpressionPointer(),
+                                                                                           UnaryNumericalFunctionExpression::OperatorType::Cos)));
+}
+
+Expression sin(Expression const& first) {
+    return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(),
+                                                                                           first.getType().trigonometric(), first.getBaseExpressionPointer(),
+                                                                                           UnaryNumericalFunctionExpression::OperatorType::Sin)));
+}
+
 Expression apply(std::vector<storm::expressions::Expression> const& expressions,
                  std::function<Expression(Expression const&, Expression const&)> const& function) {
     STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build function application of empty expression list.");
