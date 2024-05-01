@@ -221,7 +221,29 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
             auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, flexibleMatrix, treeStates, stateRewardVector);
 
-            bool doneTimeTravelling = false;
+            // Check the following:
+            // There exists a state s in visitedStates s.t. all predecessors of s are in visitedStates
+            // If not, we are not eliminating any states with this big-step which baaaad and leads to the world-famous "grid issue"
+            std::set<uint64_t> visitedStatesAsSet(visitedStates.begin(), visitedStates.end());
+            bool existsEliminableState = false;
+            for (auto const& s : visitedStates) {
+                bool allPredecessorsInVisitedStates = true;
+                for (auto const& predecessor : backwardsTransitions.getRow(s)) {
+                    if (!visitedStatesAsSet.count(predecessor.getColumn())) {
+                        allPredecessorsInVisitedStates = false;
+                        break;
+                    }
+                }
+                if (allPredecessorsInVisitedStates) {
+                    existsEliminableState = true;
+                    break;
+                }
+            }
+            // If we will not eliminate any states, do not perfom big-step
+            if (!existsEliminableState) {
+                continue;
+            }
+
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
             std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(
@@ -434,6 +456,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                 }
             }
 
+            // TODO Try out different "heuristics" for what not to time-travel
             if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
                 // We already reordered w.r.t. these target states. We're not going to time-travel again,
                 // so just enter the paths into insertPaths.
@@ -445,8 +468,6 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                 continue;
             }
             alreadyTimeTravelledToThis[parameter].insert(targetStates);
-
-            doneTimeTravelling = true;
 
             Annotation newAnnotation(parameter, polynomialCache);
 

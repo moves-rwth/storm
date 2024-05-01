@@ -214,17 +214,21 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
         return sumOfTerms;
     }
 
-    Interval evaluateOnIntervalMidpointTheorem(Interval input) const {
-        Interval boundsHere = evaluate<Interval>(input);
+    Interval evaluateOnIntervalMidpointTheorem(Interval input, bool higherOrderBounds = false) const {
         if (!derivativeOfThis) {
-            return boundsHere;
+            return evaluate<Interval>(input);
         } else {
-            Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input);
+            Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input, higherOrderBounds);
             double maxSlope = utility::abs(boundDerivative.upper());
             double fMid = evaluate<double>(input.center());
             double fMin = fMid - (input.diameter() / 2) * maxSlope;
             double fMax = fMid + (input.diameter() / 2) * maxSlope;
-            return Interval(utility::max(fMin, boundsHere.lower()), utility::min(fMax, boundsHere.upper()));
+            if (higherOrderBounds) {
+                Interval boundsHere = evaluate<Interval>(input);
+                return Interval(utility::max(fMin, boundsHere.lower()), utility::min(fMax, boundsHere.upper()));
+            } else {
+                return Interval(fMin, fMax);
+            }
         }
     }
 

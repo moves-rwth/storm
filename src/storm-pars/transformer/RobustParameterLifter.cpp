@@ -246,8 +246,8 @@ std::optional<std::set<typename storm::utility::parametric::CoefficientType<Para
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesCarl(
     UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     CoefficientType c;
-    auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(polynomial,
-                                                        carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
+    auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(
+        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
         CoefficientType rootCoefficient;
@@ -363,7 +363,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
 }
 
 template<typename ParametricType, typename ConstantType>
-RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(storm::RationalFunction transition) : transition(transition) {
+RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::RobustAbstractValuation(storm::RationalFunction transition)
+    : transition(transition) {
     STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Robust PLA only supports transitions with constant denominators.");
     transition.simplify();
     std::set<VariableType> occurringVariables;
@@ -412,7 +413,7 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
         return std::nullopt;
     }
 
-    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial().template convert<RationalNumber>();
+    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
     // Constant denominator is now distributed in the factors, not in the denominator of the rational function
     nominatorAsUnivariate /= transition.denominator().coefficient();
     if (TimeTravelling::lastSavedAnnotations.count(nominatorAsUnivariate)) {
