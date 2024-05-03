@@ -10,6 +10,7 @@
 
 #include "solver/OptimizationDirection.h"
 #include "solver/helper/SchedulerTrackingHelper.h"
+#include "storage/BitVector.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
@@ -311,6 +312,20 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
+
+        if (applyCache.hasOnlyConstants.get(offsetIndex)) {
+            for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+                auto const lower = matrixValueIt->lower();
+                if constexpr (isPair<OperandType>::value) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
+                    // Notice the unclear semantics here in terms of how to order things.
+                } else {
+                    result += operand[*matrixColumnIt] * lower;
+                }
+            }
+            return result;
+        }
+
         applyCache.robustOrder.clear();
 
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
@@ -440,6 +455,8 @@ class ValueIterationOperator {
     template<typename Dummy>
     struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
+        storage::BitVector hasOnlyConstants;
+        storage::BitVector hasTwoSuccessors;
     };
 
     /*!

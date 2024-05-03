@@ -349,6 +349,8 @@ class TimeTravelling {
         // Intentionally left empty
     }
 
+    RationalFunction uniPolyToRationalFunction(UniPoly poly);
+
     /**
      * Perform big-step on the given model and the given checkTask.
      *
@@ -359,7 +361,7 @@ class TimeTravelling {
     std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> bigStep(
         models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask);
 
-    static std::map<UniPoly, Annotation> lastSavedAnnotations;
+    static std::unordered_map<RationalFunction, Annotation> lastSavedAnnotations;
 
    private:
     /**

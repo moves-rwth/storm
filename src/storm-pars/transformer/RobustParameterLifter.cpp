@@ -38,7 +38,7 @@
 #include "utility/macros.h"
 #include "utility/solver.h"
 
-std::map<storm::transformer::UniPoly, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
+std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
 
 namespace storm {
 namespace transformer {
@@ -176,11 +176,8 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
 template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
-    std::vector<UniPoly> polynomials, std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
+    RationalFunction function,
     typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
-    if (polynomials.size() == 0 || (polynomials.size() == 1 && polynomials.begin()->isConstant())) {
-        return std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>();
-    }
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
     utility::solver::Z3SmtSolverFactory factory;
@@ -188,13 +185,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
 
     expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
-    auto expression = expressionManager->rational(0);
-    for (auto const& summand : polynomials) {
-        auto multivariatePol = carl::MultivariatePolynomial<RationalNumber>(summand);
-        auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
-        expression = expression + rfte.toExpression(storm::RationalFunction(multiNominator));
-    }
-    expression = expression == expressionManager->rational(0);
+    auto expression = rfte.toExpression(function) == expressionManager->rational(0);
 
     auto variables = expressionManager->getVariables();
     // Sum the summands together directly in the expression so we pass this info to the solver
@@ -413,11 +404,8 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
         return std::nullopt;
     }
 
-    auto nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-    // Constant denominator is now distributed in the factors, not in the denominator of the rational function
-    nominatorAsUnivariate /= transition.denominator().coefficient();
-    if (TimeTravelling::lastSavedAnnotations.count(nominatorAsUnivariate)) {
-        auto& annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
+    if (TimeTravelling::lastSavedAnnotations.count(transition)) {
+        auto& annotation = TimeTravelling::lastSavedAnnotations.at(transition);
 
         auto const& terms = annotation.getTerms();
 
@@ -497,15 +485,13 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
             // Constant denominator is now distributed in the factors, not in the denominator of the rational function
             nominatorAsUnivariate /= derivative.denominator().coefficient();
 
-            auto const& annotation = TimeTravelling::lastSavedAnnotations.at(nominatorAsUnivariate);
             // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
-
             std::optional<std::set<CoefficientType>> zeroes;
             // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
             if (derivative.nominator().totalDegree() < 4) {
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
-                zeroes = zeroesSMT({nominatorAsUnivariate}, transition.nominator().pCache(), p);
+                zeroes = zeroesSMT(transition, p);
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {

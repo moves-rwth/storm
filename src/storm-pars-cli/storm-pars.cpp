@@ -236,7 +236,11 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
         auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);
         result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
-        // TODO Do something with saved annotations
+
+        if (mpi.applyBisimulation) {
+            result.model =
+                storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+        }
         result.changed = true;
     }
 

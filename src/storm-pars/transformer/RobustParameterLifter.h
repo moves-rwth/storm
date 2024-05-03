@@ -107,8 +107,7 @@ class RobustParameterLifter {
        private:
         std::set<CoefficientType> cubicEquationZeroes(RawPolynomial polynomial, VariableType parameter);
 
-        std::optional<std::set<CoefficientType>> zeroesSMT(std::vector<UniPoly> polynomial, std::shared_ptr<RawPolynomialCache> rawPolynomialCache,
-                                                           VariableType parameter);
+        std::optional<std::set<CoefficientType>> zeroesSMT(RationalFunction function, VariableType parameter);
 
         std::optional<std::set<CoefficientType>> zeroesCarl(UniPoly polynomial, VariableType parameter);
 

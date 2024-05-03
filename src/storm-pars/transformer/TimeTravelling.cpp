@@ -42,6 +42,12 @@
 namespace storm {
 namespace transformer {
 
+RationalFunction TimeTravelling::uniPolyToRationalFunction(UniPoly uniPoly) {
+    auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniPoly);
+    auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
+    return RationalFunction(multiNominator);
+}
+
 std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
                                                                const uint64_t root,
                                                                const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
@@ -346,7 +352,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
     lastSavedAnnotations.clear();
     for (auto const& entry : storedAnnotations) {
-        lastSavedAnnotations.emplace(entry);
+        lastSavedAnnotations.emplace(std::make_pair(uniPolyToRationalFunction(entry.first), entry.second));
     }
 
     return std::make_pair(newDTMC, storedAnnotations);
@@ -558,9 +564,7 @@ std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t
     for (auto const& [state2, annotation] : insertThese) {
         auto uniProbability = annotation.getProbability();
         storedAnnotations.emplace(uniProbability, std::move(annotation));
-        auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniProbability);
-        auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
-        auto probability = RationalFunction(multiNominator);
+        auto probability = uniPolyToRationalFunction(uniProbability);
 
         // We know that neither no transition state <-> entry.first exist because we've erased them
         flexibleMatrix.getRow(state).push_back(storm::storage::MatrixEntry(state2, probability));
