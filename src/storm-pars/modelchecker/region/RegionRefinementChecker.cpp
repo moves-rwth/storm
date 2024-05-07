@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 
+#include <iterator>
 #include <queue>
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
@@ -296,6 +297,28 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariables(
     AnnotatedRegion<ParametricType> const& region, Context context) const {
+    switch (regionSplittingStrategy.heuristic) {
+    case RegionSplittingStrategy::Heuristic::EstimateBased:
+        // TODO Implement
+        break;
+    case RegionSplittingStrategy::Heuristic::RoundRobin:
+        auto const& vars = region.region.getVariables();
+        auto iter = vars.begin();
+
+        std::set<VariableType> splittingVars;
+
+        std::advance(iter, (region.refinementDepth * this->regionSplittingStrategy.maxSplitDimensions) % vars.size());
+
+        for (uint64_t i = 0; i < this->regionSplittingStrategy.maxSplitDimensions; i++) {
+            splittingVars.emplace(*iter);
+            std::advance(iter, 1);
+            if (iter == vars.end()) {
+                iter = vars.begin();
+            }
+        }
+        return splittingVars;
+    }
+
     // TODO: Use the splitting strategy, monotonicity, context, ... as in old splitSmart implementation?
     return region.region.getVariables();
 }

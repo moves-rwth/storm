@@ -228,14 +228,13 @@ std::unique_ptr<storm::modelchecker::MonotonicityBackend<ParametricType>> initia
 template<typename ParametricType>
 storm::modelchecker::RegionSplittingStrategy initializeSplittingStrategy(storm::modelchecker::RegionModelChecker<ParametricType> const& regionChecker,
                                                                          storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task,
-                                                                         bool generateSplitEstimates,
+                                                                         storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic,
                                                                          std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt) {
     storm::modelchecker::RegionSplittingStrategy strat;
     if (maxSplitsPerStepThreshold) {
         strat.maxSplitDimensions = *maxSplitsPerStepThreshold;
     }
-    strat.heuristic = generateSplitEstimates ? storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased
-                                             : storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin;
+    strat.heuristic = heuristic;
 
     if (strat.heuristic == storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased) {
         if (!strat.estimateKind) {
@@ -300,7 +299,7 @@ template<typename ValueType, typename ImpreciseType = double, typename PreciseTy
 std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initializeRegionRefinementChecker(
     Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
-    bool generateSplitEstimates = true, std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt, bool allowModelSimplification = true,
+    storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased, std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt, bool allowModelSimplification = true,
     bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
@@ -309,7 +308,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
     auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(engine, model->getType());
     auto monotonicityBackend =
         initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
-    auto splitStrat = initializeSplittingStrategy(*regionChecker, task, generateSplitEstimates, maxSplitsPerStepThreshold);
+    auto splitStrat = initializeSplittingStrategy(*regionChecker, task, heuristic, maxSplitsPerStepThreshold);
     allowModelSimplification = allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
     auto refinementChecker = std::make_unique<storm::modelchecker::RegionRefinementChecker<ValueType>>(std::move(regionChecker));
     refinementChecker->specify(env, consideredModel, task, splitStrat, std::move(monotonicityBackend), allowModelSimplification);
@@ -333,13 +332,13 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
     storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, std::optional<ValueType> const& coverageThreshold,
     std::optional<uint64_t> const& refinementDepthThreshold = std::nullopt,
     storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool allowModelSimplification = true,
+    storm::modelchecker::RegionSplittingStrategy::Heuristic splittingStrategy = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
+    std::optional<uint64_t> const& maxSplitsPerStepThreshold = std::nullopt,
     MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
-    bool const generateSplitEstimates = true;
-    std::optional<uint64_t> const maxSplitsPerStepThreshold;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, generateSplitEstimates, maxSplitsPerStepThreshold,
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, splittingStrategy, maxSplitsPerStepThreshold,
                                                                allowModelSimplification, preconditionsValidated, monotonicitySetting);
     return refinementChecker->performRegionPartitioning(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
 }
@@ -353,13 +352,13 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
     storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir,
     std::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting const& monotonicitySetting,
-    std::optional<storm::logic::Bound> const& boundInvariant, bool generateSplitEstimates = false,
+    std::optional<storm::logic::Bound> const& boundInvariant, storm::modelchecker::RegionSplittingStrategy::Heuristic splittingStrategy = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin,
     std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
     bool const allowModelSimplification = true;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, generateSplitEstimates, maxSplitsPerStepThreshold,
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, splittingStrategy, maxSplitsPerStepThreshold,
                                                                allowModelSimplification, preconditionsValidated, monotonicitySetting);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
@@ -372,7 +371,8 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
 template<typename ValueType>
 bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::logic::Formula const& formula,
                   storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine,
-                  MonotonicitySetting const& monotonicitySetting, bool generateSplitEstimates = false,
+                  MonotonicitySetting const& monotonicitySetting,
+                  storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin,
                   std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
     Environment env;
     STORM_LOG_THROW(formula.isProbabilityOperatorFormula() || formula.isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
@@ -386,7 +386,7 @@ bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const
     bool preconditionsValidated = false;
     bool const allowModelSimplification = true;
     auto refinementChecker = initializeRegionRefinementChecker(
-        env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true), engine, generateSplitEstimates,
+        env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true), engine, heuristic,
         maxSplitsPerStepThreshold, allowModelSimplification, preconditionsValidated, monotonicitySetting);
     return refinementChecker->verifyRegion(env, region, bound);
 }

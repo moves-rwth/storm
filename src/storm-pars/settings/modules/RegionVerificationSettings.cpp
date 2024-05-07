@@ -1,5 +1,6 @@
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/OptionBuilder.h"
 
@@ -10,6 +11,7 @@ namespace storm::settings::modules {
 
 const std::string RegionVerificationSettings::moduleName = "regionverif";
 const std::string splittingThresholdName = "splitting-threshold";
+const std::string splittingStrategyName = "splitting-strategy";
 const std::string checkEngineOptionName = "engine";
 
 RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(moduleName) {
@@ -19,6 +21,14 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                 storm::settings::ArgumentBuilder::createIntegerArgument("splitting-threshold", "The threshold for splitting, should be an integer > 0").build())
             .build());
 
+    std::vector<std::string> strategies = {"estimate", "roundrobin"};
+    this->addOption(storm::settings::OptionBuilder(moduleName, splittingStrategyName, false, "Sets which strategy is used for splitting regions.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the strategy to use.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(strategies))
+                                         .setDefaultValueString("estimate")
+                                         .build())
+                        .build());
+
     std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
     this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.")
@@ -26,6 +36,7 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                                          .setDefaultValueString("pl")
                                          .build())
                         .build());
+
 }
 
 int RegionVerificationSettings::getSplittingThreshold() const {
@@ -48,6 +59,22 @@ storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionChec
         result = storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting;
     } else {
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown region check engine '" << engineString << "'.");
+    }
+
+    return result;
+}
+
+
+storm::modelchecker::RegionSplittingStrategy::Heuristic RegionVerificationSettings::getRegionSplittingStrategy() const {
+    std::string strategyString = this->getOption(splittingStrategyName).getArgumentByName("name").getValueAsString();
+
+    storm::modelchecker::RegionSplittingStrategy::Heuristic result;
+    if (strategyString == "estimate") {
+        result = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased;
+    } else if (strategyString == "roundrobin") {
+        result = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin;
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown splitting strategy '" << strategyString << "'.");
     }
 
     return result;
