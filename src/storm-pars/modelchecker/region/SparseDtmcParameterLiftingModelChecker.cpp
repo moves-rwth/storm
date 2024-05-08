@@ -494,10 +494,13 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::comp
     cachedRegionSplitEstimates.clear();
     for (auto const& p : region.getVariables()) {
         // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
+        auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
+        cachedRegionSplitEstimates.emplace(p, minDelta);
 
-        if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
-            cachedRegionSplitEstimates.emplace(p, minDelta);
-        }
+        // Previously - why only insert some regionsplitestimates?????????????????????
+        // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
+        //     cachedRegionSplitEstimates.emplace(p, minDelta);
+        // }
     }
     // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
 }
@@ -576,13 +579,19 @@ RegionSplitEstimateKind SparseDtmcParameterLiftingModelChecker<SparseModelType, 
 template<typename SparseModelType, typename ConstantType>
 std::vector<typename SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::CoefficientType>
 SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::obtainRegionSplitEstimates(std::set<VariableType> const& relevantParameters) const {
-    std::vector<CoefficientType> result;
-    for (auto const& par : relevantParameters) {
-        auto est = cachedRegionSplitEstimates.find(par);
-        STORM_LOG_ASSERT(est != cachedRegionSplitEstimates.end(), "Requested region split estimate for parameter " << par.name() << " but none was generated.");
-        result.push_back(storm::utility::convertNumber<CoefficientType>(est->second));
+    if (isValueDeltaRegionSplitEstimates()) {
+        // Cached region split estimates are value-delta
+        std::vector<CoefficientType> result;
+        for (auto const& par : relevantParameters) {
+            auto est = cachedRegionSplitEstimates.find(par);
+            STORM_LOG_ASSERT(est != cachedRegionSplitEstimates.end(), "Requested region split estimate for parameter " << par.name() << " but none was generated.");
+            result.push_back(storm::utility::convertNumber<CoefficientType>(est->second));
+        }
+        return result;
+    } else {
+        // Call super method, which might support the estimate type
+        return RegionModelChecker<ParametricType>::obtainRegionSplitEstimates(relevantParameters);
     }
-    return result;
 }
 
 template<typename SparseModelType, typename ConstantType>

@@ -84,6 +84,9 @@ class RegionRefinementChecker {
 
    private:
     enum class Context { Partitioning, ExtremalValue };
+    std::set<VariableType> getSplittingVariablesEstimateBased(AnnotatedRegion<ParametricType> const& region, Context context) const;
+    std::set<VariableType> getSplittingVariablesRoundRobin(AnnotatedRegion<ParametricType> const& region, Context context) const;
+
     std::set<VariableType> getSplittingVariables(AnnotatedRegion<ParametricType> const& region, Context context) const;
 
     std::unique_ptr<RegionModelChecker<ParametricType>> regionChecker;
