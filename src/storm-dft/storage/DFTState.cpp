@@ -287,10 +287,23 @@ bool DFTState<ValueType>::updateFailableInRestrictions(size_t id) {
                         ++it;
                     }
                     if (it != restriction->children().cend() && (*it)->isBasicElement() && isOperational((*it)->id())) {
-                        // Enable next event
-                        failableElements.addBE((*it)->id());
-                        STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
-                        addedFailableEvent = true;
+                        auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(*it);
+
+                        if (be->canFail()) {
+                            // Enable next event
+                            failableElements.addBE((*it)->id());
+                            STORM_LOG_TRACE("Added possible BE failure: " << *(*it));
+                            addedFailableEvent = true;
+                        }
+
+                        // Also check if dependency triggering the BE could now fail
+                        bool change = false;
+                        for (auto dependency : be->ingoingDependencies()) {
+                            change |= updateFailableDependencies(dependency->triggerEvent()->id());
+                        }
+                        if (change) {
+                            addedFailableEvent = true;
+                        }
                     }
                     break;
                 }

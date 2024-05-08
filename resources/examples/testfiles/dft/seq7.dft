@@ -1,0 +1,5 @@
+toplevel "T";
+"T" and "A" "B";
+"A" prob=0.2 dorm=0.0;
+"B" prob=0.4 dorm=0.0;
+"SEQ" seq "A" "B";
