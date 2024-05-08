@@ -72,7 +72,7 @@ void DFTState<ValueType>::construct() {
                         break;
                     }
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->beType() << "' is not supported.");
                         break;
                 }
             }
@@ -329,7 +329,7 @@ template<typename ValueType>
 ValueType DFTState<ValueType>::getBERate(size_t id) const {
     STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
     STORM_LOG_THROW(mDft.getBasicElement(id)->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException,
-                    "BE of type '" << mDft.getBasicElement(id)->type() << "' is not supported.");
+                    "BE of type '" << mDft.getBasicElement(id)->beType() << "' is not supported.");
     auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(mDft.getBasicElement(id));
     if (mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
         // Return passive failure rate

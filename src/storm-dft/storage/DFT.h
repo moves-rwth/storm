@@ -180,7 +180,7 @@ class DFT {
                             break;
                         }
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->beType() << "' is not supported.");
                     }
                 }
             }
