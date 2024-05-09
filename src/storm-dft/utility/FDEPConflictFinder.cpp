@@ -91,7 +91,7 @@ template<typename ValueType>
 std::vector<bool> FDEPConflictFinder<ValueType>::getDynamicBehavior(storm::dft::storage::DFT<ValueType> const& dft) {
     std::vector<bool> dynamicBehaviorVector(dft.nrElements(), false);
 
-    std::queue<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const> elementQueue;
+    std::queue<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>> elementQueue;
 
     // deal with all dynamic elements
     for (size_t i = 0; i < dft.nrElements(); ++i) {
