@@ -129,7 +129,11 @@ void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::initialize
                         dimension.scalingFactor = storm::utility::one<ValueType>();
                     } else {
                         STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).isRewardBound(), "Unexpected type of time bound.");
-                        std::string const& rewardName = subformula.getTimeBoundReference(dim).getRewardName();
+                        STORM_LOG_ASSERT(subformula.getTimeBoundReference(dim).hasRewardModelName() || this->model.hasUniqueRewardModel(),
+                                         "Model has several reward models, but no reward model has been specified in the formula.");
+                        std::string const& rewardName = subformula.getTimeBoundReference(dim).hasRewardModelName()
+                                                            ? subformula.getTimeBoundReference(dim).getRewardName()
+                                                            : this->model.getUniqueRewardModelName();
                         STORM_LOG_THROW(this->model.hasRewardModel(rewardName), storm::exceptions::IllegalArgumentException,
                                         "No reward model with name '" << rewardName << "' found.");
                         auto const& rewardModel = this->model.getRewardModel(rewardName);
