@@ -70,7 +70,6 @@ class DFT {
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
     mutable std::vector<size_t> mRelevantEvents;
-    std::vector<bool> mDynamicBehavior;
     std::map<size_t, bool> mDependencyInConflict;
 
    public:
@@ -86,8 +85,6 @@ class DFT {
     DFT<ValueType> optimize() const;
 
     void copyElements(std::vector<size_t> elements, storm::dft::builder::DFTBuilder<ValueType> builder) const;
-
-    void setDynamicBehaviorInfo();
 
     size_t stateBitVectorSize() const {
         // Ensure multiple of 64
@@ -157,10 +154,6 @@ class DFT {
         return mDependencies;
     }
 
-    std::vector<bool> const& getDynamicBehavior() const {
-        return mDynamicBehavior;
-    }
-
     std::vector<size_t> nonColdBEs() const {
         std::vector<size_t> result;
         for (DFTElementPointer elem : mElements) {
@@ -180,7 +173,7 @@ class DFT {
                             break;
                         }
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->beType() << "' is not supported.");
                     }
                 }
             }
