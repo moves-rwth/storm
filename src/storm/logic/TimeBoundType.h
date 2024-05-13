@@ -44,7 +44,7 @@ class TimeBoundReference {
 
     std::string const& getRewardModelName() const {
         assert(isRewardBound());
-        return this->rewardName.get();
+        return rewardName.get();
     }
 
     std::string const& getRewardName() const {
@@ -58,7 +58,7 @@ class TimeBoundReference {
 
     boost::optional<std::string> const& getOptionalRewardModelName() const {
         assert(isRewardBound());
-        return this->rewardName;
+        return rewardName;
     }
 
     bool hasRewardAccumulation() const {
