@@ -27,10 +27,19 @@ inline GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1, const 
 
 namespace storm {
 namespace test {
-inline void initialize() {
+extern bool noGurobi;
+
+inline void initialize(int* argc, char** argv) {
     storm::utility::initializeLogger();
     // Only enable error output by default.
     storm::utility::setLogLevel(l3pp::LogLevel::ERR);
+    for (int i = 1; i < *argc; ++i) {
+        if (std::string(argv[i]) == "--nogurobi") {
+            noGurobi = true;
+        } else {
+            STORM_LOG_WARN("Unknown argument: " << argv[i]);
+        }
+    }
 }
 
 inline void enableErrorOutput() {
