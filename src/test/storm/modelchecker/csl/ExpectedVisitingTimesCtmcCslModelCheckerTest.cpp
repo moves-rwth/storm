@@ -33,6 +33,19 @@ class SparseGmmxxGmresIluEnvironment {
     }
 };
 
+class SparseSoundEnvironment {
+   public:
+    static const CtmcEngine engine = CtmcEngine::JaniSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        return env;
+    }
+};
+
 class SparseEigenRationalLuEnvironment {
    public:
     static const CtmcEngine engine = CtmcEngine::JaniSparse;
@@ -92,7 +105,7 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseSoundEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(ExpectedVisitingTimesCtmcCslModelCheckerTest, TestingTypes, );
 

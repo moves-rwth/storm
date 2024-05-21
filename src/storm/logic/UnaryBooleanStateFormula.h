@@ -12,9 +12,9 @@ class UnaryBooleanStateFormula : public UnaryStateFormula {
 
     UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
 
-    virtual ~UnaryBooleanStateFormula(){
+    virtual ~UnaryBooleanStateFormula() {
         // Intentionally left empty.
-    };
+    }
 
     virtual bool isUnaryBooleanStateFormula() const override;
 

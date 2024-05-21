@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+
 #include "storm-config.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/automata/DeterministicAutomaton.h"
@@ -8,6 +8,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/IOSettings.h"
+#include "test/storm_gtest.h"
 
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProductBuilder.h"

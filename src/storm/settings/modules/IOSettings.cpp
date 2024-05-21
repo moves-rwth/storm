@@ -219,16 +219,21 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                                          .makeOptional()
                                          .build())
                         .build());
+    std::vector<std::string> steadyStateDistrAlgorithms({"auto", "eqsys", "evt", "classic"});
     this->addOption(
         storm::settings::OptionBuilder(moduleName, steadyStateDistrOptionName, false,
                                        "Computes the steady state distribution. Result can be exported using --" + exportCheckResultOptionName + ".")
-            .setIsAdvanced()
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("algorithm", "The used algorithm. 'auto' chooses according to accuracy requirements.")
+                    .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(steadyStateDistrAlgorithms))
+                    .setDefaultValueString("auto")
+                    .makeOptional()
+                    .build())
             .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, expectedVisitingTimesOptionName, false,
                                                    "Computes the expected number of times each state is visited (DTMC) or the expected time spend in each "
                                                    "state (CTMC). Result can be exported using --" +
                                                        exportCheckResultOptionName + ".")
-                        .setIsAdvanced()
                         .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.")
@@ -457,6 +462,20 @@ std::string IOSettings::getPropertyFilter() const {
 
 bool IOSettings::isComputeSteadyStateDistributionSet() const {
     return this->getOption(steadyStateDistrOptionName).getHasOptionBeenSet();
+}
+
+storm::SteadyStateDistributionAlgorithm IOSettings::getSteadyStateDistributionAlgorithm() const {
+    auto alg = this->getOption(steadyStateDistrOptionName).getArgumentByName("algorithm").getValueAsString();
+    if (alg == "auto") {
+        return storm::SteadyStateDistributionAlgorithm::Automatic;
+    } else if (alg == "eqsys") {
+        return storm::SteadyStateDistributionAlgorithm::EquationSystem;
+    } else if (alg == "classic") {
+        return storm::SteadyStateDistributionAlgorithm::Classic;
+    } else {
+        STORM_LOG_ASSERT(alg == "evt", "Unexpected algorithm type.");
+        return storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes;
+    }
 }
 
 bool IOSettings::isComputeExpectedVisitingTimesSet() const {
