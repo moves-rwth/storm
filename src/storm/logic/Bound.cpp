@@ -23,8 +23,8 @@ storm::RationalNumber Bound::evaluateThresholdAsRational() const {
     return threshold.evaluateAsRational();
 }
 
-template <typename ValueType>
-ValueType Bound::evaluateThresholdAs () const {
+template<typename ValueType>
+ValueType Bound::evaluateThresholdAs() const {
     return storm::utility::convertNumber<ValueType>(evaluateThresholdAsRational());
 }
 
