@@ -302,7 +302,6 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariablesEstimateBased(
     AnnotatedRegion<ParametricType> const& region, Context context) const {
-    // TODO Use Monotonicity
     auto const& estimates = regionChecker->obtainRegionSplitEstimates(region.region.getVariables());
     std::vector<std::pair<VariableType, CoefficientType>> estimatesToSort;
     estimatesToSort.reserve(region.region.getVariables().size());
@@ -312,12 +311,19 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
         estimatesToSort.push_back(std::make_pair(param, *estimatesIter++));
     }
 
+    // Sort and insert largest n=maxSplitDimensions estimates
     std::sort(estimatesToSort.begin(), estimatesToSort.end(), [](const auto& a, const auto& b) {
         return a.second > b.second;
     });
 
     std::set<VariableType> splittingVars;
     for (uint64_t i = 0; i < this->regionSplittingStrategy.maxSplitDimensions; i++) {
+        // Do not split on monotone parameters if finding an extremal value is the goal
+        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getDefaultMonotonicityAnnotation() &&
+                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity &&
+                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity->isMonotone(estimatesToSort[i].first)) {
+            continue;
+        }
         splittingVars.emplace(estimatesToSort[i].first);
     }
     return splittingVars;
@@ -334,6 +340,12 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
 
     std::set<VariableType> splittingVars;
     for (uint64_t i = 0; i < this->regionSplittingStrategy.maxSplitDimensions; i++) {
+        // Do not split on monotone parameters if finding an extremal value is the goal
+        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getDefaultMonotonicityAnnotation() &&
+                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity &&
+                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity->isMonotone(*varsIter)) {
+            continue;
+        }
         splittingVars.emplace(*varsIter);
         std::advance(varsIter, 1);
         if (varsIter == vars.end()) {
