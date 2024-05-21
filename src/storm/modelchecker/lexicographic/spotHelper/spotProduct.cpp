@@ -7,14 +7,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 
-#ifdef STORM_HAVE_SPOT
-#include "spot/tl/formula.hh"
-#include "spot/tl/parse.hh"
-#include "spot/twaalgos/dot.hh"
-#include "spot/twaalgos/hoa.hh"
-#include "spot/twaalgos/totgba.hh"
-#include "spot/twaalgos/translate.hh"
-#endif
+#include "storm/adapters/SpotAdapter.h"
 
 namespace storm::modelchecker::helper::lexicographic::spothelper {
 

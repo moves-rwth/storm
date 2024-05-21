@@ -29,6 +29,8 @@ inline ComparisonType invert(ComparisonType t) {
             return ComparisonType::Less;
     }
     STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    // Wrong, but this code should not be reachable. Still, GCC issues a warning.
+    return t;
 }
 
 inline ComparisonType invertPreserveStrictness(ComparisonType t) {
@@ -43,6 +45,8 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
             return ComparisonType::LessEqual;
     }
     STORM_LOG_ASSERT(false, "Unknown ComparisonType");
+    // Wrong, but this code should not be reachable. Still, GCC issues a warning.
+    return t;
 }
 
 std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);

@@ -1,4 +1,5 @@
 #include "storm/automata/LTL2DeterministicAutomaton.h"
+#include "storm/adapters/SpotAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
@@ -8,14 +9,6 @@
 #include "storm/utility/macros.h"
 
 #include <sys/wait.h>
-
-#ifdef STORM_HAVE_SPOT
-#include "spot/tl/formula.hh"
-#include "spot/tl/parse.hh"
-#include "spot/twaalgos/hoa.hh"
-#include "spot/twaalgos/totgba.hh"
-#include "spot/twaalgos/translate.hh"
-#endif
 
 namespace storm {
 namespace automata {

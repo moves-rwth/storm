@@ -36,7 +36,7 @@ namespace builder {
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
+    void create(storm::prism::Program const& /*program*/, storm::adapters::AddExpressionAdapter<Type, ValueType>& /*rowExpressionAdapter*/) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 
