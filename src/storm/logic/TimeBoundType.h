@@ -52,8 +52,7 @@ class TimeBoundReference {
     }
 
     bool hasRewardModelName() const {
-        assert(isRewardBound());
-        return static_cast<bool>(rewardName);
+        return isRewardBound() && static_cast<bool>(rewardName);
     }
 
     boost::optional<std::string> const& getOptionalRewardModelName() const {
