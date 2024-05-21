@@ -62,7 +62,7 @@ Model::Model(std::string const& name, ModelType const& modelType, uint64_t versi
     initialStatesRestriction = this->expressionManager->boolean(true);
 
     // Add a prefined action that represents the silent action.
-    uint64_t actionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
+    [[maybe_unused]] uint64_t actionIndex = addAction(storm::jani::Action(SILENT_ACTION_NAME));
     STORM_LOG_ASSERT(actionIndex == SILENT_ACTION_INDEX, "Illegal silent action index.");
 }
 
