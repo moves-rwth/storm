@@ -135,9 +135,7 @@ BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), bucket
 }
 
 BitVector::~BitVector() {
-    if (buckets != nullptr) {
-        delete[] buckets;
-    }
+    delete[] buckets;
 }
 
 template<typename InputIterator>
@@ -206,9 +204,7 @@ BitVector& BitVector::operator=(BitVector&& other) {
     if (this != &other) {
         bitCount = other.bitCount;
         other.bitCount = 0;
-        if (this->buckets) {
-            delete[] this->buckets;
-        }
+        delete[] this->buckets;
         this->buckets = other.buckets;
         other.buckets = nullptr;
     }
@@ -277,9 +273,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
             } else {
                 std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
             }
-            if (buckets != nullptr) {
-                delete[] buckets;
-            }
+            delete[] buckets;
             buckets = newBuckets;
             bitCount = newLength;
         } else {
@@ -301,9 +295,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         if (newBucketCount < this->bucketCount()) {
             uint64_t* newBuckets = new uint64_t[newBucketCount];
             std::copy_n(buckets, newBucketCount, newBuckets);
-            if (buckets != nullptr) {
-                delete[] buckets;
-            }
+            delete[] buckets;
             buckets = newBuckets;
             bitCount = newLength;
         }
