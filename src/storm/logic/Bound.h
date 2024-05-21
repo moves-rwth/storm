@@ -23,6 +23,9 @@ struct Bound {
 
     storm::RationalNumber evaluateThresholdAsRational() const;
 
+    template<typename ValueType>
+    ValueType evaluateThresholdAs() const;
+
     bool isLowerBound() const {
         return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
     }
