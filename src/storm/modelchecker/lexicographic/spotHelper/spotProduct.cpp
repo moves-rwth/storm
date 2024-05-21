@@ -3,6 +3,7 @@
 #include <deque>
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/utility/macros.h"
