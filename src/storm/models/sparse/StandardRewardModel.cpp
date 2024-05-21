@@ -160,6 +160,35 @@ StandardRewardModel<ValueType> StandardRewardModel<ValueType>::permuteActions(st
 }
 
 template<typename ValueType>
+StandardRewardModel<ValueType> StandardRewardModel<ValueType>::permuteStates(std::vector<uint64_t> const& inversePermutation,
+                                                                             storm::OptionalRef<std::vector<uint64_t> const> rowGroupIndices,
+                                                                             storm::OptionalRef<std::vector<uint64_t> const> permutation) const {
+    std::optional<std::vector<ValueType>> newStateRewardVector;
+    if (hasStateRewards()) {
+        newStateRewardVector = storm::utility::vector::applyInversePermutation(inversePermutation, getStateRewardVector());
+    }
+    std::optional<std::vector<ValueType>> newStateActionRewardVector;
+    if (this->hasStateActionRewards()) {
+        if (rowGroupIndices) {
+            newStateActionRewardVector =
+                storm::utility::vector::applyInversePermutationToGroupedVector(inversePermutation, this->getStateActionRewardVector(), rowGroupIndices.value());
+        } else {
+            STORM_LOG_ASSERT(inversePermutation.size() == this->getStateActionRewardVector().size(), "Invalid permutation size.");
+            newStateActionRewardVector = storm::utility::vector::applyInversePermutation(inversePermutation, this->getStateActionRewardVector());
+        }
+    }
+    std::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
+    if (this->hasTransitionRewards()) {
+        STORM_LOG_ASSERT(permutation, "Permutation required for transition rewards.");
+        STORM_LOG_ASSERT(rowGroupIndices.has_value() != getTransitionRewardMatrix().hasTrivialRowGrouping(),
+                         "Row group indices required for transition rewards.");
+        this->getTransitionRewardMatrix().permuteRowGroupsAndColumns(inversePermutation, permutation.value());
+    }
+
+    return StandardRewardModel(std::move(newStateRewardVector), std::move(newStateActionRewardVector), std::move(newTransitionRewardMatrix));
+}
+
+template<typename ValueType>
 template<typename MatrixValueType>
 ValueType StandardRewardModel<ValueType>::getStateActionAndTransitionReward(uint_fast64_t choiceIndex,
                                                                             storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {

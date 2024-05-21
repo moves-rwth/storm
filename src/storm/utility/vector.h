@@ -1273,6 +1273,19 @@ std::vector<T> applyInversePermutation(std::vector<uint64_t> const& inversePermu
     return result;
 }
 
+template<typename T>
+std::vector<T> applyInversePermutationToGroupedVector(std::vector<uint64_t> const& inversePermutation, std::vector<T> const& source,
+                                                      std::vector<uint64_t> const& rowGroupIndices) {
+    std::vector<T> result;
+    result.reserve(source.size());
+    for (auto sourceIndex : inversePermutation) {
+        for (uint64_t i = rowGroupIndices[sourceIndex]; i < rowGroupIndices[sourceIndex + 1]; ++i) {
+            result.push_back(source[i]);
+        }
+    }
+    return result;
+}
+
 /*!
  * Output vector as string.
  *

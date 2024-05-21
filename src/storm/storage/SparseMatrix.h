@@ -754,13 +754,22 @@ class SparseMatrix {
      */
     SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
 
-    /*
+    /*!
      * Permute rows of the matrix according to the vector.
      * That is, in row i, write the entry of row inversePermutation[i].
      * Consequently, a single row might actually be written into multiple other rows, and the function application is not necessarily a permutation.
      * Notice that this method does *not* touch column entries, nor the row grouping.
      */
     SparseMatrix permuteRows(std::vector<index_type> const& inversePermutation) const;
+
+    /*!
+     * Permutes row groups and columns of the matrix according to the given  permutations.
+     * That is, in row group i, write the entries of row group inverseRowGroupPermutation[i] and in column columnPermutation[j], write the entries of column j.
+     * @pre inverseRowGroupPermutation and columnPermutation must be permutations (i.e., they must contain each index exactly once).
+     * @note the permutation for the row groups is inverted while the one for columns is not!
+     * @return the permuted matrix.
+     */
+    SparseMatrix permuteRowGroupsAndColumns(std::vector<index_type> const& inverseRowGroupPermutation, std::vector<index_type> const& columnPermutation) const;
 
     /*!
      * Returns a copy of this matrix that only considers entries in the selected rows.
