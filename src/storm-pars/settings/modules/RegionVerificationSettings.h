@@ -24,6 +24,11 @@ class RegionVerificationSettings : public ModuleSettings {
      */
     storm::modelchecker::RegionSplittingStrategy::Heuristic getRegionSplittingStrategy() const;
 
+    /*!
+     * Retrieves which type of region splitting strategy should be used
+     */
+    std::optional<storm::modelchecker::RegionSplitEstimateKind> getRegionSplittingEstimateMethod() const;
+
     const static std::string moduleName;
 };
 
