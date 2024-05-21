@@ -30,6 +30,7 @@ namespace test {
 extern bool noGurobi;
 
 inline void initialize(int* argc, char** argv) {
+    // GoogleTest-specific commandline arguments should already be processed before and removed from argc/argv
     storm::utility::initializeLogger();
     // Only enable error output by default.
     storm::utility::setLogLevel(l3pp::LogLevel::ERR);
