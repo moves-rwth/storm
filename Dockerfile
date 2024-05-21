@@ -7,7 +7,8 @@
 
 # Set base image
 ARG BASE_IMG=movesrwth/storm-dependencies:latest
-FROM $BASE_IMG
+ARG BASE_PLATFORM=linux/amd64
+FROM --platform=$BASE_PLATFORM  $BASE_IMG
 MAINTAINER Matthias Volk <m.volk@tue.nl>
 
 # Specify configurations
@@ -19,6 +20,9 @@ ARG build_type=Release
 ARG no_threads=1
 # Specify CMake arguments for Storm
 ARG cmake_args="-DSTORM_PORTABLE=ON"
+# Can be ON/OFF
+ARG gurobi_support="ON"
+ARG soplex_support="ON"
 
 
 # Build Storm
@@ -34,7 +38,7 @@ RUN mkdir -p /opt/storm/build
 WORKDIR /opt/storm/build
 
 # Configure Storm
-RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type $cmake_args
+RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type -DSTORM_USE_GUROBI=$gurobi_support -DSTORM_USE_SOPLEX=$soplex_support $cmake_args
 
 # Build external dependencies of Storm
 RUN make resources -j $no_threads
