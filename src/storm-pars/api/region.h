@@ -1,19 +1,26 @@
 #pragma once
 
-#include <boost/optional.hpp>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
+#include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseMdpParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/ValidatingSparseParameterLiftingModelChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/parser/MonotonicityParser.h"
@@ -129,63 +136,12 @@ parseMonotoneParameters(std::string const& fileName, std::shared_ptr<storm::mode
         fileName, modelParameters));
 }
 
-template<typename ParametricType, typename ConstantType>
-std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(
-    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false,
-    bool allowModelSimplification = true, bool preconditionsValidatedManually = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
-    boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>,
-                              std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>>>
-        monotoneParameters = boost::none) {
+template<typename ParametricType>
+std::shared_ptr<storm::models::sparse::Model<ParametricType>> preprocessSparseModelForParameterLifting(
+    std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
+    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool preconditionsValidatedManually = false) {
     STORM_LOG_WARN_COND(preconditionsValidatedManually || storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()),
                         "Could not validate whether parameter lifting is applicable. Please validate manually...");
-    STORM_LOG_WARN_COND(
-        !(allowModelSimplification && monotonicitySetting.useMonotonicity),
-        "Allowing model simplification when using monotonicity is not useful, as for monotonicity checking model simplification is done as preprocessing");
-    STORM_LOG_WARN_COND(!(monotoneParameters && !monotonicitySetting.useMonotonicity),
-                        "Setting monotone parameters without setting monotonicity usage doesn't work");
-
-    std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
-
-    // Treat continuous time models
-    if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-        STORM_LOG_WARN_COND(!monotonicitySetting.useMonotonicity,
-                            "Usage of monotonicity not supported for this type of model, continuing without montonicity checking");
-        STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
-        std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector{task.getFormula().asSharedPointer()};
-        consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
-        STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp),
-                        storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
-    }
-
-    // Obtain the region model checker
-    std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
-    if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-        // TODO if robust use robust
-        checker = std::make_shared<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
-        checker->setUseMonotonicity(monotonicitySetting.useMonotonicity);
-        checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
-        checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
-        if (monotonicitySetting.useMonotonicity && monotoneParameters) {
-            checker->setMonotoneParameters(monotoneParameters.get());
-        }
-    } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
-        STORM_LOG_WARN_COND(!monotonicitySetting.useMonotonicity,
-                            "Usage of monotonicity not supported for this type of model, continuing without montonicity checking");
-        checker = std::make_shared<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
-    }
-
-    checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
-
-    return checker;
-}
-
-template<typename ParametricType>
-std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeRobustParameterLiftingRegionModelChecker(
-    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool allowModelSimplification = true) {
     std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
 
     // Treat continuous time models
@@ -196,91 +152,136 @@ std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initial
         STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp),
                         storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
     }
-
-    // Obtain the region model checker
-    std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
-    if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-        checker = std::make_shared<storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, double>>();
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform robust parameter lifting on the provided model type.");
-    }
-
-    checker->specify(env, consideredModel, task, false, allowModelSimplification);
-
-    return checker;
+    return consideredModel;
 }
 
-template<typename ParametricType, typename ImpreciseType, typename PreciseType>
-std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(
-    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false,
-    bool allowModelSimplification = true) {
-    STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()),
-                        "Could not validate whether parameter lifting is applicable. Please validate manually...");
+template<typename ParametricType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
+std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> createRegionModelChecker(storm::modelchecker::RegionCheckEngine engine,
+                                                                                                  storm::models::ModelType modelType) {
+    STORM_LOG_THROW(modelType == storm::models::ModelType::Dtmc || modelType == storm::models::ModelType::Mdp, storm::exceptions::NotSupportedException,
+                    "Unable to create a region checker for the provided model type.");
 
-    std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
-
-    // Treat continuous time models
-    if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-        STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
-        std::vector<std::shared_ptr<storm::logic::Formula const>> taskFormulaAsVector{task.getFormula().asSharedPointer()};
-        consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
-        STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp),
-                        storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
-    }
-
-    // Obtain the region model checker
-    std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
-    if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
-        checker = std::make_shared<
-            storm::modelchecker::ValidatingSparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, PreciseType>>();
-    } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
-        checker = std::make_shared<
-            storm::modelchecker::ValidatingSparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType, PreciseType>>();
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
-    }
-
-    checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
-    return checker;
-}
-
-template<typename ValueType>
-std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(
-    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
-    bool generateSplitEstimates = false, bool allowModelSimplification = true, bool preconditionsValidated = false,
-    MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
-    boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
-                              std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
-        monotoneParameters = boost::none) {
     switch (engine) {
-            // TODO: now we always use regionsplitestimates
         case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, generateSplitEstimates, allowModelSimplification,
-                                                                                   preconditionsValidated, monotonicitySetting, monotoneParameters);
+            if (modelType == storm::models::ModelType::Dtmc) {
+                return std::make_unique<
+                    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType>>();
+            } else {
+                return std::make_unique<
+                    storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ImpreciseType>>();
+            }
         case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
-            return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(
-                env, model, task, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);
-        case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
-            // TODO should this also apply to monotonicity?
-            STORM_LOG_WARN_COND(preconditionsValidated, "Preconditions are checked anyway by a valicating model checker...");
-            return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task, generateSplitEstimates,
-                                                                                                    allowModelSimplification);
+            if (modelType == storm::models::ModelType::Dtmc) {
+                return std::make_unique<
+                    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, PreciseType>>();
+            } else {
+                return std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, PreciseType>>();
+            }
         case storm::modelchecker::RegionCheckEngine::RobustParameterLifting:
-            return initializeRobustParameterLiftingRegionModelChecker<ValueType>(env, model, task, allowModelSimplification);
+            return std::make_unique<storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType>;
+        case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
+            if (modelType == storm::models::ModelType::Dtmc) {
+                return std::make_unique<storm::modelchecker::ValidatingSparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>,
+                                                                                                          ImpreciseType, PreciseType>>();
+            } else {
+                return std::make_unique<storm::modelchecker::ValidatingSparseParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>,
+                                                                                                          ImpreciseType, PreciseType>>();
+            }
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
     }
     return nullptr;
 }
 
+template<typename ParametricType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
+std::unique_ptr<storm::modelchecker::MonotonicityBackend<ParametricType>> initializeMonotonicityBackend(
+    storm::modelchecker::RegionModelChecker<ParametricType> const& regionChecker, storm::modelchecker::RegionCheckEngine engine,
+    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, MonotonicitySetting const& monotonicitySetting,
+    std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>,
+                            std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>>>
+        monotoneParameters = std::nullopt) {
+    // Initialize default backend
+    auto monotonicityBackend = std::make_unique<storm::modelchecker::MonotonicityBackend<ParametricType>>();
+
+    // Potentially replace default by order-based monotonicity
+    if (monotonicitySetting.useMonotonicity) {
+        std::unique_ptr<storm::modelchecker::MonotonicityBackend<ParametricType>> orderBasedBackend;
+        if (engine == storm::modelchecker::RegionCheckEngine::ExactParameterLifting) {
+            orderBasedBackend = std::make_unique<storm::modelchecker::OrderBasedMonotonicityBackend<ParametricType, PreciseType>>(
+                monotonicitySetting.useOnlyGlobalMonotonicity, monotonicitySetting.useBoundsFromPLA);
+        } else {
+            orderBasedBackend = std::make_unique<storm::modelchecker::OrderBasedMonotonicityBackend<ParametricType, ImpreciseType>>(
+                monotonicitySetting.useOnlyGlobalMonotonicity, monotonicitySetting.useBoundsFromPLA);
+        }
+        if (regionChecker.isMonotonicitySupported(*orderBasedBackend, task)) {
+            monotonicityBackend = std::move(orderBasedBackend);
+        } else {
+            STORM_LOG_WARN("Order-based Monotonicity enabled for region checking engine " << engine << " but not supported in this configuration.");
+        }
+    }
+
+    // Insert monotone parameters if available
+    if (monotoneParameters) {
+        for (auto const& incrPar : monotoneParameters->first) {
+            monotonicityBackend->setMonotoneParameter(incrPar, storm::analysis::MonotonicityKind::Incr);
+        }
+        for (auto const& decrPar : monotoneParameters->second) {
+            monotonicityBackend->setMonotoneParameter(decrPar, storm::analysis::MonotonicityKind::Decr);
+        }
+    }
+    return monotonicityBackend;
+}
+
+template<typename ParametricType>
+storm::modelchecker::RegionSplittingStrategy initializeSplittingStrategy(storm::modelchecker::RegionModelChecker<ParametricType> const& regionChecker,
+                                                                         storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task,
+                                                                         storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic,
+                                                                         std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind,
+                                                                         std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt) {
+    storm::modelchecker::RegionSplittingStrategy strat;
+    if (maxSplitsPerStepThreshold) {
+        strat.maxSplitDimensions = *maxSplitsPerStepThreshold;
+    }
+    strat.heuristic = heuristic;
+    strat.estimateKind = estimateKind;
+
+    if (strat.heuristic == storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased) {
+        if (!strat.estimateKind) {
+            strat.estimateKind = regionChecker.getDefaultRegionSplitEstimateKind(task);
+        }
+        STORM_LOG_THROW(regionChecker.isRegionSplitEstimateKindSupported(*strat.estimateKind, task), storm::exceptions::NotSupportedException,
+                        "The chosen region split estimate kind is not supported by the region model checker.");
+    }
+
+    return strat;
+}
+
+template<typename ValueType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
+std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(
+    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
+    bool allowModelSimplification = true, bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
+                            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
+        monotoneParameters = std::nullopt) {
+    auto consideredModel = preprocessSparseModelForParameterLifting(model, task, preconditionsValidated);
+    auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(engine, model->getType());
+    auto monotonicityBackend =
+        initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
+    if (allowModelSimplification) {
+        allowModelSimplification = monotonicityBackend->recommendModelSimplifications();
+        STORM_LOG_WARN_COND(allowModelSimplification, "Model simplification is disabled because the monotonicity algorithm does not recommend it.");
+    }
+    regionChecker->specify(env, consideredModel, task, std::nullopt, std::move(monotonicityBackend), allowModelSimplification);
+    return regionChecker;
+}
+
 template<typename ValueType>
-std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(
+std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
     storm::modelchecker::RegionCheckEngine engine) {
     Environment env;
-    initializeRegionModelChecker(env, model, task, engine);
+    return initializeRegionModelChecker(env, model, task, engine);
 }
 
 template<typename ValueType>
@@ -303,6 +304,28 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsW
     return checkRegionsWithSparseEngine(model, task, regions, engine, hypotheses, sampleVerticesOfRegions);
 }
 
+template<typename ValueType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
+std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initializeRegionRefinementChecker(
+    Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
+    storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
+    std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
+    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt, bool allowModelSimplification = true,
+    bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
+                            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
+        monotoneParameters = std::nullopt) {
+    auto consideredModel = preprocessSparseModelForParameterLifting(model, task, preconditionsValidated);
+    auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(engine, model->getType());
+    auto monotonicityBackend =
+        initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
+    auto splitStrat = initializeSplittingStrategy(*regionChecker, task, heuristic, estimateKind, maxSplitsPerStepThreshold);
+    allowModelSimplification = allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
+    auto refinementChecker = std::make_unique<storm::modelchecker::RegionRefinementChecker<ValueType>>(std::move(regionChecker));
+    refinementChecker->specify(env, consideredModel, task, splitStrat, std::move(monotonicityBackend), allowModelSimplification);
+    return refinementChecker;
+}
+
 /*!
  * Checks and iteratively refines the given region with the sparse engine
  * @param engine The considered region checking engine
@@ -317,14 +340,19 @@ std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsW
 template<typename ValueType>
 std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
-    storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine,
-    boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none,
+    storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, std::optional<ValueType> const& coverageThreshold,
+    std::optional<uint64_t> const& refinementDepthThreshold = std::nullopt,
     storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool allowModelSimplification = true,
+    storm::modelchecker::RegionSplittingStrategy::Heuristic splittingStrategy = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
+    std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
+    std::optional<uint64_t> const& maxSplitsPerStepThreshold = std::nullopt,
     MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
     Environment env;
-    bool preconditionsValidated = false;
-    auto regionChecker = initializeRegionModelChecker(env, model, task, engine, true, allowModelSimplification, preconditionsValidated, monotonicitySetting);
-    return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
+    // TODO: allow passing these settings? Maybe also pass monotone parameters?
+    bool const preconditionsValidated = false;
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, splittingStrategy, estimateKind, maxSplitsPerStepThreshold,
+                                                               allowModelSimplification, preconditionsValidated, monotonicitySetting);
+    return refinementChecker->performRegionPartitioning(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
 }
 
 // TODO: update documentation
@@ -335,21 +363,20 @@ template<typename ValueType>
 std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task,
     storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir,
-    boost::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting const& monotonicitySetting,
-    std::optional<storm::logic::Bound> const& boundInvariant, bool generateSplitEstimates = false,
-    std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
+    std::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting const& monotonicitySetting,
+    std::optional<storm::logic::Bound> const& boundInvariant,
+    storm::modelchecker::RegionSplittingStrategy::Heuristic splittingStrategy = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin,
+    std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
+    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt) {
     Environment env;
-    bool preconditionsValidated = false;
-    bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
-    auto regionChecker =
-        initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
-    if (maxSplitsPerStepThreshold && maxSplitsPerStepThreshold < std::numeric_limits<uint64_t>::max()) {
-        regionChecker->setMaxSplitDimensions(maxSplitsPerStepThreshold.value());
-    }
-    auto res = regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(),
-                                                   absolutePrecision, boundInvariant);
-    STORM_LOG_ASSERT(res.first.isConstant(), "result must be a constant");
-    return {storm::utility::convertNumber<storm::RationalNumber>(res.first.constantPart()), std::move(res.second)};
+    // TODO: allow passing these settings? Maybe also pass monotone parameters?
+    bool const preconditionsValidated = false;
+    bool const allowModelSimplification = true;
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, splittingStrategy, estimateKind, maxSplitsPerStepThreshold,
+                                                               allowModelSimplification, preconditionsValidated, monotonicitySetting);
+    auto res =
+        refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
+    return {storm::utility::convertNumber<storm::RationalNumber>(res.first), std::move(res.second)};
 }
 
 /*!
@@ -358,7 +385,9 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
 template<typename ValueType>
 bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::logic::Formula const& formula,
                   storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine,
-                  MonotonicitySetting const& monotonicitySetting, bool generateSplitEstimates = false,
+                  MonotonicitySetting const& monotonicitySetting,
+                  storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin,
+                  std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
                   std::optional<uint64_t> maxSplitsPerStepThreshold = std::numeric_limits<uint64_t>::max()) {
     Environment env;
     STORM_LOG_THROW(formula.isProbabilityOperatorFormula() || formula.isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
@@ -368,14 +397,13 @@ bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const
     storm::logic::Bound const& bound = formula.asOperatorFormula().getBound();
     std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = formula.clone();
     formulaWithoutBounds->asOperatorFormula().removeBound();
+    // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool preconditionsValidated = false;
-    bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
-    auto regionChecker = initializeRegionModelChecker(env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true),
-                                                      engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting);
-    if (maxSplitsPerStepThreshold && maxSplitsPerStepThreshold < std::numeric_limits<uint64_t>::max()) {
-        regionChecker->setMaxSplitDimensions(maxSplitsPerStepThreshold.value());
-    }
-    return regionChecker->verifyRegion(env, region, bound);
+    bool const allowModelSimplification = true;
+    auto refinementChecker = initializeRegionRefinementChecker(
+        env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true), engine, heuristic, estimateKind,
+        maxSplitsPerStepThreshold, allowModelSimplification, preconditionsValidated, monotonicitySetting);
+    return refinementChecker->verifyRegion(env, region, bound);
 }
 
 template<typename ValueType>

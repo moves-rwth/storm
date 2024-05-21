@@ -6,12 +6,12 @@
 
 namespace storm {
 namespace analysis {
-Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
+Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates, uint_fast64_t numberOfStates,
              storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
     init(numberOfStates, decomposition);
     this->numberOfAddedStates = 0;
     this->onlyBottomTopOrder = true;
-    for (auto const& i : *topStates) {
+    for (auto i : topStates) {
         this->doneStates.set(i);
         this->bottom->statesAbove.set(i);
         this->top->states.insert(i);
@@ -20,14 +20,14 @@ Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bo
     }
     this->statesSorted = statesSorted;
 
-    for (auto const& i : *bottomStates) {
+    for (auto i : bottomStates) {
         this->doneStates.set(i);
         this->bottom->states.insert(i);
         this->nodes[i] = bottom;
         numberOfAddedStates++;
     }
     assert(numberOfAddedStates <= numberOfStates);
-    assert(doneStates.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
+    assert(doneStates.getNumberOfSetBits() == (topStates.getNumberOfSetBits() + bottomStates.getNumberOfSetBits()));
     if (numberOfAddedStates == numberOfStates) {
         doneBuilding = doneStates.full();
     }

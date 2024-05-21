@@ -1,3 +1,5 @@
+#include <_types/_uint64_t.h>
+#include <limits>
 #include "adapters/RationalFunctionAdapter.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
@@ -13,6 +15,7 @@
 
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
@@ -334,10 +337,12 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
 
     auto const& rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto engine = rvs.getRegionCheckEngine();
-    bool generateSplitEstimates = rvs.isSplittingThresholdSet();
+    auto splittingStrategy = rvs.getRegionSplittingStrategy();
+    auto estimateKind = rvs.getRegionSplittingEstimateMethod();
+    bool generateSplitEstimates = splittingStrategy == storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased;
     std::optional<uint64_t> maxSplitsPerStep = generateSplitEstimates ? std::make_optional(rvs.getSplittingThreshold()) : std::nullopt;
     storm::utility::Stopwatch watch(true);
-    if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine, monotonicitySettings, generateSplitEstimates,
+    if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine, monotonicitySettings, splittingStrategy, estimateKind,
                                             maxSplitsPerStep)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
@@ -361,7 +366,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
 
     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
-    boost::optional<uint64_t> optionalDepthLimit;
+    std::optional<uint64_t> optionalDepthLimit;
     if (partitionSettings.isDepthLimitSet()) {
         optionalDepthLimit = partitionSettings.getDepthLimit();
     }
@@ -371,8 +376,17 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     auto engine = rvs.getRegionCheckEngine();
     STORM_PRINT_AND_LOG(" using " << engine);
+    auto splittingStrategy = rvs.getRegionSplittingStrategy();
+    auto estimateKind = rvs.getRegionSplittingEstimateMethod();
+    // TODO doesn't link
+    // STORM_PRINT_AND_LOG(" and splitting strategy " << splittingStrategy);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
+    }
+
+    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt;
+    if (rvs.isSplittingThresholdSet()) {
+        maxSplitsPerStepThreshold = rvs.getSplittingThreshold();
     }
 
     STORM_PRINT_AND_LOG(" with iterative refinement until "
@@ -384,7 +398,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     // TODO Why was allowModelSimplification false here?
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
         model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, true, monotonicitySettings, monThresh);
+        storm::modelchecker::RegionResultHypothesis::Unknown, false, splittingStrategy, estimateKind, maxSplitsPerStepThreshold, monotonicitySettings, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

@@ -32,6 +32,8 @@ class ParameterRegion {
     CoefficientType const& getUpperBoundary(const std::string varName) const;
     CoefficientType getDifference(const std::string varName) const;
     CoefficientType getDifference(VariableType const& variable) const;
+    CoefficientType getCenter(const std::string varName) const;
+    CoefficientType getCenter(VariableType const& variable) const;
     Valuation const& getLowerBoundaries() const;
     Valuation const& getUpperBoundaries() const;
 
@@ -60,6 +62,11 @@ class ParameterRegion {
      * Returns the area of this region
      */
     CoefficientType area() const;
+
+    /*!
+     * Returns whether the given point is in this region
+     */
+    bool contains(Valuation const& point) const;
 
     /*!
      * Splits the region at the given point and inserts the resulting subregions at the end of the given vector.

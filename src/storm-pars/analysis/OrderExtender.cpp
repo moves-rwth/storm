@@ -30,7 +30,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sp
 }
 
 template<typename ValueType, typename ConstantType>
-OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates,
+OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates,
                                                       storm::storage::SparseMatrix<ValueType> matrix)
     : monotonicityChecker(MonotonicityChecker<ValueType>(matrix)) {
     this->matrix = matrix;
@@ -43,12 +43,12 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector*
     this->numberOfStates = matrix.getColumnCount();
     std::vector<uint64_t> firstStates;
 
-    storm::storage::BitVector subStates(topStates->size(), true);
-    for (auto state : *topStates) {
+    storm::storage::BitVector subStates(topStates.size(), true);
+    for (auto state : topStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
-    for (auto state : *bottomStates) {
+    for (auto state : bottomStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
@@ -59,7 +59,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector*
     }
 
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-    this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+    this->bottomTopOrder = std::make_shared<Order>(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted));
 
     // Build stateMap
     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
@@ -142,7 +142,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
             decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
         }
         auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-        bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+        bottomTopOrder = std::make_shared<Order>(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted));
 
         // Build stateMap
         for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
@@ -687,12 +687,14 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
         }
         STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
-        plaModelChecker.specify(env, model, checkTask.get(), false, false);
+        bool const allowModelSimplification = false;  // make sure that the results align with the input model
+        plaModelChecker.specify(env, model, checkTask.get(), std::nullopt, nullptr, allowModelSimplification);
 
+        storm::modelchecker::AnnotatedRegion<ValueType> annotatedRegion{region};
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck =
-            plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
-            plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         minValuesInit = minCheck.getValueVector();
         maxValuesInit = maxCheck.getValueVector();
         assert(minValuesInit->size() == numberOfStates);
@@ -701,8 +703,8 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues,
-                                                             std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues,
+                                                             std::vector<ConstantType>&& maxValues) {
     assert(minValues.size() == numberOfStates);
     assert(maxValues.size() == numberOfStates);
     usePLA[order] = true;
@@ -722,7 +724,7 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Ord
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
+void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues) {
     assert(minValues.size() == numberOfStates);
     auto& maxValues = this->maxValues[order];
     usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
@@ -743,7 +745,7 @@ void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order>
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& maxValues) {
     assert(maxValues.size() == numberOfStates);
     usePLA[order] = this->minValues.find(order) != this->minValues.end();
     auto& minValues = this->minValues[order];
@@ -763,13 +765,13 @@ void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order>
     this->maxValues[order] = std::move(maxValues);  // maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 }
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>& minValues) {
+void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>&& minValues) {
     assert(minValues.size() == numberOfStates);
     this->minValuesInit = std::move(minValues);
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>& maxValues) {
+void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>&& maxValues) {
     assert(maxValues.size() == numberOfStates);
     this->maxValuesInit = std::move(maxValues);  // maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 }
