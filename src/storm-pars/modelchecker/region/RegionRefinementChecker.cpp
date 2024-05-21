@@ -302,6 +302,11 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariablesEstimateBased(
     AnnotatedRegion<ParametricType> const& region, Context context) const {
+    // If we can split on all variables, do that instead of requesting region split estimates
+    if (this->regionSplittingStrategy.maxSplitDimensions >= region.region.getVariables().size()) {
+        return region.region.getVariables();
+    }
+
     auto const& estimates = regionChecker->obtainRegionSplitEstimates(region.region.getVariables());
     std::vector<std::pair<VariableType, CoefficientType>> estimatesToSort;
     estimatesToSort.reserve(region.region.getVariables().size());
