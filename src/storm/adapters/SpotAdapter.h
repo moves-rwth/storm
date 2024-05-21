@@ -16,7 +16,6 @@
 #include "spot/twaalgos/totgba.hh"
 #include "spot/twaalgos/translate.hh"
 
-
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #elif defined(__GNUC__)
