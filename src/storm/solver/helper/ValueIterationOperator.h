@@ -313,6 +313,8 @@ class ValueIterationOperator {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
+        applyCache.robustOrder.clear();
+
         if (applyCache.hasOnlyConstants.get(offsetIndex)) {
             for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
                 auto const lower = matrixValueIt->lower();
@@ -325,8 +327,6 @@ class ValueIterationOperator {
             }
             return result;
         }
-
-        applyCache.robustOrder.clear();
 
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         uint64_t orderCounter = 0;

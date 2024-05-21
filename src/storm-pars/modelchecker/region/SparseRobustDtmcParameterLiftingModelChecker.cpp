@@ -438,7 +438,6 @@ std::unique_ptr<CheckResult> SparseRobustDtmcParameterLiftingModelChecker<Sparse
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
 
         stopwatch.stop();
-        auto robustSchedulerIndex = solver->getRobustSchedulerIndex();
         if (storm::solver::minimize(dirForParameters)) {
             minSchedChoices = solver->getSchedulerChoices();
         } else {
