@@ -765,7 +765,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         }
         if (options.validateEveryStep) {
             STORM_LOG_WARN("Validating every step, for debug purposes only!");
-            validator->validate(surelyReachSinkStates);
+            validator->validate();
         }
         if (stats.getIterations() % options.restartAfterNIterations == options.restartAfterNIterations - 1) {
             reset();
@@ -824,7 +824,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     if (options.validateResult) {
         STORM_LOG_WARN("Validating result is a winning region, only for debugging purposes.");
-        validator->validate(surelyReachSinkStates);
+        validator->validate();
         STORM_LOG_WARN("Validating result is a fixed point, only for debugging purposes.");
         validator->validateIsMaximal(surelyReachSinkStates);
     }

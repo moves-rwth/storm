@@ -66,7 +66,7 @@ bool WinningRegionQueryInterface<ValueType>::staysInWinningRegion(storm::storage
 }
 
 template<typename ValueType>
-void WinningRegionQueryInterface<ValueType>::validate(storm::storage::BitVector const& badStates) const {
+void WinningRegionQueryInterface<ValueType>::validate() const {
     for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
         for (auto const& winningBelief : winningRegion.getWinningSetsPerObservation(obs)) {
             storm::storage::BitVector states(pomdp.getNumberOfStates());
