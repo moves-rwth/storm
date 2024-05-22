@@ -401,7 +401,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
     observationsWithPartialWinners &= potentialWinner;
-    for (auto const& observation : observationsWithPartialWinners) {
+    for (auto const observation : observationsWithPartialWinners) {
         uint64_t nrStatesForObs = statesPerObservation[observation].size();
         storm::storage::BitVector update(nrStatesForObs);
         for (uint64_t i = 0; i < nrStatesForObs; ++i) {
@@ -736,7 +736,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 }
                 STORM_LOG_DEBUG("Graph-based winning obs: " << stats.getGraphBasedwinningObservations());
                 observationsWithPartialWinners &= potentialWinner;
-                for (auto const& observation : observationsWithPartialWinners) {
+                for (auto const observation : observationsWithPartialWinners) {
                     uint64_t nrStatesForObs = statesPerObservation[observation].size();
                     storm::storage::BitVector update(nrStatesForObs);
                     for (uint64_t i = 0; i < nrStatesForObs; ++i) {
