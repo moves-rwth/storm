@@ -354,7 +354,8 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepCount) {
     // Only compute the result if the model has a state-based reward this->getModel().
-    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                    "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
 
     // Initialize result to state rewards of the model.
     std::vector<ValueType> result = rewardModel.getStateRewardVector();

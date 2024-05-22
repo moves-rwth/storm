@@ -58,9 +58,7 @@ TEST(DftSmtTest, FDEPConflictTest) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::vector<bool> true_vector(10, true);
 
-    dft->setDynamicBehaviorInfo();
-    EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
-
+    EXPECT_EQ(storm::dft::utility::FDEPConflictFinder<double>::getDynamicBehavior(*dft), true_vector);
     EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).empty());
 }
 
@@ -70,9 +68,7 @@ TEST(DftSmtTest, FDEPConflictSPARETest) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::vector<bool> true_vector(10, true);
 
-    dft->setDynamicBehaviorInfo();
-    EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
-
+    EXPECT_EQ(storm::dft::utility::FDEPConflictFinder<double>::getDynamicBehavior(*dft), true_vector);
     EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).empty());
 }
 
@@ -82,9 +78,7 @@ TEST(DftSmtTest, FDEPConflictSEQTest) {
     std::vector<bool> expected_dynamic_vector(dft->nrElements(), true);
     expected_dynamic_vector.at(dft->getTopLevelIndex()) = false;
 
-    dft->setDynamicBehaviorInfo();
-    EXPECT_EQ(dft->getDynamicBehavior(), expected_dynamic_vector);
-
+    EXPECT_EQ(storm::dft::utility::FDEPConflictFinder<double>::getDynamicBehavior(*dft), expected_dynamic_vector);
     EXPECT_EQ(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).size(), uint64_t(3));
 }
 }  // namespace

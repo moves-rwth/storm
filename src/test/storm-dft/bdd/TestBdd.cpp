@@ -1,5 +1,5 @@
 #include <gmm/gmm_std.h>
-#include <gtest/gtest.h>
+#include "test/storm_gtest.h"
 
 #include <vector>
 

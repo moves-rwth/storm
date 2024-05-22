@@ -62,6 +62,7 @@ set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main PUBLIC storm storm-cli-utilities)
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
+target_precompile_headers(storm-main PRIVATE ${STORM_PRECOMPILED_HEADERS})
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_LIB_HEADERS})

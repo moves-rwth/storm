@@ -117,9 +117,6 @@ std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<Va
 
 template<typename ValueType>
 bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
-    // Initialize which DFT elements have dynamic behavior
-    dft.setDynamicBehaviorInfo();
-
     std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts =
         storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(dft, useSMT, solverTimeout);
 

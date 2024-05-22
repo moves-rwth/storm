@@ -131,6 +131,10 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 1, 1, 0.42857, 0.42, false);
 }
 
+TEST(RobustMDPModelCheckingTest, Tiny05maxmin) {
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.3, 0.4, 0.4, 0.3, false);
+}
+
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }

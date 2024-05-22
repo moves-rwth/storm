@@ -91,14 +91,6 @@ void processOptions() {
     auto bounds = storm::dft::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
     STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
 
-    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
-    bool hasConflicts = storm::dft::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
-    if (hasConflicts) {
-        STORM_LOG_DEBUG("FDEP conflicts found.");
-    } else {
-        STORM_LOG_DEBUG("No FDEP conflicts found.");
-    }
-
 #ifdef STORM_HAVE_Z3
     if (useSMT) {
         // Solve with SMT
@@ -216,8 +208,18 @@ void processOptions() {
     }
     storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(props, additionalRelevantEventNames);
 
-    // Analyze DFT
+    // Analyze DFT by translation to CTMC/MA
     dft = storm::dft::api::prepareForMarkovAnalysis<ValueType>(*dft);
+    STORM_LOG_DEBUG("DFT after preparation for Markov analysis:\n" << dft->getElementsString());
+
+    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
+    bool hasConflicts = storm::dft::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
+    if (hasConflicts) {
+        STORM_LOG_DEBUG("FDEP conflicts found.");
+    } else {
+        STORM_LOG_DEBUG("No FDEP conflicts found.");
+    }
+
     // TODO allow building of state space even without properties
     if (props.empty()) {
         STORM_LOG_WARN("No property given. No analysis will be performed.");

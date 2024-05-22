@@ -3,6 +3,7 @@
 
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/builder.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
@@ -29,6 +30,33 @@ class SparseGmmxxGmresIluEnvironment {
         env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
         // env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6)); // Need to increase precision because eq sys yields
         // incorrect results
+        return env;
+    }
+};
+
+class SparseSoundEvtEnvironment {
+   public:
+    static const CtmcEngine engine = CtmcEngine::JaniSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setSteadyStateDistributionAlgorithm(storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes);
+        env.solver().setForceSoundness(true);
+        return env;
+    }
+};
+
+class SparseClassicEnvironment {
+   public:
+    static const CtmcEngine engine = CtmcEngine::JaniSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setSteadyStateDistributionAlgorithm(storm::SteadyStateDistributionAlgorithm::Classic);
         return env;
     }
 };
@@ -92,7 +120,7 @@ class SteadyStateCtmcCslModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseSoundEvtEnvironment, SparseClassicEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(SteadyStateCtmcCslModelCheckerTest, TestingTypes, );
 

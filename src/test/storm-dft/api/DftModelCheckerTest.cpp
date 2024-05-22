@@ -248,6 +248,17 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     EXPECT_EQ(result, storm::utility::infinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
     EXPECT_NEAR(result, 30000, this->precision());
+
+    if (this->getConfig().useMod) {
+        STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft"), storm::exceptions::NotSupportedException);
+    } else {
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
+        EXPECT_EQ(result, storm::utility::infinity<double>());
+    }
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft", 1.0);
+    EXPECT_NEAR(result, 0.08, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
+    EXPECT_NEAR(result, 0.08, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, Mutex) {
