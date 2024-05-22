@@ -1094,7 +1094,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                                        << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
                 STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
-                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
+                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n")
             }
         }
         if (unfoldingControl == UnfoldingControl::Pause && !stateStored) {
@@ -1278,7 +1278,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
     underApproximation->finishExploration();
     statistics.underApproximationBuildTime.stop();
     printUpdateStopwatch.stop();
-    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n");
+    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n")
     unfoldingStatus = Status::ModelExplorationFinished;
     statistics.underApproximationCheckTime.start();
     underApproximation->computeValuesOfExploredMdp(env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
