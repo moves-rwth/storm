@@ -17,7 +17,6 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
