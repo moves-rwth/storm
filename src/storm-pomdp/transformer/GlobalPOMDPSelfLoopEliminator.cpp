@@ -1,9 +1,10 @@
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
-#include <storm/transformer/ChoiceSelector.h>
 #include <vector>
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/storage/BitVector.h"
+#include "storm/transformer/ChoiceSelector.h"
 
 namespace storm {
 namespace transformer {

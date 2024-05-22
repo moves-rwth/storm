@@ -1,6 +1,7 @@
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include <vector>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/transformer/ChoiceSelector.h"
