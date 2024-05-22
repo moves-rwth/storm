@@ -1,5 +1,7 @@
 #include "storm/modelchecker/AbstractModelChecker.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"

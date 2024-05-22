@@ -10,7 +10,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace dd {

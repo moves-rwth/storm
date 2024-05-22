@@ -30,6 +30,8 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include <parallel_hashmap/phmap.h>
 
 namespace storm {

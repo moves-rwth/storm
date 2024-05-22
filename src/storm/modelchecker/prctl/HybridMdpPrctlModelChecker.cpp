@@ -28,6 +28,8 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace modelchecker {
 template<typename ModelType>
