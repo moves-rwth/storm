@@ -51,6 +51,8 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(s
     return da;
 
 #else
+    (void)f;
+    (void)dnf;
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
 #endif
 }
