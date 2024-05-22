@@ -11,8 +11,6 @@
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
