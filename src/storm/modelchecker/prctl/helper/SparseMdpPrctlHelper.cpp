@@ -759,7 +759,14 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
             } else {
                 // Set values of resulting vector according to result.
-                storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                if constexpr (!std::is_same_v<ValueType, storm::Interval>) {
+                    // For non-interval models, we only operated on the maybe states, and we must recover the qualitative values for the other state.
+                    storm::utility::vector::setVectorValues<SolutionType>(result, qualitativeStateSets.maybeStates, resultForMaybeStates.getValues());
+                } else {
+                    // For interval models, the result for maybe states indeed also holds values for all qualitative states.
+                    STORM_LOG_ASSERT(resultForMaybeStates.getValues().size() == transitionMatrix.getColumnCount(), "Dimensions do not match");
+                    result = resultForMaybeStates.getValues();
+                }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !std::is_same_v<ValueType, storm::Interval>>(*scheduler, resultForMaybeStates.getScheduler(),
                                                                                                        qualitativeStateSets.maybeStates);
@@ -821,8 +828,8 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support instantenous rewards with interval models.");
     } else {
         // Only compute the result if the model has a state-based reward this->getModel().
-        STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
-
+        STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                        "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
         // Initialize result to state rewards of the this->getModel().
         std::vector<SolutionType> result(rewardModel.getStateRewardVector());
 

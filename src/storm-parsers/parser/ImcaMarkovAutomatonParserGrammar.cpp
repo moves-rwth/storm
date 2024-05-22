@@ -1,5 +1,6 @@
 #include "storm-parsers/parser/ImcaMarkovAutomatonParserGrammar.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"

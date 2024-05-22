@@ -59,11 +59,15 @@ class SparseDeterministicInfiniteHorizonHelper : public SparseInfiniteHorizonHel
      * Computes for each BSCC the probability to reach that SCC assuming the given distribution over initial states.
      */
     std::vector<ValueType> computeBsccReachabilityProbabilities(Environment const& env, ValueGetter const& initialDistributionGetter);
+    std::vector<ValueType> computeBsccReachabilityProbabilitiesClassic(Environment const& env, ValueGetter const& initialDistributionGetter);
+    std::vector<ValueType> computeBsccReachabilityProbabilitiesEVTs(Environment const& env, ValueGetter const& initialDistributionGetter);
 
     /*!
      * Computes the long run average (steady state) distribution for the given BSCC.
      */
     std::vector<ValueType> computeSteadyStateDistrForBscc(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc);
+    std::vector<ValueType> computeSteadyStateDistrForBsccEqSys(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc);
+    std::vector<ValueType> computeSteadyStateDistrForBsccEVTs(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc);
 
     std::pair<bool, ValueType> computeLraForTrivialBscc(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter,
                                                         storm::storage::StronglyConnectedComponent const& bscc);

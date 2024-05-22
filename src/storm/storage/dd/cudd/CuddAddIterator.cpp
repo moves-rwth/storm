@@ -85,12 +85,8 @@ AddIterator<DdType::CUDD, ValueType>& AddIterator<DdType::CUDD, ValueType>::oper
 template<typename ValueType>
 AddIterator<DdType::CUDD, ValueType>::~AddIterator() {
     // We free the pointers sind Cudd allocates them using malloc rather than new/delete.
-    if (this->cube != nullptr) {
-        free(this->cube);
-    }
-    if (this->generator != nullptr) {
-        free(this->generator);
-    }
+    free(this->cube);
+    free(this->generator);
 }
 
 template<typename ValueType>

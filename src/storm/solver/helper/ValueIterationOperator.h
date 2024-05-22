@@ -291,35 +291,39 @@ class ValueIterationOperator {
                         OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
-        std::vector<std::pair<SolutionType, SolutionType>> tmp;  // TODO this reallocation is too costly.
+        AuxCompare<RobustDirection> compare;
+        applyCache.robustOrder.clear();
+
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
+            auto const lower = matrixValueIt->lower();
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
             } else {
-                result += operand[*matrixColumnIt] * (matrixValueIt->lower());
+                result += operand[*matrixColumnIt] * lower;
             }
-            remainingValue -= matrixValueIt->lower();
-            if (!storm::utility::isZero(matrixValueIt->diameter())) {
-                tmp.emplace_back(operand[*matrixColumnIt], matrixValueIt->diameter());
+            remainingValue -= lower;
+            auto const diameter = matrixValueIt->upper() - lower;
+            if (!storm::utility::isZero(diameter)) {
+                applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], diameter);
             }
         }
         if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
             return result;
         }
-        AuxCompare<RobustDirection> compare;
-        std::sort(tmp.begin(), tmp.end(), compare);
 
-        for (auto const& valWidthPair : tmp) {
-            auto availableMass = std::min(valWidthPair.second, remainingValue);
-            result += availableMass * valWidthPair.first;
+        std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), compare);
+
+        for (auto const& pair : applyCache.robustOrder) {
+            auto availableMass = std::min(pair.second, remainingValue);
+            result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isZero(remainingValue)) {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isZero(remainingValue), "Should be zero (all prob mass taken)");
+        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);
         return result;
     }
 
@@ -406,6 +410,21 @@ class ValueIterationOperator {
      * True, if an auxiliary vector exists
      */
     bool auxiliaryVectorUsedExternally{false};
+
+    // Due to a GCC bug we have to add this dummy template type here
+    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
+    template<typename ApplyValueType, typename Dummy>
+    struct ApplyCache {};
+
+    template<typename Dummy>
+    struct ApplyCache<storm::Interval, Dummy> {
+        mutable std::vector<std::pair<SolutionType, SolutionType>> robustOrder;
+    };
+
+    /*!
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     */
+    ApplyCache<ValueType, int> applyCache;
 
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector

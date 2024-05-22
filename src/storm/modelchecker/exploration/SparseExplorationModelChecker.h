@@ -48,6 +48,8 @@ class SparseExplorationModelChecker : public AbstractModelChecker<ModelType> {
 
     SparseExplorationModelChecker(storm::prism::Program const& program);
 
+    static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
+
     virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
 
     virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env,

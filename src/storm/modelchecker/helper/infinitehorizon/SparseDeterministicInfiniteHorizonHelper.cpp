@@ -1,5 +1,7 @@
 #include "SparseDeterministicInfiniteHorizonHelper.h"
 
+#include <numeric>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
@@ -16,6 +18,7 @@
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
@@ -244,20 +247,10 @@ std::pair<ValueType, std::vector<ValueType>> SparseDeterministicInfiniteHorizonH
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBscc(
     Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
-    // We want that the returned values are sorted properly. Let's assert that strongly connected components use a sorted container type
-    STORM_LOG_ASSERT(std::is_sorted(bscc.begin(), bscc.end()), "Expected that bsccs are sorted.");
-
-    // Let A be ab auxiliary Matrix with A[s,s] =  R(s,s) - r(s) & A[s,s'] = R(s,s') for s,s' in BSCC and s!=s'.
-    // We build and solve the equation system for
-    // x*A=0 &  x_0+...+x_n=1  <=>  A^t*x=0=x-x & x_0+...+x_n=1  <=> (1+A^t)*x = x & 1-x_0-...-x_n-1=x_n
-    // Then, x[i] will be the fraction of the time we are in state i.
-
-    // This method assumes that this BSCC consist of more than one state.
-    // We therefore catch the (easy) case where the BSCC is a singleton.
+    // We catch the (easy) case where the BSCC is a singleton.
     if (bscc.size() == 1) {
         return {storm::utility::one<ValueType>()};
     }
-
     // Prepare an environment for the underlying linear equation solver
     auto subEnv = env;
     if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
@@ -265,9 +258,107 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
         subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(),
                                                     subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
     }
-    subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
-    STORM_LOG_WARN_COND(!subEnv.solver().isForceSoundness(),
+
+    auto alg = subEnv.modelchecker().getSteadyStateDistributionAlgorithm();
+    if (alg == storm::SteadyStateDistributionAlgorithm::Automatic) {
+        if (subEnv.solver().isForceSoundness()) {
+            alg = storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes;
+        } else {
+            alg = storm::SteadyStateDistributionAlgorithm::EquationSystem;
+        }
+    }
+    if (alg == storm::SteadyStateDistributionAlgorithm::Classic) {
+        alg = storm::SteadyStateDistributionAlgorithm::EquationSystem;
+    }
+
+    if (alg == storm::SteadyStateDistributionAlgorithm::EquationSystem) {
+        return computeSteadyStateDistrForBsccEqSys(subEnv, bscc);
+    } else {
+        STORM_LOG_ASSERT(alg == storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes,
+                         "Unexpected algorithm for steady state distribution computation.");
+        return computeSteadyStateDistrForBsccEVTs(subEnv, bscc);
+    }
+}
+
+template<typename ValueType>
+std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBsccEVTs(
+    Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
+    //  Computes steady state distributions by computing EVTs on a slightly modified system. See https://arxiv.org/abs/2401.10638 for more information.
+    storm::storage::BitVector bsccAsBitVector(this->_transitionMatrix.getColumnCount(), false);
+    bsccAsBitVector.set(bscc.begin(), bscc.end(), true);
+
+    // Remove one state from the BSCC (so it becomes an SCC) and compute visiting times on that SCC.
+    uint64_t const proxyState = *bsccAsBitVector.rbegin();
+    bsccAsBitVector.set(proxyState, false);
+    auto visittimesHelper = this->isContinuousTime() ? SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix, *this->_exitRates)
+                                                     : SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
+    this->createBackwardTransitions();
+    visittimesHelper.provideBackwardTransitions(*this->_backwardTransitions);
+    std::vector<ValueType> initialValues;
+    initialValues.reserve(bscc.size() - 1);
+    auto row = this->_transitionMatrix.getRow(proxyState);
+    auto entryIt = row.begin();
+    auto const entryItEnd = row.end();
+    for (auto state : bsccAsBitVector) {
+        if (entryIt != entryItEnd && state == entryIt->getColumn()) {
+            initialValues.push_back(entryIt->getValue());
+            ++entryIt;
+        } else {
+            initialValues.push_back(storm::utility::zero<ValueType>());
+        }
+    }
+    STORM_LOG_ASSERT(entryIt == entryItEnd || entryIt->getColumn() == proxyState, "Unexpected matrix row.");
+    auto evtEnv = env;
+    if (evtEnv.solver().isForceSoundness()) {
+        auto prec = evtEnv.solver().getPrecisionOfLinearEquationSolver(evtEnv.solver().getLinearEquationSolverType());
+        if (prec.first.is_initialized()) {
+            auto requiredPrecision = *prec.first;
+            // We need to adapt the precision. We focus on propagation of relative errors. Absolut precision is then also fine as we're computing with values in
+            // [0,1].
+            //
+            // We are going to normalize a vector of EVTs. Assuming that the EVT vector has been computed with relative precision eps, the sum of all
+            // EVTs still is eps-precise w.r.t. the exact (unknown) sum of the EVTs. Let x and y be the computed EVT of a given state and the sum of all
+            // computed EVTs, respectively. We have relative errors of delta_x = (x-x')/x' and delta_y = (y-y')/y' respectively, where x' and y' are the exact
+            // values. Note that x = x' * (1+delta_x) and |delta_x| <= eps.
+            //
+            // The relative error in the normalized value x/y = (x'/y')*((1+delta_x)/(1+delta_y)) = (x'/y')*(1+((delta_x-delta_y)/(1+\delta_y))) can be upper
+            // bounded by 2*eps/(1-eps). We set eps so that this term is equal to requiredPrecision
+            storm::RationalNumber eps = requiredPrecision / (storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2) + requiredPrecision);
+            evtEnv.solver().setLinearEquationSolverPrecision(eps, prec.second);
+        }
+    }
+    auto visitingTimes = visittimesHelper.computeExpectedVisitingTimes(evtEnv, bsccAsBitVector, initialValues);
+    visitingTimes.push_back(storm::utility::one<ValueType>());  // Add the value for the proxy state
+    bsccAsBitVector.set(proxyState, true);
+
+    ValueType sumOfVisitingTimes = storm::utility::zero<ValueType>();
+    if (this->isContinuousTime()) {
+        auto resultIt = visitingTimes.begin();
+        for (auto state : bsccAsBitVector) {
+            *resultIt /= (*this->_exitRates)[state];
+            sumOfVisitingTimes += *resultIt;
+            ++resultIt;
+        }
+    } else {
+        sumOfVisitingTimes = std::accumulate(visitingTimes.begin(), visitingTimes.end(), storm::utility::zero<ValueType>());
+    }
+    storm::utility::vector::scaleVectorInPlace(visitingTimes, storm::utility::one<ValueType>() / sumOfVisitingTimes);
+    return visitingTimes;
+}
+
+template<typename ValueType>
+std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBsccEqSys(
+    Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
+    // We want that the returned values are sorted properly. Let's assert that strongly connected components use a sorted container type
+    STORM_LOG_ASSERT(std::is_sorted(bscc.begin(), bscc.end()), "Expected that bsccs are sorted.");
+
+    STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
                         "Sound computations are not properly implemented for this computation. You might get incorrect results.");
+
+    // Let A be ab auxiliary Matrix with A[s,s] =  R(s,s) - r(s) & A[s,s'] = R(s,s') for s,s' in BSCC and s!=s'.
+    // We build and solve the equation system for
+    // x*A=0 &  x_0+...+x_n=1  <=>  A^t*x=0=x-x & x_0+...+x_n=1  <=> (1+A^t)*x = x & 1-x_0-...-x_n-1=x_n
+    // Then, x[i] will be the fraction of the time we are in state i.
 
     // Get a mapping from global state indices to local ones as well as a bitvector containing states within the BSCC.
     std::unordered_map<uint64_t, uint64_t> toLocalIndexMap;
@@ -301,7 +392,7 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
 
     // Check whether we need the fixpoint characterization
     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-    bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(subEnv) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
+    bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
     if (isFixpointFormat) {
         // Add a 1 on the diagonal
         for (row = 0; row < auxMatrix.getRowCount(); ++row) {
@@ -346,21 +437,21 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     bsccEquationSystemRightSide.back() = storm::utility::one<ValueType>();
 
     // Create a linear equation solver
-    auto solver = linearEquationSolverFactory.create(subEnv, builder.build());
+    auto solver = linearEquationSolverFactory.create(env, builder.build());
     solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
     // Check solver requirements.
-    auto requirements = solver->getRequirements(subEnv);
+    auto requirements = solver->getRequirements(env);
     requirements.clearLowerBounds();
     requirements.clearUpperBounds();
     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
                     "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
 
     std::vector<ValueType> steadyStateDistr(bscc.size(), storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size()));
-    solver->solveEquations(subEnv, steadyStateDistr, bsccEquationSystemRightSide);
+    solver->solveEquations(env, steadyStateDistr, bsccEquationSystemRightSide);
 
     // As a last step, we normalize these values to counter numerical inaccuracies a bit.
     // This is only reasonable in non-exact mode.
-    if (!subEnv.solver().isForceExact()) {
+    if (!env.solver().isForceExact()) {
         ValueType sum = std::accumulate(steadyStateDistr.begin(), steadyStateDistr.end(), storm::utility::zero<ValueType>());
         storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(steadyStateDistr, storm::utility::one<ValueType>() / sum);
     }
@@ -504,14 +595,32 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     Environment const& env, ValueGetter const& initialDistributionGetter) {
     createDecomposition();
 
+    Environment subEnv = env;
+    if (subEnv.solver().isForceSoundness()) {
+        // We need to adapt the precision. We focus on propagation of relative errors. Absolut precision is then also fine as we're dealing with values in
+        // [0,1]
+        auto prec = subEnv.solver().getPrecisionOfLinearEquationSolver(subEnv.solver().getLinearEquationSolverType());
+        if (prec.first.is_initialized()) {
+            auto requiredPrecision = *prec.first;
+            // We are going to multiply two numbers x and y that each have relative errors of delta_x = (x-x')/x' and delta_y = (y-y')/y' respectively.
+            // Here, x' and y' are the exact values. Note that x = x' * (1+delta_x) and |delta_x| <= eps
+            // The result x*y= x' * y' * (1+delta_x) * (1+delta_y) will have a relative error of delta_x + delta_y + delta_x*\delta_y  <= (2eps * eps^2)
+            // We set eps such that (2eps * eps^2) <= requiredPrecision
+            storm::RationalNumber eps = storm::utility::sqrt<RationalNumber>(storm::utility::one<storm::RationalNumber>() + requiredPrecision) -
+                                        storm::utility::one<storm::RationalNumber>();
+            subEnv.solver().setLinearEquationSolverPrecision(eps, prec.second);
+            STORM_LOG_INFO("Precision for BSCC reachability and BSCC steady state distribution analysis set to " << storm::utility::convertNumber<double>(eps)
+                                                                                                                 << ".");
+        }
+    }
     // Compute for each BSCC get the probability with which we reach that BSCC
-    auto bsccReachProbs = computeBsccReachabilityProbabilities(env, initialDistributionGetter);
+    auto bsccReachProbs = computeBsccReachabilityProbabilities(subEnv, initialDistributionGetter);
     // We are now ready to compute the resulting lra distribution
     std::vector<ValueType> steadyStateDistr(this->_transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
     for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
         auto const& component = (*this->_longRunComponentDecomposition)[currentComponentIndex];
         // Compute distribution for current bscc
-        auto bsccDistr = this->computeSteadyStateDistrForBscc(env, component);
+        auto bsccDistr = this->computeSteadyStateDistrForBscc(subEnv, component);
         // Scale with probability to reach that bscc
         auto const& scalingFactor = bsccReachProbs[currentComponentIndex];
         if (!storm::utility::isOne(scalingFactor)) {
@@ -546,47 +655,127 @@ template<typename ValueType>
 std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeBsccReachabilityProbabilities(Environment const& env,
                                                                                                                  ValueGetter const& initialDistributionGetter) {
     STORM_LOG_ASSERT(this->_longRunComponentDecomposition != nullptr, "Decomposition not computed, yet.");
-    uint64_t numBSCCs = this->_longRunComponentDecomposition->size();
-    STORM_LOG_ASSERT(numBSCCs > 0, "Found 0 BSCCs in a Markov chain. This should not be possible.");
 
     // Compute for each BSCC get the probability with which we reach that BSCC
-    std::vector<ValueType> bsccReachProbs(numBSCCs, storm::utility::zero<ValueType>());
-    if (numBSCCs == 1) {
-        bsccReachProbs.front() = storm::utility::one<ValueType>();
+    std::vector<ValueType> bsccReachProbs;
+    if (auto numBSCCs = this->_longRunComponentDecomposition->size(); numBSCCs <= 1) {
+        STORM_LOG_ASSERT(numBSCCs == 1, "Found 0 BSCCs in a Markov chain. This should not be possible.");
+        bsccReachProbs = std::vector<ValueType>({storm::utility::one<ValueType>()});
     } else {
-        // Get the expected number of times we visit each non-BSCC state
-        // We deliberately exclude the exit rates here as we want to make this computation on the induced DTMC to get the expected number of times
-        // that a successor state is chosen probabilistically.
-        auto visittimesHelper = SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
-        this->createBackwardTransitions();
-        visittimesHelper.provideBackwardTransitions(*this->_backwardTransitions);
-        auto expVisitTimes = visittimesHelper.computeExpectedVisitingTimes(env, initialDistributionGetter);
-        // Then use the expected visiting times to compute BSCC reachability probabilities
-        storm::storage::BitVector nonBsccStates(this->_transitionMatrix.getRowCount(), true);
-        for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
-            for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
-                nonBsccStates.set(internal::getComponentElementState(element), false);
-            }
-        }
-        for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
-            auto& bsccVal = bsccReachProbs[currentComponentIndex];
-            for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
-                uint64_t state = internal::getComponentElementState(element);
-                bsccVal += initialDistributionGetter(state);
-                for (auto const& pred : this->_backwardTransitions->getRow(state)) {
-                    if (nonBsccStates.get(pred.getColumn())) {
-                        bsccVal += pred.getValue() * expVisitTimes[pred.getColumn()];
-                    }
-                }
-            }
+        if (env.modelchecker().getSteadyStateDistributionAlgorithm() == SteadyStateDistributionAlgorithm::Classic) {
+            bsccReachProbs = computeBsccReachabilityProbabilitiesClassic(env, initialDistributionGetter);
+        } else {
+            bsccReachProbs = computeBsccReachabilityProbabilitiesEVTs(env, initialDistributionGetter);
         }
     }
 
-    // As a last step, we normalize these values to counter numerical inaccuracies a bit.
-    // This is only reasonable in non-exact mode.
-    if (!env.solver().isForceExact()) {
+    // As a last step, we normalize these values to counter inaccuracies a bit.
+    // This is only reasonable in non-exact mode and can invalidate accuracy guarantees in sound mode.
+    if (!env.solver().isForceExact() && !env.solver().isForceSoundness()) {
         ValueType sum = std::accumulate(bsccReachProbs.begin(), bsccReachProbs.end(), storm::utility::zero<ValueType>());
         storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(bsccReachProbs, storm::utility::one<ValueType>() / sum);
+    }
+    return bsccReachProbs;
+}
+
+template<typename ValueType>
+std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeBsccReachabilityProbabilitiesClassic(
+    Environment const& env, ValueGetter const& initialDistributionGetter) {
+    // Solve a linear equation system for each BSCC
+
+    // Get the states that do not lie on any BSCC
+    storm::storage::BitVector nonBsccStates(this->_transitionMatrix.getRowCount(), true);
+    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+            nonBsccStates.set(internal::getComponentElementState(element), false);
+        }
+    }
+    bool const hasNonBsccStates = !nonBsccStates.empty();
+
+    // Set-up a linear equation solver (unless all states are on a BSCC)
+    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
+    if (hasNonBsccStates) {
+        storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+        bool isEquationSystemFormat =
+            linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+        auto subMatrix = this->_transitionMatrix.getSubmatrix(false, nonBsccStates, nonBsccStates, isEquationSystemFormat);
+        if (isEquationSystemFormat) {
+            subMatrix.convertToEquationSystem();
+        }
+        solver = linearEquationSolverFactory.create(env, std::move(subMatrix));
+        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        // Check solver requirements.
+        auto requirements = solver->getRequirements(env);
+        requirements.clearLowerBounds();
+        requirements.clearUpperBounds();
+        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
+                        "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+        solver->setCachingEnabled(true);
+    }
+
+    // Run over all BSCCs
+    std::vector<ValueType> bsccReachProbs(this->_longRunComponentDecomposition->size(), storm::utility::zero<ValueType>());
+    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+        auto const& bscc = (*this->_longRunComponentDecomposition)[currentComponentIndex];
+        auto& bsccVal = bsccReachProbs[currentComponentIndex];
+        // Deal with initial states within the BSCC
+        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+            uint64_t state = internal::getComponentElementState(element);
+            bsccVal += initialDistributionGetter(state);
+        }
+        // Add reachability probabilities for initial states outside of this BSCC
+        if (hasNonBsccStates) {
+            storm::storage::BitVector bsccAsBitVector(this->_transitionMatrix.getColumnCount(), false);
+            bsccAsBitVector.set(bscc.begin(), bscc.end(), true);
+            // set up and solve the equation system for this BSCC
+            std::vector<ValueType> eqSysRhs;
+            eqSysRhs.reserve(nonBsccStates.getNumberOfSetBits());
+            for (auto state : nonBsccStates) {
+                eqSysRhs.push_back(this->_transitionMatrix.getConstrainedRowSum(state, bsccAsBitVector));
+            }
+            std::vector<ValueType> eqSysSolution(eqSysRhs.size());
+            solver->solveEquations(env, eqSysSolution, eqSysRhs);
+            // Sum up reachability probabilities over initial states
+            uint64_t subsysState = 0;
+            for (auto globalState : nonBsccStates) {
+                bsccVal += initialDistributionGetter(globalState) * eqSysSolution[subsysState];
+                ++subsysState;
+            }
+        }
+    }
+    return bsccReachProbs;
+}
+
+template<typename ValueType>
+std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeBsccReachabilityProbabilitiesEVTs(
+    Environment const& env, ValueGetter const& initialDistributionGetter) {
+    // Get the expected number of times we visit each non-BSCC state
+    // See  https://arxiv.org/abs/2401.10638 for more information.
+    // We deliberately exclude the exit rates here as we want to make this computation on the induced DTMC to get the expected number of times
+    // that a successor state is chosen probabilistically.
+    auto visittimesHelper = SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
+    this->createBackwardTransitions();
+    visittimesHelper.provideBackwardTransitions(*this->_backwardTransitions);
+    auto expVisitTimes = visittimesHelper.computeExpectedVisitingTimes(env, initialDistributionGetter);
+    // Then use the expected visiting times to compute BSCC reachability probabilities
+    storm::storage::BitVector nonBsccStates(this->_transitionMatrix.getRowCount(), true);
+    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+            nonBsccStates.set(internal::getComponentElementState(element), false);
+        }
+    }
+    std::vector<ValueType> bsccReachProbs(this->_longRunComponentDecomposition->size(), storm::utility::zero<ValueType>());
+    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+        auto& bsccVal = bsccReachProbs[currentComponentIndex];
+        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+            uint64_t state = internal::getComponentElementState(element);
+            bsccVal += initialDistributionGetter(state);
+            for (auto const& pred : this->_backwardTransitions->getRow(state)) {
+                if (nonBsccStates.get(pred.getColumn())) {
+                    bsccVal += pred.getValue() * expVisitTimes[pred.getColumn()];
+                }
+            }
+        }
     }
     return bsccReachProbs;
 }

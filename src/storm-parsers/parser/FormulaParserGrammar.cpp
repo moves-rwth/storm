@@ -129,6 +129,9 @@ void FormulaParserGrammar::initialize() {
         (-qi::lit("rew") >>
          rewardModelName(storm::logic::FormulaContext::Reward))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this),
                                                                                          storm::logic::TimeBoundType::Reward, qi::_1)] |
+        (qi::lit("rew") >>
+         -rewardModelName(storm::logic::FormulaContext::Reward))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this),
+                                                                                          storm::logic::TimeBoundType::Reward, qi::_1)] |
         (qi::lit("steps"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Steps,
                                                     boost::none)] |
         (-qi::lit("time"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Time,
@@ -360,8 +363,7 @@ bool FormulaParserGrammar::areConstantDefinitionsAllowed() const {
 std::shared_ptr<storm::logic::TimeBoundReference> FormulaParserGrammar::createTimeBoundReference(storm::logic::TimeBoundType const& type,
                                                                                                  boost::optional<std::string> const& rewardModelName) const {
     if (type == storm::logic::TimeBoundType::Reward) {
-        STORM_LOG_THROW(rewardModelName, storm::exceptions::WrongFormatException, "Reward bound does not specify a reward model name.");
-        return std::make_shared<storm::logic::TimeBoundReference>(rewardModelName.get());
+        return std::make_shared<storm::logic::TimeBoundReference>(rewardModelName);
     } else {
         return std::make_shared<storm::logic::TimeBoundReference>(type);
     }
