@@ -68,14 +68,8 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
         size_t const task_deque_size = 1024 * 1024;
 
         lace_set_stacksize(1024 * 1024 * 16);  // 16 MiB
-        uint64_t numThreads = std::max(1u, lace_get_pu_count());
-        if (settings.isNumberOfThreadsSet()) {
-            STORM_LOG_WARN_COND(settings.getNumberOfThreads() <= numThreads,
-                                "Setting the number of sylvan threads to " << settings.getNumberOfThreads()
-                                                                           << " which exceeds the recommended number for your system (" << numThreads << ").");
-            numThreads = settings.getNumberOfThreads();
-        }
-        lace_start(numThreads, task_deque_size);
+
+        lace_start(settings.getNumberOfThreads(), task_deque_size);
 
         sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
         sylvan_init_package();

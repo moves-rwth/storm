@@ -11,7 +11,7 @@ enum class TimeBoundType { Steps, Time, Reward };
 
 class TimeBoundReference {
     TimeBoundType type;
-    std::string rewardName;
+    boost::optional<std::string> rewardName;
     boost::optional<RewardAccumulation> rewardAccumulation;
 
    public:
@@ -20,9 +20,10 @@ class TimeBoundReference {
         assert(t != TimeBoundType::Reward);
     }
 
-    explicit TimeBoundReference(std::string const& rewardName, boost::optional<RewardAccumulation> rewardAccumulation = boost::none)
+    explicit TimeBoundReference(boost::optional<std::string> const& rewardName = boost::none,
+                                boost::optional<RewardAccumulation> rewardAccumulation = boost::none)
         : type(TimeBoundType::Reward), rewardName(rewardName), rewardAccumulation(rewardAccumulation) {
-        assert(rewardName != "");  // Empty reward name is reserved.
+        assert(rewardName.get_value_or("NO_REWARD_NAME_GIVEN") != "");  // Empty reward name is reserved.
     }
 
     TimeBoundType const& getType() const {
@@ -41,7 +42,20 @@ class TimeBoundReference {
         return type == TimeBoundType::Reward;
     }
 
+    std::string const& getRewardModelName() const {
+        assert(isRewardBound());
+        return rewardName.get();
+    }
+
     std::string const& getRewardName() const {
+        return getRewardModelName();
+    }
+
+    bool hasRewardModelName() const {
+        return isRewardBound() && static_cast<bool>(rewardName);
+    }
+
+    boost::optional<std::string> const& getOptionalRewardModelName() const {
         assert(isRewardBound());
         return rewardName;
     }

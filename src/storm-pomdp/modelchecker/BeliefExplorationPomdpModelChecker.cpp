@@ -365,7 +365,6 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                 underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                 STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n")
             }
-            underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
         }
 
         if (options.useClipping && rewardModelName.has_value()) {
@@ -1338,7 +1337,7 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     }
                 } else if (clipping.onGrid) {
                     // If the belief is not clippable, but on the grid, it may need to be explored, too
-                    bool inserted = beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, false);
+                    beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, false);
                 } else {
                     // Otherwise, the reward for all candidates is infinite, clipping does not make sense. Cut it off instead
                     absDelta += utility::convertNumber<BeliefValueType>(successor.second);
@@ -1383,8 +1382,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
         // Transition probability to candidate is clipping value
         BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta);
-        bool addedCandidate =
-            beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
+        beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
         beliefExplorer->markAsGridBelief(clipping.targetBelief);
         if (computeRewards) {
             // collect cumulative reward bounds

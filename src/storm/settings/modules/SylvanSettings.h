@@ -37,6 +37,8 @@ class SylvanSettings : public ModuleSettings {
      */
     bool isNumberOfThreadsSet() const;
 
+    bool check() const override;
+
     // The name of the module.
     static const std::string moduleName;
 

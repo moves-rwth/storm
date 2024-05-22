@@ -106,6 +106,12 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     EXPECT_EQ(36ul, model->getNumberOfStates());
     EXPECT_EQ(66ul, model->getNumberOfTransitions());
     EXPECT_EQ(36ul, model->getInitialStates().getNumberOfSetBits());
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/sync.nm");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(5ul, model->getNumberOfStates());
+    EXPECT_EQ(24ul, model->getNumberOfTransitions());
+    EXPECT_EQ(12ul, model->getNumberOfChoices());
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ma) {

@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include <memory>
 #include "storm/automata/AcceptanceCondition.h"

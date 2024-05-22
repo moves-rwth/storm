@@ -1008,9 +1008,11 @@ void Model::simplifyComposition() {
         }
     }
 
-    // Traverse the system composition and exchange automata by their copy
-    auto newComposition = CompositionSimplificationVisitor(automatonToCopiesMap).simplify(getSystemComposition());
-    this->setSystemComposition(newComposition);
+    if (!automatonToCopiesMap.empty()) {
+        // Traverse the system composition and exchange automata by their copy
+        auto newComposition = CompositionSimplificationVisitor(automatonToCopiesMap).simplify(getSystemComposition());
+        this->setSystemComposition(newComposition);
+    }
 }
 
 void Model::setSystemComposition(std::shared_ptr<Composition> const& composition) {
@@ -1135,6 +1137,7 @@ Model& Model::substituteConstantsInPlace() {
 
 Model Model::substituteConstants() const {
     Model result(*this);
+    result.replaceUnassignedVariablesWithConstants();
     result.substituteConstantsInPlace();
     return result;
 }

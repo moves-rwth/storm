@@ -226,7 +226,7 @@ class CheckTask {
     ValueType getBoundThreshold() const {
         STORM_LOG_THROW(!bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                         "Cannot evaluate threshold '" << bound.get().threshold << "' as it contains undefined constants.");
-        return storm::utility::convertNumber<ValueType>(bound.get().threshold.evaluateAsRational());
+        return bound.get().template evaluateThresholdAs<ValueType>();
     }
 
     /*!

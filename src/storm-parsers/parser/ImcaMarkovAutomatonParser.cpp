@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "storm-parsers/parser/ImcaMarkovAutomatonParserGrammar.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/file.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/builder.h"

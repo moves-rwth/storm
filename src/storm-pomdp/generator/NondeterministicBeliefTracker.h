@@ -69,7 +69,7 @@ class SparseBeliefState {
     void setSupport(storm::storage::BitVector&) const;
     std::map<uint64_t, ValueType> const& getBeliefMap() const;
 
-    friend bool operator==<>(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<ValueType> const& rhs);
+    friend bool operator== <>(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<ValueType> const& rhs);
 
    private:
     void updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums,
@@ -105,7 +105,7 @@ class ObservationDenseBeliefState {
     std::string toString() const;
     uint64_t getSupportSize() const;
     void setSupport(storm::storage::BitVector&) const;
-    friend bool operator==<>(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDenseBeliefState<ValueType> const& rhs);
+    friend bool operator== <>(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDenseBeliefState<ValueType> const& rhs);
 
    private:
     void updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums, uint64_t currentEntry,

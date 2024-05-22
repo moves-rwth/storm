@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 #include <vector>
 #include "storm-dft/storage/DFT.h"
@@ -20,6 +20,13 @@ class FDEPConflictFinder {
      */
     static std::vector<std::pair<uint64_t, uint64_t>> getDependencyConflicts(storm::dft::storage::DFT<ValueType> const& dft, bool useSMT = false,
                                                                              uint_fast64_t timeout = 10);
+
+    /*!
+     *
+     * @param dft
+     * @return
+     */
+    static std::vector<bool> getDynamicBehavior(storm::dft::storage::DFT<ValueType> const& dft);
 };
 
 }  // namespace utility
