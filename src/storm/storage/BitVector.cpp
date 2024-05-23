@@ -516,14 +516,17 @@ BitVector BitVector::permute(std::vector<uint64_t> const& inversePermutation) co
 }
 
 BitVector BitVector::permuteGroupedVector(const std::vector<uint64_t>& inversePermutation, const std::vector<uint64_t>& rowGroupIndices) const {
-    BitVector result(this->size());
-    for (auto sourceIndex : inversePermutation) {
-        for (uint64_t i = rowGroupIndices[sourceIndex]; i < rowGroupIndices[sourceIndex + 1]; ++i) {
-            if (this->get(i)) {
-                result.set(i, true);
+    STORM_LOG_ASSERT(inversePermutation.size() == rowGroupIndices.size() - 1, "Inverse permutation and row group indices do not match.");
+    BitVector result(this->size(), false);
+    uint64_t targetIndex = 0u;
+    for (auto const sourceGroupIndex : inversePermutation) {
+        for (uint64_t sourceIndex = rowGroupIndices[sourceGroupIndex]; sourceIndex < rowGroupIndices[sourceGroupIndex + 1]; ++sourceIndex, ++targetIndex) {
+            if (this->get(sourceIndex)) {
+                result.set(targetIndex, true);
             }
         }
     }
+    STORM_LOG_ASSERT(targetIndex == result.size(), "Target index does not match the size of the result.");
     return result;
 }
 

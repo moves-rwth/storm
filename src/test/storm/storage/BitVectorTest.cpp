@@ -405,11 +405,11 @@ TEST(BitVectorTest, permute) {
 }
 
 TEST(BitVectorTest, permuteGrouped) {
-    storm::storage::BitVector vector1(6, {0, 1, 2});
+    storm::storage::BitVector vector1(6, {0, 2, 5});
     std::vector<uint64_t> inversePermutation = {1, 0, 2};
     std::vector<uint64_t> groupIndices = {0, 3, 5, 6};
     storm::storage::BitVector permuted = vector1.permuteGroupedVector(inversePermutation, groupIndices);
-    storm::storage::BitVector expected(6, {2, 3, 4});
+    storm::storage::BitVector expected(6, {2, 4, 5});
     EXPECT_EQ(expected, permuted);
 }
 
