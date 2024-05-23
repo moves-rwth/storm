@@ -1273,6 +1273,21 @@ std::vector<T> applyInversePermutation(std::vector<uint64_t> const& inversePermu
     return result;
 }
 
+template<typename T>
+std::vector<T> applyInversePermutationToGroupedVector(std::vector<uint64_t> const& inversePermutation, std::vector<T> const& source,
+                                                      std::vector<uint64_t> const& rowGroupIndices) {
+    STORM_LOG_ASSERT(inversePermutation.size() == rowGroupIndices.size() - 1, "Inverse permutation and row group indices do not match.");
+    std::vector<T> result;
+    result.reserve(source.size());
+    for (auto sourceGroupIndex : inversePermutation) {
+        for (uint64_t sourceIndex = rowGroupIndices[sourceGroupIndex]; sourceIndex < rowGroupIndices[sourceGroupIndex + 1]; ++sourceIndex) {
+            result.push_back(source[sourceIndex]);
+        }
+    }
+    STORM_LOG_ASSERT(result.size() == source.size(), "result has unexpected length.");
+    return result;
+}
+
 /*!
  * Output vector as string.
  *

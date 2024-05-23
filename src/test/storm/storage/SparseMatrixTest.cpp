@@ -3,6 +3,7 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/permutation.h"
 #include "test/storm_gtest.h"
 
 TEST(SparseMatrixBuilder, CreationWithDimensions) {
@@ -805,7 +806,7 @@ TEST(SparseMatrix, IsSubmatrix) {
     ASSERT_FALSE(matrix3.isSubmatrixOf(matrix2));
 }
 
-TEST(SparseMatrix, Permute) {
+TEST(SparseMatrix, PermuteRows) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 8);
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
@@ -828,6 +829,51 @@ TEST(SparseMatrix, Permute) {
     EXPECT_EQ(matrix.getRowSum(0), matrixperm.getRowSum(2));
     EXPECT_EQ(matrix.getRowSum(3), matrixperm.getRowSum(3));
     EXPECT_EQ(matrix.getRowSum(2), matrixperm.getRowSum(4));
+}
+
+TEST(SparseMatrix, PermuteRowGroupsAndColumns) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9, true, true, 4);
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));  // Group 0
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 0, 0.5));  // Group 1
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(4));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 0, 0.1));  // Group 2
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 1, 0.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
+    // Group 3 is empty
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
+
+    std::vector<uint64_t> permutation = {3, 0, 2, 1};
+    std::vector<uint64_t> invertedPermutation = {1, 3, 2, 0};
+    EXPECT_EQ(invertedPermutation, storm::utility::permutation::invertPermutation(permutation));
+    auto matrixPerm = matrix.permuteRowGroupsAndColumns(invertedPermutation, permutation);
+
+    storm::storage::SparseMatrixBuilder<double> expectedBuilder(5, 4, 9, true, true, 4);
+    ASSERT_NO_THROW(expectedBuilder.newRowGroup(0));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(0, 3, 0.5));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(1, 2, 1.1));
+    ASSERT_NO_THROW(expectedBuilder.newRowGroup(2));
+    ASSERT_NO_THROW(expectedBuilder.newRowGroup(2));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(2, 3, 0.1));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(2, 0, 0.2));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(2, 1, 0.3));
+    ASSERT_NO_THROW(expectedBuilder.newRowGroup(3));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 0, 1.0));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(3, 2, 1.2));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(4, 3, 0.5));
+    ASSERT_NO_THROW(expectedBuilder.addNextValue(4, 0, 0.7));
+    storm::storage::SparseMatrix<double> expectedMatrix;
+    ASSERT_NO_THROW(expectedMatrix = expectedBuilder.build());
+    EXPECT_EQ(expectedMatrix, matrixPerm);
+
+    auto matrixPerm2 = matrixPerm.permuteRowGroupsAndColumns(permutation, invertedPermutation);
+    EXPECT_EQ(matrix, matrixPerm2);
 }
 
 TEST(SparseMatrix, DropZeroEntries) {

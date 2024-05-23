@@ -507,6 +507,21 @@ BitVector BitVector::permute(std::vector<uint64_t> const& inversePermutation) co
     return result;
 }
 
+BitVector BitVector::permuteGroupedVector(const std::vector<uint64_t>& inversePermutation, const std::vector<uint64_t>& rowGroupIndices) const {
+    STORM_LOG_ASSERT(inversePermutation.size() == rowGroupIndices.size() - 1, "Inverse permutation and row group indices do not match.");
+    BitVector result(this->size(), false);
+    uint64_t targetIndex = 0u;
+    for (auto const sourceGroupIndex : inversePermutation) {
+        for (uint64_t sourceIndex = rowGroupIndices[sourceGroupIndex]; sourceIndex < rowGroupIndices[sourceGroupIndex + 1]; ++sourceIndex, ++targetIndex) {
+            if (this->get(sourceIndex)) {
+                result.set(targetIndex, true);
+            }
+        }
+    }
+    STORM_LOG_ASSERT(targetIndex == result.size(), "Target index does not match the size of the result.");
+    return result;
+}
+
 void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
     STORM_LOG_ASSERT((bitIndex & mod64mask) == 0, "Bit index must be a multiple of 64.");
     STORM_LOG_ASSERT(other.size() <= this->size() - bitIndex, "Bit vector argument is too long.");
