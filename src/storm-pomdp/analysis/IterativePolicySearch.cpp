@@ -401,7 +401,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
     observationsWithPartialWinners &= potentialWinner;
-    for (auto const& observation : observationsWithPartialWinners) {
+    for (auto const observation : observationsWithPartialWinners) {
         uint64_t nrStatesForObs = statesPerObservation[observation].size();
         storm::storage::BitVector update(nrStatesForObs);
         for (uint64_t i = 0; i < nrStatesForObs; ++i) {
@@ -736,7 +736,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 }
                 STORM_LOG_DEBUG("Graph-based winning obs: " << stats.getGraphBasedwinningObservations());
                 observationsWithPartialWinners &= potentialWinner;
-                for (auto const& observation : observationsWithPartialWinners) {
+                for (auto const observation : observationsWithPartialWinners) {
                     uint64_t nrStatesForObs = statesPerObservation[observation].size();
                     storm::storage::BitVector update(nrStatesForObs);
                     for (uint64_t i = 0; i < nrStatesForObs; ++i) {
@@ -765,7 +765,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         }
         if (options.validateEveryStep) {
             STORM_LOG_WARN("Validating every step, for debug purposes only!");
-            validator->validate(surelyReachSinkStates);
+            validator->validate();
         }
         if (stats.getIterations() % options.restartAfterNIterations == options.restartAfterNIterations - 1) {
             reset();
@@ -824,7 +824,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     if (options.validateResult) {
         STORM_LOG_WARN("Validating result is a winning region, only for debugging purposes.");
-        validator->validate(surelyReachSinkStates);
+        validator->validate();
         STORM_LOG_WARN("Validating result is a fixed point, only for debugging purposes.");
         validator->validateIsMaximal(surelyReachSinkStates);
     }

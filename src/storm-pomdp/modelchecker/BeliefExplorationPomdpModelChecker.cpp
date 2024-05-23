@@ -17,7 +17,6 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -812,7 +811,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             return r <= storm::utility::convertNumber<BeliefValueType>(heuristicParameters.observationThreshold);
         });
         STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
-        for (auto const& obs : refinedObservations) {
+        for (auto const obs : refinedObservations) {
             // Increment the resolution at the refined observations.
             // Use storm's rational number to detect overflows properly.
             storm::RationalNumber newObsResolutionAsRational = storm::utility::convertNumber<storm::RationalNumber>(observationResolutionVector[obs]) *
@@ -1095,7 +1094,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                                        << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
                 STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
-                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
+                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n")
             }
         }
         if (unfoldingControl == UnfoldingControl::Pause && !stateStored) {
@@ -1134,7 +1133,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (clipBelief && !underApproximation->isMarkedAsGridBelief(currId)) {
                 // Use a belief grid as clipping candidates
                 if (!options.useStateEliminationCutoff) {
-                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation, 0);
+                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, beliefManager, underApproximation, 0);
                     // Set again as the current belief might have been detected to be a grid belief
                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                     if (successfulClip) {
@@ -1279,7 +1278,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
     underApproximation->finishExploration();
     statistics.underApproximationBuildTime.stop();
     printUpdateStopwatch.stop();
-    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n");
+    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n")
     unfoldingStatus = Status::ModelExplorationFinished;
     statistics.underApproximationCheckTime.start();
     underApproximation->computeValuesOfExploredMdp(env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
@@ -1370,7 +1369,6 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards,
-                                                                                                              bool min,
                                                                                                               std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                               std::shared_ptr<ExplorerType>& beliefExplorer,
                                                                                                               uint64_t localActionIndex) {

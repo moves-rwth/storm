@@ -754,7 +754,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::dropUnexploredStates() {
         MdpStateType newState = 0;
         assert(exploredChoiceIndices[0] == 0u);
         // Loop invariant: all indices up to exploredChoiceIndices[newState] consider the new row indices and all other entries are not touched.
-        for (auto const &oldState : relevantMdpStates) {
+        for (auto const oldState : relevantMdpStates) {
             if (oldState != newState) {
                 assert(oldState > newState);
                 uint64_t groupSize = getRowGroupSizeOfState(oldState);
@@ -785,7 +785,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::dropUnexploredStates() {
     {  // mdpStateToChoiceLabelsMap
         if (!mdpStateToChoiceLabelsMap.empty()) {
             auto temp = std::map<BeliefId, std::map<uint64_t, std::string>>();
-            for (auto const &relevantState : relevantMdpStates) {
+            for (auto const relevantState : relevantMdpStates) {
                 temp[toRelevantStateIndexMap[relevantState]] = mdpStateToChoiceLabelsMap[relevantState];
             }
             mdpStateToChoiceLabelsMap = temp;

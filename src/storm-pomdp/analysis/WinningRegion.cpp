@@ -211,11 +211,11 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
         }
         STORM_LOG_DEBUG("Order of magnitude = " << oom);
 
-        critoom = oom - floor(log2(upperBoundElements));
+        critoom = oom - static_cast<uint64_t>(floor(log2(upperBoundElements)));
 
         STORM_LOG_DEBUG("Crit Order of magnitude = " << critoom);
 
-        uint64_t intersectSetSkip = critoom - floor(log2(origSets.size()));
+        uint64_t intersectSetSkip = critoom - static_cast<uint64_t>(floor(log2(origSets.size())));
 
         std::vector<storm::storage::BitVector> useIntersects;
         std::vector<storm::storage::BitVector> useInfo;
@@ -229,7 +229,7 @@ std::pair<storm::RationalNumber, storm::RationalNumber> count(std::vector<storm:
             }
         }
 
-        uint64_t origSetSkip = critoom - floor(log2(useIntersects.size()));
+        uint64_t origSetSkip = critoom - static_cast<uint64_t>(floor(log2(useIntersects.size())));
         STORM_LOG_DEBUG("OrigSkip= " << origSetSkip);
 
         std::vector<storm::storage::BitVector> newIntersects;
