@@ -30,7 +30,7 @@ void printFeasibilityResult(bool success,
     if (success) {
         STORM_PRINT_AND_LOG("Result at initial state: " << valueValuationPair.first << " ( approx. "
                                                         << storm::utility::convertNumber<double>(valueValuationPair.first) << ") at [" << valuationStr.str()
-                                                        << "].\n")
+                                                        << "].\n");
     } else {
         STORM_PRINT_AND_LOG("No satisfying result found.\n");
     }
