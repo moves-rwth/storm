@@ -1230,7 +1230,7 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
             if (result->isExplicitQuantitativeCheckResult()) {
                 if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
                     auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
-                    STORM_PRINT_AND_LOG("Exporting scheduler ... ")
+                    STORM_PRINT_AND_LOG("Exporting scheduler ... ");
                     if (input.model) {
                         STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
                                             "No information of state valuations available. The scheduler output will use internal state ids. You might be "
