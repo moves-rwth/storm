@@ -10,7 +10,6 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -23,7 +22,9 @@ class Environment;
 namespace storage {
 template<typename T>
 class SparseMatrix;
-}
+template<typename ValueType>
+class Scheduler;
+}  // namespace storage
 
 namespace solver {
 

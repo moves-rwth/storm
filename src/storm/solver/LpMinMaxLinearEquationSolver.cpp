@@ -3,6 +3,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/macros.h"

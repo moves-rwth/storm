@@ -24,6 +24,8 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace modelchecker {
 template<typename ModelType>

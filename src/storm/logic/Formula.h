@@ -6,14 +6,15 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/expressions/Expression.h"
-
+#include <boost/any.hpp>
 #include "storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {
 namespace expressions {
 class Variable;
-}
+class Expression;
+class ExpressionManager;
+}  // namespace expressions
 
 namespace logic {
 
