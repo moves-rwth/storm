@@ -418,12 +418,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         updated.set(observation);
     }
 
-#ifndef NDEBUG
-    for (auto const& state : targetStates) {
-        STORM_LOG_ASSERT(winningRegion.isWinning(pomdp.getObservation(state), getOffsetFromObservation(state, pomdp.getObservation(state))),
-                         "Target state " << state << " , observation " << pomdp.getObservation(state) << " is not reflected as winning.");
-    }
-#endif
+STORM_LOG_ASSERT(std::all_of(targetStates.cbegin(), targetStates.cend(), [](auto const& state) { winningRegion.isWinning(pomdp.getObservation(state), getOffsetFromObservation(state, pomdp.getObservation(state)); }), "Target state " << state << " , observation " << pomdp.getObservation(state) << " is not reflected as winning.");
 
     stats.winningRegionUpdatesTimer.stop();
 
