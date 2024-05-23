@@ -119,8 +119,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
                 this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
             } else {
                 // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
-                if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock" &&
-                    expressionOrLabelAndBool.first.getLabel() != "unexplored") {
+                if (!this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel())) {
                     STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()),
                                     storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");

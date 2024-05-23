@@ -210,43 +210,34 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
         }
     }
 
-    if (!result.containsLabel("init")) {
-        // Also label the initial state with the special label "init".
-        result.addLabel("init");
-        for (auto index : initialStateIndices) {
-            result.addLabelToState("init", index);
+    auto addSpecialLabel = [&result](std::string const& label, auto const& indices) {
+        if (!result.containsLabel(label)) {
+            result.addLabel(label);
+            for (auto index : indices) {
+                result.addLabelToState(label, index);
+            }
         }
-    }
-    if (!result.containsLabel("deadlock")) {
-        result.addLabel("deadlock");
-        for (auto index : deadlockStateIndices) {
-            result.addLabelToState("deadlock", index);
-        }
-    }
-    if (!result.containsLabel("unexplored") && !unexploredStateIndices.empty()) {
-        result.addLabel("unexplored");
-        for (auto index : unexploredStateIndices) {
-            result.addLabelToState("unexplored", index);
-        }
-    }
-
+    };
+    addSpecialLabel("init", initialStateIndices);
+    addSpecialLabel("deadlock", deadlockStateIndices);
+    addSpecialLabel("unexplored", unexploredStateIndices);
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
                         "Label 'overlap_guards' is reserved when adding overlapping guard labels");
-        result.addLabel("overlap_guards");
-        for (auto index : overlappingGuardStates.get()) {
-            result.addLabelToState("overlap_guards", index);
-        }
+        addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
-
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
         STORM_LOG_THROW(!result.containsLabel("out_of_bounds"), storm::exceptions::WrongFormatException,
                         "Label 'out_of_bounds' is reserved when adding out of bounds states.");
-        result.addLabel("out_of_bounds");
-        result.addLabelToState("out_of_bounds", stateStorage.stateToId.getValue(outOfBoundsState));
+        addSpecialLabel("out_of_bounds", std::vector{stateStorage.stateToId.getValue(outOfBoundsState)});
     }
 
     return result;
+}
+
+template<typename ValueType, typename StateType>
+bool NextStateGenerator<ValueType, StateType>::isSpecialLabel(std::string const& label) const {
+    return label == "init" || label == "deadlock" || label == "unexplored" || label == "overlap_guards" || label == "out_of_bounds";
 }
 
 template<typename ValueType, typename StateType>

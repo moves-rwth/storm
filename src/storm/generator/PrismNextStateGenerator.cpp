@@ -90,9 +90,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
                         std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
                 } else {
                     // If the label is not present in the program and is not a special one, we raise an error.
-                    STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock" ||
-                                        expressionOrLabelAndBool.first.getLabel() == "unexplored",
-                                    storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel()), storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                 }
             }
@@ -829,7 +827,7 @@ storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateTyp
             if (program.hasLabel(labelName)) {
                 labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
             } else {
-                STORM_LOG_THROW(labelName == "init" || labelName == "deadlock" || labelName == "unexplored", storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(this->isSpecialLabel(labelName), storm::exceptions::InvalidArgumentException,
                                 "Cannot build labeling for unknown label '" << labelName << "'.");
             }
         }

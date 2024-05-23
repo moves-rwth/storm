@@ -141,6 +141,11 @@ class NextStateGenerator {
 
    protected:
     /*!
+     * Checks if the input label has a special purpose (e.g. "init", "deadlock", "unexplored", "overlap_guards", "out_of_bounds").
+     */
+    bool isSpecialLabel(std::string const& label) const;
+
+    /*!
      * Creates the state labeling for the given states using the provided labels and expressions.
      */
     storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
