@@ -5,16 +5,18 @@
 #include "storm/utility/solver.h"
 
 namespace storm::test {
-#ifdef STORM_HAVE_GUROBI
 bool noGurobi = false;
 
 bool testGurobiLicense() {
+#ifdef STORM_HAVE_GUROBI
     try {
         auto lpSolver = storm::utility::solver::getLpSolver<double>("test", storm::solver::LpSolverTypeSelection::Gurobi);
     } catch (storm::exceptions::GurobiLicenseException) {
         return false;
     }
     return true;
-}
+#else
+    return false;
 #endif
+}
 }  // namespace storm::test
