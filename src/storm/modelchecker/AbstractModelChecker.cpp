@@ -36,7 +36,6 @@
 #include "storm/storage/dd/Bdd.h"
 
 #include <boost/core/typeinfo.hpp>
-#include <storm/models/symbolic/MarkovAutomaton.h>
 
 namespace storm {
 namespace modelchecker {

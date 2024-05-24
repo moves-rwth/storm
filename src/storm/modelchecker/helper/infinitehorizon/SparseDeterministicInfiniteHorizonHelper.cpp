@@ -120,7 +120,8 @@ std::pair<bool, ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::
 
 template<>
 storm::RationalFunction SparseDeterministicInfiniteHorizonHelper<storm::RationalFunction>::computeLraForBsccVi(
-    Environment const& env, ValueGetter const& stateValueGetter, ValueGetter const& actionValueGetter, storm::storage::StronglyConnectedComponent const& bscc) {
+    Environment const& /*env*/, ValueGetter const& /*stateValueGetter*/, ValueGetter const& /*actionValueGetter*/,
+    storm::storage::StronglyConnectedComponent const& /*bscc*/) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The requested Method for LRA computation is not supported for parametric models.");
 }
 template<typename ValueType>
@@ -645,8 +646,8 @@ std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes(storm::storage
 }
 
 template<>
-std::vector<storm::RationalFunction> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<storm::RationalFunction> const& nonBsccMatrix,
-                                                                                std::vector<storm::RationalFunction> const& toBsccProbabilities) {
+std::vector<storm::RationalFunction> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<storm::RationalFunction> const& /*nonBsccMatrix*/,
+                                                                                std::vector<storm::RationalFunction> const& /*toBsccProbabilities*/) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                     "Computing upper bounds for expected visiting times over rational functions is not supported.");
 }

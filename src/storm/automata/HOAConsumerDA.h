@@ -168,7 +168,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
      * Called by the parser to notify the consumer that the definition for state `stateId`
      * has ended [multiple].
      */
-    virtual void notifyEndOfState(unsigned int stateId) {
+    virtual void notifyEndOfState(unsigned int /*stateId*/) {
         helper->endOfState();
     }
 
