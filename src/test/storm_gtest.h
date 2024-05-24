@@ -44,11 +44,14 @@ namespace storm {
 namespace test {
 extern bool noGurobi;
 
+bool testGurobiLicense();
+
 inline void initialize(int* argc, char** argv) {
     // GoogleTest-specific commandline arguments should already be processed before and removed from argc/argv
     storm::utility::initializeLogger();
     // Only enable error output by default.
     storm::utility::setLogLevel(l3pp::LogLevel::ERR);
+    noGurobi = !storm::test::testGurobiLicense();
     for (int i = 1; i < *argc; ++i) {
         if (std::string(argv[i]) == "--nogurobi") {
             noGurobi = true;
