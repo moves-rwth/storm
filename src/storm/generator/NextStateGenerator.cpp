@@ -174,7 +174,8 @@ storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(
     storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices,
-    std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
+    std::vector<StateType> const& deadlockStateIndices, std::vector<StateType> const& unexploredStateIndices,
+    std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
     labelsAndExpressions.insert(labelsAndExpressions.end(), this->options.getExpressionLabels().begin(), this->options.getExpressionLabels().end());
 
     // Make the labels unique.
@@ -209,37 +210,34 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
         }
     }
 
-    if (!result.containsLabel("init")) {
-        // Also label the initial state with the special label "init".
-        result.addLabel("init");
-        for (auto index : initialStateIndices) {
-            result.addLabelToState("init", index);
+    auto addSpecialLabel = [&result](std::string const& label, auto const& indices) {
+        if (!result.containsLabel(label)) {
+            result.addLabel(label);
+            for (auto index : indices) {
+                result.addLabelToState(label, index);
+            }
         }
-    }
-    if (!result.containsLabel("deadlock")) {
-        result.addLabel("deadlock");
-        for (auto index : deadlockStateIndices) {
-            result.addLabelToState("deadlock", index);
-        }
-    }
-
+    };
+    addSpecialLabel("init", initialStateIndices);
+    addSpecialLabel("deadlock", deadlockStateIndices);
+    addSpecialLabel("unexplored", unexploredStateIndices);
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
                         "Label 'overlap_guards' is reserved when adding overlapping guard labels");
-        result.addLabel("overlap_guards");
-        for (auto index : overlappingGuardStates.get()) {
-            result.addLabelToState("overlap_guards", index);
-        }
+        addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
-
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
         STORM_LOG_THROW(!result.containsLabel("out_of_bounds"), storm::exceptions::WrongFormatException,
                         "Label 'out_of_bounds' is reserved when adding out of bounds states.");
-        result.addLabel("out_of_bounds");
-        result.addLabelToState("out_of_bounds", stateStorage.stateToId.getValue(outOfBoundsState));
+        addSpecialLabel("out_of_bounds", std::vector{stateStorage.stateToId.getValue(outOfBoundsState)});
     }
 
     return result;
+}
+
+template<typename ValueType, typename StateType>
+bool NextStateGenerator<ValueType, StateType>::isSpecialLabel(std::string const& label) const {
+    return label == "init" || label == "deadlock" || label == "unexplored" || label == "overlap_guards" || label == "out_of_bounds";
 }
 
 template<typename ValueType, typename StateType>

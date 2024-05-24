@@ -90,8 +90,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
                         std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
                 } else {
                     // If the label is not present in the program and is not a special one, we raise an error.
-                    STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock",
-                                    storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel()), storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                 }
             }
@@ -815,7 +814,8 @@ std::map<std::string, storm::storage::PlayerIndex> PrismNextStateGenerator<Value
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                                                           std::vector<StateType> const& initialStateIndices,
-                                                                                          std::vector<StateType> const& deadlockStateIndices) {
+                                                                                          std::vector<StateType> const& deadlockStateIndices,
+                                                                                          std::vector<StateType> const& unexploredStateIndices) {
     // Gather a vector of labels and their expressions.
     std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
     if (this->options.isBuildAllLabelsSet()) {
@@ -827,13 +827,13 @@ storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateTyp
             if (program.hasLabel(labelName)) {
                 labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
             } else {
-                STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(this->isSpecialLabel(labelName), storm::exceptions::InvalidArgumentException,
                                 "Cannot build labeling for unknown label '" << labelName << "'.");
             }
         }
     }
 
-    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, labels);
+    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, unexploredStateIndices, labels);
 }
 
 template<typename ValueType, typename StateType>
