@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
