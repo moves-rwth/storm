@@ -15,7 +15,7 @@
 #include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace dd {

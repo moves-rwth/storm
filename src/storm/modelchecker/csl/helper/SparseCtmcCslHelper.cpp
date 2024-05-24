@@ -266,7 +266,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 }
 
 template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                              storm::storage::SparseMatrix<ValueType> const&,
                                                                              storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&,
                                                                              storm::storage::BitVector const&, std::vector<ValueType> const&, bool, double,
@@ -363,7 +363,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                         storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                         RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
@@ -436,7 +436,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                      storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                      RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");

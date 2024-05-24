@@ -37,6 +37,11 @@ set_target_properties(${TARGET} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES \"${INC
 ")
 	elseif(TYPE STREQUAL "STATIC_LIBRARY")
 		get_target_property(LOCATION ${TARGET} IMPORTED_LOCATION)
+		if ("${LOCATION}" STREQUAL "LOCATION-NOTFOUND")
+
+			get_target_property(LOCATION ${TARGET} IMPORTED_LOCATION_RELEASE)
+
+		endif()
 		get_target_property(INCLUDE ${TARGET} INTERFACE_INCLUDE_DIRECTORIES)
 		set(${output} "${${output}}
 add_library(${TARGET} STATIC IMPORTED)

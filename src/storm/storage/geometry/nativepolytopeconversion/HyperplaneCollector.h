@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "storm/adapters/EigenAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace storage {

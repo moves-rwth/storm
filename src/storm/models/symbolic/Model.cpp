@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 
 #include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 

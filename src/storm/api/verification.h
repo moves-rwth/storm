@@ -31,6 +31,8 @@
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 
+#include "storm/storage/SymbolicModelDescription.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"

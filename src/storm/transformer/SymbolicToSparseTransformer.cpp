@@ -11,6 +11,8 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/macros.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace transformer {
 

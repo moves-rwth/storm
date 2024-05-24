@@ -261,9 +261,9 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
         auto result = checker.check(formula);
         checker.printStatisticsToStream(std::cout);
         if (storm::utility::resources::isTerminate()) {
-            STORM_PRINT_AND_LOG("\nResult till abort: ")
+            STORM_PRINT_AND_LOG("\nResult till abort: ");
         } else {
-            STORM_PRINT_AND_LOG("\nResult: ")
+            STORM_PRINT_AND_LOG("\nResult: ");
         }
         printResult(result.lowerBound, result.upperBound);
         STORM_PRINT_AND_LOG('\n');
@@ -281,9 +281,9 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
             auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
             result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
             if (storm::utility::resources::isTerminate()) {
-                STORM_PRINT_AND_LOG("\nResult till abort: ")
+                STORM_PRINT_AND_LOG("\nResult till abort: ");
             } else {
-                STORM_PRINT_AND_LOG("\nResult: ")
+                STORM_PRINT_AND_LOG("\nResult: ");
             }
             printResult(result.getMin(), result.getMax());
             STORM_PRINT_AND_LOG('\n');

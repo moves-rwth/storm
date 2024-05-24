@@ -486,6 +486,14 @@ class BitVector {
     BitVector permute(std::vector<uint64_t> const& inversePermutation) const;
 
     /*!
+     * Apply a permutation of entries assuming a grouped vector. That is, in row group i, write the entries of row group inversePermutation[i].
+     * @param inversePermutation.
+     * @return
+     * TODO this operation is slow.
+     */
+    BitVector permuteGroupedVector(std::vector<uint64_t> const& inversePermutation, std::vector<uint64_t> const& rowGroupIndices) const;
+
+    /*!
      * Retrieves the content of the current bit vector at the given index for the given number of bits as a new
      * bit vector.
      *

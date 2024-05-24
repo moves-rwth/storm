@@ -235,13 +235,12 @@ boost::any ToDiceStringVisitor::visit(UnaryNumericalFunctionExpression const& ex
 }
 
 boost::any ToDiceStringVisitor::visit(PredicateExpression const& expression, boost::any const& data) {
-    auto pdt = expression.getPredicateType();
+    auto const& pdt = expression.getPredicateType();
     STORM_LOG_ASSERT(pdt == PredicateExpression::PredicateType::ExactlyOneOf || pdt == PredicateExpression::PredicateType::AtLeastOneOf ||
                          pdt == PredicateExpression::PredicateType::AtMostOneOf,
                      "Only some predicate types are supported.");
     stream << "(";
-    if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf ||
-        expression.getPredicateType() == PredicateExpression::PredicateType::AtMostOneOf) {
+    if (pdt == PredicateExpression::PredicateType::ExactlyOneOf || pdt == PredicateExpression::PredicateType::AtMostOneOf) {
         stream << "(true ";
         for (uint64_t operandi = 0; operandi < expression.getArity(); ++operandi) {
             for (uint64_t operandj = operandi + 1; operandj < expression.getArity(); ++operandj) {
@@ -254,11 +253,10 @@ boost::any ToDiceStringVisitor::visit(PredicateExpression const& expression, boo
         }
         stream << ")";
     }
-    if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf) {
+    if (pdt == PredicateExpression::PredicateType::ExactlyOneOf) {
         stream << " && ";
     }
-    if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf ||
-        expression.getPredicateType() == PredicateExpression::PredicateType::AtLeastOneOf) {
+    if (pdt == PredicateExpression::PredicateType::ExactlyOneOf || pdt == PredicateExpression::PredicateType::AtLeastOneOf) {
         stream << "( false";
         for (uint64_t operandj = 0; operandj < expression.getArity(); ++operandj) {
             stream << "|| ";

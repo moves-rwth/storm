@@ -16,6 +16,8 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/FilteredRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/logic/FragmentSpecification.h"
 
 #include "storm/exceptions/NotImplementedException.h"

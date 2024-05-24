@@ -15,7 +15,7 @@ class QualitativeAnalysisOnGraphs {
    private:
     storm::storage::BitVector analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const;
     storm::storage::BitVector analyseProb0Max(storm::logic::UntilFormula const& formula) const;
-    storm::storage::BitVector analyseProb0Min(storm::logic::UntilFormula const& formula) const;
+    [[maybe_unused]] storm::storage::BitVector analyseProb0Min(storm::logic::UntilFormula const& formula) const;
     storm::storage::BitVector analyseProb1Max(storm::logic::UntilFormula const& formula) const;
     storm::storage::BitVector analyseProb1Min(storm::logic::UntilFormula const& formula) const;
 

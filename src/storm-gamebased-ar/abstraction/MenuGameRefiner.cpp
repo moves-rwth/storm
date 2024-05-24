@@ -1145,11 +1145,11 @@ struct ExplicitDijkstraQueueElementLess {
 template<typename ValueType>
 void performDijkstraStep(std::set<ExplicitDijkstraQueueElement<ValueType>, ExplicitDijkstraQueueElementLess<ValueType>>& dijkstraQueue,
                          bool probabilityDistances, std::vector<ValueType>& distances, std::vector<std::pair<uint64_t, uint64_t>>& predecessors,
-                         bool generatePredecessors, bool lower, uint64_t currentState, ValueType const& currentDistance, bool isPivotState,
-                         storm::storage::ExplicitGameStrategyPair const& strategyPair, storm::storage::ExplicitGameStrategyPair const& otherStrategyPair,
-                         std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Grouping,
-                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& targetStates,
-                         storm::storage::BitVector const& relevantStates) {
+                         bool generatePredecessors, bool lower, uint64_t currentState, ValueType const& currentDistance, [[maybe_unused]] bool isPivotState,
+                         storm::storage::ExplicitGameStrategyPair const& strategyPair,
+                         [[maybe_unused]] storm::storage::ExplicitGameStrategyPair const& otherStrategyPair, std::vector<uint64_t> const& player1Labeling,
+                         [[maybe_unused]] std::vector<uint64_t> const& player2Grouping, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                         [[maybe_unused]] storm::storage::BitVector const& targetStates, storm::storage::BitVector const& relevantStates) {
     if (strategyPair.getPlayer1Strategy().hasDefinedChoice(currentState)) {
         uint64_t player2Successor = strategyPair.getPlayer1Strategy().getChoice(currentState);
         uint64_t player2Choice = strategyPair.getPlayer2Strategy().getChoice(player2Successor);
@@ -1352,10 +1352,11 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
 
 template<storm::dd::DdType Type, typename ValueType>
 bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
-                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
-                                              std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling,
-                                              storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
-                                              storm::storage::BitVector const& targetStates, ExplicitQualitativeGameResultMinMax const& qualitativeResult,
+                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                              [[maybe_unused]] std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling,
+                                              std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
+                                              storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
+                                              ExplicitQualitativeGameResultMinMax const& qualitativeResult,
                                               storage::ExplicitGameStrategyPair const& minStrategyPair,
                                               storage::ExplicitGameStrategyPair const& maxStrategyPair) const {
     STORM_LOG_ASSERT(constraintStates.full(), "Constraint states are ignored. Likely buggy.");
@@ -1439,10 +1440,10 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame
 
 template<storm::dd::DdType Type, typename ValueType>
 bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,
-                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
-                                              std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling,
-                                              storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
-                                              storm::storage::BitVector const& targetStates,
+                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                              [[maybe_unused]] std::vector<uint64_t> const& player1Grouping, std::vector<uint64_t> const& player1Labeling,
+                                              std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
+                                              storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
                                               ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult,
                                               storage::ExplicitGameStrategyPair const& minStrategyPair,
                                               storage::ExplicitGameStrategyPair const& maxStrategyPair) const {
