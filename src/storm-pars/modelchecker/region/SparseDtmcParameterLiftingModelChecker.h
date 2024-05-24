@@ -7,6 +7,7 @@
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/ParameterLifter.h"
+#include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
@@ -17,7 +18,26 @@ namespace modelchecker {
 template<typename ParametricType, typename ConstantType>
 class OrderBasedMonotonicityBackend;
 
-template<typename SparseModelType, typename ConstantType>
+template<typename ConstantType, bool Robust>
+using SolverFactoryType = std::conditional_t<Robust,
+        storm::solver::MinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
+        storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>
+    >;
+
+template<typename ConstantType, bool Robust>
+using GeneralSolverFactoryType = std::conditional_t<Robust,
+        storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
+        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>
+    >;
+
+template<typename ParametricType, typename ConstantType, bool Robust>
+using ParameterLifterType =
+    std::conditional_t<Robust,
+        storm::transformer::RobustParameterLifter<ParametricType, ConstantType>,
+        storm::transformer::ParameterLifter<ParametricType, ConstantType>
+    >;
+
+template<typename SparseModelType, typename ConstantType, bool Robust=false>
 class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
    public:
     using ParametricType = typename SparseModelType::ValueType;
@@ -26,7 +46,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     using Valuation = typename RegionModelChecker<ParametricType>::Valuation;
 
     SparseDtmcParameterLiftingModelChecker();
-    SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
+    SparseDtmcParameterLiftingModelChecker(std::unique_ptr<SolverFactoryType<ConstantType, Robust>>&& solverFactory);
     virtual ~SparseDtmcParameterLiftingModelChecker() = default;
 
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
@@ -85,8 +105,8 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerVIO;
 
-    std::unique_ptr<storm::transformer::ParameterLifter<ParametricType, ConstantType>> parameterLifter;
-    std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>> solverFactory;
+    std::unique_ptr<ParameterLifterType<ParametricType, ConstantType, Robust>> parameterLifter;
+    std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;
     bool solvingRequiresUpperRewardBounds;
 
     // Results from the most recent solver call.

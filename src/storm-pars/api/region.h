@@ -16,8 +16,6 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/ValidatingSparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/ValidatingSparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/ValidatingSparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
@@ -178,7 +176,7 @@ std::unique_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> createR
                 return std::make_unique<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, PreciseType>>();
             }
         case storm::modelchecker::RegionCheckEngine::RobustParameterLifting:
-            return std::make_unique<storm::modelchecker::SparseRobustDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType>;
+            return std::make_unique<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ImpreciseType, true>>();
         case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
             if (modelType == storm::models::ModelType::Dtmc) {
                 return std::make_unique<storm::modelchecker::ValidatingSparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>,

@@ -45,7 +45,8 @@ class RobustParameterLifter {
      * @param selectedColumns a Bitvector that specifies which columns of the matrix are considered.
      */
     RobustParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector,
-                          storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels = false);
+                          storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels = false,
+                          bool useMonotonicity = false);
 
     void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
 

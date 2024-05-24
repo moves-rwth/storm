@@ -26,7 +26,7 @@ class SparseMatrix;
 
 namespace storm::modelchecker {
 
-template<typename ParametricType, typename ConstantType>
+template<typename ParametricType, typename ConstantType, bool Robust>
 class SparseDtmcParameterLiftingModelChecker;
 
 template<typename ParametricType, typename ConstantType>
@@ -37,7 +37,7 @@ class OrderBasedMonotonicityBackend : public MonotonicityBackend<ParametricType>
     using Valuation = typename MonotonicityBackend<ParametricType>::Valuation;
     using MonotonicityKind = typename MonotonicityBackend<ParametricType>::MonotonicityKind;
 
-    template<typename ModelType, typename ConstantType2>
+    template<typename ModelType, typename ConstantType2, bool Robust>
     friend class SparseDtmcParameterLiftingModelChecker;
 
     OrderBasedMonotonicityBackend(bool useOnlyGlobal = false, bool useBounds = false);
