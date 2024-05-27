@@ -50,10 +50,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            std::vector<ParametricType> const& pVector,
                                                                            storm::storage::BitVector const& selectedRows,
                                                                            storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
-                                                        
-    std::cout << pMatrix << std::endl;
-    std::cout << pVector << std::endl;
-
     STORM_LOG_ERROR_COND(useMonotonicity, "Cannot use graph monotonicity in robust mode.");
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
@@ -110,7 +106,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             if (storm::utility::isConstant(transition)) {
                 vector.push_back(utility::convertNumber<double>(transition));
             } else {
-                std::cout << "Non const vector entry " << transition << std::endl;
                 nonConstVectorEntries.set(pVectorEntryCount, true);
                 auto valuation = RobustAbstractValuation(transition);
                 vector.push_back(Interval());
@@ -176,11 +171,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
 
     for (auto& assignment : vectorAssignment) {
         *assignment.first = assignment.second;
-        std::cout << "Vector: Write " << assignment.second << std::endl;
     }
-
-    std::cout << this->matrix << std::endl;
-    std::cout << region << std::endl;
 }
 
 template<typename ParametricType, typename ConstantType>

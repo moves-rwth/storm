@@ -328,7 +328,7 @@ class ValueIterationOperator {
             return result;
         }
 
-        SolutionType remainingValue{storm::utility::one<SolutionType>()};
+        SolutionType remainingValue{storm::utility::one<SolutionType>() - result};
         uint64_t orderCounter = 0;
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
             auto const lower = matrixValueIt->lower();

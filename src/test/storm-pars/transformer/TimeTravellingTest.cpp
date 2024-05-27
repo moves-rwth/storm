@@ -15,7 +15,6 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseRobustDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"

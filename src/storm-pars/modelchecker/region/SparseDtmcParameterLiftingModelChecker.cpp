@@ -192,9 +192,16 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             // Robust PLA doesn't support eliminating states because it gets complicated with the polynomials you know
             std::vector<ParametricType> target(this->parametricModel->getNumberOfStates(), storm::utility::zero<ParametricType>());
             storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
+
+            // With Robust PLA, we cannot drop the non-maybe states out of the matrix for technical reasons
+            auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
+            auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
+
             storm::storage::BitVector allTrue(maybeStates.size(), true);
+            maybeStates = allTrue;
+
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-                this->parametricModel->getTransitionMatrix(), target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+                filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
         } else {
             // Create the vector of one-step probabilities to go to target states.
             std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
@@ -253,8 +260,17 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
         std::vector<ParametricType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
-        parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
-            this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates());
+        if constexpr (Robust) {
+            auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
+            auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
+            storm::storage::BitVector allTrue(maybeStates.size(), true);
+
+            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
+                filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+        } else {
+            parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
+                this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+        }
     }
 
     // We only know a lower bound for the result
