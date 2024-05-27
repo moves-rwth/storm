@@ -17,6 +17,7 @@ const std::string DebugSettings::additionalChecksOptionName = "additional-checks
 const std::string DebugSettings::logfileOptionName = "logfile";
 const std::string DebugSettings::logfileOptionShortName = "l";
 const std::string DebugSettings::testOptionName = "test";
+const std::string DebugSettings::forceMECDecompositionAlgorithmName = "benchmarkForceMECDecompositionAlgorithm";
 
 DebugSettings::DebugSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Print debug output.").build());
@@ -29,6 +30,13 @@ DebugSettings::DebugSettings() : ModuleSettings(moduleName) {
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to write the log.").build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, testOptionName, false, "Activate a test setting.").setIsAdvanced().build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, forceMECDecompositionAlgorithmName, false,
+                                                   "Forces symbolic model on MDP with an mec decomposition with a specific symbolic decomposition algorithm.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
+                                         "value", "1\t\tNaive\n2\t\tLockstep\n3\t\tCollapsing\n4\t\tMyalgo") // TODO change myalgo to nice name
+                                         .build())
+                        .build());
 }
 
 bool DebugSettings::isDebugSet() const {
@@ -53,6 +61,14 @@ std::string DebugSettings::getLogfilename() const {
 
 bool DebugSettings::isTestSet() const {
     return this->getOption(testOptionName).getHasOptionBeenSet();
+}
+
+uint_fast64_t DebugSettings::forceMECDecompositionAlgorithm() const {
+    if (this->getOption(forceMECDecompositionAlgorithmName).getHasOptionBeenSet()) {
+        return this->getOption(forceMECDecompositionAlgorithmName).getArgumentByName("value").getValueAsUnsignedInteger();
+    } else {
+        return 0;
+    }
 }
 
 }  // namespace modules

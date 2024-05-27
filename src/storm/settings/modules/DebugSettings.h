@@ -60,6 +60,9 @@ class DebugSettings : public ModuleSettings {
      */
     bool isTestSet() const;
 
+    // Debug function for the Symbolic MEC decomposition benchmarks
+    uint_fast64_t forceMECDecompositionAlgorithm() const;
+
     // The name of the module.
     static const std::string moduleName;
 
@@ -71,6 +74,7 @@ class DebugSettings : public ModuleSettings {
     static const std::string logfileOptionName;
     static const std::string logfileOptionShortName;
     static const std::string testOptionName;
+    static const std::string forceMECDecompositionAlgorithmName;
 };
 
 }  // namespace modules
