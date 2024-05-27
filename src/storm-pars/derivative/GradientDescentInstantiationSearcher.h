@@ -17,6 +17,8 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/Stopwatch.h"
+#include "utility/logging.h"
+#include "utility/macros.h"
 
 namespace storm {
 namespace derivative {
@@ -39,14 +41,18 @@ class GradientDescentInstantiationSearcher {
      * @param startPoint Start point of the search (default: all parameters set to 0.5)
      * @param recordRun Records the run into a global variable, which can be converted into JSON
      * using the printRunAsJson function
+     * @param region If constraintMethod is PROJECT_WITH_GRADIENT or PROJECT, the region of the search.
+     * If this is not set the region will be the graph-preseving region.
      */
     GradientDescentInstantiationSearcher(
         storm::models::sparse::Dtmc<FunctionType> const& model, GradientDescentMethod method = GradientDescentMethod::ADAM, ConstantType learningRate = 0.1,
         ConstantType averageDecay = 0.9, ConstantType squaredAverageDecay = 0.999, uint_fast64_t miniBatchSize = 32, ConstantType terminationEpsilon = 1e-6,
-        boost::optional<
+        std::optional<
             std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
-            startPoint = boost::none,
-        GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, bool recordRun = false)
+            startPoint = std::nullopt,
+        GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
+        std::optional<storage::ParameterRegion<FunctionType>> region = std::nullopt,
+        bool recordRun = false)
         : model(model),
           derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model)),
           instantiationModelChecker(
@@ -55,7 +61,9 @@ class GradientDescentInstantiationSearcher {
           miniBatchSize(miniBatchSize),
           terminationEpsilon(terminationEpsilon),
           constraintMethod(constraintMethod),
+          region(region),
           recordRun(recordRun) {
+        STORM_LOG_ERROR_COND(region == std::nullopt || (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT), "Specifying a region is only supported if you are constraining by projection.");
         // TODO should we put this in subclasses?
         switch (method) {
             case GradientDescentMethod::ADAM: {
@@ -195,11 +203,12 @@ class GradientDescentInstantiationSearcher {
     const std::unique_ptr<storm::derivative::SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>> derivativeEvaluationHelper;
     std::unique_ptr<storm::analysis::MonotonicityHelper<FunctionType, ConstantType>> monotonicityHelper;
     const std::unique_ptr<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>> instantiationModelChecker;
-    boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
+    std::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
         startPoint;
     const uint_fast64_t miniBatchSize;
     const ConstantType terminationEpsilon;
     const GradientDescentConstraintMethod constraintMethod;
+    const std::optional<storage::ParameterRegion<FunctionType>> region;
 
     // This is for visualizing data
     const bool recordRun;

@@ -1,5 +1,7 @@
 #include "storm-pars-cli/feasibility.h"
+#include <optional>
 
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/api/verification.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -110,9 +112,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
 
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                     "Gradient descent is currently only supported for DTMCs.");
-    STORM_LOG_THROW(!task->isRegionSet(), storm::exceptions::NotSupportedException, "Gradient descent only works with *the* graph-preserving region.");
     std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-
     STORM_LOG_THROW(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
                     "Input formula needs to be either a probability operator formula or a reward operator formula.");
     STORM_LOG_THROW(task->isBoundSet(), storm::exceptions::NotImplementedException, "GD (right now) requires an explicitly given bound.");
@@ -145,14 +145,19 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
         return;
     }
 
-    boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>>
+    std::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>>
         startPoint;
+    
+    std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
+    if (task->isRegionSet()) {
+        region = task->getRegion();
+    }
 
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
     storm::utility::Stopwatch derivativeWatch(true);
     storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gdsearch(
         *dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(),
-        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, derSettings.isPrintJsonSet());
+        derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
 
     gdsearch.setup(Environment(), task);
     auto instantiationAndValue = gdsearch.gradientDescent();

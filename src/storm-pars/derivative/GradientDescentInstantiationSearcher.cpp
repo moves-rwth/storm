@@ -11,6 +11,7 @@
 #include "settings/SettingsManager.h"
 #include "settings/modules/GeneralSettings.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
@@ -40,7 +41,9 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::d
     if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
         // Project gradient
         ConstantType newPlainPosition = oldPosAsConstant + precisionAsConstant * gradient.at(steppingParameter);
-        if (newPlainPosition < utility::zero<ConstantType>() + precisionAsConstant || newPlainPosition > utility::one<ConstantType>() - precisionAsConstant) {
+        auto const lower = region ? utility::convertNumber<ConstantType>(region->getLowerBoundary(steppingParameter)) : utility::zero<ConstantType>() + precisionAsConstant;
+        auto const upper = region ? utility::convertNumber<ConstantType>(region->getUpperBoundary(steppingParameter)) : utility::one<ConstantType>() - precisionAsConstant;
+        if (newPlainPosition < lower || newPlainPosition > upper) {
             projectedGradient = 0;
         } else {
             projectedGradient = gradient.at(steppingParameter);
@@ -193,11 +196,13 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::d
     const CoefficientType<FunctionType> convertedStep = utility::convertNumber<CoefficientType<FunctionType>>(step);
     const CoefficientType<FunctionType> newPos = position[steppingParameter] + convertedStep;
     position[steppingParameter] = newPos;
-    // Map parameter back to (0, 1).
+    // Map parameter back to region
     if (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
-        position[steppingParameter] = utility::max(precision, position[steppingParameter]);
-        CoefficientType<FunctionType> const upperBound = utility::one<CoefficientType<FunctionType>>() - precision;
-        position[steppingParameter] = utility::min(upperBound, position[steppingParameter]);
+        auto const lower = region ? region->getLowerBoundary(steppingParameter) : utility::zero<CoefficientType<FunctionType>>() + precision;
+        auto const upper = region ? region->getUpperBoundary(steppingParameter) : utility::one<CoefficientType<FunctionType>>() - precision;
+
+        position[steppingParameter] = utility::max(lower, position[steppingParameter]);
+        position[steppingParameter] = utility::min(upper, position[steppingParameter]);
     }
     return utility::abs<ConstantType>(oldPosAsConstant - utility::convertNumber<ConstantType>(position[steppingParameter]));
 }
