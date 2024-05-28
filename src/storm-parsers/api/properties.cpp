@@ -43,6 +43,9 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
 std::vector<storm::jani::Property> parseProperties(std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter) {
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::parser::FormulaParser formulaParser(exprManager);
+    STORM_LOG_WARN(
+        "Parsing properties using only a string as input does not have access to model variables. Properties containing model variables will not be parsed "
+        "correctly.");
     return parseProperties(formulaParser, inputString, propertyFilter);
 }
 
