@@ -25,7 +25,7 @@ jobs:
           - {name: "GMP exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "OFF",
+             Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
@@ -37,7 +37,7 @@ jobs:
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "OFF",
+             Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
@@ -49,7 +49,7 @@ jobs:
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "OFF",
+             Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
@@ -217,13 +217,11 @@ jobs:
           - {name: "Debug",
              dockerTag: "ci-debug",
              baseImg: "storm-dependencies:latest-debug",
-             Gurobi: "OFF",
              Developer: "ON"
             }
           - {name: "Release",
              dockerTag: "ci",
              baseImg: "storm-dependencies:latest",
-             Gurobi: "OFF",
              Developer: "OFF"
             }
     steps:
@@ -240,7 +238,6 @@ jobs:
             --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} \
             --build-arg build_type="${{ matrix.buildType.name }}" \
             --build-arg developer="${{ matrix.buildType.Developer }}" \
-            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}
             # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
