@@ -1,6 +1,5 @@
-#include <list>
-#include <numeric>
-#include <queue>
+#include <algorithm>
+#include <sstream>
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -71,6 +70,40 @@ template<typename ValueType>
 MaximalEndComponentDecomposition<ValueType>& MaximalEndComponentDecomposition<ValueType>::operator=(MaximalEndComponentDecomposition&& other) {
     Decomposition::operator=(std::move(other));
     return *this;
+}
+
+template<typename ValueType>
+std::string MaximalEndComponentDecomposition<ValueType>::statistics(uint64_t totalNumberOfStates) const {
+    if (this->empty()) {
+        return "Empty MEC decomposition.";
+    }
+    uint64_t statesInMec = 0;
+    uint64_t choicesInMec = 0;
+    uint64_t trivialMecs = 0;
+    uint64_t smallestSize = std::numeric_limits<uint64_t>::max();
+    uint64_t largestSize = 0;
+    for (auto const& mec : this->blocks) {
+        statesInMec += mec.size();
+        if (mec.size() == 1u) {
+            ++trivialMecs;
+        } else {
+            smallestSize = std::min<uint64_t>(smallestSize, mec.size());
+            largestSize = std::max<uint64_t>(largestSize, mec.size());
+        }
+    }
+    uint64_t const statesInNonTrivialMec = statesInMec - trivialMecs;
+    auto getPercentage = [&totalNumberOfStates](uint64_t states) -> double {
+        return (totalNumberOfStates == 0) ? 0.0 : (100.0 * states / totalNumberOfStates);
+    };
+    std::stringstream ss;
+    ss << "MEC decomposition statistics: ";
+    ss << "There are " << this->size() << " MECs out of which " << trivialMecs << " are trivial, i.e., consist of a single state.";
+    ss << " " << statesInMec << " out of " << totalNumberOfStates << " states (" << getPercentage(statesInMec) << "%) are on some MEC. "
+       << statesInNonTrivialMec << " states (" << getPercentage(statesInNonTrivialMec) << "%) are on a non-trivial mec. ";
+    if (largestSize > 0) {
+        ss << "The smallest non-trivial MEC has " << smallestSize << " states and the largest non-trivial MEC has " << largestSize << " states.";
+    }
+    return ss.str();
 }
 
 template<typename ValueType>

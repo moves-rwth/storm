@@ -646,6 +646,7 @@ boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSy
     if (doDecomposition) {
         // Compute the states that are in MECs.
         endComponentDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates);
+        STORM_LOG_INFO(endComponentDecomposition.statistics(transitionMatrix.getRowGroupCount()));
     }
 
     // Only do more work if there are actually end-components.
@@ -1237,6 +1238,7 @@ boost::optional<SparseMdpEndComponentInformation<ValueType>> computeFixedPointSy
         // Then compute the states that are in MECs with zero reward.
         endComponentDecomposition =
             storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, backwardTransitions, candidateStates, zeroRewardChoices);
+        STORM_LOG_INFO(endComponentDecomposition.statistics(transitionMatrix.getRowGroupCount()));
     }
 
     // Only do more work if there are actually end-components.
