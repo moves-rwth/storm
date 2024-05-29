@@ -220,7 +220,9 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
     };
     addSpecialLabel("init", initialStateIndices);
     addSpecialLabel("deadlock", deadlockStateIndices);
-    addSpecialLabel("unexplored", unexploredStateIndices);
+    if (!unexploredStateIndices.empty()) {
+        addSpecialLabel("unexplored", unexploredStateIndices);
+    }
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
                         "Label 'overlap_guards' is reserved when adding overlapping guard labels");
