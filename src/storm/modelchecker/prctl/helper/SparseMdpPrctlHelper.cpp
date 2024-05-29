@@ -167,24 +167,40 @@ std::vector<uint_fast64_t> computeValidSchedulerHint(Environment const& env, Sem
                                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                      storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& filterStates,
-                                                     storm::storage::BitVector const& targetStates) {
+                                                     storm::storage::BitVector const& targetStates,
+                                                     boost::optional<storm::storage::BitVector> const& selectedChoices) {
     storm::storage::Scheduler<SolutionType> validScheduler(maybeStates.size());
 
     if (type == SemanticSolutionType::UntilProbabilities) {
-        storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler, boost::none);
+        storm::utility::graph::computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, filterStates, targetStates, validScheduler,
+                                                             selectedChoices);
     } else if (type == SemanticSolutionType::ExpectedRewards) {
         storm::utility::graph::computeSchedulerProb1E(maybeStates | targetStates, transitionMatrix, backwardTransitions, filterStates, targetStates,
-                                                      validScheduler);
+                                                      validScheduler, selectedChoices);
     } else {
         STORM_LOG_ASSERT(false, "Unexpected equation system type.");
     }
 
     // Extract the relevant parts of the scheduler for the solver.
-    std::vector<uint_fast64_t> schedulerHint(maybeStates.getNumberOfSetBits());
-    auto maybeIt = maybeStates.begin();
-    for (auto& choice : schedulerHint) {
-        choice = validScheduler.getChoice(*maybeIt).getDeterministicChoice();
-        ++maybeIt;
+    std::vector<uint64_t> schedulerHint;
+    schedulerHint.reserve(maybeStates.getNumberOfSetBits());
+    if (selectedChoices) {
+        // There might be unselected choices so the local choice indices from the scheduler need to be adapted
+        for (auto maybeState : maybeStates) {
+            auto choice = validScheduler.getChoice(maybeState).getDeterministicChoice();
+            auto const groupStart = transitionMatrix.getRowGroupIndices()[maybeState];
+            auto const origGlobalChoiceIndex = groupStart + choice;
+            STORM_LOG_ASSERT(selectedChoices->get(origGlobalChoiceIndex), "The computed scheduler selects an illegal choice.");
+            // Count the number of unselected choices in [groupStart, origGlobalChoiceIndex) and subtract that from choice
+            for (auto pos = selectedChoices->getNextUnsetIndex(groupStart); pos < origGlobalChoiceIndex; pos = selectedChoices->getNextUnsetIndex(pos + 1)) {
+                --choice;
+            }
+            schedulerHint.push_back(choice);
+        }
+    } else {
+        for (auto maybeState : maybeStates) {
+            schedulerHint.push_back(validScheduler.getChoice(maybeState).getDeterministicChoice());
+        }
     }
     return schedulerHint;
 }
@@ -364,8 +380,8 @@ SparseMdpHintType<SolutionType> computeHints(Environment const& env, SemanticSol
         // If the solver requires an initial scheduler, compute one now. Note that any scheduler is valid if there are no end components.
         if (requirements.validInitialScheduler() && !result.noEndComponents) {
             STORM_LOG_DEBUG("Computing valid scheduler, because the solver requires it.");
-            result.schedulerHint =
-                computeValidSchedulerHint<ValueType, SolutionType>(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates, targetStates);
+            result.schedulerHint = computeValidSchedulerHint<ValueType, SolutionType>(env, type, transitionMatrix, backwardTransitions, maybeStates, phiStates,
+                                                                                      targetStates, selectedChoices);
             requirements.clearValidInitialScheduler();
         }
 
