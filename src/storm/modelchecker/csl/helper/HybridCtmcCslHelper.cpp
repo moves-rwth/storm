@@ -1,5 +1,7 @@
 #include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 

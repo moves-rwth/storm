@@ -76,6 +76,12 @@ class ExplicitModelBuilder {
 
         // The order in which to explore the model.
         ExplorationOrder explorationOrder;
+
+        // If set, deadlocks states will be fixed by adding a self-loop with probability 1.
+        bool fixDeadlocks;
+
+        // If set, no further states will be explored once the given number is exceeded.
+        std::optional<StateType> explorationStateLimit;
     };
 
     /*!

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/MaximalEndComponent.h"
@@ -95,6 +97,13 @@ class MaximalEndComponentDecomposition : public Decomposition<MaximalEndComponen
      * @param other The MEC decomposition from which to move-assign.
      */
     MaximalEndComponentDecomposition& operator=(MaximalEndComponentDecomposition&& other);
+
+    /*!
+     * Returns a string containing statistics about the MEC decomposition, e.g., the number of (trivial/non-trivial) MECs, the percentage of states on a MEC,
+     * etc.
+     * @param totalNumberOfStates the total number of states in the model
+     */
+    std::string statistics(uint64_t totalNumberOfStates) const;
 
    private:
     /*!

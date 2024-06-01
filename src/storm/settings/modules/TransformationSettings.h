@@ -1,13 +1,18 @@
-#ifndef STORM_TRANSFORMATIONSETTINGS_H
-#define STORM_TRANSFORMATIONSETTINGS_H
+#pragma once
+
+#include <optional>
 
 #include "storm-config.h"
 #include "storm/api/transformation.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
-namespace settings {
-namespace modules {
+
+namespace utility::permutation {
+enum class OrderKind;
+}
+
+namespace settings::modules {
 
 /*!
  * This class represents the model transformer settings
@@ -43,6 +48,16 @@ class TransformationSettings : public ModuleSettings {
      */
     bool isToDiscreteTimeModelSet() const;
 
+    /*!
+     * If the returned value is not empty, the model should be permuted according to the given order.
+     */
+    std::optional<storm::utility::permutation::OrderKind> getModelPermutation() const;
+
+    /*!
+     * Retrieves a random seed to be used in case the model shall be permuted randomly.
+     */
+    std::optional<uint64_t> getModelPermutationSeed() const;
+
     bool check() const override;
 
     void finalize() override;
@@ -56,10 +71,8 @@ class TransformationSettings : public ModuleSettings {
     static const std::string labelBehaviorOptionName;
     static const std::string toNondetOptionName;
     static const std::string toDiscreteTimeOptionName;
+    static const std::string permuteModelOptionName;
 };
 
-}  // namespace modules
-}  // namespace settings
+}  // namespace settings::modules
 }  // namespace storm
-
-#endif  // STORM_TRANSFORMATIONSETTINGS_H

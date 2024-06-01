@@ -1,6 +1,5 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"

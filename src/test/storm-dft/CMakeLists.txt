@@ -12,7 +12,7 @@ include_directories(${GMOCK_INCLUDE_DIR})
 
 foreach (testsuite api bdd simulator storage transformations)
 
-	  file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp)
+	  file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp ${STORM_TESTS_BASE_PATH}/../storm_gtest.cpp)
       add_executable (test-dft-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
 	  target_link_libraries(test-dft-${testsuite} storm-dft storm-parsers)
 	  target_link_libraries(test-dft-${testsuite} ${STORM_TEST_LINK_LIBRARIES})

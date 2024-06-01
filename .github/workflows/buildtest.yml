@@ -22,15 +22,72 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: "GMP exact; GMP rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
-          - {name: "CLN exact; GMP rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
-          - {name: "CLN exact; CLN rational functions; All dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SYSTEM=ON -DSTORM_USE_SOPLEX=ON -DMSAT_ROOT=/opt/mathsat5 -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
-          - {name: "GMP exact; CLN rational functions; No dependencies", baseImg: "storm-dependencies:latest-debug", buildType: "Debug", cmakeArgs: "-DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SYSTEM=OFF -DSTORM_USE_SOPLEX=OFF -DMSAT_ROOT= -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
+          - {name: "GMP exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             Gurobi: "ON",
+             Soplex: "ON",
+             Spot: "ON",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
+            }
+          - {name: "CLN exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             Gurobi: "ON",
+             Soplex: "ON",
+             Spot: "ON",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "OFF",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
+            }
+          - {name: "CLN exact; CLN rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             Gurobi: "ON",
+             Soplex: "ON",
+             Spot: "ON",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
+            }
+          - {name: "GMP exact; CLN rational functions; No dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             Gurobi: "OFF",
+             Soplex: "OFF",
+             Spot: "OFF",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT="
+            }
+
     steps:
       - name: Git clone
         uses: actions/checkout@v4
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:ci . --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} --build-arg build_type="${{ matrix.config.buildType }}" --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
+            --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
+            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
+            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg developer="${{ matrix.config.Developer }}" \
+            --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
+            --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
+            --build-arg all_sanitizers="${{ matrix.config.AllSanitizers }}" \
+            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
 
@@ -53,31 +110,57 @@ jobs:
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
     # Run on latest Archlinux version to get most recent compiler versions
-    name: Compiler Tests (${{ matrix.compilers.name }}, ${{ matrix.compilers.buildType }})
+    name: Compiler Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compilers:
-          - {name: "GCC", buildType: "Debug", cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON", packages: ""}
-          - {name: "Clang", buildType: "Debug", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON", packages: "clang"}
+        config:
+          - {name: "GCC",
+             buildType: "Debug",
+             Gurobi: "OFF",
+             Soplex: "OFF",
+             Spot: "OFF",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_USE_SPOT_SHIPPED=ON",
+             packages: ""
+            }
+          - {name: "Clang",
+             buildType: "Debug",
+             Gurobi: "OFF",
+             Soplex: "OFF",
+             Spot: "OFF",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_USE_SPOT_SHIPPED=ON",
+             packages: "clang"
+            }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
       - name: Replace Dockerfile
         run: cp .github/workflows/Dockerfile.archlinux Dockerfile
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:ci . --build-arg build_type="${{ matrix.compilers.buildType }}" --build-arg cmake_args="${{ matrix.compilers.cmakeArgs }}" --build-arg packages="${{ matrix.compilers.packages }}" --build-arg no_threads=${NR_JOBS}
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
+            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
+            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg developer="${{ matrix.config.Developer }}" \
+            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
+            --build-arg packages="${{ matrix.config.packages }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
 
       # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
-        if: matrix.compilers.buildType == 'Release'
+        if: matrix.config.buildType == 'Release'
         run: |
           docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
           docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
       - name: Check debug makeflags
-        if: matrix.compilers.buildType == 'Debug'
+        if: matrix.config.buildType == 'Debug'
         run: |
           docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
 
@@ -91,13 +174,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-11", "debian-12", "ubuntu-20.04", "ubuntu-22.04"]
+        distro: ["debian-11", "debian-12", "ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]
         buildType: ["Release"]
     steps:
       - name: Git clone
         uses: actions/checkout@v4
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:ci . --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} --build-arg build_type="${{ matrix.buildType }}" --build-arg no_threads=${NR_JOBS}
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} \
+            --build-arg build_type="${{ matrix.buildType }}" \
+            --build-arg gurobi_support="OFF" \
+            --build-arg soplex_support="OFF" \
+            --build-arg spot_support="OFF" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments developer, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
 
@@ -123,8 +214,16 @@ jobs:
     strategy:
       matrix:
         buildType:
-          - {name: "Debug", dockerTag: "ci-debug", baseImg: "storm-dependencies:latest-debug", cmakeArgs: "-DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"}
-          - {name: "Release", dockerTag: "ci", baseImg: "storm-dependencies:latest", cmakeArgs: "-DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON"}
+          - {name: "Debug",
+             dockerTag: "ci-debug",
+             baseImg: "storm-dependencies:latest-debug",
+             Developer: "ON"
+            }
+          - {name: "Release",
+             dockerTag: "ci",
+             baseImg: "storm-dependencies:latest",
+             Developer: "OFF"
+            }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -134,7 +233,14 @@ jobs:
       - name: Set static Storm version
         run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
       - name: Build storm from Dockerfile
-        run: docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} --build-arg build_type="${{ matrix.buildType.name }}" --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" --build-arg no_threads=${NR_JOBS}
+        run: |
+          docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
+            --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} \
+            --build-arg build_type="${{ matrix.buildType.name }}" \
+            --build-arg developer="${{ matrix.buildType.Developer }}" \
+            --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
 

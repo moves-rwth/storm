@@ -15,6 +15,9 @@
 #ifdef STORM_HAVE_GUROBI
 
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
+    if (storm::test::noGurobi) {
+        GTEST_SKIP();
+    }
     storm::Environment env;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");

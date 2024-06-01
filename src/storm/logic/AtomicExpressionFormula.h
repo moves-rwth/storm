@@ -2,6 +2,7 @@
 #define STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
 
 #include "storm/logic/StateFormula.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace logic {

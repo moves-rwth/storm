@@ -55,9 +55,13 @@ uint64_t ExplicitStateLookup<StateType>::size() const {
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
-ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options()
-    : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
-    // Intentionally left empty.
+ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() {
+    auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+    explorationOrder = buildSettings.getExplorationOrder();
+    fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
+    if (buildSettings.isExplorationStateLimitSet()) {
+        explorationStateLimit = buildSettings.getExplorationStateLimit();
+    }
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
@@ -193,14 +197,22 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
         if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
             generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuationsBuilder());
         }
-        storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
+
+        storm::generator::StateBehavior<ValueType, StateType> behavior;
+        // If the exploration state limit is set and the limit is reached, we stop the exploration.
+        bool const stateLimitExceeded = options.explorationStateLimit.has_value() && stateStorage.getNumberOfStates() >= options.explorationStateLimit.value();
+        if (!stateLimitExceeded) {
+            behavior = generator->expand(stateToIdCallback);
+        }
 
         // If there is no behavior, we might have to introduce a self-loop.
         if (behavior.empty()) {
-            if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
+            if (options.fixDeadlocks || !behavior.wasExpanded()) {
                 // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
                 if (behavior.wasExpanded()) {
                     this->stateStorage.deadlockStateIndices.push_back(currentIndex);
+                } else {
+                    this->stateStorage.unexploredStateIndices.push_back(currentIndex);
                 }
 
                 if (!generator->isDeterministicModel()) {
@@ -419,7 +431,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
 
 template<typename ValueType, typename RewardModelType, typename StateType>
 storm::models::sparse::StateLabeling ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-    return generator->label(stateStorage, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices);
+    return generator->label(stateStorage, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices, stateStorage.unexploredStateIndices);
 }
 
 // Explicitly instantiate the class.

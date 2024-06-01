@@ -119,7 +119,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
                 this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
             } else {
                 // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
-                if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
+                if (!this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel())) {
                     STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()),
                                     storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
@@ -1213,7 +1213,8 @@ storm::builder::RewardModelInformation JaniNextStateGenerator<ValueType, StateTy
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                                                          std::vector<StateType> const& initialStateIndices,
-                                                                                         std::vector<StateType> const& deadlockStateIndices) {
+                                                                                         std::vector<StateType> const& deadlockStateIndices,
+                                                                                         std::vector<StateType> const& unexploredStateIndices) {
     // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
     // create a list of boolean transient variables and the expressions that define them.
     std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
@@ -1224,7 +1225,8 @@ storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType
             }
         }
     }
-    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
+    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, unexploredStateIndices,
+                                                           transientVariableExpressions);
 }
 
 template<typename ValueType, typename StateType>
@@ -1389,7 +1391,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
+storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& /*state*/) const {
     STORM_LOG_WARN("There are no observation labels in JANI currenty");
     return storm::storage::BitVector(0);
 }

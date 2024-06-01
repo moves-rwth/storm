@@ -5,6 +5,7 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
+#include "storm/utility/permutation.h"
 
 namespace storm {
 namespace settings {
@@ -16,6 +17,7 @@ const std::string TransformationSettings::chainEliminationOptionName = "eliminat
 const std::string TransformationSettings::labelBehaviorOptionName = "ec-label-behavior";
 const std::string TransformationSettings::toNondetOptionName = "to-nondet";
 const std::string TransformationSettings::toDiscreteTimeOptionName = "to-discrete";
+const std::string TransformationSettings::permuteModelOptionName = "permute";
 
 TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, chainEliminationOptionName, false,
@@ -46,6 +48,19 @@ TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
                                                    "If set, CTMCs/MAs are converted to DTMCs/MDPs (which might or might not preserve the provided properties).")
                         .setIsAdvanced()
                         .build());
+
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, permuteModelOptionName, false, "Permutes the build model w.r.t. the given order.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("order", "The order.")
+                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(storm::utility::permutation::orderKinds()))
+                             .setDefaultValueString(storm::utility::permutation::orderKindtoString(storm::utility::permutation::OrderKind::Bfs))
+                             .build())
+            .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("seed", "An optional seed, makes random order deterministic.")
+                             .setDefaultValueUnsignedInteger(0)
+                             .makeOptional()
+                             .build())
+            .build());
 }
 
 bool TransformationSettings::isChainEliminationSet() const {
@@ -73,10 +88,30 @@ bool TransformationSettings::isToDiscreteTimeModelSet() const {
     return this->getOption(toDiscreteTimeOptionName).getHasOptionBeenSet();
 }
 
+std::optional<storm::utility::permutation::OrderKind> TransformationSettings::getModelPermutation() const {
+    if (this->getOption(permuteModelOptionName).getHasOptionBeenSet()) {
+        return storm::utility::permutation::orderKindFromString(this->getOption(permuteModelOptionName).getArgumentByName("order").getValueAsString());
+    }
+    return std::nullopt;
+}
+
+std::optional<uint64_t> TransformationSettings::getModelPermutationSeed() const {
+    if (this->getOption(permuteModelOptionName).getHasOptionBeenSet()) {
+        if (auto const& arg = this->getOption(permuteModelOptionName).getArgumentByName("seed"); arg.getHasBeenSet()) {
+            return arg.getValueAsUnsignedInteger();
+        }
+    }
+    return std::nullopt;
+}
+
 bool TransformationSettings::check() const {
     // Ensure that labeling preservation is only set if chain elimination is set
     STORM_LOG_THROW(isChainEliminationSet() || !this->getOption(labelBehaviorOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException,
                     "Label preservation can only be chosen if chain elimination is applied.");
+
+    // If there is a seed, the permutation order shall be random
+    STORM_LOG_WARN_COND(!getModelPermutationSeed().has_value() || getModelPermutation() == storm::utility::permutation::OrderKind::Random,
+                        "Random seed is given for permutation order, but the order is not random. Seed will be ignored.");
 
     return true;
 }

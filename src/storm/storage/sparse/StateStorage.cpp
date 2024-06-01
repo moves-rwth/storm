@@ -5,8 +5,7 @@ namespace storage {
 namespace sparse {
 
 template<typename StateType>
-StateStorage<StateType>::StateStorage(uint64_t bitsPerState)
-    : stateToId(bitsPerState, 100000), initialStateIndices(), deadlockStateIndices(), bitsPerState(bitsPerState) {
+StateStorage<StateType>::StateStorage(uint64_t bitsPerState) : stateToId(bitsPerState, 100000), bitsPerState(bitsPerState) {
     // Intentionally left empty.
 }
 

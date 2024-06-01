@@ -15,6 +15,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
+#include "storm/exceptions/GurobiLicenseException.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -43,6 +44,11 @@ void GurobiEnvironment::initialize() {
     // Create the environment.
     int error = GRBloadenv(&env, "");
     if (error || env == nullptr) {
+        if (error == 10009) {
+            STORM_LOG_ERROR("Gurobi License Issue. " << GRBgeterrormsg(env) << ", error code " << error << ").");
+            throw storm::exceptions::GurobiLicenseException()
+                << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
+        }
         STORM_LOG_ERROR("Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         throw storm::exceptions::InvalidStateException()
             << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
