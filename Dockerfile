@@ -7,7 +7,8 @@
 
 # Set base image
 ARG BASE_IMG=movesrwth/storm-dependencies:latest
-FROM $BASE_IMG
+ARG BASE_PLATFORM=linux/amd64
+FROM --platform=$BASE_PLATFORM  $BASE_IMG
 MAINTAINER Matthias Volk <m.volk@tue.nl>
 
 # Specify configurations

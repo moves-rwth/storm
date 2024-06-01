@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
     storm::settings::initializeAll("Storm (Functional) Testing Suite", "test");
-    storm::test::initialize();
     ::testing::InitGoogleTest(&argc, argv);
+    storm::test::initialize(&argc, argv);
     return RUN_ALL_TESTS();
 }
