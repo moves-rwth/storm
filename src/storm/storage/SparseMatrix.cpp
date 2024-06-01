@@ -1337,6 +1337,10 @@ SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowGroups(std::ve
     index_type subEntries = 0;
     for (index_type rowGroupIndex = 0, rowGroupIndexEnd = rowGroupToRowIndexMapping.size(); rowGroupIndex < rowGroupIndexEnd; ++rowGroupIndex) {
         // Determine which row we need to select from the current row group.
+        STORM_LOG_ASSERT(rowGroupToRowIndexMapping[rowGroupIndex] < this->getRowGroupSize(rowGroupIndex),
+                         "Cannot point to row offset " << rowGroupToRowIndexMapping[rowGroupIndex] << " for rowGroup " << rowGroupIndex << " which starts at "
+                                                       << this->getRowGroupIndices()[rowGroupIndex] << " and ends at "
+                                                       << this->getRowGroupIndices()[rowGroupIndex + 1] << ".");
         index_type rowToCopy = this->getRowGroupIndices()[rowGroupIndex] + rowGroupToRowIndexMapping[rowGroupIndex];
 
         // Iterate through that row and count the number of slots we have to reserve for copying.
@@ -2378,6 +2382,7 @@ typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(inde
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin(index_type row) const {
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row];
 }
 
