@@ -76,15 +76,17 @@ class RobustParameterLifter {
     // Returns the resulting vector. Should only be called AFTER specifying a region
     std::vector<Interval> const& getVector() const;
 
+    std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
+
+    std::map<VariableType, std::set<uint_fast64_t>> const& getOccuringStatesAtVariable() const;
+
     // Returns whether the curent region is all ill-defined.
     bool isCurrentRegionAllIllDefined() const;
 
-   private:
     /*
      * We minimize the number of function evaluations by only calling evaluate() once for each unique pair of function and valuation.
      * The result of each evaluation is then written to all positions in the matrix (and the vector) where the corresponding (function,valuation) occurred.
      */
-
     class RobustAbstractValuation {
        public:
         RobustAbstractValuation(storm::RationalFunction transition);
@@ -123,6 +125,7 @@ class RobustParameterLifter {
         std::optional<Annotation> annotation;
     };
 
+   private:
     /*!
      * Collects all occurring pairs of functions and (abstract) valuations.
      * We also store a placeholder for the result of each pair. The result is computed and written into the placeholder whenever a region and optimization
@@ -162,8 +165,6 @@ class RobustParameterLifter {
     std::vector<std::pair<typename storm::storage::SparseMatrix<Interval>::iterator, Interval&>>
         matrixAssignment;  // Connection of matrix entries with placeholders
 
-    std::vector<RobustAbstractValuation> rowLabels;
-
     std::vector<uint64_t> oldToNewColumnIndexMapping;  // Mapping from old to new columnIndex
     std::vector<uint64_t> oldToNewRowIndexMapping;     // Mapping from old to new columnIndex
     std::vector<uint64_t> rowGroupToStateNumber;       // Mapping from new to old columnIndex
@@ -172,6 +173,9 @@ class RobustParameterLifter {
 
     std::vector<Interval> vector;
     std::vector<std::pair<typename std::vector<Interval>::iterator, Interval&>> vectorAssignment;  // Connection of vector entries with placeholders
+
+    std::vector<std::set<VariableType>> occurringVariablesAtState;
+    std::map<VariableType, std::set<uint_fast64_t>> occuringStatesAtVariable;
 };
 
 }  // namespace transformer

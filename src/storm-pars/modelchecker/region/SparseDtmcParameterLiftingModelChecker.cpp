@@ -1,6 +1,8 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "solver/OptimizationDirection.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
@@ -22,6 +24,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "utility/constants.h"
 #include "utility/logging.h"
 #include "utility/macros.h"
 
@@ -264,6 +267,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
             auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
             storm::storage::BitVector allTrue(maybeStates.size(), true);
+            maybeStates = allTrue;
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
@@ -293,6 +297,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::specifyCumulativeRewardFormula(
     const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) {
+    STORM_LOG_ERROR_COND(!Robust, "Not implemented for robust mode.");
     // Obtain the stepBound
     stepBound = checkTask.getFormula().getBound().evaluateAsInt();
     if (checkTask.getFormula().isBoundStrict()) {
@@ -478,76 +483,142 @@ template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::computeStateValueDeltaRegionSplitEstimates(
     std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
-    std::map<VariableType, ConstantType> deltaLower, deltaUpper;
-    for (auto const& p : region.getVariables()) {
-        deltaLower.emplace(p, storm::utility::zero<ConstantType>());
-        deltaUpper.emplace(p, storm::utility::zero<ConstantType>());
-    }
     auto const& matrix = parameterLifter->getMatrix();
     auto const& vector = parameterLifter->getVector();
-    if constexpr (Robust) {
-        // TODO Robust Region Split Estimates
-
-    } else {
-        auto const& choiceValuations = parameterLifter->getRowLabels();
-
-        std::vector<ConstantType> stateResults;
-        for (uint64_t state = 0; state < schedulerChoices.size(); ++state) {
-            uint64_t rowOffset = matrix.getRowGroupIndices()[state];
-            uint64_t optimalChoice = schedulerChoices[state];
-            auto const& optimalChoiceVal = choiceValuations[rowOffset + optimalChoice];
-            assert(optimalChoiceVal.getUnspecifiedParameters().empty());
-            stateResults.clear();
-            for (uint64_t row = rowOffset; row < matrix.getRowGroupIndices()[state + 1]; ++row) {
-                stateResults.push_back(matrix.multiplyRowWithVector(row, quantitativeResult) + vector[row]);
+    switch (*this->specifiedRegionSplitEstimateKind) {
+    case RegionSplitEstimateKind::StateValueDelta:
+        if constexpr (Robust) {
+            STORM_LOG_ERROR("State-value-delta split estimates not supported for robust PLA.");
+        } else {
+            std::map<VariableType, ConstantType> deltaLower, deltaUpper;
+            for (auto const& p : region.getVariables()) {
+                deltaLower.emplace(p, storm::utility::zero<ConstantType>());
+                deltaUpper.emplace(p, storm::utility::zero<ConstantType>());
             }
-            // Do this twice, once for upperbound once for lowerbound
-            bool checkUpperParameters = false;
-            do {
-                auto const& consideredParameters = checkUpperParameters ? optimalChoiceVal.getUpperParameters() : optimalChoiceVal.getLowerParameters();
-                for (auto const& p : consideredParameters) {
-                    // Find the 'best' choice that assigns the parameter to the other bound
-                    ConstantType bestValue = 0;
-                    bool foundBestValue = false;
-                    for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
-                        if (choice != optimalChoice) {
-                            auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters()
-                                                                                    : choiceValuations[rowOffset + choice].getUpperParameters();
-                            if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
-                                ConstantType const& choiceValue = stateResults[choice];
-                                if (!foundBestValue || (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
-                                    foundBestValue = true;
-                                    bestValue = choiceValue;
+            auto const& choiceValuations = parameterLifter->getRowLabels();
+
+            std::vector<ConstantType> stateResults;
+            for (uint64_t state = 0; state < schedulerChoices.size(); ++state) {
+                uint64_t rowOffset = matrix.getRowGroupIndices()[state];
+                uint64_t optimalChoice = schedulerChoices[state];
+                auto const& optimalChoiceVal = choiceValuations[rowOffset + optimalChoice];
+                assert(optimalChoiceVal.getUnspecifiedParameters().empty());
+                stateResults.clear();
+                for (uint64_t row = rowOffset; row < matrix.getRowGroupIndices()[state + 1]; ++row) {
+                    stateResults.push_back(matrix.multiplyRowWithVector(row, quantitativeResult) + vector[row]);
+                }
+                // Do this twice, once for upperbound once for lowerbound
+                bool checkUpperParameters = false;
+                do {
+                    auto const& consideredParameters = checkUpperParameters ? optimalChoiceVal.getUpperParameters() : optimalChoiceVal.getLowerParameters();
+                    for (auto const& p : consideredParameters) {
+                        // Find the 'best' choice that assigns the parameter to the other bound
+                        ConstantType bestValue = 0;
+                        bool foundBestValue = false;
+                        for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
+                            if (choice != optimalChoice) {
+                                auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters()
+                                                                                        : choiceValuations[rowOffset + choice].getUpperParameters();
+                                if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
+                                    ConstantType const& choiceValue = stateResults[choice];
+                                    if (!foundBestValue || (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
+                                        foundBestValue = true;
+                                        bestValue = choiceValue;
+                                    }
                                 }
                             }
                         }
-                    }
-                    auto const& optimal = stateResults[optimalChoice];
-                    auto diff = storm::utility::abs<ConstantType>(optimal - storm::utility::convertNumber<ConstantType>(bestValue));
-                    if (foundBestValue) {
-                        if (checkUpperParameters) {
-                            deltaLower[p] += diff;
-                        } else {
-                            deltaUpper[p] += diff;
+                        auto const& optimal = stateResults[optimalChoice];
+                        auto diff = storm::utility::abs<ConstantType>(optimal - storm::utility::convertNumber<ConstantType>(bestValue));
+                        if (foundBestValue) {
+                            if (checkUpperParameters) {
+                                deltaLower[p] += diff;
+                            } else {
+                                deltaUpper[p] += diff;
+                            }
                         }
                     }
+                    checkUpperParameters = !checkUpperParameters;
+                } while (checkUpperParameters);
+
+                cachedRegionSplitEstimates.clear();
+                for (auto const& p : region.getVariables()) {
+                    // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
+                    auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
+                    cachedRegionSplitEstimates.emplace(p, minDelta);
+
+                    // Previously - why only insert some regionsplitestimates?????????????????????
+                    // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
+                    //     cachedRegionSplitEstimates.emplace(p, minDelta);
+                    // }
                 }
-                checkUpperParameters = !checkUpperParameters;
-            } while (checkUpperParameters);
+            }
+            // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
         }
+        break;
+    case RegionSplitEstimateKind::MinMaxDelta:
+    case RegionSplitEstimateKind::MinMaxDeltaWeighted:
+        if constexpr (!Robust) {
+            STORM_LOG_ERROR("Min-max-delta split estimates not supported for non-robust PLA. (TODO)");
+        } else {
+            cachedRegionSplitEstimates.clear();
+            for (auto const& p : region.getVariables()) {
+                cachedRegionSplitEstimates.emplace(p, utility::zero<ConstantType>());
+            }
+            // Assumption: Only one parameter per state
+            for (uint64_t state = 0; state < vector.size(); ++state) {
+                auto variables = parameterLifter->getOccurringVariablesAtState().at(state);
+                if (variables.size() == 0) {
+                    continue;
+                }
+                STORM_LOG_ERROR_COND(variables.size() == 1, "Cannot compute state-value-delta split estimates in robust mode if there are states with multiple parameters.");
 
-        cachedRegionSplitEstimates.clear();
-        for (auto const& p : region.getVariables()) {
-            // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
-            auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
-            cachedRegionSplitEstimates.emplace(p, minDelta);
+                std::vector<ConstantType> results;
 
-            // Previously - why only insert some regionsplitestimates?????????????????????
-            // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
-            //     cachedRegionSplitEstimates.emplace(p, minDelta);
-            // }
+                for (auto const& direction : {OptimizationDirection::Maximize, OptimizationDirection::Minimize}) {
+                    // Do a step of robust value iteration
+                    // TODO I think it is a problem if we have probabilities and a state that is going to the vector, we don't count that
+                    // Currently "fixed in preprocessing"
+                    // It's different for rewards (same problem in ValueIterationOperator.h, search for word "octopus" in codebase)
+                    ConstantType remainingValue = utility::one<ConstantType>();
+                    ConstantType result = utility::zero<ConstantType>();
+
+                    std::vector<std::pair<ConstantType, ConstantType>> robustOrder;
+
+                    for (auto const& entry : matrix.getRow(state)) {
+                        auto const lower = entry.getValue().lower();
+                        result += quantitativeResult[entry.getColumn()] * lower;
+                        remainingValue -= lower;
+                        auto const diameter = entry.getValue().upper() - lower;
+                        if (!storm::utility::isZero(diameter)) {
+                            robustOrder.emplace_back(quantitativeResult[entry.getColumn()], diameter);
+                        }
+                    }
+
+                    std::sort(robustOrder.begin(), robustOrder.end(), [direction](const std::pair<ConstantType, ConstantType>& a,
+                            const std::pair<ConstantType, ConstantType>& b) {
+                        if (direction == OptimizationDirection::Maximize) {
+                            return a.first > b.first;
+                        } else {
+                            return a.first < b.first;
+                        }
+                    });
+
+                    for (auto const& pair : robustOrder) {
+                        auto availableMass = std::min(pair.second, remainingValue);
+                        result += availableMass * pair.first;
+                        remainingValue -= availableMass;
+                    }
+
+                    results.push_back(result);
+                }
+
+                cachedRegionSplitEstimates.at(*variables.begin()) += results[0] - results[1];
+            }
         }
-        // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
+        break;
+    default:
+        STORM_LOG_ERROR("Region split estimate kind not handled by SparseDtmcParameterLiftingModelChecker.");
     }
 }
 
@@ -612,13 +683,14 @@ template<typename SparseModelType, typename ConstantType, bool Robust>
 bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::isRegionSplitEstimateKindSupported(
     RegionSplitEstimateKind kind, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     return RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(kind, checkTask) ||
-           (supportsStateValueDeltaEstimates(checkTask.getFormula()) && kind == RegionSplitEstimateKind::StateValueDelta);
+           (!Robust && supportsStateValueDeltaEstimates(checkTask.getFormula()) && kind == RegionSplitEstimateKind::StateValueDelta) ||
+           (Robust && (kind == RegionSplitEstimateKind::MinMaxDelta || kind == RegionSplitEstimateKind::MinMaxDeltaWeighted));
 }
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 RegionSplitEstimateKind SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getDefaultRegionSplitEstimateKind(
     CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
-    return supportsStateValueDeltaEstimates(checkTask.getFormula()) ? RegionSplitEstimateKind::StateValueDelta
+    return !Robust && supportsStateValueDeltaEstimates(checkTask.getFormula()) ? RegionSplitEstimateKind::StateValueDelta
                                                                     : RegionModelChecker<ParametricType>::getDefaultRegionSplitEstimateKind(checkTask);
 }
 
@@ -665,7 +737,9 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 template<typename SparseModelType, typename ConstantType, bool Robust>
 bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::isValueDeltaRegionSplitEstimates() const {
     return this->getSpecifiedRegionSplitEstimateKind().has_value() &&
-           this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::StateValueDelta;
+           (this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::StateValueDelta ||
+            this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::MinMaxDelta ||
+            this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::MinMaxDeltaWeighted);
 }
 
 template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, false>;

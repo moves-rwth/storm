@@ -50,7 +50,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            std::vector<ParametricType> const& pVector,
                                                                            storm::storage::BitVector const& selectedRows,
                                                                            storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
-    STORM_LOG_ERROR_COND(useMonotonicity, "Cannot use graph monotonicity in robust mode.");
+    STORM_LOG_WARN_COND(useMonotonicity, "Cannot use graph monotonicity in robust mode.");
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
     for (auto const& oldColumn : selectedColumns) {
@@ -73,16 +73,24 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
     // The matrix builder for the new matrix. The correct number of rows and entries is not known yet.
     storm::storage::SparseMatrixBuilder<Interval> builder(newIndexRows, newIndexColumns, 0, true, false);
 
+    this->occurringVariablesAtState.resize(pMatrix.getRowCount());
+
     for (uint64_t row = 0; row < pMatrix.getRowCount(); row++) {
         if (!selectedRows.get(row)) {
             continue;
         }
+        std::set<VariableType> occurringVariables;
         for (auto const& entry : pMatrix.getRow(row)) {
             auto column = entry.getColumn();
             if (!selectedColumns.get(column)) {
                 continue;
             }
+
             auto transition = entry.getValue();
+
+            auto variables = transition.gatherVariables();
+            occurringVariables.insert(variables.begin(), variables.end());
+
             if (storm::utility::isConstant(transition)) {
                 builder.addNextValue(oldToNewColumnIndexMapping[row], oldToNewColumnIndexMapping[column], utility::convertNumber<double>(transition));
             } else {
@@ -95,26 +103,30 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             }
             pMatrixEntryCount++;
         }
+
+        // Save the occuringVariables of a state, needed if we want to use monotonicity
+        for (auto& var : occurringVariables) {
+            occuringStatesAtVariable[var].insert(row);
+        }
+        occurringVariablesAtState[row] = std::move(occurringVariables);
     }
 
-    if (generateRowLabels) {
-        for (uint64_t i = 0; i < pVector.size(); i++) {
-            auto const transition = pVector[i];
-            if (!selectedRows.get(i)) {
-                continue;
-            }
-            if (storm::utility::isConstant(transition)) {
-                vector.push_back(utility::convertNumber<double>(transition));
-            } else {
-                nonConstVectorEntries.set(pVectorEntryCount, true);
-                auto valuation = RobustAbstractValuation(transition);
-                vector.push_back(Interval());
-                Interval& placeholder = functionValuationCollector.add(valuation);
-                vectorAssignment.push_back(
-                    std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
-            }
-            pVectorEntryCount++;
+    for (uint64_t i = 0; i < pVector.size(); i++) {
+        auto const transition = pVector[i];
+        if (!selectedRows.get(i)) {
+            continue;
         }
+        if (storm::utility::isConstant(transition)) {
+            vector.push_back(utility::convertNumber<double>(transition));
+        } else {
+            nonConstVectorEntries.set(pVectorEntryCount, true);
+            auto valuation = RobustAbstractValuation(transition);
+            vector.push_back(Interval());
+            Interval& placeholder = functionValuationCollector.add(valuation);
+            vectorAssignment.push_back(
+                std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
+        }
+        pVectorEntryCount++;
     }
 
     matrix = builder.build();
@@ -172,6 +184,18 @@ void RobustParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::s
     for (auto& assignment : vectorAssignment) {
         *assignment.first = assignment.second;
     }
+}
+
+template<typename ParametricType, typename ConstantType>
+const std::vector<std::set<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType>>&
+RobustParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() const {
+    return occurringVariablesAtState;
+}
+
+template<typename ParametricType, typename ConstantType>
+std::map<typename RobustParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>> const&
+RobustParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable() const {
+    return occuringStatesAtVariable;
 }
 
 template<typename ParametricType, typename ConstantType>
