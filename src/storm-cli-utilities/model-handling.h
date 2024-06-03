@@ -518,6 +518,15 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         result = buildModelExplicit<ValueType>(ioSettings, buildSettings);
     }
 
+    // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Entry point.
+    uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
+    if (DEBUG_THESIS_BENCHMARK != 0) {
+        STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
+                        "MEC decomposition benchmarking is only available for symbolic models.";)
+        doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const &)*result, DEBUG_THESIS_BENCHMARK);
+        exit(0);
+    }
+
     modelBuildingWatch.stop();
     if (result) {
         STORM_PRINT("Time for model construction: " << modelBuildingWatch << ".\n\n");
