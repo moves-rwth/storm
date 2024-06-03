@@ -21,6 +21,14 @@ void initializeLogger() {
     sink->setFormatter(fptr);
 }
 
+/*!
+ * Set number of digits for printing output.
+ * @param digits Number of digits to print.
+ */
+void setOutputDigits(int digits) {
+    std::cout.precision(digits);
+}
+
 void setUp() {
     initializeLogger();
     setOutputDigits(10);
@@ -28,10 +36,6 @@ void setUp() {
 
 void cleanUp() {
     // Intentionally left empty.
-}
-
-void setOutputDigits(int digits) {
-    std::cout.precision(digits);
 }
 
 void setOutputDigitsFromGeneralPrecision(double precision) {
