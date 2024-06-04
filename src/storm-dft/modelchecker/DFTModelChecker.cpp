@@ -371,13 +371,11 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                              "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
             totalTimer.stop();
             if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
-                std::cout << "Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second
-                          << ")\n";
+                std::cout << "Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")\n";
                 printTimings();
                 std::cout << '\n';
             } else {
-                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", "
-                                                          << approxResult.second << ")");
+                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")");
             }
 
             totalTimer.start();

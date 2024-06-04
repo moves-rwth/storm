@@ -24,9 +24,11 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
    ```
    The new tag should now be visible on [GitHub](https://github.com/moves-rwth/storm/tags).
 
-6. [Add new release](https://github.com/moves-rwth/storm/releases/new) in GitHub.
+6. Use the [CI](https://github.com/moves-rwth/storm/actions/workflows/release_docker.yml) on the tag, provide the version `X.Y.Z` as tag and automatically create the [Docker containers](https://hub.docker.com/r/movesrwth/storm) for the new version.
 
-7. Update `stable` branch:
+7. [Add new release](https://github.com/moves-rwth/storm/releases/new) in GitHub.
+
+8. Update `stable` branch:
 
    ```console
    git checkout stable
@@ -40,8 +42,8 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
    git push --force origin stable
    ```
 
-8. Update [Homebrew formula](https://github.com/moves-rwth/homebrew-storm).
+9. Use the [CI](https://github.com/moves-rwth/storm/actions/workflows/release_docker.yml) on the `stable` branch, provide the tag 'stable' and automatically create the [Docker containers](https://hub.docker.com/r/movesrwth/storm).
 
-9. Announce new storm version on [website](http://www.stormchecker.org/news.html).
+10. Update [Homebrew formula](https://github.com/moves-rwth/homebrew-storm).
 
-10. Create [Docker containers](https://hub.docker.com/r/movesrwth/storm) for new version.
+11. Announce new storm version on [website](http://www.stormchecker.org/news.html).
