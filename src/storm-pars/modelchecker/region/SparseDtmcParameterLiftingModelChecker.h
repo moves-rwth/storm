@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 
+#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/transformer/ParameterLifter.h"
@@ -81,7 +82,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                 storm::solver::OptimizationDirection const& dirForParameters) override;
 
-    void computeStateValueDeltaRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
+    void computeStateValueDeltaRegionSplitEstimates(Environment const& env, std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
                                                     storm::storage::ParameterRegion<ParametricType> const& region,
                                                     storm::solver::OptimizationDirection const& dirForParameters);
 
@@ -100,10 +101,14 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     storm::storage::BitVector maybeStates;
     std::vector<ConstantType> resultsForNonMaybeStates;
     std::optional<uint64_t> stepBound;
-
+    
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerVIO;
+
+    std::unique_ptr<storm::derivative::SparseDerivativeInstantiationModelChecker<ParametricType, ConstantType>> derivativeChecker;
+    std::unique_ptr<CheckTask<storm::logic::Formula, ParametricType>> currentCheckTaskNoBound;
+    std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
 
     std::unique_ptr<ParameterLifterType<ParametricType, ConstantType, Robust>> parameterLifter;
     std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;

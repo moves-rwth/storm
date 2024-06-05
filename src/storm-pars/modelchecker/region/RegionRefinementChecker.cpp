@@ -145,6 +145,8 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 
         currentRegion.result = regionChecker->analyzeRegion(env, currentRegion, hypothesis);
 
+        std::cout << currentRegion.result << std::endl;
+
         if (currentRegion.result == RegionResult::AllSat) {
             progress.addAllSatArea(currentRegion.region.area());
         } else if (currentRegion.result == RegionResult::AllViolated) {

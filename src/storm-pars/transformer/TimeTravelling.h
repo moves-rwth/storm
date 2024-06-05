@@ -237,7 +237,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
     }
 
     void computeDerivative(uint64_t nth) {
-        if (nth == 0) {
+        if (nth == 0 || derivativeOfThis) {
             return;
         }
         derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
@@ -298,6 +298,11 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
             }
         }
         return maxDegree;
+    }
+
+    std::shared_ptr<Annotation> derivative() {
+        computeDerivative(1);
+        return derivativeOfThis;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Annotation& annotation);

@@ -1,11 +1,16 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+#include <_types/_uint64_t.h>
 
+#include "adapters/RationalFunctionForward.h"
+#include "environment/Environment.h"
 #include "solver/OptimizationDirection.h"
+#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
+#include "storm-pars/transformer/TimeTravelling.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -105,6 +110,14 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                     return this->computeQuantitativeValues(env, region, dir);  // sets known value bounds within the region
                 });
         }
+    }
+    if (this->specifiedRegionSplitEstimateKind == RegionSplitEstimateKind::Derivative) {
+        std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = this->currentCheckTask->getFormula().clone();
+        formulaWithoutBounds->asOperatorFormula().removeBound();
+        this->currentFormulaNoBound = formulaWithoutBounds->asSharedPointer();
+        this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType>>(*this->currentFormulaNoBound);
+        this->derivativeChecker = std::make_unique<storm::derivative::SparseDerivativeInstantiationModelChecker<ParametricType, ConstantType>>(*this->parametricModel);
+        this->derivativeChecker->specifyFormula(env, *this->currentCheckTaskNoBound);
     }
 }
 
@@ -464,7 +477,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
         choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
-            computeStateValueDeltaRegionSplitEstimates(x, *choices, region.region, dirForParameters);
+            computeStateValueDeltaRegionSplitEstimates(env, x, *choices, region.region, dirForParameters);
         }
     }
 
@@ -475,14 +488,19 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
+    for (auto const& value : result) {
+        std::cout << value << " ";
+    }
+    std::cout << std::endl;
     this->updateKnownValueBoundInRegion(region, dirForParameters, result);
     return result;
 }
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::computeStateValueDeltaRegionSplitEstimates(
-    std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
+    Environment const& env, std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+    std::cout << region << std::endl;
     auto const& matrix = parameterLifter->getMatrix();
     auto const& vector = parameterLifter->getVector();
     switch (*this->specifiedRegionSplitEstimateKind) {
@@ -518,7 +536,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                         for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
                             if (choice != optimalChoice) {
                                 auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters()
-                                                                                        : choiceValuations[rowOffset + choice].getUpperParameters();
+                                                                                          : choiceValuations[rowOffset + choice].getUpperParameters();
                                 if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
                                     ConstantType const& choiceValue = stateResults[choice];
                                     if (!foundBestValue || (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
@@ -532,48 +550,95 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                         auto diff = storm::utility::abs<ConstantType>(optimal - storm::utility::convertNumber<ConstantType>(bestValue));
                         if (foundBestValue) {
                             if (checkUpperParameters) {
+                                if (diff > 0) std::cout << "Upper Diff " << p << " " << state << " " << diff << std::endl;
+                                if (diff > 0) std::cout << bestValue << " - " << optimal << std::endl;
                                 deltaLower[p] += diff;
                             } else {
+                                if (diff > 0) std::cout << "Lower Diff " << p << " " << state << " " << diff << std::endl;
+                                if (diff > 0) std::cout << bestValue << " - " << optimal << std::endl;
                                 deltaUpper[p] += diff;
                             }
                         }
                     }
                     checkUpperParameters = !checkUpperParameters;
                 } while (checkUpperParameters);
+            }
 
-                cachedRegionSplitEstimates.clear();
-                for (auto const& p : region.getVariables()) {
-                    // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
-                    auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
-                    cachedRegionSplitEstimates.emplace(p, minDelta);
+            cachedRegionSplitEstimates.clear();
+            for (auto const& p : region.getVariables()) {
+                // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
+                auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
+                cachedRegionSplitEstimates.emplace(p, minDelta);
 
-                    // Previously - why only insert some regionsplitestimates?????????????????????
-                    // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
-                    //     cachedRegionSplitEstimates.emplace(p, minDelta);
-                    // }
-                }
+                // Previously - why only insert some regionsplitestimates?????????????????????
+                // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
+                //     cachedRegionSplitEstimates.emplace(p, minDelta);
+                // }
             }
             // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
         }
         break;
+    case RegionSplitEstimateKind::Derivative: {
+        storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType> instantiationModelChecker(*this->parametricModel);
+        instantiationModelChecker.specifyFormula(*this->currentCheckTaskNoBound);
+
+        auto const center = region.getCenterPoint();
+
+        std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker.check(env, center);
+        auto const reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+
+        STORM_LOG_ASSERT(this->derivativeChecker, "Derivative checker not intialized");
+
+        for (auto const& param : region.getVariables()) {
+            auto result = this->derivativeChecker->check(env, center, param, reachabilityProbabilities);
+            ConstantType derivative = result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[this->derivativeChecker->getInitialState()];
+            cachedRegionSplitEstimates[param] = utility::abs(derivative) * utility::convertNumber<ConstantType>(region.getDifference(param));
+        }
+        break;
+    }
     case RegionSplitEstimateKind::MinMaxDelta:
     case RegionSplitEstimateKind::MinMaxDeltaWeighted:
         if constexpr (!Robust) {
             STORM_LOG_ERROR("Min-max-delta split estimates not supported for non-robust PLA. (TODO)");
         } else {
+            std::map<VariableType, ConstantType> deltaLower, deltaUpper;
+            for (auto const& p : region.getVariables()) {
+                deltaLower.emplace(p, storm::utility::zero<ConstantType>());
+                deltaUpper.emplace(p, storm::utility::zero<ConstantType>());
+            }
             cachedRegionSplitEstimates.clear();
             for (auto const& p : region.getVariables()) {
                 cachedRegionSplitEstimates.emplace(p, utility::zero<ConstantType>());
             }
+
             // Assumption: Only one parameter per state
-            for (uint64_t state = 0; state < vector.size(); ++state) {
+            for (uint64_t state : maybeStates) {
                 auto variables = parameterLifter->getOccurringVariablesAtState().at(state);
                 if (variables.size() == 0) {
                     continue;
                 }
                 STORM_LOG_ERROR_COND(variables.size() == 1, "Cannot compute state-value-delta split estimates in robust mode if there are states with multiple parameters.");
+                
+                auto const p = *variables.begin();
 
-                std::vector<ConstantType> results;
+                const uint64_t rowIndex = maybeStates.getNumberOfSetBitsBeforeIndex(state);
+
+                std::vector<ConstantType> derivatives;
+                for (auto const& entry : this->parametricModel->getTransitionMatrix().getRow(state)) {
+                    if (storm::transformer::TimeTravelling::lastSavedAnnotations.count(entry.getValue())) {
+                        auto& annotation = storm::transformer::TimeTravelling::lastSavedAnnotations.at(entry.getValue());
+                        ConstantType derivative = annotation.derivative()->template evaluate<ConstantType>(utility::convertNumber<ConstantType>(region.getCenter(p)));
+                        derivatives.push_back(derivative);
+                    } else {
+                        CoefficientType derivative = entry.getValue().derivative(p).evaluate(region.getCenterPoint());
+                        derivatives.push_back(utility::convertNumber<ConstantType>(derivative));
+                    }
+                }
+
+                std::vector<ConstantType> results(0);
+
+                ConstantType distrToNegativeDerivative = storm::utility::zero<ConstantType>();
+                ConstantType distrToPositiveDerivative = storm::utility::zero<ConstantType>();
 
                 for (auto const& direction : {OptimizationDirection::Maximize, OptimizationDirection::Minimize}) {
                     // Do a step of robust value iteration
@@ -583,20 +648,24 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                     ConstantType remainingValue = utility::one<ConstantType>();
                     ConstantType result = utility::zero<ConstantType>();
 
-                    std::vector<std::pair<ConstantType, ConstantType>> robustOrder;
+                    STORM_LOG_ASSERT(vector[rowIndex].upper() == vector[rowIndex].lower(), "Non-constant vector indices not supported (this includes parametric rewards).");
 
-                    for (auto const& entry : matrix.getRow(state)) {
+                    std::vector<std::pair<ConstantType, std::pair<ConstantType, uint64_t>>> robustOrder;
+
+                    uint64_t index = 0;
+                    for (auto const& entry : matrix.getRow(rowIndex)) {
                         auto const lower = entry.getValue().lower();
                         result += quantitativeResult[entry.getColumn()] * lower;
                         remainingValue -= lower;
                         auto const diameter = entry.getValue().upper() - lower;
                         if (!storm::utility::isZero(diameter)) {
-                            robustOrder.emplace_back(quantitativeResult[entry.getColumn()], diameter);
+                            robustOrder.emplace_back(quantitativeResult[entry.getColumn()], std::make_pair(diameter, index));
                         }
+                        index++;
                     }
 
-                    std::sort(robustOrder.begin(), robustOrder.end(), [direction](const std::pair<ConstantType, ConstantType>& a,
-                            const std::pair<ConstantType, ConstantType>& b) {
+                    std::sort(robustOrder.begin(), robustOrder.end(), [direction](const std::pair<ConstantType, std::pair<ConstantType, uint64_t>>& a,
+                            const std::pair<ConstantType, std::pair<ConstantType, uint64_t>>& b) {
                         if (direction == OptimizationDirection::Maximize) {
                             return a.first > b.first;
                         } else {
@@ -605,21 +674,64 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                     });
 
                     for (auto const& pair : robustOrder) {
-                        auto availableMass = std::min(pair.second, remainingValue);
+                        auto availableMass = std::min(pair.second.first, remainingValue);
                         result += availableMass * pair.first;
+                        // TODO hardcoded precision
+                        if (direction == this->currentCheckTask->getOptimizationDirection()) {
+                            if (derivatives[pair.second.second] > 1e-6) {
+                                distrToPositiveDerivative += availableMass;
+                            } else if (derivatives[pair.second.second] < 1e-6) {
+                                distrToNegativeDerivative += availableMass;
+                            }
+                        }
                         remainingValue -= availableMass;
                     }
 
                     results.push_back(result);
                 }
 
-                cachedRegionSplitEstimates.at(*variables.begin()) += results[0] - results[1];
+                // std::cout << distrToNegativeDerivative << " towards lower" << std::endl;
+                // std::cout << distrToPositiveDerivative << " towards upper" << std::endl;
+
+                ConstantType diff = std::abs(results[0] - results[1]);
+                if (distrToPositiveDerivative > distrToNegativeDerivative) { // Choose as upper
+                    if (diff > 0) std::cout << "Upper Diff " << p << " " << state << " " << diff << std::endl;
+                    if (diff > 0) std::cout << results[0] << " - " << results[1] << std::endl;
+                    deltaUpper[p] += diff;
+                } else { // Choose as lower
+                    if (diff > 0) std::cout << "Lower Diff " << p << " " << state << " " << diff << std::endl;
+                    if (diff > 0) std::cout << results[0] << " - " << results[1] << std::endl;
+                    deltaLower[p] += diff;
+                }
+            }
+
+            cachedRegionSplitEstimates.clear();
+            for (auto const& p : region.getVariables()) {
+                // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
+                auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
+                cachedRegionSplitEstimates.emplace(p, minDelta);
+
+                // Previously - why only insert some regionsplitestimates?????????????????????
+                // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
+                //     cachedRegionSplitEstimates.emplace(p, minDelta);
+                // }
             }
         }
         break;
     default:
         STORM_LOG_ERROR("Region split estimate kind not handled by SparseDtmcParameterLiftingModelChecker.");
     }
+
+    std::cout << region << std::endl;
+    for (auto const& [var, val] : cachedRegionSplitEstimates) {
+        std::cout << var << "=" << val << " ";
+    }
+    std::cout << std::endl;
+
+    // std::cout << matrix << std::endl;
+    // for (auto const& state : maybeStates) {
+    //     std::cout << state << " " << quantitativeResult[maybeStates.getNumberOfSetBitsBeforeIndex(state)] << std::endl;
+    // }
 }
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
@@ -684,7 +796,8 @@ bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     RegionSplitEstimateKind kind, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const {
     return RegionModelChecker<ParametricType>::isRegionSplitEstimateKindSupported(kind, checkTask) ||
            (!Robust && supportsStateValueDeltaEstimates(checkTask.getFormula()) && kind == RegionSplitEstimateKind::StateValueDelta) ||
-           (Robust && (kind == RegionSplitEstimateKind::MinMaxDelta || kind == RegionSplitEstimateKind::MinMaxDeltaWeighted));
+           (Robust && (kind == RegionSplitEstimateKind::MinMaxDelta || kind == RegionSplitEstimateKind::MinMaxDeltaWeighted) ||
+           kind == RegionSplitEstimateKind::Derivative);
 }
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
@@ -739,7 +852,8 @@ bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     return this->getSpecifiedRegionSplitEstimateKind().has_value() &&
            (this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::StateValueDelta ||
             this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::MinMaxDelta ||
-            this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::MinMaxDeltaWeighted);
+            this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::MinMaxDeltaWeighted ||
+            this->getSpecifiedRegionSplitEstimateKind().value() == RegionSplitEstimateKind::Derivative);
 }
 
 template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double, false>;

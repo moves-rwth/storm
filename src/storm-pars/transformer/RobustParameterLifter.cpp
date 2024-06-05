@@ -125,9 +125,14 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             Interval& placeholder = functionValuationCollector.add(valuation);
             vectorAssignment.push_back(
                 std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
+            for (auto const& var : valuation.getParameters()) {
+                occuringStatesAtVariable[var].insert(i);
+                occurringVariablesAtState[i].emplace(var);
+            }
         }
         pVectorEntryCount++;
     }
+
 
     matrix = builder.build();
     vector.shrink_to_fit();
