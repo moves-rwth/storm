@@ -81,13 +81,13 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> pla;
-    pla.specify(env, dtmc, checkTask);
-    auto resultPLA = pla.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto pla =
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaSimple;
-    plaSimple.specify(env, simpleDtmc, checkTask);
-    auto resultPLASimple = plaSimple.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto plaSimple =
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     // no <= defined for RationalFunctions I suppose
     ASSERT_TRUE(resultPLA < resultPLASimple || resultPLA == resultPLASimple) << "Worse PLA result with simplified DTMC";
