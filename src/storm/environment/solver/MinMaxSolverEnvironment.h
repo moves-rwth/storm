@@ -8,6 +8,8 @@
 
 namespace storm {
 
+class MinMaxLpSolverEnvironment;
+
 class MinMaxSolverEnvironment {
    public:
     MinMaxSolverEnvironment();
@@ -26,6 +28,8 @@ class MinMaxSolverEnvironment {
     void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
     bool isForceRequireUnique() const;
     void setForceRequireUnique(bool value);
+    MinMaxLpSolverEnvironment const& lp() const;
+    MinMaxLpSolverEnvironment& lp();
 
    private:
     storm::solver::MinMaxMethod minMaxMethod;
@@ -35,5 +39,6 @@ class MinMaxSolverEnvironment {
     bool considerRelativeTerminationCriterion;
     storm::solver::MultiplicationStyle multiplicationStyle;
     bool forceRequireUnique;
+    SubEnvironment<MinMaxLpSolverEnvironment> lpEnvironment;
 };
 }  // namespace storm
