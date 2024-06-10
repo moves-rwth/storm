@@ -1,0 +1,242 @@
+{
+    "jani-version": 1,
+    "name": "test_trigonometry",
+    "type": "dtmc",
+    "metadata": {
+        "description": "Testing sin, cos and constants in Storm SMC tool."
+    },
+    "features": [
+		"trigonometric-functions"
+	],
+    "variables": [
+        {
+            "name": "orientation_deg",
+            "type": "int",
+            "initial-value": 0,
+            "comment": "Orientation in degrees"
+        },
+        {
+            "name": "pose_x_cm",
+            "type": "int",
+            "initial-value": 0,
+            "comment": "X position in cm"
+        }
+    ],
+    "constants": [
+        {
+            "name": "step_size_rad",
+            "type": "real",
+            "comment": "How much to turn in each step in radians"
+        },
+        {
+            "name": "step_size_m",
+            "type": "real",
+            "comment": "How much to move in each step in meters"
+        },
+        {
+            "name": "max_n_steps",
+            "type": "int",
+            "comment": "Upper bound on the number of steps"
+        },
+        {
+            "name": "goal_orientation_rad",
+            "type": "real",
+            "value": {
+                "op": "/",
+                "left": {"constant": "π"},
+                "right": 2
+            },
+            "comment": "Orientation to reach in radians"
+        }
+    ],
+    "actions": [
+        {
+            "name": "advance"
+        }
+    ],
+    "automata": [
+        {
+            "name": "test_trig_automaton",
+            "locations": [
+                {
+                    "name": "loc"
+                }
+            ],
+            "initial-locations": [
+                "loc"
+            ],
+            "variables": [
+                {
+                    "name": "orientation_rad",
+                    "type": "real",
+                    "initial-value": 0.0,
+                    "transient": true
+                }
+            ],
+            "edges": [
+                {
+                    "location": "loc",
+                    "destinations": [
+                        {
+                            "location": "loc",
+                            "assignments": [
+                                {
+                                    "ref": "orientation_rad",
+                                    "value": {
+                                        "op": "*",
+                                        "left": "orientation_deg",
+                                        "right": {
+                                            "op": "/",
+                                            "left": {"constant": "π"},
+                                            "right": 180
+                                        }
+                                    },
+                                    "index": 0,
+                                    "comment": "Convert orientation from deg to rad"
+                                },
+                                {
+                                    "ref": "pose_x_cm",
+                                    "value": {
+                                        "op": "+",
+                                        "left": "pose_x_cm",
+                                        "right": {
+                                            "op": "*",
+                                            "left": {
+                                                "op": "*",
+                                                "left": "step_size_m",
+                                                "right": {
+                                                    "op": "cos",
+                                                    "exp": "orientation_rad"
+                                                }
+                                            },
+                                            "right": 100
+                                        }
+                                    },
+                                    "index": 1,
+                                    "comment": "Move the robot on the X axis depending on its angle"
+                                },
+                                {
+                                    "ref": "orientation_rad",
+                                    "value": {
+                                        "op": "+",
+                                        "left": "orientation_rad",
+                                        "right": "step_size_rad"
+                                    },
+                                    "index": 2,
+                                    "comment": "Turn by step_size"
+                                },
+                                {
+                                    "ref": "orientation_deg",
+                                    "value": {
+                                        "op": "*",
+                                        "left": "orientation_rad",
+                                        "right": {
+                                            "op": "/",
+                                            "left": 180,
+                                            "right": {"constant": "π"}
+                                        }
+                                    },
+                                    "index": 3,
+                                    "comment": "Convert orientation from rad to deg"
+                                }
+                            ]
+                        }
+                    ],
+                    "action": "advance"
+                }
+            ]
+        }
+    ],
+    "system": {
+        "elements": [
+            {
+                "automaton": "test_trig_automaton"
+            }
+        ],
+        "syncs": [
+            {
+                "result": "advance",
+                "synchronise": [
+                    "advance"
+                ]
+            }
+        ]
+    },
+    "properties": [
+        {
+            "name": "destination_reached_sin",
+            "expression": {
+                "op": "filter",
+                "fun": "values",
+                "values": {
+                    "op": "Pmin",
+                    "exp": {
+                        "op": "U",
+                        "step-bounds": {
+                            "upper": "max_n_steps"
+                        },
+                        "left": true,
+                        "right": {
+                            "op": "∧",
+                            "left": {
+                                "op": "∧",
+                                "left": {
+                                    "op": "<",
+                                    "left": {
+                                        "op": "abs",
+                                        "exp": {
+                                            "op": "-",
+                                            "left": "goal_orientation_rad",
+                                            "right": {
+                                                "op": "*",
+                                                "left": "orientation_deg",
+                                                "right": {
+                                                    "op": "/",
+                                                    "left": {"constant": "π"},
+                                                    "right": 180
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "right": 0.01,
+                                    "comment": "Check if orientation is close to goal"
+                                },
+                                "right": {
+                                    "op": "<",
+                                    "left": {
+                                        "op": "abs",
+                                        "exp": {
+                                            "op": "-",
+                                            "left": {
+                                                "op": "sin",
+                                                "exp": {
+                                                    "op": "*",
+                                                    "left": "orientation_deg",
+                                                    "right": {
+                                                        "op": "/",
+                                                        "left": {"constant": "π"},
+                                                        "right": 180
+                                                    }
+                                                }
+                                            },
+                                            "right": 1.0
+                                        }
+                                    },
+                                    "right": 0.01
+                                }
+                            },
+                            "right": {
+                                "op": ">",
+                                "left": "pose_x_cm",
+                                "right": 1
+                            }
+                        }
+                    }
+                },
+                "states": {
+                    "op": "initial"
+                }
+            }
+        }
+    ]
+}

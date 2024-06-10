@@ -125,7 +125,7 @@ std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<Val
     uint_fast64_t featuresCount = parsedStructure.count("features");
     STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
     if (featuresCount == 1) {
-        auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
+        const auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
         for (auto const& feature : parsedStructure.at("features")) {
             std::string featureStr = getString<ValueType>(feature, "Model feature");
             bool found = false;

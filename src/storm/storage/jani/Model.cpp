@@ -1265,6 +1265,11 @@ ModelFeatures Model::restrictToFeatures(ModelFeatures const& features, std::vect
         uncheckedFeatures.remove(ModelFeature::DerivedOperators);
     }
 
+    // There is no elimination of trigonometric operators
+    if (features.hasTrigonometricFunctions()) {
+        uncheckedFeatures.remove(ModelFeature::TrigonometricFunctions);
+    }
+
     return uncheckedFeatures;
 }
 
