@@ -793,6 +793,12 @@ boost::any ExpressionToJson::visit(storm::expressions::FunctionCallExpression co
     return opDecl;
 }
 
+boost::any ExpressionToJson::visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) {
+    ExportJsonType constantDecl;
+    constantDecl["constant"] = expression.asString();
+    return constantDecl;
+}
+
 void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid,
                           bool compact) {
     std::ofstream stream;

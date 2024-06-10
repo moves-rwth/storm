@@ -15,7 +15,7 @@ class TemplateEdgeDestination {
     /*!
      * Substitutes all variables in all expressions according to the given substitution.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
 
     /*!
      * Changes all variables in assignments based on the given mapping.

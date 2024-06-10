@@ -70,5 +70,10 @@ boost::any JaniReduceNestingExpressionVisitor::visit(FunctionCallExpression cons
     return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(
         new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getFunctionIdentifier(), newArguments)));
 }
+
+boost::any JaniReduceNestingExpressionVisitor::visit(TranscendentalNumberLiteralExpression const& expression, boost::any const& data) {
+    // No substitution is required for constants
+    return expression;
+}
 }  // namespace expressions
 }  // namespace storm

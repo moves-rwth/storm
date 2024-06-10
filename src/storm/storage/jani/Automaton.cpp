@@ -38,7 +38,9 @@ Automaton Automaton::clone(storm::expressions::ExpressionManager& manager, std::
         oldToNewVarMap[v] = cloneVariable(manager, v, variablePrefix).getExpression();
     }
     result.variables.substituteExpressionVariables(oldToNewVarMap);
-    result.substitute(oldToNewVarMap);
+    // When cloning an automaton, keep the transcendental numbers as they are.
+    const bool substituteTranscendentalNumbers = false;
+    result.substitute(oldToNewVarMap, substituteTranscendentalNumbers);
     return result;
 }
 
@@ -429,22 +431,23 @@ std::vector<storm::expressions::Expression> Automaton::getAllRangeExpressions() 
     return result;
 }
 
-void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                           bool const& substituteTranscendentalNumbers) {
     for (auto& functionDefinition : this->getFunctionDefinitions()) {
-        functionDefinition.second.substitute(substitution);
+        functionDefinition.second.substitute(substitution, substituteTranscendentalNumbers);
     }
 
-    this->getVariables().substitute(substitution);
+    this->getVariables().substitute(substitution, substituteTranscendentalNumbers);
 
     for (auto& location : this->getLocations()) {
-        location.substitute(substitution);
+        location.substitute(substitution, substituteTranscendentalNumbers);
     }
 
     if (hasInitialStatesRestriction()) {
-        this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution));
+        this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), substitution, substituteTranscendentalNumbers));
     }
 
-    edges.substitute(substitution);
+    edges.substitute(substitution, substituteTranscendentalNumbers);
 }
 void Automaton::registerTemplateEdge(std::shared_ptr<TemplateEdge> const& te) {
     edges.insertTemplateEdge(te);

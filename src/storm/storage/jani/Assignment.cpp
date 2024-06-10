@@ -62,12 +62,13 @@ bool Assignment::isTransient() const {
     return lValue.isTransient();
 }
 
-void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-    this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution).simplify());
+void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                            bool const& substituteTranscendentalNumbers) {
+    this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution, substituteTranscendentalNumbers).simplify());
     if (lValue.isArrayAccess()) {
         std::vector<storm::expressions::Expression> substitutedExpressions;
         for (auto& index : lValue.getArrayIndexVector()) {
-            substitutedExpressions.push_back(substituteJaniExpression(index, substitution).simplify());
+            substitutedExpressions.push_back(substituteJaniExpression(index, substitution, substituteTranscendentalNumbers).simplify());
         }
 
         lValue = LValue(lValue.getVariable(), substitutedExpressions);

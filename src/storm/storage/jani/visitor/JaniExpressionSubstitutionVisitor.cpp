@@ -5,18 +5,20 @@
 namespace storm {
 
 namespace jani {
-storm::expressions::Expression substituteJaniExpression(
-    storm::expressions::Expression const& expression, std::map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap) {
+storm::expressions::Expression substituteJaniExpression(storm::expressions::Expression const& expression,
+                                                        std::map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
+                                                        bool const& substituteTranscendentalNumbers) {
     return storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>>(
-               identifierToExpressionMap)
+               identifierToExpressionMap, substituteTranscendentalNumbers)
         .substitute(expression);
 }
 
 storm::expressions::Expression substituteJaniExpression(
     storm::expressions::Expression const& expression,
-    std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap) {
+    std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
+    bool const& substituteTranscendentalNumbers) {
     return storm::expressions::JaniExpressionSubstitutionVisitor<std::unordered_map<storm::expressions::Variable, storm::expressions::Expression>>(
-               identifierToExpressionMap)
+               identifierToExpressionMap, substituteTranscendentalNumbers)
         .substitute(expression);
 }
 }  // namespace jani
@@ -24,8 +26,9 @@ storm::expressions::Expression substituteJaniExpression(
 namespace expressions {
 
 template<typename MapType>
-JaniExpressionSubstitutionVisitor<MapType>::JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping)
-    : SubstitutionVisitor<MapType>(variableToExpressionMapping) {
+JaniExpressionSubstitutionVisitor<MapType>::JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping,
+                                                                              bool const& substituteTranscendentalNumbers)
+    : SubstitutionVisitor<MapType>(variableToExpressionMapping), shallSubstituteTranscendentalNumbers(substituteTranscendentalNumbers) {
     // Intentionally left empty.
 }
 
@@ -89,6 +92,17 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(FunctionCallExpress
     }
     return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(
         new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getFunctionIdentifier(), newArguments)));
+}
+
+template<typename MapType>
+boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(TranscendentalNumberLiteralExpression const& expression, boost::any const&) {
+    if (shallSubstituteTranscendentalNumbers) {
+        return std::const_pointer_cast<BaseExpression const>(
+            std::shared_ptr<BaseExpression>(new RationalLiteralExpression(expression.getManager(), expression.evaluateAsDouble())));
+        ;
+    }
+    // No substitution requested for transcendental numbers
+    return expression.getSharedPointer();
 }
 
 // Explicitly instantiate the class with map and unordered_map.

@@ -439,7 +439,7 @@ class Model {
      * Substitutes all expression variables in all expressions of the model. The original model is not modified, but
      * instead a new model is created.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all function calls with the corresponding function definition

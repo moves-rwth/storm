@@ -66,10 +66,10 @@ storm::expressions::Expression const& BoundedType::getUpperBound() const {
 void BoundedType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
     JaniType::substitute(substitution);
     if (this->hasLowerBound()) {
-        this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution));
+        this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution, true));
     }
     if (this->hasUpperBound()) {
-        this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution));
+        this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution, true));
     }
 }
 

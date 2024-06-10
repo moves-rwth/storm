@@ -49,7 +49,7 @@ class FunctionDefinition {
      */
     storm::expressions::Expression call(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> const& arguments) const;
 
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
 
    private:
     // The name of the function.

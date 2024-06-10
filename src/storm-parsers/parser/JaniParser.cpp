@@ -1446,10 +1446,14 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
             // Convert constants to a numeric value (only PI and Euler number, as in Jani specification)
             const std::string constantStr = getString<ValueType>(expressionStructure.at("constant"), scope.description);
             if (constantStr == "π") {
-                return expressionManager->rational(M_PI);
+                return std::make_shared<storm::expressions::TranscendentalNumberLiteralExpression>(
+                           *expressionManager, storm::expressions::TranscendentalNumberLiteralExpression::TranscendentalNumber::PI)
+                    ->toExpression();
             }
             if (constantStr == "e") {
-                return expressionManager->rational(std::exp(1.0));
+                return std::make_shared<storm::expressions::TranscendentalNumberLiteralExpression>(
+                           *expressionManager, storm::expressions::TranscendentalNumberLiteralExpression::TranscendentalNumber::E)
+                    ->toExpression();
             }
         }
         STORM_LOG_THROW(

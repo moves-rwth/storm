@@ -56,9 +56,10 @@ void Variable::setInitExpression(storm::expressions::Expression const& initialEx
     this->init = initialExpression;
 }
 
-void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                          bool const& substituteTranscendentalNumbers) {
     if (this->hasInitExpression()) {
-        this->setInitExpression(substituteJaniExpression(this->getInitExpression(), substitution));
+        this->setInitExpression(substituteJaniExpression(this->getInitExpression(), substitution, substituteTranscendentalNumbers));
     }
     type->substitute(substitution);
 }

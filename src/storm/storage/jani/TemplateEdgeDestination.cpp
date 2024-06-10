@@ -15,8 +15,9 @@ TemplateEdgeDestination::TemplateEdgeDestination(std::vector<Assignment> const& 
     // Intentionally left empty.
 }
 
-void TemplateEdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-    assignments.substitute(substitution);
+void TemplateEdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                                         bool const& substituteTranscendentalNumbers) {
+    assignments.substitute(substitution, substituteTranscendentalNumbers);
 }
 
 void TemplateEdgeDestination::changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) {

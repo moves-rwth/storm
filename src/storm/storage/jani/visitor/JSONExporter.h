@@ -34,6 +34,7 @@ class ExpressionToJson : public storm::expressions::ExpressionVisitor, public st
     virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
     virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
     virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data);
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const& data) override;
 
    private:
     ExpressionToJson(std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables,

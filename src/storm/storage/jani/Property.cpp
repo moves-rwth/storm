@@ -77,6 +77,10 @@ Property Property::substituteRewardModelNames(std::map<std::string, std::string>
     return Property(name, filterExpression.substituteRewardModelNames(rewardModelNameSubstitution), undefinedConstants, comment);
 }
 
+Property Property::substituteTranscendentalNumbers() const {
+    return Property(name, filterExpression.substituteTranscendentalNumbers(), undefinedConstants, comment);
+}
+
 Property Property::clone() const {
     return Property(name, filterExpression.clone(), undefinedConstants, comment);
 }

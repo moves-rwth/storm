@@ -504,7 +504,7 @@ std::shared_ptr<Formula> Formula::clone() const {
 }
 
 std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution);
+    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution, false);
     return substitute([&v](storm::expressions::Expression const& exp) { return v.substitute(exp); });
 }
 
@@ -527,6 +527,12 @@ std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> 
 std::shared_ptr<Formula> Formula::substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
     RewardModelNameSubstitutionVisitor visitor(rewardModelNameSubstitution);
     return visitor.substitute(*this);
+}
+
+std::shared_ptr<Formula> Formula::substituteTranscendentalNumbers() const {
+    const std::map<storm::expressions::Variable, storm::expressions::Expression> emptySubstitutionMap = {};
+    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(emptySubstitutionMap, true);
+    return substitute([&v](storm::expressions::Expression const& exp) { return v.substitute(exp); });
 }
 
 storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager,
