@@ -1100,38 +1100,37 @@ Model& Model::replaceUnassignedVariablesWithConstants() {
     return *this;
 }
 
-Model& Model::substituteConstantsInPlace() {
+Model& Model::substituteConstantsInPlace(bool const& substituteTranscendentalNumbers) {
     // Gather all defining expressions of constants.
-    const bool substituteTrancendentalNumbers = true;
     std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
     for (auto& constant : this->getConstants()) {
         if (constant.hasConstraint()) {
             constant.setConstraintExpression(
-                substituteJaniExpression(constant.getConstraintExpression(), constantSubstitution, substituteTrancendentalNumbers));
+                substituteJaniExpression(constant.getConstraintExpression(), constantSubstitution, substituteTranscendentalNumbers));
         }
         if (constant.isDefined()) {
-            constant.define(substituteJaniExpression(constant.getExpression(), constantSubstitution, substituteTrancendentalNumbers));
+            constant.define(substituteJaniExpression(constant.getExpression(), constantSubstitution, substituteTranscendentalNumbers));
             constantSubstitution[constant.getExpressionVariable()] = constant.getExpression();
         }
     }
 
     for (auto& functionDefinition : this->getGlobalFunctionDefinitions()) {
-        functionDefinition.second.substitute(constantSubstitution, substituteTrancendentalNumbers);
+        functionDefinition.second.substitute(constantSubstitution, substituteTranscendentalNumbers);
     }
 
     // Substitute constants in all global variables.
-    this->getGlobalVariables().substitute(constantSubstitution, substituteTrancendentalNumbers);
+    this->getGlobalVariables().substitute(constantSubstitution, substituteTranscendentalNumbers);
 
     // Substitute constants in initial states expression.
-    this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution, substituteTrancendentalNumbers));
+    this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution, substituteTranscendentalNumbers));
 
     for (auto& rewMod : this->getNonTrivialRewardExpressions()) {
-        rewMod.second = substituteJaniExpression(rewMod.second, constantSubstitution, substituteTrancendentalNumbers);
+        rewMod.second = substituteJaniExpression(rewMod.second, constantSubstitution, substituteTranscendentalNumbers);
     }
 
     // Substitute constants in variables of automata and their edges.
     for (auto& automaton : this->getAutomata()) {
-        automaton.substitute(constantSubstitution, substituteTrancendentalNumbers);
+        automaton.substitute(constantSubstitution, substituteTranscendentalNumbers);
     }
     return *this;
 }
@@ -1139,14 +1138,14 @@ Model& Model::substituteConstantsInPlace() {
 Model Model::substituteConstants() const {
     Model result(*this);
     result.replaceUnassignedVariablesWithConstants();
-    result.substituteConstantsInPlace();
+    result.substituteConstantsInPlace(false);
     return result;
 }
 
 Model Model::substituteConstantsFunctions() const {
     Model result(*this);
     result.replaceUnassignedVariablesWithConstants();
-    result.substituteConstantsInPlace();
+    result.substituteConstantsInPlace(true);
     result.substituteFunctions();
     return result;
 }

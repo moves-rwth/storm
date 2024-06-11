@@ -9,7 +9,7 @@
 namespace storm {
 namespace expressions {
 TranscendentalNumberLiteralExpression::TranscendentalNumberLiteralExpression(ExpressionManager const& manager, TranscendentalNumber const& value)
-    : BaseExpression(manager, manager.getRationalType()), value(value) {
+    : BaseExpression(manager, manager.getTranscendentalNumberType()), value(value) {
     // Intentionally left empty.
 }
 

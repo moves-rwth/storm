@@ -89,6 +89,13 @@ class Type {
     bool isArrayType() const;
 
     /*!
+     * Checks whether this type is a transcendental number type.
+     *
+     * @return True iff the type is a transcendental number.
+     */
+    bool isTranscendentalNumberType() const;
+
+    /*!
      * Retrieves the bit width of the type, provided that it is a bitvector type.
      *
      * @return The bit width of the bitvector type.
@@ -169,6 +176,7 @@ class BaseType {
     virtual bool isBitVectorType() const;
     virtual bool isRationalType() const;
     virtual bool isArrayType() const;
+    virtual bool isTranscendentalNumberType() const;
 };
 
 class BooleanType : public BaseType {
@@ -178,7 +186,7 @@ class BooleanType : public BaseType {
     virtual bool isBooleanType() const override;
 
    private:
-    static const uint64_t mask = (1ull << 60);
+    static const uint64_t mask = (1ull << 56);
 };
 
 class IntegerType : public BaseType {
@@ -188,7 +196,7 @@ class IntegerType : public BaseType {
     virtual bool isIntegerType() const override;
 
    private:
-    static const uint64_t mask = (1ull << 62);
+    static const uint64_t mask = (1ull << 58);
 };
 
 class BitVectorType : public BaseType {
@@ -214,7 +222,7 @@ class BitVectorType : public BaseType {
     virtual bool isBitVectorType() const override;
 
    private:
-    static const uint64_t mask = (1ull << 61);
+    static const uint64_t mask = (1ull << 57);
 
     // The bit width of the type.
     std::size_t width;
@@ -227,7 +235,7 @@ class RationalType : public BaseType {
     virtual bool isRationalType() const override;
 
    private:
-    static const uint64_t mask = (1ull << 63);
+    static const uint64_t mask = (1ull << 59);
 };
 
 class ArrayType : public BaseType {
@@ -242,10 +250,20 @@ class ArrayType : public BaseType {
     virtual bool isArrayType() const override;
 
    private:
-    static const uint64_t mask = (1ull << 59);
+    static const uint64_t mask = (1ull << 55);
 
     // The type of the array elements (can again be of type array).
     Type elementType;
+};
+
+class TranscendentalNumberType : public BaseType {
+   public:
+    virtual uint64_t getMask() const override;
+    virtual std::string getStringRepresentation() const override;
+    virtual bool isTranscendentalNumberType() const override;
+
+   private:
+    static const uint64_t mask = (1ull << 60);
 };
 
 class ErrorType : public BaseType {

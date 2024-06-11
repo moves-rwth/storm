@@ -73,7 +73,7 @@ boost::any JaniReduceNestingExpressionVisitor::visit(FunctionCallExpression cons
 
 boost::any JaniReduceNestingExpressionVisitor::visit(TranscendentalNumberLiteralExpression const& expression, boost::any const& data) {
     // No substitution is required for constants
-    return expression;
+    return expression.getSharedPointer();
 }
 }  // namespace expressions
 }  // namespace storm

@@ -634,6 +634,10 @@ std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             return "ceil";
         case OpType::Ite:
             return "ite";
+        case OpType::Sin:
+            return "sin";
+        case OpType::Cos:
+            return "cos";
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani");
     }

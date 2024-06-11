@@ -421,7 +421,7 @@ class Model {
     /*!
      * Substitutes all constants in all expressions of the model.
      */
-    Model& substituteConstantsInPlace();
+    Model& substituteConstantsInPlace(bool const& substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all constants in all expressions of the model. The original model is not modified, but
@@ -451,7 +451,8 @@ class Model {
     /*!
      * 1. Tries to replace variables by constants (if possible).
      * 2. Substitutes all constants in all expressions of the model.
-     * 3. Afterwards, all function calls are substituted with the defining expression.
+     * 3. Substitutes transcendental numbers by their actual value
+     * 4. Afterwards, all function calls are substituted with the defining expression.
      * The original model is not modified, but  instead a new model is created.
      */
     Model substituteConstantsFunctions() const;

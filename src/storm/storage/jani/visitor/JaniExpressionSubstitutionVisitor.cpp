@@ -99,7 +99,6 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(TranscendentalNumbe
     if (shallSubstituteTranscendentalNumbers) {
         return std::const_pointer_cast<BaseExpression const>(
             std::shared_ptr<BaseExpression>(new RationalLiteralExpression(expression.getManager(), expression.evaluateAsDouble())));
-        ;
     }
     // No substitution requested for transcendental numbers
     return expression.getSharedPointer();
