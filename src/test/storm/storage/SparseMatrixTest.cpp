@@ -6,6 +6,16 @@
 #include "storm/utility/permutation.h"
 #include "test/storm_gtest.h"
 
+TEST(SparseMatrixBuilder, CreationEmpty) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder;
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
+
+    ASSERT_EQ(0ul, matrix.getRowCount());
+    ASSERT_EQ(0ul, matrix.getColumnCount());
+    ASSERT_EQ(0ul, matrix.getEntryCount());
+}
+
 TEST(SparseMatrixBuilder, CreationWithDimensions) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(3, 4, 5);
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
