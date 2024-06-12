@@ -549,12 +549,14 @@ Expression logarithm(Expression const& first, Expression const& second) {
 }
 
 Expression cos(Expression const& first) {
+    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'cos' requires numerical operand.");
     return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(),
                                                                                            first.getType().trigonometric(), first.getBaseExpressionPointer(),
                                                                                            UnaryNumericalFunctionExpression::OperatorType::Cos)));
 }
 
 Expression sin(Expression const& first) {
+    STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'sin' requires numerical operand.");
     return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(),
                                                                                            first.getType().trigonometric(), first.getBaseExpressionPointer(),
                                                                                            UnaryNumericalFunctionExpression::OperatorType::Sin)));

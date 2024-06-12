@@ -237,6 +237,45 @@
                     "op": "initial"
                 }
             }
+        },
+        {
+            "name": "test_int_trigonometry",
+            "expression": {
+                "op": "filter",
+                "fun": "values",
+                "values": {
+                    "op": "Pmin",
+                    "exp": {
+                        "op": "U",
+                        "step-bounds": {
+                            "upper": "max_n_steps"
+                        },
+                        "left": true,
+                        "right": {
+                            "op": "∧",
+                            "left": {
+                                "op": "=",
+                                "left": {
+                                    "op": "sin",
+                                    "exp": 0
+                                },
+                                "right": 0.0
+                            },
+                            "right": {
+                                "op": "=",
+                                "left": {
+                                    "op": "cos",
+                                    "exp": 0
+                                },
+                                "right": 1.0
+                            }
+                        }
+                    }
+                },
+                "states": {
+                    "op": "initial"
+                }
+            }
         }
     ]
 }

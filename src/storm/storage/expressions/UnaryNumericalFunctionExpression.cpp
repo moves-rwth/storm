@@ -99,23 +99,32 @@ std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify
 
     if (operandSimplified->isLiteral()) {
         if (operandSimplified->hasIntegerType()) {
-            int_fast64_t value = operandSimplified->evaluateAsInt();
+            int_fast64_t intValue = operandSimplified->evaluateAsInt();
+            storm::RationalNumber rationalValue;
+            bool useInteger = true;
             switch (this->getOperatorType()) {
                 case OperatorType::Minus:
-                    value = -value;
+                    intValue = -intValue;
                     break;
                 // Nothing to be done for the other cases:
                 case OperatorType::Floor:
                 case OperatorType::Ceil:
                     break;
                 case OperatorType::Cos:
+                    useInteger = false;
+                    rationalValue = storm::utility::cos(storm::utility::convertNumber<storm::RationalNumber>(intValue));
+                    break;
                 case OperatorType::Sin:
-                    // The operands expect a real value. Raise an exception
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot apply cos or sin to an integer value.");
+                    useInteger = false;
+                    rationalValue = storm::utility::sin(storm::utility::convertNumber<storm::RationalNumber>(intValue));
                     break;
             }
-            return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
-        } else {
+            if (useInteger) {
+                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), intValue));
+            } else {
+                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), rationalValue));
+            }
+        } else if (operandSimplified->hasRationalType()) {
             storm::RationalNumber value = operandSimplified->evaluateAsRational();
             bool convertToInteger = false;
             switch (this->getOperatorType()) {

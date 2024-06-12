@@ -422,6 +422,6 @@ TEST(JaniParser, TrigonometryAndTranscendentalNumbersTest) {
     auto& properties = result.second;
     EXPECT_EQ(storm::jani::ModelType::DTMC, model.getModelType());
     EXPECT_EQ(model.getNumberOfAutomata(), 1U);
-    EXPECT_EQ(properties.size(), 1U);
+    EXPECT_EQ(properties.size(), 2U);
     EXPECT_NO_THROW(model.substitute({}, true));
 }
