@@ -267,7 +267,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave_stats(storm
                                                                 std::set<storm::expressions::Variable> const & metaVariablesActions,
                                                                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs,
                                                                 uint_fast64_t &countSymbolicOps) {
-    return std::vector{}
+    return std::vector{};
     }
 
 } // namespace symbolicMEC_stats

@@ -88,7 +88,7 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
     case MecBenchmarkType::NAIVE:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
         mecs = symbolicMEC::symbolicMECDecompositionNaive<DdType, ValueType>(
-            symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBDD(),
+            symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
             symbolicModel.getRowColumnMetaVariablePairs()
         );
