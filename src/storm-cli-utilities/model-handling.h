@@ -51,6 +51,8 @@
 
 #include "storm/utility/Stopwatch.h"
 
+#include "storm/storage/THESIS_DEBUG.h"
+
 namespace storm {
 namespace cli {
 
