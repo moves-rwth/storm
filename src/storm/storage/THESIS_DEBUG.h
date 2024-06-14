@@ -1,13 +1,13 @@
-#pragma once
-
-#ifndef STORM_THESIS_DEBUG_H
-#define STORM_THESIS_DEBUG_H
+#ifndef STORM_STORAGE_THESIS_DEBUG_H
+#define STORM_STORAGE_THESIS_DEBUG_H
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/models/Model.h"
 #include "storm/models/symbolic/NondeterministicModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/storage/SymbolicMEC.h"
+#include "storm/storage/SymbolicMEC_stats.h"
 
 #include <chrono>
 
@@ -81,12 +81,13 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
     std::vector<storm::dd::Bdd<DdType>> mecs;
     std::chrono::high_resolution_clock::time_point decompositionTimestampStart;
     std::chrono::high_resolution_clock::time_point decompositionTimestampEnd;
+    uint_fast64_t countSymbolicOps = 0;
 
     switch (type)
     {
     case MecBenchmarkType::NAIVE:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC::symbolicMECDecompositionBasic<DdType, ValueType>(
+        mecs = symbolicMEC::symbolicMECDecompositionNaive<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBDD(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
             symbolicModel.getRowColumnMetaVariablePairs()
@@ -96,16 +97,17 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
 
     case MecBenchmarkType::NAIVE_STATS:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC_EBA::symbolicMECDecompositionBasic_stats<DdType, ValueType>(
+        mecs = symbolicMEC_stats::symbolicMECDecompositionNaive_stats<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
-            symbolicModel.getRowColumnMetaVariablePairs());
+            symbolicModel.getRowColumnMetaVariablePairs(), countSymbolicOps);
         decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
+        std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
         break;
     
     case MecBenchmarkType::LOCKSTEP:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC_EBA::symbolicMECDecompositionLockstep<DdType, ValueType>(
+        mecs = symbolicMEC::symbolicMECDecompositionLockstep<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
             symbolicModel.getRowColumnMetaVariablePairs());
@@ -114,16 +116,17 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
 
     case MecBenchmarkType::LOCKSTEP_STATS:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC_EBA::symbolicMECDecompositionLockstep_stats<DdType, ValueType>(
+        mecs = symbolicMEC_stats::symbolicMECDecompositionLockstep_stats<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
-            symbolicModel.getRowColumnMetaVariablePairs());
+            symbolicModel.getRowColumnMetaVariablePairs(), countSymbolicOps);
         decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
+        std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
         break;
     
     case MecBenchmarkType::INTERLEAVE:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC_EBA::symbolicMECDecompositionInterleave<DdType, ValueType>(
+        mecs = symbolicMEC::symbolicMECDecompositionInterleave<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
             symbolicModel.getRowColumnMetaVariablePairs());
@@ -132,10 +135,11 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
 
     case MecBenchmarkType::INTERLEAVE_STATS:
         decompositionTimestampStart = std::chrono::high_resolution_clock::now();
-        mecs = symbolicMEC_EBA::symbolicMECDecompositionInterleave_stats<DdType, ValueType>(
+        mecs = symbolicMEC_stats::symbolicMECDecompositionInterleave_stats<DdType, ValueType>(
             symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(),
             symbolicModel.getRowVariables(), symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(),
-            symbolicModel.getRowColumnMetaVariablePairs());
+            symbolicModel.getRowColumnMetaVariablePairs(), countSymbolicOps);
+        std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
         decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
         break;
     

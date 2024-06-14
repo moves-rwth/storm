@@ -187,6 +187,13 @@ Bdd<LibraryType> Bdd<LibraryType>::existsAbstractRepresentative(std::set<storm::
     return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstractRepresentative(cube.getInternalBdd()), this->getContainedMetaVariables());
 }
 
+// [rmnt]
+template<DdType LibraryType>
+Bdd<LibraryType> Bdd<LibraryType>::pickOneCube() const {
+    return Bdd<LibraryType>(this->getDdManager(), internalBdd.pickOneCube(), this->getDdManager().getAllMetaVariables())
+    // [rmnt] TODO : Is getAllMetaVariables() the right choice?
+}
+
 template<DdType LibraryType>
 Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
     Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);

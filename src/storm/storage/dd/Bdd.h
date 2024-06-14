@@ -208,6 +208,14 @@ class Bdd : public Dd<LibraryType> {
     Bdd<LibraryType> existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
 
     /*!
+     * [rmnt]
+     * Gets a cube that satisfies this Bdd.
+     *
+     * @return The BDD representing the cube.
+    */
+    Bdd<LibraryType> pickOneCube() const;
+
+    /*!
      * Universally abstracts from the given meta variables.
      *
      * @param metaVariables The meta variables from which to abstract.

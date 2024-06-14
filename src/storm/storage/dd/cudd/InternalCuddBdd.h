@@ -225,6 +225,14 @@ class InternalBdd<DdType::CUDD> {
     InternalBdd<DdType::CUDD> existsAbstractRepresentative(InternalBdd<DdType::CUDD> const& cube) const;
 
     /*!
+     * [rmnt]
+     * Gets a cube that satisfies this Bdd.
+     *
+     * @return The BDD representing the cube.
+    */
+    InternalBdd<DdType::CUDD> pickOneCube() const;
+
+    /*!
      * Universally abstracts from the given cube.
      *
      * @param cube The cube from which to abstract.

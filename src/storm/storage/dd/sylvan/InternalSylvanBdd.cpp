@@ -176,6 +176,11 @@ InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstractRepresent
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.ExistAbstractRepresentative(cube.sylvanBdd));
 }
 
+// [rmnt]
+InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::pickOneCube() const {
+    return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.PickOneCube());
+}
+
 InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
     return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.UnivAbstract(cube.sylvanBdd));
 }

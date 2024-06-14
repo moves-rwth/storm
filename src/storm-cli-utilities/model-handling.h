@@ -1,4 +1,5 @@
-#pragma once
+#ifndef STORM_CLI_MODEL_HANDLING_H
+#define STORM_CLI_MODEL_HANDLING_H
 
 #include "storm/api/storm.h"
 
@@ -1365,3 +1366,5 @@ void processInputWithValueType(SymbolicInput const& input, ModelProcessingInform
 }
 }  // namespace cli
 }  // namespace storm
+
+#endif

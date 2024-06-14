@@ -216,6 +216,14 @@ class InternalBdd<DdType::Sylvan> {
     InternalBdd<DdType::Sylvan> existsAbstractRepresentative(InternalBdd<DdType::Sylvan> const& cube) const;
 
     /*!
+     * [rmnt]
+     * Gets a cube that satisfies this Bdd.
+     *
+     * @return The BDD representing the cube.
+    */
+    InternalBdd<DdType::Sylvan> pickOneCube() const;
+
+    /*!
      * Universally abstracts from the given cube.
      *
      * @param cube The cube from which to abstract.

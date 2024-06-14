@@ -128,6 +128,18 @@ InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstractRepresentativ
     return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().ExistAbstractRepresentative(cube.getCuddBdd()));
 }
 
+// [rmnt]
+InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::pickOneCube() const {
+    int numVars = ddManager->getCuddManager().ReadSize();
+    std::vector<cudd::BDD> varBdds;
+    // [rmnt] TODO : Does the order of pushing vars matter to perfornance?
+    // [rmnt] See the implementation of Cudd_Support() in cuddUtil.c where this is done in reverse order
+    for(int index = 0; index < numVars; ++index) {
+        varBdds.push_back(ddManager->getCuddManager().bddVar(index));
+    }
+    return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().PickOneMinterm(varBdds));
+}
+
 InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::universalAbstract(InternalBdd<DdType::CUDD> const& cube) const {
     return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().UnivAbstract(cube.getCuddBdd()));
 }
