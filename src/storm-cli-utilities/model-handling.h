@@ -513,19 +513,20 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         } else if (builderType == storm::builder::BuilderType::Explicit) {
             result = buildModelSparse<ValueType>(input, buildSettings);
         }
+
+        // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Entry point.
+        uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
+        if (DEBUG_THESIS_BENCHMARK != 0) {
+            STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
+                            "MEC decomposition benchmarking is only available for symbolic models.");
+            doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const &)*result, DEBUG_THESIS_BENCHMARK);
+            exit(0);
+        }
+
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
         result = buildModelExplicit<ValueType>(ioSettings, buildSettings);
-    }
-
-    // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Entry point.
-    uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
-    if (DEBUG_THESIS_BENCHMARK != 0) {
-        STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
-                        "MEC decomposition benchmarking is only available for symbolic models.";)
-        doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const &)*result, DEBUG_THESIS_BENCHMARK);
-        exit(0);
     }
 
     modelBuildingWatch.stop();
