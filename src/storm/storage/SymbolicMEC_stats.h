@@ -257,6 +257,19 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep_stats(storm::
     }
     return result;
 }
+
+
+template<storm::dd::DdType Type, typename ValueType>
+std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave_stats(storm::dd::Bdd<Type> const & allStates,
+                                                                storm::dd::Bdd<Type> const & transitionsWithActions,
+                                                                std::set<storm::expressions::Variable> const & metaVariablesRow,
+                                                                std::set<storm::expressions::Variable> const & metaVariablesColumn,
+                                                                std::set<storm::expressions::Variable> const & metaVariablesActions,
+                                                                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs,
+                                                                uint_fast64_t &countSymbolicOps) {
+    return std::vector{}
+    }
+
 } // namespace symbolicMEC_stats
 
 #endif

@@ -231,6 +231,16 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep(storm::dd::Bd
     return result;
 }
 
+template<storm::dd::DdType Type, typename ValueType>
+std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(storm::dd::Bdd<Type> const & allStates,
+                                                                   storm::dd::Bdd<Type> const & transitionsWithActions,
+                                                                   std::set<storm::expressions::Variable> const & metaVariablesRow,
+                                                                   std::set<storm::expressions::Variable> const & metaVariablesColumn,
+                                                                   std::set<storm::expressions::Variable> const & metaVariablesActions,
+                                                                   std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs) {
+    return std::vector{};
+}
+
 } // namespace symbolicMEC
 
 #endif
