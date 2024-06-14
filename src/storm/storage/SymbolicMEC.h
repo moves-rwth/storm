@@ -21,14 +21,17 @@ struct StateActionPair {
     }
 };
 
+// [rmnt] Changed type of scc argument because the earlier one was giving a compiler error.
+// [rmnt] TODO review this function, seems shady.
 template<storm::dd::DdType Type>
-static bool isTrivialSccWithoutSelfEdge(StateActionPair<Type> const & scc,
+static bool isTrivialSccWithoutSelfEdge(storm::dd::Bdd<Type> const & scc,
                                         storm::dd::Bdd<Type> const & transitionsWithActions,
                                         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs) {
-    bool isTrivialScc = (1 == scc.states.getNonZeroCount());
-    // [rmnt] TODO : Review the noSelfEdge condition. Do you need && scc.states also?
-    bool noSelfEdge = (transitionsWithActions && scc.actions && scc.states.swapVariables(metaVariablesRowColumnPairs)).isZero();
-    return (isTrivialScc && noSelfEdge);
+    bool isTrivialScc = (1 == scc.getNonZeroCount()); // [rmnt] TODO : Check if this should be counted as a symbolic op
+    if (! isTrivialScc)
+        return false;
+    bool noSelfEdge = (transitionsWithActions && scc && scc.swapVariables(metaVariablesRowColumnPairs)).isZero();
+    return noSelfEdge;
 }
 
 
@@ -91,7 +94,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionNaive(storm::dd::Bdd<T
     storm::dd::Bdd<Type> workingCopyTransitionsWithActions(transitionsWithActions);
     std::vector<storm::dd::Bdd<Type>> result{};
     std::stack<storm::dd::Bdd<Type>> mecCandidates{};
-    for (const auto& scc : symbolicScc::decomposition<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions),
+    for (const auto& scc : symbolicSCC::decomposition<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions),
                                                                        metaVariablesRow, metaVariablesColumn)) {
         mecCandidates.push(scc);
     }
@@ -109,7 +112,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionNaive(storm::dd::Bdd<T
         } else {
             StateActionPair<Type> attractor = computeRandomAttractor(sccROut, scc, workingCopyTransitionsWithActions, metaVariablesColumn, metaVariablesActions, metaVariablesRowColumnPairs);
             workingCopyTransitionsWithActions &= !attractor.actions;
-            for (auto const& subScc : symbolicScc::decomposition<Type, ValueType>(
+            for (auto const& subScc : symbolicSCC::decomposition<Type, ValueType>(
                      scc && !attractor.states, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn)) {
                 mecCandidates.push(subScc);
             }
@@ -182,7 +185,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep(storm::dd::Bd
     storm::dd::Bdd<Type> workingCopyTransitionsWithActions(transitionsWithActions);
     std::vector<storm::dd::Bdd<Type>> result{}; // In paper: "goodC"
     std::stack<MecCandidate> mecCandidates{}; // In paper: X
-    for (const auto & scc : symbolicScc::decomposition<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn)) {
+    for (const auto & scc : symbolicSCC::decomposition<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn)) {
         MecCandidate pair = { scc, scc.getDdManager().getBddZero() };
         mecCandidates.push(pair);
     }
@@ -201,7 +204,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep(storm::dd::Bd
             if (sccTs.isZero()) {
                 result.template emplace_back(scc);
             } else if (sccTs.getNonZeroCount() >= sqrt(m)) {
-                std::vector<storm::dd::Bdd<Type>> subSccs = symbolicScc::decomposition<Type, ValueType>(
+                std::vector<storm::dd::Bdd<Type>> subSccs = symbolicSCC::decomposition<Type, ValueType>(
                     scc, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn);
                 if (subSccs.size() == 1) {
                     result.template emplace_back(scc);
@@ -238,7 +241,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(storm::dd::
                                                                    std::set<storm::expressions::Variable> const & metaVariablesColumn,
                                                                    std::set<storm::expressions::Variable> const & metaVariablesActions,
                                                                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs) {
-    return std::vector{};
+    return std::vector< storm::dd::Bdd<Type> > {};
 }
 
 } // namespace symbolicMEC

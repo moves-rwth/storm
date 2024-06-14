@@ -21,16 +21,19 @@ struct StateActionPair {
     }
 };
 
+// [rmnt] Changed type of scc argument because the earlier one was giving a compiler error.
+// [rmnt] TODO review this function, seems shady.
 template<storm::dd::DdType Type>
-static bool isTrivialSccWithoutSelfEdge_stats(StateActionPair<Type> const & scc,
+static bool isTrivialSccWithoutSelfEdge_stats(storm::dd::Bdd<Type> const & scc,
                                         storm::dd::Bdd<Type> const & transitionsWithActions,
                                         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs,
                                         uint_fast64_t &countSymbolicOps) {
-    bool isTrivialScc = (1 == scc.states.getNonZeroCount()); // [rmnt] TODO : Check if this should be counted as a symbolic op
+    bool isTrivialScc = (1 == scc.getNonZeroCount()); // [rmnt] TODO : Check if this should be counted as a symbolic op
     countSymbolicOps++;
-    // [rmnt] TODO : Review the noSelfEdge condition. Do you need && scc.states also?
-    bool noSelfEdge = (transitionsWithActions && scc.actions && scc.states.swapVariables(metaVariablesRowColumnPairs)).isZero();
-    return (isTrivialScc && noSelfEdge);
+    if (! isTrivialScc)
+        return false;
+    bool noSelfEdge = (transitionsWithActions && scc && scc.swapVariables(metaVariablesRowColumnPairs)).isZero();
+    return noSelfEdge;
 }
 
 
@@ -99,7 +102,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionNaive_stats(storm::dd:
     storm::dd::Bdd<Type> workingCopyTransitionsWithActions(transitionsWithActions);
     std::vector<storm::dd::Bdd<Type>> result{};
     std::stack<storm::dd::Bdd<Type>> mecCandidates{};
-    for (const auto& scc : symbolicScc_stats::decomposition_stats<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions),
+    for (const auto& scc : symbolicSCC_stats::decomposition_stats<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions),
                                                                        metaVariablesRow, metaVariablesColumn, countSymbolicOps)) {
         mecCandidates.push(scc);
     }
@@ -120,7 +123,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionNaive_stats(storm::dd:
             metaVariablesColumn, metaVariablesActions, metaVariablesRowColumnPairs, countSymbolicOps);
             workingCopyTransitionsWithActions &= !attractor.actions;
             countSymbolicOps++; // [rmnt] For the existsAbstract call in args to scc decomp
-            for (auto const& subScc : symbolicScc_stats::decomposition_stats<Type, ValueType>(
+            for (auto const& subScc : symbolicSCC_stats::decomposition_stats<Type, ValueType>(
                      scc && !attractor.states, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions),
                      metaVariablesRow, metaVariablesColumn, countSymbolicOps)) {
                 mecCandidates.push(subScc);
@@ -204,7 +207,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep_stats(storm::
     std::vector<storm::dd::Bdd<Type>> result{}; // In paper: "goodC"
     std::stack<MecCandidate> mecCandidates{}; // In paper: X
     countSymbolicOps++; // [rmnt] For the exists abstract in the arguments
-    for (const auto & scc : symbolicScc_stats::decomposition_stats<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn, countSymbolicOps)) {
+    for (const auto & scc : symbolicSCC_stats::decomposition_stats<Type, ValueType>(allStates, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn, countSymbolicOps)) {
         MecCandidate pair = { scc, scc.getDdManager().getBddZero() };
         mecCandidates.push(pair);
     }
@@ -226,7 +229,7 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep_stats(storm::
             } else if (sccTs.getNonZeroCount() >= sqrt(m)) {
                 countSymbolicOps++; // [rmnt] for the else if condition
                 countSymbolicOps++; // [rmnt] for the exists below
-                std::vector<storm::dd::Bdd<Type>> subSccs = symbolicScc_stats::decomposition_stats<Type, ValueType>(
+                std::vector<storm::dd::Bdd<Type>> subSccs = symbolicSCC_stats::decomposition_stats<Type, ValueType>(
                     scc, workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions), metaVariablesRow, metaVariablesColumn, countSymbolicOps);
                 if (subSccs.size() == 1) {
                     result.template emplace_back(scc);
@@ -267,8 +270,8 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave_stats(storm
                                                                 std::set<storm::expressions::Variable> const & metaVariablesActions,
                                                                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs,
                                                                 uint_fast64_t &countSymbolicOps) {
-    return std::vector{};
-    }
+    return std::vector< storm::dd::Bdd<Type> > {};
+}
 
 } // namespace symbolicMEC_stats
 
