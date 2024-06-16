@@ -59,7 +59,7 @@ struct BenchmarkResult {
 
     void print() {
         std::string algorithm = benchmarkToString(type);
-        std::cout << "BENCHMARK MEC DECOMPOSITION (algorithm, time, mecCount[, conversionTime]): "
+        std::cout << "BENCHMARK MEC DECOMPOSITION (algorithm, time, mecCount): "
                   << algorithm << ", " << decompositionTimeInNanoseconds << ", "
                   << mecCount << "\n";
     }

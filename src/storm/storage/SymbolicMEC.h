@@ -60,10 +60,12 @@ static StateActionPair<Type> computeRandomAttractor(storm::dd::Bdd<Type> const &
         && ( ! (actionsCannotIntoCurrent.existsAbstract(metaVariablesActions)));
         // [rmnt]: All states s such that some (s,a1) in currentSet and all (s,a) pairs in currentSet
         nextSet.states = (currentSet.states || newVertices) && allStates;
+        // [rmnt] TODO do the && earlier?
 
         // Actions [rmnt] Actions is really state-action pairs.
         storm::dd::Bdd<Type> currentVerticesAsColumn = nextSet.states.swapVariables(metaVariablesRowColumnPairs);
-        storm::dd::Bdd<Type> actionsCanIntoCurrentVertices = (transitionsWithActions && currentVerticesAsColumn).existsAbstract(metaVariablesColumn);
+        // [rmnt] TODO this can also include actions from states outside allStates. Exclude them? [YES for now]
+        storm::dd::Bdd<Type> actionsCanIntoCurrentVertices = (allStates && transitionsWithActions && currentVerticesAsColumn).existsAbstract(metaVariablesColumn);
         nextSet.actions = currentSet.actions || actionsCanIntoCurrentVertices;
     } while (currentSet.states != nextSet.states);
     return currentSet;
@@ -234,6 +236,20 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep(storm::dd::Bd
     return result;
 }
 
+template<storm::dd::DdType Type>
+struct InterleaveDecompTask {
+    storm::dd::Bdd<Type> states;
+    storm::dd::Bdd<Type> startState;
+
+    // Instantiate all copy/move constructors/assignments with the default implementation.
+    InterleaveDecompTask() = default;
+    InterleaveDecompTask(InterleaveDecompTask<Type> const& other) = default;
+    InterleaveDecompTask& operator=(InterleaveDecompTask<Type> const& other) = default;
+    InterleaveDecompTask(InterleaveDecompTask<Type>&& other) = default;
+    InterleaveDecompTask& operator=(InterleaveDecompTask<Type>&& other) = default;
+};
+
+// [rmnt] Iterative version of the algorithm in my thesis
 template<storm::dd::DdType Type, typename ValueType>
 std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(storm::dd::Bdd<Type> const & allStates,
                                                                    storm::dd::Bdd<Type> const & transitionsWithActions,
@@ -241,7 +257,166 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(storm::dd::
                                                                    std::set<storm::expressions::Variable> const & metaVariablesColumn,
                                                                    std::set<storm::expressions::Variable> const & metaVariablesActions,
                                                                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const & metaVariablesRowColumnPairs) {
-    return std::vector< storm::dd::Bdd<Type> > {};
+    std::vector< storm::dd::Bdd<Type> > result;
+    if (allStates.isZero()) { return result; }
+
+    storm::dd::Bdd<Type> workingCopyTransitionsWithActions(transitionsWithActions);
+    storm::dd::Bdd<Type> transitionsWithoutActions = transitionsWithActions.existsAbstract(metaVariablesActions);
+    // [rmnt] TODO check if this (exists action first then relational product(exists state))
+    // is better or (states and transitions then exists (state, actions))
+
+    std::stack< InterleaveDecompTask<Type> > workStack;
+    {
+        InterleaveDecompTask<Type> initTask = { allStates, allStates.getDdManager().getBddZero() };
+        workStack.emplace(initTask);
+    }
+
+    while (! workStack.empty())
+    {
+        storm::dd::Bdd<Type> sccStartState = allStates.getDdManager().getBddZero(),
+                             newStartState = allStates.getDdManager().getBddZero(),
+                             V2 = allStates.getDdManager().getBddZero(),
+                             V3 = allStates.getDdManager().getBddZero();
+
+        {   // task Scope Start
+            InterleaveDecompTask<Type> task = workStack.top();
+            workStack.pop();
+
+            if (task.startState.isZero())
+            {
+                task.startState = pick<Type, ValueType>(task.states); // [rmnt] TODO try pickv2 or other versions
+            }
+
+
+            {   // fwdStartState Scope Start
+                storm::dd::Bdd<Type> fwdStartState = allStates.getDdManager().getBddZero();
+
+                // Inlined SCC-Fwd-Start function
+                {
+                    // Forward set computation
+                    storm::dd::Bdd<Type> prevLevel = allStates.getDdManager().getBddZero();
+                    storm::dd::Bdd<Type> level = task.startState;
+                    while (! level.isZero()) {
+                        fwdStartState |= level;
+                        prevLevel = level;
+                        level = post(level, task.states && (!fwdStartState), transitionsWithoutActions, metaVariablesRow, metaVariablesColumn);
+                        // [rmnt] TODO do && !fwd in arg or after getting result?
+                    }
+
+                    // Pick new start state as any state in the last layer
+                    newStartState = pick<Type,ValueType>(prevLevel);
+
+                    // Compute SCC by backward computation
+                    level = task.startState;
+                    while (! level.isZero())
+                    {
+                        sccStartState |= level;
+                        level = pre(level, task.states && fwdStartState && (!sccStartState), transitionsWithoutActions,
+                                    metaVariablesRow, metaVariablesColumn);
+                        // [rmnt] TODO do the &&s in the argument or after getting result?
+                    }
+                }
+
+                // V1 (reuse sccStartState), V2, V3 are for the recursive call tasks
+                V2 = fwdStartState && (! sccStartState);
+                V3 = task.states && (! fwdStartState);
+
+            }   // fwdStartState Scope End
+
+            {   // ROut1 Scope Start
+                storm::dd::Bdd<Type> ROut1 = ROut(
+                    sccStartState, workingCopyTransitionsWithActions, metaVariablesColumn,
+                    metaVariablesRowColumnPairs
+                );
+                if (ROut1.isZero()) {
+                    if (! isTrivialSccWithoutSelfEdge(sccStartState, workingCopyTransitionsWithActions, metaVariablesRowColumnPairs)) 
+                    { result.emplace_back(sccStartState); }
+                    
+                    sccStartState = allStates.getDdManager().getBddZero(); // So that the first recursive call doesn't happen
+                }
+                else {
+                    StateActionPair<Type> Attr1 = computeRandomAttractor(
+                        ROut1, sccStartState, workingCopyTransitionsWithActions,
+                        metaVariablesColumn, metaVariablesActions, metaVariablesRowColumnPairs
+                    );
+                    workingCopyTransitionsWithActions &= (! Attr1.actions);
+                    sccStartState &= (! Attr1.states); // For V1, reusing this
+                }
+
+            } // ROut1 Scope End
+
+            {   // ROut3 Scope Start
+                storm::dd::Bdd<Type> ROut3 = ROut(
+                    V3, workingCopyTransitionsWithActions, metaVariablesColumn,
+                    metaVariablesRowColumnPairs
+                );
+                if (! ROut3.isZero()) {
+                    StateActionPair<Type> Attr3 = computeRandomAttractor(
+                        ROut3, V3, workingCopyTransitionsWithActions,
+                        metaVariablesColumn, metaVariablesActions, metaVariablesRowColumnPairs
+                    );
+                    workingCopyTransitionsWithActions &= (! Attr3.actions);
+                    V3 &= (! Attr3.states); // For V3, reusing this
+                }
+
+            } // ROut3 Scope End
+        }   // task Scope End
+
+        // Get the sizes of each (potential) recursive call. Do them in order from smallest to largest
+        // So push on stack in order from largest to smallest
+        uint_fast64_t sizes[3] = { sccStartState.getNonZeroCount(), V2.getNonZeroCount(), V3.getNonZeroCount() };
+        uint8_t order[3] = { 1, 2, 3 };
+
+        // Sort order and sizes based on sizes
+        {
+            if (sizes[0] > sizes[1]) {
+                order[1] = 1; order[0] = 2;
+                uint_fast64_t temp = sizes[0];
+                sizes[0] = sizes[1];
+                sizes[1] = temp;
+            }
+            if (sizes[1] > sizes[2]) {
+                uint8_t tempOrder = order[1];
+                order[1] = order[2];
+                order[2] = tempOrder;
+
+                uint_fast64_t tempSizes = sizes[1];
+                sizes[1] = sizes[2];
+                sizes[2] = tempSizes;
+
+                if (sizes[0] > sizes[1]) {
+                    uint8_t tempOrder = order[0];
+                    order[0] = order[1];
+                    order[1] = tempOrder;
+
+                    uint_fast64_t tempSizes = sizes[0];
+                    sizes[0] = sizes[1];
+                    sizes[1] = tempSizes;
+                }
+            }
+        }
+
+        for(uint8_t i=0; i<3; i++) {
+            if ( order[2-i] == 1) {
+                if ( sizes[2-i] != 0 ) {
+                    InterleaveDecompTask<Type> newTask = { sccStartState, allStates.getDdManager().getBddZero() };
+                    workStack.emplace(newTask);
+                }
+            } else if ( order[2-i] == 2 ) {
+                if ( sizes[2-i] != 0 ) {
+                    InterleaveDecompTask<Type> newTask = { V2, newStartState };
+                    workStack.emplace(newTask);
+                }
+            } else {
+                if ( sizes[2-i] != 0 ) {
+                    InterleaveDecompTask<Type> newTask = { V3, allStates.getDdManager().getBddZero() };
+                    workStack.emplace(newTask);
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
 } // namespace symbolicMEC
