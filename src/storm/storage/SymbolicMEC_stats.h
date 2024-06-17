@@ -120,10 +120,6 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionNaive_stats(
                 mecCandidates.push(subScc);
             }
         }
-        std::cout << "DEBUG Transition BDD stats: " << workingCopyTransitionsWithActions.getNonZeroCount() << " Transitions ("
-                  << workingCopyTransitionsWithActions.getNodeCount() << " nodes), "
-                  << workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions).getNonZeroCount() << " Transitions ("
-                  << workingCopyTransitionsWithActions.existsAbstract(metaVariablesActions).getNodeCount() << " nodes)" << std::endl;
     }
     return result;
 }
