@@ -229,7 +229,7 @@ class InternalBdd<DdType::CUDD> {
      * Gets a cube that satisfies this Bdd.
      *
      * @return The BDD representing the cube.
-    */
+     */
     InternalBdd<DdType::CUDD> pickOneCube() const;
 
     /*!

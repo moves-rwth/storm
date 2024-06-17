@@ -22,7 +22,9 @@ static std::vector<storm::dd::Bdd<Type>> decomposition(storm::dd::Bdd<Type> cons
                                                        std::set<storm::expressions::Variable> const& metaVariablesRow,
                                                        std::set<storm::expressions::Variable> const& metaVariablesColumn) {
     std::vector<storm::dd::Bdd<Type>> result = {};
-    if (allStates.isZero()) { return result; }
+    if (allStates.isZero()) {
+        return result;
+    }
     std::stack<TaskEntry<Type>> workQueue;
     {
         TaskEntry<Type> initialTask = {allStates, allStates.getDdManager().getBddZero(), allStates.getDdManager().getBddZero()};
@@ -33,7 +35,7 @@ static std::vector<storm::dd::Bdd<Type>> decomposition(storm::dd::Bdd<Type> cons
     while (!workQueue.empty()) {
         TaskEntry<Type> currentTask = workQueue.top();
         workQueue.pop();
-        assert( ! currentTask.states.isZero());
+        assert(!currentTask.states.isZero());
 
         // "Determine the node for which the scc is computed"
         if (currentTask.node.isZero() && currentTask.s.isZero()) {  // Modified to allow for specification of a starting vertex
@@ -92,7 +94,9 @@ static std::vector<storm::dd::Bdd<Type>> decomposition(storm::dd::Bdd<Type> cons
                 sToCheck,
                 sToCheck && pre(scc && currentTask.s, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn),
             };
-            if ( ! newTask.states.isZero()) { workQueue.push(newTask); }
+            if (!newTask.states.isZero()) {
+                workQueue.push(newTask);
+            }
         }
 
         // "Second recursive call : Computation of the scc's in FW \ SCC"
@@ -102,12 +106,14 @@ static std::vector<storm::dd::Bdd<Type>> decomposition(storm::dd::Bdd<Type> cons
                 newS && (!scc),
                 newNode && (!scc),
             };
-            if ( ! newTask.states.isZero()) { workQueue.push(newTask); }
+            if (!newTask.states.isZero()) {
+                workQueue.push(newTask);
+            }
         }
     }
     return result;
 }
 
-} // namespace symbolicSCC
+}  // namespace symbolicSCC
 
 #endif

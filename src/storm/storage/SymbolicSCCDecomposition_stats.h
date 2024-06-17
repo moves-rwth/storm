@@ -19,11 +19,13 @@ struct TaskEntry {
  * (Gentilini, Piazza, Policriti) */
 template<storm::dd::DdType Type, typename ValueType>
 static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type> const& allStates, storm::dd::Bdd<Type> const& transitions,
-                                                       std::set<storm::expressions::Variable> const& metaVariablesRow,
-                                                       std::set<storm::expressions::Variable> const& metaVariablesColumn,
-                                                       uint_fast64_t &countSymbolicOps) {
+                                                             std::set<storm::expressions::Variable> const& metaVariablesRow,
+                                                             std::set<storm::expressions::Variable> const& metaVariablesColumn,
+                                                             uint_fast64_t& countSymbolicOps) {
     std::vector<storm::dd::Bdd<Type>> result = {};
-    if (allStates.isZero()) { return result; }
+    if (allStates.isZero()) {
+        return result;
+    }
     std::stack<TaskEntry<Type>> workQueue;
     {
         TaskEntry<Type> initialTask = {allStates, allStates.getDdManager().getBddZero(), allStates.getDdManager().getBddZero()};
@@ -34,7 +36,7 @@ static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type
     while (!workQueue.empty()) {
         TaskEntry<Type> currentTask = workQueue.top();
         workQueue.pop();
-        assert( ! currentTask.states.isZero());
+        assert(!currentTask.states.isZero());
 
         // "Determine the node for which the scc is computed"
         if (currentTask.node.isZero() && currentTask.s.isZero()) {  // Modified to allow for specification of a starting vertex
@@ -61,11 +63,12 @@ static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type
             level = stack.top();
             stack.pop();
             newNode = pick_stats<Type, ValueType>(level, countSymbolicOps);  // TODO: Better Name
-            newS = storm::dd::Bdd<Type>(newNode);    // TODO: Better name for this variable
+            newS = storm::dd::Bdd<Type>(newNode);                            // TODO: Better name for this variable
             while (!stack.empty()) {
                 level = stack.top();
                 stack.pop();
-                storm::dd::Bdd<Type> toPickFrom = level && pre_stats(newS, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn, countSymbolicOps);
+                storm::dd::Bdd<Type> toPickFrom =
+                    level && pre_stats(newS, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn, countSymbolicOps);
                 newS |= pick_stats<Type, ValueType>(toPickFrom, countSymbolicOps);
             }
         }
@@ -75,7 +78,8 @@ static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type
         {
             bool changed = true;
             while (changed) {
-                storm::dd::Bdd<Type> updatedScc = fw && pre_stats(scc, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn, countSymbolicOps);
+                storm::dd::Bdd<Type> updatedScc =
+                    fw && pre_stats(scc, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn, countSymbolicOps);
                 storm::dd::Bdd<Type> addedStates = updatedScc && (!scc);
                 scc |= updatedScc;
                 changed = (!addedStates.isZero());
@@ -93,7 +97,9 @@ static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type
                 sToCheck,
                 sToCheck && pre_stats(scc && currentTask.s, currentTask.states, transitions, metaVariablesRow, metaVariablesColumn, countSymbolicOps),
             };
-            if ( ! newTask.states.isZero()) { workQueue.push(newTask); }
+            if (!newTask.states.isZero()) {
+                workQueue.push(newTask);
+            }
         }
 
         // "Second recursive call : Computation of the scc's in FW \ SCC"
@@ -103,12 +109,14 @@ static std::vector<storm::dd::Bdd<Type>> decomposition_stats(storm::dd::Bdd<Type
                 newS && (!scc),
                 newNode && (!scc),
             };
-            if ( ! newTask.states.isZero()) { workQueue.push(newTask); }
+            if (!newTask.states.isZero()) {
+                workQueue.push(newTask);
+            }
         }
     }
     return result;
 }
 
-} // namespace symbolicSCC_stats
+}  // namespace symbolicSCC_stats
 
 #endif

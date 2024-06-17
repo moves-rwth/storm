@@ -521,7 +521,7 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         if (DEBUG_THESIS_BENCHMARK != 0) {
             STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
                             "MEC decomposition benchmarking is only available for symbolic models.");
-            doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const &)*result, DEBUG_THESIS_BENCHMARK);
+            doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const&)*result, DEBUG_THESIS_BENCHMARK);
             exit(0);
         }
 

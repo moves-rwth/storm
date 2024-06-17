@@ -220,7 +220,7 @@ class InternalBdd<DdType::Sylvan> {
      * Gets a cube that satisfies this Bdd.
      *
      * @return The BDD representing the cube.
-    */
+     */
     InternalBdd<DdType::Sylvan> pickOneCube() const;
 
     /*!

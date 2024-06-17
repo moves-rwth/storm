@@ -212,7 +212,7 @@ class Bdd : public Dd<LibraryType> {
      * Gets a cube that satisfies this Bdd.
      *
      * @return The BDD representing the cube.
-    */
+     */
     Bdd<LibraryType> pickOneCube() const;
 
     /*!
