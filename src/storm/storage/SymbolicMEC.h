@@ -254,9 +254,6 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(
     }
 
     storm::dd::Bdd<Type> workingCopyTransitionsWithActions(transitionsWithActions);
-    storm::dd::Bdd<Type> transitionsWithoutActions = transitionsWithActions.existsAbstract(metaVariablesActions);
-    // [rmnt] TODO check if this (exists action first then relational product(exists state))
-    // is better or (states and transitions then exists (state, actions))
 
     std::stack<InterleaveDecompTask<Type>> workStack;
     {
@@ -281,6 +278,10 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave(
 
                 // Inlined SCC-Fwd-Start function
                 {
+                    storm::dd::Bdd<Type> transitionsWithoutActions = transitionsWithActions.existsAbstract(metaVariablesActions);
+                    // [rmnt] TODO check if this (exists action first then relational product(exists state))
+                    // is better or (states and transitions then exists (state, actions))
+
                     // Forward set computation
                     storm::dd::Bdd<Type> prevLevel = allStates.getDdManager().getBddZero();
                     storm::dd::Bdd<Type> level = task.startState;
