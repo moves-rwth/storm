@@ -101,7 +101,7 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
                 symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(), symbolicModel.getRowColumnMetaVariablePairs(),
                 countSymbolicOps);
             decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
+            std::cout << "BENCHMARK SYMBOLIC OPS (count): " << countSymbolicOps << std::endl;
             break;
 
         case MecBenchmarkType::LOCKSTEP:
@@ -119,7 +119,7 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
                 symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(), symbolicModel.getRowColumnMetaVariablePairs(),
                 countSymbolicOps);
             decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
-            std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
+            std::cout << "BENCHMARK SYMBOLIC OPS (count): " << countSymbolicOps << std::endl;
             break;
 
         case MecBenchmarkType::INTERLEAVE:
@@ -136,8 +136,8 @@ BenchmarkResult doSymbolicBenchmark(storm::models::symbolic::NondeterministicMod
                 symbolicModel.getReachableStates(), symbolicModel.getTransitionMatrix().toBdd(), symbolicModel.getRowVariables(),
                 symbolicModel.getColumnVariables(), symbolicModel.getNondeterminismVariables(), symbolicModel.getRowColumnMetaVariablePairs(),
                 countSymbolicOps);
-            std::cout << "DEBUG SYMBOLIC OPS " << countSymbolicOps << std::endl;
             decompositionTimestampEnd = std::chrono::high_resolution_clock::now();
+            std::cout << "BENCHMARK SYMBOLIC OPS (count): " << countSymbolicOps << std::endl;
             break;
 
         default:
