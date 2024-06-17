@@ -251,6 +251,19 @@ std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionLockstep_stats(
     return result;
 }
 
+template<storm::dd::DdType Type>
+struct InterleaveDecompTask {
+    storm::dd::Bdd<Type> states;
+    storm::dd::Bdd<Type> startState;
+
+    // Instantiate all copy/move constructors/assignments with the default implementation.
+    InterleaveDecompTask() = default;
+    InterleaveDecompTask(InterleaveDecompTask<Type> const& other) = default;
+    InterleaveDecompTask& operator=(InterleaveDecompTask<Type> const& other) = default;
+    InterleaveDecompTask(InterleaveDecompTask<Type>&& other) = default;
+    InterleaveDecompTask& operator=(InterleaveDecompTask<Type>&& other) = default;
+};
+
 // [rmnt] Iterative version of the algorithm in my thesis
 template<storm::dd::DdType Type, typename ValueType>
 std::vector<storm::dd::Bdd<Type>> symbolicMECDecompositionInterleave_stats(
