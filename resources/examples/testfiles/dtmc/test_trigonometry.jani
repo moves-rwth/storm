@@ -13,40 +13,32 @@
             "name": "orientation_deg",
             "type": "int",
             "initial-value": 0,
-            "comment": "Orientation in degrees"
-        },
-        {
-            "name": "pose_x_cm",
-            "type": "int",
-            "initial-value": 0,
-            "comment": "X position in cm"
+            "comment": "Current orientation in degrees"
         }
     ],
     "constants": [
         {
             "name": "step_size_rad",
-            "type": "real",
-            "comment": "How much to turn in each step in radians"
-        },
-        {
-            "name": "step_size_m",
-            "type": "real",
-            "comment": "How much to move in each step in meters"
-        },
-        {
-            "name": "max_n_steps",
-            "type": "int",
-            "comment": "Upper bound on the number of steps"
-        },
-        {
-            "name": "goal_orientation_rad",
-            "type": "real",
-            "value": {
-                "op": "/",
-                "left": {"constant": "π"},
-                "right": 2
+            "type": {
+                "kind": "bounded",
+                "base": "real",
+                "lower-bound": {
+                    "op": "/",
+                    "left": {
+                        "constant": "π"
+                    },
+                    "right": 180
+                },
+                "upper-bound": {
+                    "op": "*",
+                    "left": {
+                        "constant": "π"
+                    },
+                    "right": 2
+                }
+
             },
-            "comment": "Orientation to reach in radians"
+            "comment": "How much to turn in each step in radians. Bounds: [1 deg., 360 deg.]"
         }
     ],
     "actions": [
@@ -59,11 +51,16 @@
             "name": "test_trig_automaton",
             "locations": [
                 {
-                    "name": "loc"
+                    "name": "increasing",
+                    "comment": "A state were the angle is increased each transition"
+                },
+                {
+                    "name": "final",
+                    "comment": "State reached when cos(angle) ~= 1"
                 }
             ],
             "initial-locations": [
-                "loc"
+                "increasing"
             ],
             "variables": [
                 {
@@ -75,10 +72,29 @@
             ],
             "edges": [
                 {
-                    "location": "loc",
+                    "action": "advance",
+                    "location": "increasing",
+                    "guard": {
+                        "exp": {
+                            "op": "<",
+                            "left": {
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
+                                }
+                            },
+                            "right": 0.99
+                        }
+                    },
                     "destinations": [
                         {
-                            "location": "loc",
+                            "location": "increasing",
                             "assignments": [
                                 {
                                     "ref": "orientation_rad",
@@ -95,34 +111,13 @@
                                     "comment": "Convert orientation from deg to rad"
                                 },
                                 {
-                                    "ref": "pose_x_cm",
-                                    "value": {
-                                        "op": "+",
-                                        "left": "pose_x_cm",
-                                        "right": {
-                                            "op": "*",
-                                            "left": {
-                                                "op": "*",
-                                                "left": "step_size_m",
-                                                "right": {
-                                                    "op": "cos",
-                                                    "exp": "orientation_rad"
-                                                }
-                                            },
-                                            "right": 100
-                                        }
-                                    },
-                                    "index": 1,
-                                    "comment": "Move the robot on the X axis depending on its angle"
-                                },
-                                {
                                     "ref": "orientation_rad",
                                     "value": {
                                         "op": "+",
                                         "left": "orientation_rad",
                                         "right": "step_size_rad"
                                     },
-                                    "index": 2,
+                                    "index": 1,
                                     "comment": "Turn by step_size"
                                 },
                                 {
@@ -136,13 +131,39 @@
                                             "right": {"constant": "π"}
                                         }
                                     },
-                                    "index": 3,
+                                    "index": 2,
                                     "comment": "Convert orientation from rad to deg"
                                 }
                             ]
                         }
-                    ],
-                    "action": "advance"
+                    ]
+                },
+                {
+                    "action": "advance",
+                    "location": "increasing",
+                    "guard": {
+                        "exp": {
+                            "op": "≥",
+                            "left": {
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
+                                }
+                            },
+                            "right": 0.99
+                        }
+                    },
+                    "destinations": [
+                        {
+                            "location": "final"
+                        }
+                    ]
                 }
             ]
         }
@@ -173,63 +194,24 @@
                     "exp": {
                         "op": "U",
                         "step-bounds": {
-                            "upper": "max_n_steps"
+                            "upper": 1000
                         },
                         "left": true,
                         "right": {
-                            "op": "∧",
+                            "op": "≥",
                             "left": {
-                                "op": "∧",
-                                "left": {
-                                    "op": "<",
-                                    "left": {
-                                        "op": "abs",
-                                        "exp": {
-                                            "op": "-",
-                                            "left": "goal_orientation_rad",
-                                            "right": {
-                                                "op": "*",
-                                                "left": "orientation_deg",
-                                                "right": {
-                                                    "op": "/",
-                                                    "left": {"constant": "π"},
-                                                    "right": 180
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "right": 0.01,
-                                    "comment": "Check if orientation is close to goal"
-                                },
-                                "right": {
-                                    "op": "<",
-                                    "left": {
-                                        "op": "abs",
-                                        "exp": {
-                                            "op": "-",
-                                            "left": {
-                                                "op": "sin",
-                                                "exp": {
-                                                    "op": "*",
-                                                    "left": "orientation_deg",
-                                                    "right": {
-                                                        "op": "/",
-                                                        "left": {"constant": "π"},
-                                                        "right": 180
-                                                    }
-                                                }
-                                            },
-                                            "right": 1.0
-                                        }
-                                    },
-                                    "right": 0.01
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
                                 }
                             },
-                            "right": {
-                                "op": ">",
-                                "left": "pose_x_cm",
-                                "right": 1
-                            }
+                            "right": 0.99
                         }
                     }
                 },
@@ -247,9 +229,6 @@
                     "op": "Pmin",
                     "exp": {
                         "op": "U",
-                        "step-bounds": {
-                            "upper": "max_n_steps"
-                        },
                         "left": true,
                         "right": {
                             "op": "∧",

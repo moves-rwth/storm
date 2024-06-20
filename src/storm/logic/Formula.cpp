@@ -530,9 +530,9 @@ std::shared_ptr<Formula> Formula::substituteRewardModelNames(std::map<std::strin
 }
 
 std::shared_ptr<Formula> Formula::substituteTranscendentalNumbers() const {
-    const std::map<storm::expressions::Variable, storm::expressions::Expression> emptySubstitutionMap = {};
-    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(emptySubstitutionMap, true);
-    return substitute([&v](storm::expressions::Expression const& exp) { return v.substitute(exp); });
+    using SubMap = std::map<storm::expressions::Variable, storm::expressions::Expression>;
+    storm::expressions::JaniExpressionSubstitutionVisitor<SubMap> transcendentalsVisitor(SubMap(), true);
+    return substitute([&transcendentalsVisitor](storm::expressions::Expression const& exp) { return transcendentalsVisitor.substitute(exp); });
 }
 
 storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager,

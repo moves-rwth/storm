@@ -12,6 +12,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/jani/types/ArrayType.h"
 #include "storm/storage/jani/types/BasicType.h"
@@ -847,7 +848,11 @@ std::pair<std::unique_ptr<storm::jani::JaniType>, storm::expressions::Type> Jani
                                 "Upper bound for bounded real variable " << variableName << "(scope: " << scope.description << ") must be numeric");
                 if (lowerboundExpr.isInitialized() && upperboundExpr.isInitialized() && !lowerboundExpr.containsVariables() &&
                     !upperboundExpr.containsVariables()) {
-                    STORM_LOG_THROW(lowerboundExpr.evaluateAsRational() <= upperboundExpr.evaluateAsRational(), storm::exceptions::InvalidJaniException,
+                    using SubMap = std::map<storm::expressions::Variable, storm::expressions::Expression>;
+                    storm::expressions::JaniExpressionSubstitutionVisitor<SubMap> transcendentalVisitor(SubMap(), true);
+                    const storm::RationalNumber lowerboundValue = transcendentalVisitor.substitute(lowerboundExpr).evaluateAsRational();
+                    const storm::RationalNumber upperboundValue = transcendentalVisitor.substitute(upperboundExpr).evaluateAsRational();
+                    STORM_LOG_THROW(lowerboundValue <= upperboundValue, storm::exceptions::InvalidJaniException,
                                     "Lower bound must not be larger than upper bound for bounded real variable " << variableName
                                                                                                                  << "(scope: " << scope.description << ").");
                 }

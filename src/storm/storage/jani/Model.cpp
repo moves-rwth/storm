@@ -1066,6 +1066,12 @@ Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, sto
                                 "Illegal type of expression defining constant '" << constant.getName() << "'.");
 
                 // Now define the constant.
+                if (constant.hasConstraint()) {
+                    // Constraints need to be evaluated before defining a constant.
+                    using SubMap = std::map<storm::expressions::Variable, storm::expressions::Expression>;
+                    storm::expressions::JaniExpressionSubstitutionVisitor<SubMap> transcendentalsVisitor(SubMap(), true);
+                    constant.setConstraintExpression(transcendentalsVisitor.substitute(constant.getConstraintExpression()));
+                }
                 constant.define(variableExpressionPair->second);
             }
         }
