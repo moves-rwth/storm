@@ -37,7 +37,7 @@
 #include "utility/logging.h"
 #include "utility/macros.h"
 
-#define WRITE_DTMCS 0
+#define WRITE_DTMCS 1
 
 namespace storm {
 namespace transformer {
@@ -214,12 +214,35 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             continue;
         }
 
-        std::set<RationalFunctionVariable> bigStepParameters;
-        for (auto const& parameter : allParameters) {
-            if (treeStates[parameter].count(state) && treeStates.at(parameter).at(state).size() >= 1) {
-                bigStepParameters.emplace(parameter);
+        std::set<RationalFunctionVariable> parametersInState;
+        for (auto const& entry : flexibleMatrix.getRow(state)) {
+            for (auto const& parameter : entry.getValue().gatherVariables()) {
+                parametersInState.emplace(parameter);
             }
         }
+
+        std::set<RationalFunctionVariable> bigStepParameters;
+        for (auto const& parameter : allParameters) {
+            if (treeStates[parameter].count(state)) {
+                // Parallel parameters
+                if (treeStates.at(parameter).at(state).size() > 1) {
+                    bigStepParameters.emplace(parameter);
+                    continue;
+                } 
+                // Sequential parameters
+                if (parametersInState.count(parameter)) {
+                    for (auto const& treeState : treeStates[parameter][state]) {
+                        for (auto const& successor : flexibleMatrix.getRow(treeState)) {
+                            if (treeStates[parameter].count(successor.getColumn())) {
+                                bigStepParameters.emplace(parameter);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
         // Do big-step lifting from here
         // Follow the treeStates and eliminate transitions
@@ -248,6 +271,10 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             // If we will not eliminate any states, do not perfom big-step
             if (!existsEliminableState) {
                 continue;
+            }
+
+            for (auto const& [state, annotation] : bottomAnnotations) {
+                std::cout << state << ": " << annotation << std::endl;
             }
 
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
@@ -392,10 +419,15 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                 // We add stuff to this annotation
                 auto& targetAnnotation = annotations.at(goToState);
 
+                std::cout << targetAnnotation << " + ";
+                std::cout << "(" << transition << " * (" << annotations.at(state) << "))";
+
                 // The core of this big-step algorithm: "value-iterating" on our annotation.
                 if (transition.isConstant()) {
+                    std::cout << "(constant)";
                     targetAnnotation.addAnnotationTimesConstant(annotations.at(state), transition.constantPart());
                 } else {
+                    std::cout << "(pol)";
                     // Read transition from DTMC, convert to univariate polynomial
                     STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
                                                                                     << transition.denominator() << " in transition " << transition);
@@ -405,6 +437,8 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                     nominatorAsUnivariate /= transition.denominator().coefficient();
                     targetAnnotation.addAnnotationTimesPolynomial(annotations.at(state), nominatorAsUnivariate);
                 }
+
+                std::cout << " == " << targetAnnotation << std::endl;
 
                 // Continue BFS
                 if (subtree.get(goToState) && !bottomStates.get(goToState)) {
@@ -428,6 +462,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates) {
+    STORM_LOG_INFO("Find time travelling called with root " << root << " and parameter " << parameter);
     bool doneTimeTravelling = false;
 
     // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
@@ -451,6 +486,8 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
     for (auto const& [factors, transitions] : parametricTransitions) {
         if (transitions.size() > 1) {
+            STORM_LOG_ERROR_COND(!factors.empty(), "Empty factors!");
+            STORM_LOG_INFO("Time-travelling from root " << root);
             // The set of target states of the paths that we maybe want to time-travel
             std::set<uint64_t> targetStates;
 
@@ -462,18 +499,18 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                 }
             }
 
-            // TODO Try out different "heuristics" for what not to time-travel
-            if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
-                // We already reordered w.r.t. these target states. We're not going to time-travel again,
-                // so just enter the paths into insertPaths.
-                for (auto const& [toState, withConstant] : transitions) {
-                    Annotation newAnnotation(parameter, polynomialCache);
-                    newAnnotation[factors] = withConstant;
-                    insertTransitions.emplace_back(toState, newAnnotation);
-                }
-                continue;
-            }
-            alreadyTimeTravelledToThis[parameter].insert(targetStates);
+            // // TODO Try out different "heuristics" for what not to time-travel
+            // if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
+            //     // We already reordered w.r.t. these target states. We're not going to time-travel again,
+            //     // so just enter the paths into insertPaths.
+            //     for (auto const& [toState, withConstant] : transitions) {
+            //         Annotation newAnnotation(parameter, polynomialCache);
+            //         newAnnotation[factors] = withConstant;
+            //         insertTransitions.emplace_back(toState, newAnnotation);
+            //     }
+            //     continue;
+            // }
+            // alreadyTimeTravelledToThis[parameter].insert(targetStates);
 
             Annotation newAnnotation(parameter, polynomialCache);
 
@@ -483,7 +520,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
             }
             newAnnotation[factors] = constantPart;
 
-            STORM_LOG_INFO("Time travellable transitions with " << newAnnotation << std::endl);
+            STORM_LOG_INFO("Time travellable transitions with " << newAnnotation);
 
             doneTimeTravelling = true;
 

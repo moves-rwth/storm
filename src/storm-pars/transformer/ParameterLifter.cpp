@@ -51,7 +51,6 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
             }
         }
 
-        std::cout << "Occurring variables at state " << rowIndex << ": ";
         for (auto const& entry : occurringVariables) {
             std::cout << entry << " ";
         }
@@ -61,7 +60,6 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
         std::set<VariableType> vectorEntryVariables;
         if (!storm::utility::isConstant(pVectorEntry)) {
             storm::utility::parametric::gatherOccurringVariables(pVectorEntry, vectorEntryVariables);
-            std::cout << "Occurring variables at vector of state " << rowIndex << ", entry " << pVectorEntry << ": ";
             for (auto const& entry : vectorEntryVariables) {
                 std::cout << entry << " ";
             }

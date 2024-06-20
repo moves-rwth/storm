@@ -78,7 +78,7 @@ storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<Parametric
     Valuation upperBoundaries;
     std::vector<std::string> parameterBoundaries;
     CoefficientType bound = storm::utility::convertNumber<CoefficientType>(regionBound);
-    STORM_LOG_THROW(0 < bound && bound < 1, storm::exceptions::WrongFormatException, "Bound must be between 0 and 1, " << bound << " is not.");
+    // STORM_LOG_THROW(0 < bound && bound < 1, storm::exceptions::WrongFormatException, "Bound must be between 0 and 1, " << bound << " is not.");
     for (auto const& v : consideredVariables) {
         lowerBoundaries.emplace(std::make_pair(v, 0 + bound));
         upperBoundaries.emplace(std::make_pair(v, 1 - bound));

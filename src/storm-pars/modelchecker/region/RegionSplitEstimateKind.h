@@ -1,5 +1,5 @@
 #pragma once
 
 namespace storm::modelchecker {
-enum class RegionSplitEstimateKind { Distance, StateValueDelta, MinMaxDelta, MinMaxDeltaWeighted, Derivative };
+enum class RegionSplitEstimateKind { Distance, StateValueDelta, StateValueDeltaWeighted, Derivative };
 }

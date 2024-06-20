@@ -74,6 +74,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
 
     storm::Environment env;
     storm::Environment envRobust;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     envRobust.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     for (auto const& instantiation : testInstantiations) {
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];

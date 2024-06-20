@@ -464,16 +464,11 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
             // Compute bounds on initial split points
             std::vector<double> splitPoints;
             splitPoints.push_back(0.0);
-            // Sometimes we can read off zeroes of the first derivative terms, those are nice split points
-            // Otherwise just uniform distribution
-            if (auto const& zeroes = annotation.zeroesOfDerivativeOfTerms()) {
-                splitPoints = *zeroes;
-            } else {
-                // Heuristic number of split points
-                uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t)20);
-                for (uint64_t i = 0; i < numSplitPoints; i++) {
-                    splitPoints.push_back(((double)i) / ((double)numSplitPoints));
-                }
+            // Heuristic number of split points
+            // TODO read off p and 1-p?
+            uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t)20);
+            for (uint64_t i = 0; i < numSplitPoints; i++) {
+                splitPoints.push_back(((double)i) / ((double)numSplitPoints));
             }
             splitPoints.push_back(1.0);
             std::sort(splitPoints.begin(), splitPoints.end());
@@ -760,9 +755,10 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         }
 
         bool graphPreserving = true;
-        const ConstantType epsilon =
-            graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-                            : utility::zero<ConstantType>();
+        // const ConstantType epsilon =
+        //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+        //                     : utility::zero<ConstantType>();
+        const ConstantType epsilon = 1e-6;
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
@@ -770,6 +766,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
 
         placeholder = Interval(lowerBound, upperBound);
+        // std::cout << placeholder << std::endl;
     }
     for (auto& key : insertThese) {
         this->collectedValuations.insert(std::move(insertThese.extract(key.first)));

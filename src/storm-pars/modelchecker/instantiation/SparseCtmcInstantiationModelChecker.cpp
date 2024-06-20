@@ -23,6 +23,12 @@ std::unique_ptr<CheckResult> SparseCtmcInstantiationModelChecker<SparseModelType
     return modelChecker.check(env, *this->currentCheckTask);
 }
 
+template<typename SparseModelType, typename ConstantType>
+bool SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::isProbabilistic(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
+    auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
+    return instantiatedModel.getTransitionMatrix().isProbabilistic();
+}
+
 template class SparseCtmcInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, double>;
 template class SparseCtmcInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::RationalNumber>;
 }  // namespace modelchecker

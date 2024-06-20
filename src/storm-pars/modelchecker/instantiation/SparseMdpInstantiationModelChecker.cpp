@@ -232,6 +232,12 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
     return result;
 }
 
+template<typename SparseModelType, typename ConstantType>
+bool SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::isProbabilistic(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
+    auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
+    return instantiatedModel.getTransitionMatrix().isProbabilistic();
+}
+
 template class SparseMdpInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 template class SparseMdpInstantiationModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 

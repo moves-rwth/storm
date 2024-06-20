@@ -318,7 +318,7 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
     while (iterator != annotation.end()) {
         auto const& factors = iterator->first;
         auto const& constant = iterator->second;
-        std::cout << constant << " * (";
+        os << constant << " * (";
         bool alreadyPrintedFactor = false;
         for (uint64_t i = 0; i < factors.size(); i++) {
             if (factors[i] > 0) {
@@ -330,7 +330,10 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
                 os << "(" << annotation.polynomialCache->at(annotation.parameter)[i] << ")" << "^" << factors[i];
             }
         }
-        std::cout << ")";
+        if (factors.empty()) {
+            os << "1";
+        }
+        os << ")";
         iterator++;
         if (iterator != annotation.end()) {
             os << " + ";

@@ -31,7 +31,7 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                                          .build())
                         .build());
 
-    std::vector<std::string> estimates = {"delta", "distance", "minmaxdelta", "minmaxdeltaweighted", "derivative"};
+    std::vector<std::string> estimates = {"delta", "distance", "deltaweighted", "derivative"};
     this->addOption(storm::settings::OptionBuilder(moduleName, estimateMethodName, false, "Sets which estimate strategy is used for splitting regions (if splitting-stratgegy is estimate).")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the strategy to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(estimates))
@@ -102,10 +102,8 @@ std::optional<storm::modelchecker::RegionSplitEstimateKind> RegionVerificationSe
     storm::modelchecker::RegionSplitEstimateKind result;
     if (strategyString == "delta") {
         result = storm::modelchecker::RegionSplitEstimateKind::StateValueDelta;
-    } else if (strategyString == "minmaxdelta") {
-        result = storm::modelchecker::RegionSplitEstimateKind::MinMaxDelta;
-    } else if (strategyString == "minmaxdeltaweighted") {
-        result = storm::modelchecker::RegionSplitEstimateKind::MinMaxDeltaWeighted;
+    } else if (strategyString == "deltaweighted") {
+        result = storm::modelchecker::RegionSplitEstimateKind::StateValueDeltaWeighted;
     } else if (strategyString == "distance") {
         result = storm::modelchecker::RegionSplitEstimateKind::Distance;
     } else if (strategyString == "derivative") {
