@@ -78,6 +78,10 @@ class ArrayExpressionFinderExpressionVisitor : public storm::expressions::Expres
         }
         return false;
     }
+
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const&, boost::any const&) override {
+        return false;
+    }
 };
 
 class ArrayExpressionFinderTraverser : public ConstJaniTraverser {

@@ -163,6 +163,12 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     Type const& getArrayType(Type elementType) const;
 
     /*!
+     * Retrieves the transcendental numbers type (i.e. pi and e)
+     * @return The transcendental numbers type
+     */
+    Type const& getTranscendentalNumberType() const;
+
+    /*!
      * Declares a variable that is a copy of the provided variable (i.e. has the same type).
      *
      * @param variable The variable of which to create a copy.
@@ -486,6 +492,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     mutable std::unordered_set<Type> bitvectorTypes;
     mutable boost::optional<Type> rationalType;
     mutable std::unordered_set<Type> arrayTypes;
+    mutable boost::optional<Type> transcendentalNumberType;
 
     // A mask that can be used to query whether a variable is an auxiliary variable.
     static const uint64_t auxiliaryMask = (1ull << 50);

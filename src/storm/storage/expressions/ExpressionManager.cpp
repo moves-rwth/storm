@@ -137,6 +137,13 @@ Type const& ExpressionManager::getArrayType(Type elementType) const {
     return *arrayTypes.insert(type).first;
 }
 
+Type const& ExpressionManager::getTranscendentalNumberType() const {
+    if (!transcendentalNumberType) {
+        transcendentalNumberType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new TranscendentalNumberType()));
+    }
+    return transcendentalNumberType.get();
+}
+
 bool ExpressionManager::isValidVariableName(std::string const& name) {
     return name.size() < 2 || name.at(0) != '_' || name.at(1) != '_';
 }

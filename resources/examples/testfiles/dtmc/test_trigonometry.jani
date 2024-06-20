@@ -1,0 +1,260 @@
+{
+    "jani-version": 1,
+    "name": "test_trigonometry",
+    "type": "dtmc",
+    "metadata": {
+        "description": "Testing sin, cos and constants in Storm SMC tool."
+    },
+    "features": [
+		"trigonometric-functions"
+	],
+    "variables": [
+        {
+            "name": "orientation_deg",
+            "type": "int",
+            "initial-value": 0,
+            "comment": "Current orientation in degrees"
+        }
+    ],
+    "constants": [
+        {
+            "name": "step_size_rad",
+            "type": {
+                "kind": "bounded",
+                "base": "real",
+                "lower-bound": {
+                    "op": "/",
+                    "left": {
+                        "constant": "π"
+                    },
+                    "right": 180
+                },
+                "upper-bound": {
+                    "op": "*",
+                    "left": {
+                        "constant": "π"
+                    },
+                    "right": 2
+                }
+
+            },
+            "comment": "How much to turn in each step in radians. Bounds: [1 deg., 360 deg.]"
+        }
+    ],
+    "actions": [
+        {
+            "name": "advance"
+        }
+    ],
+    "automata": [
+        {
+            "name": "test_trig_automaton",
+            "locations": [
+                {
+                    "name": "increasing",
+                    "comment": "A state were the angle is increased each transition"
+                },
+                {
+                    "name": "final",
+                    "comment": "State reached when cos(angle) ~= 1"
+                }
+            ],
+            "initial-locations": [
+                "increasing"
+            ],
+            "variables": [
+                {
+                    "name": "orientation_rad",
+                    "type": "real",
+                    "initial-value": 0.0,
+                    "transient": true
+                }
+            ],
+            "edges": [
+                {
+                    "action": "advance",
+                    "location": "increasing",
+                    "guard": {
+                        "exp": {
+                            "op": "<",
+                            "left": {
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
+                                }
+                            },
+                            "right": 0.99
+                        }
+                    },
+                    "destinations": [
+                        {
+                            "location": "increasing",
+                            "assignments": [
+                                {
+                                    "ref": "orientation_rad",
+                                    "value": {
+                                        "op": "*",
+                                        "left": "orientation_deg",
+                                        "right": {
+                                            "op": "/",
+                                            "left": {"constant": "π"},
+                                            "right": 180
+                                        }
+                                    },
+                                    "index": 0,
+                                    "comment": "Convert orientation from deg to rad"
+                                },
+                                {
+                                    "ref": "orientation_rad",
+                                    "value": {
+                                        "op": "+",
+                                        "left": "orientation_rad",
+                                        "right": "step_size_rad"
+                                    },
+                                    "index": 1,
+                                    "comment": "Turn by step_size"
+                                },
+                                {
+                                    "ref": "orientation_deg",
+                                    "value": {
+                                        "op": "*",
+                                        "left": "orientation_rad",
+                                        "right": {
+                                            "op": "/",
+                                            "left": 180,
+                                            "right": {"constant": "π"}
+                                        }
+                                    },
+                                    "index": 2,
+                                    "comment": "Convert orientation from rad to deg"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "action": "advance",
+                    "location": "increasing",
+                    "guard": {
+                        "exp": {
+                            "op": "≥",
+                            "left": {
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
+                                }
+                            },
+                            "right": 0.99
+                        }
+                    },
+                    "destinations": [
+                        {
+                            "location": "final"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "system": {
+        "elements": [
+            {
+                "automaton": "test_trig_automaton"
+            }
+        ],
+        "syncs": [
+            {
+                "result": "advance",
+                "synchronise": [
+                    "advance"
+                ]
+            }
+        ]
+    },
+    "properties": [
+        {
+            "name": "destination_reached_sin",
+            "expression": {
+                "op": "filter",
+                "fun": "values",
+                "values": {
+                    "op": "Pmin",
+                    "exp": {
+                        "op": "U",
+                        "step-bounds": {
+                            "upper": 1000
+                        },
+                        "left": true,
+                        "right": {
+                            "op": "≥",
+                            "left": {
+                                "op": "sin",
+                                "exp": {
+                                    "op": "*",
+                                    "left": "orientation_deg",
+                                    "right": {
+                                        "op": "/",
+                                        "left": {"constant": "π"},
+                                        "right": 180
+                                    }
+                                }
+                            },
+                            "right": 0.99
+                        }
+                    }
+                },
+                "states": {
+                    "op": "initial"
+                }
+            }
+        },
+        {
+            "name": "test_int_trigonometry",
+            "expression": {
+                "op": "filter",
+                "fun": "values",
+                "values": {
+                    "op": "Pmin",
+                    "exp": {
+                        "op": "U",
+                        "left": true,
+                        "right": {
+                            "op": "∧",
+                            "left": {
+                                "op": "=",
+                                "left": {
+                                    "op": "sin",
+                                    "exp": 0
+                                },
+                                "right": 0.0
+                            },
+                            "right": {
+                                "op": "=",
+                                "left": {
+                                    "op": "cos",
+                                    "exp": 0
+                                },
+                                "right": 1.0
+                            }
+                        }
+                    }
+                },
+                "states": {
+                    "op": "initial"
+                }
+            }
+        }
+    ]
+}

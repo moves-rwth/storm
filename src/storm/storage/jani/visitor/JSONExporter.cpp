@@ -634,6 +634,10 @@ std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             return "ceil";
         case OpType::Ite:
             return "ite";
+        case OpType::Sin:
+            return "sin";
+        case OpType::Cos:
+            return "cos";
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani");
     }
@@ -791,6 +795,12 @@ boost::any ExpressionToJson::visit(storm::expressions::FunctionCallExpression co
     }
     opDecl["args"] = std::move(arguments);
     return opDecl;
+}
+
+boost::any ExpressionToJson::visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) {
+    ExportJsonType constantDecl;
+    constantDecl["constant"] = expression.asString();
+    return constantDecl;
 }
 
 void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid,

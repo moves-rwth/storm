@@ -238,9 +238,10 @@ detail::ConstAssignments::iterator OrderedAssignments::end() const {
     return detail::ConstAssignments::make_iterator(allAssignments.end());
 }
 
-void OrderedAssignments::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void OrderedAssignments::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                                    bool const substituteTranscendentalNumbers) {
     for (auto& assignment : allAssignments) {
-        assignment->substitute(substitution);
+        assignment->substitute(substitution, substituteTranscendentalNumbers);
     }
 }
 

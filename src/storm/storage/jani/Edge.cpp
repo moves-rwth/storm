@@ -90,12 +90,12 @@ OrderedAssignments const& Edge::getAssignments() const {
     return templateEdge->getAssignments();
 }
 
-void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers) {
     if (this->hasRate()) {
-        this->setRate(substituteJaniExpression(this->getRate(), substitution));
+        this->setRate(substituteJaniExpression(this->getRate(), substitution, substituteTranscendentalNumbers));
     }
     for (auto& destination : destinations) {
-        destination.substitute(substitution);
+        destination.substitute(substitution, substituteTranscendentalNumbers);
     }
 }
 

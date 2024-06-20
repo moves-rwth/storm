@@ -78,6 +78,10 @@ class FilterExpression {
                                 statesFormula->substituteRewardModelNames(rewardModelNameSubstitution));
     }
 
+    FilterExpression substituteTranscendentalNumbers() const {
+        return FilterExpression(formula->substituteTranscendentalNumbers(), ft, statesFormula->substituteTranscendentalNumbers());
+    }
+
     FilterExpression clone() const {
         storm::logic::CloneVisitor cv;
         return FilterExpression(cv.clone(*formula), ft, cv.clone(*statesFormula));
@@ -131,6 +135,7 @@ class Property {
     Property substitute(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction) const;
     Property substituteLabels(std::map<std::string, std::string> const& labelSubstitution) const;
     Property substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
+    Property substituteTranscendentalNumbers() const;
     Property clone() const;
 
     FilterExpression const& getFilter() const;

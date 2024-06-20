@@ -72,5 +72,16 @@ boost::any JaniSyntacticalEqualityCheckVisitor::visit(FunctionCallExpression con
         return false;
     }
 }
+
+boost::any JaniSyntacticalEqualityCheckVisitor::visit(TranscendentalNumberLiteralExpression const& expression, boost::any const& data) {
+    BaseExpression const& otherBaseExpression = boost::any_cast<std::reference_wrapper<BaseExpression const>>(data).get();
+    auto const rhs = std::dynamic_pointer_cast<storm::expressions::TranscendentalNumberLiteralExpression const>(otherBaseExpression.getSharedPointer());
+    if (rhs) {
+        return expression.getTranscendentalNumber() == rhs->getTranscendentalNumber();
+    } else {
+        return false;
+    }
+}
+
 }  // namespace expressions
 }  // namespace storm

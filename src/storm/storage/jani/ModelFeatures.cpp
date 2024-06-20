@@ -15,6 +15,8 @@ std::string toString(ModelFeature const& modelFeature) {
             return "functions";
         case ModelFeature::StateExitRewards:
             return "state-exit-rewards";
+        case ModelFeature::TrigonometricFunctions:
+            return "trigonometric-functions";
     }
     STORM_LOG_ASSERT(false, "Unhandled model feature");
     return "Unhandled-feature";
@@ -50,6 +52,10 @@ bool ModelFeatures::hasStateExitRewards() const {
     return features.count(ModelFeature::StateExitRewards) > 0;
 }
 
+bool ModelFeatures::hasTrigonometricFunctions() const {
+    return features.count(ModelFeature::TrigonometricFunctions) > 0;
+}
+
 std::set<ModelFeature> const& ModelFeatures::asSet() const {
     return features;
 }
@@ -68,7 +74,12 @@ void ModelFeatures::remove(ModelFeature const& modelFeature) {
 }
 
 ModelFeatures getAllKnownModelFeatures() {
-    return ModelFeatures().add(ModelFeature::Arrays).add(ModelFeature::DerivedOperators).add(ModelFeature::Functions).add(ModelFeature::StateExitRewards);
+    return ModelFeatures()
+        .add(ModelFeature::Arrays)
+        .add(ModelFeature::DerivedOperators)
+        .add(ModelFeature::Functions)
+        .add(ModelFeature::StateExitRewards)
+        .add(ModelFeature::TrigonometricFunctions);
 }
 }  // namespace jani
 }  // namespace storm

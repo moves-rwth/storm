@@ -22,6 +22,14 @@ std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<s
     return preprocessedProperties;
 }
 
+std::vector<storm::jani::Property> substituteTranscendentalNumbersInProperties(std::vector<storm::jani::Property> const& properties) {
+    std::vector<storm::jani::Property> preprocessedProperties;
+    for (auto const& property : properties) {
+        preprocessedProperties.emplace_back(property.substituteTranscendentalNumbers());
+    }
+    return preprocessedProperties;
+}
+
 std::vector<storm::jani::Property> filterProperties(std::vector<storm::jani::Property> const& properties,
                                                     boost::optional<std::set<std::string>> const& propertyFilter) {
     if (propertyFilter) {

@@ -21,6 +21,8 @@ enum class OperatorType {
     Power,
     Modulo,
     Logarithm,
+    Cos,
+    Sin,
     Equal,
     NotEqual,
     Less,

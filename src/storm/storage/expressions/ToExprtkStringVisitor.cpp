@@ -228,6 +228,16 @@ boost::any ToExprtkStringVisitor::visit(UnaryNumericalFunctionExpression const& 
             expression.getOperand()->accept(*this, data);
             stream << ")";
             break;
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+            stream << "cos(";
+            expression.getOperand()->accept(*this, data);
+            stream << ")";
+            break;
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
+            stream << "sin(";
+            expression.getOperand()->accept(*this, data);
+            stream << ")";
+            break;
     }
     return boost::any();
 }

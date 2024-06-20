@@ -454,6 +454,8 @@ Expression ceil(Expression const& first);
 Expression round(Expression const& first);
 Expression modulo(Expression const& first, Expression const& second);
 Expression logarithm(Expression const& first, Expression const& second);
+Expression cos(Expression const& first);
+Expression sin(Expression const& first);
 Expression minimum(Expression const& first, Expression const& second);
 Expression maximum(Expression const& first, Expression const& second);
 Expression atLeastOneOf(std::vector<storm::expressions::Expression> const& expressions);
