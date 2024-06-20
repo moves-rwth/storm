@@ -63,7 +63,7 @@ bool Assignment::isTransient() const {
 }
 
 void Assignment::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                            bool const& substituteTranscendentalNumbers) {
+                            bool const substituteTranscendentalNumbers) {
     this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution, substituteTranscendentalNumbers).simplify());
     if (lValue.isArrayAccess()) {
         std::vector<storm::expressions::Expression> substitutedExpressions;

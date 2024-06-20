@@ -46,7 +46,7 @@ void Location::setTimeProgressInvariant(storm::expressions::Expression const& ex
 }
 
 void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                          bool const& substituteTranscendentalNumbers) {
+                          bool const substituteTranscendentalNumbers) {
     for (auto& assignment : assignments) {
         assignment.substitute(substitution, substituteTranscendentalNumbers);
     }

@@ -68,7 +68,7 @@ class Assignment {
     /*!
      * Substitutes all variables in all expressions according to the given substitution.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
 
     /**
      * Retrieves whether the assignment assigns to a transient variable.

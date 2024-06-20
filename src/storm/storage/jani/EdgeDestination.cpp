@@ -41,7 +41,7 @@ OrderedAssignments const& EdgeDestination::getOrderedAssignments() const {
 }
 
 void EdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                                 bool const& substituteTranscendentalNumbers) {
+                                 bool const substituteTranscendentalNumbers) {
     this->setProbability(substituteJaniExpression(this->getProbability(), substitution, substituteTranscendentalNumbers));
 }
 

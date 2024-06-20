@@ -42,7 +42,7 @@ storm::expressions::Expression FunctionDefinition::call(std::vector<std::shared_
 }
 
 void FunctionDefinition::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                                    bool const& substituteTranscendentalNumbers) {
+                                    bool const substituteTranscendentalNumbers) {
     this->setFunctionBody(substituteJaniExpression(this->getFunctionBody(), substitution, substituteTranscendentalNumbers));
 }
 

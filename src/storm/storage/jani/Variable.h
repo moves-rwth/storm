@@ -82,7 +82,7 @@ class Variable {
     /*!
      * Substitutes all variables in all expressions according to the given substitution.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
 
     /**
      * Convenience functions to call the appropriate constructor and return a shared pointer to the variable.

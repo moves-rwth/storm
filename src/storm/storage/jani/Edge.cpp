@@ -90,7 +90,7 @@ OrderedAssignments const& Edge::getAssignments() const {
     return templateEdge->getAssignments();
 }
 
-void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers) {
+void Edge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers) {
     if (this->hasRate()) {
         this->setRate(substituteJaniExpression(this->getRate(), substitution, substituteTranscendentalNumbers));
     }

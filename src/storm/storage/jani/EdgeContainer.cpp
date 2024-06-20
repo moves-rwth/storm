@@ -95,7 +95,7 @@ void EdgeContainer::liftTransientDestinationAssignments(int64_t maxLevel) {
 }
 
 void EdgeContainer::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                               bool const& substituteTranscendentalNumbers) {
+                               bool const substituteTranscendentalNumbers) {
     for (auto& templateEdge : templates) {
         templateEdge->substitute(substitution, substituteTranscendentalNumbers);
     }

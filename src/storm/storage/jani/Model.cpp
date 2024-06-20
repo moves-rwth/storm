@@ -1106,7 +1106,7 @@ Model& Model::replaceUnassignedVariablesWithConstants() {
     return *this;
 }
 
-Model& Model::substituteConstantsInPlace(bool const& substituteTranscendentalNumbers) {
+Model& Model::substituteConstantsInPlace(bool const substituteTranscendentalNumbers) {
     // Gather all defining expressions of constants.
     std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
     for (auto& constant : this->getConstants()) {
@@ -1168,8 +1168,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Model::ge
     return result;
 }
 
-void Model::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                       bool const& substituteTranscendentalNumbers) {
+void Model::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers) {
     // substitute in all defining expressions of constants
     for (auto& constant : this->getConstants()) {
         if (constant.hasConstraint()) {

@@ -9,11 +9,11 @@ namespace storm {
 namespace jani {
 storm::expressions::Expression substituteJaniExpression(storm::expressions::Expression const& expression,
                                                         std::map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
-                                                        bool const& substituteTranscendentalNumbers);
+                                                        bool const substituteTranscendentalNumbers);
 storm::expressions::Expression substituteJaniExpression(
     storm::expressions::Expression const& expression,
     std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
-    bool const& substituteTranscendentalNumbers);
+    bool const substituteTranscendentalNumbers);
 }  // namespace jani
 
 namespace expressions {
@@ -26,7 +26,7 @@ class JaniExpressionSubstitutionVisitor : public SubstitutionVisitor<MapType>, p
      * @param variableToExpressionMapping A mapping from variables to expressions.
      * @param substituteTranscendentalNumbers Enables transcendental numbers substitution
      */
-    JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping, bool const& substituteTranscendentalNumbers);
+    JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping, bool const substituteTranscendentalNumbers);
     using SubstitutionVisitor<MapType>::visit;
 
     virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) override;

@@ -16,7 +16,7 @@ TemplateEdgeDestination::TemplateEdgeDestination(std::vector<Assignment> const& 
 }
 
 void TemplateEdgeDestination::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                                         bool const& substituteTranscendentalNumbers) {
+                                         bool const substituteTranscendentalNumbers) {
     assignments.substitute(substitution, substituteTranscendentalNumbers);
 }
 

@@ -421,7 +421,7 @@ class Model {
     /*!
      * Substitutes all constants in all expressions of the model.
      */
-    Model& substituteConstantsInPlace(bool const& substituteTranscendentalNumbers);
+    Model& substituteConstantsInPlace(bool const substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all constants in all expressions of the model. The original model is not modified, but
@@ -439,7 +439,7 @@ class Model {
      * Substitutes all expression variables in all expressions of the model. The original model is not modified, but
      * instead a new model is created.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all function calls with the corresponding function definition

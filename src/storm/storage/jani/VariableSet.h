@@ -261,7 +261,7 @@ class VariableSet {
      * The substitution does not apply to the variables itself, but to initial expressions, variable bounds, ...
      * @param substitution
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const& substituteTranscendentalNumbers);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
 
     /*!
      * Substitutes the actual variables according to the given substitution.

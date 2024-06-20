@@ -86,7 +86,7 @@ OrderedAssignments& TemplateEdge::getAssignments() {
 }
 
 void TemplateEdge::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                              bool const& substituteTranscendentalNumbers) {
+                              bool const substituteTranscendentalNumbers) {
     guard = substituteJaniExpression(guard, substitution, substituteTranscendentalNumbers);
 
     for (auto& assignment : assignments) {

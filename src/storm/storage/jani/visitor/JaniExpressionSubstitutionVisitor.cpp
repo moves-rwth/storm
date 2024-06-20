@@ -7,7 +7,7 @@ namespace storm {
 namespace jani {
 storm::expressions::Expression substituteJaniExpression(storm::expressions::Expression const& expression,
                                                         std::map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
-                                                        bool const& substituteTranscendentalNumbers) {
+                                                        bool const substituteTranscendentalNumbers) {
     return storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>>(
                identifierToExpressionMap, substituteTranscendentalNumbers)
         .substitute(expression);
@@ -16,7 +16,7 @@ storm::expressions::Expression substituteJaniExpression(storm::expressions::Expr
 storm::expressions::Expression substituteJaniExpression(
     storm::expressions::Expression const& expression,
     std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> const& identifierToExpressionMap,
-    bool const& substituteTranscendentalNumbers) {
+    bool const substituteTranscendentalNumbers) {
     return storm::expressions::JaniExpressionSubstitutionVisitor<std::unordered_map<storm::expressions::Variable, storm::expressions::Expression>>(
                identifierToExpressionMap, substituteTranscendentalNumbers)
         .substitute(expression);
@@ -27,7 +27,7 @@ namespace expressions {
 
 template<typename MapType>
 JaniExpressionSubstitutionVisitor<MapType>::JaniExpressionSubstitutionVisitor(MapType const& variableToExpressionMapping,
-                                                                              bool const& substituteTranscendentalNumbers)
+                                                                              bool const substituteTranscendentalNumbers)
     : SubstitutionVisitor<MapType>(variableToExpressionMapping), shallSubstituteTranscendentalNumbers(substituteTranscendentalNumbers) {
     // Intentionally left empty.
 }

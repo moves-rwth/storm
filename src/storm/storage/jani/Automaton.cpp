@@ -432,7 +432,7 @@ std::vector<storm::expressions::Expression> Automaton::getAllRangeExpressions() 
 }
 
 void Automaton::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
-                           bool const& substituteTranscendentalNumbers) {
+                           bool const substituteTranscendentalNumbers) {
     for (auto& functionDefinition : this->getFunctionDefinitions()) {
         functionDefinition.second.substitute(substitution, substituteTranscendentalNumbers);
     }
