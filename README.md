@@ -5,6 +5,7 @@ Storm - A Modern Probabilistic Model Checker
 [![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
+This is a custom fork of Storm for my Bachelor and Master Thesis at IIT Delhi, titled, "`INTERLEAVE` : An Empirically Faster Symbolic Algorithm for Maximal End Component Decomposition of MDPs". Most of the code (except the new algorithm added -- `INTERLEAVE`) has been adapted from [the code for Felix Faber's Bachelor Thesis at RWTH Aachen](https://doi.org/10.5281/zenodo.8311805). I am grateful to Felix for writing an excellent thesis, and for writing code that was easy to understand and extend.
 
 Usage
 -----------------------------
