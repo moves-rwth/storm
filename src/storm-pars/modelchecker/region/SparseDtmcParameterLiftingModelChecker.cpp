@@ -1,5 +1,4 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include <_types/_uint64_t.h>
 #include <vector>
 
 #include "adapters/RationalFunctionForward.h"

@@ -248,7 +248,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
-            auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, flexibleMatrix, treeStates, stateRewardVector);
+            auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, flexibleMatrix, backwardsTransitions, treeStates, stateRewardVector);
 
             // Check the following:
             // There exists a state s in visitedStates s.t. all predecessors of s are in visitedStates
@@ -386,7 +386,9 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 }
 
 std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling::bigStepBFS(
-    uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    uint64_t start, const RationalFunctionVariable& parameter,
+    const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
     const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
@@ -411,34 +413,52 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
             visitedStatesInBFSOrder.push_back(state);
             for (auto const& entry : flexibleMatrix.getRow(state)) {
                 auto const goToState = entry.getColumn();
-                auto const transition = entry.getValue();
 
-                if (!annotations.count(goToState)) {
-                    annotations.emplace(goToState, Annotation(parameter, polynomialCache));
-                }
-                // We add stuff to this annotation
-                auto& targetAnnotation = annotations.at(goToState);
-
-                std::cout << targetAnnotation << " + ";
-                std::cout << "(" << transition << " * (" << annotations.at(state) << "))";
-
-                // The core of this big-step algorithm: "value-iterating" on our annotation.
-                if (transition.isConstant()) {
-                    std::cout << "(constant)";
-                    targetAnnotation.addAnnotationTimesConstant(annotations.at(state), transition.constantPart());
+                // Update the annotation of the target state
+                if (annotations.count(goToState)) {
+                    annotations.at(goToState).clear();
                 } else {
-                    std::cout << "(pol)";
-                    // Read transition from DTMC, convert to univariate polynomial
-                    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
-                                                                                    << transition.denominator() << " in transition " << transition);
-                    auto nominator = transition.nominator();
-                    UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-                    // Constant denominator is now distributed in the factors, not in the denominator of the rational function
-                    nominatorAsUnivariate /= transition.denominator().coefficient();
-                    targetAnnotation.addAnnotationTimesPolynomial(annotations.at(state), nominatorAsUnivariate);
+                    annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
                 }
 
-                std::cout << " == " << targetAnnotation << std::endl;
+                // Value-iteration style
+                for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
+                    if (!subtree.get(backwardsEntry.getColumn()) || !annotations.count(backwardsEntry.getColumn())) {
+                        continue;
+                    }
+                    // This is kinda ugly: we need to check that the two states are not in the "tree" for unrelated reasons
+                    // A better solution would be to return edges from findSubgraph as well as nodes, as that is what a subgraph is
+                    if (!backwardsEntry.getValue().isConstant() && !backwardsEntry.getValue().gatherVariables().count(parameter)) {
+                        continue;
+                    }
+                    auto const transition = backwardsEntry.getValue();
+
+                    std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
+
+                    // We add stuff to this annotation
+                    auto& targetAnnotation = annotations.at(goToState);
+
+                    std::cout << targetAnnotation << " + ";
+                    std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
+
+                    // The core of this big-step algorithm: "value-iterating" on our annotation.
+                    if (transition.isConstant()) {
+                        std::cout << "(constant)";
+                        targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
+                    } else {
+                        std::cout << "(pol)";
+                        // Read transition from DTMC, convert to univariate polynomial
+                        STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
+                                                                                        << transition.denominator() << " in transition " << transition);
+                        auto nominator = transition.nominator();
+                        UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+                        // Constant denominator is now distributed in the factors, not in the denominator of the rational function
+                        nominatorAsUnivariate /= transition.denominator().coefficient();
+                        targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), nominatorAsUnivariate);
+                    }
+
+                    std::cout << " == " << targetAnnotation << std::endl;
+                }
 
                 // Continue BFS
                 if (subtree.get(goToState) && !bottomStates.get(goToState)) {

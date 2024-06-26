@@ -378,12 +378,14 @@ class TimeTravelling {
      * @param start Root state of search.
      * @param parameter Parameter w.r.t. which we search.
      * @param flexibleMatrix Matrix of the pMC.
+     * @param backwardsFlexibleMatrix Transposed matrix of the pMC.
      * @param treeStates Tree states (see updateTreeStates).
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
      * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
     std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> bigStepBFS(
         uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+        const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
         const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
 
