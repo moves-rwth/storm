@@ -1,4 +1,5 @@
 #include "TimeTravelling.h"
+#include <_types/_uint64_t.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
@@ -37,7 +38,7 @@
 #include "utility/logging.h"
 #include "utility/macros.h"
 
-#define WRITE_DTMCS 1
+#define WRITE_DTMCS 0
 
 namespace storm {
 namespace transformer {
@@ -48,21 +49,21 @@ RationalFunction TimeTravelling::uniPolyToRationalFunction(UniPoly uniPoly) {
     return RationalFunction(multiNominator);
 }
 
-std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
+std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
                                                                const uint64_t root,
                                                                const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                                                                const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                                                                const RationalFunctionVariable parameter) {
-    storm::storage::BitVector exploredStates(transitionMatrix.getRowCount(), false);
-    storm::storage::BitVector bottomStates(transitionMatrix.getRowCount(), false);
+    std::map<uint64_t, std::set<uint64_t>> subgraph;
+    std::set<uint64_t> bottomStates;
 
-    storm::storage::BitVector acyclicStates(transitionMatrix.getRowCount(), false);
+    std::set<uint64_t> acyclicStates;
 
     std::vector<uint64_t> dfsStack = {root};
     while (!dfsStack.empty()) {
         uint64_t state = dfsStack.back();
-        if (!exploredStates.get(state)) {
-            exploredStates.set(state, true);
+        if (!subgraph.count(state)) {
+            subgraph[state] = {};
 
             std::vector<uint64_t> tmpStack;
             bool isAcyclic = true;
@@ -71,7 +72,10 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::stor
                     STORM_LOG_ASSERT(entry.getValue().isConstant() ||
                                          (entry.getValue().gatherVariables().size() == 1 && *entry.getValue().gatherVariables().begin() == parameter),
                                      "Called findSubgraph with incorrect parameter.");
-                    if (!exploredStates.get(entry.getColumn())) {
+                    // Add this edge to the subgraph
+                    subgraph.at(state).emplace(entry.getColumn());
+                    // If we haven't explored the node we are going to, we will need to figure out if it is a leaf or not
+                    if (!subgraph.count(entry.getColumn())) {
                         bool continueSearching = treeStates.at(parameter).count(entry.getColumn()) && !treeStates.at(parameter).at(entry.getColumn()).empty();
 
                         // Also continue searching if there is only a transition with a one coming up, we can skip that
@@ -84,15 +88,18 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::stor
                         continueSearching &= !(stateRewardVector && !stateRewardVector->at(entry.getColumn()).isZero());
 
                         if (continueSearching) {
+                            // We are setting this state to explored once we pop it from the stack, not yet
+                            // Just push it to the stack
                             tmpStack.push_back(entry.getColumn());
                         } else {
-                            exploredStates.set(entry.getColumn(), true);
-                            bottomStates.set(entry.getColumn(), true);
+                            // This state is a leaf
+                            subgraph[entry.getColumn()] = {};
+                            bottomStates.emplace(entry.getColumn());
 
-                            acyclicStates.set(entry.getColumn(), true);
+                            acyclicStates.emplace(entry.getColumn());
                         }
                     } else {
-                        if (!acyclicStates.get(entry.getColumn())) {
+                        if (!acyclicStates.count(entry.getColumn())) {
                             // The state has been visited before but is not known to be acyclic.
                             isAcyclic = false;
                             break;
@@ -105,14 +112,14 @@ std::pair<storage::BitVector, storage::BitVector> findSubgraph(const storm::stor
                     dfsStack.push_back(entry);
                 }
             } else {
-                bottomStates.set(state, true);
+                bottomStates.emplace(state);
             }
         } else {
-            acyclicStates.set(state, true);
+            acyclicStates.emplace(state);
             dfsStack.pop_back();
         }
     }
-    return std::make_pair(exploredStates, bottomStates);
+    return std::make_pair(subgraph, bottomStates);
 }
 
 std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> TimeTravelling::bigStep(
@@ -273,9 +280,9 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                 continue;
             }
 
-            for (auto const& [state, annotation] : bottomAnnotations) {
-                std::cout << state << ": " << annotation << std::endl;
-            }
+            // for (auto const& [state, annotation] : bottomAnnotations) {
+            //     std::cout << state << ": " << annotation << std::endl;
+            // }
 
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
@@ -423,30 +430,32 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
 
                 // Value-iteration style
                 for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
-                    if (!subtree.get(backwardsEntry.getColumn()) || !annotations.count(backwardsEntry.getColumn())) {
+                    if (!subtree.count(backwardsEntry.getColumn()) || !subtree.at(backwardsEntry.getColumn()).count(goToState)) {
+                        // We don't consider this edge for one of two reasons:
+                        // (1) The node is not in the subtree.
+                        // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
                         continue;
                     }
-                    // This is kinda ugly: we need to check that the two states are not in the "tree" for unrelated reasons
-                    // A better solution would be to return edges from findSubgraph as well as nodes, as that is what a subgraph is
-                    if (!backwardsEntry.getValue().isConstant() && !backwardsEntry.getValue().gatherVariables().count(parameter)) {
+                    if (!annotations.count(backwardsEntry.getColumn())) {
+                        // This edge is in the subtree but we just haven't gotten around to it yet. Treat it as having value zero.
                         continue;
                     }
                     auto const transition = backwardsEntry.getValue();
 
-                    std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
+                    // std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
 
                     // We add stuff to this annotation
                     auto& targetAnnotation = annotations.at(goToState);
 
-                    std::cout << targetAnnotation << " + ";
-                    std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
+                    // std::cout << targetAnnotation << " + ";
+                    // std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
 
                     // The core of this big-step algorithm: "value-iterating" on our annotation.
                     if (transition.isConstant()) {
-                        std::cout << "(constant)";
+                        // std::cout << "(constant)";
                         targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
                     } else {
-                        std::cout << "(pol)";
+                        // std::cout << "(pol)";
                         // Read transition from DTMC, convert to univariate polynomial
                         STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
                                                                                         << transition.denominator() << " in transition " << transition);
@@ -457,11 +466,11 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                         targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), nominatorAsUnivariate);
                     }
 
-                    std::cout << " == " << targetAnnotation << std::endl;
+                    // std::cout << " == " << targetAnnotation << std::endl;
                 }
 
                 // Continue BFS
-                if (subtree.get(goToState) && !bottomStates.get(goToState)) {
+                if (subtree.count(goToState) && !bottomStates.count(goToState)) {
                     nextActiveStates.emplace(goToState);
                 }
             }
@@ -469,8 +478,8 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
         activeStates = nextActiveStates;
     }
     // Delete annotations that are not bottom states
-    for (auto const& state : subtree) {
-        if (!bottomStates.get(state)) {
+    for (auto const& [state, _successors] : subtree) {
+        if (!bottomStates.count(state)) {
             annotations.erase(state);
         }
     }
