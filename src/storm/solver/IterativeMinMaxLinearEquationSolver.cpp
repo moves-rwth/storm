@@ -367,8 +367,9 @@ MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<Value
         // Rational search needs to approach the solution from below.
         requirements.requireLowerBounds();
         // The solution needs to be unique in case of minimizing or in cases where we want a scheduler.
-        if (!this->hasUniqueSolution() &&
-            (env.solver().minMax().isForceRequireUnique() || !direction || direction.get() == OptimizationDirection::Minimize || this->isTrackSchedulerSet())) {
+        if (!this->hasUniqueSolution()) {
+            // RationalSearch guesses and verifies a fixpoint and terminates once a fixpoint is found. To ensure that the guessed fixpoint is the
+            // correct one, we enforce uniqueness.
             requirements.requireUniqueSolution();
         }
     } else if (method == MinMaxMethod::PolicyIteration) {
