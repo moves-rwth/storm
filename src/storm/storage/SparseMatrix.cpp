@@ -2382,14 +2382,24 @@ typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(inde
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin(index_type row) const {
-    STORM_LOG_ASSERT(row < this->getRowCount() || row == 0, "Row " << row << " exceeds row count " << this->getRowCount() << ".");
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row];
 }
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin(index_type row) {
-    STORM_LOG_ASSERT(row < this->getRowCount() || row == 0, "Row " << row << " exceeds row count " << this->getRowCount() << ".");
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row];
+}
+
+template<typename ValueType>
+typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin() const {
+    return this->columnsAndValues.begin();
+}
+
+template<typename ValueType>
+typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin() {
+    return this->columnsAndValues.begin();
 }
 
 template<typename ValueType>
