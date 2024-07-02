@@ -1149,7 +1149,7 @@ class SparseMatrix {
      * @param row The row to the beginning of which the iterator has to point.
      * @return An iterator that points to the beginning of the given row.
      */
-    const_iterator begin(index_type row = 0) const;
+    const_iterator begin(index_type row) const;
 
     /*!
      * Retrieves an iterator that points to the beginning of the given row.
@@ -1157,7 +1157,21 @@ class SparseMatrix {
      * @param row The row to the beginning of which the iterator has to point.
      * @return An iterator that points to the beginning of the given row.
      */
-    iterator begin(index_type row = 0);
+    iterator begin(index_type row);
+
+    /*!
+     * Retrieves an iterator that points to the beginning of the first row of the matrix.
+     *
+     * @return An iterator that points to the beginning of the first row of the matrix.
+     */
+    const_iterator begin() const;
+
+    /*!
+     * Retrieves an iterator that points to the beginning of the first row of the matrix.
+     *
+     * @return An iterator that points to the beginning of the first row of the matrix.
+     */
+    iterator begin();
 
     /*!
      * Retrieves an iterator that points past the end of the given row.
