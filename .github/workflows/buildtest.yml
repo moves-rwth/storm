@@ -70,7 +70,18 @@ jobs:
              AllSanitizers: "ON",
              cmakeArgs: "-DMSAT_ROOT="
             }
-
+          - {name: "Minimal dependencies",
+            baseImg: "storm-basesystem:minimal_dependencies",
+            buildType: "Debug",
+             Gurobi: "OFF",
+             Soplex: "OFF",
+             Spot: "OFF",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT="
+            }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
