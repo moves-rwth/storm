@@ -1,22 +1,16 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
-
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
 #include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -101,7 +95,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeBou
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeCumulativeRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -114,7 +108,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeCum
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeInstantaneousRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
     storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -127,7 +121,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeIns
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -141,7 +135,7 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeRea
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");

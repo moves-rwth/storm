@@ -1,6 +1,6 @@
 #include "storm/logic/FragmentChecker.h"
-#include <boost/any.hpp>
 
+#include <boost/any.hpp>
 #include "storm/logic/Formulas.h"
 
 namespace storm {
@@ -179,7 +179,6 @@ boost::any FragmentChecker::visit(TimeOperatorFormula const& f, boost::any const
     result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
     result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
     result = result && f.getSubformula().isTimePathFormula();
-    result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == RewardMeasureType::Expectation);
     if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
         result = result &&
                  boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
@@ -290,7 +289,6 @@ boost::any FragmentChecker::visit(RewardOperatorFormula const& f, boost::any con
     result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
     result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
     result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
-    result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == RewardMeasureType::Expectation);
 
     if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
         result = result &&

@@ -2,25 +2,19 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-#include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
-
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/FilteredRewardModel.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -76,7 +70,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeNextPr
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -88,7 +82,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReacha
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -129,7 +123,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBounde
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstantaneousRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
     storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
 
     STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException,
@@ -142,7 +136,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeInstan
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeCumulativeRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
 
     STORM_LOG_THROW(rewardPathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
@@ -169,8 +163,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-    CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
     storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions,
