@@ -25,7 +25,7 @@ const std::string GmmxxEquationSolverSettings::maximalIterationsOptionShortName 
 const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
 
 GmmxxEquationSolverSettings::GmmxxEquationSolverSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
+    std::vector<std::string> methods = {"bicgstab", "qmr", "gmres"};
     this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true,
                                                    "The method to be used for solving linear equation systems with the gmm++ engine.")
                         .setIsAdvanced()
