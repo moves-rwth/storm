@@ -7,6 +7,7 @@
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
+#include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/transformer/ParameterLifter.h"
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
@@ -36,6 +37,13 @@ using ParameterLifterType =
     std::conditional_t<Robust,
         storm::transformer::RobustParameterLifter<ParametricType, ConstantType>,
         storm::transformer::ParameterLifter<ParametricType, ConstantType>
+    >;
+
+template<typename ParametricType, typename ConstantType, bool Robust>
+using IntervalEndComponentPreserverType =
+    std::conditional_t<Robust,
+        storm::transformer::IntervalEndComponentPreserver<ParametricType>,
+        std::monostate
     >;
 
 template<typename SparseModelType, typename ConstantType, bool Robust=false>
@@ -111,6 +119,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
 
     std::unique_ptr<ParameterLifterType<ParametricType, ConstantType, Robust>> parameterLifter;
+    std::unique_ptr<IntervalEndComponentPreserverType<ParametricType, ConstantType, Robust>> intervalEndComponentPreserver;
     std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;
     bool solvingRequiresUpperRewardBounds;
 

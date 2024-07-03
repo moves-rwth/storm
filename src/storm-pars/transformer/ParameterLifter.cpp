@@ -51,19 +51,10 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
             }
         }
 
-        for (auto const& entry : occurringVariables) {
-            std::cout << entry << " ";
-        }
-        std::cout << std::endl;
-
         ParametricType const& pVectorEntry = pVector[rowIndex];
         std::set<VariableType> vectorEntryVariables;
         if (!storm::utility::isConstant(pVectorEntry)) {
             storm::utility::parametric::gatherOccurringVariables(pVectorEntry, vectorEntryVariables);
-            for (auto const& entry : vectorEntryVariables) {
-                std::cout << entry << " ";
-            }
-            std::cout << std::endl;
             if (generateRowLabels) {
                 // If row labels are to be generated, we do not allow unspecified valuations.
                 // Therefore, we also 'lift' parameters that only occurr on a vector.

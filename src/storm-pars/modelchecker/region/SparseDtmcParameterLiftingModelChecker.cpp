@@ -1,4 +1,5 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+#include <memory>
 #include <vector>
 
 #include "adapters/RationalFunctionForward.h"
@@ -9,6 +10,7 @@
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
+#include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm-pars/transformer/TimeTravelling.h"
@@ -166,6 +168,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
         parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
             this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, isOrderBasedMonotonicityBackend());
+        if constexpr (Robust) {
+            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+        }
     }
 
     // We know some bounds for the results so set them
@@ -219,6 +224,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, target);
         } else {
             // Create the vector of one-step probabilities to go to target states.
             std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
@@ -285,6 +291,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
+            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, b);
         } else {
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
@@ -335,6 +342,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(this->parametricModel->getTransitionMatrix(), b,
                                                                                                           maybeStates, maybeStates);
+    if constexpr (Robust) {
+        intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+    }
 
     // We only know a lower bound for the result
     lowerResultBound = storm::utility::zero<ConstantType>();
@@ -389,23 +399,26 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         return resultsForNonMaybeStates;
     }
     parameterLifter->specifyRegion(region.region, dirForParameters);
+    auto& liftedMatrix = parameterLifter->getMatrix();
+    auto& liftedVector = parameterLifter->getVector();
     if constexpr (Robust) {
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
         }
+        intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
     }
 
     if (stepBound) {
         if constexpr (!Robust) {
             assert(*stepBound > 0);
             x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-            auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, parameterLifter->getMatrix());
-            multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &parameterLifter->getVector(), *stepBound);
+            auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, liftedMatrix);
+            multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &liftedVector, *stepBound);
         } else {
             STORM_LOG_ERROR("Cannot check step-bounded formulas in robust mode.");
         }
     } else {
-        auto solver = solverFactory->create(env, parameterLifter->getMatrix());
+        auto solver = solverFactory->create(env, liftedMatrix);
         solver->setHasUniqueSolution();
         solver->setHasNoEndComponents();
         if (lowerResultBound)
@@ -416,16 +429,16 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             if constexpr (!Robust) {
                 // For the min-case, we use DS-MPI, for the max-case variant 2 of the Baier et al. paper (CAV'17).
                 std::vector<ConstantType> oneStepProbs;
-                oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
-                for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
-                    oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
+                oneStepProbs.reserve(liftedMatrix.getRowCount());
+                for (uint64_t row = 0; row < liftedMatrix.getRowCount(); ++row) {
+                    oneStepProbs.push_back(storm::utility::one<ConstantType>() - liftedMatrix.getRowSum(row));
                 }
                 if (dirForParameters == storm::OptimizationDirection::Minimize) {
-                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(),
+                    storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(liftedMatrix, liftedVector,
                                                                                                     oneStepProbs);
                     solver->setUpperBounds(dsmpi.computeUpperBounds());
                 } else {
-                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(),
+                    storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(liftedMatrix, liftedVector,
                                                                                                     oneStepProbs);
                     solver->setUpperBound(baier.computeUpperBound());
                 }
@@ -480,7 +493,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
 
         // Invoke the solver
         x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-        solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
+        solver->solveEquations(env, dirForParameters, x, liftedVector);
         choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
             computeStateValueDeltaRegionSplitEstimates(env, x, *choices, region.region, dirForParameters);
@@ -503,11 +516,10 @@ template<typename SparseModelType, typename ConstantType, bool Robust>
 void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::computeStateValueDeltaRegionSplitEstimates(
     Environment const& env, std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
-    // std::cout << region << std::endl;
     auto const& matrix = parameterLifter->getMatrix();
     auto const& vector = parameterLifter->getVector();
 
-    std::vector<ConstantType> weighting = std::vector<ConstantType>(parameterLifter->getVector().size(), utility::one<ConstantType>());
+    std::vector<ConstantType> weighting = std::vector<ConstantType>(vector.size(), utility::one<ConstantType>());
     if (this->specifiedRegionSplitEstimateKind == RegionSplitEstimateKind::StateValueDeltaWeighted) {
         // Instantiated on center, instantiate on choices instead?
         // Kinda complicated tho
@@ -614,17 +626,10 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                     results.push_back(result);
                 }
 
-                // std::cout << distrToNegativeDerivative << " towards lower" << std::endl;
-                // std::cout << distrToPositiveDerivative << " towards upper" << std::endl;
-
                 ConstantType diff = std::abs(results[0] - results[1]);
                 if (distrToPositiveDerivative > distrToNegativeDerivative) { // Choose as upper
-                    // if (diff > 0) std::cout << "Upper Diff " << p << " " << state << " " << diff << std::endl;
-                    // if (diff > 0) std::cout << results[0] << " - " << results[1] << std::endl;
                     deltaUpper[p] += diff * weighting[rowIndex];
                 } else { // Choose as lower
-                    // if (diff > 0) std::cout << "Lower Diff " << p << " " << state << " " << diff << std::endl;
-                    // if (diff > 0) std::cout << results[0] << " - " << results[1] << std::endl;
                     deltaLower[p] += diff * weighting[rowIndex];
                 }
             }
@@ -666,12 +671,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                         auto diff = storm::utility::abs<ConstantType>(optimal - storm::utility::convertNumber<ConstantType>(bestValue));
                         if (foundBestValue) {
                             if (checkUpperParameters) {
-                                // if (diff > 0) std::cout << "Upper Diff " << p << " " << state << " " << diff << std::endl;
-                                // if (diff > 0) std::cout << bestValue << " - " << optimal << std::endl;
                                 deltaLower[p] += diff * weighting[state];
                             } else {
-                                // if (diff > 0) std::cout << "Lower Diff " << p << " " << state << " " << diff << std::endl;
-                                // if (diff > 0) std::cout << bestValue << " - " << optimal << std::endl;
                                 deltaUpper[p] += diff * weighting[state];
                             }
                         }
@@ -713,17 +714,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     default:
         STORM_LOG_ERROR("Region split estimate kind not handled by SparseDtmcParameterLiftingModelChecker.");
     }
-
-    // std::cout << region << std::endl;
-    // for (auto const& [var, val] : cachedRegionSplitEstimates) {
-    //     std::cout << var << "=" << val << " ";
-    // }
-    // std::cout << std::endl;
-
-    // std::cout << matrix << std::endl;
-    // for (auto const& state : maybeStates) {
-    //     std::cout << state << " " << quantitativeResult[maybeStates.getNumberOfSetBitsBeforeIndex(state)] << std::endl;
-    // }
 }
 
 template<typename SparseModelType, typename ConstantType, bool Robust>

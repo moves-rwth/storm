@@ -754,11 +754,11 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
             } while (refine);
         }
 
-        bool graphPreserving = true;
-        // const ConstantType epsilon =
-        //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-        //                     : utility::zero<ConstantType>();
-        const ConstantType epsilon = 1e-6;
+        // bool graphPreserving = true;
+        // // const ConstantType epsilon =
+        // //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
+        // //                     : utility::zero<ConstantType>();
+        const ConstantType epsilon = 0;
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
@@ -766,7 +766,6 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
         STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
 
         placeholder = Interval(lowerBound, upperBound);
-        // std::cout << placeholder << std::endl;
     }
     for (auto& key : insertThese) {
         this->collectedValuations.insert(std::move(insertThese.extract(key.first)));
