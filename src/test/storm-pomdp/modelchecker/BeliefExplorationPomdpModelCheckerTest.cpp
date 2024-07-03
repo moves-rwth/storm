@@ -195,16 +195,22 @@ class PreprocessedDefaultRationalPIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
-    }
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
     static PreprocessingType const preprocessingType = PreprocessingType::All;
 };
 
 template<typename TestType>
-class BeliefExplorationTest : public ::testing::Test {
+class BeliefExplorationPomdpModelCheckerTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
-    BeliefExplorationTest() : _environment(TestType::createEnvironment()) {}
+    BeliefExplorationPomdpModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
@@ -296,9 +302,9 @@ typedef ::testing::Types<DefaultDoubleVIEnvironment, SelfloopReductionDefaultDou
                          DefaultDoubleOVIEnvironment, DefaultRationalPIEnvironment, PreprocessedDefaultRationalPIEnvironment>
     TestingTypes;
 
-TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes, );
+TYPED_TEST_SUITE(BeliefExplorationPomdpModelCheckerTest, TestingTypes, );
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
@@ -313,7 +319,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmax) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
@@ -329,7 +335,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmax_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
@@ -344,7 +350,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
@@ -360,7 +366,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
@@ -375,7 +381,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
@@ -391,7 +397,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
@@ -414,7 +420,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
@@ -438,7 +444,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
@@ -453,7 +459,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
@@ -469,7 +475,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmax_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
@@ -484,7 +490,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
@@ -500,7 +506,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
@@ -515,7 +521,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
@@ -531,7 +537,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
@@ -546,7 +552,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
@@ -562,7 +568,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
@@ -578,7 +584,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
@@ -595,7 +601,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
@@ -606,7 +612,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
@@ -618,7 +624,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax_SE) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
@@ -634,7 +640,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
@@ -651,7 +657,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
@@ -662,7 +668,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
@@ -674,7 +680,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_SE) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmax) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
@@ -690,7 +696,7 @@ TYPED_TEST(BeliefExplorationTest, refuel_Pmax) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmax_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
@@ -707,7 +713,7 @@ TYPED_TEST(BeliefExplorationTest, refuel_Pmax_SE) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmin) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
@@ -723,7 +729,7 @@ TYPED_TEST(BeliefExplorationTest, refuel_Pmin) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmin_SE) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
     auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
@@ -742,7 +748,7 @@ TYPED_TEST(BeliefExplorationTest, refuel_Pmin_SE) {
 
 #if defined STORM_HAVE_Z3_OPTIMIZE
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -760,7 +766,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmax_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Pmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -778,7 +784,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Pmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -796,7 +802,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -822,7 +828,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -840,7 +846,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmax_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_Rmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -858,7 +864,7 @@ TYPED_TEST(BeliefExplorationTest, simple_Rmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -876,7 +882,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -894,7 +900,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -913,7 +919,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_Rmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -927,7 +933,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax_Clip) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -946,7 +952,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -960,7 +966,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_Clip) {
     EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmax_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -979,7 +985,7 @@ TYPED_TEST(BeliefExplorationTest, refuel_Pmax_Clip) {
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 }
 
-TYPED_TEST(BeliefExplorationTest, refuel_Pmin_Clip) {
+TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin_Clip) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }

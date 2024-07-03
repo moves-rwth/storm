@@ -142,6 +142,9 @@ TEST(MaximalEndComponentDecomposition, Subsystem) {
 }
 
 TEST(MaximalEndComponentDecomposition, Example1) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example1.nm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
@@ -161,6 +164,9 @@ TEST(MaximalEndComponentDecomposition, Example1) {
 }
 
 TEST(MaximalEndComponentDecomposition, Example2) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/mdp/prism-mec-example2.nm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();

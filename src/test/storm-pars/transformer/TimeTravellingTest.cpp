@@ -91,19 +91,28 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
 
-TEST(TimeTravelling, Crowds) {
+class TimeTravelling : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(TimeTravelling, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST(TimeTravelling, Nand) {
+TEST_F(TimeTravelling, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST(TimeTravelling, Herman) {
+TEST_F(TimeTravelling, Herman) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/herman5_pla.pm";
     std::string formulaAsString = "R=? [F \"stable\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
