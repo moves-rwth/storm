@@ -1,7 +1,8 @@
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/CloneVisitor.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -11,9 +12,6 @@
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace transformer {
@@ -233,8 +231,8 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewa
     // obtain the simplified formula for the simplified model
     auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const>(targetLabel);
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula const>(labelFormula, storm::logic::FormulaContext::Reward);
-    this->simplifiedFormula = std::make_shared<storm::logic::RewardOperatorFormula const>(
-        eventuallyFormula, rewardModelNameAsVector.front(), formula.getOperatorInformation(), storm::logic::RewardMeasureType::Expectation);
+    this->simplifiedFormula =
+        std::make_shared<storm::logic::RewardOperatorFormula const>(eventuallyFormula, rewardModelNameAsVector.front(), formula.getOperatorInformation());
 
     // Eliminate all states for which all outgoing transitions are constant
     storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
