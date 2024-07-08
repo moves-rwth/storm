@@ -47,7 +47,8 @@ class JaniType {
     /*!
      * Substitutes all variables in all expressions according to the given substitution.
      */
-    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                            bool const substituteTranscendentalNumbers);
 
     friend std::ostream& operator<<(std::ostream& stream, JaniType const& type);
 };

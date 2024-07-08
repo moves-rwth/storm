@@ -76,7 +76,7 @@ TEST(ExplicitJaniModelBuilderTest, pdtmc) {
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/pdtmc/die_array_nested.jani").first;
-    janiModel.substituteConstantsFunctions();
+    janiModel.substituteConstantsFunctionsTranscendentals();
     model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());

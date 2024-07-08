@@ -60,7 +60,7 @@ std::shared_ptr<BaseExpression const> ConstructorArrayExpression::size() const {
 std::shared_ptr<BaseExpression const> ConstructorArrayExpression::at(uint64_t i) const {
     std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
     substitution.emplace(indexVar, this->getManager().integer(i));
-    return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution, true).getBaseExpressionPointer();
+    return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution, false).getBaseExpressionPointer();
 }
 
 std::shared_ptr<BaseExpression const> const& ConstructorArrayExpression::getElementExpression() const {

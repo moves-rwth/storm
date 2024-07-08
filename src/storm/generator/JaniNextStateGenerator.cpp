@@ -42,7 +42,7 @@ namespace generator {
 
 template<typename ValueType, typename StateType>
 JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options)
-    : JaniNextStateGenerator(model.substituteConstantsFunctions(), options, false) {
+    : JaniNextStateGenerator(model.substituteConstantsFunctionsTranscendentals(), options, false) {
     // Intentionally left empty.
 }
 

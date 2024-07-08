@@ -63,13 +63,14 @@ storm::expressions::Expression const& BoundedType::getUpperBound() const {
     return this->upperBound;
 }
 
-void BoundedType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-    JaniType::substitute(substitution);
+void BoundedType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                             bool const substituteTranscendentalNumbers) {
+    JaniType::substitute(substitution, substituteTranscendentalNumbers);
     if (this->hasLowerBound()) {
-        this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution, true));
+        this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution, substituteTranscendentalNumbers));
     }
     if (this->hasUpperBound()) {
-        this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution, true));
+        this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution, substituteTranscendentalNumbers));
     }
 }
 

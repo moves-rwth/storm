@@ -1148,7 +1148,7 @@ Model Model::substituteConstants() const {
     return result;
 }
 
-Model Model::substituteConstantsFunctions() const {
+Model Model::substituteConstantsFunctionsTranscendentals() const {
     Model result(*this);
     result.replaceUnassignedVariablesWithConstants();
     result.substituteConstantsInPlace(true);

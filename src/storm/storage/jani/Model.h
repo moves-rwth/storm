@@ -455,7 +455,7 @@ class Model {
      * 4. Afterwards, all function calls are substituted with the defining expression.
      * The original model is not modified, but  instead a new model is created.
      */
-    Model substituteConstantsFunctions() const;
+    Model substituteConstantsFunctionsTranscendentals() const;
 
     /*!
      * Returns true if at least one array variable occurs in the model.
