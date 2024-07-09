@@ -497,10 +497,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::comp
         auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
         cachedRegionSplitEstimates.emplace(p, minDelta);
 
-        // Previously - why only insert some regionsplitestimates?????????????????????
-        // if (auto minDelta = std::min(deltaLower[p], deltaUpper[p]); minDelta >= storm::utility::convertNumber<ConstantType>(1e-4)) {
-        //     cachedRegionSplitEstimates.emplace(p, minDelta);
-        // }
     }
     // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
 }
