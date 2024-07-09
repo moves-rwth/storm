@@ -210,9 +210,9 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                          task->getRegion(), engine, direction, precision, !task->isMaxGapRelative(),
-                                                                          monotonicitySettings, std::nullopt, strategy);
+        auto valueValuation =
+            storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true), task->getRegion(),
+                                                        engine, direction, precision, !task->isMaxGapRelative(), monotonicitySettings, std::nullopt, strategy);
         watch.stop();
 
         printFeasibilityResult(true, valueValuation, watch);

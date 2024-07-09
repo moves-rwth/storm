@@ -32,7 +32,8 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                         .build());
 
     std::vector<std::string> estimates = {"delta", "distance"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, estimateMethodName, false, "Sets which estimate strategy is used for splitting regions (if splitting-stratgegy is estimate).")
+    this->addOption(storm::settings::OptionBuilder(moduleName, estimateMethodName, false,
+                                                   "Sets which estimate strategy is used for splitting regions (if splitting-stratgegy is estimate).")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the strategy to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(estimates))
                                          .setDefaultValueString("delta")
@@ -46,7 +47,6 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                                          .setDefaultValueString("pl")
                                          .build())
                         .build());
-
 }
 
 int RegionVerificationSettings::getSplittingThreshold() const {
@@ -74,7 +74,6 @@ storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionChec
     return result;
 }
 
-
 storm::modelchecker::RegionSplittingStrategy::Heuristic RegionVerificationSettings::getRegionSplittingStrategy() const {
     std::string strategyString = this->getOption(splittingStrategyName).getArgumentByName("name").getValueAsString();
 
@@ -87,7 +86,8 @@ storm::modelchecker::RegionSplittingStrategy::Heuristic RegionVerificationSettin
         STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown splitting strategy '" << strategyString << "'.");
     }
 
-    STORM_LOG_ERROR_COND(!getRegionSplittingEstimateMethod() || result == modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased, "Setting an estimate method requires setting the estimate splitting strategy");
+    STORM_LOG_ERROR_COND(!getRegionSplittingEstimateMethod() || result == modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
+                         "Setting an estimate method requires setting the estimate splitting strategy");
     return result;
 }
 
@@ -108,6 +108,5 @@ std::optional<storm::modelchecker::RegionSplitEstimateKind> RegionVerificationSe
 
     return result;
 }
-
 
 }  // namespace storm::settings::modules

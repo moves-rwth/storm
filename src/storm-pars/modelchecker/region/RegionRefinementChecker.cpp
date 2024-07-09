@@ -317,16 +317,13 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
     }
 
     // Sort and insert largest n=maxSplitDimensions estimates
-    std::sort(estimatesToSort.begin(), estimatesToSort.end(), [](const auto& a, const auto& b) {
-        return a.second > b.second;
-    });
+    std::sort(estimatesToSort.begin(), estimatesToSort.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
 
     std::set<VariableType> splittingVars;
     for (auto const& estimate : estimatesToSort) {
         // Do not split on monotone parameters if finding an extremal value is the goal
-        if (context == Context::ExtremalValue &&
-                region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
-                region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(estimate.first)) {
+        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
+            region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(estimate.first)) {
             continue;
         }
         splittingVars.emplace(estimate.first);
@@ -351,9 +348,8 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
     std::set<VariableType> splittingVars;
     do {
         // Do not split on monotone parameters if finding an extremal value is the goal
-        if (context == Context::ExtremalValue &&
-                region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
-                region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(*varsIter)) {
+        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
+            region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(*varsIter)) {
             continue;
         }
         splittingVars.emplace(*varsIter);
@@ -370,10 +366,10 @@ template<typename ParametricType>
 std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionRefinementChecker<ParametricType>::getSplittingVariables(
     AnnotatedRegion<ParametricType> const& region, Context context) const {
     switch (regionSplittingStrategy.heuristic) {
-    case RegionSplittingStrategy::Heuristic::EstimateBased:
-        return getSplittingVariablesEstimateBased(region, context);
-    case RegionSplittingStrategy::Heuristic::RoundRobin:
-        return getSplittingVariablesRoundRobin(region, context);
+        case RegionSplittingStrategy::Heuristic::EstimateBased:
+            return getSplittingVariablesEstimateBased(region, context);
+        case RegionSplittingStrategy::Heuristic::RoundRobin:
+            return getSplittingVariablesRoundRobin(region, context);
     }
 }
 

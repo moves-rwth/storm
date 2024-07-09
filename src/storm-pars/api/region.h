@@ -304,8 +304,8 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
     storm::modelchecker::RegionSplittingStrategy::Heuristic heuristic = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
     std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
-    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt, bool allowModelSimplification = true,
-    bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt, bool allowModelSimplification = true, bool preconditionsValidated = false,
+    MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
         monotoneParameters = std::nullopt) {
@@ -339,8 +339,8 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
     storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool allowModelSimplification = true,
     storm::modelchecker::RegionSplittingStrategy::Heuristic splittingStrategy = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased,
     std::optional<storm::modelchecker::RegionSplitEstimateKind> estimateKind = storm::modelchecker::RegionSplitEstimateKind::Distance,
-    std::optional<uint64_t> const& maxSplitsPerStepThreshold = std::nullopt,
-    MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
+    std::optional<uint64_t> const& maxSplitsPerStepThreshold = std::nullopt, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    uint64_t monThresh = 0) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;

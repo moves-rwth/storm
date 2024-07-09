@@ -496,7 +496,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::comp
         // TODO: previously, the reginSplitEstimates were only used in splitting if at least one parameter is possibly monotone. Why?
         auto minDelta = std::min(deltaLower[p], deltaUpper[p]);
         cachedRegionSplitEstimates.emplace(p, minDelta);
-
     }
     // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
 }
@@ -580,7 +579,8 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::obtainReg
         std::vector<CoefficientType> result;
         for (auto const& par : relevantParameters) {
             auto est = cachedRegionSplitEstimates.find(par);
-            STORM_LOG_ASSERT(est != cachedRegionSplitEstimates.end(), "Requested region split estimate for parameter " << par.name() << " but none was generated.");
+            STORM_LOG_ASSERT(est != cachedRegionSplitEstimates.end(),
+                             "Requested region split estimate for parameter " << par.name() << " but none was generated.");
             result.push_back(storm::utility::convertNumber<CoefficientType>(est->second));
         }
         return result;
