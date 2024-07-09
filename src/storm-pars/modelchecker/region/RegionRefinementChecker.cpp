@@ -322,14 +322,17 @@ STORM_LOG_ASSERT(estimates.size() == region.region.getVariables().size(), "Unexp
     });
 
     std::set<VariableType> splittingVars;
-    for (uint64_t i = 0; i < this->regionSplittingStrategy.maxSplitDimensions; i++) {
+    for (auto const& estimate : estimatesToSort) {
         // Do not split on monotone parameters if finding an extremal value is the goal
-        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getDefaultMonotonicityAnnotation() &&
-                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity &&
-                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity->isMonotone(estimatesToSort[i].first)) {
+        if (context == Context::ExtremalValue &&
+                region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
+                region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(estimate.first)) {
             continue;
         }
-        splittingVars.emplace(estimatesToSort[i].first);
+        splittingVars.emplace(estimate.first);
+        if (splittingVars.size() == regionSplittingStrategy.maxSplitDimensions) {
+            break;
+        }
     }
     return splittingVars;
 }
