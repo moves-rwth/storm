@@ -5,6 +5,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 
 #include "storm/utility/ProgressMeasurement.h"
@@ -35,6 +36,9 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
                                                       bool allowModelSimplifications) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
+    if (this->regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::Default) {
+        regionSplittingStrategy.heuristic = RegionSplittingStrategy::Heuristic::EstimateBased;
+    }
     // Potentially determine the kind of region split estimate to generate
     if (regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::EstimateBased) {
         if (regionSplittingStrategy.estimateKind.has_value()) {
@@ -370,6 +374,9 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
             return getSplittingVariablesEstimateBased(region, context);
         case RegionSplittingStrategy::Heuristic::RoundRobin:
             return getSplittingVariablesRoundRobin(region, context);
+        case RegionSplittingStrategy::Heuristic::Default:
+            STORM_LOG_ERROR("Default strategy should have been populated.");
+            return {};
     }
 }
 

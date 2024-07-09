@@ -12,7 +12,7 @@ namespace storm::settings::modules {
 
 const std::string RegionVerificationSettings::moduleName = "regionverif";
 const std::string splittingThresholdName = "splitting-threshold";
-const std::string splittingStrategyName = "splitting-strategy";
+const std::string splittingHeuristicName = "splitting-heuristic";
 const std::string estimateMethodName = "estimate-method";
 const std::string checkEngineOptionName = "engine";
 
@@ -23,11 +23,11 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                 storm::settings::ArgumentBuilder::createIntegerArgument("splitting-threshold", "The threshold for splitting, should be an integer > 0").build())
             .build());
 
-    std::vector<std::string> strategies = {"estimate", "roundrobin"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, splittingStrategyName, false, "Sets which strategy is used for splitting regions.")
+    std::vector<std::string> strategies = {"estimate", "roundrobin", "default"};
+    this->addOption(storm::settings::OptionBuilder(moduleName, splittingHeuristicName, false, "Sets which strategy is used for splitting regions.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the strategy to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(strategies))
-                                         .setDefaultValueString("estimate")
+                                         .setDefaultValueString("default")
                                          .build())
                         .build());
 
@@ -74,11 +74,13 @@ storm::modelchecker::RegionCheckEngine RegionVerificationSettings::getRegionChec
     return result;
 }
 
-storm::modelchecker::RegionSplittingStrategy::Heuristic RegionVerificationSettings::getRegionSplittingStrategy() const {
-    std::string strategyString = this->getOption(splittingStrategyName).getArgumentByName("name").getValueAsString();
+storm::modelchecker::RegionSplittingStrategy::Heuristic RegionVerificationSettings::getRegionSplittingHeuristic() const {
+    std::string strategyString = this->getOption(splittingHeuristicName).getArgumentByName("name").getValueAsString();
 
     storm::modelchecker::RegionSplittingStrategy::Heuristic result;
-    if (strategyString == "estimate") {
+    if (strategyString == "default") {
+        result = storm::modelchecker::RegionSplittingStrategy::Heuristic::Default;
+    } else if (strategyString == "estimate") {
         result = storm::modelchecker::RegionSplittingStrategy::Heuristic::EstimateBased;
     } else if (strategyString == "roundrobin") {
         result = storm::modelchecker::RegionSplittingStrategy::Heuristic::RoundRobin;
