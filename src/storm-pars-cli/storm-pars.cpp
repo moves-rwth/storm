@@ -1,4 +1,3 @@
-#include <cstdint.h>
 #include <limits>
 #include "adapters/RationalFunctionAdapter.h"
 #include "storm-cli-utilities/cli.h"
@@ -374,7 +373,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto splittingStrategy = rvs.getRegionSplittingStrategy();
     auto estimateKind = rvs.getRegionSplittingEstimateMethod();
     // TODO doesn't link
-    // STORM_PRINT_AND_LOG(" and splitting strategy " << splittingStrategy);
+    STORM_PRINT_AND_LOG(" and splitting strategy " << splittingStrategy << "\n");
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
     }
