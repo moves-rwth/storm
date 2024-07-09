@@ -310,7 +310,7 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
     auto const& estimates = regionChecker->obtainRegionSplitEstimates(region.region.getVariables());
     std::vector<std::pair<VariableType, CoefficientType>> estimatesToSort;
     estimatesToSort.reserve(region.region.getVariables().size());
-STORM_LOG_ASSERT(estimates.size() == region.region.getVariables().size(), "Unexpected number of estimates");
+    STORM_LOG_ASSERT(estimates.size() == region.region.getVariables().size(), "Unexpected number of estimates");
     auto estimatesIter = estimates.begin();
     for (auto const& param : region.region.getVariables()) {
         estimatesToSort.push_back(std::make_pair(param, *estimatesIter++));
@@ -346,12 +346,14 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
 
     std::advance(varsIter, (region.refinementDepth * this->regionSplittingStrategy.maxSplitDimensions) % vars.size());
 
+    auto loopPoint = varsIter;
+
     std::set<VariableType> splittingVars;
-    for (uint64_t i = 0; i < this->regionSplittingStrategy.maxSplitDimensions; i++) {
+    do {
         // Do not split on monotone parameters if finding an extremal value is the goal
-        if (context == Context::ExtremalValue && region.monotonicityAnnotation.getDefaultMonotonicityAnnotation() &&
-                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity &&
-                region.monotonicityAnnotation.getDefaultMonotonicityAnnotation()->globalMonotonicity->isMonotone(*varsIter)) {
+        if (context == Context::ExtremalValue &&
+                region.monotonicityAnnotation.getGlobalMonotonicityResult() &&
+                region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(*varsIter)) {
             continue;
         }
         splittingVars.emplace(*varsIter);
@@ -359,7 +361,8 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
         if (varsIter == vars.end()) {
             varsIter = vars.begin();
         }
-    }
+    } while (loopPoint != varsIter && splittingVars.size() < this->regionSplittingStrategy.maxSplitDimensions);
+
     return splittingVars;
 }
 
