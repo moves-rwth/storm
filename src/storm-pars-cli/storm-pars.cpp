@@ -379,7 +379,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         STORM_PRINT_AND_LOG(" with local monotonicity and");
     }
 
-    std::optional<uint64_t> maxSplitsPerStepThreshold = std::nullopt;
+    std::optional<uint64_t> maxSplitsPerStepThreshold;
     if (rvs.isSplittingThresholdSet()) {
         maxSplitsPerStepThreshold = rvs.getSplittingThreshold();
     }
