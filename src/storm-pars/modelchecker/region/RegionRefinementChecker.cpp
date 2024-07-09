@@ -11,7 +11,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "utility/logging.h"
+#include "storm/utility/macros.h"
 
 namespace storm::modelchecker {
 
