@@ -379,13 +379,13 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic << "\n");
+    STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
     }
 
     STORM_PRINT_AND_LOG(" with iterative refinement until "
-                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "% is covered."
+                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "\% is covered."
                         << (partitionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(partitionSettings.getDepthLimit()) + "." : "") << '\n');
 
     storm::cli::printModelCheckingProperty(property);
