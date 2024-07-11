@@ -2,20 +2,16 @@ file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-conv/*.h ${PROJECT_S
 
 register_source_groups_from_filestructure("${ALL_FILES}" storm-conv)
 
-
-
 file(GLOB_RECURSE STORM_CONV_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-conv/*/*.cpp)
 file(GLOB_RECURSE STORM_CONV_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-conv/*/*.h)
 
 
 # Create storm-conv.
 add_library(storm-conv SHARED ${STORM_CONV_SOURCES} ${STORM_CONV_HEADERS})
-
 target_precompile_headers(storm-conv REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-conv PROPERTIES DEFINE_SYMBOL "")
-#add_dependencies(storm resources)
 list(APPEND STORM_TARGETS storm-conv)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
