@@ -2,8 +2,6 @@ file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-dft/*.h ${PROJECT_SO
 
 register_source_groups_from_filestructure("${ALL_FILES}" storm-dft)
 
-
-
 file(GLOB_RECURSE STORM_DFT_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-dft/*/*.cpp)
 file(GLOB_RECURSE STORM_DFT_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-dft/*/*.h)
 
@@ -14,7 +12,6 @@ target_precompile_headers(storm-dft REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-dft PROPERTIES DEFINE_SYMBOL "")
-#add_dependencies(storm resources)
 list(APPEND STORM_TARGETS storm-dft)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
