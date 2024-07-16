@@ -46,6 +46,9 @@ template std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> bu
     storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::RationalNumber>&& components);
 template std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> buildModelFromComponents(
     storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::RationalFunction>&& components);
+template std::shared_ptr<storm::models::sparse::Model<storm::Interval>> buildModelFromComponents(
+    storm::models::ModelType modelType, storm::storage::sparse::ModelComponents<storm::Interval>&& components);
+
 }  // namespace builder
 }  // namespace utility
 }  // namespace storm

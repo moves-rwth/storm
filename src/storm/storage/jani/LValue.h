@@ -11,7 +11,6 @@ class LValue {
     explicit LValue(storm::jani::Variable const& variable);
     LValue(storm::jani::Variable const&, std::vector<storm::expressions::Expression> const& index);
 
-    LValue(LValue const&) = default;
     bool operator==(LValue const& other) const;
 
     bool isVariable() const;         /// Returns true if the lValue refers to a variable (potentially of type array).

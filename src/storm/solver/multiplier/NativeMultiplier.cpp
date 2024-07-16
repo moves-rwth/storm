@@ -142,10 +142,9 @@ void NativeMultiplier<ValueType>::multAddReduceParallel(storm::solver::Optimizat
 }
 
 template class NativeMultiplier<double>;
-#ifdef STORM_HAVE_CARL
 template class NativeMultiplier<storm::RationalNumber>;
 template class NativeMultiplier<storm::RationalFunction>;
-#endif
+template class NativeMultiplier<storm::Interval>;
 
 }  // namespace solver
 }  // namespace storm

@@ -19,9 +19,6 @@
 
 namespace carl {
 
-template<typename Number>
-class Interval;
-
 template<typename P>
 class FactorizedPolynomial;
 
@@ -51,6 +48,5 @@ typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
 typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
 
 typedef carl::RationalFunction<Polynomial, true> RationalFunction;
-typedef carl::Interval<double> Interval;
 
 }  // namespace storm

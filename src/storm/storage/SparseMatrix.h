@@ -627,7 +627,8 @@ class SparseMatrix {
     void makeRowGroupingTrivial();
 
     /*!
-     * Returns the indices of the rows that belong to one of the selected row groups.
+     * Returns a bitvector representing the set of rows,
+     * with all indices set that correspond to one of the selected row groups.
      *
      * @param groups the selected row groups
      * @return a bit vector that is true at position i iff the row group of row i is selected.
@@ -684,14 +685,14 @@ class SparseMatrix {
      */
     void makeRowDirac(index_type row, index_type column, bool dropZeroEntries = false);
 
-    /*
+    /*!
      * Sums the entries in all rows.
      *
      * @return The vector of sums of the entries in the respective rows.
      */
     std::vector<ValueType> getRowSumVector() const;
 
-    /*
+    /*!
      * Sums the entries in the given row and columns.
      *
      * @param row The row whose entries to add.
@@ -753,13 +754,22 @@ class SparseMatrix {
      */
     SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
 
-    /*
+    /*!
      * Permute rows of the matrix according to the vector.
      * That is, in row i, write the entry of row inversePermutation[i].
      * Consequently, a single row might actually be written into multiple other rows, and the function application is not necessarily a permutation.
      * Notice that this method does *not* touch column entries, nor the row grouping.
      */
     SparseMatrix permuteRows(std::vector<index_type> const& inversePermutation) const;
+
+    /*!
+     * Permutes row groups and columns of the matrix according to the given  permutations.
+     * That is, in row group i, write the entries of row group inverseRowGroupPermutation[i] and in column columnPermutation[j], write the entries of column j.
+     * @pre inverseRowGroupPermutation and columnPermutation must be permutations (i.e., they must contain each index exactly once).
+     * @note the permutation for the row groups is inverted while the one for columns is not!
+     * @return the permuted matrix.
+     */
+    SparseMatrix permuteRowGroupsAndColumns(std::vector<index_type> const& inverseRowGroupPermutation, std::vector<index_type> const& columnPermutation) const;
 
     /*!
      * Returns a copy of this matrix that only considers entries in the selected rows.
@@ -1025,6 +1035,12 @@ class SparseMatrix {
      * Checks for each row whether it sums to one.
      */
     bool isProbabilistic() const;
+
+    /*!
+     * Checks whether each present entry is strictly positive (omitted entries are not considered).
+     */
+    bool hasOnlyPositiveEntries() const;
+
     /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
      * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
@@ -1133,7 +1149,7 @@ class SparseMatrix {
      * @param row The row to the beginning of which the iterator has to point.
      * @return An iterator that points to the beginning of the given row.
      */
-    const_iterator begin(index_type row = 0) const;
+    const_iterator begin(index_type row) const;
 
     /*!
      * Retrieves an iterator that points to the beginning of the given row.
@@ -1141,7 +1157,21 @@ class SparseMatrix {
      * @param row The row to the beginning of which the iterator has to point.
      * @return An iterator that points to the beginning of the given row.
      */
-    iterator begin(index_type row = 0);
+    iterator begin(index_type row);
+
+    /*!
+     * Retrieves an iterator that points to the beginning of the first row of the matrix.
+     *
+     * @return An iterator that points to the beginning of the first row of the matrix.
+     */
+    const_iterator begin() const;
+
+    /*!
+     * Retrieves an iterator that points to the beginning of the first row of the matrix.
+     *
+     * @return An iterator that points to the beginning of the first row of the matrix.
+     */
+    iterator begin();
 
     /*!
      * Retrieves an iterator that points past the end of the given row.

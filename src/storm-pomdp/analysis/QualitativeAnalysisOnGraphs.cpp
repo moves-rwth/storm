@@ -1,5 +1,6 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
@@ -87,7 +88,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0Ma
 }
 
 template<typename ValueType>
-storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0Min(storm::logic::UntilFormula const& formula) const {
+[[maybe_unused]] storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0Min(storm::logic::UntilFormula const& formula) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Prob0 analysis is currently not implemented for minimizing properties.");
 }
 

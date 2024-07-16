@@ -36,8 +36,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
-#include "storm-pars/transformer/ParametricTransformer.h"
-
 #include <typeinfo>
 
 namespace storm {
@@ -263,9 +261,9 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
         auto result = checker.check(formula);
         checker.printStatisticsToStream(std::cout);
         if (storm::utility::resources::isTerminate()) {
-            STORM_PRINT_AND_LOG("\nResult till abort: ")
+            STORM_PRINT_AND_LOG("\nResult till abort: ");
         } else {
-            STORM_PRINT_AND_LOG("\nResult: ")
+            STORM_PRINT_AND_LOG("\nResult: ");
         }
         printResult(result.lowerBound, result.upperBound);
         STORM_PRINT_AND_LOG('\n');
@@ -283,9 +281,9 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
             auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
             result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
             if (storm::utility::resources::isTerminate()) {
-                STORM_PRINT_AND_LOG("\nResult till abort: ")
+                STORM_PRINT_AND_LOG("\nResult till abort: ");
             } else {
-                STORM_PRINT_AND_LOG("\nResult: ")
+                STORM_PRINT_AND_LOG("\nResult: ");
             }
             printResult(result.getMin(), result.getMax());
             STORM_PRINT_AND_LOG('\n');
@@ -355,12 +353,6 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
             pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),
                                                                                        {formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)
                       ->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-            STORM_PRINT_AND_LOG(" done.\n");
-            pmc->printModelInformationToStream(std::cout);
-        }
-        if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
-            STORM_PRINT_AND_LOG("Ensuring constant rewards...");
-            pmc = storm::transformer::makeRewardsConstant(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
             STORM_PRINT_AND_LOG(" done.\n");
             pmc->printModelInformationToStream(std::cout);
         }

@@ -153,6 +153,10 @@ template<typename ValueType>
 std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
     EquationSolverType type = env.solver().getLinearEquationSolverType();
 
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not implemented interval-based linear equation solvers");
+    }
+
     // Adjust the solver type if none was specified and we want sound/exact computations
     if (env.solver().isForceExact() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination &&
         type != EquationSolverType::Topological && type != EquationSolverType::Acyclic) {

@@ -254,6 +254,16 @@ ValueType log10(ValueType const& number) {
 }
 
 template<typename ValueType>
+ValueType cos(ValueType const& number) {
+    return std::cos(number);
+}
+
+template<typename ValueType>
+ValueType sin(ValueType const& number) {
+    return std::sin(number);
+}
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number) {
     return static_cast<typename NumberTraits<ValueType>::IntegerType>(std::trunc(number));
 }
@@ -417,6 +427,16 @@ ClnRationalNumber log(ClnRationalNumber const& number) {
 template<>
 ClnRationalNumber log10(ClnRationalNumber const& number) {
     return carl::log10(number);
+}
+
+template<>
+ClnRationalNumber cos(ClnRationalNumber const& number) {
+    return carl::cos(number);
+}
+
+template<>
+ClnRationalNumber sin(ClnRationalNumber const& number) {
+    return carl::sin(number);
 }
 
 template<>
@@ -625,6 +645,16 @@ GmpRationalNumber log10(GmpRationalNumber const& number) {
 }
 
 template<>
+GmpRationalNumber cos(GmpRationalNumber const& number) {
+    return carl::cos(number);
+}
+
+template<>
+GmpRationalNumber sin(GmpRationalNumber const& number) {
+    return carl::sin(number);
+}
+
+template<>
 typename NumberTraits<GmpRationalNumber>::IntegerType trunc(GmpRationalNumber const& number) {
     return carl::getNum(number) / carl::getDenom(number);
 }
@@ -717,6 +747,11 @@ bool isConstant(storm::RationalFunction const& a) {
 template<>
 bool isConstant(storm::Polynomial const& a) {
     return a.isConstant();
+}
+
+template<>
+bool isConstant(storm::Interval const& a) {
+    return a.isPointInterval();
 }
 
 template<>
@@ -893,6 +928,33 @@ double convertNumber(std::string const& value) {
     return convertNumber<double>(convertNumber<storm::RationalNumber>(value));
 }
 
+template<>
+storm::Interval convertNumber(double const& number) {
+    return storm::Interval(number);
+}
+
+template<>
+storm::Interval convertNumber(storm::RationalNumber const& n) {
+    return storm::Interval(convertNumber<double>(n));
+}
+
+template<>
+storm::RationalNumber convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return convertNumber<storm::RationalNumber>(number.lower());
+}
+
+template<>
+double convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return number.lower();
+}
+
+template<>
+storm::Interval abs(storm::Interval const& interval) {
+    return interval.abs();
+}
+
 // Explicit instantiations.
 
 // double
@@ -923,6 +985,8 @@ template double ceil(double const& number);
 template double round(double const& number);
 template double log(double const& number);
 template double log10(double const& number);
+template double cos(double const& number);
+template double sin(double const& number);
 template typename NumberTraits<double>::IntegerType trunc(double const& number);
 template double mod(double const& first, double const& second);
 template std::string to_string(double const& value);
@@ -1015,6 +1079,8 @@ template std::string to_string(storm::GmpRationalNumber const& value);
 template RationalFunction one();
 template RationalFunction zero();
 
+template bool isNan(RationalFunction const&);
+
 // Instantiations for polynomials.
 template Polynomial one();
 template Polynomial zero();
@@ -1024,8 +1090,10 @@ template Interval one();
 template Interval zero();
 template bool isOne(Interval const& value);
 template bool isZero(Interval const& value);
-template bool isConstant(Interval const& value);
 template bool isInfinity(Interval const& value);
+template bool isAlmostZero(Interval const& value);
+
+template std::string to_string(storm::Interval const& value);
 #endif
 
 }  // namespace utility

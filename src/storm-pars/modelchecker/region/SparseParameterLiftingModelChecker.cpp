@@ -264,7 +264,6 @@ template<typename SparseModelType, typename ConstantType>
 struct RegionBound {
     typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType VariableType;
 
-    RegionBound(RegionBound<SparseModelType, ConstantType> const& other) = default;
     RegionBound(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& r, std::shared_ptr<storm::analysis::Order> o,
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> l, boost::optional<ConstantType> const& b)
         : region(r), order(o), localMonRes(l), bound(b) {}

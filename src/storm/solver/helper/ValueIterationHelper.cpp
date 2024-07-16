@@ -54,21 +54,22 @@ class VIOperatorBackend {
     bool isConverged{true};
 };
 
-template<typename ValueType, bool TrivialRowGrouping>
-ValueIterationHelper<ValueType, TrivialRowGrouping>::ValueIterationHelper(std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator)
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::ValueIterationHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator)
     : viOperator(viOperator) {
     // Intentionally left empty
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-template<storm::OptimizationDirection Dir, bool Relative>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping>::VI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets,
-                                                                     uint64_t& numIterations, ValueType const& precision,
-                                                                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                     MultiplicationStyle mult) const {
-    VIOperatorBackend<ValueType, Dir, Relative> backend{precision};
-    std::vector<ValueType>* operand1{&operand};
-    std::vector<ValueType>* operand2{&operand};
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+template<storm::OptimizationDirection Dir, bool Relative, storm::OptimizationDirection RobustDir>
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
+                                                                                   uint64_t& numIterations, SolutionType const& precision,
+                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
+                                                                                   MultiplicationStyle mult) const {
+    VIOperatorBackend<SolutionType, Dir, Relative> backend{precision};
+    std::vector<SolutionType>* operand1{&operand};
+    std::vector<SolutionType>* operand2{&operand};
     if (mult == MultiplicationStyle::Regular) {
         operand2 = &viOperator->allocateAuxiliaryVector(operand.size());
     }
@@ -76,7 +77,8 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping>::VI(std::vector
     SolverStatus status{SolverStatus::InProgress};
     while (status == SolverStatus::InProgress) {
         ++numIterations;
-        if (viOperator->template apply(*operand1, *operand2, offsets, backend)) {
+        bool applyResult = viOperator->template applyRobust<RobustDir>(*operand1, *operand2, offsets, backend);
+        if (applyResult) {
             status = SolverStatus::Converged;
         } else if (iterationCallback) {
             status = iterationCallback(status);
@@ -96,40 +98,56 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping>::VI(std::vector
     return status;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping>::VI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets,
-                                                                     uint64_t& numIterations, bool relative, ValueType const& precision,
-                                                                     std::optional<storm::OptimizationDirection> const& dir,
-                                                                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                     MultiplicationStyle mult) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+template<storm::OptimizationDirection Dir, bool Relative>
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
+                                                                                   uint64_t& numIterations, SolutionType const& precision,
+                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
+                                                                                   MultiplicationStyle mult, bool robust) const {
+    if (robust) {
+        return VI<Dir, Relative, invert(Dir)>(operand, offsets, numIterations, precision, iterationCallback, mult);
+    } else {
+        return VI<Dir, Relative, Dir>(operand, offsets, numIterations, precision, iterationCallback, mult);
+    }
+}
+
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
+                                                                                   uint64_t& numIterations, bool relative, SolutionType const& precision,
+                                                                                   std::optional<storm::OptimizationDirection> const& dir,
+                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
+                                                                                   MultiplicationStyle mult, bool robust) const {
     STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
-            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult);
+            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
         } else {
-            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult);
+            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
         }
     } else {
         if (relative) {
-            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult);
+            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
         } else {
-            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult);
+            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
         }
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping>::VI(std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative,
-                                                                     ValueType const& precision, std::optional<storm::OptimizationDirection> const& dir,
-                                                                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                     MultiplicationStyle mult) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
+                                                                                   bool relative, SolutionType const& precision,
+                                                                                   std::optional<storm::OptimizationDirection> const& dir,
+                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
+                                                                                   MultiplicationStyle mult, bool robust) const {
     uint64_t numIterations = 0;
-    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult);
+    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, robust);
 }
 
 template class ValueIterationHelper<double, true>;
 template class ValueIterationHelper<double, false>;
 template class ValueIterationHelper<storm::RationalNumber, true>;
 template class ValueIterationHelper<storm::RationalNumber, false>;
+template class ValueIterationHelper<storm::Interval, true, double>;
+template class ValueIterationHelper<storm::Interval, false, double>;
 
 }  // namespace storm::solver::helper

@@ -120,6 +120,7 @@ void ExplicitModelCheckerHint<ValueType>::setNoEndComponentsInMaybeStates(bool v
 template class ExplicitModelCheckerHint<double>;
 template class ExplicitModelCheckerHint<storm::RationalNumber>;
 template class ExplicitModelCheckerHint<storm::RationalFunction>;
+template class ExplicitModelCheckerHint<storm::Interval>;
 
 }  // namespace modelchecker
 }  // namespace storm

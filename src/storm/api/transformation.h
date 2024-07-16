@@ -2,12 +2,14 @@
 
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
+#include "storm/transformer/StatePermuter.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/permutation.h"
 
 namespace storm {
 namespace api {
@@ -144,6 +146,24 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondetermini
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
                         "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
     }
+}
+
+/*!
+ * Permutes the order of the states of the model according to the given order.
+ * The order of the available choices at a state (of a nondeterministic model) is not changed.
+ * A seed can be given which will be respected if a random permutation is requested.
+ */
+template<typename ValueType>
+std::shared_ptr<storm::models::sparse::Model<ValueType>> permuteModelStates(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                            storm::utility::permutation::OrderKind order,
+                                                                            std::optional<uint64_t> seed = std::nullopt) {
+    std::vector<storm::utility::permutation::index_type> permutation;
+    if (order == storm::utility::permutation::OrderKind::Random && seed.has_value()) {
+        permutation = storm::utility::permutation::createRandomPermutation(model->getNumberOfStates(), seed.value());
+    } else {
+        permutation = storm::utility::permutation::createPermutation(order, model->getTransitionMatrix(), model->getInitialStates());
+    }
+    return storm::transformer::permuteStates(*model, permutation);
 }
 
 }  // namespace api

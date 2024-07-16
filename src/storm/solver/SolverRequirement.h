@@ -6,7 +6,6 @@ namespace solver {
 class SolverRequirement {
    public:
     SolverRequirement();
-    SolverRequirement(SolverRequirement const& other) = default;
 
     /*!
      * Returns true if this is a requirement of the considered solver.

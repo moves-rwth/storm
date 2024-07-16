@@ -2,6 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -86,4 +87,13 @@ TEST(DirectEncodingParserTest, MarkovAutomatonParsing) {
     ASSERT_EQ(1ul, modelPtr->getInitialStates().getNumberOfSetBits());
     ASSERT_TRUE(modelPtr->hasLabel("one_job_finished"));
     ASSERT_EQ(6ul, modelPtr->getStates("one_job_finished").getNumberOfSetBits());
+}
+
+TEST(DirectEncodingParserTest, IntervalDtmcTest) {
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::DirectEncodingParser<storm::Interval>::parseModel(STORM_TEST_RESOURCES_DIR "/idtmc/brp-16-2.drn");
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
+    ASSERT_EQ(613ul, dtmc->getNumberOfStates());
+    EXPECT_TRUE(modelPtr->hasUncertainty());
 }

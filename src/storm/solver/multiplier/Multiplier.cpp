@@ -10,6 +10,8 @@
 #include "NativeMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/utility/ProgressMeasurement.h"
@@ -99,6 +101,9 @@ std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Envi
 
     switch (type) {
         case MultiplierType::Gmmxx:
+            if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+                throw storm::exceptions::NotImplementedException() << "Gmm not supported with intervals.";
+            }
             return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
         case MultiplierType::Native:
             return std::make_unique<NativeMultiplier<ValueType>>(matrix);
@@ -108,13 +113,12 @@ std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Envi
 
 template class Multiplier<double>;
 template class MultiplierFactory<double>;
-
-#ifdef STORM_HAVE_CARL
 template class Multiplier<storm::RationalNumber>;
 template class MultiplierFactory<storm::RationalNumber>;
 template class Multiplier<storm::RationalFunction>;
 template class MultiplierFactory<storm::RationalFunction>;
-#endif
+template class Multiplier<storm::Interval>;
+template class MultiplierFactory<storm::Interval>;
 
 }  // namespace solver
 }  // namespace storm

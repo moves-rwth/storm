@@ -8,10 +8,9 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverStatus.h"
 
-namespace storm::solver::helper {
+#include "storm/solver/helper/ValueIterationOperatorForward.h"
 
-template<typename ValueType, bool TrivialRowGrouping>
-class ValueIterationOperator;
+namespace storm::solver::helper {
 
 /*!
  * Implements Optimistic value iteration

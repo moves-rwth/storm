@@ -19,7 +19,8 @@ class BoundedType : public JaniType {
     bool isNumericalType() const;  /// true iff type is either real or int (i.e. it's  always true but let's make it explicit)
 
     virtual std::string getStringRepresentation() const override;
-    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                            bool const substituteTranscendentalNumbers) override;
     virtual std::unique_ptr<JaniType> clone() const override;
 
     void setLowerBound(storm::expressions::Expression const& expression);

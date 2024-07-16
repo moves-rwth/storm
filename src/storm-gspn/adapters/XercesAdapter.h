@@ -2,6 +2,7 @@
 
 #include "storm-config.h"
 #ifdef STORM_HAVE_XERCES
+
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/util/XMLString.hpp>
 

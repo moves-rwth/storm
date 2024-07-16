@@ -1,12 +1,10 @@
-#ifndef STORM_STORAGE_PRISM_CONSTANT_H_
-#define STORM_STORAGE_PRISM_CONSTANT_H_
+#pragma once
 
 #include <map>
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {
@@ -91,7 +89,8 @@ class Constant : public LocatedInformation {
     // The expression that defines the constant (in case it is defined).
     storm::expressions::Expression expression;
 };
+
+bool operator==(Constant const& lhs, Constant const& rhs);
+
 }  // namespace prism
 }  // namespace storm
-
-#endif /* STORM_STORAGE_PRISM_CONSTANT_H_ */

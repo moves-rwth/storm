@@ -211,5 +211,4 @@ ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
 
 template class BaierUpperRewardBoundsComputer<double>;
 template class BaierUpperRewardBoundsComputer<storm::RationalNumber>;
-
 }  // namespace storm::modelchecker::helper

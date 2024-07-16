@@ -76,12 +76,25 @@ MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
         storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.")
             .setIsAdvanced()
             .build());
-    std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The preferred type of encoding for constraint-based methods.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The preferred for encoding for constraint-based methods.")
                         .setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("style", "The main type of encoding.")
                                          .setDefaultValueString("auto")
-                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(encodingTypes))
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"auto", "classic", "flow"}))
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("constraints", "type of constraints.")
+                                         .setDefaultValueString("bigm")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"bigm", "indicator"}))
+                                         .makeOptional()
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("bscc", "bscc encoding.")
+                                         .setDefaultValueString("flow")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"flow", "order"}))
+                                         .makeOptional()
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument("redundant", "enable redundant bscc constraints.")
+                                         .setDefaultValueBoolean(false)
+                                         .makeOptional()
                                          .build())
                         .build());
 
@@ -171,15 +184,35 @@ bool MultiObjectiveSettings::isPrintResultsSet() const {
 }
 
 bool MultiObjectiveSettings::isClassicEncodingSet() const {
-    return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "classic";
+    return this->getOption(encodingOptionName).getArgumentByName("style").getValueAsString() == "classic";
 }
 
 bool MultiObjectiveSettings::isFlowEncodingSet() const {
-    return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "flow";
+    return this->getOption(encodingOptionName).getArgumentByName("style").getValueAsString() == "flow";
 }
 
 bool MultiObjectiveSettings::isAutoEncodingSet() const {
-    return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "auto";
+    return this->getOption(encodingOptionName).getArgumentByName("style").getValueAsString() == "auto";
+}
+
+bool MultiObjectiveSettings::isBsccDetectionViaFlowConstraintsSet() const {
+    return this->getOption(encodingOptionName).getArgumentByName("bscc").getValueAsString() == "flow";
+}
+
+bool MultiObjectiveSettings::isBsccDetectionViaOrderConstraintsSet() const {
+    return this->getOption(encodingOptionName).getArgumentByName("bscc").getValueAsString() == "order";
+}
+
+bool MultiObjectiveSettings::isBigMConstraintsSet() const {
+    return this->getOption(encodingOptionName).getArgumentByName("constraints").getValueAsString() == "bigm";
+}
+
+bool MultiObjectiveSettings::isIndicatorConstraintsSet() const {
+    return this->getOption(encodingOptionName).getArgumentByName("constraints").getValueAsString() == "indicator";
+}
+
+bool MultiObjectiveSettings::isRedundantBsccConstraintsSet() const {
+    return this->getOption(encodingOptionName).getArgumentByName("redundant").getValueAsBoolean();
 }
 
 bool MultiObjectiveSettings::isLexicographicModelCheckingSet() const {

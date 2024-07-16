@@ -123,7 +123,8 @@ class NextStateGenerator {
 
     virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                        std::vector<StateType> const& initialStateIndices = {},
-                                                       std::vector<StateType> const& deadlockStateIndices = {}) = 0;
+                                                       std::vector<StateType> const& deadlockStateIndices = {},
+                                                       std::vector<StateType> const& unexploredStateIndices = {}) = 0;
 
     NextStateGeneratorOptions const& getOptions() const;
 
@@ -140,10 +141,16 @@ class NextStateGenerator {
 
    protected:
     /*!
+     * Checks if the input label has a special purpose (e.g. "init", "deadlock", "unexplored", "overlap_guards", "out_of_bounds").
+     */
+    bool isSpecialLabel(std::string const& label) const;
+
+    /*!
      * Creates the state labeling for the given states using the provided labels and expressions.
      */
     storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices,
+                                               std::vector<StateType> const& unexploredStateIndices,
                                                std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
 
     /*!

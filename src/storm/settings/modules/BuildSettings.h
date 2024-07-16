@@ -139,6 +139,16 @@ class BuildSettings : public ModuleSettings {
      */
     uint64_t getLocationEliminationEdgesHeuristic() const;
 
+    /*!
+     * Retrieves whether an exploration state limit has been set in which case state space exploration might be stopped once the specified number is exceeded.
+     */
+    bool isExplorationStateLimitSet() const;
+
+    /*!
+     * Retrieves the state limit (if set). State space exploration might be stopped once the specified number is exceeded.
+     */
+    uint64_t getExplorationStateLimit() const;
+
     // The name of the module.
     static const std::string moduleName;
 };

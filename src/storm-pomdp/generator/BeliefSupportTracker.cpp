@@ -1,4 +1,5 @@
 #include "storm-pomdp/generator/BeliefSupportTracker.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace generator {

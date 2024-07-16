@@ -7,10 +7,10 @@
 
 namespace storm::solver::helper {
 
-template<typename ValueType, bool TrivialRowGrouping>
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 template<bool Backward>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix,
-                                                                      std::vector<IndexType> const* rowGroupIndices) {
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix,
+                                                                                    std::vector<IndexType> const* rowGroupIndices) {
     if constexpr (TrivialRowGrouping) {
         STORM_LOG_ASSERT(matrix.hasTrivialRowGrouping(), "Expected a matrix with trivial row grouping");
         STORM_LOG_ASSERT(rowGroupIndices == nullptr, "Row groups given, but grouping is supposed to be trivial.");
@@ -55,20 +55,20 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrix(storm::sto
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrixForwards(storm::storage::SparseMatrix<ValueType> const& matrix,
-                                                                              std::vector<IndexType> const* rowGroupIndices) {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMatrixForwards(storm::storage::SparseMatrix<ValueType> const& matrix,
+                                                                                            std::vector<IndexType> const* rowGroupIndices) {
     setMatrix<false>(matrix, rowGroupIndices);
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::setMatrixBackwards(storm::storage::SparseMatrix<ValueType> const& matrix,
-                                                                               std::vector<IndexType> const* rowGroupIndices) {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMatrixBackwards(storm::storage::SparseMatrix<ValueType> const& matrix,
+                                                                                             std::vector<IndexType> const* rowGroupIndices) {
     setMatrix<true>(matrix, rowGroupIndices);
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::unsetIgnoredRows() {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::unsetIgnoredRows() {
     for (auto& c : matrixColumns) {
         if (c >= StartOfRowIndicator) {
             c &= StartOfRowGroupIndicator;
@@ -77,9 +77,10 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::unsetIgnoredRows() {
     hasSkippedRows = false;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 template<bool Backward>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::setIgnoredRows(bool useLocalRowIndices, std::function<bool(IndexType, IndexType)> const& ignore) {
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setIgnoredRows(bool useLocalRowIndices,
+                                                                                         std::function<bool(IndexType, IndexType)> const& ignore) {
     STORM_LOG_ASSERT(!TrivialRowGrouping, "Tried to ignroe rows but the row grouping is trivial.");
     auto colIt = matrixColumns.begin();
     for (auto groupIndex : indexRange<Backward>(0, this->rowGroupIndices->size() - 1)) {
@@ -107,8 +108,9 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setIgnoredRows(bool 
     hasSkippedRows = true;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::setIgnoredRows(bool useLocalRowIndices, std::function<bool(IndexType, IndexType)> const& ignore) {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setIgnoredRows(bool useLocalRowIndices,
+                                                                                         std::function<bool(IndexType, IndexType)> const& ignore) {
     if (backwards) {
         setIgnoredRows<true>(useLocalRowIndices, ignore);
     } else {
@@ -116,16 +118,16 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping>::setIgnoredRows(bool 
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-std::vector<typename ValueIterationOperator<ValueType, TrivialRowGrouping>::IndexType> const&
-ValueIterationOperator<ValueType, TrivialRowGrouping>::getRowGroupIndices() const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+std::vector<typename ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::IndexType> const&
+ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::getRowGroupIndices() const {
     STORM_LOG_ASSERT(!TrivialRowGrouping, "Tried to get row group indices for trivial row grouping");
     return *rowGroupIndices;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-std::vector<ValueType>& ValueIterationOperator<ValueType, TrivialRowGrouping>::allocateAuxiliaryVector(uint64_t size,
-                                                                                                       std::optional<ValueType> const& initialValue) {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+std::vector<SolutionType>& ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::allocateAuxiliaryVector(
+    uint64_t size, std::optional<SolutionType> const& initialValue) {
     STORM_LOG_ASSERT(!auxiliaryVectorUsedExternally, "Auxiliary vector already in use.");
     if (initialValue) {
         auxiliaryVector.assign(size, *initialValue);
@@ -136,21 +138,21 @@ std::vector<ValueType>& ValueIterationOperator<ValueType, TrivialRowGrouping>::a
     return auxiliaryVector;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::freeAuxiliaryVector() {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::freeAuxiliaryVector() {
     auxiliaryVectorUsedExternally = false;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ValueIterationOperator<ValueType, TrivialRowGrouping>::moveToEndOfRow(std::vector<IndexType>::iterator& matrixColumnIt) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::moveToEndOfRow(std::vector<IndexType>::iterator& matrixColumnIt) const {
     do {
         ++matrixColumnIt;
     } while (*matrixColumnIt < StartOfRowIndicator);
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-bool ValueIterationOperator<ValueType, TrivialRowGrouping>::skipIgnoredRow(std::vector<IndexType>::const_iterator& matrixColumnIt,
-                                                                           typename std::vector<ValueType>::const_iterator& matrixValueIt) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+bool ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::skipIgnoredRow(std::vector<IndexType>::const_iterator& matrixColumnIt,
+                                                                                         typename std::vector<ValueType>::const_iterator& matrixValueIt) const {
     if (IndexType entriesToSkip = (*matrixColumnIt & SkipNumEntriesMask)) {
         matrixColumnIt += entriesToSkip;
         matrixValueIt += entriesToSkip - 1;
@@ -159,9 +161,9 @@ bool ValueIterationOperator<ValueType, TrivialRowGrouping>::skipIgnoredRow(std::
     return false;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-uint64_t ValueIterationOperator<ValueType, TrivialRowGrouping>::skipMultipleIgnoredRows(std::vector<IndexType>::const_iterator& matrixColumnIt,
-                                                                                        typename std::vector<ValueType>::const_iterator& matrixValueIt) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+uint64_t ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::skipMultipleIgnoredRows(
+    std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt) const {
     IndexType result{0ull};
     while (skipIgnoredRow(matrixColumnIt, matrixValueIt)) {
         ++result;
@@ -176,5 +178,7 @@ template class ValueIterationOperator<double, true>;
 template class ValueIterationOperator<double, false>;
 template class ValueIterationOperator<storm::RationalNumber, true>;
 template class ValueIterationOperator<storm::RationalNumber, false>;
+template class ValueIterationOperator<storm::Interval, true, double>;
+template class ValueIterationOperator<storm::Interval, false, double>;
 
 }  // namespace storm::solver::helper

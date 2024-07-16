@@ -18,8 +18,7 @@ class SparseMatrix;
 }
 
 namespace solver {
-template<typename ValueType>
-class MinMaxLinearEquationSolverFactory;
+
 template<typename ValueType>
 class LinearEquationSolverFactory;
 }  // namespace solver
@@ -37,17 +36,16 @@ class Model;
 
 namespace solver {
 template<typename ValueType>
-class MinMaxLinearEquationSolver;
-template<typename ValueType>
 class LinearEquationSolver;
 
-template<typename ValueType>
+template<typename ValueType, typename SolutionType = ValueType>
 class SolveGoal {
    public:
     SolveGoal();
 
     template<typename RewardModelType, typename FormulaType>
-    SolveGoal(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::modelchecker::CheckTask<FormulaType, ValueType> const& checkTask) {
+    SolveGoal(storm::models::sparse::Model<ValueType, RewardModelType> const& model,
+              storm::modelchecker::CheckTask<FormulaType, SolutionType> const& checkTask) {
         if (checkTask.isOptimizationDirectionSet()) {
             optimizationDirection = checkTask.getOptimizationDirection();
         }
@@ -58,11 +56,12 @@ class SolveGoal {
             comparisonType = checkTask.getBoundComparisonType();
             threshold = checkTask.getBoundThreshold();
         }
+        robustAgainstUncertainty = checkTask.getRobustUncertainty();
     }
 
     SolveGoal(bool minimize);
     SolveGoal(OptimizationDirection d);
-    SolveGoal(OptimizationDirection d, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold,
+    SolveGoal(OptimizationDirection d, storm::logic::ComparisonType boundComparisonType, SolutionType const& boundThreshold,
               storm::storage::BitVector const& relevantValues);
     SolveGoal(OptimizationDirection d, storm::storage::BitVector const& relevantValues);
 
@@ -77,13 +76,15 @@ class SolveGoal {
 
     OptimizationDirection direction() const;
 
+    bool isRobust() const;
+
     bool isBounded() const;
 
     bool boundIsALowerBound() const;
 
     bool boundIsStrict() const;
 
-    ValueType const& thresholdValue() const;
+    SolutionType const& thresholdValue() const;
 
     bool hasRelevantValues() const;
 
@@ -97,22 +98,24 @@ class SolveGoal {
     boost::optional<OptimizationDirection> optimizationDirection;
 
     boost::optional<storm::logic::ComparisonType> comparisonType;
-    boost::optional<ValueType> threshold;
+    boost::optional<SolutionType> threshold;
     boost::optional<storm::storage::BitVector> relevantValueVector;
+    bool robustAgainstUncertainty = true;  // If set to false, the uncertainty is interpreted as controllable.
 };
 
-template<typename ValueType, typename MatrixType>
-std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(
-    Environment const& env, SolveGoal<ValueType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
-    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
+template<typename ValueType, typename MatrixType, typename SolutionType>
+std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> configureMinMaxLinearEquationSolver(
+    Environment const& env, SolveGoal<ValueType, SolutionType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType, SolutionType> const& factory,
+    MatrixType&& matrix) {
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
     solver->setOptimizationDirection(goal.direction());
     if (goal.isBounded()) {
         if (goal.boundIsALowerBound()) {
-            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(
+            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<SolutionType>>(
                 goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), true));
         } else {
-            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumBelowThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(),
-                                                                                                                   goal.thresholdValue(), false));
+            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumBelowThreshold<SolutionType>>(
+                goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), false));
         }
     }
     if (goal.hasRelevantValues()) {
@@ -121,9 +124,10 @@ std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureM
     return solver;
 }
 
-template<typename ValueType, typename MatrixType>
+template<typename ValueType, typename MatrixType, typename SolutionType>
 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(
-    Environment const& env, SolveGoal<ValueType>&& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory, MatrixType&& matrix) {
+    Environment const& env, SolveGoal<ValueType, SolutionType>&& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory,
+    MatrixType&& matrix) {
     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
     if (goal.isBounded()) {
         solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(),

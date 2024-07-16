@@ -57,7 +57,11 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->getTransitionMatrix().isProbabilistic(), "The matrix is not probabilistic.");
+    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(),
+                     "The matrix is not probabilistic.");
+    if (this->hasUncertainty()) {
+        STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
+    }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
     for (auto const& rewardModel : this->getRewardModels()) {
@@ -599,12 +603,12 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
 }
 
 template<>
-void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream& outStream) const {
+void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
 }
 
 template<typename ValueType, typename RewardModelType>
-std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
+std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t /*state*/) const {
     return "";
 }
 
@@ -647,11 +651,31 @@ bool Model<ValueType, RewardModelType>::supportsParameters() const {
 }
 
 template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::supportsUncertainty() const {
+    return std::is_same<ValueType, storm::Interval>::value;
+}
+
+template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::hasParameters() const {
     if (!this->supportsParameters()) {
         return false;
     }
     // Check for parameters
+    for (auto const& entry : this->getTransitionMatrix()) {
+        if (!storm::utility::isConstant(entry.getValue())) {
+            return true;
+        }
+    }
+    // Only constant values present
+    return false;
+}
+
+template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::hasUncertainty() const {
+    if (!this->supportsUncertainty()) {
+        return false;
+    }
+    // Check for intervals
     for (auto const& entry : this->getTransitionMatrix()) {
         if (!storm::utility::isConstant(entry.getValue())) {
             return true;
@@ -676,7 +700,6 @@ std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardM
     return this->rewardModels;
 }
 
-#ifdef STORM_HAVE_CARL
 std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
     return storm::storage::getVariables(model.getTransitionMatrix());
 }
@@ -710,16 +733,13 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
-#endif
 
 template class Model<double>;
+template class Model<storm::Interval>;
 
-#ifdef STORM_HAVE_CARL
 template class Model<storm::RationalNumber>;
-
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Model<storm::RationalFunction>;
-#endif
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

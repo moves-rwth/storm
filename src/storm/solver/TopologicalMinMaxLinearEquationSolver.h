@@ -11,8 +11,8 @@ class Environment;
 
 namespace solver {
 
-template<typename ValueType>
-class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
+template<typename ValueType, typename SolutionType = ValueType>
+class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType, SolutionType> {
    public:
     TopologicalMinMaxLinearEquationSolver();
     TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
@@ -27,7 +27,7 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
                                                                    bool const& hasInitialScheduler = false) const override;
 
    protected:
-    virtual bool internalSolveEquations(storm::Environment const& env, OptimizationDirection d, std::vector<ValueType>& x,
+    virtual bool internalSolveEquations(storm::Environment const& env, OptimizationDirection d, std::vector<SolutionType>& x,
                                         std::vector<ValueType> const& b) const override;
 
    private:
@@ -40,7 +40,7 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
     // ... for the case that the SCC is trivial
     bool solveTrivialScc(uint64_t const& sccState, OptimizationDirection d, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const;
     // ... for the case that there is just one large SCC
-    bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, std::vector<ValueType>& x,
+    bool solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, std::vector<SolutionType>& x,
                                            std::vector<ValueType> const& b) const;
     // ... for the remaining cases (1 < scc.size() < x.size())
     bool solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, storm::storage::BitVector const& sccRowGroups,

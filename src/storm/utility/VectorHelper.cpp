@@ -50,10 +50,8 @@ void VectorHelper<storm::RationalFunction>::reduceVector(storm::solver::Optimiza
 }
 
 template class VectorHelper<double>;
-
-#ifdef STORM_HAVE_CARL
 template class VectorHelper<storm::RationalNumber>;
 template class VectorHelper<storm::RationalFunction>;
-#endif
+template class VectorHelper<storm::Interval>;
 }  // namespace utility
 }  // namespace storm

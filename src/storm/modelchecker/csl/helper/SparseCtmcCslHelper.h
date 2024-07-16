@@ -3,6 +3,7 @@
 
 #include "storm/storage/BitVector.h"
 
+#include "storm/logic/OperatorFormula.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolveGoal.h"
 

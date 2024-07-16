@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <vector>
+
 #include "storm/utility/OptionalRef.h"
 
 namespace storm {

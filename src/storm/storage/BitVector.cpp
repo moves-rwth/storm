@@ -135,9 +135,7 @@ BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), bucket
 }
 
 BitVector::~BitVector() {
-    if (buckets != nullptr) {
-        delete[] buckets;
-    }
+    delete[] buckets;
 }
 
 template<typename InputIterator>
@@ -206,9 +204,7 @@ BitVector& BitVector::operator=(BitVector&& other) {
     if (this != &other) {
         bitCount = other.bitCount;
         other.bitCount = 0;
-        if (this->buckets) {
-            delete[] this->buckets;
-        }
+        delete[] this->buckets;
         this->buckets = other.buckets;
         other.buckets = nullptr;
     }
@@ -277,9 +273,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
             } else {
                 std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
             }
-            if (buckets != nullptr) {
-                delete[] buckets;
-            }
+            delete[] buckets;
             buckets = newBuckets;
             bitCount = newLength;
         } else {
@@ -301,9 +295,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         if (newBucketCount < this->bucketCount()) {
             uint64_t* newBuckets = new uint64_t[newBucketCount];
             std::copy_n(buckets, newBucketCount, newBuckets);
-            if (buckets != nullptr) {
-                delete[] buckets;
-            }
+            delete[] buckets;
             buckets = newBuckets;
             bitCount = newLength;
         }
@@ -515,6 +507,21 @@ BitVector BitVector::permute(std::vector<uint64_t> const& inversePermutation) co
     return result;
 }
 
+BitVector BitVector::permuteGroupedVector(const std::vector<uint64_t>& inversePermutation, const std::vector<uint64_t>& rowGroupIndices) const {
+    STORM_LOG_ASSERT(inversePermutation.size() == rowGroupIndices.size() - 1, "Inverse permutation and row group indices do not match.");
+    BitVector result(this->size(), false);
+    uint64_t targetIndex = 0u;
+    for (auto const sourceGroupIndex : inversePermutation) {
+        for (uint64_t sourceIndex = rowGroupIndices[sourceGroupIndex]; sourceIndex < rowGroupIndices[sourceGroupIndex + 1]; ++sourceIndex, ++targetIndex) {
+            if (this->get(sourceIndex)) {
+                result.set(targetIndex, true);
+            }
+        }
+    }
+    STORM_LOG_ASSERT(targetIndex == result.size(), "Target index does not match the size of the result.");
+    return result;
+}
+
 void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
     STORM_LOG_ASSERT((bitIndex & mod64mask) == 0, "Bit index must be a multiple of 64.");
     STORM_LOG_ASSERT(other.size() <= this->size() - bitIndex, "Bit vector argument is too long.");
@@ -528,6 +535,14 @@ void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
 
     for (; first2 != last2; ++first1, ++first2) {
         *first1 = *first2;
+    }
+}
+
+void BitVector::setMultiple(uint64_t bitIndex, uint64_t nrOfBits, bool newValue) {
+    // TODO we may want to optimize this code for large nrs of bits.
+    uint64_t endPos = std::min(bitIndex + nrOfBits, bitCount);
+    for (uint64_t tmpIndex = bitIndex; tmpIndex < endPos; ++tmpIndex) {
+        set(tmpIndex, newValue);
     }
 }
 

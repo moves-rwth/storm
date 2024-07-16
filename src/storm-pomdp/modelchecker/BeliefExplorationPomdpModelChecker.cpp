@@ -17,7 +17,6 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -363,9 +362,8 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
             } else {
                 underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n")
+                STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n");
             }
-            underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
         }
 
         if (options.useClipping && rewardModelName.has_value()) {
@@ -813,7 +811,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             return r <= storm::utility::convertNumber<BeliefValueType>(heuristicParameters.observationThreshold);
         });
         STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
-        for (auto const& obs : refinedObservations) {
+        for (auto const obs : refinedObservations) {
             // Increment the resolution at the refined observations.
             // Use storm's rational number to detect overflows properly.
             storm::RationalNumber newObsResolutionAsRational = storm::utility::convertNumber<storm::RationalNumber>(observationResolutionVector[obs]) *
@@ -1050,7 +1048,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 
     unfoldingStatus = Status::Exploring;
     if (options.useClipping) {
-        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
+        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n");
         statistics.nrClippingAttempts = 0;
         statistics.nrClippedStates = 0;
     }
@@ -1093,7 +1091,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
             printUpdateStopwatch.restart();
             STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP"
-                                       << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
+                                       << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
                 STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
                                                                 << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
@@ -1135,7 +1133,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
             if (clipBelief && !underApproximation->isMarkedAsGridBelief(currId)) {
                 // Use a belief grid as clipping candidates
                 if (!options.useStateEliminationCutoff) {
-                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation, 0);
+                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, beliefManager, underApproximation, 0);
                     // Set again as the current belief might have been detected to be a grid belief
                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                     if (successfulClip) {
@@ -1338,7 +1336,7 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                     }
                 } else if (clipping.onGrid) {
                     // If the belief is not clippable, but on the grid, it may need to be explored, too
-                    bool inserted = beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, false);
+                    beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, false);
                 } else {
                     // Otherwise, the reward for all candidates is infinite, clipping does not make sense. Cut it off instead
                     absDelta += utility::convertNumber<BeliefValueType>(successor.second);
@@ -1371,7 +1369,6 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards,
-                                                                                                              bool min,
                                                                                                               std::shared_ptr<BeliefManagerType>& beliefManager,
                                                                                                               std::shared_ptr<ExplorerType>& beliefExplorer,
                                                                                                               uint64_t localActionIndex) {
@@ -1383,8 +1380,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         statistics.nrClippedStates = statistics.nrClippedStates.value() + 1;
         // Transition probability to candidate is clipping value
         BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta);
-        bool addedCandidate =
-            beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
+        beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
         beliefExplorer->markAsGridBelief(clipping.targetBelief);
         if (computeRewards) {
             // collect cumulative reward bounds

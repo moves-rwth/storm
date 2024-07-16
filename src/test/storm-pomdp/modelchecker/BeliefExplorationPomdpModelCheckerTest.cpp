@@ -45,7 +45,7 @@ class SelfloopReductionDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::SelfloopReduction;
 };
@@ -63,7 +63,7 @@ class QualitativeReductionDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::QualitativeReduction;
 };
@@ -81,7 +81,7 @@ class PreprocessedDefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::All;
 };
@@ -159,7 +159,7 @@ class DefaultDoubleOVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::None;
 };
@@ -177,7 +177,7 @@ class DefaultRationalPIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::None;
 };
@@ -195,7 +195,7 @@ class PreprocessedDefaultRationalPIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
     }
     static PreprocessingType const preprocessingType = PreprocessingType::All;
 };
@@ -565,7 +565,7 @@ TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_SE) {
 TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -581,7 +581,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
 TYPED_TEST(BeliefExplorationTest, maze2_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
@@ -598,7 +598,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin_SE) {
 TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -609,7 +609,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
 TYPED_TEST(BeliefExplorationTest, maze2_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
@@ -621,7 +621,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax_SE) {
 TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -637,7 +637,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin) {
 TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
@@ -654,7 +654,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_SE) {
 TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -665,7 +665,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
 TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_SE) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model,
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
@@ -900,7 +900,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmin_Clip) {
     }
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -919,7 +919,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_Rmax_Clip) {
     }
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -933,7 +933,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_Clip) {
     }
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 
@@ -952,7 +952,7 @@ TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_Clip) {
     }
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmax=? [F \"goal\"]", "sl=0.075");
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 

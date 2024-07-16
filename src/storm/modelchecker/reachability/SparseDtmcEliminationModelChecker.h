@@ -1,10 +1,7 @@
-#ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_
-#define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-
 #include "storm/models/sparse/Dtmc.h"
-
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
@@ -44,11 +41,10 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
                                                                           CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env,
                                                                    CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env,
                                                                          CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
@@ -123,5 +119,3 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCELIMINATIONMODELCHECKER_H_ */

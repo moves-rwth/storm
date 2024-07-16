@@ -15,9 +15,7 @@
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
-namespace storm {
-namespace modelchecker {
-namespace helper {
+namespace storm::modelchecker::helper {
 
 template<typename ValueType>
 SparseDeterministicStepBoundedHorizonHelper<ValueType>::SparseDeterministicStepBoundedHorizonHelper() {
@@ -85,8 +83,4 @@ std::vector<ValueType> SparseDeterministicStepBoundedHorizonHelper<ValueType>::c
 template class SparseDeterministicStepBoundedHorizonHelper<double>;
 template class SparseDeterministicStepBoundedHorizonHelper<storm::RationalNumber>;
 template class SparseDeterministicStepBoundedHorizonHelper<storm::RationalFunction>;
-}  // namespace helper
-}  // namespace modelchecker
-}  // namespace storm
-// Created by Sebastian Junges on 8/20/20.
-//
+}  // namespace storm::modelchecker::helper

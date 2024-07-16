@@ -67,7 +67,9 @@ class SparseMdpEndComponentInformation {
         storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices = false);
 
     void setValues(std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates, std::vector<ValueType> const& fromResult);
-    void setScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::storage::BitVector const& maybeStates,
+
+    template<typename SolutionType>
+    void setScheduler(storm::storage::Scheduler<SolutionType>& scheduler, storm::storage::BitVector const& maybeStates,
                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                       std::vector<uint64_t> const& fromResult);
 

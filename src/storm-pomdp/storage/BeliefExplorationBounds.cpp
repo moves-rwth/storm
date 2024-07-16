@@ -1,4 +1,5 @@
 #include "BeliefExplorationBounds.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace pomdp {

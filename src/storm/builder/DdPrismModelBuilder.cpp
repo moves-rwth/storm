@@ -36,7 +36,7 @@ namespace builder {
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
+    void create(storm::prism::Program const& /*program*/, storm::adapters::AddExpressionAdapter<Type, ValueType>& /*rowExpressionAdapter*/) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 
@@ -911,11 +911,11 @@ storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::encodeChoi
                                 << ".");
 
     std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
-    for (uint_fast64_t i = nondeterminismVariableOffset; i < nondeterminismVariableOffset + numberOfBinaryVariables; ++i) {
+    for (uint_fast64_t i = 0; i < numberOfBinaryVariables; ++i) {
         if (value & (1ull << (numberOfBinaryVariables - i - 1))) {
-            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 1);
+            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[nondeterminismVariableOffset + i], 1);
         } else {
-            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 0);
+            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[nondeterminismVariableOffset + i], 0);
         }
     }
 

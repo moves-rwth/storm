@@ -66,6 +66,7 @@ template class DeterministicModel<storm::RationalNumber>;
 
 template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class DeterministicModel<storm::RationalFunction>;
+template class DeterministicModel<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models

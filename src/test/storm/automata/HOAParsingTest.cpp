@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "storm/automata/DeterministicAutomaton.h"
+#include "test/storm_gtest.h"
 
 #include <sstream>
 #include <string>

@@ -25,14 +25,14 @@ SparsePropositionalModelChecker<SparseModelType>::SparsePropositionalModelChecke
 }
 
 template<typename SparseModelType>
-bool SparsePropositionalModelChecker<SparseModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+bool SparsePropositionalModelChecker<SparseModelType>::canHandle(CheckTask<storm::logic::Formula, SolutionType> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     return formula.isInFragment(storm::logic::propositional());
 }
 
 template<typename SparseModelType>
 std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkBooleanLiteralFormula(
-    Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) {
     storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
     if (stateFormula.isTrueFormula()) {
         return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
@@ -43,7 +43,7 @@ std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::c
 
 template<typename SparseModelType>
 std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkAtomicLabelFormula(
-    Environment const& env, CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::AtomicLabelFormula, SolutionType> const& checkTask) {
     storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
     STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException,
                     "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
@@ -82,6 +82,8 @@ template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
+
+template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
 #endif
 }  // namespace modelchecker
 }  // namespace storm

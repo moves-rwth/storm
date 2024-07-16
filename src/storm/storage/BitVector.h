@@ -473,12 +473,25 @@ class BitVector {
     void set(uint_fast64_t bitIndex, BitVector const& other);
 
     /*!
+     * Sets multiple bits to the given value.
+     */
+    void setMultiple(uint64_t bitIndex, uint64_t nrOfBits, bool newValue = true);
+
+    /*!
      * Apply a permutation of entries. That is, in row i, write the entry of row inversePermutation[i].
      * @param inversePermutation.
      * @return
      * TODO this operation is slow.
      */
     BitVector permute(std::vector<uint64_t> const& inversePermutation) const;
+
+    /*!
+     * Apply a permutation of entries assuming a grouped vector. That is, in row group i, write the entries of row group inversePermutation[i].
+     * @param inversePermutation.
+     * @return
+     * TODO this operation is slow.
+     */
+    BitVector permuteGroupedVector(std::vector<uint64_t> const& inversePermutation, std::vector<uint64_t> const& rowGroupIndices) const;
 
     /*!
      * Retrieves the content of the current bit vector at the given index for the given number of bits as a new

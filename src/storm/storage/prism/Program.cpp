@@ -442,7 +442,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Program::
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
     for (auto const& substVarExpr : substitution) {
-        newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution));
+        newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution, false));
     }
     return newSubstitution;
 }
@@ -650,6 +650,11 @@ storm::prism::InitialConstruct const& Program::getInitialConstruct() const {
 
 boost::optional<InitialConstruct> const& Program::getOptionalInitialConstruct() const {
     return this->initialConstruct;
+}
+
+void Program::updateInitialStatesExpression(expressions::Expression const& newExpression) {
+    STORM_LOG_THROW(hasInitialConstruct(), exceptions::InvalidOperationException, "We can only update the initial construct, if it already exists.");
+    this->initialConstruct = boost::make_optional(InitialConstruct(newExpression));
 }
 
 storm::expressions::Expression Program::getInitialStatesExpression() const {
@@ -1202,9 +1207,10 @@ Program Program::replaceConstantByVariable(Constant const& c, expressions::Expre
     std::vector<BooleanVariable> newBooleanVariables = globalBooleanVariables;
     std::vector<IntegerVariable> newIntegerVariables = globalIntegerVariables;
     std::vector<Constant> newConstants = constants;
-    std::remove_if(newConstants.begin(), newConstants.end(),
-                   [&](const auto& item) -> bool { return item.getExpressionVariable() == c.getExpressionVariable(); });
-
+    auto newEnd = std::remove(newConstants.begin(), newConstants.end(), c);
+    newConstants.erase(newEnd, newConstants.end());  // Erase is necessary based on Erase-remove idiom
+    // The following throw is moved here as this is cheaper.
+    STORM_LOG_THROW(newConstants.size() == constants.size() - 1, exceptions::InvalidArgumentException, "Can only replace a constant if it is present.");
     if (c.getType().isBooleanType()) {
         newBooleanVariables.emplace_back(c.getExpressionVariable(), c.getExpression(), observable);
     } else {

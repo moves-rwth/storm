@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  BASE_IMG: "movesrwth/carl:ci-release"
+  BASE_IMG: "movesrwth/carl-storm:ci-release"
   STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
   STORM_BRANCH: "master"
   # github runners currently have two cores
@@ -45,7 +45,7 @@ jobs:
       - name: Copy doxygen
         run: sudo docker cp storm:/opt/storm/build/doc/html .
       - name: Deploy doxygen
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.DOC_DEPLOY_KEY }}
           publish_dir: ./html
@@ -60,8 +60,8 @@ jobs:
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
-      - uses: technote-space/workflow-conclusion-action@v2
-      - uses: dawidd6/action-send-mail@v2
+      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

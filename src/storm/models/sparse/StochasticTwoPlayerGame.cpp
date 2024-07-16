@@ -66,6 +66,8 @@ template class StochasticTwoPlayerGame<double>;
 template class StochasticTwoPlayerGame<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class StochasticTwoPlayerGame<storm::RationalFunction>;
 template class StochasticTwoPlayerGame<storm::RationalNumber>;
+template class StochasticTwoPlayerGame<storm::Interval>;
+
 #endif
 
 }  // namespace sparse

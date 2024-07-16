@@ -380,23 +380,15 @@ class Program : public LocatedInformation {
     std::map<std::string, uint_fast64_t> const& getActionNameToIndexMapping() const;
 
     /*!
+     * Sets a new initial states expression.
+     * May only be called if the program already has an initial states expression.
+     */
+    void updateInitialStatesExpression(expressions::Expression const& newExpression);
+
+    /*!
      * Retrieves whether the program specifies an initial construct.
      */
     bool hasInitialConstruct() const;
-
-    /*!
-     * Retrieves the initial construct of the program.
-     *
-     * @return The initial construct of the program.
-     */
-    InitialConstruct const& getInitialConstruct() const;
-
-    /*!
-     * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
-     *
-     * @return The initial construct of the program.
-     */
-    boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
 
     /*!
      * Retrieves an expression characterizing the initial states.
@@ -779,6 +771,20 @@ class Program : public LocatedInformation {
     storm::storage::BitVector const& getPossiblySynchronizingCommands() const;
 
    private:
+    /*!
+     * Retrieves the initial construct of the program.
+     *
+     * @return The initial construct of the program.
+     */
+    InitialConstruct const& getInitialConstruct() const;
+
+    /*!
+     * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
+     *
+     * @return The initial construct of the program.
+     */
+    boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
+
     /*!
      * This function builds a command that corresponds to the synchronization of the given list of commands.
      *

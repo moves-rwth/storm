@@ -302,6 +302,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
     objectiveHelper.reserve(objectives.size());
     for (auto const& obj : objectives) {
         objectiveHelper.emplace_back(*model, obj);
+        STORM_LOG_ASSERT(!objectiveHelper.back().hasThreshold(), "Unexpected input: got a Pareto query with a thresholded objective.");
     }
     lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
     if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
@@ -309,54 +310,14 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
     } else {
         wvChecker = nullptr;
     }
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        storm::utility::Stopwatch sw(true);
-        std::string modelname = "original-model";
-        std::vector<SparseModelType const*> models;
-        models.push_back(&preprocessorResult.originalModel);
-        models.push_back(model.get());
-        for (SparseModelType const* m : models) {
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfStates() << " states in " << modelname << '\n');
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfChoices() << " choices in " << modelname << '\n');
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfTransitions() << " transitions in " << modelname << '\n');
-            storm::RationalNumber numScheds = storm::utility::one<storm::RationalNumber>();
-            for (uint64_t state = 0; state < m->getNumberOfStates(); ++state) {
-                storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices(state));
-                numScheds *= storm::utility::max(storm::utility::one<storm::RationalNumber>(), numChoices);
-            }
-            auto numSchedsStr = storm::utility::to_string(numScheds);
-            STORM_PRINT_AND_LOG("#STATS " << numSchedsStr.front() << "e" << (numSchedsStr.size() - 1) << " memoryless deterministic schedulers in " << modelname
-                                          << '\n');
-            storm::storage::MaximalEndComponentDecomposition<ModelValueType> mecs(*m);
-            uint64_t nonConstMecCounter = 0;
-            uint64_t nonConstMecStateCounter = 0;
-            for (auto const& mec : mecs) {
-                bool mecHasNonConstValue = false;
-                for (auto const& stateChoices : mec) {
-                    for (auto const& helper : objectiveHelper) {
-                        if (helper.getSchedulerIndependentStateValues().count(stateChoices.first) == 0) {
-                            ++nonConstMecStateCounter;
-                            mecHasNonConstValue = true;
-                            break;
-                        }
-                    }
-                }
-                if (mecHasNonConstValue)
-                    ++nonConstMecCounter;
-            }
-            STORM_PRINT_AND_LOG("#STATS " << nonConstMecCounter << " non-constant MECS in " << modelname << '\n');
-            STORM_PRINT_AND_LOG("#STATS " << nonConstMecStateCounter << " non-constant MEC States in " << modelname << '\n');
-            // Print the same statistics for the unfolded model as well.
-            modelname = "unfolded-model";
-        }
-        sw.stop();
-        STORM_PRINT_AND_LOG("#STATS " << sw << " seconds for computing these statistics.\n");
-    }
 }
 
 template<class SparseModelType, typename GeometryValueType>
 std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::check(Environment const& env) {
     clean();
+    for (auto& obj : objectiveHelper) {
+        obj.computeLowerUpperBounds(env);
+    }
     initializeFacets(env);
 
     // Compute the relative precision in each dimension.
@@ -385,7 +346,8 @@ std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, 
                 eps.back() = storm::utility::convertNumber<GeometryValueType>(1e-8);
             }
         }
-        STORM_PRINT_AND_LOG("Relative precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << '\n');
+        STORM_LOG_INFO("Relative precision for deterministic scheduler Pareto explorer is "
+                       << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << '\n');
     } else {
         STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute,
                         storm::exceptions::IllegalArgumentException, "Unknown multiobjective precision type.");
@@ -406,12 +368,6 @@ std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, 
             paretoPoints.push_back(
                 storm::utility::vector::convertNumericVector<ModelValueType>(transformObjectiveValuesToOriginal(objectives, p.second.get())));
         }
-    }
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points\n");
-        STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable areas\n");
-        STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable halfspaces\n");
-        STORM_PRINT_AND_LOG(lpChecker->getStatistics("#STATS "));
     }
     return std::make_unique<storm::modelchecker::ExplicitParetoCurveCheckResult<ModelValueType>>(originalModelInitialState, std::move(paretoPoints), nullptr,
                                                                                                  nullptr);
@@ -509,21 +465,25 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::init
     for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
         std::vector<GeometryValueType> weightVector(objectives.size(), storm::utility::zero<GeometryValueType>());
         weightVector[objIndex] = storm::utility::one<GeometryValueType>();
-        std::vector<GeometryValueType> point;
+        std::vector<GeometryValueType> pointCoord;
+        GeometryValueType offset;
         if (wvChecker) {
             wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
-            point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
-            negateMinObjectives(point);
+            pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+            negateMinObjectives(pointCoord);
+            auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
+            negateMinObjectives(upperBoundPoint);
+            offset = storm::utility::vector::dotProduct(weightVector, upperBoundPoint);
         } else {
             lpChecker->setCurrentWeightVector(env, weightVector);
             auto optionalPoint = lpChecker->check(env, overApproximation);
-            STORM_LOG_THROW(optionalPoint.is_initialized(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
-            point = std::move(optionalPoint.get());
+            STORM_LOG_THROW(optionalPoint.has_value(), storm::exceptions::UnexpectedException, "Unable to find a point in the current overapproximation.");
+            pointCoord = std::move(optionalPoint->first);
+            offset = std::move(optionalPoint->second);
         }
-        Point p(point);
+        Point p(pointCoord);
         p.setOnFacet();
         // Adapt the overapproximation
-        GeometryValueType offset = storm::utility::vector::dotProduct(weightVector, p.get());
         addHalfspaceToOverApproximation(env, weightVector, offset);
         pointset.addPoint(env, std::move(p));
     }
@@ -549,13 +509,8 @@ template<class SparseModelType, typename GeometryValueType>
 std::vector<GeometryValueType> DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::getReferenceCoordinates(Environment const& env) const {
     std::vector<GeometryValueType> result;
     for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-        ModelValueType value;
-        if (objectiveHelper[objIndex].minimizing()) {
-            value = -objectiveHelper[objIndex].getUpperValueBoundAtState(env, *model->getInitialStates().begin());
-        } else {
-            value = objectiveHelper[objIndex].getLowerValueBoundAtState(env, *model->getInitialStates().begin());
-        }
-        result.push_back(storm::utility::convertNumber<GeometryValueType>(value));
+        result.push_back(
+            storm::utility::convertNumber<GeometryValueType>(objectiveHelper[objIndex].getLowerValueBoundAtState(*model->getInitialStates().begin())));
     }
     return result;
 }
@@ -605,24 +560,29 @@ template<class SparseModelType, typename GeometryValueType>
 bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::optimizeAndSplitFacet(Environment const& env, Facet& f) {
     // Invoke optimization and insert the explored points
     boost::optional<PointId> optPointId;
-    std::vector<GeometryValueType> point;
+    std::vector<GeometryValueType> pointCoord;
+    GeometryValueType offset;
     if (wvChecker) {
         wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
-        point = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
-        negateMinObjectives(point);
+        pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+        negateMinObjectives(pointCoord);
+        auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
+        negateMinObjectives(upperBoundPoint);
+        offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), upperBoundPoint);
     } else {
         auto currentArea = overApproximation->intersection(f.getHalfspace().invert());
-        auto optionalPoint = lpChecker->check(env, currentArea);
-        if (optionalPoint.is_initialized()) {
-            point = std::move(optionalPoint.get());
+        auto optionalPoint = lpChecker->check(env, overApproximation, eps);
+        if (optionalPoint.has_value()) {
+            pointCoord = std::move(optionalPoint->first);
         } else {
             // As we did not find any feasable solution in the given area, we take a point that lies on the facet
-            point = pointset.getPoint(f.getPoints().front()).get();
+            pointCoord = pointset.getPoint(f.getPoints().front()).get();
         }
+        offset = std::move(optionalPoint->second);
     }
-    Point p(point);
+
+    Point p(pointCoord);
     p.setOnFacet();
-    GeometryValueType offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), p.get());
     addHalfspaceToOverApproximation(env, f.getHalfspace().normalVector(), offset);
     optPointId = pointset.addPoint(env, std::move(p));
 

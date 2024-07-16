@@ -122,11 +122,12 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
                 functionBodySubstitution[var] = functionParameters.back().getExpression();
             }
             for (auto const& formulaVar : placeholdersInFormula) {
-                functionBodySubstitution[formulaVar] = storm::jani::substituteJaniExpression(formulaToFunctionCallMap[formulaVar], functionBodySubstitution);
+                functionBodySubstitution[formulaVar] =
+                    storm::jani::substituteJaniExpression(formulaToFunctionCallMap[formulaVar], functionBodySubstitution, false);
             }
 
             storm::jani::FunctionDefinition funDef(formula.getName(), formula.getType(), functionParameters,
-                                                   storm::jani::substituteJaniExpression(formula.getExpression(), functionBodySubstitution));
+                                                   storm::jani::substituteJaniExpression(formula.getExpression(), functionBodySubstitution, false));
             janiModel.addFunctionDefinition(funDef);
             auto functionCallExpression =
                 std::make_shared<storm::expressions::FunctionCallExpression>(*manager, formula.getType(), formula.getName(), functionArguments);
@@ -250,9 +251,9 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
 
     // Create an initial state restriction if there was an initial construct in the program.
     if (program.hasInitialConstruct()) {
-        janiModel.setInitialStatesRestriction(program.getInitialConstruct().getInitialStatesExpression());
+        janiModel.setInitialStatesRestriction(program.getInitialStatesExpression());
         // Variables in the initial state expression should be made global
-        std::set<storm::expressions::Variable> variables = program.getInitialConstruct().getInitialStatesExpression().getVariables();
+        std::set<storm::expressions::Variable> variables = program.getInitialStatesExpression().getVariables();
         for (auto const& variable : variables) {
             if (formulaToFunctionCallMap.count(variable) > 0) {
                 for (auto const& funVar : formulaToFunctionCallMap[variable].getVariables()) {
@@ -514,7 +515,7 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
         // formula placeholders. Note that the formula placeholders of non-renamed modules are replaced later.
         if (program.getNumberOfFormulas() > 0 && module.isRenamedFromModule()) {
             auto renamedFormulaToFunctionCallMap = program.getSubstitutionForRenamedModule(module, formulaToFunctionCallMap);
-            automaton.substitute(renamedFormulaToFunctionCallMap);
+            automaton.substitute(renamedFormulaToFunctionCallMap, false);
         }
 
         janiModel.addAutomaton(automaton);
@@ -532,7 +533,7 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
     // if there are formulas, replace the remaining placeholder variables by actual function calls in all expressions
     if (program.getNumberOfFormulas() > 0) {
         janiModel.getModelFeatures().add(storm::jani::ModelFeature::Functions);
-        janiModel.substitute(formulaToFunctionCallMap);
+        janiModel.substitute(formulaToFunctionCallMap, false);
     }
 
     janiModel.finalize();

@@ -1,20 +1,17 @@
 #pragma once
 
+#include <boost/variant.hpp>
 #include <fstream>
 #include <memory>
-
-#include <boost/variant.hpp>
 
 #include "storm-parsers/parser/ConstantDataType.h"
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/jani/Property.h"
-
 #include "storm/modelchecker/results/FilterType.h"
-
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/jani/Property.h"
 
 namespace storm {
 namespace logic {
@@ -81,15 +78,6 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     // A parser used for recognizing the optimality operators.
     optimalityOperatorStruct optimalityOperator_;
 
-    struct rewardMeasureTypeStruct : qi::symbols<char, storm::logic::RewardMeasureType> {
-        rewardMeasureTypeStruct() {
-            add("exp", storm::logic::RewardMeasureType::Expectation)("var", storm::logic::RewardMeasureType::Variance);
-        }
-    };
-
-    // A parser used for recognizing the reward measure types.
-    rewardMeasureTypeStruct rewardMeasureType_;
-
     struct filterTypeStruct : qi::symbols<char, storm::modelchecker::FilterType> {
         filterTypeStruct() {
             add("min", storm::modelchecker::FilterType::MIN)("max", storm::modelchecker::FilterType::MAX)("sum", storm::modelchecker::FilterType::SUM)(
@@ -140,7 +128,6 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>>, Skipper> operatorInformation;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> operatorSubFormula;
     qi::rule<Iterator, std::string(storm::logic::FormulaContext), Skipper> rewardModelName;
-    qi::rule<Iterator, storm::logic::RewardMeasureType(storm::logic::FormulaContext), Skipper> rewardMeasureType;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), qi::locals<storm::logic::FormulaContext>, Skipper> operatorFormula;
 
     // Atomic propositions
@@ -255,18 +242,15 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
                                                                 boost::optional<storm::logic::ComparisonType> const& comparisonType,
                                                                 boost::optional<storm::expressions::Expression> const& threshold) const;
     std::shared_ptr<storm::logic::Formula const> createOperatorFormula(storm::logic::FormulaContext const& context,
-                                                                       boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType,
                                                                        boost::optional<std::string> const& rewardModelName,
                                                                        storm::logic::OperatorInformation const& operatorInformation,
                                                                        std::shared_ptr<storm::logic::Formula const> const& subformula);
     std::shared_ptr<storm::logic::Formula const> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation,
                                                                                      std::shared_ptr<storm::logic::Formula const> const& subformula) const;
-    std::shared_ptr<storm::logic::Formula const> createRewardOperatorFormula(boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType,
-                                                                             boost::optional<std::string> const& rewardModelName,
+    std::shared_ptr<storm::logic::Formula const> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName,
                                                                              storm::logic::OperatorInformation const& operatorInformation,
                                                                              std::shared_ptr<storm::logic::Formula const> const& subformula) const;
-    std::shared_ptr<storm::logic::Formula const> createTimeOperatorFormula(boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType,
-                                                                           storm::logic::OperatorInformation const& operatorInformation,
+    std::shared_ptr<storm::logic::Formula const> createTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation,
                                                                            std::shared_ptr<storm::logic::Formula const> const& subformula) const;
     std::shared_ptr<storm::logic::Formula const> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation,
                                                                                   std::shared_ptr<storm::logic::Formula const> const& subformula);

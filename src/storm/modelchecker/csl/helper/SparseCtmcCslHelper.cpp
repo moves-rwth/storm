@@ -266,7 +266,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 }
 
 template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                              storm::storage::SparseMatrix<ValueType> const&,
                                                                              storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&,
                                                                              storm::storage::BitVector const&, std::vector<ValueType> const&, bool, double,
@@ -308,7 +308,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
                                                                         std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
                                                                         double timeBound) {
     // Only compute the result if the model has a state-based reward model.
-    STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                    "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
 
     uint_fast64_t numberOfStates = rateMatrix.getRowCount();
 
@@ -362,7 +363,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                         storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                         RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
@@ -435,7 +436,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                      storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                      RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");

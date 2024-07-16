@@ -14,43 +14,41 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-namespace storm {
-namespace solver {
+namespace storm::solver {
 
-template<typename ValueType>
-StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver() : A(nullptr) {
+template<typename ValueType, typename SolutionType>
+StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::StandardMinMaxLinearEquationSolver() : A(nullptr) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : localA(nullptr), A(&A) {
+template<typename ValueType, typename SolutionType>
+StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A)
+    : localA(nullptr), A(&A) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A)
+template<typename ValueType, typename SolutionType>
+StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A)
     : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(localA.get()) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
+template<typename ValueType, typename SolutionType>
+void StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
     this->localA = nullptr;
     this->A = &matrix;
     this->clearCache();
 }
 
-template<typename ValueType>
-void StandardMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) {
+template<typename ValueType, typename SolutionType>
+void StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) {
     this->localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(matrix));
     this->A = this->localA.get();
     this->clearCache();
 }
 
 template class StandardMinMaxLinearEquationSolver<double>;
-
-#ifdef STORM_HAVE_CARL
 template class StandardMinMaxLinearEquationSolver<storm::RationalNumber>;
-#endif
-}  // namespace solver
-}  // namespace storm
+template class StandardMinMaxLinearEquationSolver<storm::Interval, double>;
+
+}  // namespace storm::solver

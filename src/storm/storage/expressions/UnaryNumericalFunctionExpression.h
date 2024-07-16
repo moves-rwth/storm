@@ -11,7 +11,7 @@ class UnaryNumericalFunctionExpression : public UnaryExpression {
     /*!
      * An enum type specifying the different functions applicable.
      */
-    enum class OperatorType { Minus, Floor, Ceil };
+    enum class OperatorType { Minus, Floor, Ceil, Cos, Sin };
 
     /*!
      * Creates a unary numerical function expression with the given return type, operand and operator.

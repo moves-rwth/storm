@@ -18,7 +18,6 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm-parsers/api/storm-parsers.h"
-#include "storm-parsers/parser/ValueParser.h"
 
 #include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/api/storm-pars.h"

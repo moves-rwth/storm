@@ -4,7 +4,6 @@
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalNumberAdapter.h"
 #include "environment/Environment.h"
-#include "gtest/gtest.h"
 #include "modelchecker/CheckTask.h"
 #include "modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "models/sparse/Model.h"

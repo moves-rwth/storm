@@ -150,7 +150,7 @@ class MenuGameRefiner {
                 storage::ExplicitGameStrategyPair const& maxStrategyPair) const;
 
     /*!
-     * Refines the abstractor based on the qualitative result by trying to derive suitable predicates.
+     * Refines the abstractor based on the quantitative result by trying to derive suitable predicates.
      *
      * @param True if predicates for refinement could be derived, false otherwise.
      */
@@ -218,11 +218,6 @@ class MenuGameRefiner {
                                                                             ExplicitPivotStateResult<ValueType> const& pivotStateResult,
                                                                             storm::dd::Odd const& odd) const;
 
-    boost::optional<RefinementPredicates> derivePredicatesFromInterpolationKShortestPaths(
-        storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
-        std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
-        storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability,
-        storage::ExplicitGameStrategyPair const& maxStrategyPair) const;
     boost::optional<RefinementPredicates> derivePredicatesFromInterpolationReversedPath(storm::dd::Odd const& odd,
                                                                                         storm::expressions::ExpressionManager& interpolationManager,
                                                                                         std::vector<uint64_t> const& reversedPath,

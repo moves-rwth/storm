@@ -1,0 +1,19 @@
+mdp
+module main
+	
+	x : [0..2];
+	[a] x=0 -> (x'=1);
+	[b] x=0 -> (x'=2);
+	[c] x=1 -> (x'=1);
+	[d] x=1 -> (x'=2);
+	[e] x=2 -> (x'=1);
+endmodule
+
+rewards "one"
+	[b] true : 10;
+	[c] true : 1;
+endrewards
+
+rewards "two"
+    [e] true : 1;
+endrewards

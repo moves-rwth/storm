@@ -58,5 +58,9 @@ std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
     stream << ";";
     return stream;
 }
+
+bool operator==(Constant const& lhs, Constant const& rhs) {
+    return (lhs.getExpressionVariable() == rhs.getExpressionVariable()) && (lhs.getExpression().isSyntacticallyEqual(rhs.getExpression()));
+}
 }  // namespace prism
 }  // namespace storm

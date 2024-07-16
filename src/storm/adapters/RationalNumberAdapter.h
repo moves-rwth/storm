@@ -13,6 +13,7 @@
 #include <gmpxx.h>
 #endif
 
+#include <carl/interval/Interval.h>
 #include <carl/numbers/numbers.h>
 
 #if defined(STORM_HAVE_CLN)

@@ -13,7 +13,7 @@ class WinningRegionQueryInterface {
 
     bool staysInWinningRegion(storm::storage::BitVector const& beliefSupport, uint64_t actionIndex) const;
 
-    void validate(storm::storage::BitVector const& badStates) const;
+    void validate() const;
 
     void validateIsMaximal(storm::storage::BitVector const& badStates) const;
 

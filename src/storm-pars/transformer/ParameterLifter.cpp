@@ -34,20 +34,17 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
     rowGroupToStateNumber = std::vector<uint_fast64_t>();
     uint_fast64_t newRowIndex = 0;
-    uint_fast64_t countNonParam = 0;
     for (auto const& rowIndex : selectedRows) {
         builder.newRowGroup(newRowIndex);
         rowGroupToStateNumber.push_back(rowIndex);
 
         // Gather the occurring variables within this row and set which entries are non-constant
         std::set<VariableType> occurringVariables;
-        bool constant = true;
         for (auto const& entry : pMatrix.getRow(rowIndex)) {
             if (selectedColumns.get(entry.getColumn())) {
                 if (!storm::utility::isConstant(entry.getValue())) {
                     storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
                     nonConstMatrixEntries.set(pMatrixEntryCount, true);
-                    constant = false;
                 }
                 ++pMatrixEntryCount;
             } else {
@@ -57,9 +54,6 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
             }
         }
 
-        if (constant) {
-            countNonParam++;
-        }
         ParametricType const& pVectorEntry = pVector[rowIndex];
         std::set<VariableType> vectorEntryVariables;
         if (!storm::utility::isConstant(pVectorEntry)) {
@@ -79,7 +73,6 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
                 rowLabels.push_back(val);
             }
 
-            auto countPlaceHolders = 0;
             // Insert matrix entries for each valuation. For non-constant entries, a dummy value is inserted and the function and the valuation are collected.
             // The placeholder for the collected function/valuation are stored in the matrixAssignment. The matrixAssignment is completed after the matrix is
             // finished
@@ -93,7 +86,6 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
                         ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
                         matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(
                             typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
-                        countPlaceHolders++;
                     }
                 }
             }

@@ -93,6 +93,10 @@ class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions:
         }
         return boost::any();
     }
+
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const&, boost::any const&) override {
+        return boost::any();
+    }
 };
 
 class FunctionCallExpressionFinderTraverser : public ConstJaniTraverser {

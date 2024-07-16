@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_SPARSESMGRPATLMODELCHECKER_H_
-#define STORM_MODELCHECKER_SPARSESMGRPATLMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Smg.h"
@@ -31,10 +30,7 @@ class SparseSmgRpatlModelChecker : public SparsePropositionalModelChecker<Sparse
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
                                                                             CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SPARSESMGRPATLMODELCHECKER_H_ */

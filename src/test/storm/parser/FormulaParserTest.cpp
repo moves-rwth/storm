@@ -130,10 +130,27 @@ TEST(FormulaParserTest, UntilOperatorTest) {
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
     EXPECT_TRUE(nested3.isBoundedUntilFormula());
-    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());  // This will fail, as we have not finished the parser.
-    // EXPECT_EQ("rewardname", nested3.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ("rewardname", nested3.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
     EXPECT_EQ(3, nested3.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
-    // TODO: Extend as soon as it does not crash anymore.
+
+    input = "P<0.9 [\"a\" Urew{\"rewardname\"}<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested4 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested4.isBoundedUntilFormula());
+    EXPECT_TRUE(nested4.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_TRUE(nested4.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ("rewardname", nested4.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_EQ(3, nested4.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+
+    input = "P<0.9 [\"a\" Urew<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested5 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested5.isBoundedUntilFormula());
+    EXPECT_TRUE(nested5.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_FALSE(nested5.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ(3, nested5.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 }
 
 TEST(FormulaParserTest, RewardOperatorTest) {

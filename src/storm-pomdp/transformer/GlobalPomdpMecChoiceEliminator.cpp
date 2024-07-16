@@ -1,6 +1,7 @@
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include <vector>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/transformer/ChoiceSelector.h"
@@ -67,7 +68,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
 
     // Filter the observations that have a state that is not an out state
     storm::storage::BitVector stateFilter = ~uniqueOutStates;
-    for (auto const& state : stateFilter) {
+    for (auto const state : stateFilter) {
         mecChoicesPerObservation[pomdp.getObservation(state)].clear();
     }
 
@@ -79,7 +80,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
     // transform the set of selected choices to global choice indices
     storm::storage::BitVector choiceFilter(pomdp.getNumberOfChoices(), true);
     stateFilter.complement();
-    for (auto const& state : stateFilter) {
+    for (auto const state : stateFilter) {
         uint64_t offset = pomdp.getTransitionMatrix().getRowGroupIndices()[state];
         for (auto const& choice : mecChoicesPerObservation[pomdp.getObservation(state)]) {
             choiceFilter.set(offset + choice, false);
@@ -109,7 +110,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
 
     // Filter the observations that have a state that is neither an out state, nor a prob0A state
     storm::storage::BitVector stateFilter = ~(uniqueOutStates | prob01States.first);
-    for (auto const& state : stateFilter) {
+    for (auto const state : stateFilter) {
         mecChoicesPerObservation[pomdp.getObservation(state)].clear();
     }
 
@@ -121,7 +122,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPomdpMecChoiceEli
     // transform the set of selected choices to global choice indices
     storm::storage::BitVector choiceFilter(pomdp.getNumberOfChoices(), true);
     stateFilter.complement();
-    for (auto const& state : stateFilter) {
+    for (auto const state : stateFilter) {
         uint64_t offset = pomdp.getTransitionMatrix().getRowGroupIndices()[state];
         for (auto const& choice : mecChoicesPerObservation[pomdp.getObservation(state)]) {
             choiceFilter.set(offset + choice, false);
