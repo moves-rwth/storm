@@ -13,9 +13,7 @@
 #include <unordered_map>
 #include <vector>
 #include "adapters/RationalFunctionAdapter.h"
-#include "adapters/RationalFunctionAdapter_Private.h"
 #include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
 #include "modelchecker/CheckTask.h"
 #include "models/sparse/Dtmc.h"
 #include "models/sparse/StateLabeling.h"
@@ -28,7 +26,7 @@
 namespace storm {
 namespace transformer {
 
-using UniPoly = carl::UnivariatePolynomial<RationalNumber>;
+using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
 struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>> {
     /**
@@ -73,7 +71,7 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
     }
 };
 
-class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
+class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoefficient> {
    public:
     Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) : parameter(parameter), polynomialCache(polynomialCache) {
         // Intentionally left empty
@@ -100,7 +98,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
      *
      * @param n The rational number.
      */
-    void operator*=(RationalNumber n) {
+    void operator*=(RationalFunctionCoefficient n) {
         for (auto& [factors, number] : *this) {
             number *= n;
         }
@@ -111,7 +109,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
      *
      * @param n The rational number.
      */
-    Annotation operator*(RationalNumber n) const {
+    Annotation operator*(RationalFunctionCoefficient n) const {
         Annotation annotationCopy(*this);
         annotationCopy *= n;
         return annotationCopy;
@@ -123,10 +121,10 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
      * @param other The other annotation.
      * @param timesConstant The constant.
      */
-    void addAnnotationTimesConstant(Annotation const& other, RationalNumber timesConstant) {
+    void addAnnotationTimesConstant(Annotation const& other, RationalFunctionCoefficient timesConstant) {
         for (auto const& [info, constant] : other) {
             if (!this->count(info)) {
-                this->emplace(info, utility::zero<RationalNumber>());
+                this->emplace(info, utility::zero<RationalFunctionCoefficient>());
             }
             this->at(info) += constant * timesConstant;
         }
@@ -152,7 +150,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
             newCounter[cacheNum]++;
 
             if (!this->count(newCounter)) {
-                this->emplace(newCounter, utility::zero<RationalNumber>());
+                this->emplace(newCounter, utility::zero<RationalFunctionCoefficient>());
             }
             this->at(newCounter) += constant;
         }
@@ -201,7 +199,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
                 Number innerSum = utility::zero<Number>();
                 for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
                     if (exponent != 0) {
-                        innerSum += carl::pow(input, exponent) * utility::convertNumber<double>(coefficients[exponent]);
+                        innerSum += carl::pow(input, exponent) * utility::convertNumber<Number>(coefficients[exponent]);
                     } else {
                         innerSum += utility::convertNumber<Number>(coefficients[exponent]);
                     }
@@ -254,8 +252,8 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalNumber> {
                 std::vector<uint64_t> insert(info);
                 insert[i]--;
 
-                RationalNumber newConstant = constant;
-                newConstant += utility::convertNumber<RationalNumber>(i);
+                RationalFunctionCoefficient newConstant = constant;
+                newConstant += utility::convertNumber<RationalFunctionCoefficient>(i);
 
                 auto polynomial = polynomialCache->at(parameter).at(i);
                 auto derivative = polynomial.derivative();

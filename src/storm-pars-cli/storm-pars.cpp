@@ -1,4 +1,3 @@
-#include <_types/_uint64_t.h>
 #include <limits>
 #include "adapters/RationalFunctionAdapter.h"
 #include "storm-cli-utilities/cli.h"

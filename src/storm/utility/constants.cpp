@@ -904,14 +904,25 @@ storm::Interval convertNumber(double const& number) {
 }
 
 template<>
-storm::Interval convertNumber(storm::RationalNumber const& n) {
+storm::Interval convertNumber(storm::ClnRationalNumber const& n) {
     return storm::Interval(convertNumber<double>(n));
 }
 
 template<>
-storm::RationalNumber convertNumber(storm::Interval const& number) {
+storm::Interval convertNumber(storm::GmpRationalNumber const& n) {
+    return storm::Interval(convertNumber<double>(n));
+}
+
+template<>
+storm::ClnRationalNumber convertNumber(storm::Interval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
-    return convertNumber<storm::RationalNumber>(number.lower());
+    return convertNumber<storm::ClnRationalNumber>(number.lower());
+}
+
+template<>
+storm::GmpRationalNumber convertNumber(storm::Interval const& number) {
+    STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
+    return convertNumber<storm::GmpRationalNumber>(number.lower());
 }
 
 template<>

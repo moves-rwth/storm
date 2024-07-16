@@ -578,7 +578,7 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
 
         for (auto const& potentialExtremum : potentialExtrema) {
             // TODO use double or rational number for storage?
-            auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalNumber>(potentialExtremum)));
+            auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalFunctionCoefficient>(potentialExtremum)));
             if (value > maxValue) {
                 maxValue = value;
             }
