@@ -1,5 +1,4 @@
 #include "TimeTravelling.h"
-#include <_types/_uint64_t.h>
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
@@ -24,7 +23,6 @@
 #include "adapters/RationalFunctionAdapter.h"
 #include "adapters/RationalFunctionForward.h"
 
-#include "adapters/RationalNumberForward.h"
 #include "modelchecker/CheckTask.h"
 #include "models/sparse/Dtmc.h"
 #include "models/sparse/StandardRewardModel.h"
@@ -412,7 +410,7 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
 
     annotations.emplace(start, Annotation(parameter, polynomialCache));
     // We go with probability one from the start to the start
-    annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalNumber>();
+    annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalFunctionCoefficient>();
 
     while (!activeStates.empty()) {
         std::set<uint64_t> nextActiveStates;
@@ -495,12 +493,12 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
     bool doneTimeTravelling = false;
 
     // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
-    std::map<std::vector<uint64_t>, std::map<uint64_t, RationalNumber>> parametricTransitions;
+    std::map<std::vector<uint64_t>, std::map<uint64_t, RationalFunctionCoefficient>> parametricTransitions;
 
     for (auto const& [state, annotation] : bigStepAnnotations) {
         for (auto const& [info, constant] : annotation) {
             if (!parametricTransitions.count(info)) {
-                parametricTransitions[info] = std::map<uint64_t, RationalNumber>();
+                parametricTransitions[info] = std::map<uint64_t, RationalFunctionCoefficient>();
             }
             STORM_LOG_ASSERT(!parametricTransitions.at(info).count(state), "State already exists");
             parametricTransitions.at(info)[state] = constant;
@@ -543,7 +541,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
             Annotation newAnnotation(parameter, polynomialCache);
 
-            RationalNumber constantPart = utility::zero<RationalNumber>();
+            RationalFunctionCoefficient constantPart = utility::zero<RationalFunctionCoefficient>();
             for (auto const& [state, transition] : transitions) {
                 constantPart += transition;
             }
