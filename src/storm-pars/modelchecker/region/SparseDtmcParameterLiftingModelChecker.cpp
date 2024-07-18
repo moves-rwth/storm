@@ -399,21 +399,21 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         return resultsForNonMaybeStates;
     }
     parameterLifter->specifyRegion(region.region, dirForParameters);
-    auto& liftedMatrix = parameterLifter->getMatrix();
-    auto& liftedVector = parameterLifter->getVector();
+    auto liftedMatrix = parameterLifter->getMatrix();
+    auto liftedVector = parameterLifter->getVector();
     if constexpr (Robust) {
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
         }
         intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
-        // liftedMatrix = intervalEndComponentPreserver->getMatrix();
-        // liftedVector = intervalEndComponentPreserver->getVector();
+        liftedMatrix = intervalEndComponentPreserver->getMatrix();
+        liftedVector = intervalEndComponentPreserver->getVector();
     }
 
     if (stepBound) {
         if constexpr (!Robust) {
             assert(*stepBound > 0);
-            x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+            x = std::vector<ConstantType>(liftedVector.size(), storm::utility::zero<ConstantType>());
             auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, liftedMatrix);
             multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &liftedVector, *stepBound);
         } else {
@@ -496,7 +496,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         }
 
         // Invoke the solver
-        x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
+        x.resize(liftedVector.size(), storm::utility::zero<ConstantType>());
         solver->solveEquations(env, dirForParameters, x, liftedVector);
         choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
