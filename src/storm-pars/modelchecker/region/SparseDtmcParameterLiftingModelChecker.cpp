@@ -406,6 +406,8 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             return std::vector<ConstantType>();
         }
         intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
+        // liftedMatrix = intervalEndComponentPreserver->getMatrix();
+        // liftedVector = intervalEndComponentPreserver->getVector();
     }
 
     if (stepBound) {
@@ -421,6 +423,8 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         auto solver = solverFactory->create(env, liftedMatrix);
         solver->setHasUniqueSolution();
         solver->setHasNoEndComponents();
+        // Uncertainty is not robust (=adversarial)
+        solver->setUncertaintyIsRobust(false);
         if (lowerResultBound)
             solver->setLowerBound(lowerResultBound.value());
         if (upperResultBound) {

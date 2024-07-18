@@ -103,8 +103,8 @@ template<storm::OptimizationDirection Dir, bool Relative>
 SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool robust) const {
-    if (robust) {
+                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
+    if (adversarialRobust) {
         return VI<Dir, Relative, invert(Dir)>(operand, offsets, numIterations, precision, iterationCallback, mult);
     } else {
         return VI<Dir, Relative, Dir>(operand, offsets, numIterations, precision, iterationCallback, mult);
@@ -116,19 +116,19 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    uint64_t& numIterations, bool relative, SolutionType const& precision,
                                                                                    std::optional<storm::OptimizationDirection> const& dir,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool robust) const {
+                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
     STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
-            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
+            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
         } else {
-            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
+            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
         }
     } else {
         if (relative) {
-            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
+            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
         } else {
-            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, robust);
+            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
         }
     }
 }
@@ -138,9 +138,9 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    bool relative, SolutionType const& precision,
                                                                                    std::optional<storm::OptimizationDirection> const& dir,
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool robust) const {
+                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
     uint64_t numIterations = 0;
-    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, robust);
+    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, adversarialRobust);
 }
 
 template class ValueIterationHelper<double, true>;
