@@ -7,8 +7,6 @@
 #include "storm-dft/simulator/ImportanceFunction.h"
 #include "storm-dft/storage/DftSymmetries.h"
 
-#include "storm-parsers/api/storm-parsers.h"
-
 namespace {
 
 std::pair<std::shared_ptr<storm::dft::storage::DFT<double>>, storm::dft::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) {
