@@ -347,7 +347,7 @@ class ValueIterationOperator {
                 applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
         }
-        if (storm::utility::isZero(remainingValue) || storm::utility::isOne(remainingValue)) {
+        if (storm::utility::isZero(remainingValue)) {
             return result;
         }
 
