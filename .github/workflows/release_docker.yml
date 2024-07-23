@@ -10,8 +10,8 @@ on:
         default: 'x.y.z'
 
 env:
-  # GitHub runners currently have two cores
-  NR_JOBS: "2"
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
 
 jobs:
   deploy:
