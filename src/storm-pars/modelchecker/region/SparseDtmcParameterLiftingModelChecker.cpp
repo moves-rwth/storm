@@ -401,6 +401,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
     parameterLifter->specifyRegion(region.region, dirForParameters);
     auto liftedMatrix = parameterLifter->getMatrix();
     auto liftedVector = parameterLifter->getVector();
+    const uint64_t resultVectorSize = liftedMatrix.getColumnCount();
     if constexpr (Robust) {
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
@@ -413,7 +414,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
     if (stepBound) {
         if constexpr (!Robust) {
             assert(*stepBound > 0);
-            x = std::vector<ConstantType>(liftedVector.size(), storm::utility::zero<ConstantType>());
+            x = std::vector<ConstantType>(resultVectorSize, storm::utility::zero<ConstantType>());
             auto multiplier = storm::solver::MultiplierFactory<ConstantType>().create(env, liftedMatrix);
             multiplier->repeatedMultiplyAndReduce(env, dirForParameters, x, &liftedVector, *stepBound);
         } else {
@@ -496,7 +497,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         }
 
         // Invoke the solver
-        x.resize(liftedVector.size(), storm::utility::zero<ConstantType>());
+        x.resize(resultVectorSize, storm::utility::zero<ConstantType>());
         solver->solveEquations(env, dirForParameters, x, liftedVector);
         choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
