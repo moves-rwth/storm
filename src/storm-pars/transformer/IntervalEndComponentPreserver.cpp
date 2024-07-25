@@ -46,8 +46,6 @@ IntervalEndComponentPreserver<ParametricType>::IntervalEndComponentPreserver(sto
             builder.addNextValue(row, sinkState, Interval(0, 0));
         }
     }
-    // For the new sink state
-    builder.addNextValue(sinkState, sinkState, Interval(1, 1));
 
     for (uint64_t row = 0; row < originalVector.size() + 1; row++) {
         vector.push_back(Interval());
