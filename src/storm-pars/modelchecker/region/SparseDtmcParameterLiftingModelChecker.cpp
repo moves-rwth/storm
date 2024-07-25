@@ -401,7 +401,6 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
     parameterLifter->specifyRegion(region.region, dirForParameters);
     auto liftedMatrix = parameterLifter->getMatrix();
     auto liftedVector = parameterLifter->getVector();
-    const uint64_t resultVectorSize = liftedMatrix.getColumnCount();
     if constexpr (Robust) {
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
@@ -410,6 +409,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         liftedMatrix = intervalEndComponentPreserver->getMatrix();
         liftedVector = intervalEndComponentPreserver->getVector();
     }
+    const uint64_t resultVectorSize = liftedMatrix.getColumnCount();
 
     if (stepBound) {
         if constexpr (!Robust) {
