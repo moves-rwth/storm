@@ -13,6 +13,9 @@ std::ostream& operator<<(std::ostream& os, RegionSplittingStrategy::Heuristic co
         case RegionSplittingStrategy::Heuristic::RoundRobin:
             os << "Round Robin";
             break;
+        case RegionSplittingStrategy::Heuristic::Default:
+            os << "Default";
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                             "Could not get a string from the region check engine. The case has not been implemented");
