@@ -362,7 +362,11 @@ class ValueIterationOperator {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue), "Remaining value should be zero (all prob mass taken) but is " << remainingValue);
+        STORM_LOG_ASSERT(
+            storm::utility::isAlmostZero(remainingValue) ||
+            // sad states allowed (they're having a bummer summer)
+            (storm::utility::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
+            "Remaining value should be zero (all prob mass taken) or it should be a sad state, but is " << remainingValue);
         return result;
     }
 
