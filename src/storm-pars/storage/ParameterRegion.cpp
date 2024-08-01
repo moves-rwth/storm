@@ -106,6 +106,16 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
 }
 
 template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(VariableType const& variable) const {
+    return (getLowerBoundary(variable) + getUpperBoundary(variable)) / 2;
+}
+
+template<typename ParametricType>
+typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getCenter(const std::string varName) const {
+    return (getLowerBoundary(varName) + getUpperBoundary(varName)) / 2;
+}
+
+template<typename ParametricType>
 typename ParameterRegion<ParametricType>::Valuation const& ParameterRegion<ParametricType>::getUpperBoundaries() const {
     return upperBoundaries;
 }
@@ -151,7 +161,7 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getCenterPoint() const {
     Valuation result;
     for (auto const& variable : this->variables) {
-        result.insert(typename Valuation::value_type(variable, (this->getLowerBoundary(variable) + this->getUpperBoundary(variable)) / 2));
+        result.emplace(variable, getCenter(variable));
     }
     return result;
 }
@@ -163,6 +173,19 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
         result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
     }
     return result;
+}
+
+template<typename ParametricType>
+bool ParameterRegion<ParametricType>::contains(Valuation const& point) const {
+    for (auto const& variable : this->variables) {
+        STORM_LOG_ASSERT(point.count(variable) > 0,
+                         "Tried to check if a point is in a region, but the point does not contain a value for variable " << variable);
+        auto pointEntry = point.find(variable)->second;
+        if (pointEntry < this->getLowerBoundary(variable) || pointEntry > this->getUpperBoundary(variable)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template<typename ParametricType>
