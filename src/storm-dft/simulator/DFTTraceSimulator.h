@@ -11,10 +11,16 @@ namespace storm::dft {
 namespace simulator {
 
 /*!
- * Simulation result.
+ * Result of a single simulation step.
  *
  */
-enum class SimulationResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
+enum class SimulationStepResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
+
+/*!
+ * Result of a simulation trace.
+ * CONTINUE is only used for partial traces to indicate that no conclusive outcome has been reached yet.
+ */
+enum class SimulationTraceResult { SUCCESSFUL, UNSUCCESSFUL, INVALID, CONTINUE };
 
 /*!
  * Simulator for DFTs.
@@ -45,9 +51,19 @@ class DFTTraceSimulator {
     void setRandomNumberGenerator(boost::mt19937& randomNumberGenerator);
 
     /*!
-     * Set the current state back to the intial state in order to start a new simulation.
+     * Set the current state back to the initial state in order to start a new simulation.
      */
     void resetToInitial();
+
+    /*!
+     * Set the current state back to the given state.
+     */
+    void resetToState(DFTStatePointer state);
+
+    /*!
+     * Set the elapsed time so far.
+     */
+    void setTime(double time);
 
     /*!
      * Get the current DFT state.
@@ -57,14 +73,21 @@ class DFTTraceSimulator {
     DFTStatePointer getCurrentState() const;
 
     /*!
+     * Get the total elapsed time so far.
+     *
+     * @return Elapsed time.
+     */
+    double getCurrentTime() const;
+
+    /*!
      * Perform one simulation step by letting the next element fail.
      *
      * @param nextFailElement Iterator giving the next element which should fail.
      * @param dependencySuccessful Whether the triggering dependency was successful.
-     *              If the dependency is unsuccessful, no BE fails and only the depedendy is marked as failed.
-     * @return Successful if step could be performed, unsuccesful if no element can fail or invalid if the next state is invalid (due to a restrictor).
+     *              If the dependency is unsuccessful, no BE fails and only the dependency is marked as failed.
+     * @return Successful if step could be performed, unsuccessful if no element can fail or invalid if the next state is invalid (due to a restrictor).
      */
-    SimulationResult step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
+    SimulationStepResult step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
 
     /*!
      * Randomly pick an element which fails next (either a BE or a dependency which triggers a BE) and the time after which it fails.
@@ -78,9 +101,19 @@ class DFTTraceSimulator {
     /*!
      * Perform a random step by using the random number generator.
      *
-     * @return Pair of the simulation result (successful, unsuccesful, invalid) and the time which progessed between the last step and this step.
+     * @return Result of the simulation step (successful, unsuccessful, invalid).
      */
-    std::pair<SimulationResult, double> randomStep();
+    SimulationStepResult randomStep();
+
+    /*!
+     * Simulate the (randomly chosen) next step and return the outcome of the current (partial) trace.
+     *
+     * @param timebound Time bound in which the system failure should occur.
+     * @return Result of (partial) trace is (1) SUCCESSFUL if the current state corresponds to a system failure and the current time does not exceed the
+     * timebound. (2) UNSUCCESSFUL, if the current time exceeds the timebound, (3) INVALID, if an invalid state (due to a restrictor) was reached, or (4)
+     * CONTINUE, if the simulation should continue.
+     */
+    SimulationTraceResult simulateNextStep(double timebound);
 
     /*!
      * Perform a complete simulation of a failure trace by using the random number generator.
@@ -89,11 +122,11 @@ class DFTTraceSimulator {
      * If an invalid state (due to a restrictor) was reached, the simulated trace is invalid.
      *
      * @param timebound Time bound in which the system failure should occur.
-     * @return Simulation result is (1) successful if a system failure occurred for the generated trace within the time bound,
-     *                              (2) unsuccesfull, if no system failure occurred within the time bound, or
-     *                              (3) invalid, if an invalid state (due to a restrictor) was reached during the trace generation.
+     * @return Result of simulation trace is (1) SUCCESSFUL if a system failure occurred for the generated trace within the time bound,
+     *                                       (2) UNSUCCESSFUL, if no system failure occurred within the time bound, or
+     *                                       (3) INVALID, if an invalid state (due to a restrictor) was reached during the trace generation.
      */
-    SimulationResult simulateCompleteTrace(double timebound);
+    SimulationTraceResult simulateCompleteTrace(double timebound);
 
    protected:
     // The DFT used for the generation of next states.
@@ -107,6 +140,9 @@ class DFTTraceSimulator {
 
     // Current state
     DFTStatePointer state;
+
+    // Currently elapsed time
+    double time;
 
     // Random number generator
     boost::mt19937& randomGenerator;
