@@ -427,11 +427,11 @@ storm::RationalFunction const& RobustParameterLifter<ParametricType, ConstantTyp
 }
 
 template<typename ParametricType, typename ConstantType>
-std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initialize() {
+void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::initialize() {
     // TODO This function is a mess
     if (this->extrema || this->annotation) {
         // Extrema already initialized
-        return std::nullopt;
+        return;
     }
 
     if (TimeTravelling::lastSavedAnnotations.count(transition)) {
@@ -452,47 +452,14 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
             // Hooray, we found the zeroes with the SMT solver / CARL
             this->extrema = std::map<VariableType, std::set<CoefficientType>>();
             (*this->extrema)[annotation.getParameter()];
-            for (auto const& zero : *carlResult) {
-                (*this->extrema).at(annotation.getParameter()).emplace(utility::convertNumber<CoefficientType>(zero));
+            for (auto const& root : *carlResult) {
+                (*this->extrema).at(annotation.getParameter()).emplace(utility::convertNumber<CoefficientType>(root));
             }
-            this->annotation.emplace(annotation);
-            return std::nullopt;
         } else {
             // TODO make evaluation depth configurable
             annotation.computeDerivative(4);
-
-            // Compute bounds on initial split points
-            std::vector<double> splitPoints;
-            splitPoints.push_back(0.0);
-            // Heuristic number of split points
-            // TODO read off p and 1-p?
-            uint64_t numSplitPoints = std::max(annotation.maxDegree(), (uint64_t)20);
-            for (uint64_t i = 0; i < numSplitPoints; i++) {
-                splitPoints.push_back(((double)i) / ((double)numSplitPoints));
-            }
-            splitPoints.push_back(1.0);
-            std::sort(splitPoints.begin(), splitPoints.end());
-
-            // Compute input intervals
-            std::vector<Interval> regions;
-            for (uint64_t i = 0; i < splitPoints.size() - 1; i++) {
-                if (splitPoints[i] == splitPoints[i + 1]) {
-                    continue;
-                }
-                regions.push_back(Interval(splitPoints[i], splitPoints[i + 1]));
-            }
-
-            // Compute region results using interval arithmatic
-
-            std::vector<std::pair<Interval, Interval>> regionsAndBounds;
-            for (auto const& region : regions) {
-                Interval result = annotation.evaluateOnIntervalMidpointTheorem(region);
-                regionsAndBounds.emplace_back(region, result);
-            }
-
-            this->annotation.emplace(annotation);
-            return regionsAndBounds;
         }
+        this->annotation.emplace(annotation);
     } else {
         this->extrema = std::map<VariableType, std::set<CoefficientType>>();
 
@@ -525,7 +492,6 @@ std::optional<std::vector<std::pair<Interval, Interval>>> RobustParameterLifter<
                 }
             }
         }
-        return std::nullopt;
     }
 }
 
@@ -552,10 +518,8 @@ template<typename ParametricType, typename ConstantType>
 Interval& RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(RobustAbstractValuation& valuation) {
     // If no valuation like this is present in the collectedValuations, initialize the extrema
     if (!collectedValuations.count(valuation)) {
-        auto result = valuation.initialize();
-        if (result) {
-            this->regionsAndBounds.emplace(valuation, *result);
-        }
+        valuation.initialize();
+        this->regionsAndBounds.emplace(valuation, std::vector<std::pair<Interval, Interval>>());
     }
     // insert the function and the valuation
     // Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
@@ -715,11 +679,17 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 }
 
                 // TODO make this configurable
-                uint64_t regionsRefine = 10;
+                uint64_t regionsRefine = annotation.maxDegree();
                 refine = regionsInPLARegion.size() < regionsRefine;
+
                 if (refine) {
                     std::vector<Interval> newIntervals;
                     auto diameter = plaRegion.diameter();
+                    // If we have no regions at all, initialize with the entire region
+                    if (regionsAndBounds.empty()) {
+                        regionsAndBounds.emplace_back(plaRegion, Interval(0, 1));
+                        regionsInPLARegion.push_back(0);
+                    }
                     // Add start (old regions might be larger than currently considered region)
                     if (regionsAndBounds[regionsInPLARegion.front()].first.lower() < plaRegion.lower()) {
                         newIntervals.push_back(Interval(regionsAndBounds[regionsInPLARegion.front()].first.lower(), plaRegion.lower()));
@@ -741,7 +711,6 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     // Remove previous results
                     regionsAndBounds.erase(regionsAndBounds.begin() + *regionsInPLARegion.begin(), regionsAndBounds.end());
 
-                    std::vector<Interval> evaluatedIntervals;
                     // Compute region results using interval arithmetic
                     for (auto const& region : newIntervals) {
                         regionsAndBounds.emplace_back(region, annotation.evaluateOnIntervalMidpointTheorem(region));

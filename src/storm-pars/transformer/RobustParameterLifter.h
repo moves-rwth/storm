@@ -101,7 +101,7 @@ class RobustParameterLifter {
 
         storm::RationalFunction const& getTransition() const;
 
-        std::optional<std::vector<std::pair<Interval, Interval>>> initialize();
+        void initialize();
 
         std::optional<std::map<VariableType, std::set<CoefficientType>>> const& getExtrema() const;
 
