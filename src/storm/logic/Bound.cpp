@@ -1,4 +1,6 @@
 #include "storm/logic/Bound.h"
+#include "adapters/RationalFunctionForward.h"
+#include "adapters/RationalNumberForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::logic {
@@ -29,9 +31,15 @@ ValueType Bound::evaluateThresholdAs() const {
 }
 
 template bool Bound::isSatisfied(double const& compareValue) const;
-template bool Bound::isSatisfied(storm::RationalNumber const& compareValue) const;
+#if defined(STORM_HAVE_CLN)
+template bool Bound::isSatisfied(storm::ClnRationalNumber const& compareValue) const;
+template storm::ClnRationalNumber Bound::evaluateThresholdAs() const;
+#endif
+#if defined(STORM_HAVE_GMP)
+template bool Bound::isSatisfied(storm::GmpRationalNumber const& compareValue) const;
+template storm::GmpRationalNumber Bound::evaluateThresholdAs() const;
+#endif
 template double Bound::evaluateThresholdAs() const;
-template storm::RationalNumber Bound::evaluateThresholdAs() const;
 template storm::RationalFunction Bound::evaluateThresholdAs() const;
 
 }  // namespace storm::logic
