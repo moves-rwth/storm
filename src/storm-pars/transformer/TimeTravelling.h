@@ -272,22 +272,6 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoeffi
         derivativeOfThis->computeDerivative(nth - 1);
     }
 
-    // If our factors are p and 1-p, we can read off the zeroes of the first derivative of all terms
-    // These are *not* the zeroes of the derivative of this annotation
-    std::optional<std::vector<double>> zeroesOfDerivativeOfTerms() {
-        // Check if cache is indeed p and 1-p
-        auto cacheHere = this->polynomialCache->at(this->parameter);
-        if (cacheHere.empty() || cacheHere.size() > 2) {
-            return std::nullopt;
-        }
-        auto const pPoly = UniPoly(parameter, {1, 0});
-        auto const oneMinusPPoly = UniPoly(parameter, {-1, 1});
-        // TODO finish this
-
-        // for now
-        return std::nullopt;
-    }
-
     uint64_t maxDegree() const {
         uint64_t maxDegree = 0;
         for (auto const& [info, constant] : *this) {

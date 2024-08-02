@@ -19,7 +19,7 @@ namespace storage {
 
 template<typename ValueType>
 RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition() : Decomposition() {
-    // Intentionally pty.
+    // Intentionally empty.
 }
 
 template<typename ValueType>
@@ -183,11 +183,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
             break;
         }
 
-        // prepare next iteration.
-        // It suffices to keep the candidates that have the possibility to always stay in the candidate set
-        // remainingEcCandidates = storm::utility::graph::performProbGreater0A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions,
-        //                                                                     remainingEcCandidates, ~remainingEcCandidates, false, 0, ecChoices);
-        // remainingEcCandidates.complement();
         sccDecOptions.subsystem(remainingEcCandidates);
     }
 

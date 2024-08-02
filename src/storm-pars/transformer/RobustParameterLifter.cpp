@@ -275,8 +275,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         if (root.isNumeric()) {
             rootCoefficient = CoefficientType(root.value());
         } else {
-            // TODO incorrect
-            rootCoefficient = CoefficientType(root.lower());
+            rootCoefficient = CoefficientType((root.upper() + root.lower()) / 2);
         }
         zeroes.emplace(rootCoefficient);
     }
@@ -541,7 +540,6 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
         double maxValue = -utility::infinity<double>();
 
         for (auto const& potentialExtremum : potentialExtrema) {
-            // TODO use double or rational number for storage?
             auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalFunctionCoefficient>(potentialExtremum)));
             if (value > maxValue) {
                 maxValue = value;

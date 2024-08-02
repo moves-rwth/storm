@@ -529,19 +529,6 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                 }
             }
 
-            // // TODO Try out different "heuristics" for what not to time-travel
-            // if ((alreadyTimeTravelledToThis[parameter].count(targetStates) && root >= originalNumStates) || targetStates.size() == 1) {
-            //     // We already reordered w.r.t. these target states. We're not going to time-travel again,
-            //     // so just enter the paths into insertPaths.
-            //     for (auto const& [toState, withConstant] : transitions) {
-            //         Annotation newAnnotation(parameter, polynomialCache);
-            //         newAnnotation[factors] = withConstant;
-            //         insertTransitions.emplace_back(toState, newAnnotation);
-            //     }
-            //     continue;
-            // }
-            // alreadyTimeTravelledToThis[parameter].insert(targetStates);
-
             Annotation newAnnotation(parameter, polynomialCache);
 
             RationalFunctionCoefficient constantPart = utility::zero<RationalFunctionCoefficient>();

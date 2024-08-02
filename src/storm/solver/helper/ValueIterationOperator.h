@@ -181,10 +181,8 @@ class ValueIterationOperator {
         for (auto groupIndex : indexRange<Backward>(0, operandSize)) {
             STORM_LOG_ASSERT(matrixColumnIt != matrixColumns.end(), "VI Operator in invalid state.");
             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
-            //            STORM_LOG_ASSERT(matrixValueIt != matrixValues.end(), "VI Operator in invalid state.");
             if constexpr (TrivialRowGrouping) {
                 // Ugly special case
-                // TODO how to export robustOrder to backend?
                 if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
                     // Intentionally different method name
                     backend.processRobustRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex,
