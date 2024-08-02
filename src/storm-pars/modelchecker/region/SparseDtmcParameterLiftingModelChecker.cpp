@@ -94,7 +94,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     reset();
 
-    if (allowModelSimplifications) {
+    if (!Robust && allowModelSimplifications) {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmc);
         if (!simplifier.simplify(checkTask.getFormula())) {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
@@ -162,7 +162,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
-    if (!maybeStates.empty()) {
+    if (Robust || !maybeStates.empty()) {
         // Create the vector of one-step probabilities to go to target states.
         std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
             storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
@@ -208,18 +208,26 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
-    if (!maybeStates.empty()) {
+    if (Robust || !maybeStates.empty()) {
         if constexpr (Robust) {
             // Create the vector of one-step probabilities to go to target states.
             // Robust PLA doesn't support eliminating states because it gets complicated with the polynomials you know
             std::vector<ParametricType> target(this->parametricModel->getNumberOfStates(), storm::utility::zero<ParametricType>());
-            storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
+            storm::storage::BitVector allTrue(maybeStates.size(), true);
+
+            // TODO if graph-preserving option is set you can have a larger set of target states, otherwise you cannot
+            bool graphPreserving = false;
+            if (!graphPreserving) {
+                storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
+                maybeStates = allTrue;
+            } else {
+                storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<ParametricType>());
+            }
 
             // With Robust PLA, we cannot drop the non-maybe states out of the matrix for technical reasons
             auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
             auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
 
-            storm::storage::BitVector allTrue(maybeStates.size(), true);
             maybeStates = allTrue;
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
@@ -272,7 +280,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
-    if (!maybeStates.empty()) {
+    if (Robust || !maybeStates.empty()) {
         // Create the reward vector
         STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) ||
                             (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()),
@@ -284,9 +292,14 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         std::vector<ParametricType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
         if constexpr (Robust) {
+            // TODO check if graph preserving!!
+            storm::storage::BitVector allTrue(maybeStates.size(), true);
+            bool graphPreserving = false;
+            if (!graphPreserving) {
+                maybeStates = allTrue;
+            }
             auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
             auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
-            storm::storage::BitVector allTrue(maybeStates.size(), true);
             maybeStates = allTrue;
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(

@@ -3,15 +3,32 @@
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 #include "storage/BitVector.h"
+#include "storage/RobustMaximalEndComponentDecomposition.h"
+#include "storage/StronglyConnectedComponentDecomposition.h"
 #include "storm-pars/utility/parametric.h"
 #include "utility/constants.h"
 #include "utility/logging.h"
+#include "utility/macros.h"
 namespace storm {
 namespace transformer {
 
 template<typename ParametricType>
 IntervalEndComponentPreserver<ParametricType>::IntervalEndComponentPreserver(storm::storage::SparseMatrix<ParametricType> const& originalMatrix,
                                                                              std::vector<ParametricType> const& originalVector) {
+    
+    storage::StronglyConnectedComponentDecomposition<ParametricType> decomposition(originalMatrix);
+    auto const& indexMap = decomposition.computeStateToSccIndexMap(originalMatrix.getRowCount());
+
+    for (auto const& group : decomposition) {
+        if (group.size() > 1) {
+            std::cout << "Group: ";
+            for (auto const& state : group) {
+                std::cout << state << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
     // Our new matrix has one more state, which is the new sink state. Otherwise, the rows and columns are the same.
     storm::storage::SparseMatrixBuilder<Interval> builder(originalMatrix.getRowCount() + 1, originalMatrix.getColumnCount() + 1, 0, true, false);
 
@@ -19,25 +36,12 @@ IntervalEndComponentPreserver<ParametricType>::IntervalEndComponentPreserver(sto
     considered = storage::BitVector(originalMatrix.getRowCount());
 
     for (uint64_t row = 0; row < originalMatrix.getRowCount(); row++) {
-        bool thisHasSelfLoop = false;
-        bool thisIsParametric = false;
-
-        for (auto const& entry : originalMatrix.getRow(row)) {
-            auto column = entry.getColumn();
-            if (column == row) {
-                thisHasSelfLoop = true;
-            }
-            if (!entry.getValue().isConstant()) {
-                thisIsParametric = true;
-            }
-        }
-
-        bool thisIsConsidered = thisHasSelfLoop && thisIsParametric;
+        // non-trivial sccs may be in the end components
+        bool thisIsConsidered = !decomposition.getBlock(indexMap.at(row)).isTrivial();
         considered.set(row, thisIsConsidered);
 
         for (auto const& entry : originalMatrix.getRow(row)) {
             auto column = entry.getColumn();
-
             builder.addNextValue(row, column, Interval());
         }
 
@@ -64,42 +68,38 @@ IntervalEndComponentPreserver<ParametricType>::IntervalEndComponentPreserver(sto
     for (uint64_t row = 0; row < vector.size(); row++) {
         vectorAssignment.push_back(vector.begin() + row);
     }
-
-    std::cout << considered << std::endl;
 }
 
 template<typename ParametricType>
 void IntervalEndComponentPreserver<ParametricType>::specifyAssignment(storm::storage::SparseMatrix<Interval> const& originalMatrix,
                                                       std::vector<Interval> const& originalVector) {
+    storage::RobustMaximalEndComponentDecomposition<Interval> decomposition(originalMatrix, originalMatrix.transpose());
+
+    auto const& indexMap = decomposition.computeStateToSccIndexMap(originalMatrix.getRowCount());
     auto matrixPlaceholderIterator = matrixAssignment.begin();
 
-    for (uint64_t row = 0; row < originalMatrix.getRowCount(); row++) {
-        // Criteria for transformation
-        // (1) upper of self-loop is one
-        bool upperOfSelfLoopOne = false;
-        // (2) lower of all other outgoing transitions are zero
-        bool lowerOfAllTransitionsZero = true;
+    for (auto const& group : decomposition) {
+        if (group.size() > 1) {
+            std::cout << "Non-trivial MEC: ";
+            for (auto const& state : group) {
+                std::cout << state << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
 
-        if (considered.get(row)) {
+    for (uint64_t row = 0; row < originalMatrix.getRowCount(); row++) {
+        const uint64_t blockIndex = indexMap.at(row);
+        if (blockIndex < decomposition.size() && !decomposition.getBlock(blockIndex).isTrivial()) {
+            STORM_LOG_ASSERT(considered.get(row), "Non-considered row " << row << " in non-trivial end component");
+            // Write [0, 1] to all transitions
             for (auto const& entry : originalMatrix.getRow(row)) {
                 if (entry.getColumn() == row) {
-                    if (utility::isAlmostOne(entry.getValue().upper())) {
-                        upperOfSelfLoopOne = true;
-                    }
+                    // Self-loop
+                    (*matrixPlaceholderIterator)->setValue(Interval(0, 0));
                 } else {
-                    if (!utility::isAlmostZero(entry.getValue().lower())) {
-                        lowerOfAllTransitionsZero = false;
-                        break;
-                    }
+                    (*matrixPlaceholderIterator)->setValue(Interval(0, 1));
                 }
-            }
-        }
-
-        if (considered.get(row) && upperOfSelfLoopOne && lowerOfAllTransitionsZero) {
-            // Write [0, 1] to all transitions
-            std::cout << "Doing the interval end component transformation!" << std::endl;
-            for (auto const& entry : originalMatrix.getRow(row)) {
-                (*matrixPlaceholderIterator)->setValue(Interval(0, 1));
                 matrixPlaceholderIterator++;
             }
             // Write [0, 1] to sink state
