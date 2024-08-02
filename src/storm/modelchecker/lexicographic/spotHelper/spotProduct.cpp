@@ -6,15 +6,9 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/utility/macros.h"
 
-#ifdef STORM_HAVE_SPOT
-#include "spot/tl/formula.hh"
-#include "spot/tl/parse.hh"
-#include "spot/twaalgos/dot.hh"
-#include "spot/twaalgos/hoa.hh"
-#include "spot/twaalgos/totgba.hh"
-#include "spot/twaalgos/translate.hh"
-#endif
+#include "storm/adapters/SpotAdapter.h"
 
 namespace storm::modelchecker::helper::lexicographic::spothelper {
 
@@ -33,9 +27,7 @@ struct product_state_hash {
 enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };
 typedef std::vector<std::pair<unsigned, unsigned>> product_states;
 
-template<typename SparseModelType, typename ValueType>
 std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula,
-                                                                           CheckFormulaCallback const& formulaChecker, SparseModelType const& model,
                                                                            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
                                                                            std::vector<uint>& acceptanceConditions) {
 #ifdef STORM_HAVE_SPOT
@@ -173,17 +165,9 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
     (void)formula;
-    (void)model;
     (void)extracted;
     (void)acceptanceConditions;
 #endif
 }
 
-template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<double>, double>(
-    storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, storm::models::sparse::Mdp<double> const& model,
-    storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted, std::vector<uint>& acceptanceConditions);
-template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>(
-    storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker,
-    storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
-    std::vector<uint>& acceptanceConditions);
 }  // namespace storm::modelchecker::helper::lexicographic::spothelper

@@ -1,16 +1,11 @@
-#ifndef STORM_MODELCHECKER_HYBRIDCTMCCSLMODELCHECKER_H_
-#define STORM_MODELCHECKER_HYBRIDCTMCCSLMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
-
 #include "storm/models/symbolic/Ctmc.h"
-
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {
-
 namespace modelchecker {
 
 template<typename ModelType>
@@ -36,19 +31,16 @@ class HybridCtmcCslModelChecker : public SymbolicPropositionalModelChecker<Model
                                                                             CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
 
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env,
                                                                      CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env,
                                                                   CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
                                                                   CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
 };
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_HYBRIDCTMCCSLMODELCHECKER_H_ */

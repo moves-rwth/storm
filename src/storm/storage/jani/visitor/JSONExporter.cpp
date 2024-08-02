@@ -556,18 +556,16 @@ boost::any FormulaToJaniJson::visit(storm::logic::TotalRewardFormula const&, boo
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
     ExportJsonType opDecl;
-    storm::logic::UnaryBooleanStateFormula::OperatorType op = f.getOperator();
-    assert(op == storm::logic::UnaryBooleanStateFormula::OperatorType::Not);
     opDecl["op"] = "¬";
     opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
     return opDecl;
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const {
+    STORM_LOG_ASSERT(f.getOperator() == storm::logic::UnaryBooleanStateFormula::OperatorType::Not, "Unsupported operator");
     ExportJsonType opDecl;
-    storm::logic::UnaryBooleanPathFormula::OperatorType op = f.getOperator();
-    assert(op == storm::logic::UnaryBooleanPathFormula::OperatorType::Not);
     opDecl["op"] = "¬";
     opDecl["exp"] = boost::any_cast<ExportJsonType>(f.getSubformula().accept(*this, data));
     return opDecl;
@@ -636,6 +634,10 @@ std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             return "ceil";
         case OpType::Ite:
             return "ite";
+        case OpType::Sin:
+            return "sin";
+        case OpType::Cos:
+            return "cos";
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Operator not supported by Jani");
     }
@@ -793,6 +795,12 @@ boost::any ExpressionToJson::visit(storm::expressions::FunctionCallExpression co
     }
     opDecl["args"] = std::move(arguments);
     return opDecl;
+}
+
+boost::any ExpressionToJson::visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) {
+    ExportJsonType constantDecl;
+    constantDecl["constant"] = expression.asString();
+    return constantDecl;
 }
 
 void JsonExporter::toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid,

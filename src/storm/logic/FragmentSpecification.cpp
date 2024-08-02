@@ -289,7 +289,6 @@ FragmentSpecification::FragmentSpecification() {
     timeBoundedCumulativeRewardFormulas = false;
     rewardBoundedCumulativeRewardFormulas = false;
     multiDimensionalCumulativeRewardFormulas = false;
-    varianceAsMeasureType = false;
 
     qualitativeOperatorResults = true;
     quantitativeOperatorResults = true;
@@ -682,15 +681,6 @@ FragmentSpecification& FragmentSpecification::setTimeAllowed(bool newValue) {
 
 FragmentSpecification& FragmentSpecification::setLongRunAverageProbabilitiesAllowed(bool newValue) {
     this->setLongRunAverageOperatorsAllowed(newValue);
-    return *this;
-}
-
-bool FragmentSpecification::isVarianceMeasureTypeAllowed() const {
-    return varianceAsMeasureType;
-}
-
-FragmentSpecification& FragmentSpecification::setVarianceMeasureTypeAllowed(bool newValue) {
-    this->varianceAsMeasureType = newValue;
     return *this;
 }
 

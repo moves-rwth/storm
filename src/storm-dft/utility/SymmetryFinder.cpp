@@ -1,8 +1,7 @@
 #include "SymmetryFinder.h"
 
 #include "storm-dft/storage/DFTIsomorphism.h"
-
-#include "storm/utility/iota_n.h"
+#include "storm/utility/vector.h"
 
 namespace storm::dft {
 namespace utility {
@@ -12,10 +11,8 @@ storm::dft::storage::DftSymmetries SymmetryFinder<ValueType>::findSymmetries(sto
     // Colour the DFT elements to find candidates for symmetries
     storm::dft::storage::DFTColouring<ValueType> colouring(dft);
 
-    std::vector<size_t> vec;
-    vec.reserve(dft.nrElements());
-    storm::utility::iota_n(std::back_inserter(vec), dft.nrElements(), 0);
-    storm::dft::storage::BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
+    std::vector<size_t> subDftIndices(storm::utility::vector::buildVectorForRange(size_t(0), dft.nrElements()));
+    storm::dft::storage::BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(subDftIndices);
     std::map<size_t, std::vector<std::vector<size_t>>> res;
 
     // Find symmetries for gates

@@ -208,7 +208,7 @@ TYPED_TEST(BeliefExplorationAPITest, simple_slippery_Rmin) {
 TYPED_TEST(BeliefExplorationAPITest, maze2_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
     auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 
@@ -224,7 +224,7 @@ TYPED_TEST(BeliefExplorationAPITest, maze2_Rmin) {
 TYPED_TEST(BeliefExplorationAPITest, maze2_slippery_Rmin) {
     typedef typename TestFixture::ValueType ValueType;
 
-    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "Rmin=? [F \"goal\"]", "sl=0.075");
     auto task = storm::api::createTask<ValueType>(data.formula, false);
     auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(data.model, task, 100);
 

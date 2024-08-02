@@ -4,12 +4,9 @@
 #include <utility>
 #include <vector>
 
-#include "storm/exceptions/InvalidArgumentException.h"
-
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/elements/DFTElementType.h"
 #include "storm-dft/storage/elements/DFTElements.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm::dft {
@@ -380,7 +377,7 @@ class DFTIsomorphismCheck {
    public:
     DFTIsomorphismCheck(BijectionCandidates<ValueType> const& left, BijectionCandidates<ValueType> const& right, DFT<ValueType> const& dft)
         : bleft(left), bright(right), dft(dft) {
-        checkCompatibility();
+        candidatesCompatible = checkCompatibility();
     }
 
     /**
@@ -565,52 +562,50 @@ class DFTIsomorphismCheck {
     }
 
    private:
-    /**
-     * Returns true if the colours are compatible.
+    /*!
+     * Check compatibility of colour classes for specific type.
+     * @param left Left candidates.
+     * @param right Right candidates.
+     * @return True iff left and right are compatible.
+     */
+    template<typename ColourType>
+    bool checkCompatibility(std::unordered_map<ColourType, std::vector<size_t>> const& left, std::unordered_map<ColourType, std::vector<size_t>> const& right) {
+        if (left.size() != right.size()) {
+            // Different number of colour classes
+            return false;
+        }
+
+        for (auto const& gc : left) {
+            auto it = right.find(gc.first);
+            if (it == right.end()) {
+                // No corresponding colour
+                return false;
+            } else if (it->second.size() != gc.second.size()) {
+                // Corresponding colour classes have different number of elements
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /*!
+     * Check if colour classes are compatible in principle.
+     * This checks only excludes non-compatible colour classes. In the positive case, further checks are necessary.
+     *
+     * @return True iff colours are compatible.
      */
     bool checkCompatibility() {
-        if (bleft.gateCandidates.size() != bright.gateCandidates.size()) {
-            candidatesCompatible = false;
+        if (!checkCompatibility(bleft.gateCandidates, bright.gateCandidates)) {
             return false;
         }
-        if (bleft.beCandidates.size() != bright.beCandidates.size()) {
-            candidatesCompatible = false;
+        if (!checkCompatibility(bleft.beCandidates, bright.beCandidates)) {
             return false;
         }
-        if (bleft.pdepCandidates.size() != bright.pdepCandidates.size()) {
-            candidatesCompatible = false;
+        if (!checkCompatibility(bleft.pdepCandidates, bright.pdepCandidates)) {
             return false;
         }
-        if (bleft.restrictionCandidates.size() != bright.restrictionCandidates.size()) {
-            candidatesCompatible = false;
+        if (!checkCompatibility(bleft.restrictionCandidates, bright.restrictionCandidates)) {
             return false;
-        }
-
-        for (auto const& gc : bleft.gateCandidates) {
-            if (bright.gateCandidates.count(gc.first) == 0) {
-                candidatesCompatible = false;
-                return false;
-            }
-        }
-        for (auto const& bc : bleft.beCandidates) {
-            if (bright.beCandidates.count(bc.first) == 0) {
-                candidatesCompatible = false;
-                return false;
-            }
-        }
-
-        for (auto const& dc : bleft.pdepCandidates) {
-            if (bright.pdepCandidates.count(dc.first) == 0) {
-                candidatesCompatible = false;
-                return false;
-            }
-        }
-
-        for (auto const& dc : bleft.restrictionCandidates) {
-            if (bright.restrictionCandidates.count(dc.first) == 0) {
-                candidatesCompatible = false;
-                return false;
-            }
         }
         return true;
     }

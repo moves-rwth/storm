@@ -310,11 +310,10 @@ class BeliefExplorationPomdpModelChecker {
      * handled by the main exploration routine.
      * @param clippingStateId the state ID of the clipping belief
      * @param computeRewards true, if rewards are computed
-     * @param min true, if objective is to minimise
      * @param beliefManager the belief manager used
      * @param beliefExplorer the belief MDP explorer used
      */
-    bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType>& beliefManager,
+    bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, std::shared_ptr<BeliefManagerType>& beliefManager,
                               std::shared_ptr<ExplorerType>& beliefExplorer, uint64_t localActionIndex);
 
     /**

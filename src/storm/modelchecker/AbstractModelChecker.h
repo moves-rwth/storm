@@ -1,5 +1,4 @@
-#ifndef STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
-#define STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_
+#pragma once
 
 #include <string>
 
@@ -13,8 +12,6 @@ class Environment;
 
 namespace modelchecker {
 class CheckResult;
-
-enum class RewardType { Expectation, Variance };
 
 template<typename ModelType>
 class AbstractModelChecker {
@@ -73,27 +70,25 @@ class AbstractModelChecker {
     std::unique_ptr<CheckResult> computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, SolutionType> const& checkTask);
 
     // The methods to compute the rewards for path formulas.
-    virtual std::unique_ptr<CheckResult> computeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-                                                        CheckTask<storm::logic::Formula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeConditionalRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeRewards(Environment const& env, CheckTask<storm::logic::Formula, SolutionType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> computeConditionalRewards(Environment const& env,
                                                                    CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env,
                                                                   CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env,
                                                                      CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env,
                                                              CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env,
                                                                       CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask);
 
     // The methods to compute the long-run average probabilities and timing measures.
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
                                                                             CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-                                                      CheckTask<storm::logic::Formula, SolutionType> const& checkTask);
-    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeTimes(Environment const& env, CheckTask<storm::logic::Formula, SolutionType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
                                                                   CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask);
 
     // The methods to check state formulas.
@@ -133,5 +128,3 @@ class AbstractModelChecker {
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_ABSTRACTMODELCHECKER_H_ */

@@ -820,7 +820,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
                         break;
                     }
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
                         break;
                 }
             }

@@ -10,6 +10,8 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
 
+#include "storm/exceptions/WrongFormatException.h"
+
 #include "storm/logic/Formula.h"
 
 #include "storm/utility/cli.h"
@@ -43,7 +45,14 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
 std::vector<storm::jani::Property> parseProperties(std::string const& inputString, boost::optional<std::set<std::string>> const& propertyFilter) {
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::parser::FormulaParser formulaParser(exprManager);
-    return parseProperties(formulaParser, inputString, propertyFilter);
+    try {
+        return parseProperties(formulaParser, inputString, propertyFilter);
+    } catch (storm::exceptions::WrongFormatException const& e) {
+        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                        e.what() << "Note that the used API function does not have access to model variables. If the property you tried to parse contains "
+                                    "model variables, it will not "
+                                    "be parsed correctly.");
+    }
 }
 
 std::vector<storm::jani::Property> parsePropertiesForJaniModel(std::string const& inputString, storm::jani::Model const& model,

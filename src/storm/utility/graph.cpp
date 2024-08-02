@@ -517,7 +517,7 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
-        bool setValue = false;
+        [[maybe_unused]] bool setValue = false;
         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
             bool oneSuccessorInStates = false;
             for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -1392,7 +1392,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
         for (auto player1State : result.player1States) {
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 // At least one player 2 successor is a state with probability 0, find it.
-                bool foundProb0Successor = false;
+                [[maybe_unused]] bool foundProb0Successor = false;
                 uint64_t player2State;
                 for (player2State = player1Groups[player1State]; player2State < player1Groups[player1State + 1]; ++player2State) {
                     if (result.player2States.get(player2State)) {
@@ -1414,7 +1414,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
         for (auto player2State : result.player2States) {
             if (player2Direction == storm::OptimizationDirection::Minimize) {
                 // At least one distribution only has successors with probability 0, find it.
-                bool foundProb0SuccessorDistribution = false;
+                [[maybe_unused]] bool foundProb0SuccessorDistribution = false;
 
                 uint64_t row;
                 for (row = transitionMatrix.getRowGroupIndices()[player2State]; row < transitionMatrix.getRowGroupIndices()[player2State + 1]; ++row) {

@@ -1,16 +1,11 @@
-#ifndef STORM_MODELCHECKER_SPARSECTMCCSLMODELCHECKER_H_
-#define STORM_MODELCHECKER_SPARSECTMCCSLMODELCHECKER_H_
+#pragma once
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-
 #include "storm/models/sparse/Ctmc.h"
-
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {
-
 namespace modelchecker {
 
 template<class SparseCtmcModelType>
@@ -41,19 +36,18 @@ class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<SparseC
 
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
                                                                             CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
                                                                   CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
 
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env,
                                                                   CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env,
                                                                      CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env,
                                                              CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask) override;
 
     /*!
@@ -76,5 +70,3 @@ class SparseCtmcCslModelChecker : public SparsePropositionalModelChecker<SparseC
 
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SPARSECTMCCSLMODELCHECKER_H_ */

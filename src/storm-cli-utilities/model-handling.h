@@ -572,14 +572,14 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovA
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBisimulation(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input,
-    storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
+    storm::settings::modules::BisimulationSettings const& bisimulationSettings, bool graphPreserving = true) {
     storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
     if (bisimulationSettings.isWeakBisimulationSet()) {
         bisimType = storm::storage::BisimulationType::Weak;
     }
 
     STORM_LOG_INFO("Performing bisimulation minimization...");
-    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType);
+    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType, graphPreserving);
 }
 
 template<typename ValueType>
@@ -590,6 +590,15 @@ std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> prepro
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
     std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> result = std::make_pair(model, false);
+
+    if (auto order = transformationSettings.getModelPermutation(); order.has_value()) {
+        auto seed = transformationSettings.getModelPermutationSeed();
+        STORM_PRINT_AND_LOG("Permuting model states using " << storm::utility::permutation::orderKindtoString(order.value()) << " order"
+                                                            << (seed.has_value() ? " with seed " + std::to_string(seed.value()) : "") << ".\n");
+        result.first = storm::api::permuteModelStates(result.first, order.value(), seed);
+        result.second = true;
+        STORM_PRINT_AND_LOG("Transition matrix hash after permuting: " << result.first->getTransitionMatrix().hash() << ".\n");
+    }
 
     if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
         result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
@@ -1221,7 +1230,7 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
             if (result->isExplicitQuantitativeCheckResult()) {
                 if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
                     auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
-                    STORM_PRINT_AND_LOG("Exporting scheduler ... ")
+                    STORM_PRINT_AND_LOG("Exporting scheduler ... ");
                     if (input.model) {
                         STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
                                             "No information of state valuations available. The scheduler output will use internal state ids. You might be "

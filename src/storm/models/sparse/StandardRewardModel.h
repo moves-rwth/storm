@@ -6,6 +6,7 @@
 
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
 
@@ -206,6 +207,17 @@ class StandardRewardModel {
      *
      */
     StandardRewardModel<ValueType> permuteActions(std::vector<uint64_t> const& inversePermutation) const;
+
+    /*!
+     * Creates a new reward model by permuting the states.
+     * That is, assign to state i, the rewards previously assigned to state inversePermutation[i].
+     * @param inversePermutation The inverse permutation that is used to permute the states.
+     * @param rowGroupIndices must be given to respect grouped action rewards. If they are not given, it is assumed that each state has exactly one action
+     * @param permutation The (non-inverted) permutation. Relevant only if transition rewards are present.
+     */
+    StandardRewardModel<ValueType> permuteStates(std::vector<uint64_t> const& inversePermutation,
+                                                 storm::OptionalRef<std::vector<uint64_t> const> rowGroupIndices = storm::NullRef,
+                                                 storm::OptionalRef<std::vector<uint64_t> const> permutation = storm::NullRef) const;
 
     /*!
      * Reduces the transition-based rewards to state-action rewards by taking the average of each row. If

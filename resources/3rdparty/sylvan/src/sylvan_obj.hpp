@@ -28,7 +28,7 @@
 /////////////////////
 
 // For the Mtbdd extensions
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 /////////////////////
 

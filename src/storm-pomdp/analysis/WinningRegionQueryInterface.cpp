@@ -1,5 +1,6 @@
 #include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
-#include <storm/exceptions/UnexpectedException.h>
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {
@@ -66,7 +67,7 @@ bool WinningRegionQueryInterface<ValueType>::staysInWinningRegion(storm::storage
 }
 
 template<typename ValueType>
-void WinningRegionQueryInterface<ValueType>::validate(storm::storage::BitVector const& badStates) const {
+void WinningRegionQueryInterface<ValueType>::validate() const {
     for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
         for (auto const& winningBelief : winningRegion.getWinningSetsPerObservation(obs)) {
             storm::storage::BitVector states(pomdp.getNumberOfStates());
@@ -91,7 +92,7 @@ void WinningRegionQueryInterface<ValueType>::validateIsMaximal(storm::storage::B
         STORM_LOG_DEBUG("Check listed belief supports for observation " << obs << " are maximal");
         for (auto const& winningBelief : winningRegion.getWinningSetsPerObservation(obs)) {
             storm::storage::BitVector remainders = ~winningBelief;
-            for (auto const& additional : remainders) {
+            for (auto const additional : remainders) {
                 uint64_t addState = statesPerObservation[obs][additional];
                 if (badStates.get(addState)) {
                     continue;

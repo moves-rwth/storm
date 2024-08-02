@@ -43,9 +43,10 @@ std::string ArrayType::getStringRepresentation() const {
     return "array[" + getBaseType().getStringRepresentation() + "]";
 }
 
-void ArrayType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
-    JaniType::substitute(substitution);
-    baseType->substitute(substitution);
+void ArrayType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                           bool const substituteTranscendentalNumbers) {
+    JaniType::substitute(substitution, substituteTranscendentalNumbers);
+    baseType->substitute(substitution, substituteTranscendentalNumbers);
 }
 
 std::unique_ptr<JaniType> ArrayType::clone() const {

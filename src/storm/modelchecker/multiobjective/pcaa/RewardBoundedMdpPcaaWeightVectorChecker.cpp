@@ -1,6 +1,5 @@
 #include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"

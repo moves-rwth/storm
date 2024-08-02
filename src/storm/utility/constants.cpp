@@ -254,6 +254,16 @@ ValueType log10(ValueType const& number) {
 }
 
 template<typename ValueType>
+ValueType cos(ValueType const& number) {
+    return std::cos(number);
+}
+
+template<typename ValueType>
+ValueType sin(ValueType const& number) {
+    return std::sin(number);
+}
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number) {
     return static_cast<typename NumberTraits<ValueType>::IntegerType>(std::trunc(number));
 }
@@ -417,6 +427,16 @@ ClnRationalNumber log(ClnRationalNumber const& number) {
 template<>
 ClnRationalNumber log10(ClnRationalNumber const& number) {
     return carl::log10(number);
+}
+
+template<>
+ClnRationalNumber cos(ClnRationalNumber const& number) {
+    return carl::cos(number);
+}
+
+template<>
+ClnRationalNumber sin(ClnRationalNumber const& number) {
+    return carl::sin(number);
 }
 
 template<>
@@ -622,6 +642,16 @@ GmpRationalNumber log(GmpRationalNumber const& number) {
 template<>
 GmpRationalNumber log10(GmpRationalNumber const& number) {
     return carl::log10(number);
+}
+
+template<>
+GmpRationalNumber cos(GmpRationalNumber const& number) {
+    return carl::cos(number);
+}
+
+template<>
+GmpRationalNumber sin(GmpRationalNumber const& number) {
+    return carl::sin(number);
 }
 
 template<>
@@ -968,6 +998,8 @@ template double ceil(double const& number);
 template double round(double const& number);
 template double log(double const& number);
 template double log10(double const& number);
+template double cos(double const& number);
+template double sin(double const& number);
 template typename NumberTraits<double>::IntegerType trunc(double const& number);
 template double mod(double const& first, double const& second);
 template std::string to_string(double const& value);

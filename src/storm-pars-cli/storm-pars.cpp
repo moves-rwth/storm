@@ -84,6 +84,19 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
     }
+    if (!regionSettings.isNotGraphPreservingSet()) {
+        for (auto const& region : result) {
+            for (auto const& variable : region.getVariables()) {
+                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
+                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
+                    STORM_LOG_WARN(
+                        "Region" << region
+                                 << " appears to not preserve the graph structure of the parametric model. If this is the case, --not-graph-preserving.");
+                    break;
+                }
+            }
+        }
+    }
     return result;
 }
 
@@ -204,6 +217,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     PreprocessResult result(model, false);
     // TODO: why only simplify in these modes
@@ -220,8 +234,8 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     }
 
     if (mpi.applyBisimulation) {
-        result.model =
-            storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+        result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                     bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
         result.changed = true;
     }
 
@@ -414,6 +428,7 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
     auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
     auto sampleSettings = storm::settings::getModule<storm::settings::modules::SamplingSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse || mpi.engine == storm::utility::Engine::Hybrid || mpi.engine == storm::utility::Engine::Dd,
                     storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
@@ -477,6 +492,7 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
         STORM_LOG_INFO("Solution function mode started.");
         STORM_LOG_THROW(regions.empty(), storm::exceptions::InvalidSettingsException,
                         "Solution function computations cannot be restricted to specific regions");
+        STORM_LOG_ERROR_COND(!regionSettings.isNotGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {
             computeSolutionFunctionsWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input);

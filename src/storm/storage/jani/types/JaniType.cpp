@@ -68,7 +68,8 @@ ContinuousType& JaniType::asContinuousType() {
     return dynamic_cast<ContinuousType&>(*this);
 }
 
-void JaniType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& /*substitution*/) {
+void JaniType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& /*substitution*/,
+                          bool const /*substituteTranscendentalNumbers*/) {
     // intentionally left empty
 }
 
