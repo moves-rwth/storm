@@ -703,7 +703,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                     // Remember everything that comes after what we changed
                     std::vector<std::pair<Interval, Interval>> regionsAndBoundsAfter;
-                    for (uint64_t i = regionsInPLARegion.back(); i < regionsAndBounds.size(); i++) {
+                    for (uint64_t i = regionsInPLARegion.back() + 1; i < regionsAndBounds.size(); i++) {
                         regionsAndBoundsAfter.push_back(regionsAndBounds[i]);
                     }
                     // Remove previous results
