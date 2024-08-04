@@ -251,7 +251,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             }
         }
 
-
         // Do big-step lifting from here
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
@@ -289,9 +288,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
             std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(
                 bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis, treeStatesNeedUpdate, state, originalNumStates);
-            // for (auto const& [state, annotation] : bottomAnnotations) {
-            //     transitions.emplace_back(state, annotation);
-            // }
 
             // Put paths into matrix
             auto newStoredAnnotations =
@@ -314,6 +310,9 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
                 for (uint64_t i = oldMatrixSize; i < newMatrixSize; i++) {
                     topologicalOrderingStack.push(i);
+                    for (auto& [_parameter, updateStates] : treeStatesNeedUpdate) {
+                        updateStates.emplace(i);
+                    }
                     // New states have zero reward
                     if (stateRewardVector) {
                         stateRewardVector->push_back(storm::utility::zero<RationalFunction>());
@@ -322,6 +321,9 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                 updateTreeStates(treeStates, treeStatesNeedUpdate, flexibleMatrix, backwardsTransitions, allParameters, stateRewardVector,
                                  runningLabelingTreeStates);
             }
+            // We continue the loop through the bigStepParameters if we don't do big-step.
+            // If we reach here, then we did indeed to big-step, so we will break.
+            break;
         }
 
         // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsTransitions.createSparseMatrix(), "");
@@ -516,7 +518,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
     for (auto const& [factors, transitions] : parametricTransitions) {
         if (transitions.size() > 1) {
-            STORM_LOG_ERROR_COND(!factors.empty(), "Empty factors!");
+            // STORM_LOG_ERROR_COND(!factors.empty(), "Empty factors!");
             STORM_LOG_INFO("Time-travelling from root " << root);
             // The set of target states of the paths that we maybe want to time-travel
             std::set<uint64_t> targetStates;
@@ -698,7 +700,7 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
                                       const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                                       const models::sparse::StateLabeling stateLabeling) {
     for (auto const& parameter : allParameters) {
-        std::set<uint64_t> workingSet = workingSets[parameter];
+        std::set<uint64_t>& workingSet = workingSets[parameter];
         while (!workingSet.empty()) {
             std::set<uint64_t> newWorkingSet;
             for (uint64_t row : workingSet) {
