@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -24,6 +25,13 @@ std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(st
     if (!formulas.empty() && graphPreserving) {
         options = typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
     }
+    // If we cannot use formula-based decomposition because of
+    // non-graph-preserving regions but there are reward models, we need to
+    // preserve those
+    if (!graphPreserving &&
+        std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) { return formula->getReferencedRewardModels().size() > 0; })) {
+        options.setKeepRewards(true);
+    }
     options.setType(type);
 
     storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
@@ -38,6 +46,13 @@ std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization
     typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options options;
     if (!formulas.empty() && graphPreserving) {
         options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
+    }
+    // If we cannot use formula-based decomposition because of
+    // non-graph-preserving regions but there are reward models, we need to
+    // preserve those
+    if (!graphPreserving &&
+        std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) { return formula->getReferencedRewardModels().size() > 0; })) {
+        options.setKeepRewards(true);
     }
     options.setType(type);
 
