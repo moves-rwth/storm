@@ -51,7 +51,7 @@ class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
         std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<const storm::logic::Formula> formula,
         bool useMonotonicity) {
         return storm::api::initializeRegionModelChecker(env(), model, storm::api::createTask<storm::RationalFunction>(formula, true), TestType::regionEngine,
-                                                        true, false, storm::api::MonotonicitySetting(useMonotonicity));
+                                                        true, true, false, storm::api::MonotonicitySetting(useMonotonicity));
     }
 
     virtual void SetUp() {

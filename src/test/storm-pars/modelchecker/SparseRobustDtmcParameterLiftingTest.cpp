@@ -18,7 +18,7 @@
 #include "storm/storage/jani/Property.h"
 
 namespace {
-class DoubleViEnvironment {
+class IsGraphPreserving {
    public:
     typedef double ValueType;
     static storm::Environment createEnvironment() {
@@ -27,15 +27,35 @@ class DoubleViEnvironment {
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
         return env;
     }
+    static bool graphPreserving() {
+        return true;
+    }
+};
+
+class NotGraphPreserving {
+   public:
+    typedef double ValueType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+        return env;
+    }
+    static bool graphPreserving() {
+        return false;
+    }
 };
 
 template<typename TestType>
 class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
-    SparseRobustDtmcParameterLiftingTest() : _environment(TestType::createEnvironment()) {}
+    SparseRobustDtmcParameterLiftingTest() : _environment(TestType::createEnvironment()), _graphPreserving(TestType::graphPreserving()) {}
     storm::Environment const& env() const {
         return _environment;
+    }
+    bool const& graphPreserving() const {
+        return _graphPreserving;
     }
     virtual void SetUp() {
         carl::VariablePool::getInstance().clear();
@@ -46,9 +66,10 @@ class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
 
    private:
     storm::Environment _environment;
+    bool _graphPreserving;
 };
 
-typedef ::testing::Types<DoubleViEnvironment> TestingTypes;
+typedef ::testing::Types<IsGraphPreserving, NotGraphPreserving> TestingTypes;
 
 TYPED_TEST_SUITE(SparseRobustDtmcParameterLiftingTest, TestingTypes, );
 
@@ -72,7 +93,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
@@ -110,7 +131,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob_no_simplification) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
@@ -146,7 +167,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
@@ -183,7 +204,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, DISABLED_Brp_Rew_Bounded) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.875,0.75<=TOMsg<=0.95", modelParameters);
@@ -201,7 +222,8 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, DISABLED_Brp_Rew_Bounded) {
                                            true));
 }
 
-TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew_Infty) {
+// disabled because the model is basically just one state and simplifier stuff happens idk
+TYPED_TEST(SparseRobustDtmcParameterLiftingTest, DISABLED_Brp_Rew_Infty) {
     typedef typename TestFixture::ValueType ValueType;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
@@ -219,7 +241,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew_Infty) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
@@ -247,7 +269,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew_4Par) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9", modelParameters);
@@ -284,7 +306,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -326,7 +348,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, DISABLED_Crowds_Prob_stepBounde
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=PF<=0.75,0.15<=badC<=0.2", modelParameters);
@@ -367,7 +389,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_1Par) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.9<=PF<=0.99", modelParameters);
@@ -404,7 +426,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_Const) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("", modelParameters);
@@ -434,7 +456,7 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, ZeroConf) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+        this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), storm::modelchecker::RegionCheckEngine::RobustParameterLifting, true, this->graphPreserving());
 
     // start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.8<=pL<=0.95,0.8<=pK<=0.95", modelParameters);

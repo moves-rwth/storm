@@ -219,10 +219,10 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             storm::storage::BitVector allTrue(maybeStates.size(), true);
 
             if (!graphPreserving) {
-                storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
+                storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<ParametricType>());
                 maybeStates = allTrue;
             } else {
-                storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<ParametricType>());
+                storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
             }
 
             // With Robust PLA, we cannot drop the non-maybe states out of the matrix for technical reasons
