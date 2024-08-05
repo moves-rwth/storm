@@ -80,10 +80,11 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                                                                                     CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                                                     std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates,
                                                                                     std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                                                    bool allowModelSimplifications) {
+                                                                                    bool allowModelSimplifications, bool graphPreserving) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
+    this->graphPreserving = graphPreserving;
     auto dtmc = parametricModel->template as<SparseModelType>();
     if (isOrderBasedMonotonicityBackend()) {
         STORM_LOG_WARN_COND(!(allowModelSimplifications),
@@ -94,7 +95,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     reset();
 
-    if (!Robust && allowModelSimplifications) {
+    if (allowModelSimplifications && graphPreserving) {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmc);
         if (!simplifier.simplify(checkTask.getFormula())) {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
@@ -169,7 +170,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
             this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, isOrderBasedMonotonicityBackend());
         if constexpr (Robust) {
-            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+            if (!graphPreserving) {
+                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+            }
         }
     }
 
@@ -215,8 +218,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             std::vector<ParametricType> target(this->parametricModel->getNumberOfStates(), storm::utility::zero<ParametricType>());
             storm::storage::BitVector allTrue(maybeStates.size(), true);
 
-            // TODO if graph-preserving option is set you can have a larger set of target states, otherwise you cannot
-            bool graphPreserving = false;
             if (!graphPreserving) {
                 storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
                 maybeStates = allTrue;
@@ -232,7 +233,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
-            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, target);
+            if (!graphPreserving) {
+                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, target);
+            }
         } else {
             // Create the vector of one-step probabilities to go to target states.
             std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
@@ -292,9 +295,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         std::vector<ParametricType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
 
         if constexpr (Robust) {
-            // TODO check if graph preserving!!
             storm::storage::BitVector allTrue(maybeStates.size(), true);
-            bool graphPreserving = false;
             if (!graphPreserving) {
                 maybeStates = allTrue;
             }
@@ -304,7 +305,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
-            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, b);
+            if (!graphPreserving) {
+                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, b);
+            }
         } else {
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
@@ -356,7 +359,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(this->parametricModel->getTransitionMatrix(), b,
                                                                                                           maybeStates, maybeStates);
     if constexpr (Robust) {
-        intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+        if (!graphPreserving) {
+            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
+        }
     }
 
     // We only know a lower bound for the result
@@ -418,9 +423,11 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
         }
-        intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
-        liftedMatrix = intervalEndComponentPreserver->getMatrix();
-        liftedVector = intervalEndComponentPreserver->getVector();
+        if (!graphPreserving) {
+            intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
+            liftedMatrix = intervalEndComponentPreserver->getMatrix();
+            liftedVector = intervalEndComponentPreserver->getVector();
+        }
     }
     const uint64_t resultVectorSize = liftedMatrix.getColumnCount();
 

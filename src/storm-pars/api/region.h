@@ -282,7 +282,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
     Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
     storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(), bool allowModelSimplification = true,
-    bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    bool graphPreserving = true, bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
         monotoneParameters = std::nullopt) {
@@ -292,7 +292,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
         initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
     allowModelSimplification = allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
     auto refinementChecker = std::make_unique<storm::modelchecker::RegionRefinementChecker<ValueType>>(std::move(regionChecker));
-    refinementChecker->specify(env, consideredModel, task, std::move(regionSplittingStrategy), std::move(monotonicityBackend), allowModelSimplification);
+    refinementChecker->specify(env, consideredModel, task, std::move(regionSplittingStrategy), std::move(monotonicityBackend), allowModelSimplification, graphPreserving);
     return refinementChecker;
 }
 
@@ -314,11 +314,12 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
     std::optional<uint64_t> const& refinementDepthThreshold = std::nullopt,
     storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown,
     storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(), bool allowModelSimplification = true,
+    bool graphPreserving = true,
     MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification,
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification, graphPreserving,
                                                                preconditionsValidated, monotonicitySetting);
     return refinementChecker->performRegionPartitioning(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
 }
@@ -338,7 +339,8 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
     bool const allowModelSimplification = true;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification,
+    bool const graphPreserving = true;
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification, graphPreserving,
                                                                preconditionsValidated, monotonicitySetting);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
@@ -363,9 +365,10 @@ bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool preconditionsValidated = false;
     bool const allowModelSimplification = true;
+    bool const graphPreserving = true;
     auto refinementChecker =
         initializeRegionRefinementChecker(env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true), engine,
-                                          regionSplittingStrategy, allowModelSimplification, preconditionsValidated, monotonicitySetting);
+                                          regionSplittingStrategy, allowModelSimplification, graphPreserving, preconditionsValidated, monotonicitySetting);
     return refinementChecker->verifyRegion(env, region, bound);
 }
 

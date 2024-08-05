@@ -33,7 +33,7 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                       RegionSplittingStrategy splittingStrategy,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                      bool allowModelSimplifications) {
+                                                      bool allowModelSimplifications, bool graphPreserving) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
     if (this->regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::Default) {
@@ -53,7 +53,7 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
         regionSplittingStrategy.estimateKind = std::nullopt;  // do not compute estimates
     }
 
-    regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications);
+    regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications, graphPreserving);
 }
 
 template<typename T>
@@ -382,6 +382,7 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
         case RegionSplittingStrategy::Heuristic::RoundRobin:
             return getSplittingVariablesRoundRobin(region, context);
         case RegionSplittingStrategy::Heuristic::Default:
+        default:
             STORM_LOG_ERROR("Default strategy should have been populated.");
             return {};
     }

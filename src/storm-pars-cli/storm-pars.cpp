@@ -377,6 +377,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
     std::optional<uint64_t> optionalDepthLimit;
@@ -398,6 +399,8 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
+    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+
     STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
@@ -412,7 +415,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     // TODO Why was allowModelSimplification false here?
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
         model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, splittingStrategy, true, monotonicitySettings, monThresh);
+        storm::modelchecker::RegionResultHypothesis::Unknown, splittingStrategy, true, graphPreserving, monotonicitySettings, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

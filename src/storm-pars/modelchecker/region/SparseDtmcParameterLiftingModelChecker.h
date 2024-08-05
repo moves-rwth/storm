@@ -64,7 +64,8 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                          std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true) override;
+                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+                         bool graphPreserving = true) override;
 
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
@@ -122,6 +123,8 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::unique_ptr<IntervalEndComponentPreserverType<ParametricType, ConstantType, Robust>> intervalEndComponentPreserver;
     std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;
     bool solvingRequiresUpperRewardBounds;
+
+    bool graphPreserving;
 
     // Results from the most recent solver call.
     std::optional<std::vector<uint64_t>> minSchedChoices, maxSchedChoices;

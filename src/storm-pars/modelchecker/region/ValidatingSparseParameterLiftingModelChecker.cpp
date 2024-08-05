@@ -38,8 +38,9 @@ template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::specify(
     Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
     std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-    bool allowModelSimplifications) {
+    bool allowModelSimplifications, bool graphPreserving) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
+    STORM_LOG_ERROR_COND(graphPreserving, "non-graph-preserving regions not implemented for validating");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
 

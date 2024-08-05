@@ -59,8 +59,9 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
                                                                                    CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                                                    std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates,
                                                                                    std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                                                   bool allowModelSimplifications) {
+                                                                                   bool allowModelSimplifications, bool graphPreserving) {
     STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
+    STORM_LOG_ERROR_COND(graphPreserving, "non-graph-preserving regions not implemented for MDPs");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
     auto mdp = parametricModel->template as<SparseModelType>();
