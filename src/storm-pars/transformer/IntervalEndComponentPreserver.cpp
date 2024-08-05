@@ -20,7 +20,7 @@ IntervalEndComponentPreserver<ParametricType>::IntervalEndComponentPreserver(sto
     auto const& indexMap = decomposition.computeStateToSccIndexMap(originalMatrix.getRowCount());
 
     for (auto const& group : decomposition) {
-        if (group.size() > 1) {
+        if (!group.isTrivial()) {
             std::cout << "Group: ";
             for (auto const& state : group) {
                 std::cout << state << " ";
@@ -79,7 +79,7 @@ void IntervalEndComponentPreserver<ParametricType>::specifyAssignment(storm::sto
     auto matrixPlaceholderIterator = matrixAssignment.begin();
 
     for (auto const& group : decomposition) {
-        if (group.size() > 1) {
+        if (!group.isTrivial()) {
             std::cout << "Non-trivial MEC: ";
             for (auto const& state : group) {
                 std::cout << state << " ";

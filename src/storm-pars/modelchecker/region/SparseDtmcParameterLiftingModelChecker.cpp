@@ -220,7 +220,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             if (!graphPreserving) {
                 storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<ParametricType>());
-                maybeStates = allTrue;
+                maybeStates = ~statesWithProbability01.first & ~psiStates;
             } else {
                 storm::utility::vector::setVectorValues(target, statesWithProbability01.second, storm::utility::one<ParametricType>());
             }
@@ -297,7 +297,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         if constexpr (Robust) {
             storm::storage::BitVector allTrue(maybeStates.size(), true);
             if (!graphPreserving) {
-                maybeStates = allTrue;
+                maybeStates = ~targetStates;
             }
             auto rowFilter = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates);
             auto filteredMatrix = this->parametricModel->getTransitionMatrix().filterEntries(rowFilter);
@@ -419,6 +419,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
     parameterLifter->specifyRegion(region.region, dirForParameters);
     auto liftedMatrix = parameterLifter->getMatrix();
     auto liftedVector = parameterLifter->getVector();
+    bool nonTrivialEndComponents = false;
     if constexpr (Robust) {
         if (parameterLifter->isCurrentRegionAllIllDefined()) {
             return std::vector<ConstantType>();
@@ -497,6 +498,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             }
         } else {
             // Set initial scheduler
+            // if (choices.has_value() && !nonTrivialEndComponents) {
             if (choices.has_value()) {
                 solver->setInitialScheduler(std::move(choices.value()));
             }
@@ -524,6 +526,12 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         // Invoke the solver
         x.resize(resultVectorSize, storm::utility::zero<ConstantType>());
         solver->solveEquations(env, dirForParameters, x, liftedVector);
+        // if (isValueDeltaRegionSplitEstimates()) {
+        //     computeStateValueDeltaRegionSplitEstimates(env, x, solver->getSchedulerChoices(), region.region, dirForParameters);
+        // }
+        // if (!nonTrivialEndComponents) {
+        //     choices = solver->getSchedulerChoices();
+        // }
         choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
             computeStateValueDeltaRegionSplitEstimates(env, x, *choices, region.region, dirForParameters);
