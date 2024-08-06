@@ -1,6 +1,5 @@
 dtmc
 
-// Function is just p
 const double p;
 
 module test

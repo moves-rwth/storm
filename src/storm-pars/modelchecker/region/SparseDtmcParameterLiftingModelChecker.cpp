@@ -169,11 +169,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
         parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
             this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, isOrderBasedMonotonicityBackend());
-        if constexpr (Robust) {
-            if (!graphPreserving) {
-                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
-            }
-        }
     }
 
     // We know some bounds for the results so set them
@@ -233,9 +228,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, target, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
-            if (!graphPreserving) {
-                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, target);
-            }
         } else {
             // Create the vector of one-step probabilities to go to target states.
             std::vector<ParametricType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(
@@ -305,9 +297,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 filteredMatrix, b, allTrue, allTrue, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
-            if (!graphPreserving) {
-                intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(filteredMatrix, b);
-            }
         } else {
             parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(
                 this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, isValueDeltaRegionSplitEstimates(), isOrderBasedMonotonicityBackend());
@@ -358,12 +347,6 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     parameterLifter = std::make_unique<ParameterLifterType<ParametricType, ConstantType, Robust>>(this->parametricModel->getTransitionMatrix(), b,
                                                                                                           maybeStates, maybeStates);
-    if constexpr (Robust) {
-        if (!graphPreserving) {
-            intervalEndComponentPreserver = std::make_unique<transformer::IntervalEndComponentPreserver<ParametricType>>(this->parametricModel->getTransitionMatrix(), b);
-        }
-    }
-
     // We only know a lower bound for the result
     lowerResultBound = storm::utility::zero<ConstantType>();
 
@@ -425,9 +408,12 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             return std::vector<ConstantType>();
         }
         if (!graphPreserving) {
-            intervalEndComponentPreserver->specifyAssignment(liftedMatrix, liftedVector);
-            liftedMatrix = intervalEndComponentPreserver->getMatrix();
-            liftedVector = intervalEndComponentPreserver->getVector();
+            transformer::IntervalEndComponentPreserver endComponentPreserver;
+            auto const& result = endComponentPreserver.eliminateMECs(liftedMatrix, liftedVector);
+            if (result) {
+                liftedMatrix = *result;
+                nonTrivialEndComponents = true;
+            }
         }
     }
     const uint64_t resultVectorSize = liftedMatrix.getColumnCount();
@@ -498,8 +484,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             }
         } else {
             // Set initial scheduler
-            // if (choices.has_value() && !nonTrivialEndComponents) {
-            if (choices.has_value()) {
+            if (!nonTrivialEndComponents && choices.has_value()) {
                 solver->setInitialScheduler(std::move(choices.value()));
             }
         }
@@ -526,15 +511,12 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         // Invoke the solver
         x.resize(resultVectorSize, storm::utility::zero<ConstantType>());
         solver->solveEquations(env, dirForParameters, x, liftedVector);
-        // if (isValueDeltaRegionSplitEstimates()) {
-        //     computeStateValueDeltaRegionSplitEstimates(env, x, solver->getSchedulerChoices(), region.region, dirForParameters);
-        // }
-        // if (!nonTrivialEndComponents) {
-        //     choices = solver->getSchedulerChoices();
-        // }
-        choices = solver->getSchedulerChoices();
         if (isValueDeltaRegionSplitEstimates()) {
-            computeStateValueDeltaRegionSplitEstimates(env, x, *choices, region.region, dirForParameters);
+            computeStateValueDeltaRegionSplitEstimates(env, x, solver->getSchedulerChoices(), region.region, dirForParameters);
+        }
+        // Store choices for next time, if we have no non-trivial end components
+        if (!nonTrivialEndComponents) {
+            choices = solver->getSchedulerChoices();
         }
     }
 

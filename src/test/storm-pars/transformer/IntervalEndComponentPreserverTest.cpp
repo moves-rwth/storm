@@ -5,10 +5,15 @@
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberAdapter.h"
 #include "environment/Environment.h"
+#include "environment/solver/MinMaxSolverEnvironment.h"
+#include "environment/solver/SolverEnvironment.h"
+#include "gtest/gtest.h"
 #include "modelchecker/CheckTask.h"
 #include "modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "models/sparse/Model.h"
+#include "solver/IterativeMinMaxLinearEquationSolver.h"
+#include "solver/MinMaxLinearEquationSolver.h"
 #include "solver/OptimizationDirection.h"
 #include "storage/bisimulation/BisimulationType.h"
 #include "storage/prism/Program.h"
@@ -43,14 +48,9 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    std::cout << *formulas[0] << std::endl;
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
-
-    // TODO!! Bisimulation incorrectly transforms this
-    // dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Weak)
-    //            ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
     storm::storage::BitVector psiStates =
@@ -61,112 +61,82 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
 
     storm::storage::BitVector allTrue(model->getNumberOfStates(), true);
 
-    // std::cout << dtmc->getTransitionMatrix() << std::endl;
-
     // Lift parameters for region [0,1]
     storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(
-        dtmc->getTransitionMatrix(),
+        dtmc->getTransitionMatrix().filterEntries(~psiStates),
         target,
         allTrue,
         allTrue
     );
-    storm::transformer::IntervalEndComponentPreserver<storm::RationalFunction> preserver(dtmc->getTransitionMatrix(), target);
 
     storm::storage::ParameterRegion<storm::RationalFunction> region = storm::api::createRegion<storm::RationalFunction>("0", *dtmc)[0];
 
     parameterLifter.specifyRegion(region, storm::solver::OptimizationDirection::Maximize);
-    preserver.specifyAssignment(parameterLifter.getMatrix(), parameterLifter.getVector());
 
-    // std::cout << parameterLifter.getMatrix() << std::endl;
-    // std::cout << preserver.getMatrix() << std::endl;
+    storm::transformer::IntervalEndComponentPreserver preserver;
+    auto result = preserver.eliminateMECs(parameterLifter.getMatrix(), parameterLifter.getVector());
+    ASSERT_TRUE(result.has_value());
+    auto const& withoutMECs = *result;
 
-    // storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
-    // modelChecker.specifyFormula(checkTask);
-    // storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerSimple(*simpleDtmc);
-    // modelCheckerSimple.specifyFormula(checkTask);
+    auto target2 = parameterLifter.getVector();
+    target2.push_back(storm::utility::zero<storm::Interval>());
 
-    // auto parameters = storm::models::sparse::getAllParameters(*dtmc);
+    auto env = storm::Environment();
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
 
-    // // Check if both DTMCs are equivalent just by sampling.
-    // std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> testInstantiations;
-    // std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> emptyInstantiation;
-    // testInstantiations.push_back(emptyInstantiation);
-    // for (auto const& param : parameters) {
-    //     std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> newInstantiations;
-    //     for (auto point : testInstantiations) {
-    //         for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-6); x <= 1;
-    //              x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-6)) / 10) {
-    //             std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> newMap(point);
-    //             newMap[param] = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(x);
-    //             newInstantiations.push_back(newMap);
-    //         }
-    //     }
-    //     testInstantiations = newInstantiations;
-    // }
+    auto factory = std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, double>>();
 
-    // storm::Environment env;
-    // for (auto const& instantiation : testInstantiations) {
-    //     auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-    //     auto resultSimple = modelCheckerSimple.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-    //     ASSERT_TRUE(storm::utility::isAlmostZero(result - resultSimple))
-    //         << "Results " << result << " and " << resultSimple << " are not the same but should be.";
-    // }
+    auto const& solver1 = factory->create(env);
+    auto x1 = std::vector<double>(parameterLifter.getVector().size(), 0);
+    solver1->setMatrix(parameterLifter.getMatrix());
 
+    auto const& solver2 = factory->create(env);
+    solver2->setMatrix(withoutMECs);
+    auto x2 = std::vector<double>(target2.size(), 0);
 
-    // auto pla =
-    //     storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
-    // auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    solver1->setUncertaintyIsRobust(false);
+    solver2->setUncertaintyIsRobust(false);
 
-    // auto plaSimple =
-    //     storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, simpleDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
-    // auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    // Check that maximize is the same
+    solver1->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+    solver1->solveEquations(env, x1, parameterLifter.getVector());
+    solver2->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+    solver2->solveEquations(env, x2, target2);
 
-    // // no <= defined for RationalFunctions I suppose
-    // ASSERT_TRUE(resultPLA < resultPLASimple || resultPLA == resultPLASimple) << "Worse PLA result with simplified DTMC";
-
-    // // Check that simpleDtmc is in fact simple
-    // for (uint64_t state = 0; state < simpleDtmc->getTransitionMatrix().getRowCount(); ++state) {
-    //     auto row = simpleDtmc->getTransitionMatrix().getRow(state);
-
-    //     std::set<storm::RationalFunctionVariable> variables;
-
-    //     for (auto const& entry : row) {
-    //         for (auto const& variable : entry.getValue().gatherVariables()) {
-    //             variables.emplace(variable);
-    //         }
-    //     }
-
-    //     if (variables.size() != 0) {
-    //         ASSERT_TRUE(variables.size() == 1);
-    //         auto parameter = *variables.begin();
-
-    //         auto parameterPol = storm::RawPolynomial(parameter);
-    //         auto parameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(parameterPol));
-    //         auto oneMinusParameter = storm::RawPolynomial(1) - parameterPol;
-    //         auto oneMinusParameterRational = storm::RationalFunction(carl::makePolynomial<storm::Polynomial>(oneMinusParameter));
-
-    //         uint64_t seenP = 0;
-    //         uint64_t seenOneMinusP = 0;
-
-    //         for (auto const& entry : row) {
-    //             if (!storm::utility::isZero(entry.getValue())) {
-    //                 if (entry.getValue() == parameterRational) {
-    //                     seenP++;
-    //                 } else if (entry.getValue() == oneMinusParameterRational) {
-    //                     seenOneMinusP++;
-    //                 } else {
-    //                     ASSERT_TRUE(false) << "Value " << entry.getValue() << " is not simple";
-    //                 }
-    //             }
-    //         }
-
-    //         ASSERT_TRUE(seenP == 1 && seenOneMinusP == 1) << "State " << state << " not simple";
-    //     }
-    // }
+    for (uint64_t i = 0; i < x1.size(); i++) {
+        if (withoutMECs.getRow(i).getNumberOfEntries() > 0) {
+            ASSERT_NEAR(x1[i], x2[i], 1e-7);
+        }
+    }
+    
+    // We can't check minimize because we don't know what is happening, and
+    // also, minimizing solver1 is what we want to avoid
 }
 
 TEST(IntervalEndComponentPreserver, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm";
+    std::string formulaAsString = "P=? [F \"target\"]";
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
+    testModelInterval(programFile, formulaAsString, constantsAsString);
+}
+
+TEST(IntervalEndComponentPreserver, BRP) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
+    std::string formulaAsString = "P=? [F \"error\"]";
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
+    testModelInterval(programFile, formulaAsString, constantsAsString);
+}
+
+TEST(IntervalEndComponentPreserver, Crowds) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
+    std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
+    testModelInterval(programFile, formulaAsString, constantsAsString);
+}
+
+TEST(IntervalEndComponentPreserver, NAND) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);

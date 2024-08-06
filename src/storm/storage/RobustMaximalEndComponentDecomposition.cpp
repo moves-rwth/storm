@@ -31,29 +31,17 @@ RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDeco
 
 template<typename ValueType>
 RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
-    performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions);
+                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                              std::vector<ValueType> const& vector) {
+    performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, vector);
 }
 
 template<typename ValueType>
 RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                              std::vector<ValueType> const& vector,
                                                                               storm::storage::BitVector const& states) {
-    performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states);
-}
-
-template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                              storm::storage::BitVector const& states,
-                                                                              storm::storage::BitVector const& choices) {
-    performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states, choices);
-}
-
-template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::models::sparse::DeterministicModel<ValueType> const& model,
-                                                                              storm::storage::BitVector const& states) {
-    performRobustMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), states);
+    performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, vector, states);
 }
 
 template<typename ValueType>
@@ -81,8 +69,8 @@ RobustMaximalEndComponentDecomposition<ValueType>& RobustMaximalEndComponentDeco
 template<typename ValueType>
 void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                          storm::OptionalRef<storm::storage::BitVector const> states,
-                                                                                          storm::OptionalRef<storm::storage::BitVector const> choices) {
+                                                                                          storm::OptionalRef<std::vector<ValueType> const> vector,
+                                                                                          storm::OptionalRef<storm::storage::BitVector const> states) {
     
 
     // Adapted from Haddad-Monmege Algorithm 3
@@ -112,16 +100,20 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
             // If this probability is >= 1, we are able to stay in the SCC
             // Otherwise not
             double probabilityToStayInScc = 0;
-            for (auto const& entry : transitionMatrix.getRow(state)) {
-                auto const& target = entry.getColumn();
-                const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
-                auto const& interval = entry.getValue();
-                if (interval.lower() > 0 && !targetInSCC) {
-                    // You have to leave the SCC here
-                    probabilityToStayInScc = 0;
-                    break;
-                } else if (targetInSCC) {
-                    probabilityToStayInScc += interval.upper();
+            // If the lower of the vector is > 0, the probability to stay in the SCC stays zero
+            if (vector && vector->at(state).lower() == 0) {
+                // Check if we can stay in the SCC
+                for (auto const& entry : transitionMatrix.getRow(state)) {
+                    auto const& target = entry.getColumn();
+                    const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
+                    auto const& interval = entry.getValue();
+                    if (interval.lower() > 0 && !targetInSCC) {
+                        // You have to leave the SCC here
+                        probabilityToStayInScc = 0;
+                        break;
+                    } else if (targetInSCC) {
+                        probabilityToStayInScc += interval.upper();
+                    }
                 }
             }
 

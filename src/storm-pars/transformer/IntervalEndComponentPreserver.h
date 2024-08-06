@@ -20,28 +20,10 @@
 namespace storm {
 namespace transformer {
 
-template<typename ParametricType>
 class IntervalEndComponentPreserver {
    public:
-      IntervalEndComponentPreserver(storm::storage::SparseMatrix<ParametricType> const& originalMatrix, std::vector<ParametricType> const& originalVector);
-
-      void specifyAssignment(storm::storage::SparseMatrix<Interval> const& matrix, std::vector<Interval> const& vector);
-
-      // Returns the resulting matrix. Should only be called AFTER specifying an assigment
-      storm::storage::SparseMatrix<Interval> const& getMatrix() const;
-
-      // Returns the resulting vector. Should only be called AFTER specifying an assigment
-      std::vector<Interval> const& getVector() const;
-
-   private:
-      storm::storage::SparseMatrix<Interval> matrix;  // The resulting matrix;
-      std::vector<typename storm::storage::SparseMatrix<Interval>::iterator> matrixAssignment;  // Connection of matrix entries with placeholders
-      
-      std::vector<Interval> vector;
-      std::vector<typename std::vector<Interval>::iterator> vectorAssignment;  // Connection of vector entries with placeholders
-      std::vector<Interval> vectorPlaceholders;
-
-      storage::BitVector considered;
+      IntervalEndComponentPreserver();
+      std::optional<storage::SparseMatrix<Interval>> eliminateMECs(storm::storage::SparseMatrix<Interval> const& matrix, std::vector<Interval> const& vector);
 };
 }  // namespace transformer
 }  // namespace storm

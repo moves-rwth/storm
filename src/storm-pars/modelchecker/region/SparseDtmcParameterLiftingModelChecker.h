@@ -39,13 +39,6 @@ using ParameterLifterType =
         storm::transformer::ParameterLifter<ParametricType, ConstantType>
     >;
 
-template<typename ParametricType, typename ConstantType, bool Robust>
-using IntervalEndComponentPreserverType =
-    std::conditional_t<Robust,
-        storm::transformer::IntervalEndComponentPreserver<ParametricType>,
-        std::monostate
-    >;
-
 template<typename SparseModelType, typename ConstantType, bool Robust=false>
 class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
    public:
@@ -120,7 +113,6 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
 
     std::unique_ptr<ParameterLifterType<ParametricType, ConstantType, Robust>> parameterLifter;
-    std::unique_ptr<IntervalEndComponentPreserverType<ParametricType, ConstantType, Robust>> intervalEndComponentPreserver;
     std::unique_ptr<SolverFactoryType<ConstantType, Robust>> solverFactory;
     bool solvingRequiresUpperRewardBounds;
 
