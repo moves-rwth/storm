@@ -183,7 +183,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
             if (!this->count(newCounter)) {
                 this->emplace(newCounter, constant);
             } else {
-                // std::cout << this->at(newCounter) << " += " << constant << std::endl;
                 this->at(newCounter) += constant;
             }
         }
@@ -271,8 +270,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
         if (nth == 0 || derivativeOfThis) {
             return;
         }
-        std::cout << *this << std::endl;
-        std::cout << polynomialCache->at(this->parameter).first << std::endl;
         derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
         for (auto const& [info, constant] : *this) {
             // Product rule
@@ -295,7 +292,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
                 if (derivative.isConstant()) {
                     newConstant *= derivative.constantPart();
                 } else {
-                    std::cout << "non-constant" << derivative << std::endl;
                     uint64_t derivativeIndex = this->polynomialCache->lookUpInCache(derivative, parameter);
                     while (insert.size() < derivativeIndex) {
                         insert.push_back(0);
@@ -309,7 +305,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
                 }
             }
         }
-        std::cout << "Derivative of " << std::endl << *this << std::endl << *derivativeOfThis << std::endl;
         derivativeOfThis->computeDerivative(nth - 1);
     }
 

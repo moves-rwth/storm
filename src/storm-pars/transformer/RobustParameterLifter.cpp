@@ -456,7 +456,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             }
         } else {
             // TODO make evaluation depth configurable
-            annotation.computeDerivative(3);
+            annotation.computeDerivative(4);
         }
         this->annotation.emplace(annotation);
     } else {
@@ -479,7 +479,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             // Compute zeros of derivative (= maxima/minima of function) and emplace those between 0 and 1 into the maxima set
             std::optional<std::set<CoefficientType>> zeroes;
             // Find zeroes with straight-forward method for degrees <4, find them with SMT for degrees above that
-            if (derivative.nominator().totalDegree() < 2) {
+            if (derivative.nominator().totalDegree() < 4) {
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
                 zeroes = zeroesSMT(transition, p);
@@ -663,10 +663,12 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 std::vector<uint64_t> regionsInPLARegion;
                 for (uint64_t i = 0; i < regionsAndBounds.size(); i++) {
                     auto const& [region, bound] = regionsAndBounds[i];
-                    std::cout << "Region " << region << " bound " << bound << std::endl;
                     STORM_LOG_ASSERT(
                         i==0?true:(
-                            region.lower() >= regionsAndBounds[i - 1].first.upper() && region.upper() <= regionsAndBounds[i - 1].first.lower()
+                            !(
+                                region.upper() < regionsAndBounds[i - 1].first.lower() ||
+                                region.lower() > regionsAndBounds[i - 1].first.upper()
+                            )
                         ), "regions next to each other need to intersect");
                     if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
                         if (regionsInPLARegion.empty()) {
