@@ -29,7 +29,24 @@ namespace transformer {
 
 using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
-struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<std::map<UniPoly, uint64_t>, std::vector<UniPoly>>> {
+// optimization for the polynomial cache - built in comparison is slow
+struct UniPolyCompare {
+    bool operator()(const UniPoly& lhs, const UniPoly& rhs) const {
+        if (lhs.degree() != rhs.degree()) {
+            return lhs.degree() < rhs.degree();
+        }
+
+        for (uint64_t i = 0; i < lhs.coefficients().size(); i++) {
+            if (lhs.coefficients()[i] != rhs.coefficients()[i]) {
+                return lhs.coefficients()[i] < rhs.coefficients()[i];
+            }
+        }
+
+        return false;
+    }
+};
+
+struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<std::map<UniPoly, uint64_t, UniPolyCompare>, std::vector<UniPoly>>> {
     /**
      * Look up the index of this polynomial in the cache. If it doesn't exist, adds it to the cache.
      *
@@ -151,7 +168,7 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
      * @param polynomial The polynomial.
      * @param parameter The parameter in the polynomial.
      */
-    void addAnnotationTimesPolynomial(Annotation const& other, UniPoly polynomial) {
+    void addAnnotationTimesPolynomial(Annotation const& other, UniPoly&& polynomial) {
         for (auto const& [info, constant] : other) {
             // Copy array
             auto newCounter = info;
@@ -164,9 +181,11 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
             newCounter[cacheNum]++;
 
             if (!this->count(newCounter)) {
-                this->emplace(newCounter, utility::zero<RationalFunctionCoefficient>());
+                this->emplace(newCounter, constant);
+            } else {
+                // std::cout << this->at(newCounter) << " += " << constant << std::endl;
+                this->at(newCounter) += constant;
             }
-            this->at(newCounter) += constant;
         }
     }
 

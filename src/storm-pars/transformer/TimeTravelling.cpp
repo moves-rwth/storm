@@ -466,7 +466,7 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                         UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
                         // Constant denominator is now distributed in the factors, not in the denominator of the rational function
                         nominatorAsUnivariate /= transition.denominator().coefficient();
-                        targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), nominatorAsUnivariate);
+                        targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
                     }
 
                     // std::cout << " == " << targetAnnotation << std::endl;

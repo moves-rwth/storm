@@ -456,7 +456,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             }
         } else {
             // TODO make evaluation depth configurable
-            annotation.computeDerivative(4);
+            annotation.computeDerivative(5);
         }
         this->annotation.emplace(annotation);
     } else {
@@ -677,7 +677,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 }
 
                 // TODO make this configurable
-                uint64_t regionsRefine = annotation.maxDegree();
+                uint64_t regionsRefine = std::max((uint64_t) 10, annotation.maxDegree() / 4);
                 refine = regionsInPLARegion.size() < regionsRefine;
 
                 if (refine) {
