@@ -22,13 +22,14 @@
 #include "storm-pars/utility/parametric.h"
 #include "utility/constants.h"
 #include "utility/macros.h"
+#include <boost/container/flat_map.hpp>
 
 namespace storm {
 namespace transformer {
 
 using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
-struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>> {
+struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<std::map<UniPoly, uint64_t>, std::vector<UniPoly>>> {
     /**
      * Look up the index of this polynomial in the cache. If it doesn't exist, adds it to the cache.
      *
@@ -37,13 +38,18 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
      * @return uint64_t The index of the polynomial.
      */
     uint64_t lookUpInCache(UniPoly const& f, RationalFunctionVariable const& p) {
-        for (uint64_t i = 0; i < (*this)[p].size(); i++) {
-            if (this->at(p)[i] == f) {
-                return i;
-            }
+        auto& container = (*this)[p];
+
+        auto it = container.first.find(f);
+        if (it != container.first.end()) {
+            return it->second;
         }
-        this->at(p).push_back(f);
-        return this->at(p).size() - 1;
+        
+        uint64_t newIndex = container.second.size();
+        container.first[f] = newIndex;
+        container.second.push_back(f);
+
+        return newIndex;
     }
 
     /**
@@ -63,7 +69,7 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
         polynomial = polynomial.one();
         for (uint64_t i = 0; i < factorization.size(); i++) {
             for (uint64_t j = 0; j < factorization[i]; j++) {
-                polynomial *= this->at(p)[i];
+                polynomial *= this->at(p).second[i];
             }
         }
         localCache.emplace(key, polynomial);
@@ -71,7 +77,15 @@ struct PolynomialCache : std::map<RationalFunctionVariable, std::vector<UniPoly>
     }
 };
 
-class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoefficient> {
+
+template<typename Container>
+struct container_hash {
+    std::size_t operator()(Container const& c) const {
+        return boost::hash_range(c.begin(), c.end());
+    }
+};
+
+class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunctionCoefficient, container_hash<std::vector<uint64_t>>> {
    public:
     Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) : parameter(parameter), polynomialCache(polynomialCache) {
         // Intentionally left empty
@@ -193,7 +207,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoeffi
         for (auto const& [info, constant] : *this) {
             Number outerMult = utility::one<Number>();
             for (uint64_t i = 0; i < info.size(); i++) {
-                auto polynomial = this->polynomialCache->at(parameter)[i];
+                auto polynomial = this->polynomialCache->at(parameter).second[i];
                 // Evaluate the inner polynomial by its coefficients
                 auto coefficients = polynomial.coefficients();
                 Number innerSum = utility::zero<Number>();
@@ -241,7 +255,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoeffi
         derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
         for (auto const& [info, constant] : *this) {
             // Product rule
-            for (uint64_t i = 0; i < polynomialCache->at(parameter).size(); i++) {
+            for (uint64_t i = 0; i < polynomialCache->at(parameter).second.size(); i++) {
                 if (info.size() <= i) {
                     break;
                 }
@@ -255,7 +269,7 @@ class Annotation : public std::map<std::vector<uint64_t>, RationalFunctionCoeffi
                 RationalFunctionCoefficient newConstant = constant;
                 newConstant += utility::convertNumber<RationalFunctionCoefficient>(i);
 
-                auto polynomial = polynomialCache->at(parameter).at(i);
+                auto polynomial = polynomialCache->at(parameter).second.at(i);
                 auto derivative = polynomial.derivative();
                 if (derivative.isConstant()) {
                     newConstant *= derivative.constantPart();
@@ -309,7 +323,7 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
                 } else {
                     alreadyPrintedFactor = true;
                 }
-                os << "(" << annotation.polynomialCache->at(annotation.parameter)[i] << ")" << "^" << factors[i];
+                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
             }
         }
         if (factors.empty()) {
