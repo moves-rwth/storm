@@ -1,6 +1,5 @@
 
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
-#include <_types/_uint64_t.h>
 #include "adapters/RationalFunctionForward.h"
 #include "adapters/RationalNumberForward.h"
 #include "storage/BitVector.h"
