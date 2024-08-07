@@ -62,7 +62,7 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
             boost::container::flat_set<uint64_t> groupSet;
             for (auto const& state : group) {
                 for (auto const& entry : originalMatrix.getRow(state)) {
-                    if (group.getStates().contains(entry.getColumn())) {
+                    if (group.getStates().contains(entry.getColumn()) || utility::isZero(entry.getValue())) {
                         continue;
                     }
                     // We want to route this transition to the state representing the group
@@ -72,9 +72,12 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
                 }
             }
             // Insert interval [0, 1] to all of these states
+            std::cout << "Group Set from " << row << ": ";
             for (auto const& state : groupSet) {
+                std::cout << state << " ";
                 builder.addNextValue(row, state, Interval(0, 1));
             }
+            std::cout << std::endl;
         }
     }
 

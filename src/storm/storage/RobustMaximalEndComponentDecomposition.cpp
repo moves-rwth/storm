@@ -107,7 +107,7 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                     auto const& target = entry.getColumn();
                     const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
                     auto const& interval = entry.getValue();
-                    if (interval.lower() > 0 && !targetInSCC) {
+                    if (!utility::isAlmostZero(interval.lower()) && !targetInSCC) {
                         // You have to leave the SCC here
                         probabilityToStayInScc = 0;
                         break;
