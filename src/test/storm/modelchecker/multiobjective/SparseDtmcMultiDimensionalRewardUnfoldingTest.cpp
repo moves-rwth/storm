@@ -11,7 +11,16 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/constants.h"
 
-TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
+class SparseDtmcMultiDimensionalRewardUnfoldingTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
     storm::Environment env;
     std::string programFile = STORM_TEST_RESOURCES_DIR "/dtmc/die.pm";
     std::string formulasAsString = "P=? [ F{\"coin_flips\"}<=2 \"two\" ] ";
@@ -45,7 +54,7 @@ TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
+TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
     storm::Environment env;
     std::string programFile = STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm";
     std::string formulasAsString = "P=? [ F{\"num_rounds\"}<=1 \"elected\" ] ";
@@ -85,7 +94,7 @@ TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
               result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_crowds) {
+TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_crowds) {
     storm::Environment env;
     std::string programFile = STORM_TEST_RESOURCES_DIR "/dtmc/crowds_cost_bounded.pm";
     std::string formulasAsString = "P=? [F{\"num_runs\"}<=3,{\"observe0\"}>1 true]";

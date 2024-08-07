@@ -83,6 +83,9 @@ class SparseDerivativeInstantiationModelCheckerTest : public ::testing::Test {
         return _environment;
     }
     virtual void SetUp() {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
         carl::VariablePool::getInstance().clear();
     }
     virtual void TearDown() {

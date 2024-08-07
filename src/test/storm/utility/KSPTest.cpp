@@ -13,6 +13,15 @@
 //       more than that.
 //       An independent verification of the values would be really nice ...
 
+class KSPTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
 std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
     std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
@@ -26,7 +35,7 @@ std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
 const storm::utility::ksp::state_t testState = 296;
 const storm::utility::ksp::state_t stateWithOnlyOnePath = 1;
 
-TEST(KSPTest, dijkstra) {
+TEST_F(KSPTest, dijkstra) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
@@ -34,7 +43,7 @@ TEST(KSPTest, dijkstra) {
     EXPECT_NEAR(0.015859334652581887, dist, 1e-12);
 }
 
-TEST(KSPTest, singleTarget) {
+TEST_F(KSPTest, singleTarget) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
@@ -42,7 +51,7 @@ TEST(KSPTest, singleTarget) {
     EXPECT_NEAR(1.5231305000339662e-06, dist, 1e-12);
 }
 
-TEST(KSPTest, reentry) {
+TEST_F(KSPTest, reentry) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
@@ -54,7 +63,7 @@ TEST(KSPTest, reentry) {
     EXPECT_NEAR(3.0462610000679315e-08, dist2, 1e-12);
 }
 
-TEST(KSPTest, groupTarget) {
+TEST_F(KSPTest, groupTarget) {
     auto model = buildExampleModel();
     auto groupTarget = std::vector<storm::utility::ksp::state_t>{50, 90};
     auto spg = storm::utility::ksp::ShortestPathsGenerator<double>(*model, groupTarget);
@@ -69,14 +78,14 @@ TEST(KSPTest, groupTarget) {
     EXPECT_NEAR(7.5303043199999984e-06, dist3, 1e-12);
 }
 
-TEST(KSPTest, kTooLargeException) {
+TEST_F(KSPTest, kTooLargeException) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, stateWithOnlyOnePath);
 
     STORM_SILENT_ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
 }
 
-TEST(KSPTest, kspStateSet) {
+TEST_F(KSPTest, kspStateSet) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
@@ -93,7 +102,7 @@ TEST(KSPTest, kspStateSet) {
     //    EXPECT_EQ(referenceBV, bv);
 }
 
-TEST(KSPTest, kspPathAsList) {
+TEST_F(KSPTest, kspPathAsList) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 

@@ -133,19 +133,28 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     }
 }
 
-TEST(BinaryDtmcTransformer, Crowds) {
+class BinaryDtmcTransformer : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(BinaryDtmcTransformer, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelB(programFile, formulaAsString, constantsAsString);
 }
-TEST(BinaryDtmcTransformer, Nand) {
+TEST_F(BinaryDtmcTransformer, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelB(programFile, formulaAsString, constantsAsString);
 }
-TEST(BinaryDtmcTransformer, Brp) {
+TEST_F(BinaryDtmcTransformer, Brp) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F \"error\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

@@ -23,7 +23,16 @@
 
 #include "carl/util/stringparser.h"
 
-TEST(MonotonicityHelperTest, Derivative_checker) {
+class MonotonicityHelperTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(MonotonicityHelperTest, Derivative_checker) {
     // Create the region
     typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
     typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upperBoundaries;
@@ -108,7 +117,7 @@ TEST(MonotonicityHelperTest, Derivative_checker) {
     EXPECT_FALSE(functionRes.second);
 }
 
-TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
+TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -163,7 +172,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     }
 }
 
-TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
+TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -218,7 +227,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     }
 }
 
-TEST(MonotonicityHelperTest, zeroconf) {
+TEST_F(MonotonicityHelperTest, zeroconf) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
     std::string formulaAsString = "P > 0.5 [ F s=5 ]";
     std::string constantsAsString = "n = 4";  // e.g. pL=0.9,TOACK=0.5
@@ -272,7 +281,7 @@ TEST(MonotonicityHelperTest, zeroconf) {
     }
 }
 
-TEST(MonotonicityHelperTest, Simple1) {
+TEST_F(MonotonicityHelperTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
@@ -318,7 +327,7 @@ TEST(MonotonicityHelperTest, Simple1) {
     }
 }
 
-TEST(MonotonicityHelperTest, Casestudy1) {
+TEST_F(MonotonicityHelperTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
@@ -360,7 +369,7 @@ TEST(MonotonicityHelperTest, Casestudy1) {
     }
 }
 
-TEST(MonotonicityHelperTest, CaseStudy2) {
+TEST_F(MonotonicityHelperTest, CaseStudy2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P > 0.5 [ F s=4 ]";
     std::string constantsAsString = "";
@@ -393,7 +402,7 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     EXPECT_FALSE(result.begin()->first->getDoneBuilding());
 }
 
-TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
+TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
@@ -436,7 +445,7 @@ TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
     }
 }
 
-TEST(MonotonicityHelperTest, Casestudy3_monotone) {
+TEST_F(MonotonicityHelperTest, Casestudy3_monotone) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";

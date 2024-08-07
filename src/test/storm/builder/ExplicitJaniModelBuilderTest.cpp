@@ -23,7 +23,16 @@ storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesD
     return m;
 }
 
-TEST(ExplicitJaniModelBuilderTest, Dtmc) {
+class ExplicitJaniModelBuilderTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(ExplicitJaniModelBuilderTest, Dtmc) {
     auto janiModel = getJaniModelFromPrism("/dtmc/die.pm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
@@ -68,7 +77,7 @@ TEST(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(5ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitJaniModelBuilderTest, pdtmc) {
+TEST_F(ExplicitJaniModelBuilderTest, pdtmc) {
     auto janiModel = getJaniModelFromPrism("/pdtmc/parametric_die.pm");
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model =
         storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
@@ -87,7 +96,7 @@ TEST(ExplicitJaniModelBuilderTest, pdtmc) {
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitJaniModelBuilderTest, Ctmc) {
+TEST_F(ExplicitJaniModelBuilderTest, Ctmc) {
     auto janiModel = getJaniModelFromPrism("/ctmc/cluster2.sm", true);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
@@ -115,7 +124,7 @@ TEST(ExplicitJaniModelBuilderTest, Ctmc) {
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitJaniModelBuilderTest, Mdp) {
+TEST_F(ExplicitJaniModelBuilderTest, Mdp) {
     auto janiModel = getJaniModelFromPrism("/mdp/two_dice.nm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
@@ -154,7 +163,7 @@ TEST(ExplicitJaniModelBuilderTest, Mdp) {
     EXPECT_EQ(12ul, model->getNumberOfChoices());
 }
 
-TEST(ExplicitJaniModelBuilderTest, Ma) {
+TEST_F(ExplicitJaniModelBuilderTest, Ma) {
     auto janiModel = getJaniModelFromPrism("/ma/simple.ma");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
@@ -187,20 +196,20 @@ TEST(ExplicitJaniModelBuilderTest, Ma) {
     EXPECT_EQ(1530ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 }
 
-TEST(ExplicitJaniModelBuilderTest, FailComposition) {
+TEST_F(ExplicitJaniModelBuilderTest, FailComposition) {
     auto janiModel = getJaniModelFromPrism("/mdp/system_composition.nm");
 
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
 
-TEST(ExplicitJaniModelBuilderTest, unassignedVariables) {
+TEST_F(ExplicitJaniModelBuilderTest, unassignedVariables) {
     storm::jani::Model janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani").first;
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(25ul, model->getNumberOfStates());
     EXPECT_EQ(81ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitJaniModelBuilderTest, enumerateInitial) {
+TEST_F(ExplicitJaniModelBuilderTest, enumerateInitial) {
     storm::jani::Model janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/enumerate_init.jani").first;
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(94ul, model->getNumberOfStates());

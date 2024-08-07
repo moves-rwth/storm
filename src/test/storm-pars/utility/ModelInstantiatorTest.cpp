@@ -19,7 +19,16 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/jani/Property.h"
 
-TEST(ModelInstantiatorTest, BrpProb) {
+class ModelInstantiatorTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -144,7 +153,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
     }
 }
 
-TEST(ModelInstantiatorTest, Brp_Rew) {
+TEST_F(ModelInstantiatorTest, Brp_Rew) {
     carl::VariablePool::getInstance().clear();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -216,7 +225,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     }
 }
 
-TEST(ModelInstantiatorTest, Consensus) {
+TEST_F(ModelInstantiatorTest, Consensus) {
     carl::VariablePool::getInstance().clear();
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.nm";

@@ -445,6 +445,13 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     typedef typename storm::models::symbolic::Dtmc<TestType::ddType, ValueType> SymbolicModelType;
 
     DtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
@@ -641,6 +648,9 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, SynchronousLeader) {
 }
 
 TEST(DtmcPrctlModelCheckerTest, AllUntilProbabilities) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     std::string formulasString = "P=? [F \"one\"]";
     formulasString += "; P=? [F \"two\"]";
     formulasString += "; P=? [F \"three\"]";

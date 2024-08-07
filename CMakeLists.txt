@@ -175,8 +175,15 @@ else()
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 
-set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
-set(SHIPPED_CARL_USE_GINAC ON)
+# Set compile flags for dependencies
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+	set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
+	set(SHIPPED_CARL_USE_GINAC ON)
+else()
+	set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
+	set(SHIPPED_CARL_USE_GINAC OFF)
+endif()
+
 # Detect Apple Silicon and adjust settings
 if(APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
 	message(STATUS "Storm - Detected that target system uses Apple Silicon.")

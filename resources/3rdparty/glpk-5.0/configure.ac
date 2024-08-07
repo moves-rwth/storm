@@ -191,7 +191,7 @@ esac
 AC_SUBST([NOUNDEFINED])
 
 AC_CONFIG_FILES(
-   [src/Makefile examples/Makefile Makefile])
+   [src/Makefile Makefile])
 AC_OUTPUT
 
 dnl eof

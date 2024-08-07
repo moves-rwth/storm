@@ -4,6 +4,9 @@
 #include "test/storm_gtest.h"
 
 TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     storm::Environment env;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::builder::BuilderOptions options;

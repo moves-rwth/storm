@@ -18,7 +18,16 @@
 
 #include "test/storm_gtest.h"
 
-TEST(MonotonicityCheckerTest, Simple1_larger_region) {
+class MonotonicityCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(MonotonicityCheckerTest, Simple1_larger_region) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -66,7 +75,7 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
 }
 
-TEST(MonotonicityCheckerTest, Simple1_small_region) {
+TEST_F(MonotonicityCheckerTest, Simple1_small_region) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -115,7 +124,7 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
 }
 
-TEST(MonotonicityCheckerTest, Casestudy1) {
+TEST_F(MonotonicityCheckerTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -168,7 +177,7 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
     }
 }
 
-TEST(MonotonicityCheckerTest, Casestudy2) {
+TEST_F(MonotonicityCheckerTest, Casestudy2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P=? [F s=4 ]";
     std::string constantsAsString = "";
@@ -222,7 +231,7 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     }
 }
 
-TEST(MonotonicityCheckerTest, Casestudy3) {
+TEST_F(MonotonicityCheckerTest, Casestudy3) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";

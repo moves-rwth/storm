@@ -12,7 +12,16 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 
-TEST(SparseExplorationModelCheckerTest, Dice) {
+class SparseExplorationModelCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseExplorationModelCheckerTest, Dice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
 
     // A parser that we use for conveniently constructing the formulas.
@@ -63,7 +72,7 @@ TEST(SparseExplorationModelCheckerTest, Dice) {
     EXPECT_NEAR(0.083333283662796020508, quantitativeResult6[0], storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision());
 }
 
-TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
+TEST_F(SparseExplorationModelCheckerTest, AsynchronousLeader) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader4.nm");
 
     // A parser that we use for conveniently constructing the formulas.
@@ -86,7 +95,7 @@ TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
     EXPECT_NEAR(1, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision());
 }
 
-TEST(SparseExplorationModelCheckerTest, Cicle) {
+TEST_F(SparseExplorationModelCheckerTest, Cicle) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/cicle.nm");
 
     // A parser that we use for conveniently constructing the formulas.
