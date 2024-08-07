@@ -271,37 +271,45 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
         if (nth == 0 || derivativeOfThis) {
             return;
         }
+        std::cout << *this << std::endl;
+        std::cout << polynomialCache->at(this->parameter).first << std::endl;
         derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
         for (auto const& [info, constant] : *this) {
             // Product rule
-            for (uint64_t i = 0; i < polynomialCache->at(parameter).second.size(); i++) {
-                if (info.size() <= i) {
-                    break;
-                }
+            for (uint64_t i = 0; i < info.size(); i++) {
                 if (info[i] == 0) {
                     continue;
                 }
 
+                RationalFunctionCoefficient newConstant = constant * utility::convertNumber<RationalFunctionCoefficient>(info[i]);
+    
                 std::vector<uint64_t> insert(info);
                 insert[i]--;
-
-                RationalFunctionCoefficient newConstant = constant;
-                newConstant += utility::convertNumber<RationalFunctionCoefficient>(i);
-
+                // Delete trailing zeroes from insert
+                while (!insert.empty() && insert.back() == 0) {
+                    insert.pop_back();
+                }
+    
                 auto polynomial = polynomialCache->at(parameter).second.at(i);
                 auto derivative = polynomial.derivative();
                 if (derivative.isConstant()) {
                     newConstant *= derivative.constantPart();
                 } else {
+                    std::cout << "non-constant" << derivative << std::endl;
                     uint64_t derivativeIndex = this->polynomialCache->lookUpInCache(derivative, parameter);
-                    while (insert.size() <= derivativeIndex) {
+                    while (insert.size() < derivativeIndex) {
                         insert.push_back(0);
                     }
                     insert[derivativeIndex]++;
                 }
-                derivativeOfThis->emplace(insert, constant);
+                if (derivativeOfThis->count(insert)) {
+                    derivativeOfThis->at(insert) += newConstant;
+                } else {
+                    derivativeOfThis->emplace(insert, newConstant);
+                }
             }
         }
+        std::cout << "Derivative of " << std::endl << *this << std::endl << *derivativeOfThis << std::endl;
         derivativeOfThis->computeDerivative(nth - 1);
     }
 
