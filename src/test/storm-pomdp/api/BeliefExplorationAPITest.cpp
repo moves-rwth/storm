@@ -24,8 +24,7 @@ class DefaultDoubleVIEnvironment {
     static ValueType precision() {
         return storm::utility::convertNumber<ValueType>(0.12);
     }  // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */
-    }
+    static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
 };
 
 template<typename TestType>
