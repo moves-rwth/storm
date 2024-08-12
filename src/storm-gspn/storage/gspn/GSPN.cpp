@@ -155,16 +155,14 @@ void GSPN::writeDotToStream(std::ostream& outStream) const {
     outStream << "digraph " << this->getName() << " {\n";
 
     // print places with initial marking (not printed is the capacity)
-    outStream << "\t"
-              << "node [shape=ellipse]\n";
+    outStream << "\t" << "node [shape=ellipse]\n";
     for (auto& place : this->getPlaces()) {
         outStream << "\t" << place.getName() << " [label=\"" << place.getName() << "(" << place.getNumberOfInitialTokens();
         outStream << ")\"];\n";
     }
 
     // print transitions with weight/rate
-    outStream << "\t"
-              << "node [shape=box]\n";
+    outStream << "\t" << "node [shape=box]\n";
 
     for (auto& trans : this->getImmediateTransitions()) {
         outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=<" << trans.getName()

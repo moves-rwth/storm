@@ -140,8 +140,7 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::gbar::abstraction
         uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
         out << stateName << "_" << index;
         out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];\n";
-        out << "\tpl1_" << stateName << " -> "
-            << "pl2_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
+        out << "\tpl1_" << stateName << " -> " << "pl2_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
     }
 
     // Create the nodes of the probabilistic player.
@@ -157,8 +156,7 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::gbar::abstraction
         index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame.getPlayer2Variables().size());
         out << stateName << "_" << index;
         out << " [ shape=\"point\", label=\"\" ];\n";
-        out << "\tpl2_" << stateName << " -> "
-            << "plp_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
+        out << "\tpl2_" << stateName << " -> " << "plp_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
     }
 
     for (auto stateValue : filteredTransitions) {

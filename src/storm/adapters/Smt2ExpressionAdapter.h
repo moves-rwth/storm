@@ -61,9 +61,7 @@ class Smt2ExpressionAdapter {
      */
     std::string translateExpression(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation) {
         std::stringstream ss;
-        ss << "(" << relation << " " << leftHandSide.toString(false, useReadableVarNames) << " "
-           << "0 "
-           << ")";
+        ss << "(" << relation << " " << leftHandSide.toString(false, useReadableVarNames) << " " << "0 " << ")";
         return ss.str();
     }
 
