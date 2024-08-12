@@ -12,13 +12,13 @@ jobs:
       - uses: DoozyX/clang-format-lint-action@v0.18
         with:
           source: './src'
-          clangFormatVersion: 17
+          clangFormatVersion: 18
           style: file
           inplace: True
       - uses: DoozyX/clang-format-lint-action@v0.18
         with:
           source: './src'
-          clangFormatVersion: 17
+          clangFormatVersion: 18
           style: file
           inplace: True
       - name: Commit Formatting
