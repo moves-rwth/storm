@@ -39,7 +39,7 @@ class RegionRefinementChecker {
     bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const;
 
     void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, RegionSplittingStrategy splittingStrategy = {},
+                 CheckTask<storm::logic::Formula, ParametricType> const& checkTask, RegionSplittingStrategy splittingStrategy = RegionSplittingStrategy(),
                  std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true);
 
     /*!
@@ -84,6 +84,9 @@ class RegionRefinementChecker {
 
    private:
     enum class Context { Partitioning, ExtremalValue };
+    std::set<VariableType> getSplittingVariablesEstimateBased(AnnotatedRegion<ParametricType> const& region, Context context) const;
+    std::set<VariableType> getSplittingVariablesRoundRobin(AnnotatedRegion<ParametricType> const& region, Context context) const;
+
     std::set<VariableType> getSplittingVariables(AnnotatedRegion<ParametricType> const& region, Context context) const;
 
     std::unique_ptr<RegionModelChecker<ParametricType>> regionChecker;

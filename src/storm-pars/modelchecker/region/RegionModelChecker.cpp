@@ -75,6 +75,7 @@ void RegionModelChecker<ParametricType>::specifySplitEstimates(std::optional<Reg
                                                                [[maybe_unused]] CheckTask<storm::logic::Formula, ParametricType> const& checkTask) {
     STORM_LOG_ASSERT(!splitEstimates.has_value() || isRegionSplitEstimateKindSupported(splitEstimates.value(), checkTask),
                      "specified region split estimate kind not supported");
+    specifiedRegionSplitEstimateKind = splitEstimates;
 }
 
 template<typename ParametricType>
