@@ -17,7 +17,7 @@ list(APPEND STORM_VERSION_INFO_SOURCES "${PROJECT_BINARY_DIR}/storm-version.cpp"
 
 # Create storm-version-info lib
 add_library(storm-version-info SHARED ${STORM_VERSION_INFO_SOURCES} ${STORM_VERSION_INFO_HEADERS})
-target_include_directories(storm-version-info PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include/>$<INSTALL_INTERFACE:include/storm>")
+target_include_directories(storm-version-info PUBLIC "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/>$<INSTALL_INTERFACE:include/storm>")
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-version-info PROPERTIES DEFINE_SYMBOL "")
@@ -32,12 +32,12 @@ foreach(HEADER ${STORM_VERSION_INFO_HEADERS})
 	string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
 	string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
 	add_custom_command(
-		OUTPUT ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}
-		COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		OUTPUT ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}
+		COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
 		DEPENDS ${HEADER}
 	)
-	list(APPEND STORM_VERSION_INFO_OUTPUT_HEADERS "${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}")
+	list(APPEND STORM_VERSION_INFO_OUTPUT_HEADERS "${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}")
 endforeach()
 add_custom_target(copy_storm_version_info_headers DEPENDS ${STORM_VERSION_INFO_OUTPUT_HEADERS} ${STORM_VERSION_INFO_HEADERS})
 add_dependencies(storm-version-info copy_storm_version_info_headers)

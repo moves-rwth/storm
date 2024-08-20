@@ -39,7 +39,7 @@ add_dependencies(storm resources)
 #The library that needs symbols must be first, then the library that resolves the symbol.
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
 #target_include_directories(storm PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/storm>$<INSTALL_INTERFACE:include/storm>")
-target_include_directories(storm PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include/>$<INSTALL_INTERFACE:include/storm>")
+target_include_directories(storm PUBLIC "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/>$<INSTALL_INTERFACE:include/storm>")
 target_include_directories(storm PUBLIC "$<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}>$<INSTALL_INTERFACE:include>") # the interface loc is not right
 # Add base folder for better inclusion paths
 list(APPEND STORM_TARGETS storm)
@@ -51,12 +51,12 @@ foreach(HEADER ${STORM_HEADERS})
 	string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
 	string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
 	add_custom_command(
-		OUTPUT ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
-		COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}
-		COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		OUTPUT ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}
+		COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}
 		DEPENDS ${HEADER}
 	)
-	list(APPEND STORM_OUTPUT_HEADERS "${CMAKE_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}")
+	list(APPEND STORM_OUTPUT_HEADERS "${PROJECT_BINARY_DIR}/include/${RELATIVE_DIRECTORY}${HEADER_FILENAME}")
 endforeach()
 add_custom_target(copy_storm_headers DEPENDS ${STORM_OUTPUT_HEADERS} ${STORM_HEADERS})
 add_dependencies(storm copy_storm_headers)
@@ -65,5 +65,5 @@ add_dependencies(storm copy_resources_headers)
 
 # installation
 install(TARGETS storm EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
-install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include/storm
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include/storm
 		FILES_MATCHING PATTERN "*.h")
