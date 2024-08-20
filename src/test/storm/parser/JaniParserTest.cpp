@@ -414,3 +414,14 @@ TEST(JaniParser, UnassignedVariablesTest) {
     EXPECT_TRUE(result.first.hasConstant("c"));
     EXPECT_EQ(2ul, result.first.getNumberOfAutomata());
 }
+
+TEST(JaniParser, TrigonometryAndTranscendentalNumbersTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/test_trigonometry.jani"));
+    auto& model = result.first;
+    auto& properties = result.second;
+    EXPECT_EQ(storm::jani::ModelType::DTMC, model.getModelType());
+    EXPECT_EQ(model.getNumberOfAutomata(), 1U);
+    EXPECT_EQ(properties.size(), 2U);
+    EXPECT_NO_THROW(model.substitute({}, true));
+}

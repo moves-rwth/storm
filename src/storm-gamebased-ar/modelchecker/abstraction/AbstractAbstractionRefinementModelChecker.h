@@ -87,8 +87,7 @@ class AbstractAbstractionRefinementModelChecker : public storm::modelchecker::Ab
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeReachabilityProbabilities(
         Environment const& env, storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeReachabilityRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
+        Environment const& env, storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
 
    protected:
     /// -------- Methods that need to be overwritten/defined by implementations in subclasses.

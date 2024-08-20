@@ -1,11 +1,8 @@
 #pragma once
 
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
-
 #include "storm/models/symbolic/MarkovAutomaton.h"
-
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/utility/NumberTraits.h"
 
 namespace storm {
@@ -27,15 +24,14 @@ class HybridMarkovAutomatonCslModelChecker : public SymbolicPropositionalModelCh
                                                                           CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env,
                                                                    CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
                                                                   CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
                                                                             CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
 };
 
 }  // namespace modelchecker

@@ -2,16 +2,15 @@
 #include <boost/any.hpp>
 #include <ostream>
 
-#include "storm/logic/FormulaVisitor.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/FormulaVisitor.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {
 RewardOperatorFormula::RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName,
-                                             OperatorInformation const& operatorInformation, RewardMeasureType rewardMeasureType)
-    : OperatorFormula(subformula, operatorInformation), rewardModelName(rewardModelName), rewardMeasureType(rewardMeasureType) {
+                                             OperatorInformation const& operatorInformation)
+    : OperatorFormula(subformula, operatorInformation), rewardModelName(rewardModelName) {
     // Intentionally left empty.
 }
 
@@ -44,14 +43,9 @@ void RewardOperatorFormula::gatherReferencedRewardModels(std::set<std::string>& 
     this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
 }
 
-RewardMeasureType RewardOperatorFormula::getMeasureType() const {
-    return rewardMeasureType;
-}
-
 std::ostream& RewardOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
     // No parentheses necessary
     out << "R";
-    out << "[" << rewardMeasureType << "]";
     if (this->hasRewardModelName()) {
         out << "{\"" << this->getRewardModelName() << "\"}";
     }

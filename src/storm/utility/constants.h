@@ -168,6 +168,12 @@ template<typename ValueType>
 ValueType log10(ValueType const& number);
 
 template<typename ValueType>
+ValueType cos(ValueType const& number);
+
+template<typename ValueType>
+ValueType sin(ValueType const& number);
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
 
 template<typename RationalType>

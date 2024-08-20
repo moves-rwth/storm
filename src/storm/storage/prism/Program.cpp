@@ -442,7 +442,7 @@ std::map<storm::expressions::Variable, storm::expressions::Expression> Program::
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> newSubstitution;
     for (auto const& substVarExpr : substitution) {
-        newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution));
+        newSubstitution.emplace(substVarExpr.first, storm::jani::substituteJaniExpression(substVarExpr.second, renamingAsSubstitution, false));
     }
     return newSubstitution;
 }

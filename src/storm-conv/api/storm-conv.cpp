@@ -22,7 +22,7 @@ void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Prope
     }
 
     if (options.substituteConstants) {
-        janiModel.substituteConstantsInPlace();
+        janiModel.substituteConstantsInPlace(false);
     }
 
     if (options.localVars) {

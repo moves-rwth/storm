@@ -11,8 +11,8 @@ on:
   pull_request:
 
 env:
-  # GitHub runners currently have two cores
-  NR_JOBS: "2"
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
 
 jobs:
   # Perform in-depth tests with different configurations

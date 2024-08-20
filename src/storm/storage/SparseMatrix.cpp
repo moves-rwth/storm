@@ -386,8 +386,7 @@ void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowG
         for (typename SparseMatrix<ValueType>::index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
             endRows = i < rowIndications.size() - 1 ? rowIndications[i + 1] : columnsAndValues.size();
             // Print the actual row.
-            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")"
-                      << ": ";
+            std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")" << ": ";
             for (typename SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
                 std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
             }
@@ -2388,16 +2387,29 @@ typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin(
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin(index_type row) {
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row];
 }
 
 template<typename ValueType>
+typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::begin() const {
+    return this->columnsAndValues.begin();
+}
+
+template<typename ValueType>
+typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::begin() {
+    return this->columnsAndValues.begin();
+}
+
+template<typename ValueType>
 typename SparseMatrix<ValueType>::const_iterator SparseMatrix<ValueType>::end(index_type row) const {
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row + 1];
 }
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::iterator SparseMatrix<ValueType>::end(index_type row) {
+    STORM_LOG_ASSERT(row < this->getRowCount(), "Row " << row << " exceeds row count " << this->getRowCount() << ".");
     return this->columnsAndValues.begin() + this->rowIndications[row + 1];
 }
 

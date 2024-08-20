@@ -1,0 +1,13 @@
+toplevel "A";
+"A" or "M" "N";
+"M" and "M1" "M2" "M3" "M4";
+"N" and "N1" "N2" "N3" "N4";
+"M1" lambda=0.5 dorm=0;
+"M2" lambda=0.5 dorm=0;
+"M3" lambda=0.5 dorm=0;
+"M4" lambda=1 dorm=0;
+"N1" lambda=0.5 dorm=0;
+"N2" lambda=0.5 dorm=0;
+"N3" lambda=1 dorm=0;
+"N4" lambda=1 dorm=0;
+
