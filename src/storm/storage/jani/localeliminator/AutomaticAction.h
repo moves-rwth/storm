@@ -2,9 +2,9 @@
 
 #include <boost/optional.hpp>
 #include <vector>
-#include "JaniLocalEliminator.h"
-#include "UnfoldDependencyGraph.h"
 #include "storm/storage/jani/localeliminator/FinishAction.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/UnfoldDependencyGraph.h"
 
 // AutomaticAction performs location elimination completely automatically. For this, it alternates between unfolding a variable and eliminating as many
 // locations as possible from the model. There are two main parameters to control this process:

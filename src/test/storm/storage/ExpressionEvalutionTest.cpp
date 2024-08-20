@@ -1,9 +1,9 @@
-#include "adapters/RationalNumberAdapter.h"
-#include "storage/expressions/OperatorType.h"
 #include "storm-parsers/parser/ExpressionCreator.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "test/storm_gtest.h"
 
