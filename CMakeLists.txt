@@ -608,9 +608,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Add the binary dir include directory for storm-config.h
-include_directories("${PROJECT_BINARY_DIR}/include")
-
 include(CTest)
 # Compiles all tests
 add_custom_target(tests)

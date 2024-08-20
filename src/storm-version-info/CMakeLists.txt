@@ -17,6 +17,7 @@ list(APPEND STORM_VERSION_INFO_SOURCES "${PROJECT_BINARY_DIR}/storm-version.cpp"
 
 # Create storm-version-info lib
 add_library(storm-version-info SHARED ${STORM_VERSION_INFO_SOURCES} ${STORM_VERSION_INFO_HEADERS})
+target_include_directories(storm-version-info PUBLIC "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include/>$<INSTALL_INTERFACE:include/storm>")
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-version-info PROPERTIES DEFINE_SYMBOL "")
