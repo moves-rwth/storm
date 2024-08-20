@@ -1,4 +1,4 @@
-#include "GSPN.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 
 #include <unordered_map>
 

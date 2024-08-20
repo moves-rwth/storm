@@ -2,7 +2,7 @@
 #include <sstream>
 #include <vector>
 
-#include "storm-pars/analysis/OrderExtender.cpp"
+#include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"

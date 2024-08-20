@@ -1,15 +1,6 @@
 #include <carl/formula/Constraint.h>
 #include <memory>
 #include <string>
-#include "adapters/RationalFunctionAdapter.h"
-#include "adapters/RationalNumberAdapter.h"
-#include "environment/Environment.h"
-#include "modelchecker/CheckTask.h"
-#include "modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "models/sparse/Model.h"
-#include "solver/OptimizationDirection.h"
-#include "storage/bisimulation/BisimulationType.h"
-#include "storage/prism/Program.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
@@ -18,17 +9,26 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
+#include "storm/environment/Environment.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/bisimulation/BisimulationType.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/prism.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/api/storm-parsers.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
-#include "utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
+#include "storm/utility/macros.h"
 
 void testModelB(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);

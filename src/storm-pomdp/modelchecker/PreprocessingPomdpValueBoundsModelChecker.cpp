@@ -1,4 +1,4 @@
-#include "PreprocessingPomdpValueBoundsModelChecker.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include <random>
 
 #include "storm-pomdp/storage/PomdpMemory.h"
@@ -7,7 +7,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
 
-#include "environment/Environment.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"

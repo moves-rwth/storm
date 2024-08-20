@@ -8,7 +8,7 @@
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/Stopwatch.h"
 
-#include "AssumptionMaker.h"
+#include "storm-pars/analysis/AssumptionMaker.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm-pars/analysis/Order.h"

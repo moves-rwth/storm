@@ -1,21 +1,21 @@
-#include "GradientDescentInstantiationSearcher.h"
+#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include <cmath>
 #include <cstdint>
 #include <random>
-#include "environment/Environment.h"
-#include "environment/solver/GmmxxSolverEnvironment.h"
-#include "environment/solver/MinMaxSolverEnvironment.h"
-#include "environment/solver/NativeSolverEnvironment.h"
-#include "environment/solver/SolverEnvironment.h"
-#include "modelchecker/results/CheckResult.h"
-#include "settings/SettingsManager.h"
-#include "settings/modules/GeneralSettings.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
-#include "utility/SignalHandler.h"
 
 namespace storm {
 namespace derivative {
