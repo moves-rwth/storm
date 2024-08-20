@@ -215,7 +215,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
     // Initialize result
     auto valueValuation = regionChecker->getAndEvaluateGoodPoint(env, rootRegion, dir);
     auto& value = valueValuation.first;
-    if (boundInvariant && !boundInvariant->isSatisfied(value)) {
+    if (boundInvariant && !boundInvariant->isSatisfied(storm::utility::convertNumber<storm::RationalNumber>(value))) {
         return valueValuation;
     }
 
@@ -263,7 +263,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
-                if (boundInvariant && !boundInvariant->isSatisfied(value)) {
+                if (boundInvariant && !boundInvariant->isSatisfied(storm::utility::convertNumber<storm::RationalNumber>(value))) {
                     return valueValuation;
                 }
             }
