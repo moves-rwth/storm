@@ -62,6 +62,7 @@ struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<
             return it->second;
         }
         
+        // std::cout << f << std::endl;
         uint64_t newIndex = container.second.size();
         container.first[f] = newIndex;
         container.second.push_back(f);
@@ -166,7 +167,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
      *
      * @param other The other annotation.
      * @param polynomial The polynomial.
-     * @param parameter The parameter in the polynomial.
      */
     void addAnnotationTimesPolynomial(Annotation const& other, UniPoly&& polynomial) {
         for (auto const& [info, constant] : other) {
@@ -184,6 +184,35 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
                 this->emplace(newCounter, constant);
             } else {
                 this->at(newCounter) += constant;
+            }
+        }
+    }
+
+    /**
+     * Adds another annotation times an annotation to this annotation.
+     *
+     * @param anno1 The first annotation.
+     * @param anno2 The second annotation.
+     */
+    void addAnnotationTimesAnnotation(Annotation const& anno1, Annotation const& anno2) {
+        for (auto const& [info1, constant1] : anno1) {
+            for (auto const& [info2, constant2] : anno2) {
+                std::vector<uint64_t> newCounter(std::max(info1.size(), info2.size()), 0);
+
+                for (uint64_t i = 0; i < newCounter.size(); i++) {
+                    if (i < info1.size()) {
+                        newCounter[i] += info1[i];
+                    }
+                    if (i < info2.size()) {
+                        newCounter[i] += info2[i];
+                    }
+                }
+
+                if (!this->count(newCounter)) {
+                    this->emplace(newCounter, constant1 * constant2);
+                } else {
+                    this->at(newCounter) += constant1 * constant2;
+                }
             }
         }
     }
@@ -401,11 +430,12 @@ class TimeTravelling {
      * @param stateRewardVector State-reward vector of the pMC (because we are not big-stepping states with rewards.)
      * @return std::pair<std::vector<std::shared_ptr<searchingPath>>, std::vector<uint64_t>> Resulting paths, all states we visited while searching paths.
      */
-    std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> bigStepBFS(
+    std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::map<uint64_t, std::set<uint64_t>>>> bigStepBFS(
         uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-        const boost::optional<std::vector<RationalFunction>>& stateRewardVector);
+        const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+        const std::map<UniPoly, Annotation>& storedAnnotations);
 
     /**
      * Find time-travelling on the given big-step paths, i.e., identify transitions that are linear to each other and put them into seperate states,

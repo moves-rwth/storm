@@ -60,11 +60,29 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
     std::vector<uint64_t> dfsStack = {root};
     while (!dfsStack.empty()) {
         uint64_t state = dfsStack.back();
+        // Is it a new state that we see for the first time or one we've already visited?
         if (!subgraph.count(state)) {
             subgraph[state] = {};
 
             std::vector<uint64_t> tmpStack;
             bool isAcyclic = true;
+
+            // First we find out whether the state is acyclic
+            for (auto const& entry : transitionMatrix.getRow(state)) {
+                if (!storm::utility::isZero(entry.getValue())) {
+                    if (subgraph.count(entry.getColumn() && !acyclicStates.count(entry.getColumn()))) {
+                        // The state has been visited before but is not known to be acyclic.
+                        isAcyclic = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!isAcyclic) {
+                bottomStates.emplace(state);
+                continue;
+            }
+
             for (auto const& entry : transitionMatrix.getRow(state)) {
                 if (!storm::utility::isZero(entry.getValue())) {
                     STORM_LOG_ASSERT(entry.getValue().isConstant() ||
@@ -96,23 +114,15 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
 
                             acyclicStates.emplace(entry.getColumn());
                         }
-                    } else {
-                        if (!acyclicStates.count(entry.getColumn())) {
-                            // The state has been visited before but is not known to be acyclic.
-                            isAcyclic = false;
-                            break;
-                        }
                     }
                 }
             }
-            if (isAcyclic) {
-                for (auto const& entry : tmpStack) {
-                    dfsStack.push_back(entry);
-                }
-            } else {
-                bottomStates.emplace(state);
+
+            for (auto const& entry : tmpStack) {
+                dfsStack.push_back(entry);
             }
         } else {
+            // Go back over the states backwards - we know these are not acyclic
             acyclicStates.emplace(state);
             dfsStack.pop_back();
         }
@@ -255,22 +265,25 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
-            auto const [bottomAnnotations, visitedStates] = bigStepBFS(state, parameter, flexibleMatrix, backwardsTransitions, treeStates, stateRewardVector);
+            auto const [bottomAnnotations, visitedStatesAndSubtree] = bigStepBFS(state, parameter, flexibleMatrix, backwardsTransitions, treeStates, stateRewardVector, storedAnnotations);
+            auto const [visitedStates, subtree] = visitedStatesAndSubtree;
 
             // Check the following:
-            // There exists a state s in visitedStates s.t. all predecessors of s are in visitedStates
+            // There exists a state s in visitedStates s.t. all predecessors of s are in the subtree
             // If not, we are not eliminating any states with this big-step which baaaad and leads to the world-famous "grid issue"
-            std::set<uint64_t> visitedStatesAsSet(visitedStates.begin(), visitedStates.end());
             bool existsEliminableState = false;
             for (auto const& s : visitedStates) {
                 bool allPredecessorsInVisitedStates = true;
                 for (auto const& predecessor : backwardsTransitions.getRow(s)) {
-                    if (!visitedStatesAsSet.count(predecessor.getColumn())) {
+                    // is the predecessor not in the subtree? then this state won't get eliminated
+                    // is the predcessor in the subtree but the edge isn't? then this state won't get eliminated
+                    if (!subtree.count(predecessor.getColumn()) || !subtree.at(predecessor.getColumn()).count(s)) {
                         allPredecessorsInVisitedStates = false;
                         break;
                     }
                 }
                 if (allPredecessorsInVisitedStates) {
+                    // std::cout << "Eliminable state " << s << std::endl;
                     existsEliminableState = true;
                     break;
                 }
@@ -395,12 +408,13 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     return std::make_pair(newDTMC, storedAnnotations);
 }
 
-std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling::bigStepBFS(
+std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::map<uint64_t, std::set<uint64_t>>>> TimeTravelling::bigStepBFS(
     uint64_t start, const RationalFunctionVariable& parameter,
     const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-    const boost::optional<std::vector<RationalFunction>>& stateRewardVector) {
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+    const std::map<UniPoly, Annotation>& storedAnnotations) {
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
     auto const [subtree, bottomStates] = findSubgraph(flexibleMatrix, start, treeStates, stateRewardVector, parameter);
 
@@ -466,7 +480,11 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
                         UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
                         // Constant denominator is now distributed in the factors, not in the denominator of the rational function
                         nominatorAsUnivariate /= transition.denominator().coefficient();
-                        targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
+                        if (storedAnnotations.count(nominatorAsUnivariate)) {
+                            targetAnnotation.addAnnotationTimesAnnotation(annotations.at(backwardsEntry.getColumn()), storedAnnotations.at(nominatorAsUnivariate));
+                        } else {
+                            targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
+                        }
                     }
 
                     // std::cout << " == " << targetAnnotation << std::endl;
@@ -482,11 +500,15 @@ std::pair<std::map<uint64_t, Annotation>, std::vector<uint64_t>> TimeTravelling:
     }
     // Delete annotations that are not bottom states
     for (auto const& [state, _successors] : subtree) {
+        // std::cout << "Subtree of " << state << ": ";
+        // for (auto const& entry : _successors) {
+        //     std::cout << entry << " ";
+        // }
         if (!bottomStates.count(state)) {
             annotations.erase(state);
         }
     }
-    return std::make_pair(annotations, visitedStatesInBFSOrder);
+    return std::make_pair(annotations, std::make_pair(visitedStatesInBFSOrder, subtree));
 }
 
 std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
@@ -515,6 +537,17 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
+
+    // for (auto const& [factors, transitions] : parametricTransitions) {
+    //     std::cout << "Factors: ";
+    //     for (uint64_t i = 0; i < factors.size(); i++) {
+    //         std::cout << polynomialCache->at(parameter).second[i] << ": " << factors[i] << " ";
+    //     }
+    //     std::cout << std::endl;
+    //     for (auto const& [state, info] : transitions) {
+    //         std::cout << "State " << state << " with " << info << std::endl;
+    //     }
+    // }
 
     for (auto const& [factors, transitions] : parametricTransitions) {
         if (transitions.size() > 1) {

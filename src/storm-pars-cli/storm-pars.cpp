@@ -254,8 +254,8 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
 
         if (mpi.applyBisimulation) {
-            result.model =
-                storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+            result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                        bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
         }
         result.changed = true;
     }
