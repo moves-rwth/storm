@@ -70,7 +70,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
             // First we find out whether the state is acyclic
             for (auto const& entry : transitionMatrix.getRow(state)) {
                 if (!storm::utility::isZero(entry.getValue())) {
-                    if (subgraph.count(entry.getColumn() && !acyclicStates.count(entry.getColumn()))) {
+                    if (subgraph.count(entry.getColumn()) && !acyclicStates.count(entry.getColumn()) && !bottomStates.count(entry.getColumn())) {
                         // The state has been visited before but is not known to be acyclic.
                         isAcyclic = false;
                         break;
@@ -93,6 +93,12 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
                     // If we haven't explored the node we are going to, we will need to figure out if it is a leaf or not
                     if (!subgraph.count(entry.getColumn())) {
                         bool continueSearching = treeStates.at(parameter).count(entry.getColumn()) && !treeStates.at(parameter).at(entry.getColumn()).empty();
+
+                        if (!entry.getValue().isConstant()) {
+                            // We are only interested in transitions that are constant or have the parameter
+                            // We can skip transitions that have other parameters
+                            continueSearching &= entry.getValue().gatherVariables().size() == 1 && *entry.getValue().gatherVariables().begin() == parameter;
+                        }
 
                         // Also continue searching if there is only a transition with a one coming up, we can skip that
                         // This is nice because we can possibly combine more transitions later
@@ -219,6 +225,8 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
     // We will return these stored annotations to help find the zeroes
     std::map<UniPoly, Annotation> storedAnnotations;
+
+    std::map<RationalFunctionVariable, std::set<uint64_t>> bottomStatesSeen;
 
 #if WRITE_DTMCS
     uint64_t writeDtmcCounter = 0;
@@ -563,6 +571,17 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                     targetStates.emplace(state);
                 }
             }
+
+            if (alreadyTimeTravelledToThis[parameter].count(targetStates)) {
+                for (auto const& [state, probability] : transitions) {
+                    Annotation newAnnotation(parameter, polynomialCache);
+                    newAnnotation[factors] = probability;
+
+                    insertTransitions.emplace_back(state, newAnnotation);
+                }
+                continue;
+            }
+            alreadyTimeTravelledToThis[parameter].emplace(targetStates);
 
             Annotation newAnnotation(parameter, polynomialCache);
 

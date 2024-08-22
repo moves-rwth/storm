@@ -445,7 +445,6 @@ class TimeTravelling {
      * @param parameter The parameter w.r.t. which we are time-travelling.
      * @param flexibleMatrix Flexible matrix, modifies this!
      * @param backwardsFlexibleMatrix Backwards matrix, modifies this!
-     * @param alreadyTimeTravelledToThis Map of stuff we already time-travelled w.r.t. (modifies this!)
      * @param treeStatesNeedUpdate Map of the tree states that need updating (modifies this!)
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>

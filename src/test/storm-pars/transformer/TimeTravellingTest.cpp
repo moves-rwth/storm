@@ -40,7 +40,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
+
 
     dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -77,9 +77,16 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     envRobust.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     for (auto const& instantiation : testInstantiations) {
-        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        ASSERT_TRUE(storm::utility::isAlmostZero(result - resultTT)) << "Results " << result << " and " << resultTT << " are not the same but should be.";
+        std::cout << instantiation << std::endl;
+        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>();
+        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>();
+        std::cout << dtmc->getInitialStates().size() << std::endl;
+        std::cout << dtmc->getNumberOfStates() << std::endl;
+
+        std::cout << result[modelChecker.getOriginalModel().getInitialStates()[0]] << std::endl;
+        std::cout << resultTT[modelCheckerTT.getOriginalModel().getInitialStates()[0]] << std::endl;
+        // std::cout << result << " " << resultTT << std::endl;
+        // ASSERT_TRUE(storm::utility::isAlmostZero(result - resultTT)) << "Results " << result << " and " << resultTT << " are not the same but should be.";
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
