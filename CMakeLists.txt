@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.22)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Set project name
 project (storm CXX C)
