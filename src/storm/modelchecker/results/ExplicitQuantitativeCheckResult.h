@@ -1,6 +1,4 @@
-#ifndef STORM_MODELCHECKER_EXPLICITQUANTITATIVECHECKRESULT_H_
-#define STORM_MODELCHECKER_EXPLICITQUANTITATIVECHECKRESULT_H_
-
+#pragma once
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <map>
@@ -93,5 +91,3 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
 };
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_EXPLICITQUANTITATIVECHECKRESULT_H_ */
