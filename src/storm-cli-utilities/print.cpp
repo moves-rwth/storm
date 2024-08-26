@@ -1,4 +1,4 @@
-#include "print.h"
+#include "storm-cli-utilities/print.h"
 
 #include "storm-version-info/storm-version.h"
 #include "storm/utility/cli.h"

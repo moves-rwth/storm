@@ -27,7 +27,7 @@ else()
     set(GLPK_LIBRARIES  ${GLPK_LIB_DIR}/libglpk${DYNAMIC_EXT})
     set(GLPK_INCLUDE_DIR ${STORM_3RDPARTY_BINARY_DIR}/glpk-5.0/include)
     set(GLPK_VERSION_STRING 5.0)
-    add_dependencies(resources glpk_ext)
+    add_dependencies(storm_resources glpk_ext)
 endif()
 
 # Since there is a shipped version, always use GLPK

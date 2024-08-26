@@ -1,15 +1,12 @@
 cmake_minimum_required (VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 17)
-
 # Set project name
 project (storm CXX C)
 
-# Add base folder for better inclusion paths
-#  include_directories("${PROJECT_SOURCE_DIR}/src")
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+add_custom_target(storm_resources)
 
 include(ExternalProject)
 include(RegisterSourceGroup)
@@ -17,6 +14,10 @@ include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
 include(ProcessorCount)
+include(resources/3rdparty/fetch_carl.cmake)
+
+
+set(CMAKE_CXX_STANDARD 17)
 
 #############################################################
 ##
@@ -525,7 +526,7 @@ endif()
 include(resources/3rdparty/CMakeLists.txt)
 
 # Include Doxygen
-include(resources/doxygen/CMakeLists.txt)
+# include(resources/doxygen/CMakeLists.txt)
 
 #############################################################
 ##
@@ -618,7 +619,7 @@ add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 add_dependencies(check tests)
 add_dependencies(check-verbose tests)
 # Apply code formatting
-add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+# add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
