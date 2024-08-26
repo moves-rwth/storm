@@ -18,6 +18,7 @@ function(configure_testsuite_target testsuite)
 	#message(CONFIGURING TESTSUITE '${testsuite}') #DEBUG
 	target_link_libraries(test-${testsuite} storm storm-parsers storm-conv)
 	target_link_libraries(test-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
+	target_include_directories(test-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
 
 	add_dependencies(test-${testsuite} test-resources)
 	add_test(NAME run-test-${testsuite} COMMAND $<TARGET_FILE:test-${testsuite}>)

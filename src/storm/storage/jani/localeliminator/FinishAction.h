@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 
 // When a FinishAction is executed, it stops any further actions from being executed.
 

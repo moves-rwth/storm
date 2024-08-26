@@ -17,7 +17,7 @@
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
-#include "utility/graph.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace modelchecker {

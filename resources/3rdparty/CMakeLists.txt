@@ -82,7 +82,7 @@ else()
 	        LOG_INSTALL ON
 	)
 endif()
-add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen")
+add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}")
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
 

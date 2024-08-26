@@ -6,8 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 project (storm CXX C)
 
 # Add base folder for better inclusion paths
-include_directories("${PROJECT_SOURCE_DIR}/src")
-include_directories("${PROJECT_SOURCE_DIR}/src/storm")
+#  include_directories("${PROJECT_SOURCE_DIR}/src")
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")

@@ -2,12 +2,12 @@
 
 #include <cstdint>
 #include <set>
-#include "adapters/RationalFunctionAdapter.h"
-#include "modelchecker/CheckTask.h"
-#include "models/sparse/Dtmc.h"
-#include "models/sparse/StateLabeling.h"
-#include "storage/FlexibleSparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 
 namespace storm {
 namespace transformer {
