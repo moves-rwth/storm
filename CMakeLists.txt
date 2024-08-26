@@ -182,6 +182,12 @@ message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
 set(SHIPPED_CARL_USE_GINAC ON)
 
+# Warning for Apple Silicon
+if(APPLE_SILICON)
+	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report any issues to support@stormchecker.org.")
+endif()
+
+
 set(DYNAMIC_EXT ".so")
 set(STATIC_EXT ".a")
 set(LIB_PREFIX "lib")
