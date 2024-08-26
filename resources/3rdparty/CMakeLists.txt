@@ -379,7 +379,7 @@ if (STORM_SHIPPED_CARL)
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
-            BUILD_COMMAND make lib_carl
+            BUILD_COMMAND make lib_carl -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             LOG_BUILD ON
 			LOG_INSTALL ON

@@ -65,8 +65,7 @@ void DeterministicAutomaton::printHOA(std::ostream& out) const {
 
     out << "Acceptance: " << acceptance->getNumberOfAcceptanceSets() << " " << *acceptance->getAcceptanceExpression() << "\n";
 
-    out << "--BODY--"
-        << "\n";
+    out << "--BODY--" << "\n";
 
     for (std::size_t s = 0; s < getNumberOfStates(); s++) {
         out << "State: " << s;

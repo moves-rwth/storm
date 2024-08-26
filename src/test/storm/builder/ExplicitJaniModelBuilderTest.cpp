@@ -68,6 +68,13 @@ TEST_F(ExplicitJaniModelBuilderTest, Dtmc) {
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/test_trigonometry.jani").first;
+    auto constants = storm::utility::cli::parseConstantDefinitionString(janiModel.getManager(), "step_size_rad=0.523599");  // step_size = 30 deg
+    janiModel = janiModel.defineUndefinedConstants(constants);
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(5ul, model->getNumberOfStates());
+    EXPECT_EQ(5ul, model->getNumberOfTransitions());
 }
 
 TEST_F(ExplicitJaniModelBuilderTest, pdtmc) {
@@ -78,7 +85,7 @@ TEST_F(ExplicitJaniModelBuilderTest, pdtmc) {
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
 
     janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/pdtmc/die_array_nested.jani").first;
-    janiModel.substituteConstantsFunctions();
+    janiModel.substituteConstantsFunctionsTranscendentals();
     model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());

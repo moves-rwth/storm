@@ -36,22 +36,20 @@ class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<Sparse
                                                                       CheckTask<storm::logic::GloballyFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env,
                                                                          CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env,
                                                                   CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+        Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env,
                                                              CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) override;
-    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
                                                                   CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env,
                                                                             CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(
-        Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-        CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) override;
+        Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeLTLProbabilities(Environment const& env,
                                                                  CheckTask<storm::logic::PathFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeHOAPathProbabilities(Environment const& env,

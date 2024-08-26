@@ -1,23 +1,16 @@
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 
-#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
-
-#include "storm/storage/dd/Add.h"
-
-#include "storm/utility/FilteredRewardModel.h"
-#include "storm/utility/macros.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/solver/SymbolicLinearEquationSolver.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/solver/SymbolicLinearEquationSolver.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/utility/FilteredRewardModel.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -97,7 +90,7 @@ std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeBo
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeCumulativeRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
@@ -109,7 +102,7 @@ std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeCu
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeInstantaneousRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
     storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
     storm::dd::Add<DdType, ValueType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(
@@ -121,7 +114,7 @@ std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeIn
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -133,7 +126,7 @@ std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeRe
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();

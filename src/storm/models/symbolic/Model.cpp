@@ -375,8 +375,7 @@ void Model<Type, ValueType>::printDdVariableInformationToStream(std::ostream& ou
         columnVariableCount += this->getManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
     }
 
-    out << "Variables: \t"
-        << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)"
+    out << "Variables: \t" << "rows: " << this->rowVariables.size() << " meta variables (" << rowVariableCount << " DD variables)"
         << ", columns: " << this->columnVariables.size() << " meta variables (" << columnVariableCount << " DD variables)";
 }
 

@@ -29,7 +29,8 @@ class ArrayType : public JaniType {
     uint64_t getNestingDegree() const;
 
     virtual std::string getStringRepresentation() const override;
-    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+    virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                            bool const substituteTranscendentalNumbers) override;
     virtual std::unique_ptr<JaniType> clone() const override;
 
    private:

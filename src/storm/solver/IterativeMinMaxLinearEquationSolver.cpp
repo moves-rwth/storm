@@ -367,8 +367,9 @@ MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<Value
         // Rational search needs to approach the solution from below.
         requirements.requireLowerBounds();
         // The solution needs to be unique in case of minimizing or in cases where we want a scheduler.
-        if (!this->hasUniqueSolution() &&
-            (env.solver().minMax().isForceRequireUnique() || !direction || direction.get() == OptimizationDirection::Minimize || this->isTrackSchedulerSet())) {
+        if (!this->hasUniqueSolution()) {
+            // RationalSearch guesses and verifies a fixpoint and terminates once a fixpoint is found. To ensure that the guessed fixpoint is the
+            // correct one, we enforce uniqueness.
             requirements.requireUniqueSolution();
         }
     } else if (method == MinMaxMethod::PolicyIteration) {
@@ -672,6 +673,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
     {
         Environment viEnv = env;
         viEnv.solver().minMax().setMethod(MinMaxMethod::ValueIteration);
+        viEnv.solver().setForceExact(false);
+        viEnv.solver().setForceSoundness(false);
         auto impreciseSolver = GeneralMinMaxLinearEquationSolverFactory<double>().create(viEnv, this->A->template toValueType<double>());
         impreciseSolver->setHasUniqueSolution(this->hasUniqueSolution());
         impreciseSolver->setTrackScheduler(true);
@@ -679,8 +682,10 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             auto initSched = this->getInitialScheduler();
             impreciseSolver->setInitialScheduler(std::move(initSched));
         }
-        STORM_LOG_THROW(!impreciseSolver->getRequirements(viEnv, dir).hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
-                        "The value-iteration based solver has an unmet requirement.");
+        auto impreciseSolverReq = impreciseSolver->getRequirements(viEnv, dir);
+        STORM_LOG_THROW(!impreciseSolverReq.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
+                        "The value-iteration based solver has an unmet requirement: " << impreciseSolverReq.getEnabledRequirementsAsString());
+        impreciseSolver->setRequirementsChecked(true);
         auto xVi = storm::utility::vector::convertNumericVector<double>(x);
         auto bVi = storm::utility::vector::convertNumericVector<double>(b);
         impreciseSolver->solveEquations(viEnv, dir, xVi, bVi);

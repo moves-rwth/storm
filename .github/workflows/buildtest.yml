@@ -11,8 +11,8 @@ on:
   pull_request:
 
 env:
-  # GitHub runners currently have two cores
-  NR_JOBS: "2"
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
 
 jobs:
   # Perform in-depth tests with different configurations
@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-11", "debian-12", "ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]
+        distro: ["debian-12", "ubuntu-22.04", "ubuntu-24.04"]
         buildType: ["Release"]
     steps:
       - name: Git clone
