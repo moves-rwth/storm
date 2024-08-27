@@ -8,6 +8,16 @@
 #include "test/storm_gtest.h"
 
 namespace {
+
+class StatePermuterTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
 void testStatePermuter(std::string const& prismModelFile, std::string const& formulaString) {
     storm::prism::Program program = storm::parser::PrismParser::parse(prismModelFile, true);
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
@@ -45,19 +55,19 @@ void testStatePermuter(std::string const& prismModelFile, std::string const& for
     permutedModel = checkOrder(storm::utility::permutation::OrderKind::ReverseBfs);
     EXPECT_EQ(permutedModel->getNumberOfStates() - 1, *permutedModel->getInitialStates().begin()) << "Failed for model " << prismModelFile;
 }
-TEST(StatePermuterTest, BrpTest) {
+TEST_F(StatePermuterTest, BrpTest) {
     testStatePermuter(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]");
 }
 
-TEST(StatePermuterTest, ClusterTest) {
+TEST_F(StatePermuterTest, ClusterTest) {
     testStatePermuter(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", " R{\"num_repairs\"}=? [C<=200]");
 }
 
-TEST(StatePermuterTest, Coin22Test) {
+TEST_F(StatePermuterTest, Coin22Test) {
     testStatePermuter(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Rmax=? [ F \"finished\"]");
 }
 
-TEST(StatePermuterTest, StreamTest) {
+TEST_F(StatePermuterTest, StreamTest) {
     testStatePermuter(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma", "R{\"buffering\"}max=? [ F \"done\"]");
 }
 }  // namespace

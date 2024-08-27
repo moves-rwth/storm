@@ -11,6 +11,9 @@
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
 TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
 
     // Build the die model without its reward model.

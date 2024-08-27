@@ -99,24 +99,33 @@ void symbolicbelsup_test(std::string const& path, std::string const& constants, 
     janicreator.verifySymbolic(initialOnly);
 }
 
-TEST(QualitativeAnalysis, GraphAlgorithm_Simple) {
+class QualitativeAnalysis : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(QualitativeAnalysis, GraphAlgorithm_Simple) {
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]");
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]");
 }
 
-TEST(QualitativeAnalysis, GraphAlgorithm_Maze) {
+TEST_F(QualitativeAnalysis, GraphAlgorithm_Maze) {
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]");
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]");
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]");
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]");
 }
 
-TEST(QualitativeAnalysis, OneShot_Simple) {
+TEST_F(QualitativeAnalysis, OneShot_Simple) {
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", 5);
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", 5);
 }
 
-TEST(QualitativeAnalysis, OneShots_Maze) {
+TEST_F(QualitativeAnalysis, OneShots_Maze) {
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", 5);
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", 5);
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", 30);
@@ -125,7 +134,7 @@ TEST(QualitativeAnalysis, OneShots_Maze) {
     oneshot_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", 5);
 }
 
-TEST(QualitativeAnalysis, Iterative_Simple) {
+TEST_F(QualitativeAnalysis, Iterative_Simple) {
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", false);
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", false);
 
@@ -133,7 +142,7 @@ TEST(QualitativeAnalysis, Iterative_Simple) {
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", true);
 }
 
-TEST(QualitativeAnalysis, Iterative_Maze) {
+TEST_F(QualitativeAnalysis, Iterative_Maze) {
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", false);
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", false);
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", false);
@@ -145,7 +154,7 @@ TEST(QualitativeAnalysis, Iterative_Maze) {
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", true);
 }
 
-TEST(QualitativeAnalysis, SymbolicBelSup_Simple) {
+TEST_F(QualitativeAnalysis, SymbolicBelSup_Simple) {
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", false);
 
@@ -153,7 +162,7 @@ TEST(QualitativeAnalysis, SymbolicBelSup_Simple) {
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", true);
 }
 
-TEST(QualitativeAnalysis, SymbolicBelSup_Maze) {
+TEST_F(QualitativeAnalysis, SymbolicBelSup_Maze) {
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", false);

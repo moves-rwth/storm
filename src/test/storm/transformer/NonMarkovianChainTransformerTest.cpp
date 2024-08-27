@@ -7,6 +7,10 @@
 #include "test/storm_gtest.h"
 
 TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma");
     std::string formulasString = "Pmin=? [ F \"done\"];Pmin=? [ F<=1 \"done\"];Tmin=? [ F \"done\" ]";
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));

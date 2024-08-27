@@ -15,6 +15,14 @@ In case a new patch needs to be created follow these steps:
 4. Resolve issues, make changes, and commit them
 5. Create a new patch file via `git format-patch <tag> --stdout > eigen.patch`, where `<tag>` is the tag, branch or commit from step 1
 
+## GLPK
+
+To update GLPK, download the new sources from [here](https://ftp.gnu.org/gnu/glpk/) and put them into `$STORM_DIR/resources/3rdparty/glpk-5.0`.
+We remove some unnecessary files to reduce the size of the folder:
+1. Remove the folders `doc` and `examples`
+2. Remove these folders from the `SUBDIRS` in `Makefile.am`
+3. Recreate the `configure` script via `autoconf`
+
 ## googletest / gtest
 
 To update gtest, simply download the new sources from [here](https://github.com/google/googletest/releases) and put them to `$STORM_DIR/resources/3rdparty/googletest`.
@@ -29,7 +37,7 @@ We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. 
 
 ## nlohmann/json for Modern C++
 
-The currently shipped version is forked from the [official github](https://github.com/nlohmann/json) commit `6eab7a2b187b10b2494e39c1961750bfd1bda500`.
+The currently shipped version is forked from the [official GitHub](https://github.com/nlohmann/json) commit `6eab7a2b187b10b2494e39c1961750bfd1bda500`.
 We extended the library towards rational numbers, see [here](../resources/3rdparty/modernjson/README_STORM.md).
 To update, you can follow these steps:
 
@@ -38,13 +46,13 @@ To update, you can follow these steps:
 3. The diff for that commit shows you the exact modifications we made.
 4. Merge the json version you want to update to into your branch.
 5. Resolve potential conflicts and review what has changed, in particular if it affects handling of floating point numbers.
-7. When this is all done, copy the contents back into the storm directory. Make sure to not apply any unnecessary code formatting to keep the diff smallish.
-8. *Update the commit hash mentioned in this document*
+6. When this is all done, copy the contents back into the storm directory. Make sure to not apply any unnecessary code formatting to keep the diff smallish.
+7. *Update the commit hash mentioned in this document*
 
 
 ## parallel hashmap
 
-Download the new sources from [github](https://github.com/greg7mdp/parallel-hashmap) and put them to `$STORM_DIR/resources/3rdparty/parallel_hashmap/`.
+Download the new sources from [GitHub](https://github.com/greg7mdp/parallel-hashmap) and put them to `$STORM_DIR/resources/3rdparty/parallel_hashmap/`.
 Remove directories that are not needed, e.g, `rm -r doc examples html css benchmark tests index.html`.
 
 
@@ -62,7 +70,7 @@ To update, you can follow these steps:
 1. Check out the above commit in a separate repository
 2. Copy the contents of `$STORM_DIR/resources/3rdparty/sylvan` to the repository you just checked out and commit to a fresh branch
 3. The diff for that commit shows you the modifications we made to the sylvan source code. 
-   We also include *lace* (`lace.c` and `lace.h`) which is a dependency of sylvan that is normally downloaded by sylvans build scripts via cmake `FetchContent`.
+   We also include *lace* (`lace.c` and `lace.h`) which is a dependency of sylvan that is normally downloaded by sylvan's build scripts via cmake `FetchContent`.
    As this requires cmake 3.14 and complicates the overall build process, we decided to ship the files `lace.c` and `lace.h` directly (see Storm commit 095e78a897b01db20df95bca89e746229e6a85c8)
 4. Merge the `master` of sylvan (or whatever version you want to update to) into your branch
 5. Resolve potential conflicts and review what has changed, in particular if it affects the API that Storm uses
