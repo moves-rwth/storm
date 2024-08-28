@@ -406,6 +406,13 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
     typedef typename storm::models::symbolic::Mdp<TestType::ddType, ValueType> SymbolicModelType;
 
     MdpPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }

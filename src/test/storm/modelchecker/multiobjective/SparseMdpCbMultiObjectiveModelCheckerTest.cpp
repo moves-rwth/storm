@@ -13,7 +13,16 @@
 
 #include "storm/environment/Environment.h"
 
-TEST(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
+class SparseMdpCbMultiObjectiveModelCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased);
 
@@ -43,7 +52,7 @@ TEST(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
     EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
 }
 
-TEST(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
+TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased);
 
@@ -66,7 +75,7 @@ TEST(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
 }
 
 /* This test takes a little bit too long ...
-TEST(SparseMdpCbMultiObjectiveModelCheckerTest, team3with3objectives) {
+TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, team3with3objectives) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm";
     std::string formulasAsString = "multi(P>=0.75 [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ], P>=0.5 [ F \"task2_compl\" ])"; // numerical

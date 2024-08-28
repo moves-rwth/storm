@@ -14,6 +14,7 @@ foreach (testsuite modelchecker abstraction)
     add_executable(test-gamebased-ar-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
     target_link_libraries(test-gamebased-ar-${testsuite} storm-gamebased-ar storm-parsers)
     target_link_libraries(test-gamebased-ar-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
+    target_include_directories(test-gamebased-ar-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
 
     # Reusing form any of the main storm tests will do here.
     target_precompile_headers(test-gamebased-ar-${testsuite} REUSE_FROM test-builder)

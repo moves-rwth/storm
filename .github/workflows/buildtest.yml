@@ -70,7 +70,18 @@ jobs:
              AllSanitizers: "ON",
              cmakeArgs: "-DMSAT_ROOT="
             }
-
+          - {name: "Minimal dependencies",
+            baseImg: "storm-basesystem:minimal_dependencies",
+            buildType: "Debug",
+             Gurobi: "OFF",
+             Soplex: "OFF",
+             Spot: "OFF",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: "-DMSAT_ROOT="
+            }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -174,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-11", "debian-12", "ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]
+        distro: ["debian-12", "ubuntu-22.04", "ubuntu-24.04"]
         buildType: ["Release"]
     steps:
       - name: Git clone

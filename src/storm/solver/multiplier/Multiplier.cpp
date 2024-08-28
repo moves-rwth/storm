@@ -1,4 +1,4 @@
-#include "Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm-config.h"
 

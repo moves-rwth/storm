@@ -4,10 +4,10 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.8.x
+Version 1.9.x
 -------------
 
-## Version 1.8.2
+## Version 1.9.0 (2024/08)
 - Improved expected visiting times (EVTs) and steady state distribution computations.
 - Support for interval-based models.
 - Robust VI.
@@ -33,6 +33,10 @@ Version 1.8.x
 - Developer: Use various Dockerfiles in CI.
 - Developer: Revised includes and use pre-compiled headers.
 - Developer: Fixed various compiler warnings.
+
+
+Version 1.8.x
+-------------
 
 ## Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81

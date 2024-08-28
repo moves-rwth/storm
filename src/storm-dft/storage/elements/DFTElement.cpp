@@ -1,4 +1,4 @@
-#include "DFTElement.h"
+#include "storm-dft/storage/elements/DFTElement.h"
 #include <set>
 #include "storm-dft/storage/elements/DFTElements.h"
 #include "storm/exceptions/NotImplementedException.h"
