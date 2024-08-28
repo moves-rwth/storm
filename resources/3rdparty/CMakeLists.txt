@@ -280,21 +280,6 @@ get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
 ##
 #############################################################
 
-if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
-endif()
-if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
-endif()
-
-
-if(STORM_HAVE_CLN)
-    get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-endif()
-
-if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
-    list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
-endif()
 
 #############################################################
 ##
