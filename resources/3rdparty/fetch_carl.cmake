@@ -88,9 +88,9 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 include(FetchContent)
 FETCHCONTENT_DECLARE(
         carl
-        SOURCE_DIR /Users/junges/carl
-        #GIT_REPOSITORY https://github.com/sjunges/carl-storm.git
-        #GIT_TAG  cmakeupdates
+        #SOURCE_DIR /Users/junges/carl
+        GIT_REPOSITORY https://github.com/sjunges/carl-storm.git
+        GIT_TAG  cmakeupdates
 )
 SET(EXCLUDE_TESTS_FROM_ALL ON)
 SET(CARL_COMPILE_RELEASE ON)
@@ -125,17 +125,8 @@ set(STORM_HAVE_CARL ON)
 #    endif()
 #endif()
 
-if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.22")
-    # This version is too old for forward declarations and updating requires moving the git,
-    # so we warn users but start warning them now.
-    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
-elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.23")
-    # This version is too old for forward declarations, but we keep supporting it for the moment.
-    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-else()
-    set(STORM_CARL_SUPPORTS_FWD_DECL ON)
-endif()
+
+set(STORM_CARL_SUPPORTS_FWD_DECL ON)
 
 
 # The library that needs symbols must be first, then the library that resolves the symbol.
