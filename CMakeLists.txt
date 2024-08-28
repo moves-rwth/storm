@@ -1,8 +1,8 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.22)
 
+<<<<<<< HEAD
 # Set project name
 project (storm CXX C)
-
 
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
@@ -16,8 +16,7 @@ include(CheckCSourceCompiles)
 include(ProcessorCount)
 include(resources/3rdparty/fetch_carl.cmake)
 
-
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 #############################################################
 ##
@@ -157,39 +156,42 @@ set(STORM_TEST_RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources/examples/testfiles
 # Auto-detect operating system.
 set(MACOSX 0)
 set(LINUX 0)
+set(APPLE_SILICON 0)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	# Mac OS
 	set(OPERATING_SYSTEM "Mac OS")
         set(MACOSX 1)
+	if(${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
+		set(APPLE_SILICON 1)
+	endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # Linux
+	# Linux
 	set(OPERATING_SYSTEM "Linux")
         set(LINUX 1)
 elseif(WIN32)
-    # Assuming Windows.
-    set(OPERATING_SYSTEM "Windows")
+	# Assuming Windows.
+	set(OPERATING_SYSTEM "Windows")
 else()
-    message(WARNING "We are unsure about your operating system.")
-    set(OPERATING_SYSTEM "Linux")
-    set(LINUX 1)
+	message(WARNING "We are unsure about your operating system.")
+	set(OPERATING_SYSTEM "Linux")
+	set(LINUX 1)
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 
-set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
-set(SHIPPED_CARL_USE_GINAC ON)
-# Detect Apple Silicon and adjust settings
-if(APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
-	message(STATUS "Storm - Detected that target system uses Apple Silicon.")
-	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report issues to support@stormchecker.org. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
-	set(APPLE_SILICON 1)
-	if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
-		message(WARNING "CLN and GiNaC are currently not supported on Apple Silicon-based architectures. Disabling Storm and carl usage of the libraries.")
-		set(STORM_USE_CLN_EA OFF)
-		set(STORM_USE_CLN_RF OFF)
-	endif()
+# Set compile flags for dependencies
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+	set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
+	set(SHIPPED_CARL_USE_GINAC ON)
+else()
 	set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
 	set(SHIPPED_CARL_USE_GINAC OFF)
 endif()
+
+# Warning for Apple Silicon
+if(APPLE_SILICON)
+	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report any issues to support@stormchecker.org.")
+endif()
+
 
 set(DYNAMIC_EXT ".so")
 set(STATIC_EXT ".a")

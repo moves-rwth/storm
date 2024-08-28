@@ -85,7 +85,7 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 #endif()
 
 #if (STORM_SHIPPED_CARL)
-include(FETCHCONTENT)
+include(FetchContent)
 FETCHCONTENT_DECLARE(
         carl
         SOURCE_DIR /Users/junges/carl

@@ -169,6 +169,13 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
     typedef typename storm::models::symbolic::Ctmc<TestType::ddType, ValueType> SymbolicModelType;
 
     CtmcCslModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
@@ -390,6 +397,39 @@ TYPED_TEST(CtmcCslModelCheckerTest, Tandem) {
 
     result = checker->check(this->env(), tasks[5]);
     EXPECT_NEAR(this->parseNumber("262.85103824276308"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+}
+
+TYPED_TEST(CtmcCslModelCheckerTest, simple1) {
+    std::string formulasString = "P=? [ F<=0.5 x=1 ]";
+    formulasString += "; R=? [ C<=0.1 ]";
+    formulasString += "; R=? [ C<=1 ]";
+    formulasString += "; R=? [ C<=10 ]";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/simple1.sm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(2ul, model->getNumberOfStates());
+    EXPECT_EQ(2ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+    auto checker = this->createModelChecker(model);
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+    uint64_t propertyIndex = 0;
+    auto expected = this->parseNumber("0.9502129316");  // integrate  6* e^(-6*t) dt from 0 to 0.5 = 1 - 1/(e^3)
+    result = checker->check(this->env(), tasks[propertyIndex++]);
+    EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+    expected = this->parseNumber("0.075198060651");  // integrate min(t,0.1) * 6* e^(-6*t) dt from 0 to infty = 1/6 - 1/(6*e^0.6)
+    result = checker->check(this->env(), tasks[propertyIndex++]);
+    EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+    expected = this->parseNumber("0.1662535413");  // =  1/6 - 1/(6*e^6)
+    result = checker->check(this->env(), tasks[propertyIndex++]);
+    EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+    expected = this->parseNumber("0.16666666667");  // = 1/6 - 1/(6*e^60)
+    result = checker->check(this->env(), tasks[propertyIndex++]);
+    EXPECT_NEAR(expected, this->getQuantitativeResultAtInitialState(model, result), this->precision());
 }
 
 TYPED_TEST(CtmcCslModelCheckerTest, simple2) {

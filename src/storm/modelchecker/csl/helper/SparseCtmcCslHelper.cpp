@@ -671,12 +671,28 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
 
     // If the cumulative reward is to be computed, we need to adjust the weights.
     if (useMixedPoissonProbabilities) {
-        ValueType sum = storm::utility::zero<ValueType>();
-
-        for (auto& element : foxGlynnResult.weights) {
-            sum += element;
-            element = (foxGlynnResult.totalWeight - sum) / uniformizationRate;
+        // The following computes a vector v such that
+        // v[i] = foxGlynnResult.totalWeight - sum_{j=0}^{i} foxGlynnResult.weights[j]
+        //      = sum_{j=i+1}^{n} foxGlynnResult.weights[j]  for i=0,...,n-1
+        // and then sets foxGlynnResult.totalWeight = v / uniformizationRate.
+        // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
+        uint64_t l{0ull}, r{foxGlynnResult.weights.size()};
+        ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
+        while (l < r) {
+            if (foxGlynnResult.weights[l] < foxGlynnResult.weights[r]) {
+                sumLeft += foxGlynnResult.weights[l];
+                foxGlynnResult.weights[l] = (foxGlynnResult.totalWeight - sumLeft) / uniformizationRate;
+                ++l;
+            } else {
+                --r;
+                auto const tmp = foxGlynnResult.weights[r];
+                foxGlynnResult.weights[r] = sumRight / uniformizationRate;
+                sumRight += tmp;
+            }
         }
+        auto const relDiff = storm::utility::abs<ValueType>(foxGlynnResult.totalWeight - (sumLeft + sumRight)) / foxGlynnResult.totalWeight;
+        STORM_LOG_WARN_COND(relDiff < storm::utility::convertNumber<ValueType>(1e-8),
+                            "Numerical instability when adjusting the FoxGlynn weights. Relative Difference: " << relDiff << ".");
     }
 
     STORM_LOG_DEBUG("Starting iterations with " << uniformizedMatrix.getRowCount() << " x " << uniformizedMatrix.getColumnCount() << " matrix.");
@@ -717,7 +733,9 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
         // To make sure that the values obtained before the left truncation point have the same 'impact' on the total result as the values obtained
         // between the left and right truncation point, we scale them here with the total sum of the weights.
         // Note that we divide with this value afterwards. This is to improve numerical stability.
-        storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, foxGlynnResult.totalWeight);
+        if (foxGlynnResult.left > 0) {
+            storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, foxGlynnResult.totalWeight);
+        }
     }
 
     // For the indices that fall in between the truncation points, we need to perform the matrix-vector

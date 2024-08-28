@@ -77,6 +77,13 @@ class SchedulerGenerationMdpPrctlModelCheckerTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
     SchedulerGenerationMdpPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
