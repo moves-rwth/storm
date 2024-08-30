@@ -238,9 +238,10 @@ class FailableElements {
     /*!
      * Get a string representation of the currently failable elements.
      *
+     * @param forceBE If true, failable dependencies are ignored and only BEs are considered.
      * @return std::string Enumeration of currently failable elements.
      */
-    std::string getCurrentlyFailableString() const;
+    std::string getCurrentlyFailableString(bool forceBE = false) const;
 
    private:
     // We use a BitVector for BEs but a list for dependencies, because usually only a few dependencies are failable at the same time.
