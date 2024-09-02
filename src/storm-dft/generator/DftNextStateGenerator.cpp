@@ -78,7 +78,6 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     storm::generator::StateBehavior<ValueType, StateType> result;
 
     STORM_LOG_TRACE("Currently failable: " << state->getFailableElements().getCurrentlyFailableString(!exploreDependencies));
-    // TODO remove exploreDependencies
     auto iterFailable = this->state->getFailableElements().begin(!exploreDependencies);
 
     // Check for absorbing state:
