@@ -164,6 +164,15 @@ TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
 }
 
+TEST_F(ExplicitPrismModelBuilderTest, SMG) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/smg/action_labels.prism");
+    program = storm::utility::prism::preprocess(program, "");
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(3ul, model->getNumberOfChoices());
+    EXPECT_EQ(6ul, model->getNumberOfTransitions());
+}
+
 TEST_F(ExplicitPrismModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
 
