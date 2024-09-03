@@ -15,7 +15,7 @@ In case a new patch needs to be created follow these steps:
 4. Make a commit, e.g., `git commit -a -m "Storm patch"`
 5. Merge or rebase the new Eigen tag, branch or commit, e.g., `git rebase <new_commit_hash>`
 6. Resolve issues, make changes, and commit them
-5. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
+7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
 
 ## GLPK
 
