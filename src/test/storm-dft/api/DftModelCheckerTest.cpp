@@ -259,6 +259,8 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     EXPECT_NEAR(result, 0.08, this->precision());
     result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
     EXPECT_NEAR(result, 0.08, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq8.dft");
+    EXPECT_NEAR(result, 11 / 8.0, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, Mutex) {
