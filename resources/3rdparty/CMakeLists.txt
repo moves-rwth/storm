@@ -31,7 +31,7 @@ ExternalProject_Add(
 )
 ExternalProject_Get_Property(l3pp_ext source_dir)
 set(l3pp_INCLUDE "${source_dir}/")
-add_imported_library_interface(l3pp "${l3pp_INCLUDE}")
+storm_add_imported_library_interface(l3pp "${l3pp_INCLUDE}" "")
 list(APPEND STORM_DEP_TARGETS l3pp)
 add_dependencies(l3pp l3pp_ext)
 
@@ -41,7 +41,7 @@ add_dependencies(l3pp l3pp_ext)
 ##
 #############################################################
 
-add_imported_library_interface(gmm "${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include")
+storm_add_imported_library_interface(gmm "${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include" "")
 list(APPEND STORM_DEP_TARGETS gmm)
 
 #############################################################
@@ -59,6 +59,7 @@ ExternalProject_Add(
         eigen_src
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG bae907b8f6078b1df290729eef946360315bd312
+        GIT_SHALLOW ON
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.1alpha
 		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
@@ -68,7 +69,7 @@ ExternalProject_Add(
         INSTALL_COMMAND ""
         LOG_INSTALL ON
 )
-add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}")
+storm_add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}" "")
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
 
@@ -83,7 +84,7 @@ add_dependencies(StormEigen eigen_src)
 
 # Use the shipped version of ExprTK
 message (STATUS "Storm - Including ExprTk.")
-add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk")
+storm_add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk" "")
 list(APPEND STORM_DEP_TARGETS ExprTk)
 
 
@@ -133,7 +134,7 @@ include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/include/")
+storm_add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/include/" "")
 list(APPEND STORM_DEP_TARGETS ModernJSON)
 
 #############################################################
