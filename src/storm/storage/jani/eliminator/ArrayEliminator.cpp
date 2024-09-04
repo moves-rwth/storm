@@ -30,7 +30,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
     typedef typename ArrayEliminatorData::Replacement Replacement;
     typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
 
-    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr){};
+    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {};
     virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
     /*!

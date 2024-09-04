@@ -13,7 +13,7 @@ class UnaryBooleanPathFormula : public UnaryPathFormula {
 
     UnaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula, FormulaContext context = FormulaContext::Probability);
 
-    virtual ~UnaryBooleanPathFormula(){
+    virtual ~UnaryBooleanPathFormula() {
         // Intentionally left empty.
     };
 
