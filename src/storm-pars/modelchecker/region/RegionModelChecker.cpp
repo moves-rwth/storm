@@ -79,8 +79,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
     uint_fast64_t numOfAnalyzedRegions = 0;
     CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Progress (solved fraction) :\n"
-                            << "0% [");
+        STORM_PRINT_AND_LOG("Progress (solved fraction) :\n" << "0% [");
         while (displayedProgress < storm::utility::one<CoefficientType>() - thresholdAsCoefficient) {
             STORM_PRINT_AND_LOG(" ");
             displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
@@ -89,8 +88,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
             STORM_PRINT_AND_LOG("-");
             displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
         }
-        STORM_PRINT_AND_LOG("] 100%\n"
-                            << "   [");
+        STORM_PRINT_AND_LOG("] 100%\n" << "   [");
         displayedProgress = storm::utility::zero<CoefficientType>();
     }
 

@@ -7,7 +7,7 @@ namespace storm {
 namespace logic {
 class StateFormula : public Formula {
    public:
-    virtual ~StateFormula(){
+    virtual ~StateFormula() {
         // Intentionally left empty.
     };
 
