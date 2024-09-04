@@ -9,12 +9,14 @@ Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen.
 
 In case a new patch needs to be created follow these steps:
 
-1. Clone `https://gitlab.com/libeigen/eigen.git` to `$STORM_DIR/resources/3rdparty/` and checkout the corresponding commit
-2. Checkout a new branch
-3. Apply the old patch via `git apply $STORM_DIR/resources/3rdparty/patches/eigen.patch`
-4. Resolve issues, make changes, and commit them
-5. Create a new patch file via `git format-patch <tag> --stdout > eigen.patch`, where `<tag>` is the tag, branch or commit from step 1
-
+1. Clone `https://gitlab.com/libeigen/eigen.git` somewhere and checkout the previously shipped version
+2. Checkout a new branch e.g., `git branch storm-patch; git checkout storm-patch`
+3. Apply the old patch via `git apply $STORM_DIR/resources/3rdparty/patches/eigen.patch`. At this point, `git diff` shows you all the changes we apply to Eigen
+4. Make a commit, e.g., `git commit -a -m "Storm patch"`
+5. Merge or rebase the new Eigen tag, branch or commit, e.g., `git rebase <new_commit_hash>`
+6. Resolve issues, make changes, and commit them
+7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
+8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
 ## GLPK
 
 To update GLPK, download the new sources from [here](https://ftp.gnu.org/gnu/glpk/) and put them into `$STORM_DIR/resources/3rdparty/glpk-5.0`.
