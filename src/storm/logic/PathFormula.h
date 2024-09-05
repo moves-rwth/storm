@@ -7,7 +7,7 @@ namespace storm {
 namespace logic {
 class PathFormula : public Formula {
    public:
-    virtual ~PathFormula(){
+    virtual ~PathFormula() {
         // Intentionally left empty.
     };
 

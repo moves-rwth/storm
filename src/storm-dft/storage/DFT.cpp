@@ -39,7 +39,6 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                 for (size_t modelem : module) {
                     if (mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                         sparesAndBes.insert(modelem);
-                        mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                     }
                 }
                 mModules.insert(std::make_pair(spareReprs->id(), storm::dft::storage::DftModule(spareReprs->id(), sparesAndBes)));
@@ -84,6 +83,15 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
         }
     }
     mModules.insert(std::make_pair(mTopLevelIndex, topModule));
+
+    // Set representants for all spare modules
+    for (auto const& module : mModules) {
+        if (module.first != mTopLevelIndex) {
+            for (auto const& index : module.second.getElements()) {
+                mRepresentants.insert(std::make_pair(index, module.first));
+            }
+        }
+    }
 
     // Reserve space for failed spares
     ++mMaxSpareChildCount;
