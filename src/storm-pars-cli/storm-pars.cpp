@@ -510,11 +510,20 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
         if (!samples.empty()) {
             STORM_LOG_TRACE("Sampling the model at given points.");
 
-            if (samples.exact) {
-                verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, storm::RationalNumber>(model->as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                                                 samples);
+            if (sampleSettings.isSampleDerivativeSet()) {
+                if (samples.exact) {
+                    verifyPropertiesAtSamplePointsWithSparseEngineDerivatives<ValueType, storm::RationalNumber>(model->as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                                                    samples);
+                } else {
+                    verifyPropertiesAtSamplePointsWithSparseEngineDerivatives<ValueType, double>(model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
+                }
             } else {
-                verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, double>(model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
+                if (samples.exact) {
+                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, storm::RationalNumber>(model->as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                                                    samples);
+                } else {
+                    verifyPropertiesAtSamplePointsWithSparseEngine<ValueType, double>(model->as<storm::models::sparse::Model<ValueType>>(), input, samples);
+                }
             }
         }
     } else {
