@@ -74,7 +74,6 @@ struct SampleInformation {
     bool exact;
 };
 
-
 template<template<typename, typename> class ModelCheckerType, typename ModelType, typename ValueType, typename SolveValueType = double>
 void verifyPropertiesAtSamplePointsDerivative(ModelType const& model, cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     // When samples are provided, we create an instantiation model checker.
@@ -214,11 +213,11 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
 }
 
 template<typename ValueType, typename SolveValueType = double>
-void verifyPropertiesAtSamplePointsWithSparseEngineDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
-                                             SampleInformation<ValueType> const& samples) {
+void verifyPropertiesAtSamplePointsWithSparseEngineDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                               cli::SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
     if (model->isOfType(storm::models::ModelType::Dtmc)) {
-        verifyPropertiesAtSamplePointsDerivative<storm::derivative::SparseDerivativeInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType,
-                                       SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
+        verifyPropertiesAtSamplePointsDerivative<storm::derivative::SparseDerivativeInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>,
+                                                 ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling the derivative is currently only supported for DTMCs.");
     }
