@@ -158,7 +158,7 @@ class BitVector {
          * Lets the iterator point to the previous bit with value 1
          * @return A copy of the iterator before incrementing.
          */
-        const_reverse_iterator& operator++(int);
+        const_reverse_iterator operator++(int);
 
         /*!
          * Lets the iterator point to the n'th previous bit with value 1

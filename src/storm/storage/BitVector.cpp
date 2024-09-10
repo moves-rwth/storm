@@ -103,7 +103,7 @@ BitVector::const_reverse_iterator& BitVector::const_reverse_iterator::operator++
     currentIndex = getNextIndexWithValue<true, true>(dataPtr, lowerBound, --currentIndex);
     return *this;
 }
-BitVector::const_reverse_iterator& BitVector::const_reverse_iterator::operator++(int) {
+BitVector::const_reverse_iterator BitVector::const_reverse_iterator::operator++(int) {
     BitVector::const_reverse_iterator copy{*this};
     ++(*this);
     return copy;
