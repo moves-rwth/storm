@@ -33,6 +33,8 @@ class BitVector {
         using pointer = uint_fast64_t*;
         using reference = uint_fast64_t&;
 
+        const_iterator();
+
         /*!
          * Constructs an iterator over the indices of the set bits in the given bit vector, starting and
          * stopping, respectively, at the given indices.
@@ -66,6 +68,14 @@ class BitVector {
          * @return A reference to this iterator.
          */
         const_iterator& operator++();
+
+        /*!
+         * Increases the position of the iterator to the position of the next bit that is set to true in the
+         * underlying bit vector.
+         *
+         * @return A copy of the iterator before incrementing
+         */
+        const_iterator operator++(int);
 
         /*!
          * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
@@ -133,6 +143,7 @@ class BitVector {
          * first bit upon construction.
          * @param lowerBound The index at which to abort the iteration process.
          */
+        const_reverse_iterator();
         const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound = 0ull, bool setOnFirstBit = true);
         const_reverse_iterator(const_reverse_iterator const& other);
         const_reverse_iterator& operator=(const_reverse_iterator const& other);
@@ -142,6 +153,12 @@ class BitVector {
          * @return A reference to this iterator.
          */
         const_reverse_iterator& operator++();
+
+        /*!
+         * Lets the iterator point to the previous bit with value 1
+         * @return A copy of the iterator before incrementing.
+         */
+        const_reverse_iterator& operator++(int);
 
         /*!
          * Lets the iterator point to the n'th previous bit with value 1
