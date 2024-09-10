@@ -62,7 +62,8 @@ BisimulationDecomposition<ModelType, BlockDataType>::Options::Options()
       buildQuotient(true),
       keepRewards(false),
       type(BisimulationType::Strong),
-      bounded(false) {
+      bounded(false),
+      discounted(false) {
     // Intentionally left empty.
 }
 
@@ -82,6 +83,9 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveFormu
     // Preserve bounded properties if necessary.
     bounded = bounded || (info.containsBoundedUntilFormula() || info.containsNextFormula() || info.containsCumulativeRewardFormula());
 
+    // Preserve discounted properties if necessary.
+    discounted = discounted || info.containsDiscountFormula();
+
     // Compute the relevant labels and expressions.
     this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
 }
@@ -95,6 +99,9 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveSingl
 
     // We need to preserve bounded properties iff the formula contains a bounded until or a next subformula.
     bounded = info.containsBoundedUntilFormula() || info.containsNextFormula() || info.containsCumulativeRewardFormula();
+
+    // We need to preserve discounting iff the formula contains a discounted subformula
+    discounted = info.containsDiscountFormula();
 
     // Compute the relevant labels and expressions.
     this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -197,6 +204,8 @@ BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(M
                     "rewards (via suitable function calls).");
     STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getBounded(), storm::exceptions::IllegalFunctionCallException,
                     "Weak bisimulation cannot preserve bounded properties.");
+    STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getDiscounted(), storm::exceptions::IllegalFunctionCallException,
+                    "Weak bisimulation cannot preserve discounted properties.");
 
     // Fix the respected atomic propositions if they were not explicitly given.
     if (!this->options.respectedAtomicPropositions) {
