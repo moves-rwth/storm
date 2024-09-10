@@ -16,7 +16,7 @@
 namespace storm {
 namespace storage {
 
-BitVector::const_iterator::const_iterator() : dataPtr(nullptr), currentIndex(0), endIndex(0) {};
+BitVector::const_iterator::const_iterator() : dataPtr(nullptr), currentIndex(0), endIndex(0){};
 
 BitVector::const_iterator::const_iterator(uint64_t const* dataPtr, uint_fast64_t startIndex, uint_fast64_t endIndex, bool setOnFirstBit)
     : dataPtr(dataPtr), endIndex(endIndex) {
@@ -72,8 +72,7 @@ bool BitVector::const_iterator::operator==(const_iterator const& other) const {
     return currentIndex == other.currentIndex;
 }
 
-BitVector::const_reverse_iterator::const_reverse_iterator() : dataPtr(nullptr), currentIndex(0), lowerBound(0) {};
-
+BitVector::const_reverse_iterator::const_reverse_iterator() : dataPtr(nullptr), currentIndex(0), lowerBound(0){};
 
 BitVector::const_reverse_iterator::const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound, bool setOnFirstBit)
     : dataPtr(dataPtr), lowerBound(lowerBound) {
@@ -84,7 +83,6 @@ BitVector::const_reverse_iterator::const_reverse_iterator(uint64_t const* dataPt
         currentIndex = upperBound;
     }
 }
-
 
 BitVector::const_reverse_iterator::const_reverse_iterator(const_reverse_iterator const& other)
     : dataPtr(other.dataPtr), currentIndex(other.currentIndex), lowerBound(other.lowerBound) {
