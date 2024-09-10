@@ -26,7 +26,7 @@ SamplingSettings::SamplingSettings() : ModuleSettings(moduleName) {
                                                    "Sets whether it can be assumed that the samples are graph-preserving.")
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, sampleDerivativeOptionName, false, "Sets whether to sample the derivatives instead..").build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, sampleDerivativeOptionName, false, "Sets whether to sample the derivatives.").build());
 }
 
 std::string SamplingSettings::getSamples() const {
