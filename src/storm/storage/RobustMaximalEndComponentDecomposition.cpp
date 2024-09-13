@@ -108,7 +108,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                     const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
                     auto const& interval = entry.getValue();
                     if (!utility::isZero(interval.lower()) && !targetInSCC) {
-                        std::cout << "leave with " << interval.lower()  << std::endl;
                         // You have to leave the SCC here
                         probabilityToStayInScc = 0;
                         break;
@@ -119,7 +118,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
             }
 
             // if (probabilityToStayInScc < 1 && !utility::isAlmostOne(probabilityToStayInScc)) {
-            std::cout << "stay: " << probabilityToStayInScc << std::endl;
             if (probabilityToStayInScc < 1) {
                 // This state is not in an EC
                 remainingEcCandidates.set(state, false);

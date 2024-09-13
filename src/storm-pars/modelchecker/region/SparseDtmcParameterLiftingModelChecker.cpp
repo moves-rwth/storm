@@ -395,7 +395,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 template<typename SparseModelType, typename ConstantType, bool Robust>
 std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::computeQuantitativeValues(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
-    std::cout << region.region << std::endl;
+    // std::cout << region.region << std::endl;
     if (maybeStates.empty()) {
         this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
         return resultsForNonMaybeStates;
@@ -412,8 +412,8 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
             transformer::IntervalEndComponentPreserver endComponentPreserver;
             auto const& result = endComponentPreserver.eliminateMECs(liftedMatrix, liftedVector);
             if (result) {
-                std::cout << liftedMatrix << std::endl;
-                std::cout << *result << std::endl;
+                // std::cout << liftedMatrix << std::endl;
+                // std::cout << *result << std::endl;
                 liftedMatrix = *result;
                 nonTrivialEndComponents = true;
             }
@@ -531,7 +531,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         ++maybeStateResIt;
     }
 
-    std::cout << dirForParameters << " " << result[this->getUniqueInitialState()] << std::endl;
+    // std::cout << dirForParameters << " " << result[this->getUniqueInitialState()] << std::endl;
 
     this->updateKnownValueBoundInRegion(region, dirForParameters, result);
     return result;
