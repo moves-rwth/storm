@@ -283,6 +283,12 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             for (auto const& s : visitedStates) {
                 bool allPredecessorsInVisitedStates = true;
                 for (auto const& predecessor : backwardsTransitions.getRow(s)) {
+                    if (predecessor.getValue().isZero()) {
+                        continue;
+                    }
+                    if (!reachableStates.get(predecessor.getColumn())) {
+                        continue;
+                    }
                     // is the predecessor not in the subtree? then this state won't get eliminated
                     // is the predcessor in the subtree but the edge isn't? then this state won't get eliminated
                     if (!subtree.count(predecessor.getColumn()) || !subtree.at(predecessor.getColumn()).count(s)) {
@@ -291,7 +297,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                     }
                 }
                 if (allPredecessorsInVisitedStates) {
-                    // std::cout << "Eliminable state " << s << std::endl;
                     existsEliminableState = true;
                     break;
                 }
@@ -557,6 +562,8 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
     //     }
     // }
 
+    std::set<std::set<uint64_t>> targetSetStates;
+
     for (auto const& [factors, transitions] : parametricTransitions) {
         if (transitions.size() > 1) {
             // STORM_LOG_ERROR_COND(!factors.empty(), "Empty factors!");
@@ -581,7 +588,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
                 }
                 continue;
             }
-            alreadyTimeTravelledToThis[parameter].emplace(targetStates);
+            targetSetStates.emplace(targetStates);
 
             Annotation newAnnotation(parameter, polynomialCache);
 
@@ -628,6 +635,11 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
             insertTransitions.emplace_back(state, newAnnotation);
         }
+    }
+
+    // Add everything to alreadyTimeTravelledToThis
+    for (auto const& targetSet : targetSetStates) {
+        alreadyTimeTravelledToThis[parameter].emplace(targetSet);
     }
 
     return insertTransitions;
