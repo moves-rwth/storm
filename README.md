@@ -10,7 +10,7 @@ This is a custom fork of Storm for my Bachelor and Master Thesis at IIT Delhi, t
 - `src/storm/storage/SymbolicMEC.h` and `src/storm/storage/SymbolicMEC_stats.h` contain the algorithm implementations (the `_stats` files additionally count the number of transition BDD operations). The functions `symbolicMECDecompositionInterleave` and `symbolicMECDecompositionInterleave_stats` implement our `INTERLEAVE` algorithm.
 - `src/storm/storage/SymbolicOperations.h` and `src/storm/storage/SymbolicOperations_stats.h` contain the implementations of symbolic operations (including a new implementation of `pick` which I tried out and added support for to the `src/storm/storage/dd`, `src/storm/storage/dd/cudd` and `src/storm/storage/dd/sylvan` folders)
 - `src/storm/storage/SymbolicSCCDecomposition.h` and `src/storm/storage/SymbolicSCCDecomposition_stats.h` contain symbolic SCC decomposition algorithm implementations
-- `src/storm/storage/THESIS_DEBUG.h` contains miscellaneous definitions of the algorithms we benchmarked.
+- `src/storm/storage/THESIS_DEBUG.h` contains miscellaneous definitions for the algorithms we benchmarked.
 
 To run any of the symbolic MEC decomposition algorithms, call the `storm` binary as usual, adding the argument `--benchmarkForceMECDecompositionAlgorithm <n>` with `n = 1,2,3` for `NAIVE, LOCKSTEP, INTERLEAVE`. Using `n = 4,5,6` also counts and outputs the number of symbolic operations performed by the `NAIVE, LOCKSTEP, INTERLEAVE` algorithms. Usual Storm GitHub README is below.
 
