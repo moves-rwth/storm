@@ -1458,6 +1458,11 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> valueList) {
+    this->interactiveUnderApproximationExplorer->setFMSchedValueList(valueList);
+}
+
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::rateObservation(
     typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
     auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
