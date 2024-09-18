@@ -25,11 +25,11 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
     for (auto const& group : decomposition) {
         if (!group.isTrivial()) {
             hasNonTrivialMEC = true;
-            std::cout << "Non-trivial MEC: ";
-            for (auto const& state : group) {
-                std::cout << state << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "Non-trivial MEC: ";
+            // for (auto const& state : group) {
+            //     std::cout << state << " ";
+            // }
+            // std::cout << std::endl;
         }
     }
     
@@ -55,7 +55,10 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
         } else {
             auto const& group = decomposition.getBlock(indexMap.at(row));
             // Group is non-trivial: Check whether state is the smallest in the group
-            if (row != *group.begin()) {
+            uint64_t smallestInGroup = *group.begin();
+            if (row != smallestInGroup) {
+                // Add a one transition that points to the smallest state in the group
+                builder.addNextValue(row, smallestInGroup, utility::one<Interval>());
                 continue;
             }
             // Collect all states outside of the group that states inside of the group go to
@@ -72,12 +75,9 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
                 }
             }
             // Insert interval [0, 1] to all of these states
-            std::cout << "Group Set from " << row << ": ";
             for (auto const& state : groupSet) {
-                std::cout << state << " ";
                 builder.addNextValue(row, state, Interval(0, 1));
             }
-            std::cout << std::endl;
         }
     }
 

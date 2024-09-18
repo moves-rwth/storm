@@ -531,7 +531,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         ++maybeStateResIt;
     }
 
-    // std::cout << dirForParameters << " " << result[this->getUniqueInitialState()] << std::endl;
+    STORM_LOG_INFO(dirForParameters << " " << result[this->getUniqueInitialState()] << std::endl);
 
     this->updateKnownValueBoundInRegion(region, dirForParameters, result);
     return result;
