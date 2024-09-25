@@ -15,7 +15,7 @@ class BinaryBooleanStateFormula : public BinaryStateFormula {
     BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula,
                               std::shared_ptr<Formula const> const& rightSubformula);
 
-    virtual ~BinaryBooleanStateFormula(){
+    virtual ~BinaryBooleanStateFormula() {
         // Intentionally left empty.
     };
 

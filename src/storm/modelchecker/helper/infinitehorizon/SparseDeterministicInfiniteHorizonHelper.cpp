@@ -252,17 +252,9 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     if (bscc.size() == 1) {
         return {storm::utility::one<ValueType>()};
     }
-    // Prepare an environment for the underlying linear equation solver
-    auto subEnv = env;
-    if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
-        // Topological solver does not make any sense since the BSCC is connected.
-        subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(),
-                                                    subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
-    }
-
-    auto alg = subEnv.modelchecker().getSteadyStateDistributionAlgorithm();
+    auto alg = env.modelchecker().getSteadyStateDistributionAlgorithm();
     if (alg == storm::SteadyStateDistributionAlgorithm::Automatic) {
-        if (subEnv.solver().isForceSoundness()) {
+        if (env.solver().isForceSoundness()) {
             alg = storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes;
         } else {
             alg = storm::SteadyStateDistributionAlgorithm::EquationSystem;
@@ -273,11 +265,11 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
     }
 
     if (alg == storm::SteadyStateDistributionAlgorithm::EquationSystem) {
-        return computeSteadyStateDistrForBsccEqSys(subEnv, bscc);
+        return computeSteadyStateDistrForBsccEqSys(env, bscc);
     } else {
         STORM_LOG_ASSERT(alg == storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes,
                          "Unexpected algorithm for steady state distribution computation.");
-        return computeSteadyStateDistrForBsccEVTs(subEnv, bscc);
+        return computeSteadyStateDistrForBsccEVTs(env, bscc);
     }
 }
 
@@ -349,9 +341,17 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
 
 template<typename ValueType>
 std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBsccEqSys(
-    Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
+    Environment const& inputEnv, storm::storage::StronglyConnectedComponent const& bscc) {
     // We want that the returned values are sorted properly. Let's assert that strongly connected components use a sorted container type
     STORM_LOG_ASSERT(std::is_sorted(bscc.begin(), bscc.end()), "Expected that bsccs are sorted.");
+
+    // Prepare an environment for the underlying linear equation solver
+    auto env = inputEnv;
+    if (env.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
+        // Topological solver does not make any sense since the BSCC is connected.
+        env.solver().setLinearEquationSolverType(env.solver().topological().getUnderlyingEquationSolverType(),
+                                                 env.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
+    }
 
     STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
                         "Sound computations are not properly implemented for this computation. You might get incorrect results.");

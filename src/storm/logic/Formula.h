@@ -30,7 +30,7 @@ class FormulaInformation;
 class Formula : public std::enable_shared_from_this<Formula> {
    public:
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
-    virtual ~Formula(){
+    virtual ~Formula() {
         // Intentionally left empty.
     };
 

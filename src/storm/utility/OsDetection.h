@@ -16,6 +16,9 @@
 #define MACOS
 #define NOEXCEPT noexcept
 #define _DARWIN_USE_64_BIT_INODE
+#ifdef __arm64__
+#define APPLE_SILICON
+#endif
 #include <cxxabi.h>    // Required by ErrorHandling.h
 #include <execinfo.h>  // Required by ErrorHandling.h
 #include <sys/mman.h>
