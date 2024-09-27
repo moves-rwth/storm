@@ -339,6 +339,10 @@ std::set<typename RegionRefinementChecker<ParametricType>::VariableType> RegionR
             region.monotonicityAnnotation.getGlobalMonotonicityResult()->isMonotone(estimate.first)) {
             continue;
         }
+        // Do not split on parameters that are fixed
+        if (region.region.getDifference(estimate.first) == storm::utility::zero<CoefficientType>()) {
+            continue;
+        }
         splittingVars.emplace(estimate.first);
         if (splittingVars.size() == regionSplittingStrategy.maxSplitDimensions) {
             break;
