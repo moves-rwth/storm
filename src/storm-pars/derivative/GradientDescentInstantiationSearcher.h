@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/variant.hpp>
 #include <map>
 #include <memory>
 #include "storm-pars/analysis/MonotonicityHelper.h"
