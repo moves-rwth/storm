@@ -14,7 +14,9 @@ RegionCheckResult<ValueType>::RegionCheckResult(
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>> const& regionResults)
     : regionResults(regionResults) {
     auto overallArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
+    std::cout << "Region areas" << std::endl;
     for (auto const& res : this->regionResults) {
+        std::cout << res.first << " " << res.first.area() << std::endl;
         overallArea += res.first.area();
     }
     initFractions(overallArea);
@@ -24,8 +26,10 @@ template<typename ValueType>
 RegionCheckResult<ValueType>::RegionCheckResult(
     std::vector<std::pair<storm::storage::ParameterRegion<ValueType>, storm::modelchecker::RegionResult>>&& regionResults)
     : regionResults(std::move(regionResults)) {
+    std::cout << "Region areas" << std::endl;
     auto overallArea = storm::utility::zero<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>();
     for (auto const& res : this->regionResults) {
+        std::cout << res.first << " " << res.first.area() << std::endl;
         overallArea += res.first.area();
     }
     initFractions(overallArea);
@@ -124,6 +128,11 @@ void RegionCheckResult<ValueType>::initFractions(typename storm::storage::Parame
     satFraction = satArea / overallArea;
     unsatFraction = unsatArea / overallArea;
     illDefinedFraction = illDefinedArea / overallArea;
+
+    std::cout << "Overall area " << overallArea << std::endl;
+    std::cout << "Sat area " << satArea << std::endl;
+    std::cout << "Unsat area " << unsatArea << std::endl;
+    std::cout << "IllDefined area " << illDefinedArea << std::endl;
 }
 
 template<typename ValueType>

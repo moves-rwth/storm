@@ -32,10 +32,12 @@ template<typename ParametricType>
 void RegionRefinementChecker<ParametricType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                       RegionSplittingStrategy splittingStrategy,
+                                                      std::set<VariableType> const& discreteVariables,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
                                                       bool allowModelSimplifications, bool graphPreserving) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
+    this->discreteVariables = std::move(discreteVariables);
     if (this->regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::Default) {
         regionSplittingStrategy.heuristic = RegionSplittingStrategy::Heuristic::EstimateBased;
     }
@@ -166,7 +168,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
                 monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
                 auto splittingVariables = getSplittingVariables(currentRegion, Context::Partitioning);
                 STORM_LOG_INFO("Splitting on variables" << splittingVariables);
-                currentRegion.splitLeafNodeAtCenter(splittingVariables, true);
+                currentRegion.splitLeafNodeAtCenter(splittingVariables, this->discreteVariables, true);
                 for (auto& child : currentRegion.subRegions) {
                     unprocessedRegions.emplace(child);
                 }
@@ -281,7 +283,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
             auto splittingVariables = getSplittingVariables(currentRegion, Context::ExtremalValue);
             STORM_LOG_INFO("Splitting on variables " << splittingVariables);
-            currentRegion.splitLeafNodeAtCenter(splittingVariables, true);
+            currentRegion.splitLeafNodeAtCenter(splittingVariables, this->discreteVariables, true);
             for (auto& child : currentRegion.subRegions) {
                 unprocessedRegions.emplace(child);
             }

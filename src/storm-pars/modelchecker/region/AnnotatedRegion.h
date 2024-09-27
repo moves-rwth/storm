@@ -16,10 +16,10 @@ struct AnnotatedRegion {
 
     void propagateAnnotationsToSubregions(bool allowDeleteAnnotationsOfThis);
 
-    void splitAndPropagate(typename Region::Valuation const& splittingPoint, std::set<VariableType> const& consideredVariable,
-                           bool allowDeleteAnnotationsOfThis);
+    void splitAndPropagate(typename Region::Valuation const& splittingPoint, std::set<VariableType> const& consideredVariables,
+                           std::set<VariableType> const& discreteVariables, bool allowDeleteAnnotationsOfThis);
 
-    void splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, bool allowDeleteAnnotationsOfThis);
+    void splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, std::set<VariableType> const& discreteVariables, bool allowDeleteAnnotationsOfThis);
 
     void postOrderTraverseSubRegions(std::function<void(AnnotatedRegion<ParametricType>&)> const& visitor);
 

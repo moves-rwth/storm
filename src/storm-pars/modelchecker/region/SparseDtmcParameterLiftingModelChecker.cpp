@@ -395,7 +395,6 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 template<typename SparseModelType, typename ConstantType, bool Robust>
 std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::computeQuantitativeValues(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
-    // std::cout << region.region << std::endl;
     if (maybeStates.empty()) {
         this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
         return resultsForNonMaybeStates;
@@ -531,7 +530,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         ++maybeStateResIt;
     }
 
-    STORM_LOG_INFO(dirForParameters << " " << result[this->getUniqueInitialState()] << std::endl);
+    STORM_LOG_INFO(dirForParameters << " " << region.region << ": " << result[this->getUniqueInitialState()] << std::endl);
 
     this->updateKnownValueBoundInRegion(region, dirForParameters, result);
     return result;

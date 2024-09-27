@@ -75,7 +75,7 @@ class ParameterRegion {
      */
     void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
     void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector,
-               std::set<VariableType> const& consideredVariables) const;
+               std::set<VariableType> const& consideredVariables, std::set<VariableType> const& discreteVariables) const;
 
     Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType>& monRes) const;
     Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters,

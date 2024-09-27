@@ -15,6 +15,7 @@ const std::string regionOptionName = "region";
 const std::string regionShortOptionName = "reg";
 const std::string regionBoundOptionName = "regionbound";
 const std::string notGraphPreservingName = "not-graph-preserving";
+const std::string discreteVariablesName = "discrete-variables";
 
 RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.")
@@ -32,6 +33,14 @@ RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
 
     this->addOption(storm::settings::OptionBuilder(moduleName, notGraphPreservingName, false,
                                                    "Enables mode in which the region might not preserve the graph structure of the parametric model.")
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, discreteVariablesName, false,
+                                                   "Comma-seperated list of variables that are discrete and will be split to the region edges.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "discretevars", "The variables in the format p1,p2,p3.")
+                                        .setDefaultValueString("")
+                                         .build())
                         .build());
 }
 
@@ -53,6 +62,10 @@ std::string RegionSettings::getRegionBoundString() const {
 
 bool RegionSettings::isNotGraphPreservingSet() const {
     return this->getOption(notGraphPreservingName).getHasOptionBeenSet();
+}
+
+std::string RegionSettings::getDiscreteVariablesString() const {
+    return this->getOption(discreteVariablesName).getArgumentByName("discretevars").getValueAsString();
 }
 
 }  // namespace modules

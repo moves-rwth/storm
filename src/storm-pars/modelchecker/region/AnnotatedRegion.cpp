@@ -32,10 +32,10 @@ void AnnotatedRegion<ParametricType>::propagateAnnotationsToSubregions(bool allo
 }
 
 template<typename ParametricType>
-void AnnotatedRegion<ParametricType>::splitAndPropagate(typename Region::Valuation const& splittingPoint, std::set<VariableType> const& consideredVariable,
-                                                        bool allowDeleteAnnotationsOfThis) {
+void AnnotatedRegion<ParametricType>::splitAndPropagate(typename Region::Valuation const& splittingPoint, std::set<VariableType> const& consideredVariables,
+                                                        std::set<VariableType> const& discreteVariables, bool allowDeleteAnnotationsOfThis) {
     std::vector<storm::storage::ParameterRegion<ParametricType>> subRegionsWithoutAnnotations;
-    region.split(splittingPoint, subRegionsWithoutAnnotations, consideredVariable);
+    region.split(splittingPoint, subRegionsWithoutAnnotations, consideredVariables, discreteVariables);
     subRegions.reserve(subRegionsWithoutAnnotations.size());
     for (auto& newRegion : subRegionsWithoutAnnotations) {
         subRegions.emplace_back(newRegion);
@@ -44,9 +44,9 @@ void AnnotatedRegion<ParametricType>::splitAndPropagate(typename Region::Valuati
 }
 
 template<typename ParametricType>
-void AnnotatedRegion<ParametricType>::splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, bool allowDeleteAnnotationsOfThis) {
+void AnnotatedRegion<ParametricType>::splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, std::set<VariableType> const& discreteVariables, bool allowDeleteAnnotationsOfThis) {
     STORM_LOG_ASSERT(subRegions.empty(), "Region assumed to be a leaf.");
-    splitAndPropagate(region.getCenterPoint(), splittingVariables, allowDeleteAnnotationsOfThis);
+    splitAndPropagate(region.getCenterPoint(), splittingVariables, discreteVariables, allowDeleteAnnotationsOfThis);
 }
 
 template<typename ParametricType>

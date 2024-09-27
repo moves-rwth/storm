@@ -41,6 +41,11 @@ class RegionSettings : public ModuleSettings {
      */
     bool isNotGraphPreservingSet() const;
 
+    /*!
+     * Retrieves the discrete variables string
+     */
+    std::string getDiscreteVariablesString() const;
+
     const static std::string moduleName;
 };
 

@@ -401,6 +401,9 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
 
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+    
     STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
@@ -415,7 +418,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     // TODO Why was allowModelSimplification false here?
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
         model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, splittingStrategy, true, graphPreserving, monotonicitySettings, monThresh);
+        storm::modelchecker::RegionResultHypothesis::Unknown,  splittingStrategy, discreteVariables, true, graphPreserving, monotonicitySettings, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

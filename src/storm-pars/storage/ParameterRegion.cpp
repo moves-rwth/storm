@@ -170,7 +170,13 @@ template<typename ParametricType>
 typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::area() const {
     CoefficientType result = storm::utility::one<CoefficientType>();
     for (auto const& variable : this->variables) {
-        result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
+        if (this->getUpperBoundary(variable) != this->getLowerBoundary(variable)) {
+            result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
+        } else {
+            // HACK to get regions with zero area to work correctly
+            // This area represents half of the area of the region
+            result *= utility::convertNumber<CoefficientType>(RationalNumber(1,2));
+        }
     }
     return result;
 }
@@ -190,13 +196,22 @@ bool ParameterRegion<ParametricType>::contains(Valuation const& point) const {
 
 template<typename ParametricType>
 void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const {
-    return split(splittingPoint, regionVector, variables);
+    return split(splittingPoint, regionVector, variables, {});
 }
 
 template<typename ParametricType>
 void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector,
-                                            const std::set<VariableType>& consideredVariables) const {
-    auto vertices = getVerticesOfRegion(consideredVariables);
+                                            const std::set<VariableType>& consideredVariables, const std::set<VariableType>& discreteVariables) const {
+    std::set<VariableType> vertexVariables = consideredVariables;
+    // Remove the discrete variables that are already unit from the considered
+    // variables set, so we don't split them again
+    for (auto const& var : discreteVariables) {
+        if (this->getDifference(var) == storm::utility::zero<CoefficientType>()) {
+            vertexVariables.erase(var);
+        }
+    }
+    
+    auto vertices = getVerticesOfRegion(vertexVariables);
 
     for (auto const& vertex : vertices) {
         // The resulting subregion is the smallest region containing vertex and splittingPoint.
@@ -205,9 +220,17 @@ void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std
             VariableType variable = variableBound.first;
             auto vertexEntry = vertex.find(variable);
             if (vertexEntry != vertex.end()) {
-                auto splittingPointEntry = splittingPoint.find(variable);
-                subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
-                subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                if (discreteVariables.find(variable) != discreteVariables.end()) {
+                    // As this parameter is discrete, we set this parameter to the vertex entry (splitting point does not matter)
+                    // e.g. we split the region p in [0,1], q in [0,1] at center with q being discrete
+                    // then we get the regions [0,0.5]x[0,1] and [0.5,1]x[0,1]
+                    subLower.insert(typename Valuation::value_type(variable, vertexEntry->second));
+                    subUpper.insert(typename Valuation::value_type(variable, vertexEntry->second));
+                } else {
+                    auto splittingPointEntry = splittingPoint.find(variable);
+                    subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
+                    subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                }
             } else {
                 subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
                 subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));

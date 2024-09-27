@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/algorithm/string.hpp>
+
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
@@ -51,6 +53,49 @@ struct MonotonicitySetting {
 };
 
 template<typename ValueType>
+std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> getModelParameters(storm::models::ModelBase const& model) {
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
+    if (model.isSparseModel()) {
+        auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
+        modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
+        auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
+    }
+    return modelParameters;
+}
+
+
+template<typename ValueType>
+std::vector<typename storm::storage::ParameterRegion<ValueType>::VariableType> parseVariableList(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+    std::vector<typename storm::storage::ParameterRegion<ValueType>::VariableType> variables;
+    std::vector<std::string> variableStrings;
+    boost::split(variableStrings, inputString, boost::is_any_of(","));
+    for (auto& var : variableStrings) {
+        boost::trim(var);
+        bool found = false;
+        // Find parameter in list
+        for (auto const& param : consideredVariables) {
+            if (var == param.name()) {
+                variables.push_back(param);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            STORM_LOG_ERROR("Variable " << var << " not found.");
+        }
+    }
+    return variables;
+}
+
+template<typename ValueType>
+std::vector<typename storm::storage::ParameterRegion<ValueType>::VariableType> parseVariableList(std::string const& inputString, storm::models::ModelBase const& model) {
+    return parseVariableList<ValueType>(inputString, getModelParameters<ValueType>(model));
+}
+
+template<typename ValueType>
 std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(
     std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
     // If the given input string looks like a file (containing a dot and there exists a file with that name),
@@ -63,23 +108,14 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(
 }
 
 template<typename ValueType>
-storm::storage::ParameterRegion<ValueType> createRegion(
-    std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
-    return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables);
+std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
+    return parseRegions<ValueType>(inputString, getModelParameters<ValueType>(model));
 }
 
 template<typename ValueType>
-std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
-    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
-    if (model.isSparseModel()) {
-        auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
-        modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
-        auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
-        modelParameters.insert(rewParameters.begin(), rewParameters.end());
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
-    }
-    return parseRegions<ValueType>(inputString, modelParameters);
+storm::storage::ParameterRegion<ValueType> createRegion(
+    std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+    return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables);
 }
 
 template<typename ValueType>
@@ -281,7 +317,9 @@ template<typename ValueType, typename ImpreciseType = double, typename PreciseTy
 std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initializeRegionRefinementChecker(
     Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
-    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(), bool allowModelSimplification = true,
+    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(),
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {}, 
+    bool allowModelSimplification = true,
     bool graphPreserving = true, bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
@@ -292,7 +330,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
         initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
     allowModelSimplification = allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
     auto refinementChecker = std::make_unique<storm::modelchecker::RegionRefinementChecker<ValueType>>(std::move(regionChecker));
-    refinementChecker->specify(env, consideredModel, task, std::move(regionSplittingStrategy), std::move(monotonicityBackend), allowModelSimplification, graphPreserving);
+    refinementChecker->specify(env, consideredModel, task, std::move(regionSplittingStrategy), std::move(discreteVariables), std::move(monotonicityBackend), allowModelSimplification, graphPreserving);
     return refinementChecker;
 }
 
@@ -313,13 +351,15 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
     storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, std::optional<ValueType> const& coverageThreshold,
     std::optional<uint64_t> const& refinementDepthThreshold = std::nullopt,
     storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown,
-    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(), bool allowModelSimplification = true,
+    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(),
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {}, 
+    bool allowModelSimplification = true,
     bool graphPreserving = true,
     MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification, graphPreserving,
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, discreteVariables, allowModelSimplification, graphPreserving,
                                                                preconditionsValidated, monotonicitySetting);
     return refinementChecker->performRegionPartitioning(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
 }
@@ -334,13 +374,14 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
     storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir,
     std::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting const& monotonicitySetting,
     std::optional<storm::logic::Bound> const& boundInvariant,
-    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy()) {
+    storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy = modelchecker::RegionSplittingStrategy(),
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {}) {
     Environment env;
     // TODO: allow passing these settings? Maybe also pass monotone parameters?
     bool const preconditionsValidated = false;
     bool const allowModelSimplification = true;
     bool const graphPreserving = true;
-    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, allowModelSimplification, graphPreserving,
+    auto refinementChecker = initializeRegionRefinementChecker(env, model, task, engine, regionSplittingStrategy, discreteVariables, allowModelSimplification, graphPreserving,
                                                                preconditionsValidated, monotonicitySetting);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
@@ -368,7 +409,7 @@ bool verifyRegion(std::shared_ptr<storm::models::sparse::Model<ValueType>> const
     bool const graphPreserving = true;
     auto refinementChecker =
         initializeRegionRefinementChecker(env, model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBounds, true), engine,
-                                          regionSplittingStrategy, allowModelSimplification, graphPreserving, preconditionsValidated, monotonicitySetting);
+                                          regionSplittingStrategy, {}, allowModelSimplification, graphPreserving, preconditionsValidated, monotonicitySetting);
     return refinementChecker->verifyRegion(env, region, bound);
 }
 
