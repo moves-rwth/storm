@@ -6,6 +6,7 @@
 #include <functional>
 #include <iterator>
 #include <ostream>
+#include <ranges>
 #include <vector>
 
 namespace storm {
@@ -27,7 +28,7 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = uint_fast64_t;
         using difference_type = std::ptrdiff_t;
         using pointer = uint_fast64_t*;
@@ -127,7 +128,7 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = uint_fast64_t;
         using difference_type = std::ptrdiff_t;
         using pointer = uint_fast64_t*;
@@ -777,6 +778,8 @@ class BitVector {
     // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
     static const uint_fast64_t mod64mask = (1 << 6) - 1;
 };
+
+static_assert(std::ranges::forward_range<BitVector>);
 
 struct FNV1aBitVectorHash {
     std::size_t operator()(storm::storage::BitVector const& bv) const;
