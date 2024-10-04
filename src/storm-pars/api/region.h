@@ -69,6 +69,9 @@ std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> getM
 
 template<typename ValueType>
 std::vector<typename storm::storage::ParameterRegion<ValueType>::VariableType> parseVariableList(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+    if (inputString == "") {
+        return {};
+    }
     std::vector<typename storm::storage::ParameterRegion<ValueType>::VariableType> variables;
     std::vector<std::string> variableStrings;
     boost::split(variableStrings, inputString, boost::is_any_of(","));
