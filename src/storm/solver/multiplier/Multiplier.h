@@ -123,6 +123,23 @@ class Multiplier {
                                    uint64_t n) const;
 
     /*!
+     * Performs repeated matrix-vector multiplication x' = A*x + b, minimizes/maximizes over the row groups
+     * so that the resulting vector has the size of number of row groups of A and multiplies the vector by a scalar factor.
+     *
+     * @param dir The direction for the reduction step.
+     * @param x The input vector with which to multiply the matrix. Its length must be equal
+     * to the number of columns of A.
+     * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+     * to the number of rows of A.
+     * @param result The target vector into which to write the multiplication result. Its length must be equal
+     * to the number of rows of A.
+     * @param n The number of times to perform the multiplication.
+     * @param factor The scalar to multiply with in each iteration.
+     */
+    void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
+                                             std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+
+    /*!
      * Multiplies the row with the given index with x and adds the result to the provided value
      * @param rowIndex The index of the considered row
      * @param x The input vector with which the row is multiplied
