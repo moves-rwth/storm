@@ -434,82 +434,98 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     // We need this to later determine which states are now unreachable
     std::vector<uint64_t> visitedStatesInBFSOrder;
 
+    std::set<std::pair<uint64_t, uint64_t>> visitedEdges;
+
     // We iterate over these annotations
     std::map<uint64_t, Annotation> annotations;
 
     // Set of active states in BFS
-    std::set<uint64_t> activeStates = {start};
+    std::queue<uint64_t> activeStates;
+    activeStates.push(start);
 
     annotations.emplace(start, Annotation(parameter, polynomialCache));
     // We go with probability one from the start to the start
     annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalFunctionCoefficient>();
 
     while (!activeStates.empty()) {
-        std::set<uint64_t> nextActiveStates;
-        for (auto const& state : activeStates) {
-            visitedStatesInBFSOrder.push_back(state);
-            for (auto const& entry : flexibleMatrix.getRow(state)) {
-                auto const goToState = entry.getColumn();
-
-                // Update the annotation of the target state
-                if (annotations.count(goToState)) {
-                    annotations.at(goToState).clear();
-                } else {
-                    annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
+        auto const& state = activeStates.front();
+        activeStates.pop();
+        visitedStatesInBFSOrder.push_back(state);
+        for (auto const& entry : flexibleMatrix.getRow(state)) {
+            auto const goToState = entry.getColumn();
+            if (!subtree.count(goToState) || !subtree.at(state).count(goToState)) {
+                continue;
+            }
+            visitedEdges.emplace(std::make_pair(state, goToState));
+            // Check if all of the backwards states have been visited
+            bool allBackwardsStatesVisited = true;
+            for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
+                if (!subtree.count(backwardsEntry.getColumn()) || !subtree.at(backwardsEntry.getColumn()).count(goToState)) {
+                    // We don't consider this edge for one of two reasons:
+                    // (1) The node is not in the subtree.
+                    // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
+                    continue;
                 }
-
-                // Value-iteration style
-                for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
-                    if (!subtree.count(backwardsEntry.getColumn()) || !subtree.at(backwardsEntry.getColumn()).count(goToState)) {
-                        // We don't consider this edge for one of two reasons:
-                        // (1) The node is not in the subtree.
-                        // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
-                        continue;
-                    }
-                    if (!annotations.count(backwardsEntry.getColumn())) {
-                        // This edge is in the subtree but we just haven't gotten around to it yet. Treat it as having value zero.
-                        continue;
-                    }
-                    auto const transition = backwardsEntry.getValue();
-
-                    // std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
-
-                    // We add stuff to this annotation
-                    auto& targetAnnotation = annotations.at(goToState);
-
-                    // std::cout << targetAnnotation << " + ";
-                    // std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
-
-                    // The core of this big-step algorithm: "value-iterating" on our annotation.
-                    if (transition.isConstant()) {
-                        // std::cout << "(constant)";
-                        targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
-                    } else {
-                        // std::cout << "(pol)";
-                        // Read transition from DTMC, convert to univariate polynomial
-                        STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
-                                                                                        << transition.denominator() << " in transition " << transition);
-                        auto nominator = transition.nominator();
-                        UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
-                        // Constant denominator is now distributed in the factors, not in the denominator of the rational function
-                        nominatorAsUnivariate /= transition.denominator().coefficient();
-                        if (storedAnnotations.count(nominatorAsUnivariate)) {
-                            targetAnnotation.addAnnotationTimesAnnotation(annotations.at(backwardsEntry.getColumn()), storedAnnotations.at(nominatorAsUnivariate));
-                        } else {
-                            targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
-                        }
-                    }
-
-                    // std::cout << " == " << targetAnnotation << std::endl;
-                }
-
-                // Continue BFS
-                if (subtree.count(goToState) && !bottomStates.count(goToState)) {
-                    nextActiveStates.emplace(goToState);
+                if (!visitedEdges.count(std::make_pair(backwardsEntry.getColumn(), goToState))) {
+                    allBackwardsStatesVisited = false;
+                    break;
                 }
             }
+            if (!allBackwardsStatesVisited) {
+                continue;
+            }
+
+            // Update the annotation of the target state
+            if (annotations.count(goToState)) {
+                annotations.at(goToState).clear();
+            } else {
+                annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
+            }
+
+            // Value-iteration style
+            for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
+                if (!subtree.count(backwardsEntry.getColumn()) || !subtree.at(backwardsEntry.getColumn()).count(goToState)) {
+                    // We don't consider this edge for one of two reasons:
+                    // (1) The node is not in the subtree.
+                    // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
+                    continue;
+                }
+                if (!annotations.count(backwardsEntry.getColumn())) {
+                    // This edge is in the subtree but we just haven't gotten around to it yet. Treat it as having value zero.
+                    continue;
+                }
+                auto const transition = backwardsEntry.getValue();
+
+                // std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
+
+                // We add stuff to this annotation
+                auto& targetAnnotation = annotations.at(goToState);
+
+                // std::cout << targetAnnotation << " + ";
+                // std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
+
+                // The core of this big-step algorithm: "value-iterating" on our annotation.
+                if (transition.isConstant()) {
+                    // std::cout << "(constant)";
+                    targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
+                } else {
+                    // std::cout << "(pol)";
+                    // Read transition from DTMC, convert to univariate polynomial
+                    STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
+                                                                                    << transition.denominator() << " in transition " << transition);
+                    auto nominator = transition.nominator();
+                    UniPoly nominatorAsUnivariate = transition.nominator().toUnivariatePolynomial();
+                    // Constant denominator is now distributed in the factors, not in the denominator of the rational function
+                    nominatorAsUnivariate /= transition.denominator().coefficient();
+                    if (storedAnnotations.count(nominatorAsUnivariate)) {
+                        targetAnnotation.addAnnotationTimesAnnotation(annotations.at(backwardsEntry.getColumn()), storedAnnotations.at(nominatorAsUnivariate));
+                    } else {
+                        targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
+                    }
+                }
+            }
+            activeStates.push(goToState);
         }
-        activeStates = nextActiveStates;
     }
     // Delete annotations that are not bottom states
     for (auto const& [state, _successors] : subtree) {
@@ -696,6 +712,9 @@ std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t
 
 void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
                                              storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState) {
+    if (backwardsFlexibleMatrix.getRowCount() > reachableStates.size()) {
+        reachableStates.resize(backwardsFlexibleMatrix.getRowCount(), true);
+    }
     // Look if one of our visitedStates has become unreachable
     // i.e. all of its predecessors are unreachable
     for (auto const& visitedState : statesMaybeUnreachable) {
