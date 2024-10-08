@@ -76,6 +76,11 @@ void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVec
 }
 
 template<typename ValueType>
+void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector const& relevantValues) {
+    this->relevantValues = relevantValues;
+}
+
+template<typename ValueType>
 void AbstractEquationSolver<ValueType>::clearRelevantValues() {
     relevantValues = boost::none;
 }
