@@ -6,7 +6,6 @@
 #include "storage/BitVector.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/SparseMatrix.h"
-#include "utility/constants.h"
 
 namespace storm::solver::helper {
 
@@ -50,32 +49,19 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
         if constexpr (std::is_same<ValueType, storm::Interval>::value) {
             applyCache.hasOnlyConstants.clear();
             applyCache.hasOnlyConstants.grow(matrix.getRowCount());
-            applyCache.twoSimpleSuccessors.clear();
-            applyCache.twoSimpleSuccessors.grow(matrix.getRowCount());
+            // TODO Implement hasTwoSuccessors
+            // applyCache.hasTwoSuccessors.clear();
+            // applyCache.hasTwoSuccessors.grow(matrix.getRowCount());
             matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
             for (auto rowIndex : indexRange<Backward>(0, numRows)) {
                 bool hasOnlyConstants = true;
-
-                uint64_t numSuccessors = 0;
-                double sumOne = 0;
-                double sumTwo = 0;
-
                 for (auto const& entry : matrix.getRow(rowIndex)) {
                     ValueType value = entry.getValue();
-                    numSuccessors++;
-                    if (numSuccessors == 1) {
-                        sumOne += value.lower();
-                        sumTwo += value.upper();
-                    } else if (numSuccessors == 2) {
-                        sumOne += value.upper();
-                        sumTwo += value.lower();
-                    }
                     hasOnlyConstants &= value.upper() == value.lower();
                     matrixValues.push_back(value);
                     matrixColumns.push_back(entry.getColumn());
                 }
                 applyCache.hasOnlyConstants.set(rowIndex, hasOnlyConstants);
-                applyCache.twoSimpleSuccessors.set(rowIndex, numSuccessors == 2 && utility::isAlmostOne(sumOne) && utility::isAlmostOne(sumTwo));
                 matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
             }
         } else {

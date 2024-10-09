@@ -326,27 +326,6 @@ class ValueIterationOperator {
             return result;
         }
 
-        if (applyCache.twoSimpleSuccessors.get(offsetIndex)) {
-            matrixColumnIt++;
-            auto const& firstValue = operand[*(matrixColumnIt++)];
-            auto const& firstInt = matrixValueIt++;
-            auto const& secondValue = operand[*(matrixColumnIt++)];
-            auto const& secondInt = matrixValueIt++;
-            if (firstValue > secondValue) {
-                if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    return firstInt->upper() * firstValue + secondInt->lower() * secondValue;
-                } else {
-                    return firstInt->lower() * firstValue + secondInt->upper() * secondValue;
-                }
-            } else {
-                if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    return firstInt->lower() * firstValue + secondInt->upper() * secondValue;
-                } else {
-                    return firstInt->upper() * firstValue + secondInt->lower() * secondValue;
-                }
-            }
-        }
-
         // TODO I think this is a problem if we have probabilities and a state that is going to the vector, we don't count that
         // Currently "fixed in preprocessing"
         // It's different for rewards (same problem somewhere else, search for word "octopus" in codebase)
@@ -482,7 +461,7 @@ class ValueIterationOperator {
     struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
         storage::BitVector hasOnlyConstants;
-        storage::BitVector twoSimpleSuccessors;
+        storage::BitVector hasTwoSuccessors;
     };
 
     /*!
