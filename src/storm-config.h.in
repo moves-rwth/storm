@@ -15,7 +15,7 @@
 #define STORM_TEST_RESOURCES_DIR "@STORM_TEST_RESOURCES_DIR@"
 
 // The directory in which Storm was built.
-#define STORM_BUILD_DIR "@CMAKE_BINARY_DIR@"
+#define STORM_BUILD_DIR "@PROJECT_BINARY_DIR@"
 
 // Boost include directory used during compilation.
 #define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
