@@ -329,20 +329,20 @@ class ValueIterationOperator {
         if (applyCache.twoSimpleSuccessors.get(offsetIndex)) {
             matrixColumnIt++;
             auto const& firstValue = operand[*(matrixColumnIt++)];
-            auto const& firstInt = matrixValueIt++;
+            auto const& firstInt = *(matrixValueIt++);
             auto const& secondValue = operand[*(matrixColumnIt++)];
-            auto const& secondInt = matrixValueIt++;
+            auto const& secondInt = *(matrixValueIt++);
             if (firstValue > secondValue) {
                 if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    return firstInt->upper() * firstValue + secondInt->lower() * secondValue;
+                    return firstInt.upper() * firstValue + secondInt.lower() * secondValue;
                 } else {
-                    return firstInt->lower() * firstValue + secondInt->upper() * secondValue;
+                    return firstInt.lower() * firstValue + secondInt.upper() * secondValue;
                 }
             } else {
                 if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    return firstInt->lower() * firstValue + secondInt->upper() * secondValue;
+                    return firstInt.lower() * firstValue + secondInt.upper() * secondValue;
                 } else {
-                    return firstInt->upper() * firstValue + secondInt->lower() * secondValue;
+                    return firstInt.upper() * firstValue + secondInt.lower() * secondValue;
                 }
             }
         }
