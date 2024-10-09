@@ -186,7 +186,7 @@ class ValueIterationOperator {
                 if constexpr (std::is_same<BackendType, RobustSchedulerTrackingBackend<double, RobustDirection, TrivialRowGrouping>>::value) {
                     // Intentionally different method name
                     backend.processRobustRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex,
-                                             applyCache.robustOrder, applyCache.orderMode);
+                                             applyCache.robustOrder);
                 } else {
                     // Generic nextRow interface
                     backend.firstRow(applyRow<RobustDirection>(matrixColumnIt, matrixValueIt, operandIn, offsets, groupIndex), groupIndex, groupIndex);
@@ -311,8 +311,9 @@ class ValueIterationOperator {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         auto result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
+        applyCache.robustOrder.clear();
+
         if (applyCache.hasOnlyConstants.get(offsetIndex)) {
-            applyCache.orderMode = 1; // Constants only
             for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
                 auto const lower = matrixValueIt->lower();
                 if constexpr (isPair<OperandType>::value) {
@@ -333,25 +334,18 @@ class ValueIterationOperator {
             auto const& secondInt = *(matrixValueIt++);
             if (firstValue > secondValue) {
                 if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    applyCache.orderMode = 2; // Simple choose first
                     return firstInt.upper() * firstValue + secondInt.lower() * secondValue;
                 } else {
-                    applyCache.orderMode = 3; // Simple choose second
                     return firstInt.lower() * firstValue + secondInt.upper() * secondValue;
                 }
             } else {
                 if constexpr (RobustDirection == OptimizationDirection::Maximize) {
-                    applyCache.orderMode = 3; // Simple choose second
                     return firstInt.lower() * firstValue + secondInt.upper() * secondValue;
                 } else {
-                    applyCache.orderMode = 2; // Simple choose first
                     return firstInt.upper() * firstValue + secondInt.lower() * secondValue;
                 }
             }
         }
-
-        applyCache.robustOrder.clear();
-        applyCache.orderMode = 0; // Consult list
 
         // TODO I think this is a problem if we have probabilities and a state that is going to the vector, we don't count that
         // Currently "fixed in preprocessing"
@@ -487,12 +481,6 @@ class ValueIterationOperator {
     template<typename Dummy>
     struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
-        // Fake enum because it's used in SchedulerTrackingHelper
-        // 0 == CONSULT_LIST
-        // 1 == CONSTANTS
-        // 2 == SIMPLE_FIRST
-        // 3 == SIMPLE_SECOND
-        mutable uint64_t orderMode;
         storage::BitVector hasOnlyConstants;
         storage::BitVector twoSimpleSuccessors;
     };

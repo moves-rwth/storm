@@ -19,33 +19,11 @@ class RobustSchedulerTrackingBackend {
         isConverged = true;
     }
 
-    void processRobustRow(ValueType&& value, uint64_t row, std::vector<std::pair<ValueType, std::pair<ValueType, uint64_t>>> const& robustOrder, uint64_t orderMode) {
+    void processRobustRow(ValueType&& value, uint64_t row, std::vector<std::pair<ValueType, std::pair<ValueType, uint64_t>>> const& info) {
         currStart = robustIndices[row];
-        switch (orderMode) {
-        case 0:
-            // Consult list
-            for (uint64_t i = 0; i < robustOrder.size(); ++i) {
-                isConverged &= schedulerStorage[currStart + i] == robustOrder[i].second.second;
-                schedulerStorage[currStart + i] = robustOrder[i].second.second;
-            }
-            break;
-        case 1:
-            // Only constants - do nothing
-            break;
-        case 2:
-            // Simple first
-            isConverged &= schedulerStorage[0] == 0;
-            schedulerStorage[currStart] = 0;
-            isConverged &= schedulerStorage[1] == 1;
-            schedulerStorage[currStart + 1] = 1;
-            break;
-        case 3:
-            // Simple second
-            isConverged &= schedulerStorage[0] == 1;
-            schedulerStorage[currStart] = 1;
-            isConverged &= schedulerStorage[1] == 0;
-            schedulerStorage[currStart + 1] = 0;
-            break;
+        for (uint64_t i = 0; i < info.size(); ++i) {
+            isConverged &= schedulerStorage[currStart + i] == info[i].second.second;
+            schedulerStorage[currStart + i] = info[i].second.second;
         }
         best = value;
     }
