@@ -189,7 +189,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, TrivialRowGrou
         bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
 
         storm::storage::SparseMatrixBuilder<SolutionType> newMatrixBuilder(this->A->getRowCount(), this->A->getColumnCount(), this->A->getEntryCount());
-
+        
         // Robust VI scheduler is an order, compute the correct values for this order
         auto schedulerIterator = scheduler.begin();
         for (uint64_t rowIndex = 0; rowIndex < this->A->getRowCount(); rowIndex++) {
