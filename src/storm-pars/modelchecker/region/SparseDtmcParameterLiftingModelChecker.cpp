@@ -580,13 +580,17 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                     auto const p = *variables.begin();
                     for (auto const& entry : this->parametricModel->getTransitionMatrix().getRow(state)) {
                         auto const& function = entry.getValue();
+                        if (functionDerivatives.count(function)) {
+                            constantDerivatives.emplace_back(false, 0);
+                            continue;
+                        }
                         auto const derivative = function.derivative(p);
                         if (derivative.isConstant()) {
                             constantDerivatives.emplace_back(true, utility::convertNumber<double>(derivative.constantPart()));
+                        } else if (!storm::transformer::TimeTravelling::lastSavedAnnotations.count(entry.getValue())) {
+                            functionDerivatives.emplace(function, derivative);
+                            constantDerivatives.emplace_back(false, 0);
                         } else {
-                            if (!functionDerivatives.count(function)) {
-                                functionDerivatives.emplace(function, derivative);
-                            }
                             constantDerivatives.emplace_back(false, 0);
                         }
                     }
@@ -598,6 +602,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                 cachedRegionSplitEstimates.emplace(p, utility::zero<ConstantType>());
             }
 
+            uint64_t entryCount = 0;
             // Assumption: Only one parameter per state
             for (uint64_t state : maybeStates) {
                 auto variables = parameterLifter->getOccurringVariablesAtState().at(state);
@@ -617,7 +622,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                         ConstantType derivative = annotation.derivative()->template evaluate<ConstantType>(utility::convertNumber<ConstantType>(region.getCenter(p)));
                         derivatives.push_back(derivative);
                     } else {
-                        auto const& cDer = constantDerivatives.at(derivatives.size());
+                        auto const& cDer = constantDerivatives.at(entryCount);
                         if (cDer.first) {
                             derivatives.push_back(cDer.second);
                         } else {
@@ -625,6 +630,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                             derivatives.push_back(utility::convertNumber<ConstantType>(derivative));
                         }
                     }
+                    entryCount++;
                 }
 
                 std::vector<ConstantType> results(0);
