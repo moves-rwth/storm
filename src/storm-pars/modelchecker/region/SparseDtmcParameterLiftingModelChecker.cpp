@@ -6,6 +6,7 @@
 #include "environment/Environment.h"
 #include "modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "solver/OptimizationDirection.h"
+#include "storage/BitVector.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
@@ -566,6 +567,32 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
             deltaUpper.emplace(p, storm::utility::zero<ConstantType>());
         }
         if constexpr (Robust) {
+            // Cache all derivatives of functions that turn up in pMC
+            static std::map<RationalFunction, RationalFunction> functionDerivatives;
+            static std::vector<std::pair<bool, double>> constantDerivatives;
+            if (constantDerivatives.empty()) {
+                for (uint64_t state : maybeStates) {
+                    auto variables = parameterLifter->getOccurringVariablesAtState().at(state);
+                    if (variables.size() == 0) {
+                        continue;
+                    }
+                    STORM_LOG_ERROR_COND(variables.size() == 1, "Cannot compute state-value-delta split estimates in robust mode if there are states with multiple parameters.");
+                    auto const p = *variables.begin();
+                    for (auto const& entry : this->parametricModel->getTransitionMatrix().getRow(state)) {
+                        auto const& function = entry.getValue();
+                        auto const derivative = function.derivative(p);
+                        if (derivative.isConstant()) {
+                            constantDerivatives.emplace_back(true, utility::convertNumber<double>(derivative.constantPart()));
+                        } else {
+                            if (!functionDerivatives.count(function)) {
+                                functionDerivatives.emplace(function, derivative);
+                            }
+                            constantDerivatives.emplace_back(false, 0);
+                        }
+                    }
+                }
+            }
+
             cachedRegionSplitEstimates.clear();
             for (auto const& p : region.getVariables()) {
                 cachedRegionSplitEstimates.emplace(p, utility::zero<ConstantType>());
@@ -590,8 +617,13 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                         ConstantType derivative = annotation.derivative()->template evaluate<ConstantType>(utility::convertNumber<ConstantType>(region.getCenter(p)));
                         derivatives.push_back(derivative);
                     } else {
-                        CoefficientType derivative = entry.getValue().derivative(p).evaluate(region.getCenterPoint());
-                        derivatives.push_back(utility::convertNumber<ConstantType>(derivative));
+                        auto const& cDer = constantDerivatives.at(derivatives.size());
+                        if (cDer.first) {
+                            derivatives.push_back(cDer.second);
+                        } else {
+                            CoefficientType derivative = functionDerivatives.at(entry.getValue()).evaluate(region.getCenterPoint());
+                            derivatives.push_back(utility::convertNumber<ConstantType>(derivative));
+                        }
                     }
                 }
 
