@@ -476,11 +476,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
             }
 
             // Update the annotation of the target state
-            if (annotations.count(goToState)) {
-                annotations.at(goToState).clear();
-            } else {
-                annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
-            }
+            annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
 
             // Value-iteration style
             for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
@@ -488,10 +484,6 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
                     // We don't consider this edge for one of two reasons:
                     // (1) The node is not in the subtree.
                     // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
-                    continue;
-                }
-                if (!annotations.count(backwardsEntry.getColumn())) {
-                    // This edge is in the subtree but we just haven't gotten around to it yet. Treat it as having value zero.
                     continue;
                 }
                 auto const transition = backwardsEntry.getValue();
@@ -522,6 +514,24 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
                     } else {
                         targetAnnotation.addAnnotationTimesPolynomial(annotations.at(backwardsEntry.getColumn()), std::move(nominatorAsUnivariate));
                     }
+                }
+
+                // Check if we have visited all forward edges of this annotation, if so, erase it
+                bool allForwardEdgesVisited = true;
+                for (auto const& entry : flexibleMatrix.getRow(backwardsEntry.getColumn())) {
+                    if (!subtree.at(backwardsEntry.getColumn()).count(entry.getColumn())) {
+                        // We don't consider this edge for one of two reasons:
+                        // (1) The node is not in the subtree.
+                        // (2) The edge is not in the subtree. This can happen if to states are in the subtree for unrelated reasons
+                        continue;
+                    }
+                    if (!annotations.count(entry.getColumn())) {
+                        allForwardEdgesVisited = false;
+                        break;
+                    }
+                }
+                if (allForwardEdgesVisited) {
+                    annotations.erase(backwardsEntry.getColumn());
                 }
             }
             activeStates.push(goToState);
