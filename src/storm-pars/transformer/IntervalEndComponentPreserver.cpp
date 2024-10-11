@@ -47,10 +47,8 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
         if (indexMap.at(row) >= decomposition.size() || decomposition.getBlock(indexMap.at(row)).isTrivial()) {
             // Group is trivial: Copy the row
             for (auto const& entry : originalMatrix.getRow(row)) {
-                // We want to route this transition to the state representing the group
-                uint64_t groupIndex = indexMap.at(entry.getColumn());
-                uint64_t stateRepresentingGroup = groupIndex >= decomposition.size() ? entry.getColumn() : *decomposition.getBlock(groupIndex).begin();
-                builder.addNextValue(row, stateRepresentingGroup, entry.getValue());
+                // We want to route this transition to a state in the group
+                builder.addNextValue(row, entry.getColumn(), entry.getValue());
             }
         } else {
             auto const& group = decomposition.getBlock(indexMap.at(row));
