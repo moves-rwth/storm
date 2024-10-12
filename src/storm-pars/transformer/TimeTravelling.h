@@ -278,7 +278,7 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
             return evaluate<Interval>(input);
         } else {
             Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input, higherOrderBounds);
-            double maxSlope = utility::abs(boundDerivative.upper());
+            double maxSlope = utility::max(utility::abs(boundDerivative.lower()), utility::abs(boundDerivative.upper()));
             double fMid = evaluate<double>(input.center());
             double fMin = fMid - (input.diameter() / 2) * maxSlope;
             double fMax = fMid + (input.diameter() / 2) * maxSlope;
