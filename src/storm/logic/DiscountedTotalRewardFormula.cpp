@@ -14,36 +14,12 @@ namespace storm {
 namespace logic {
 DiscountedTotalRewardFormula::DiscountedTotalRewardFormula(storm::expressions::Expression const discountFactor,
                                                            boost::optional<RewardAccumulation> rewardAccumulation)
-    : discountFactor(discountFactor), rewardAccumulation(rewardAccumulation) {
+    : TotalRewardFormula(rewardAccumulation), discountFactor(discountFactor) {
     // Intentionally left empty.
 }
 
 bool DiscountedTotalRewardFormula::isDiscountedTotalRewardFormula() const {
     return true;
-}
-
-bool DiscountedTotalRewardFormula::isTotalRewardFormula() const {
-    return true;
-}
-
-bool DiscountedTotalRewardFormula::isRewardPathFormula() const {
-    return true;
-}
-
-bool DiscountedTotalRewardFormula::hasRewardAccumulation() const {
-    return rewardAccumulation.is_initialized();
-}
-
-RewardAccumulation const& DiscountedTotalRewardFormula::getRewardAccumulation() const {
-    return rewardAccumulation.get();
-}
-
-std::shared_ptr<DiscountedTotalRewardFormula const> DiscountedTotalRewardFormula::stripRewardAccumulation() const {
-    return std::make_shared<DiscountedTotalRewardFormula>(discountFactor);
-}
-
-boost::any DiscountedTotalRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
-    return visitor.visit(*this, data);
 }
 
 std::ostream& DiscountedTotalRewardFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
@@ -77,6 +53,10 @@ storm::RationalNumber DiscountedTotalRewardFormula::getDiscountFactor() const {
 void DiscountedTotalRewardFormula::checkNoVariablesInDiscountFactor(storm::expressions::Expression const& factor) {
     STORM_LOG_THROW(!factor.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate discount factor '" << factor << "' as it contains undefined constants.");
+}
+
+boost::any DiscountedTotalRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+    return visitor.visit(*this, data);
 }
 
 }  // namespace logic
