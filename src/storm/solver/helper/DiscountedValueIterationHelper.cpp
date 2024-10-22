@@ -12,8 +12,9 @@ class DiscountedVIOperatorBackend {
     DiscountedVIOperatorBackend(ValueType const& precision, ValueType const& discountFactor, ValueType const& maximalAbsoluteReward)
         : precision{precision},
           discountFactor{discountFactor},
-          bound{(((storm::utility::one<ValueType>() - discountFactor) * precision) / (2 * discountFactor))} {
-        // Intentionally left empty
+          // We initialize the bound with a value guarantees preciseness when the difference between two iterations is less than it
+          // See Russell, Norvig: Artificial Intelligence: A Modern Approach, 4th ed., p.583
+          bound{(((storm::utility::one<ValueType>() - discountFactor) * precision) / (discountFactor))} {
         auto upper = storm::utility::log<ValueType>((2 * maximalAbsoluteReward) / (precision * (1 - discountFactor)));
         maxIterations = storm::utility::convertNumber<uint64_t>(storm::utility::ceil<ValueType>(upper / -storm::utility::log(discountFactor)));
         STORM_LOG_DEBUG("Maximum number of iterations: " << maxIterations);
@@ -38,7 +39,9 @@ class DiscountedVIOperatorBackend {
             } else {
                 isConverged = storm::utility::abs<ValueType>(currValue - *best) <= bound;
             }
+            // If we want to use the maximum number of iterations as the convergence criterion, we can use the following line
             // isConverged = currentIteration >= maxIterations;
+            // In some preliminary experiments using only this criterion, performance was worse than with the check above.
         }
         currValue = std::move(*best);
     }
