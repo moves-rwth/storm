@@ -34,14 +34,6 @@ void DiscountingHelper<ValueType, TrivialRowGrouping>::setUpViOperator() const {
         viOperator = std::make_shared<solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping>>();
         viOperator->setMatrixBackwards(this->discountedA);
     }
-    /*if (this->choiceFixedForRowGroup) {
-        // Ignore those rows that are not selected
-        assert(this->initialScheduler);
-        auto callback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
-            return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
-        };
-        viOperator->setIgnoredRows(true, callback);
-    }*/
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
@@ -53,13 +45,10 @@ template<typename ValueType, bool TrivialRowGrouping>
 bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueIteration(storm::Environment const& env,
                                                                                          std::optional<OptimizationDirection> dir, std::vector<ValueType>& x,
                                                                                          std::vector<ValueType> const& b) const {
+    // This is currently missing progress indications, we can add them later
     storm::solver::helper::DiscountedValueIterationHelper<ValueType, TrivialRowGrouping> viHelper(viOperator);
     uint64_t numIterations{0};
-    auto viCallback = [&](solver::SolverStatus const& current) {
-        return current;
-        showProgressIterative(numIterations);
-        // return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
-    };
+    auto viCallback = [&](solver::SolverStatus const& current) { return current; };
     auto maximalAbsoluteReward = storm::utility::zero<ValueType>();
     for (auto const& entry : b) {
         if (storm::utility::abs(entry) > maximalAbsoluteReward) {
@@ -70,8 +59,6 @@ bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueI
     auto status = viHelper.DiscountedVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                         storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), discountFactor, maximalAbsoluteReward,
                                         dir, viCallback, env.solver().minMax().getMultiplicationStyle());
-
-    // this->reportStatus(status, numIterations);
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {
