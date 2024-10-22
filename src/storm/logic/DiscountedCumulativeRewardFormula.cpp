@@ -54,7 +54,6 @@ storm::RationalNumber DiscountedCumulativeRewardFormula::getDiscountFactor() con
     return value;
 }
 
-
 std::ostream& DiscountedCumulativeRewardFormula::writeToStream(std::ostream& out, bool /*allowParentheses*/) const {
     // No parentheses necessary
     out << "Cdiscount=";
