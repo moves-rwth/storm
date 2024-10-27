@@ -30,7 +30,7 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
     typedef typename ArrayEliminatorData::Replacement Replacement;
     typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
 
-    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr){};
+    ArrayReplacementsCollectorExpressionVisitor(Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {};
     virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
     /*!
@@ -278,6 +278,11 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
         STORM_LOG_THROW(
             false, storm::exceptions::UnexpectedException,
             "Found Function call expression within an array expression. This is not expected since functions are expected to be eliminated at this point.");
+    }
+
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const&, boost::any const&) override {
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+        return boost::any();
     }
 
    private:
@@ -799,6 +804,10 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
                         "Found Function call expression while eliminating array expressions. This is not expected since functions are expected to be "
                         "eliminated at this point.");
         return false;
+    }
+
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) override {
+        return ResultType(expression.getSharedPointer());
     }
 
    private:

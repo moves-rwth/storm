@@ -1,4 +1,5 @@
 #include "storm-pomdp/analysis/FormulaInformation.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -76,7 +77,7 @@ template<typename PomdpType>
 FormulaInformation::StateSet getStateSet(PomdpType const& pomdp, storm::storage::BitVector&& inputStates) {
     FormulaInformation::StateSet result;
     result.states = std::move(inputStates);
-    for (auto const& state : result.states) {
+    for (auto const state : result.states) {
         result.observations.insert(pomdp.getObservation(state));
     }
     // check if this set is observation-closed, i.e., whether there is a state outside of this set with one of the observations collected above

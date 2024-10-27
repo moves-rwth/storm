@@ -47,42 +47,24 @@ list(APPEND STORM_DEP_TARGETS gmm)
 #############################################################
 
 # Checkout Eigen 
-# Version 3.3.9 has a known issue when compiled on Apple Silicon (FullPivLU segfaults, relevant for multi-obj model checking).
-# Version 3.4.0 has issues with gcc https://github.com/moves-rwth/storm/issues/162
-# We use this as a workaround:
-if (APPLE_SILICON)
-	message (STATUS "Storm - Including Eigen 3.4.0 commit b0eded878d5d162d61583a286c0d8a45406ad1bc.")
-	ExternalProject_Add(
-	        eigen_src
-	        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-	        GIT_TAG b0eded878d5d162d61583a286c0d8a45406ad1bc
-	        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
-	        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.0
-			PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen340.patch
-	        UPDATE_COMMAND ""
-	        CONFIGURE_COMMAND ""
-	        BUILD_COMMAND ""
-	        INSTALL_COMMAND ""
-	        LOG_INSTALL ON
-	)
-else()
-	message (STATUS "Storm - Including Eigen 3.3.9.")
-	ExternalProject_Add(
-	        eigen_src
-	        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-			GIT_SHALLOW 1
-	        GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
-	        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
-	        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.9
-			PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen339.patch
-	        UPDATE_COMMAND ""
-	        CONFIGURE_COMMAND ""
-	        BUILD_COMMAND ""
-	        INSTALL_COMMAND ""
-	        LOG_INSTALL ON
-	)
-endif()
-add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen")
+# We're checking out Eigen using the (currently not officially released) version 3.4.1
+# See here https://gitlab.com/libeigen/eigen/-/commit/bae907b8f6078b1df290729eef946360315bd312
+# The current official release is 3.4.0 which results in issues, see https://github.com/moves-rwth/storm/issues/162
+message (STATUS "Storm - Including Eigen commit bae907b8f6078b1df290729eef946360315bd312 (unofficial 3.4.1 release).")
+ExternalProject_Add(
+        eigen_src
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG bae907b8f6078b1df290729eef946360315bd312
+        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
+        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.1alpha
+		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        LOG_INSTALL ON
+)
+add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}")
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
 
@@ -199,15 +181,19 @@ find_package(Z3 QUIET)
 # Z3 Defines
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
-
 if(Z3_FOUND)
-    # Get the z3 version by compiling and running a simple program
-    try_run(version_run_result version_compile_result "${STORM_3RDPARTY_BINARY_DIR}/z3/" "${STORM_3RDPARTY_SOURCE_DIR}/z3/output_version.cpp" CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${Z3_INCLUDE_DIR}" LINK_LIBRARIES "${Z3_LIBRARIES}" RUN_OUTPUT_VARIABLE z3_version_output)
-    if (version_compile_result AND version_run_result EQUAL 0)
-        if (z3_version_output MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*)")
-            set(Z3_VERSION "${CMAKE_MATCH_1}")
-        endif()
+    if(NOT EXISTS "${Z3_INCLUDE_DIR}/z3_version.h")
+        message(FATAL_ERROR "No file z3_version.h found in ${Z3_INCLUDE_DIR}.")
     endif()
+
+    # Parse z3 version from version file
+    file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_MAJOR REGEX "^#define[\t ]+Z3_MAJOR_VERSION .*")
+    file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_MINOR REGEX "^#define[\t ]+Z3_MINOR_VERSION .*")
+    file(STRINGS ${Z3_INCLUDE_DIR}/z3_version.h Z3_VERSION_PATCH REGEX "^#define[\t ]+Z3_BUILD_NUMBER .*")
+    string(REGEX MATCH "[0-9]+$" Z3_VERSION_MAJOR "${Z3_VERSION_MAJOR}")
+    string(REGEX MATCH "[0-9]+$" Z3_VERSION_MINOR "${Z3_VERSION_MINOR}")
+    string(REGEX MATCH "[0-9]+$" Z3_VERSION_PATCH "${Z3_VERSION_PATCH}")
+    set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
     if(Z3_VERSION)
         # Split Z3 version into its components
@@ -375,7 +361,7 @@ if (STORM_SHIPPED_CARL)
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
-            BUILD_COMMAND make lib_carl
+            BUILD_COMMAND make lib_carl -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             LOG_BUILD ON
 			LOG_INSTALL ON

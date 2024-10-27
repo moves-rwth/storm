@@ -1,5 +1,5 @@
 #include <limits>
-#include "adapters/RationalFunctionAdapter.h"
+
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
@@ -7,6 +7,7 @@
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 #include "storm-pars-cli/solutionFunctions.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"

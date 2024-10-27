@@ -3,13 +3,14 @@
 #include <boost/optional.hpp>
 #include <vector>
 
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Property.h"
-
 namespace storm {
+namespace storage {
+class SymbolicModelDescription;
+}
 namespace jani {
 class ModelFeatures;
-}
+class Property;
+}  // namespace jani
 
 namespace builder {
 enum class BuilderType { Explicit, Dd };

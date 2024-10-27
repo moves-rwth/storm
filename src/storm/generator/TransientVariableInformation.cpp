@@ -40,7 +40,7 @@ TransientVariableData<VariableType>::TransientVariableData(storm::expressions::V
 
 template<typename VariableType>
 TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable, VariableType const& defaultValue, bool global)
-    : variable(variable), defaultValue(defaultValue) {
+    : variable(variable), defaultValue(defaultValue), global(global) {
     // Intentionally left empty.
 }
 

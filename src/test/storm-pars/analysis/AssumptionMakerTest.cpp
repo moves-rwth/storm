@@ -16,7 +16,16 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/graph.h"
 
-TEST(AssumptionMakerTest, Brp_without_bisimulation) {
+class AssumptionMakerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -68,7 +77,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
-TEST(AssumptionMakerTest, Simple1) {
+TEST_F(AssumptionMakerTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -121,7 +130,7 @@ TEST(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
-TEST(AssumptionMakerTest, Casestudy1) {
+TEST_F(AssumptionMakerTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";

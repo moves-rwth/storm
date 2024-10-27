@@ -100,7 +100,11 @@ void BoundedUntilFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<
 void BoundedUntilFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
     for (unsigned i = 0; i < this->getDimension(); ++i) {
         if (this->getTimeBoundReference(i).isRewardBound()) {
-            referencedRewardModels.insert(this->getTimeBoundReference(i).getRewardName());
+            if (!this->getTimeBoundReference(i).hasRewardModelName()) {
+                referencedRewardModels.insert("");
+            } else {
+                referencedRewardModels.insert(this->getTimeBoundReference(i).getRewardName());
+            }
         }
     }
     if (hasMultiDimensionalSubformulas()) {
@@ -382,7 +386,9 @@ std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out, bool allowPa
                 if (this->getTimeBoundReference(i).hasRewardAccumulation()) {
                     out << "[" << this->getTimeBoundReference(i).getRewardAccumulation() << "]";
                 }
-                out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                if (this->getTimeBoundReference(i).hasRewardModelName()) {
+                    out << "{\"" << this->getTimeBoundReference(i).getRewardName() << "\"}";
+                }
             } else if (this->getTimeBoundReference(i).isStepBound()) {
                 out << "steps";
                 //} else if (this->getTimeBoundReference(i).isStepBound())

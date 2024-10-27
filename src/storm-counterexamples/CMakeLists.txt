@@ -2,20 +2,16 @@ file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-counterexamples/*.h 
 
 register_source_groups_from_filestructure("${ALL_FILES}" storm-counterexamples)
 
-
-
 file(GLOB_RECURSE STORM_CEX_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-counterexamples/*/*.cpp)
 file(GLOB_RECURSE STORM_CEX_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-counterexamples/*/*.h)
 
 
 # Create storm-counterexamples.
 add_library(storm-counterexamples SHARED ${STORM_CEX_SOURCES} ${STORM_CEX_HEADERS})
-
 target_precompile_headers(storm-counterexamples REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-counterexamples PROPERTIES DEFINE_SYMBOL "")
-#add_dependencies(storm resources)
 list(APPEND STORM_TARGETS storm-counterexamples)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 

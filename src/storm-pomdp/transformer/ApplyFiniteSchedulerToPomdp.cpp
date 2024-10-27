@@ -31,7 +31,7 @@ struct RationalFunctionConstructor {
 };
 
 template<typename ValueType>
-std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<ValueType> const& model) {
+std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<ValueType> const&) {
     return std::make_shared<RawPolynomialCache>();
 }
 

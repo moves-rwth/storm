@@ -90,8 +90,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
                         std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
                 } else {
                     // If the label is not present in the program and is not a special one, we raise an error.
-                    STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock",
-                                    storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel()), storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                 }
             }
@@ -660,10 +659,19 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             }
 
             if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                storm::storage::PlayerIndex const& playerOfModule = moduleIndexToPlayerIndexMap.at(i);
-                STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
-                                "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
-                choice.setPlayerIndex(playerOfModule);
+                if (command.getActionIndex() == 0) {
+                    // Unlabeled command
+                    auto const playerOfModule = moduleIndexToPlayerIndexMap.at(i);
+                    STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
+                    choice.setPlayerIndex(playerOfModule);
+                } else {
+                    // Labelled command (that happens to not synchronize with another command
+                    auto const playerOfAction = actionIndexToPlayerIndexMap.at(command.getActionIndex());
+                    STORM_LOG_THROW(playerOfAction != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Command with action label '" << program.getActionName(command.getActionIndex()) << "' is not owned by any player.");
+                    choice.setPlayerIndex(playerOfAction);
+                }
             }
 
             if (this->options.isExplorationChecksSet()) {
@@ -815,7 +823,8 @@ std::map<std::string, storm::storage::PlayerIndex> PrismNextStateGenerator<Value
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                                                           std::vector<StateType> const& initialStateIndices,
-                                                                                          std::vector<StateType> const& deadlockStateIndices) {
+                                                                                          std::vector<StateType> const& deadlockStateIndices,
+                                                                                          std::vector<StateType> const& unexploredStateIndices) {
     // Gather a vector of labels and their expressions.
     std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
     if (this->options.isBuildAllLabelsSet()) {
@@ -827,13 +836,13 @@ storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateTyp
             if (program.hasLabel(labelName)) {
                 labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
             } else {
-                STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(this->isSpecialLabel(labelName), storm::exceptions::InvalidArgumentException,
                                 "Cannot build labeling for unknown label '" << labelName << "'.");
             }
         }
     }
 
-    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, labels);
+    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, unexploredStateIndices, labels);
 }
 
 template<typename ValueType, typename StateType>

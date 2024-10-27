@@ -1,5 +1,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"

@@ -1,43 +1,34 @@
 #include "storm-gamebased-ar/modelchecker/abstraction/AbstractAbstractionRefinementModelChecker.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/logic/Formulas.h"
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/models/symbolic/Dtmc.h"
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/modelchecker/CheckTask.h"
-#include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/results/QuantitativeCheckResult.h"
-#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
-#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
-#include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
-
-#include "storm/solver/SymbolicGameSolver.h"
-
 #include "storm-gamebased-ar/abstraction/QualitativeResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/StateSet.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
-
-#include "storm/utility/graph.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/logic/Formulas.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/solver/SymbolicGameSolver.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {
@@ -91,8 +82,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementM
 
 template<typename ModelType>
 std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-    storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     this->setCheckTask(checkTask.template substituteFormula<storm::logic::Formula>(checkTask.getFormula()));
     return performAbstractionRefinement(env);
 }

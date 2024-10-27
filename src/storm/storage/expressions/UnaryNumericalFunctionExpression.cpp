@@ -36,6 +36,12 @@ storm::expressions::OperatorType UnaryNumericalFunctionExpression::getOperator()
         case OperatorType::Ceil:
             result = storm::expressions::OperatorType::Ceil;
             break;
+        case OperatorType::Cos:
+            result = storm::expressions::OperatorType::Cos;
+            break;
+        case OperatorType::Sin:
+            result = storm::expressions::OperatorType::Sin;
+            break;
     }
     return result;
 }
@@ -78,6 +84,12 @@ double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valua
         case OperatorType::Ceil:
             result = std::ceil(result);
             break;
+        case OperatorType::Cos:
+            result = std::cos(result);
+            break;
+        case OperatorType::Sin:
+            result = std::sin(result);
+            break;
     }
     return result;
 }
@@ -87,18 +99,32 @@ std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify
 
     if (operandSimplified->isLiteral()) {
         if (operandSimplified->hasIntegerType()) {
-            int_fast64_t value = operandSimplified->evaluateAsInt();
+            int_fast64_t intValue = operandSimplified->evaluateAsInt();
+            storm::RationalNumber rationalValue;
+            bool useInteger = true;
             switch (this->getOperatorType()) {
                 case OperatorType::Minus:
-                    value = -value;
+                    intValue = -intValue;
                     break;
                 // Nothing to be done for the other cases:
                 case OperatorType::Floor:
                 case OperatorType::Ceil:
                     break;
+                case OperatorType::Cos:
+                    useInteger = false;
+                    rationalValue = storm::utility::cos(storm::utility::convertNumber<storm::RationalNumber>(intValue));
+                    break;
+                case OperatorType::Sin:
+                    useInteger = false;
+                    rationalValue = storm::utility::sin(storm::utility::convertNumber<storm::RationalNumber>(intValue));
+                    break;
             }
-            return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), value));
-        } else {
+            if (useInteger) {
+                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), intValue));
+            } else {
+                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), rationalValue));
+            }
+        } else if (operandSimplified->hasRationalType()) {
             storm::RationalNumber value = operandSimplified->evaluateAsRational();
             bool convertToInteger = false;
             switch (this->getOperatorType()) {
@@ -112,6 +138,12 @@ std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify
                 case OperatorType::Ceil:
                     value = storm::utility::ceil(value);
                     convertToInteger = true;
+                    break;
+                case OperatorType::Cos:
+                    value = storm::utility::cos(value);
+                    break;
+                case OperatorType::Sin:
+                    value = storm::utility::sin(value);
                     break;
             }
             if (convertToInteger) {
@@ -148,6 +180,12 @@ void UnaryNumericalFunctionExpression::printToStream(std::ostream& stream) const
             break;
         case OperatorType::Ceil:
             stream << "ceil(";
+            break;
+        case OperatorType::Cos:
+            stream << "cos(";
+            break;
+        case OperatorType::Sin:
+            stream << "sin(";
             break;
     }
     stream << *this->getOperand() << ")";

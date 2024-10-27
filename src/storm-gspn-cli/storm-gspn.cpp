@@ -8,7 +8,7 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
-#include "api/storm.h"
+#include "storm/api/storm.h"
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-parsers/api/storm-parsers.h"

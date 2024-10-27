@@ -2,25 +2,23 @@ file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-parsers/*.h ${PROJEC
 
 register_source_groups_from_filestructure("${ALL_FILES}" storm-parsers)
 
-
-
 file(GLOB_RECURSE STORM_PARSER_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-parsers/*/*.cpp)
 file(GLOB_RECURSE STORM_PARSER_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-parsers/*/*.h)
 
 
 # Disable Debug compiler flags for PrismParser to lessen memory consumption during compilation
 SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/storm-parsers/parser/PrismParser.cpp PROPERTIES COMPILE_FLAGS -g0)
+
 # Create storm-parsers.
 add_library(storm-parsers SHARED ${STORM_PARSER_SOURCES} ${STORM_PARSER_HEADERS})
+target_precompile_headers(storm-parsers REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-parsers PROPERTIES DEFINE_SYMBOL "")
-#add_dependencies(storm resources)
 list(APPEND STORM_TARGETS storm-parsers)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 target_link_libraries(storm-parsers PUBLIC storm)
-target_precompile_headers(storm-parsers REUSE_FROM storm)
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_PARSER_HEADERS})

@@ -7,7 +7,8 @@
 
 # Set base image
 ARG BASE_IMG=movesrwth/storm-dependencies:latest
-FROM $BASE_IMG
+ARG BASE_PLATFORM=linux/amd64
+FROM --platform=$BASE_PLATFORM  $BASE_IMG
 MAINTAINER Matthias Volk <m.volk@tue.nl>
 
 # Specify configurations
@@ -17,8 +18,18 @@ MAINTAINER Matthias Volk <m.volk@tue.nl>
 ARG build_type=Release
 # Specify number of threads to use for parallel compilation
 ARG no_threads=1
-# Specify CMake arguments for Storm
-ARG cmake_args="-DSTORM_PORTABLE=ON"
+
+# Specify Storm configuration (ON/OFF)
+ARG gurobi_support="ON"
+ARG soplex_support="ON"
+ARG spot_support="ON"
+ARG developer="OFF"
+ARG cln_exact="OFF"
+ARG cln_ratfunc="ON"
+ARG all_sanitizers="OFF"
+
+# Specify additional CMake arguments for Storm
+ARG cmake_args=""
 
 
 # Build Storm
@@ -34,7 +45,15 @@ RUN mkdir -p /opt/storm/build
 WORKDIR /opt/storm/build
 
 # Configure Storm
-RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type $cmake_args
+RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
+             -DSTORM_PORTABLE=ON \
+             -DSTORM_USE_GUROBI=$gurobi_support \
+             -DSTORM_USE_SOPLEX=$soplex_support \
+             -DSTORM_USE_SPOT_SYSTEM=$spot_support \
+             -DSTORM_DEVELOPER=$developer \
+             -DSTORM_USE_CLN_EA=$cln_exact \
+             -DSTORM_USE_CLN_RF=$cln_ratfunc \
+             $cmake_args
 
 # Build external dependencies of Storm
 RUN make resources -j $no_threads

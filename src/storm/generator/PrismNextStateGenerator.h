@@ -43,7 +43,8 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
 
     virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                        std::vector<StateType> const& initialStateIndices = {},
-                                                       std::vector<StateType> const& deadlockStateIndices = {}) override;
+                                                       std::vector<StateType> const& deadlockStateIndices = {},
+                                                       std::vector<StateType> const& unexploredStateIndices = {}) override;
 
     virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
 

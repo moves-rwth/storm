@@ -1,3 +1,4 @@
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"

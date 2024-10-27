@@ -10,6 +10,8 @@
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/storage/Scheduler.h"
+
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotImplementedException.h"

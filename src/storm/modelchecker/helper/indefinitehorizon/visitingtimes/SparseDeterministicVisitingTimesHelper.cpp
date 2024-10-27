@@ -17,7 +17,7 @@
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
-#include "utility/graph.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace modelchecker {
@@ -242,7 +242,7 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::createNonBsccStateVector
 
 template<>
 std::vector<storm::RationalFunction> SparseDeterministicVisitingTimesHelper<storm::RationalFunction>::computeUpperBounds(
-    storm::storage::BitVector const& stateSetAsBitvector) const {
+    storm::storage::BitVector const& /*stateSetAsBitvector*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                     "Computing upper bounds for expected visiting times over rational functions is not supported.");
 }

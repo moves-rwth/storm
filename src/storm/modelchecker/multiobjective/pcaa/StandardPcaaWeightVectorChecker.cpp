@@ -3,7 +3,6 @@
 #include <map>
 #include <set>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"

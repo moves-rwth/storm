@@ -57,7 +57,7 @@ class BitVectorHashMap {
      * @param loadFactor The load factor that determines at which point the size of the underlying storage is
      * increased.
      */
-    BitVectorHashMap(uint64_t bucketSize = 64, uint64_t initialSize = 1000, double loadFactor = 0.75);
+    BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize = 1000, double loadFactor = 0.75);
 
     BitVectorHashMap(BitVectorHashMap const&) = default;
     BitVectorHashMap(BitVectorHashMap&&) = default;

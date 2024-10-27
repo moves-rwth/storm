@@ -136,6 +136,15 @@ TEST(SymmetryTest, SymmetricFT) {
     EXPECT_EQ(symmetries.getSymmetryGroup(2).size(), 3ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(2)[0].size(), 3ul);
 
+    symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/symmetry7.dft");
+    EXPECT_EQ(symmetries.nrSymmetries(), 3ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(0).size(), 1ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(0)[0].size(), 3ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(5).size(), 1ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(5)[0].size(), 2ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(7).size(), 1ul);
+    EXPECT_EQ(symmetries.getSymmetryGroup(7)[0].size(), 2ul);
+
     symmetries = findSymmetries(STORM_TEST_RESOURCES_DIR "/dft/pdep_symmetry.dft");
     EXPECT_EQ(symmetries.nrSymmetries(), 2ul);
     EXPECT_EQ(symmetries.getSymmetryGroup(2).size(), 4ul);

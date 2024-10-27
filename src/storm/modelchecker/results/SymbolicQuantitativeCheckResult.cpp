@@ -1,6 +1,8 @@
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
 

@@ -25,7 +25,7 @@ void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> 
 
             STORM_PRINT_AND_LOG(" for instance [" << ss.str() << "]");
         }
-        STORM_PRINT_AND_LOG(": ")
+        STORM_PRINT_AND_LOG(": ");
 
         auto const *regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const *>(result.get());
         if (regionCheckResult != nullptr) {

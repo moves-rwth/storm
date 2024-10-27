@@ -45,12 +45,13 @@ void Location::setTimeProgressInvariant(storm::expressions::Expression const& ex
     timeProgressInvariant = expression;
 }
 
-void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void Location::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                          bool const substituteTranscendentalNumbers) {
     for (auto& assignment : assignments) {
-        assignment.substitute(substitution);
+        assignment.substitute(substitution, substituteTranscendentalNumbers);
     }
     if (hasTimeProgressInvariant()) {
-        setTimeProgressInvariant(substituteJaniExpression(getTimeProgressInvariant(), substitution));
+        setTimeProgressInvariant(substituteJaniExpression(getTimeProgressInvariant(), substitution, substituteTranscendentalNumbers));
     }
 }
 

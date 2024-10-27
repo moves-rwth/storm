@@ -140,6 +140,9 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
 }
 
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
     makeUncertainAndCheck(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
 }

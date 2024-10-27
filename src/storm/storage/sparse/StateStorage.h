@@ -23,6 +23,9 @@ struct StateStorage {
     // A list of deadlock states.
     std::vector<StateType> deadlockStateIndices;
 
+    // A list of unexplored states.
+    std::vector<StateType> unexploredStateIndices;
+
     // The number of bits of each state.
     uint64_t bitsPerState;
 

@@ -14,7 +14,7 @@
 #include "storm/storage/expressions/Variable.h"
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace storage {
