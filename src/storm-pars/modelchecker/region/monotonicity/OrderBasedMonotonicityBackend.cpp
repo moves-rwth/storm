@@ -102,7 +102,7 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
     if (useBounds) {
         STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
         orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
-        orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
+        orderExtender->setMinValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
     }
     typename MonotonicityAnnotation<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
     annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
