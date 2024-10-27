@@ -205,47 +205,50 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
             behavior = generator->expand(stateToIdCallback);
         }
 
-        // If there is no behavior, we might have to introduce a self-loop.
         if (behavior.empty()) {
-            if (options.fixDeadlocks || !behavior.wasExpanded()) {
-                // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
-                if (behavior.wasExpanded()) {
-                    this->stateStorage.deadlockStateIndices.push_back(currentIndex);
-                } else {
-                    this->stateStorage.unexploredStateIndices.push_back(currentIndex);
-                }
-
-                if (!generator->isDeterministicModel()) {
-                    transitionMatrixBuilder.newRowGroup(currentRow);
-                }
-
-                transitionMatrixBuilder.addNextValue(currentRow, currentIndex, storm::utility::one<ValueType>());
-
-                for (auto& rewardModelBuilder : rewardModelBuilders) {
-                    if (rewardModelBuilder.hasStateRewards()) {
-                        rewardModelBuilder.addStateReward(storm::utility::zero<ValueType>());
-                    }
-
-                    if (rewardModelBuilder.hasStateActionRewards()) {
-                        rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
-                    }
-                }
-
-                // This state shall be Markovian (to not introduce Zeno behavior)
-                if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
-                    stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
-                }
-                // Other state-based information does not need to be treated, in particular:
-                // * StateValuations have already been set above
-                // * The associated player shall be the "default" player, i.e. INVALID_PLAYER_INDEX
-
-                ++currentRow;
-                ++currentRowGroup;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+            // There are three possible cases for missing behavior:
+            if (behavior.wasExpanded()) {
+                // (a) The state is a deadlock state, i.e. there is no behavior even though the state was expanded
+                STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::WrongFormatException,
                                 "Error while creating sparse matrix from probabilistic program: found deadlock state ("
                                     << generator->stateToString(currentState) << "). For fixing these, please provide the appropriate option.");
+                this->stateStorage.deadlockStateIndices.push_back(currentIndex);
+            } else {
+                if (stateLimitExceeded) {
+                    // (b) The state was not expanded because the state limit is reached
+                    this->stateStorage.unexploredStateIndices.push_back(currentIndex);
+                }
+                // (c) the state was not expanded because it is terminal, i.e., exploration from that state is not required for the given property/ies
             }
+
+            // In all cases, we need to add a self-loop to the transition matrix.
+
+            if (!generator->isDeterministicModel()) {
+                transitionMatrixBuilder.newRowGroup(currentRow);
+            }
+
+            transitionMatrixBuilder.addNextValue(currentRow, currentIndex, storm::utility::one<ValueType>());
+
+            for (auto& rewardModelBuilder : rewardModelBuilders) {
+                if (rewardModelBuilder.hasStateRewards()) {
+                    rewardModelBuilder.addStateReward(storm::utility::zero<ValueType>());
+                }
+
+                if (rewardModelBuilder.hasStateActionRewards()) {
+                    rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
+                }
+            }
+
+            // This state shall be Markovian (to not introduce Zeno behavior)
+            if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
+                stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
+            }
+            // Other state-based information does not need to be treated, in particular:
+            // * StateValuations have already been set above
+            // * The associated player shall be the "default" player, i.e. INVALID_PLAYER_INDEX
+
+            ++currentRow;
+            ++currentRowGroup;
         } else {
             // Add the state rewards to the corresponding reward models.
             auto stateRewardIt = behavior.getStateRewards().begin();

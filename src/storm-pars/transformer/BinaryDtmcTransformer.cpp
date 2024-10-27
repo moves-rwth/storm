@@ -3,15 +3,15 @@
 #include <cstdint>
 #include <queue>
 
-#include "adapters/RationalFunctionAdapter.h"
-#include "storage/SparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
 
 namespace storm {
 namespace transformer {

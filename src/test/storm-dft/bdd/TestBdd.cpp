@@ -14,8 +14,8 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
+#include "storm/utility/vector.h"
 #include "test/storm_gtest.h"
-#include "utility/vector.h"
 
 namespace {
 

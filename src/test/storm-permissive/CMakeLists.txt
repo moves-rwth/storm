@@ -14,6 +14,8 @@ foreach (testsuite analysis)
     add_executable(test-permissive-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp ${STORM_TESTS_BASE_PATH}/../storm_gtest.cpp)
     target_link_libraries(test-permissive-${testsuite} storm-permissive storm-parsers)
     target_link_libraries(test-permissive-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
+    target_include_directories(test-permissive-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
+
 
     target_precompile_headers(test-permissive-${testsuite} REUSE_FROM test-builder)
 

@@ -450,13 +450,19 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
         }
         std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
         if (rewardModel.second.hasTransitionRewards()) {
-            storm::storage::SparseMatrixBuilder<RewardValueType> builder(resultTransitionMatrix.getRowCount(), resultTransitionMatrix.getColumnCount());
+            bool const useRowGrouping = !resultTransitionMatrix.hasTrivialRowGrouping();
+            storm::storage::SparseMatrixBuilder<RewardValueType> builder(resultTransitionMatrix.getRowCount(), resultTransitionMatrix.getColumnCount(), 0ull,
+                                                                         true, useRowGrouping,
+                                                                         useRowGrouping ? resultTransitionMatrix.getRowGroupCount() : 0ull);
             uint64_t stateIndex = 0;
             for (auto const& resState : toResultStateMapping) {
                 if (resState < numResStates) {
                     uint64_t modelState = stateIndex / memoryStateCount;
                     uint64_t memoryState = stateIndex % memoryStateCount;
                     uint64_t rowGroupSize = resultTransitionMatrix.getRowGroupSize(resState);
+                    if (useRowGrouping) {
+                        builder.newRowGroup(resultTransitionMatrix.getRowGroupIndices()[resState]);
+                    }
                     if (scheduler && scheduler->getChoice(modelState, memoryState).isDefined()) {
                         std::map<uint64_t, RewardValueType> rewards;
                         for (uint64_t rowOffset = 0; rowOffset < rowGroupSize; ++rowOffset) {

@@ -16,6 +16,7 @@ foreach (testsuite api bdd simulator storage transformations)
       add_executable (test-dft-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
 	  target_link_libraries(test-dft-${testsuite} storm-dft storm-parsers)
 	  target_link_libraries(test-dft-${testsuite} ${STORM_TEST_LINK_LIBRARIES})
+	  target_include_directories(test-dft-${testsuite} PRIVATE "${PROJECT_SOURCE_DIR}/src")
 
 	  # Reusing form any of the main storm tests will do here.
 	  target_precompile_headers(test-dft-${testsuite} REUSE_FROM test-builder)

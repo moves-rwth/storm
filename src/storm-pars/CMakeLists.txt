@@ -2,24 +2,20 @@ file(GLOB_RECURSE ALL_FILES ${PROJECT_SOURCE_DIR}/src/storm-pars/*.h ${PROJECT_S
 
 register_source_groups_from_filestructure("${ALL_FILES}" storm-pars)
 
-
-
 file(GLOB_RECURSE STORM_PARS_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-pars/*/*.cpp)
 file(GLOB_RECURSE STORM_PARS_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-pars/*/*.h)
 
 
 # Create storm-pars.
 add_library(storm-pars SHARED ${STORM_PARS_SOURCES} ${STORM_PARS_HEADERS})
+target_precompile_headers(storm-pars REUSE_FROM storm)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-pars PROPERTIES DEFINE_SYMBOL "")
-#add_dependencies(storm resources)
 list(APPEND STORM_TARGETS storm-pars)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 target_link_libraries(storm-pars PUBLIC storm ${STORM_PARS_LINK_LIBRARIES})
-target_precompile_headers(storm-pars REUSE_FROM storm)
-
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_PARS_HEADERS})

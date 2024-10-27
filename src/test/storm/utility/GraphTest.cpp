@@ -16,7 +16,16 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/utility/graph.h"
 
-TEST(GraphTest, SymbolicProb01_Cudd) {
+class GraphTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(GraphTest, SymbolicProb01_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model =
@@ -45,7 +54,7 @@ TEST(GraphTest, SymbolicProb01_Cudd) {
     }
 }
 
-TEST(GraphTest, SymbolicProb01_Sylvan) {
+TEST_F(GraphTest, SymbolicProb01_Sylvan) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model =
@@ -74,7 +83,7 @@ TEST(GraphTest, SymbolicProb01_Sylvan) {
     }
 }
 
-TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
+TEST_F(GraphTest, SymbolicProb01MinMax_Cudd) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model =
@@ -152,7 +161,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
     }
 }
 
-TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
+TEST_F(GraphTest, SymbolicProb01MinMax_Sylvan) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model =
@@ -230,7 +239,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
     }
 }
 
-TEST(GraphTest, ExplicitProb01) {
+TEST_F(GraphTest, ExplicitProb01) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model =
@@ -259,7 +268,7 @@ TEST(GraphTest, ExplicitProb01) {
     EXPECT_EQ(1032ull, statesWithProbability01.second.getNumberOfSetBits());
 }
 
-TEST(GraphTest, ExplicitProb01MinMax) {
+TEST_F(GraphTest, ExplicitProb01MinMax) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     std::shared_ptr<storm::models::sparse::Model<double>> model =

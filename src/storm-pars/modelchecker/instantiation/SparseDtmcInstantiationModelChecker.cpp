@@ -119,9 +119,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
             auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
             newCheckTask.setQualitative(true);
             newCheckTask.setOnlyInitialStatesRelevant(false);
-            qualitativeResult = modelChecker.computeRewards(env, this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask)
-                                    ->template asExplicitQuantitativeCheckResult<ConstantType>()
-                                    .getValueVector();
+            qualitativeResult = modelChecker.computeRewards(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
         storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult, [](ConstantType const& value) -> bool {
             return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isInfinity<ConstantType>(value));
@@ -142,8 +140,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
     } else {
         auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula())
                                 .setOnlyInitialStatesRelevant(false);
-        std::unique_ptr<CheckResult> quantitativeResult =
-            modelChecker.computeRewards(env, this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask);
+        std::unique_ptr<CheckResult> quantitativeResult = modelChecker.computeRewards(env, newCheckTask);
         result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(
             this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(),
             this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());

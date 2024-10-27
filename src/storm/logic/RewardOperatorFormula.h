@@ -1,16 +1,13 @@
-#ifndef STORM_LOGIC_REWARDOPERATORFORMULA_H_
-#define STORM_LOGIC_REWARDOPERATORFORMULA_H_
+#pragma once
 
 #include "storm/logic/OperatorFormula.h"
-#include "storm/logic/RewardMeasureType.h"
 
 namespace storm {
 namespace logic {
 class RewardOperatorFormula : public OperatorFormula {
    public:
     RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName = boost::none,
-                          OperatorInformation const& operatorInformation = OperatorInformation(),
-                          RewardMeasureType rewardMeasureType = RewardMeasureType::Expectation);
+                          OperatorInformation const& operatorInformation = OperatorInformation());
 
     virtual ~RewardOperatorFormula() {
         // Intentionally left empty.
@@ -46,21 +43,9 @@ class RewardOperatorFormula : public OperatorFormula {
      */
     std::string const& getRewardModelName() const;
 
-    /*!
-     * Retrieves the measure type of the operator.
-     *
-     * @return The measure type.
-     */
-    RewardMeasureType getMeasureType() const;
-
    private:
     // The (optional) name of the reward model this property refers to.
     boost::optional<std::string> rewardModelName;
-
-    // The measure type of the operator.
-    RewardMeasureType rewardMeasureType;
 };
 }  // namespace logic
 }  // namespace storm
-
-#endif /* STORM_LOGIC_REWARDOPERATORFORMULA_H_ */

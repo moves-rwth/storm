@@ -15,7 +15,16 @@
 
 #include "storm/environment/Environment.h"
 
-TEST(SparseMaCbMultiObjectiveModelCheckerTest, server) {
+class SparseMaCbMultiObjectiveModelCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, server) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::ConstraintBased);
 

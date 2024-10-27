@@ -30,7 +30,7 @@ class FormulaInformation;
 class Formula : public std::enable_shared_from_this<Formula> {
    public:
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
-    virtual ~Formula(){
+    virtual ~Formula() {
         // Intentionally left empty.
     };
 
@@ -227,6 +227,7 @@ class Formula : public std::enable_shared_from_this<Formula> {
     std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
     std::shared_ptr<Formula> substitute(std::map<std::string, std::string> const& labelSubstitution) const;
     std::shared_ptr<Formula> substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
+    std::shared_ptr<Formula> substituteTranscendentalNumbers() const;
 
     /*!
      * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but

@@ -51,7 +51,7 @@ cd storm
 mkdir -p build
 cd build
 cmake ..
-make storm-main -j$THREADS
+make storm-cli -j$THREADS
 cd ../../
 
 echo "Installation successfull."

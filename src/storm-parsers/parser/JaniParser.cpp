@@ -12,6 +12,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/jani/types/ArrayType.h"
 #include "storm/storage/jani/types/BasicType.h"
@@ -47,8 +48,8 @@ template<typename ValueType>
 const bool JaniParser<ValueType>::defaultVariableTransient = false;
 const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
 template<typename ValueType>
-const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"sin",  "cos",  "tan",   "cot",   "sec",   "csc",   "asin", "acos",
-                                                                         "atan", "acot", "asec",  "acsc",  "sinh",  "cosh",  "tanh", "coth",
+const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"tan",  "cot",  "sec",   "csc",   "asin",  "acos",  "atan",
+                                                                         "acot", "asec", "acsc",  "sinh",  "cosh",  "tanh",  "coth",
                                                                          "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
 template<typename ValueType>
@@ -125,7 +126,7 @@ std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<Val
     uint_fast64_t featuresCount = parsedStructure.count("features");
     STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
     if (featuresCount == 1) {
-        auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
+        const auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
         for (auto const& feature : parsedStructure.at("features")) {
             std::string featureStr = getString<ValueType>(feature, "Model feature");
             bool found = false;
@@ -758,7 +759,8 @@ std::shared_ptr<storm::jani::Constant> JaniParser<ValueType>::parseConstant(Json
         // variable occurs also on the assignment.
         definingExpression = parseExpression(constantStructure.at("value"), scope.refine("Value of constant " + name));
         assert(definingExpression.isInitialized());
-        STORM_LOG_THROW((type.second == definingExpression.getType() || type.second.isRationalType() && definingExpression.getType().isIntegerType()),
+        // Check that the defined and actual expression value match OR the defined value is a rational and the actual value is a numerical type.
+        STORM_LOG_THROW((type.second == definingExpression.getType() || type.second.isRationalType() && definingExpression.getType().isNumericalType()),
                         storm::exceptions::InvalidJaniException,
                         "Type of value for constant '" + name + "' (scope: " + scope.description + ") does not match the given type '" +
                             type.first->getStringRepresentation() + ".");
@@ -846,7 +848,11 @@ std::pair<std::unique_ptr<storm::jani::JaniType>, storm::expressions::Type> Jani
                                 "Upper bound for bounded real variable " << variableName << "(scope: " << scope.description << ") must be numeric");
                 if (lowerboundExpr.isInitialized() && upperboundExpr.isInitialized() && !lowerboundExpr.containsVariables() &&
                     !upperboundExpr.containsVariables()) {
-                    STORM_LOG_THROW(lowerboundExpr.evaluateAsRational() <= upperboundExpr.evaluateAsRational(), storm::exceptions::InvalidJaniException,
+                    using SubMap = std::map<storm::expressions::Variable, storm::expressions::Expression>;
+                    storm::expressions::JaniExpressionSubstitutionVisitor<SubMap> transcendentalVisitor(SubMap(), true);
+                    const storm::RationalNumber lowerboundValue = transcendentalVisitor.substitute(lowerboundExpr).evaluateAsRational();
+                    const storm::RationalNumber upperboundValue = transcendentalVisitor.substitute(upperboundExpr).evaluateAsRational();
+                    STORM_LOG_THROW(lowerboundValue <= upperboundValue, storm::exceptions::InvalidJaniException,
                                     "Lower bound must not be larger than upper bound for bounded real variable " << variableName
                                                                                                                  << "(scope: " << scope.description << ").");
                 }
@@ -1333,6 +1339,16 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                 ensureNumericalType(arguments[0], opstring, 0, scope.description);
                 ensureNumericalType(arguments[1], opstring, 1, scope.description);
                 return storm::expressions::logarithm(arguments[0], arguments[1]);
+            } else if (opstring == "cos") {
+                arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                assert(arguments.size() == 1);
+                ensureNumericalType(arguments[0], opstring, 0, scope.description);
+                return storm::expressions::cos(arguments[0]);
+            } else if (opstring == "sin") {
+                arguments = parseUnaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                assert(arguments.size() == 1);
+                ensureNumericalType(arguments[0], opstring, 0, scope.description);
+                return storm::expressions::sin(arguments[0]);
             } else if (opstring == "aa") {
                 STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
                                 "Array access operator requires exactly one exp (at " + scope.description + ").");
@@ -1430,6 +1446,20 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                     return storm::expressions::Expression();
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in " << scope.description << ".");
+            }
+        }
+        if (expressionStructure.count("constant") == 1) {
+            // Convert constants to a numeric value (only PI and Euler number, as in Jani specification)
+            const std::string constantStr = getString<ValueType>(expressionStructure.at("constant"), scope.description);
+            if (constantStr == "π") {
+                return std::make_shared<storm::expressions::TranscendentalNumberLiteralExpression>(
+                           *expressionManager, storm::expressions::TranscendentalNumberLiteralExpression::TranscendentalNumber::PI)
+                    ->toExpression();
+            }
+            if (constantStr == "e") {
+                return std::make_shared<storm::expressions::TranscendentalNumberLiteralExpression>(
+                           *expressionManager, storm::expressions::TranscendentalNumberLiteralExpression::TranscendentalNumber::E)
+                    ->toExpression();
             }
         }
         STORM_LOG_THROW(

@@ -77,8 +77,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     // Prepare the result, in case we return early.
     storm::generator::StateBehavior<ValueType, StateType> result;
 
-    STORM_LOG_TRACE("Currently failable: " << state->getFailableElements().getCurrentlyFailableString());
-    // TODO remove exploreDependencies
+    STORM_LOG_TRACE("Currently failable: " << state->getFailableElements().getCurrentlyFailableString(!exploreDependencies));
     auto iterFailable = this->state->getFailableElements().begin(!exploreDependencies);
 
     // Check for absorbing state:
@@ -213,8 +212,8 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
 
     if (dependencySuccessful) {
         // Dependency was successful -> dependent BE fails
-        STORM_LOG_TRACE("With the successful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]"
-                                                                  << " in " << mDft.getStateString(origState));
+        STORM_LOG_TRACE("With the successful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]" << " in "
+                                                                  << mDft.getStateString(origState));
         newState->letDependencyTrigger(dependency, true);
         STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "Dependency " << dependency->name() << " does not have unique dependent event.");
         STORM_LOG_ASSERT(dependency->dependentEvents().front()->isBasicElement(),
@@ -223,8 +222,8 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
         return createSuccessorState(newState, trigger);
     } else {
         // Dependency was unsuccessful -> no BE fails
-        STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]"
-                                                                    << " in " << mDft.getStateString(origState));
+        STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << dependency->name() << " [" << dependency->id() << "]" << " in "
+                                                                    << mDft.getStateString(origState));
         newState->letDependencyTrigger(dependency, false);
         return newState;
     }
@@ -236,8 +235,7 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
     // Construct new state as copy from original one
     DFTStatePointer newState = origState->copy();
 
-    STORM_LOG_TRACE("With the failure of " << be->name() << " [" << be->id() << "]"
-                                           << " in " << mDft.getStateString(origState));
+    STORM_LOG_TRACE("With the failure of " << be->name() << " [" << be->id() << "]" << " in " << mDft.getStateString(origState));
     newState->letBEFail(be);
 
     // Propagate

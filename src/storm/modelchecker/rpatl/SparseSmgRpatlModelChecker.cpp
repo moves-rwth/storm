@@ -4,20 +4,15 @@
 #include <vector>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/utility/FilteredRewardModel.h"
-#include "storm/utility/macros.h"
-
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
-#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/FilteredRewardModel.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -64,7 +59,7 @@ std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::com
 
 template<typename SparseSmgModelType>
 std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::computeLongRunAverageRewards(
-    Environment const&, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    Environment const&, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     STORM_LOG_THROW(checkTask.isPlayerCoalitionSet(), storm::exceptions::InvalidPropertyException, "No player coalition was set.");
     auto coalitionStates = this->getModel().computeStatesOfCoalition(checkTask.getPlayerCoalition());
@@ -73,8 +68,6 @@ std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::com
 }
 
 template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<double>>;
-#ifdef STORM_HAVE_CARL
 template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<storm::RationalNumber>>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

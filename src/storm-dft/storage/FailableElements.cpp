@@ -37,25 +37,22 @@ uint_fast64_t FailableElements::const_iterator::operator*() const {
 }
 
 bool FailableElements::const_iterator::operator!=(const_iterator const& other) const {
-    if (dependency != other.dependency || conflicting != other.conflicting) {
+    if (dependency != other.dependency) {
         return true;
     }
     if (dependency) {
-        return itDep != other.itDep;
+        if (conflicting != other.conflicting) {
+            return true;
+        } else {
+            return itDep != other.itDep;
+        }
     } else {
         return itBE != other.itBE;
     }
 }
 
 bool FailableElements::const_iterator::operator==(const_iterator const& other) const {
-    if (dependency != other.dependency || conflicting != other.conflicting) {
-        return false;
-    }
-    if (dependency) {
-        return itDep == other.itDep;
-    } else {
-        return itBE == other.itBE;
-    }
+    return !(*this != other);
 }
 
 bool FailableElements::const_iterator::isFailureDueToDependency() const {
@@ -145,13 +142,13 @@ bool FailableElements::hasBEs() const {
     return !currentlyFailableBE.empty();
 }
 
-std::string FailableElements::getCurrentlyFailableString() const {
+std::string FailableElements::getCurrentlyFailableString(bool forceBE) const {
     std::stringstream stream;
     stream << "{";
-    if (hasDependencies()) {
+    if (hasDependencies() && !forceBE) {
         stream << "Dependencies: ";
     }
-    for (auto it = begin(); it != end(); ++it) {
+    for (auto it = begin(forceBE); it != end(forceBE); ++it) {
         stream << *it << ", ";
     }
     stream << "}";

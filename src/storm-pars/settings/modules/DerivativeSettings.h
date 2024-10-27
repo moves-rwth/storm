@@ -1,11 +1,10 @@
-#ifndef STORM_SETTINGS_MODULES_DERIVATIVESETTINGS_H_
-#define STORM_SETTINGS_MODULES_DERIVATIVESETTINGS_H_
+#pragma once
 
 #include <boost/none.hpp>
 #include <boost/optional.hpp>
-#include "adapters/RationalFunctionAdapter.h"
 #include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -110,5 +109,3 @@ class DerivativeSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_DERIVATIVESETTINGS_H_ */

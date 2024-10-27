@@ -11,6 +11,7 @@ class JaniExpressionVisitor {
     virtual boost::any visit(ConstructorArrayExpression const& expression, boost::any const& data) = 0;
     virtual boost::any visit(ArrayAccessExpression const& expression, boost::any const& data) = 0;
     virtual boost::any visit(FunctionCallExpression const& expression, boost::any const& data) = 0;
+    virtual boost::any visit(TranscendentalNumberLiteralExpression const& expression, boost::any const& data) = 0;
 };
 }  // namespace expressions
 }  // namespace storm
