@@ -6,7 +6,7 @@
 
 #include <boost/optional.hpp>
 
-#include "CompositionVisitor.h"
+#include "storm/storage/jani/visitor/CompositionVisitor.h"
 
 namespace storm {
 namespace jani {

@@ -15,6 +15,9 @@
 // A more robust test would take the high-level actions and observations and track on those.
 
 TEST(BeliefSupportTracking, Maze) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
     program = storm::utility::prism::preprocess(program, "sl=0.4");
     std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram("Pmax=? [F \"goal\" ]", program).front().getRawFormula();

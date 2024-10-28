@@ -1,4 +1,4 @@
-#include "PreprocessingPomdpValueBoundsModelChecker.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include <random>
 
 #include "storm-pomdp/storage/PomdpMemory.h"
@@ -7,7 +7,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
 
-#include "environment/Environment.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"
@@ -18,8 +18,7 @@ namespace pomdp {
 namespace modelchecker {
 template<typename ValueType>
 PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp)
-    : pomdp(pomdp) { /* Intentionally left empty */
-}
+    : pomdp(pomdp) { /* Intentionally left empty */ }
 
 template<typename ValueType>
 typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(

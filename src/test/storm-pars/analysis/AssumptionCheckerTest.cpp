@@ -19,7 +19,16 @@
 
 #include "test/storm_gtest.h"
 
-TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
+class AssumptionCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(AssumptionCheckerTest, Brp_no_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -93,7 +102,7 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder, region));
 }
 
-TEST(AssumptionCheckerTest, Simple1) {
+TEST_F(AssumptionCheckerTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -167,7 +176,7 @@ TEST(AssumptionCheckerTest, Simple1) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
 }
 
-TEST(AssumptionCheckerTest, Casestudy1) {
+TEST_F(AssumptionCheckerTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -242,7 +251,7 @@ TEST(AssumptionCheckerTest, Casestudy1) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
 }
 
-TEST(AssumptionCheckerTest, Casestudy2) {
+TEST_F(AssumptionCheckerTest, Casestudy2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P=? [F s=4]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -302,7 +311,7 @@ TEST(AssumptionCheckerTest, Casestudy2) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
 }
 
-TEST(AssumptionCheckerTest, Casestudy3) {
+TEST_F(AssumptionCheckerTest, Casestudy3) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

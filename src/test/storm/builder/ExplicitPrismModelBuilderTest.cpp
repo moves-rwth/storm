@@ -8,7 +8,16 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "test/storm_gtest.h"
 
-TEST(ExplicitPrismModelBuilderTest, Dtmc) {
+class ExplicitPrismModelBuilderTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -36,7 +45,7 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitPrismModelBuilderTest, Ctmc) {
+TEST_F(ExplicitPrismModelBuilderTest, Ctmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -64,7 +73,7 @@ TEST(ExplicitPrismModelBuilderTest, Ctmc) {
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitPrismModelBuilderTest, Mdp) {
+TEST_F(ExplicitPrismModelBuilderTest, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(169ul, model->getNumberOfStates());
@@ -114,7 +123,7 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     EXPECT_EQ(12ul, model->getNumberOfChoices());
 }
 
-TEST(ExplicitPrismModelBuilderTest, Ma) {
+TEST_F(ExplicitPrismModelBuilderTest, Ma) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/simple.ma");
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -138,7 +147,7 @@ TEST(ExplicitPrismModelBuilderTest, Ma) {
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 }
 
-TEST(ExplicitPrismModelBuilderTest, POMdp) {
+TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
     program = storm::utility::prism::preprocess(program, "slippery=0.4");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -155,19 +164,28 @@ TEST(ExplicitPrismModelBuilderTest, POMdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
 }
 
-TEST(ExplicitPrismModelBuilderTest, FailComposition) {
+TEST_F(ExplicitPrismModelBuilderTest, SMG) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/smg/action_labels.prism");
+    program = storm::utility::prism::preprocess(program, "");
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(3ul, model->getNumberOfChoices());
+    EXPECT_EQ(6ul, model->getNumberOfTransitions());
+}
+
+TEST_F(ExplicitPrismModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
 
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);
 }
 
-TEST(ExplicitPrismModelBuilderTest, FailUnbounded) {
+TEST_F(ExplicitPrismModelBuilderTest, FailUnbounded) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
     storm::prism::Program program = modelDescription.preprocess("N=7").asPrismProgram();
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);
 }
 
-TEST(ExplicitPrismModelBuilderTest, ExportExplicitLookup) {
+TEST_F(ExplicitPrismModelBuilderTest, ExportExplicitLookup) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
     generatorOptions.setBuildAllLabels();
@@ -194,7 +212,7 @@ bool only_first_action_mask(storm::expressions::SimpleValuation const&, uint64_t
     return actionIndex <= 1;
 }
 
-TEST(ExplicitPrismModelBuilderTest, CallbackActionMask) {
+TEST_F(ExplicitPrismModelBuilderTest, CallbackActionMask) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_selection.nm");
     storm::generator::NextStateGeneratorOptions generatorOptions;
     generatorOptions.setBuildAllLabels();

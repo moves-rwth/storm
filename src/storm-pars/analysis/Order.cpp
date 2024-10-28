@@ -560,8 +560,7 @@ void Order::setDoneState(uint_fast64_t stateNumber) {
 
 void Order::toDotOutput() const {
     // Graphviz Output start
-    STORM_PRINT("Dot Output:\n"
-                << "digraph model {\n");
+    STORM_PRINT("Dot Output:\n" << "digraph model {\n");
 
     // Vertices of the digraph
     storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);

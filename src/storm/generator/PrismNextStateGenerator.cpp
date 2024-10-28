@@ -659,10 +659,19 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             }
 
             if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                storm::storage::PlayerIndex const& playerOfModule = moduleIndexToPlayerIndexMap.at(i);
-                STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
-                                "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
-                choice.setPlayerIndex(playerOfModule);
+                if (command.getActionIndex() == 0) {
+                    // Unlabeled command
+                    auto const playerOfModule = moduleIndexToPlayerIndexMap.at(i);
+                    STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
+                    choice.setPlayerIndex(playerOfModule);
+                } else {
+                    // Labelled command (that happens to not synchronize with another command
+                    auto const playerOfAction = actionIndexToPlayerIndexMap.at(command.getActionIndex());
+                    STORM_LOG_THROW(playerOfAction != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Command with action label '" << program.getActionName(command.getActionIndex()) << "' is not owned by any player.");
+                    choice.setPlayerIndex(playerOfAction);
+                }
             }
 
             if (this->options.isExplorationChecksSet()) {

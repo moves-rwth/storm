@@ -1,16 +1,5 @@
 #include <memory>
 #include <string>
-#include "adapters/RationalFunctionAdapter.h"
-#include "adapters/RationalNumberAdapter.h"
-#include "environment/Environment.h"
-#include "environment/solver/SolverEnvironment.h"
-#include "modelchecker/CheckTask.h"
-#include "modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "models/sparse/Model.h"
-#include "solver/OptimizationDirection.h"
-#include "solver/SolverSelectionOptions.h"
-#include "storage/bisimulation/BisimulationType.h"
-#include "storage/prism/Program.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
@@ -20,16 +9,24 @@
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/Environment.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/bisimulation/BisimulationType.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/prism.h"
 #include "test/storm_gtest.h"
 
-#include "utility/constants.h"
-#include "utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 void testModel(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -103,19 +100,28 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
 
-TEST(TimeTravelling, Crowds) {
+class TimeTravelling : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(TimeTravelling, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST(TimeTravelling, Nand) {
+TEST_F(TimeTravelling, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST(TimeTravelling, Herman) {
+TEST_F(TimeTravelling, Herman) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/herman5_pla.pm";
     std::string formulaAsString = "R=? [F \"stable\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

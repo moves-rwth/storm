@@ -1,0 +1,9 @@
+toplevel "T";
+"T" or "A" "B";
+"A" lambda=1.0 dorm=0.0;
+"B" lambda=2.0 dorm=1.0;
+"C" lambda=1.0 dorm=0.0;
+"E" lambda=1.0 dorm=1.0;
+"SEQ1" seq "E" "B";
+"SEQ2" seq "C" "T";
+"PDEP" pdep=0.5 "E" "A";

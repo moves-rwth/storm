@@ -1,4 +1,4 @@
-#include "DFTModelChecker.h"
+#include "storm-dft/modelchecker/DFTModelChecker.h"
 
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/InvalidModelException.h"

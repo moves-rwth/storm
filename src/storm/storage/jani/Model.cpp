@@ -1631,8 +1631,7 @@ Model Model::createModelFromAutomaton(Automaton const& automaton) const {
 
 std::string filterName(std::string const& text) {
     std::string result = text;
-    std::replace_if(
-        result.begin(), result.end(), [](const char& c) { return std::ispunct(c); }, '_');
+    std::replace_if(result.begin(), result.end(), [](const char& c) { return std::ispunct(c); }, '_');
     return result;
 }
 

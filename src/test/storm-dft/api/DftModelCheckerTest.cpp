@@ -233,6 +233,8 @@ TYPED_TEST(DftModelCheckerTest, SpareMTTF) {
     EXPECT_NEAR(result, 249 / 52.0, this->precision());  // DFTCalc has result of 4.33779 due to different semantics of nested spares
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_dc.dft");
     EXPECT_NEAR(result, 78311 / 182700.0, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/modules3.dft");
+    EXPECT_NEAR(result, 7 / 6.0, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
@@ -259,6 +261,8 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     EXPECT_NEAR(result, 0.08, this->precision());
     result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
     EXPECT_NEAR(result, 0.08, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq8.dft");
+    EXPECT_NEAR(result, 11 / 8.0, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, Mutex) {

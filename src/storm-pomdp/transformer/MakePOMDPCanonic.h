@@ -16,6 +16,7 @@ class MakePOMDPCanonic {
     std::vector<uint64_t> computeCanonicalPermutation() const;
     std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> applyPermutationOnPomdp(std::vector<uint64_t> permutation) const;
     std::string getStateInformation(uint64_t state) const;
+    std::string getObservationInformation(uint32_t obs) const;
 
     storm::models::sparse::Pomdp<ValueType> const& pomdp;
 };

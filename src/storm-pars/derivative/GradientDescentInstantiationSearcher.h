@@ -2,16 +2,16 @@
 
 #include <map>
 #include <memory>
-#include "GradientDescentConstraintMethod.h"
-#include "GradientDescentMethod.h"
-#include "analysis/GraphConditions.h"
-#include "logic/Formula.h"
-#include "solver/LinearEquationSolver.h"
 #include "storm-pars/analysis/MonotonicityHelper.h"
+#include "storm-pars/derivative/GradientDescentConstraintMethod.h"
+#include "storm-pars/derivative/GradientDescentMethod.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/analysis/GraphConditions.h"
+#include "storm/logic/Formula.h"
+#include "storm/solver/LinearEquationSolver.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"

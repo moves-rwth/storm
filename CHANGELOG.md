@@ -1,21 +1,42 @@
-
 Changelog
 ==============
 
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.8.x
+Version 1.9.x
 -------------
 
-## Version 1.8.2
+## Version 1.9.0 (2024/08)
+- Improved expected visiting times (EVTs) and steady state distribution computations.
+- Support for interval-based models.
+- Robust VI.
+- Significantly improved compilation times.
+- Support for logarithm expressions in PRISM and JANI.
+- Support for sin and cos operators, and PI and Euler constants in JANI parser.
+- Extraction of schedulers for minimal expected total rewards.
+- More efficient MEC and SCC decompositions.
+- Revised LP encoding for multi-objective verification under simple strategies.
+- Added CLI option `--permute` to re-order the states after building.
+- Added CLI option `--build:state limit <number>` to limit the number of explored states.
 - Print all linked libraries when using `--version`.
-- Removed HyPro as dependency.
+- Removed support for HyPro and Cuda.
+- Moved gamebased-ar to own library.
+- Various bug fixes.
 - `storm-conv`: Removed option `--stdout`.
-- `storm-pars`: completely reworked the command-line interface (and partially the c++ API).
+- `storm-dft`: Fixes and improvements for DFT symmetries and DFT simulation.
+- `storm-pars`: Completely reworked the command-line interface (and partially the C++ API).
+- `storm-pars`: "Time travelling" optimization.
+- `storm-pgcl`: Removed the library.
 - Developer: Require at least CMake version 3.15.
 - Developer: Moved `storm-config.h.in` into `src` directory.
-- Developer: Use Dockerfile in CI.
+- Developer: Use various Dockerfiles in CI.
+- Developer: Revised includes and use pre-compiled headers.
+- Developer: Fixed various compiler warnings.
+
+
+Version 1.8.x
+-------------
 
 ## Version 1.8.1 (2023/06)
 - Workaround for issue with Boost >= 1.81

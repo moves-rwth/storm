@@ -10,19 +10,12 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include <unordered_map>
-#include <vector>
-#include "adapters/RationalFunctionAdapter.h"
-#include "adapters/RationalFunctionForward.h"
-#include "modelchecker/CheckTask.h"
-#include "models/sparse/Dtmc.h"
-#include "models/sparse/StateLabeling.h"
-#include "storage/BitVector.h"
-#include "storage/FlexibleSparseMatrix.h"
 #include "storm-pars/utility/parametric.h"
-#include "utility/constants.h"
-#include "utility/macros.h"
-#include <boost/container/flat_map.hpp>
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 
 namespace storm {
 namespace transformer {

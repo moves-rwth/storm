@@ -721,8 +721,7 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         // While we tell the procedure to be paused, idle
         while (unfoldingControl ==
                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::UnfoldingControl::Pause &&
-               !storm::utility::resources::isTerminate())
-            ;
+               !storm::utility::resources::isTerminate());
     }
     STORM_LOG_INFO("\tInteractive Unfolding terminated.\n");
 }
@@ -1090,8 +1089,8 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         }
         if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
             printUpdateStopwatch.restart();
-            STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP"
-                                       << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
+            STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### "
+                                       << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
                 STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
                                                                 << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
@@ -1456,6 +1455,12 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 std::shared_ptr<storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType>>
 BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveBeliefExplorer() {
     return interactiveUnderApproximationExplorer;
+}
+
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::setFMSchedValueList(
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> valueList) {
+    interactiveUnderApproximationExplorer->setFMSchedValueList(valueList);
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
