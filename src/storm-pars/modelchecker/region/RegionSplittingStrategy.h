@@ -14,9 +14,7 @@ struct RegionSplittingStrategy {
 
     RegionSplittingStrategy() = default;
     RegionSplittingStrategy(Heuristic heuristic, uint64_t maxSplitDimensions, std::optional<RegionSplitEstimateKind> estimateKind)
-        : heuristic(heuristic),
-          maxSplitDimensions(maxSplitDimensions),
-          estimateKind(estimateKind){
+        : heuristic(heuristic), maxSplitDimensions(maxSplitDimensions), estimateKind(estimateKind) {
               // Intentionally left empty.
           };
 };
