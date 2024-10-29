@@ -1,15 +1,15 @@
 
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
-#include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
-#include "storage/BitVector.h"
-#include "storage/RobustMaximalEndComponentDecomposition.h"
-#include "storage/SparseMatrix.h"
-#include "storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/RobustMaximalEndComponentDecomposition.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm-pars/utility/parametric.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
-#include "utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
+#include "storm/utility/macros.h"
 namespace storm {
 namespace transformer {
 

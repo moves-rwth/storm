@@ -1,9 +1,12 @@
 #include <memory>
 #include <string>
+#include "gtest/gtest.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
@@ -45,9 +48,9 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     storm::transformer::TimeTravelling timeTravelling;
     auto timeTravelledDtmc = timeTravelling.bigStep(*dtmc, checkTask).first;
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(*dtmc);
     modelChecker.specifyFormula(checkTask);
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerTT(timeTravelledDtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelCheckerTT(timeTravelledDtmc);
     modelCheckerTT.specifyFormula(checkTask);
 
     auto parameters = storm::models::sparse::getAllParameters(*dtmc);
@@ -59,8 +62,8 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     for (auto const& param : parameters) {
         std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-6); x <= 1;
-                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-6)) / 10) {
+            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-5); x <= 1;
+                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-5)) / 10) {
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> newMap(point);
                 newMap[param] = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(x);
                 newInstantiations.push_back(newMap);
@@ -74,16 +77,12 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     envRobust.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     for (auto const& instantiation : testInstantiations) {
-        std::cout << instantiation << std::endl;
-        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>();
-        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>();
-        std::cout << dtmc->getInitialStates().size() << std::endl;
-        std::cout << dtmc->getNumberOfStates() << std::endl;
+        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
 
-        std::cout << result[modelChecker.getOriginalModel().getInitialStates()[0]] << std::endl;
-        std::cout << resultTT[modelCheckerTT.getOriginalModel().getInitialStates()[0]] << std::endl;
-        // std::cout << result << " " << resultTT << std::endl;
-        // ASSERT_TRUE(storm::utility::isAlmostZero(result - resultTT)) << "Results " << result << " and " << resultTT << " are not the same but should be.";
+        storm::RationalNumber resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
+        storm::RationalNumber resB =  resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
+        ASSERT_NEAR(resA, resB, storm::utility::convertNumber<storm::RationalNumber>(1e-6));
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);

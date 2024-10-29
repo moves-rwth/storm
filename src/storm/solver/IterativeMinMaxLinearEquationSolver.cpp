@@ -1,8 +1,8 @@
 #include <functional>
 #include <limits>
 
-#include "solver/LinearEquationSolver.h"
-#include "solver/OptimizationDirection.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -21,8 +21,8 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
 
 namespace storm {
 namespace solver {

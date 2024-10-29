@@ -1,6 +1,6 @@
 #include "storm/storage/RobustMaximalEndComponent.h"
-#include "storage/BoostTypes.h"
-#include "storage/sparse/StateType.h"
+#include "storm/storage/BoostTypes.h"
+#include "storm/storage/sparse/StateType.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/storage/BitVector.h"
 

@@ -1,6 +1,4 @@
 #include "storm/logic/Bound.h"
-#include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::logic {

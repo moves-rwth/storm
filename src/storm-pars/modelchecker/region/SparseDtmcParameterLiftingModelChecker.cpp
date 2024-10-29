@@ -2,11 +2,11 @@
 #include <memory>
 #include <vector>
 
-#include "adapters/RationalFunctionForward.h"
-#include "environment/Environment.h"
-#include "modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
-#include "solver/OptimizationDirection.h"
-#include "storage/BitVector.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/environment/Environment.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/BitVector.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
@@ -33,9 +33,9 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
-#include "utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

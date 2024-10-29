@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/TimeTravelling.h"

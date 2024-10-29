@@ -17,8 +17,8 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/Stopwatch.h"
-#include "utility/logging.h"
-#include "utility/macros.h"
+#include "storm/utility/logging.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace derivative {

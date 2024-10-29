@@ -8,14 +8,14 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/irange.hpp>
 
-#include "solver/OptimizationDirection.h"
-#include "solver/helper/SchedulerTrackingHelper.h"
-#include "storage/BitVector.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/helper/SchedulerTrackingHelper.h"
+#include "storm/storage/BitVector.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"  // TODO
-#include "utility/constants.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 class Environment;

@@ -2,17 +2,17 @@
 #include <numeric>
 #include <queue>
 
-#include "storage/BitVector.h"
-#include "storage/BoostTypes.h"
-#include "storage/StronglyConnectedComponent.h"
-#include "storage/sparse/StateType.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/BoostTypes.h"
+#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/sparse/StateType.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/graph.h"
-#include "utility/constants.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace storage {

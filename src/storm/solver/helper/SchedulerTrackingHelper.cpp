@@ -3,7 +3,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
-#include "utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm::solver::helper {
 

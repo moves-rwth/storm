@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 

@@ -4,8 +4,8 @@
 #include <queue>
 #include <type_traits>
 
-#include "adapters/RationalFunctionForward.h"
-#include "solver/OptimizationDirection.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/utility/ModelInstantiator.h"
@@ -20,7 +20,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/exceptions/NotSupportedException.h"
-#include "utility/macros.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

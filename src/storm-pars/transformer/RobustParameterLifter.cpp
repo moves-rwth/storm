@@ -14,18 +14,18 @@
 #include <set>
 #include <type_traits>
 #include <vector>
-#include "adapters/RationalFunctionForward.h"
-#include "adapters/RationalNumberForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 
-#include "environment/Environment.h"
-#include "modelchecker/results/CheckResult.h"
-#include "settings/SettingsManager.h"
-#include "settings/modules/GeneralSettings.h"
-#include "solver/SmtSolver.h"
-#include "solver/SmtlibSmtSolver.h"
-#include "solver/Z3SmtSolver.h"
-#include "storage/expressions/Expression.h"
-#include "storage/expressions/RationalFunctionToExpression.h"
+#include "storm/environment/Environment.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/solver/SmtlibSmtSolver.h"
+#include "storm/solver/Z3SmtSolver.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-pars/utility/parametric.h"
@@ -33,10 +33,10 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/vector.h"
-#include "utility/constants.h"
-#include "utility/logging.h"
-#include "utility/macros.h"
-#include "utility/solver.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/logging.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
 

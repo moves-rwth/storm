@@ -1,9 +1,9 @@
 #pragma once
 
-#include "models/sparse/DeterministicModel.h"
-#include "storage/BoostTypes.h"
-#include "storage/StronglyConnectedComponent.h"
-#include "storage/sparse/StateType.h"
+#include "storm/models/sparse/DeterministicModel.h"
+#include "storm/storage/BoostTypes.h"
+#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/RobustMaximalEndComponent.h"
 #include "storm/utility/OptionalRef.h"
