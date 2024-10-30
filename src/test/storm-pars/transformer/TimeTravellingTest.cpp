@@ -79,14 +79,14 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> pla;
-    pla.specify(env, dtmc, checkTask);
-    auto resultPLA = pla.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto pla =
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaTT;
     auto sharedDtmc = std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(timeTravelledDtmc);
-    plaTT.specify(env, sharedDtmc, checkTask);
-    auto resultPLATT = plaTT.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto plaTT =
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, sharedDtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto resultPLATT = plaTT->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
