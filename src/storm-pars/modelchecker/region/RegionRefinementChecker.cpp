@@ -8,6 +8,8 @@
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 
+#include "storm/logic/Bound.h"
+#include "storm/logic/ComparisonType.h"
 #include "storm/utility/ProgressMeasurement.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -200,7 +202,8 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 template<typename ParametricType>
 std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
 RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                              storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
+                                                              storm::solver::OptimizationDirection const& dir,
+                                                              ParametricType const& precision,
                                                               bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
     auto progress = PartitioningProgress<CoefficientType>(region.area());
 
@@ -270,8 +273,10 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
+            std::cout << "Value is " << value << " currValue is " << currValue << std::endl;
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
+                std::cout << boundInvariant->threshold.evaluateAsRational() << std::endl;
                 if (boundInvariant && !boundInvariant->isSatisfied(value)) {
                     return valueValuation;
                 }

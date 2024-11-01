@@ -116,11 +116,11 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                 });
         }
     }
+    std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = this->currentCheckTask->getFormula().clone();
+    formulaWithoutBounds->asOperatorFormula().removeBound();
+    this->currentFormulaNoBound = formulaWithoutBounds->asSharedPointer();
+    this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType>>(*this->currentFormulaNoBound);
     if (this->specifiedRegionSplitEstimateKind == RegionSplitEstimateKind::Derivative) {
-        std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = this->currentCheckTask->getFormula().clone();
-        formulaWithoutBounds->asOperatorFormula().removeBound();
-        this->currentFormulaNoBound = formulaWithoutBounds->asSharedPointer();
-        this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType>>(*this->currentFormulaNoBound);
         this->derivativeChecker = std::make_unique<storm::derivative::SparseDerivativeInstantiationModelChecker<ParametricType, ConstantType>>(*this->parametricModel);
         this->derivativeChecker->specifyFormula(env, *this->currentCheckTaskNoBound);
     }
@@ -359,11 +359,11 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerSAT() {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerSAT(bool quantitative) {
     if (!instantiationCheckerSAT) {
         instantiationCheckerSAT =
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-        instantiationCheckerSAT->specifyFormula(this->currentCheckTask->template convertValueType<ParametricType>());
+        instantiationCheckerSAT->specifyFormula(quantitative ? *this->currentCheckTaskNoBound : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
     }
     return *instantiationCheckerSAT;
@@ -371,11 +371,11 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerVIO() {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationCheckerVIO(bool quantitative) {
     if (!instantiationCheckerVIO) {
         instantiationCheckerVIO =
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-        instantiationCheckerVIO->specifyFormula(this->currentCheckTask->template convertValueType<ParametricType>());
+        instantiationCheckerVIO->specifyFormula(quantitative ? *this->currentCheckTaskNoBound : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
     }
     return *instantiationCheckerVIO;
@@ -383,11 +383,11 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
 
 template<typename SparseModelType, typename ConstantType, bool Robust>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationChecker() {
+SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::getInstantiationChecker(bool quantitative) {
     if (!instantiationChecker) {
         instantiationChecker =
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-        instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<ParametricType>());
+        instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);
     }
     return *instantiationChecker;

@@ -51,7 +51,7 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) override;
     virtual void specifyCumulativeRewardFormula(const CheckTask<storm::logic::CumulativeRewardFormula, ConstantType>& checkTask) override;
 
-    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() override;
+    virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker(bool quantitative) override;
 
     virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                 storm::solver::OptimizationDirection const& dirForParameters) override;
@@ -66,6 +66,9 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     std::optional<uint64_t> stepBound;
 
     std::unique_ptr<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
+
+    std::unique_ptr<CheckTask<storm::logic::Formula, ParametricType>> currentCheckTaskNoBound;
+    std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
 
     storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
     std::unique_ptr<storm::transformer::ParameterLifter<ParametricType, ConstantType>> parameterLifter;

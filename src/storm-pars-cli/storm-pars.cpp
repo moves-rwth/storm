@@ -37,6 +37,7 @@
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -355,7 +356,14 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
 
     auto splittingStrategy = modelchecker::RegionSplittingStrategy(splittingHeuristic, maxSplitsPerStep, estimateKind);
     storm::utility::Stopwatch watch(true);
-    if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine, monotonicitySettings, splittingStrategy)) {
+    auto const& settings = storm::api::RefinementSettings<ValueType>{
+        model,
+        *(property.getRawFormula()),
+        engine,
+        splittingStrategy,
+        monotonicitySettings
+    };
+    if (storm::api::verifyRegion<ValueType>(settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
         STORM_PRINT_AND_LOG("Formula is not satisfied by all parameter instantiations.\n");
@@ -414,10 +422,23 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
-    // TODO Why was allowModelSimplification false here?
+    Environment env;
+
+    auto settings = storm::api::RefinementSettings<ValueType>{
+        model,
+        storm::api::createTask<ValueType>(property.getRawFormula(), true),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true, // allow model simplification
+        graphPreserving,
+        false // preconditions not yet validated
+    };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
-        model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown,  splittingStrategy, discreteVariables, true, graphPreserving, monotonicitySettings, monThresh);
+        settings,
+        regions.front(),  refinementThreshold, optionalDepthLimit,
+        storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

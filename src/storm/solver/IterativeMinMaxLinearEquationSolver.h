@@ -19,7 +19,7 @@ class Environment;
 
 namespace solver {
 
-template<typename ValueType, typename SolutionType = ValueType, bool TrivialRowGrouping = false>
+template<typename ValueType, typename SolutionType = ValueType>
 class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType, SolutionType> {
    public:
     IterativeMinMaxLinearEquationSolver(std::unique_ptr<LinearEquationSolverFactory<SolutionType>>&& linearEquationSolverFactory);
@@ -69,7 +69,7 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     std::unique_ptr<LinearEquationSolverFactory<SolutionType>> linearEquationSolverFactory;
 
     // possibly cached data
-    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, std::is_same_v<ValueType, storm::Interval>, SolutionType>> viOperator;
     mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;  // A.rowGroupCount() entries
 };
 

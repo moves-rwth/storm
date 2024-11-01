@@ -12,6 +12,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/StandardGameSolver.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -78,6 +79,11 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
         this->parametricModel = mdp;
         this->specifyFormula(env, checkTask);
     }
+
+    std::shared_ptr<storm::logic::Formula> formulaWithoutBounds = this->currentCheckTask->getFormula().clone();
+    formulaWithoutBounds->asOperatorFormula().removeBound();
+    this->currentFormulaNoBound = formulaWithoutBounds->asSharedPointer();
+    this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType>>(*this->currentFormulaNoBound);
 }
 
 template<typename SparseModelType, typename ConstantType>
@@ -287,10 +293,10 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
 template<typename SparseModelType, typename ConstantType>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker() {
+SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(bool quantitative) {
     if (!instantiationChecker) {
         instantiationChecker = std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-        instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<ParametricType>());
+        instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);
     }
     return *instantiationChecker;

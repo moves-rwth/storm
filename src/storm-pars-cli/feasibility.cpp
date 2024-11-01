@@ -211,9 +211,20 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
+        auto const& settings = storm::api::RefinementSettings<ValueType>{
+            model,
+            storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+            engine,
+            regionSplittingStrategy
+        };
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(
-            model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true), task->getRegion(), engine, direction,
-            storm::utility::zero<ValueType>(), !task->isMaxGapRelative(), monotonicitySettings, task->getBound().getInvertedBound(), regionSplittingStrategy);
+            settings, 
+            task->getRegion(), 
+            direction, 
+            storm::utility::zero<ValueType>(), 
+            !task->isMaxGapRelative(), 
+            task->getBound().getInvertedBound()
+        );
         watch.stop();
 
         printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
@@ -223,9 +234,20 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                          task->getRegion(), engine, direction, precision, !task->isMaxGapRelative(),
-                                                                          monotonicitySettings, std::nullopt, regionSplittingStrategy);
+                auto const& settings = storm::api::RefinementSettings<ValueType>{
+            model,
+            storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+            engine,
+            regionSplittingStrategy
+        };
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(
+            settings, 
+            task->getRegion(), 
+            direction, 
+            storm::utility::zero<ValueType>(), 
+            !task->isMaxGapRelative(), 
+            std::nullopt
+        );
         watch.stop();
 
         printFeasibilityResult(true, valueValuation, watch);
