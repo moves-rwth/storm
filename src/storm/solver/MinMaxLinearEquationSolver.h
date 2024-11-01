@@ -138,6 +138,11 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     std::vector<uint_fast64_t> const& getSchedulerChoices() const;
 
     /*!
+     * Retrieves the generated robust index into the scheduler. Note: it is only legal to call this function if a scheduler was generated.
+     */
+    std::vector<uint_fast64_t> const& getRobustSchedulerIndex() const;
+
+    /*!
      * Sets whether some of the generated data during solver calls should be cached.
      * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
      */
@@ -199,6 +204,9 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
 
     /// The scheduler choices that induce the optimal values (if they could be successfully generated).
     mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
+
+    /// For interval models, this index points into the schedulerChoices and is a state -> index map.
+    mutable boost::optional<std::vector<uint_fast64_t>> robustSchedulerIndex;
 
     /// A scheduler that can be used by solvers that require a valid initial scheduler.
     boost::optional<std::vector<uint_fast64_t>> initialScheduler;
