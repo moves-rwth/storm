@@ -32,7 +32,8 @@ RegionVerificationSettings::RegionVerificationSettings() : ModuleSettings(module
                         .build());
 
     std::vector<std::string> estimates = {"delta", "distance", "deltaweighted", "derivative"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, estimateMethodName, false, "Sets which estimate strategy is used for splitting regions (if splitting-stratgegy is estimate).")
+    this->addOption(storm::settings::OptionBuilder(moduleName, estimateMethodName, false,
+                                                   "Sets which estimate strategy is used for splitting regions (if splitting-stratgegy is estimate).")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the strategy to use.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(estimates))
                                          .setDefaultValueString("delta")

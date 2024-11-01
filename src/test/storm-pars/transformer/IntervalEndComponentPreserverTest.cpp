@@ -1,22 +1,7 @@
 #include <carl/formula/Constraint.h>
 #include <memory>
 #include <string>
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalFunctionForward.h"
-#include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/environment/Environment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
 #include "gtest/gtest.h"
-#include "storm/modelchecker/CheckTask.h"
-#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/models/sparse/Model.h"
-#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/bisimulation/BisimulationType.h"
-#include "storm/storage/prism/Program.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
@@ -28,10 +13,25 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Model.h"
+#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/bisimulation/BisimulationType.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/prism.h"
 #include "storm/utility/vector.h"
 #include "test/storm_gtest.h"
@@ -54,7 +54,9 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
 
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
     storm::storage::BitVector psiStates =
-        std::move(propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+        std::move(propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
+                      ->asExplicitQualitativeCheckResult()
+                      .getTruthValuesVector());
 
     std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());
     storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<storm::RationalFunction>());
@@ -62,12 +64,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     storm::storage::BitVector allTrue(model->getNumberOfStates(), true);
 
     // Lift parameters for region [0,1]
-    storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(
-        dtmc->getTransitionMatrix().filterEntries(~psiStates),
-        target,
-        allTrue,
-        allTrue
-    );
+    storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(dtmc->getTransitionMatrix().filterEntries(~psiStates), target,
+                                                                                               allTrue, allTrue);
 
     storm::storage::ParameterRegion<storm::RationalFunction> region = storm::api::createRegion<storm::RationalFunction>("0", *dtmc)[0];
 
@@ -109,7 +107,7 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
             ASSERT_NEAR(x1[i], x2[i], 1e-7);
         }
     }
-    
+
     // We can't check minimize because we don't know what is happening, and
     // also, minimizing solver1 is what we want to avoid
 }

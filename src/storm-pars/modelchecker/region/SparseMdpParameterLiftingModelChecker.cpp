@@ -296,7 +296,8 @@ storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantTy
 SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(bool quantitative) {
     if (!instantiationChecker) {
         instantiationChecker = std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-        instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound : this->currentCheckTask->template convertValueType<ParametricType>());
+        instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
+                                                          : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);
     }
     return *instantiationChecker;

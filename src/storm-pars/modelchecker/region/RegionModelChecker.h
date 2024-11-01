@@ -3,12 +3,12 @@
 #include <memory>
 #include <optional>
 
+#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/ModelBase.h"
@@ -41,7 +41,8 @@ class RegionModelChecker {
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                          std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true, bool graphPreserving = true) = 0;
+                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+                         bool graphPreserving = true) = 0;
 
     /*!
      * Analyzes the given region. Assumes that a property with a threshold was specified.

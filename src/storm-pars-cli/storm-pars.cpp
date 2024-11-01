@@ -255,7 +255,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
 
         if (mpi.applyBisimulation) {
             result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                        bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
+                                                                         bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
         }
         result.changed = true;
     }
@@ -356,13 +356,7 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
 
     auto splittingStrategy = modelchecker::RegionSplittingStrategy(splittingHeuristic, maxSplitsPerStep, estimateKind);
     storm::utility::Stopwatch watch(true);
-    auto const& settings = storm::api::RefinementSettings<ValueType>{
-        model,
-        *(property.getRawFormula()),
-        engine,
-        splittingStrategy,
-        monotonicitySettings
-    };
+    auto const& settings = storm::api::RefinementSettings<ValueType>{model, *(property.getRawFormula()), engine, splittingStrategy, monotonicitySettings};
     if (storm::api::verifyRegion<ValueType>(settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
@@ -410,7 +404,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
-    
+
     STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
@@ -431,14 +425,12 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         splittingStrategy,
         monotonicitySettings,
         discreteVariables,
-        true, // allow model simplification
+        true,  // allow model simplification
         graphPreserving,
-        false // preconditions not yet validated
+        false  // preconditions not yet validated
     };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
-        settings,
-        regions.front(),  refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
+        settings, regions.front(), refinementThreshold, optionalDepthLimit, storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 

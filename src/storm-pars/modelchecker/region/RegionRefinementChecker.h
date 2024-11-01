@@ -40,8 +40,8 @@ class RegionRefinementChecker {
 
     void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                  CheckTask<storm::logic::Formula, ParametricType> const& checkTask, RegionSplittingStrategy splittingStrategy = RegionSplittingStrategy(),
-                 std::set<VariableType> const& discreteVariables = {}, 
-                 std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true, bool graphPreserving = true);
+                 std::set<VariableType> const& discreteVariables = {}, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {},
+                 bool allowModelSimplifications = true, bool graphPreserving = true);
 
     /*!
      * Iteratively refines the region until the region analysis yields a conclusive result (AllSat or AllViolated).

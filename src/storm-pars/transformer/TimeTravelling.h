@@ -54,7 +54,7 @@ struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<
         if (it != container.first.end()) {
             return it->second;
         }
-        
+
         // std::cout << f << std::endl;
         uint64_t newIndex = container.second.size();
         container.first[f] = newIndex;
@@ -87,7 +87,6 @@ struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<
         return polynomial;
     }
 };
-
 
 template<typename Container>
 struct container_hash {
@@ -301,14 +300,14 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
                 }
 
                 RationalFunctionCoefficient newConstant = constant * utility::convertNumber<RationalFunctionCoefficient>(info[i]);
-    
+
                 std::vector<uint64_t> insert(info);
                 insert[i]--;
                 // Delete trailing zeroes from insert
                 while (!insert.empty() && insert.back() == 0) {
                     insert.pop_back();
                 }
-    
+
                 auto polynomial = polynomialCache->at(parameter).second.at(i);
                 auto derivative = polynomial.derivative();
                 if (derivative.isConstant()) {
@@ -427,8 +426,7 @@ class TimeTravelling {
         uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
         const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-        const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-        const std::map<UniPoly, Annotation>& storedAnnotations);
+        const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const std::map<UniPoly, Annotation>& storedAnnotations);
 
     /**
      * Find time-travelling on the given big-step paths, i.e., identify transitions that are linear to each other and put them into seperate states,

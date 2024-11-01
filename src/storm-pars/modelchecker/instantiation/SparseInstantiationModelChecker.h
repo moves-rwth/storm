@@ -25,7 +25,7 @@ class SparseInstantiationModelChecker {
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
-    
+
     virtual bool isProbabilistic(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
 
     // If set, it is assumed that all considered model instantiations have the same underlying graph structure.

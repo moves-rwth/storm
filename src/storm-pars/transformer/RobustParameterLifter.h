@@ -5,12 +5,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm/adapters/RationalFunctionForward.h"
-#include "storm/adapters/RationalNumberForward.h"
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"

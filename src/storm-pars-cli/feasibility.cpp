@@ -1,8 +1,8 @@
 #include "storm-pars-cli/feasibility.h"
 #include <optional>
 
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/api/verification.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -148,7 +148,7 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
 
     std::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>>
         startPoint;
-    
+
     std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
@@ -211,20 +211,10 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
-        auto const& settings = storm::api::RefinementSettings<ValueType>{
-            model,
-            storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-            engine,
-            regionSplittingStrategy
-        };
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(
-            settings, 
-            task->getRegion(), 
-            direction, 
-            storm::utility::zero<ValueType>(), 
-            !task->isMaxGapRelative(), 
-            task->getBound().getInvertedBound()
-        );
+        auto const& settings = storm::api::RefinementSettings<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                         engine, regionSplittingStrategy};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+                                                                          !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
         printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
@@ -234,20 +224,10 @@ void runFeasibilityWithPLA(std::shared_ptr<storm::models::sparse::Model<ValueTyp
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-                auto const& settings = storm::api::RefinementSettings<ValueType>{
-            model,
-            storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-            engine,
-            regionSplittingStrategy
-        };
-        auto valueValuation = storm::api::computeExtremalValue<ValueType>(
-            settings, 
-            task->getRegion(), 
-            direction, 
-            storm::utility::zero<ValueType>(), 
-            !task->isMaxGapRelative(), 
-            std::nullopt
-        );
+        auto const& settings = storm::api::RefinementSettings<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+                                                                         engine, regionSplittingStrategy};
+        auto valueValuation = storm::api::computeExtremalValue<ValueType>(settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
+                                                                          !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
 
         printFeasibilityResult(true, valueValuation, watch);

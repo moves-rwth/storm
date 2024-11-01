@@ -48,11 +48,10 @@ RationalFunction TimeTravelling::uniPolyToRationalFunction(UniPoly uniPoly) {
     return RationalFunction(multiNominator);
 }
 
-std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix,
-                                                               const uint64_t root,
-                                                               const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                                                               const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-                                                               const RationalFunctionVariable parameter) {
+std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(
+    const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix, const uint64_t root,
+    const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const RationalFunctionVariable parameter) {
     std::map<uint64_t, std::set<uint64_t>> subgraph;
     std::set<uint64_t> bottomStates;
 
@@ -255,7 +254,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
                 if (treeStates.at(parameter).at(state).size() > 1) {
                     bigStepParameters.emplace(parameter);
                     continue;
-                } 
+                }
                 // Sequential parameters
                 if (parametersInState.count(parameter)) {
                     for (auto const& treeState : treeStates[parameter][state]) {
@@ -274,7 +273,8 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         // Follow the treeStates and eliminate transitions
         for (auto const& parameter : bigStepParameters) {
             // Find the paths along which we eliminate the transitions into one transition along with their probabilities.
-            auto const [bottomAnnotations, visitedStatesAndSubtree] = bigStepBFS(state, parameter, flexibleMatrix, backwardsTransitions, treeStates, stateRewardVector, storedAnnotations);
+            auto const [bottomAnnotations, visitedStatesAndSubtree] =
+                bigStepBFS(state, parameter, flexibleMatrix, backwardsTransitions, treeStates, stateRewardVector, storedAnnotations);
             auto const [visitedStates, subtree] = visitedStatesAndSubtree;
 
             // Check the following:
@@ -423,12 +423,10 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 }
 
 std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::map<uint64_t, std::set<uint64_t>>>> TimeTravelling::bigStepBFS(
-    uint64_t start, const RationalFunctionVariable& parameter,
-    const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+    uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-    const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-    const std::map<UniPoly, Annotation>& storedAnnotations) {
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const std::map<UniPoly, Annotation>& storedAnnotations) {
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
     auto const [subtree, bottomStates] = findSubgraph(flexibleMatrix, start, treeStates, stateRewardVector, parameter);
 

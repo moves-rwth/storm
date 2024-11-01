@@ -168,7 +168,8 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                     }
                 }
             case Z3_OP_AGNUM:
-                return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), Z3_get_algebraic_number_lower(expr.ctx(), expr, 16)))));
+                return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(
+                    std::string(Z3_get_numeral_string(expr.ctx(), Z3_get_algebraic_number_lower(expr.ctx(), expr, 16)))));
             case Z3_OP_UNINTERPRETED:
                 // Currently, we only support uninterpreted constant functions.
                 STORM_LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException,

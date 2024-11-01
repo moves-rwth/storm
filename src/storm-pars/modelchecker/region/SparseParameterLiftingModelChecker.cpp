@@ -4,20 +4,20 @@
 #include <queue>
 #include <type_traits>
 
-#include "storm/adapters/RationalFunctionForward.h"
-#include "storm/solver/OptimizationDirection.h"
-#include "storm-pars/modelchecker/region/RegionResult.h"
-#include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
-#include "storm-pars/utility/ModelInstantiator.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
+#include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/OptimizationDirection.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
@@ -103,18 +103,19 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     }
 
     // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
-    if (hypothesis == RegionResultHypothesis::Unknown && (result == RegionResult::Unknown || result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined)) {
+    if (hypothesis == RegionResultHypothesis::Unknown &&
+        (result == RegionResult::Unknown || result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined)) {
         auto const center = region.region.getCenterPoint();
         if (getInstantiationChecker(false).isProbabilistic(center)) {
             result = getInstantiationChecker(false).check(env, center)->asExplicitQualitativeCheckResult()[getUniqueInitialState()]
-                        ? RegionResult::CenterSat
-                        : RegionResult::CenterViolated;
+                         ? RegionResult::CenterSat
+                         : RegionResult::CenterViolated;
         } else {
             auto const lowerCorner = region.region.getLowerBoundaries();
             if (getInstantiationChecker(false).isProbabilistic(lowerCorner)) {
                 result = getInstantiationChecker(false).check(env, lowerCorner)->asExplicitQualitativeCheckResult()[getUniqueInitialState()]
-                            ? RegionResult::ExistsSat
-                            : RegionResult::ExistsViolated;
+                             ? RegionResult::ExistsSat
+                             : RegionResult::ExistsViolated;
             } else {
                 result = RegionResult::CenterIllDefined;
             }
@@ -126,11 +127,12 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     {
         [[maybe_unused]] bool const existsViolated =
             (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated);
-        STORM_LOG_ASSERT(existsSat + existsViolated + existsIllDefined == 1, "Invalid state of region analysis.");  // At this point, exactly one of the three cases must be true
+        STORM_LOG_ASSERT(existsSat + existsViolated + existsIllDefined == 1,
+                         "Invalid state of region analysis.");  // At this point, exactly one of the three cases must be true
     }
     auto const dirForSat =
         isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::OptimizationDirection::Minimize : storm::OptimizationDirection::Maximize;
-    
+
     std::vector<storm::OptimizationDirection> dirsToCheck;
     if (existsSat) {
         dirsToCheck = {dirForSat};
@@ -151,15 +153,15 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
             if (existsSat == monCheckResult) {
                 result = existsSat ? RegionResult::AllSat : RegionResult::AllViolated;
                 STORM_LOG_INFO("Region " << region.region << " is " << result << ", discovered with instantiation checker on " << valuation
-                                        << " and help of monotonicity\n");
+                                         << " and help of monotonicity\n");
                 region.resultKnownThroughMonotonicity = true;
             } else if (result == RegionResult::ExistsSat || result == RegionResult::CenterSat || result == RegionResult::ExistsViolated ||
-                    result == RegionResult::CenterViolated) {
+                       result == RegionResult::CenterViolated) {
                 // We found a satisfying and a violating point
                 result = RegionResult::ExistsBoth;
             } else {
                 STORM_LOG_ASSERT(result == RegionResult::Unknown,
-                                "This case should only be reached if the initial region result is unknown, but it is " << result << ".");
+                                 "This case should only be reached if the initial region result is unknown, but it is " << result << ".");
                 result = monCheckResult ? RegionResult::ExistsSat : RegionResult::ExistsViolated;
                 if (sampleVerticesOfRegion) {
                     result = sampleVertices(env, region.region, result);

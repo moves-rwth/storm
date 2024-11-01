@@ -17,7 +17,13 @@
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"
 
+#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -26,17 +32,11 @@
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm-pars/storage/ParameterRegion.h"
-#include "storm-pars/transformer/TimeTravelling.h"
-#include "storm-pars/utility/parametric.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/utility/vector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
 
@@ -49,7 +49,8 @@ template<typename ParametricType, typename ConstantType>
 RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix,
                                                                            std::vector<ParametricType> const& pVector,
                                                                            storm::storage::BitVector const& selectedRows,
-                                                                           storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
+                                                                           storm::storage::BitVector const& selectedColumns, bool generateRowLabels,
+                                                                           bool useMonotonicity) {
     STORM_LOG_WARN_COND(useMonotonicity, "Cannot use graph monotonicity in robust mode.");
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
@@ -123,8 +124,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
             auto valuation = RobustAbstractValuation(transition);
             vector.push_back(Interval());
             Interval& placeholder = functionValuationCollector.add(valuation);
-            vectorAssignment.push_back(
-                std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
+            vectorAssignment.push_back(std::pair<typename std::vector<Interval>::iterator, Interval&>(typename std::vector<Interval>::iterator(), placeholder));
             for (auto const& var : valuation.getParameters()) {
                 occuringStatesAtVariable[var].insert(i);
                 occurringVariablesAtState[i].emplace(var);
@@ -132,7 +132,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
         }
         pVectorEntryCount++;
     }
-
 
     matrix = builder.build();
     vector.shrink_to_fit();
@@ -201,8 +200,7 @@ RobustParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable
 template<typename ParametricType, typename ConstantType>
 std::optional<std::set<typename storm::utility::parametric::CoefficientType<ParametricType>::type>>
 RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::zeroesSMT(
-    RationalFunction function,
-    typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
+    RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
     utility::solver::Z3SmtSolverFactory factory;
@@ -659,12 +657,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 for (uint64_t i = 0; i < regionsAndBounds.size(); i++) {
                     auto const& [region, bound] = regionsAndBounds[i];
                     STORM_LOG_ASSERT(
-                        i==0?true:(
-                            !(
-                                region.upper() < regionsAndBounds[i - 1].first.lower() ||
-                                region.lower() > regionsAndBounds[i - 1].first.upper()
-                            )
-                        ), "regions next to each other need to intersect");
+                        i == 0 ? true : (!(region.upper() < regionsAndBounds[i - 1].first.lower() || region.lower() > regionsAndBounds[i - 1].first.upper())),
+                        "regions next to each other need to intersect");
                     if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
                         if (regionsInPLARegion.empty()) {
                             continue;
@@ -679,7 +673,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 }
 
                 // TODO make this configurable
-                uint64_t regionsRefine = std::max((uint64_t) 10, annotation.maxDegree());
+                uint64_t regionsRefine = std::max((uint64_t)10, annotation.maxDegree());
                 refine = regionsInPLARegion.size() < regionsRefine;
 
                 if (refine) {

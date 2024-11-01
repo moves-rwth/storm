@@ -1,12 +1,12 @@
 
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
+#include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm-pars/utility/parametric.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -18,7 +18,7 @@ IntervalEndComponentPreserver::IntervalEndComponentPreserver() {
 }
 
 std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::eliminateMECs(storm::storage::SparseMatrix<Interval> const& originalMatrix,
-                                                      std::vector<Interval> const& originalVector) {
+                                                                                            std::vector<Interval> const& originalVector) {
     storage::RobustMaximalEndComponentDecomposition<Interval> decomposition(originalMatrix, originalMatrix.transpose(), originalVector);
 
     bool hasNonTrivialMEC = false;
@@ -32,7 +32,7 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
             // std::cout << std::endl;
         }
     }
-    
+
     if (!hasNonTrivialMEC) {
         return std::nullopt;
     }
@@ -82,5 +82,5 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
     return builder.build();
 }
 
-}
-}
+}  // namespace transformer
+}  // namespace storm

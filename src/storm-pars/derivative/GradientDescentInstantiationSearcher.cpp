@@ -40,8 +40,10 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::d
     if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
         // Project gradient
         ConstantType newPlainPosition = oldPosAsConstant + precisionAsConstant * gradient.at(steppingParameter);
-        auto const lower = region ? utility::convertNumber<ConstantType>(region->getLowerBoundary(steppingParameter)) : utility::zero<ConstantType>() + precisionAsConstant;
-        auto const upper = region ? utility::convertNumber<ConstantType>(region->getUpperBoundary(steppingParameter)) : utility::one<ConstantType>() - precisionAsConstant;
+        auto const lower =
+            region ? utility::convertNumber<ConstantType>(region->getLowerBoundary(steppingParameter)) : utility::zero<ConstantType>() + precisionAsConstant;
+        auto const upper =
+            region ? utility::convertNumber<ConstantType>(region->getUpperBoundary(steppingParameter)) : utility::one<ConstantType>() - precisionAsConstant;
         if (newPlainPosition < lower || newPlainPosition > upper) {
             projectedGradient = 0;
         } else {

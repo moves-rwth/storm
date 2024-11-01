@@ -37,9 +37,8 @@ RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
 
     this->addOption(storm::settings::OptionBuilder(moduleName, discreteVariablesName, false,
                                                    "Comma-seperated list of variables that are discrete and will be split to the region edges.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
-                                         "discretevars", "The variables in the format p1,p2,p3.")
-                                        .setDefaultValueString("")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("discretevars", "The variables in the format p1,p2,p3.")
+                                         .setDefaultValueString("")
                                          .build())
                         .build());
 }

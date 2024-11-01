@@ -33,10 +33,9 @@ bool RegionRefinementChecker<ParametricType>::canHandle(std::shared_ptr<storm::m
 template<typename ParametricType>
 void RegionRefinementChecker<ParametricType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                      RegionSplittingStrategy splittingStrategy,
-                                                      std::set<VariableType> const& discreteVariables,
-                                                      std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                      bool allowModelSimplifications, bool graphPreserving) {
+                                                      RegionSplittingStrategy splittingStrategy, std::set<VariableType> const& discreteVariables,
+                                                      std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend, bool allowModelSimplifications,
+                                                      bool graphPreserving) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
     this->discreteVariables = std::move(discreteVariables);
@@ -57,7 +56,8 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
         regionSplittingStrategy.estimateKind = std::nullopt;  // do not compute estimates
     }
 
-    regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications, graphPreserving);
+    regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications,
+                           graphPreserving);
 }
 
 template<typename T>
@@ -202,8 +202,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 template<typename ParametricType>
 std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
 RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                              storm::solver::OptimizationDirection const& dir,
-                                                              ParametricType const& precision,
+                                                              storm::solver::OptimizationDirection const& dir, ParametricType const& precision,
                                                               bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
     auto progress = PartitioningProgress<CoefficientType>(region.area());
 

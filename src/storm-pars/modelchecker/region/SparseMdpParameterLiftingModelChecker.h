@@ -33,7 +33,8 @@ class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModel
     virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                          std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true, bool graphPreserving = true) override;
+                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+                         bool graphPreserving = true) override;
 
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
     std::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();

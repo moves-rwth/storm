@@ -10,12 +10,12 @@
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
-#include "storm/storage/BitVector.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
+#include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"  // TODO
-#include "storm/utility/constants.h"
 
 namespace storm {
 class Environment;
@@ -360,11 +360,10 @@ class ValueIterationOperator {
                 return result;
             }
         }
-        STORM_LOG_ASSERT(
-            storm::utility::isAlmostZero(remainingValue) ||
-            // sad states allowed (they're having a bummer summer)
-            (storm::utility::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
-            "Remaining value should be zero (all prob mass taken) or it should be a sad state, but is " << remainingValue);
+        STORM_LOG_ASSERT(storm::utility::isAlmostZero(remainingValue) ||
+                             // sad states allowed (they're having a bummer summer)
+                             (storm::utility::isOne(remainingValue) && applyCache.robustOrder.size() == 0),
+                         "Remaining value should be zero (all prob mass taken) or it should be a sad state, but is " << remainingValue);
         return result;
     }
 

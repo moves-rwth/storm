@@ -1,8 +1,8 @@
 #pragma once
 
 #include <variant>
-#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/MultiplicationStyle.h"
+#include "storm/solver/OptimizationDirection.h"
 
 #include "storm/utility/NumberTraits.h"
 

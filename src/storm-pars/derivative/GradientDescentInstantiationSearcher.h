@@ -51,8 +51,7 @@ class GradientDescentInstantiationSearcher {
             std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>>
             startPoint = std::nullopt,
         GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
-        std::optional<storage::ParameterRegion<FunctionType>> region = std::nullopt,
-        bool recordRun = false)
+        std::optional<storage::ParameterRegion<FunctionType>> region = std::nullopt, bool recordRun = false)
         : model(model),
           derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model)),
           instantiationModelChecker(
@@ -63,7 +62,9 @@ class GradientDescentInstantiationSearcher {
           constraintMethod(constraintMethod),
           region(region),
           recordRun(recordRun) {
-        STORM_LOG_ERROR_COND(region == std::nullopt || (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT), "Specifying a region is only supported if you are constraining by projection.");
+        STORM_LOG_ERROR_COND(region == std::nullopt || (constraintMethod == GradientDescentConstraintMethod::PROJECT ||
+                                                        constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT),
+                             "Specifying a region is only supported if you are constraining by projection.");
         // TODO should we put this in subclasses?
         switch (method) {
             case GradientDescentMethod::ADAM: {

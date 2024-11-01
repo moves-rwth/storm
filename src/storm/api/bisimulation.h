@@ -28,13 +28,12 @@ std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(st
     // If we cannot use formula-based decomposition because of
     // non-graph-preserving regions but there are reward models, we need to
     // preserve those
-    if (!graphPreserving && std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) {
-            return formula->getReferencedRewardModels().size() > 0;
-        })) {
+    if (!graphPreserving &&
+        std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) { return formula->getReferencedRewardModels().size() > 0; })) {
         options.setKeepRewards(true);
     }
     options.setType(type);
-    
+
     storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
     bisimulationDecomposition.computeBisimulationDecomposition();
     return bisimulationDecomposition.getQuotient();
@@ -51,9 +50,8 @@ std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization
     // If we cannot use formula-based decomposition because of
     // non-graph-preserving regions but there are reward models, we need to
     // preserve those
-    if (!graphPreserving && std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) {
-            return formula->getReferencedRewardModels().size() > 0;
-        })) {
+    if (!graphPreserving &&
+        std::any_of(formulas.begin(), formulas.end(), [](auto const& formula) { return formula->getReferencedRewardModels().size() > 0; })) {
         options.setKeepRewards(true);
     }
     options.setType(type);

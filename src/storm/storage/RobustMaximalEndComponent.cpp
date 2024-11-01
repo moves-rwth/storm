@@ -1,8 +1,8 @@
 #include "storm/storage/RobustMaximalEndComponent.h"
-#include "storm/storage/BoostTypes.h"
-#include "storm/storage/sparse/StateType.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/BoostTypes.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace storage {

@@ -175,7 +175,7 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
         } else {
             // HACK to get regions with zero area to work correctly
             // This area represents half of the area of the region
-            result *= utility::convertNumber<CoefficientType>(RationalNumber(1,2));
+            result *= utility::convertNumber<CoefficientType>(RationalNumber(1, 2));
         }
     }
     return result;
@@ -210,7 +210,7 @@ void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std
             vertexVariables.erase(var);
         }
     }
-    
+
     auto vertices = getVerticesOfRegion(vertexVariables);
 
     for (auto const& vertex : vertices) {

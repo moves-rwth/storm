@@ -2,10 +2,10 @@
 
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/BoostTypes.h"
-#include "storm/storage/StronglyConnectedComponent.h"
-#include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/RobustMaximalEndComponent.h"
+#include "storm/storage/StronglyConnectedComponent.h"
+#include "storm/storage/sparse/StateType.h"
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::storage {
@@ -36,8 +36,7 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      * @param backwardTransition The reversed transition relation.
      */
     RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                     std::vector<ValueType> const& vector);
+                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& vector);
 
     /*
      * Creates an MEC decomposition of the given subsystem of given model (represented by a row-grouped matrix).
@@ -48,9 +47,8 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      * @param states The states of the subsystem to decompose.
      */
     RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                     std::vector<ValueType> const& vector,
-                                     storm::storage::BitVector const& states);
+                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& vector,
+                                           storm::storage::BitVector const& states);
 
     /*!
      * Creates an MEC decomposition of the given subsystem in the given model.
@@ -107,8 +105,8 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      *
      */
     void performRobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                 storm::OptionalRef<std::vector<ValueType> const> vector = storm::NullRef,
-                                                 storm::OptionalRef<storm::storage::BitVector const> states = storm::NullRef);
+                                                       storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                       storm::OptionalRef<std::vector<ValueType> const> vector = storm::NullRef,
+                                                       storm::OptionalRef<storm::storage::BitVector const> states = storm::NullRef);
 };
 }  // namespace storm::storage

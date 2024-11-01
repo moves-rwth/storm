@@ -22,8 +22,8 @@ namespace transformer {
 
 class IntervalEndComponentPreserver {
    public:
-      IntervalEndComponentPreserver();
-      std::optional<storage::SparseMatrix<Interval>> eliminateMECs(storm::storage::SparseMatrix<Interval> const& matrix, std::vector<Interval> const& vector);
+    IntervalEndComponentPreserver();
+    std::optional<storage::SparseMatrix<Interval>> eliminateMECs(storm::storage::SparseMatrix<Interval> const& matrix, std::vector<Interval> const& vector);
 };
 }  // namespace transformer
 }  // namespace storm

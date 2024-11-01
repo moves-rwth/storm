@@ -21,25 +21,18 @@ template<typename ParametricType, typename ConstantType>
 class OrderBasedMonotonicityBackend;
 
 template<typename ConstantType, bool Robust>
-using SolverFactoryType = std::conditional_t<Robust,
-        storm::solver::MinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
-        storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>
-    >;
+using SolverFactoryType = std::conditional_t<Robust, storm::solver::MinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
+                                             storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>;
 
 template<typename ConstantType, bool Robust>
-using GeneralSolverFactoryType = std::conditional_t<Robust,
-        storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
-        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>
-    >;
+using GeneralSolverFactoryType = std::conditional_t<Robust, storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, ConstantType>,
+                                                    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ConstantType>>;
 
 template<typename ParametricType, typename ConstantType, bool Robust>
-using ParameterLifterType =
-    std::conditional_t<Robust,
-        storm::transformer::RobustParameterLifter<ParametricType, ConstantType>,
-        storm::transformer::ParameterLifter<ParametricType, ConstantType>
-    >;
+using ParameterLifterType = std::conditional_t<Robust, storm::transformer::RobustParameterLifter<ParametricType, ConstantType>,
+                                               storm::transformer::ParameterLifter<ParametricType, ConstantType>>;
 
-template<typename SparseModelType, typename ConstantType, bool Robust=false>
+template<typename SparseModelType, typename ConstantType, bool Robust = false>
 class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
    public:
     using ParametricType = typename SparseModelType::ValueType;
@@ -84,7 +77,8 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual std::vector<ConstantType> computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
                                                                 storm::solver::OptimizationDirection const& dirForParameters) override;
 
-    void computeStateValueDeltaRegionSplitEstimates(Environment const& env, std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
+    void computeStateValueDeltaRegionSplitEstimates(Environment const& env, std::vector<ConstantType> const& quantitativeResult,
+                                                    std::vector<uint64_t> const& schedulerChoices,
                                                     storm::storage::ParameterRegion<ParametricType> const& region,
                                                     storm::solver::OptimizationDirection const& dirForParameters);
 
@@ -103,7 +97,7 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     storm::storage::BitVector maybeStates;
     std::vector<ConstantType> resultsForNonMaybeStates;
     std::optional<uint64_t> stepBound;
-    
+
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
     std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerVIO;

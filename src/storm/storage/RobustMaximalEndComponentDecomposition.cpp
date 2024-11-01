@@ -2,17 +2,17 @@
 #include <numeric>
 #include <queue>
 
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/StronglyConnectedComponent.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/utility/graph.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace storage {
@@ -31,48 +31,49 @@ RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDeco
 
 template<typename ValueType>
 RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                              std::vector<ValueType> const& vector) {
+                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                          std::vector<ValueType> const& vector) {
     performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, vector);
 }
 
 template<typename ValueType>
 RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                              std::vector<ValueType> const& vector,
-                                                                              storm::storage::BitVector const& states) {
+                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                          std::vector<ValueType> const& vector,
+                                                                                          storm::storage::BitVector const& states) {
     performRobustMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, vector, states);
 }
 
 template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(RobustMaximalEndComponentDecomposition const& other) : Decomposition(other) {
+RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(RobustMaximalEndComponentDecomposition const& other)
+    : Decomposition(other) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>& RobustMaximalEndComponentDecomposition<ValueType>::operator=(RobustMaximalEndComponentDecomposition const& other) {
+RobustMaximalEndComponentDecomposition<ValueType>& RobustMaximalEndComponentDecomposition<ValueType>::operator=(
+    RobustMaximalEndComponentDecomposition const& other) {
     Decomposition::operator=(other);
     return *this;
 }
 
 template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(RobustMaximalEndComponentDecomposition&& other) : Decomposition(std::move(other)) {
+RobustMaximalEndComponentDecomposition<ValueType>::RobustMaximalEndComponentDecomposition(RobustMaximalEndComponentDecomposition&& other)
+    : Decomposition(std::move(other)) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-RobustMaximalEndComponentDecomposition<ValueType>& RobustMaximalEndComponentDecomposition<ValueType>::operator=(RobustMaximalEndComponentDecomposition&& other) {
+RobustMaximalEndComponentDecomposition<ValueType>& RobustMaximalEndComponentDecomposition<ValueType>::operator=(
+    RobustMaximalEndComponentDecomposition&& other) {
     Decomposition::operator=(std::move(other));
     return *this;
 }
 
 template<typename ValueType>
-void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                          storm::OptionalRef<std::vector<ValueType> const> vector,
-                                                                                          storm::OptionalRef<storm::storage::BitVector const> states) {
-    
-
+void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndComponentDecomposition(
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+    storm::OptionalRef<std::vector<ValueType> const> vector, storm::OptionalRef<storm::storage::BitVector const> states) {
     // Adapted from Haddad-Monmege Algorithm 3
     storm::storage::BitVector remainingEcCandidates;
     SccDecompositionResult sccDecRes;
@@ -144,7 +145,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
             this->blocks.emplace_back(std::move(newMec));
         }
 
-
         // Populate the transitions that stay inside the EC (sort of Haddad-Monmege line 10-11)
         for (auto sccIndex : nonTrivSccIndices) {
             for (uint64_t state = 0; state < transitionMatrix.getRowCount(); state++) {
@@ -169,7 +169,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                 }
             }
         }
-        
 
         if (nonTrivSccIndices == ecSccIndices) {
             // All non trivial SCCs are MECs, nothing left to do!
@@ -197,7 +196,8 @@ std::vector<uint64_t> RobustMaximalEndComponentDecomposition<ValueType>::compute
 
 // Explicitly instantiate the MEC decomposition.
 template class RobustMaximalEndComponentDecomposition<Interval>;
-template RobustMaximalEndComponentDecomposition<Interval>::RobustMaximalEndComponentDecomposition(storm::models::sparse::DeterministicModel<Interval> const& model);
+template RobustMaximalEndComponentDecomposition<Interval>::RobustMaximalEndComponentDecomposition(
+    storm::models::sparse::DeterministicModel<Interval> const& model);
 
 }  // namespace storage
 }  // namespace storm

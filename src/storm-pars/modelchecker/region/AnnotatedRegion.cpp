@@ -44,7 +44,8 @@ void AnnotatedRegion<ParametricType>::splitAndPropagate(typename Region::Valuati
 }
 
 template<typename ParametricType>
-void AnnotatedRegion<ParametricType>::splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, std::set<VariableType> const& discreteVariables, bool allowDeleteAnnotationsOfThis) {
+void AnnotatedRegion<ParametricType>::splitLeafNodeAtCenter(std::set<VariableType> const& splittingVariables, std::set<VariableType> const& discreteVariables,
+                                                            bool allowDeleteAnnotationsOfThis) {
     STORM_LOG_ASSERT(subRegions.empty(), "Region assumed to be a leaf.");
     splitAndPropagate(region.getCenterPoint(), splittingVariables, discreteVariables, allowDeleteAnnotationsOfThis);
 }
