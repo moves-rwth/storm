@@ -3,6 +3,8 @@
 #include <optional>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm::solver::helper {
@@ -44,13 +46,33 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
             matrixColumns.back() = StartOfRowGroupIndicator;  // This is the start of the next row group
         }
     } else {
-        matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
-        for (auto rowIndex : indexRange<Backward>(0, numRows)) {
-            for (auto const& entry : matrix.getRow(rowIndex)) {
-                matrixValues.push_back(entry.getValue());
-                matrixColumns.push_back(entry.getColumn());
+        if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+            applyCache.hasOnlyConstants.clear();
+            applyCache.hasOnlyConstants.grow(matrix.getRowCount());
+            // TODO Implement hasTwoSuccessors
+            // applyCache.hasTwoSuccessors.clear();
+            // applyCache.hasTwoSuccessors.grow(matrix.getRowCount());
+            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
+            for (auto rowIndex : indexRange<Backward>(0, numRows)) {
+                bool hasOnlyConstants = true;
+                for (auto const& entry : matrix.getRow(rowIndex)) {
+                    ValueType value = entry.getValue();
+                    hasOnlyConstants &= value.upper() == value.lower();
+                    matrixValues.push_back(value);
+                    matrixColumns.push_back(entry.getColumn());
+                }
+                applyCache.hasOnlyConstants.set(rowIndex, hasOnlyConstants);
+                matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
             }
-            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
+        } else {
+            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
+            for (auto rowIndex : indexRange<Backward>(0, numRows)) {
+                for (auto const& entry : matrix.getRow(rowIndex)) {
+                    matrixValues.push_back(entry.getValue());
+                    matrixColumns.push_back(entry.getColumn());
+                }
+                matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
+            }
         }
     }
 }
