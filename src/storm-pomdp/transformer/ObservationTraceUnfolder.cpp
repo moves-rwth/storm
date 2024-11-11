@@ -5,7 +5,6 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/ConstantsComparator.h"
 
-
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 
 namespace storm {
@@ -50,20 +49,21 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     svbuilder.addVariable(svvar);
     svbuilder.addVariable(tsvar);
 
-    // TODO: Do we need this as ordered maps? Is it better to make them unordered?
-    std::map<uint64_t, uint64_t> unfoldedToOld;
-    std::map<uint64_t, uint64_t> unfoldedToOldNextStep;
-    std::map<uint64_t, uint64_t> oldToUnfolded;
+    std::unordered_map<uint64_t, uint64_t> unfoldedToOld;
+    std::unordered_map<uint64_t, uint64_t> unfoldedToOldNextStep;
+    std::unordered_map<uint64_t, uint64_t> oldToUnfolded;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "start buildiing matrix...\n";
 #endif
 
     uint64_t newStateIndex = 0;
-    // TODO do not add violated state if we do rejection sampling.
     uint64_t violatedState = newStateIndex;
-    ++newStateIndex;
-    // Add this initial state state:
+    if (!options.rejectionSampling) {
+        // The violated state is only used if we do no use the rejection semantics.
+        ++newStateIndex;
+    }
+    // Add this initial state:
     uint64_t initialState = newStateIndex;
     ++newStateIndex;
 
@@ -73,10 +73,12 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, true, true);
 
     // TODO only add this state if it is actually reachable / rejection sampling
-    // the violated state is a sink state
-    transitionMatrixBuilder.newRowGroup(violatedState);
-    transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
-    svbuilder.addState(violatedState, {}, {-1, -1});
+    if (!options.rejectionSampling) {
+        // the violated state (only used when no rejection sampling) is a sink state
+        transitionMatrixBuilder.newRowGroup(violatedState);
+        transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
+        svbuilder.addState(violatedState, {}, {-1, -1});
+    }
 
     // Now we are starting to build the MDP from the initial state onwards.
     uint64_t newRowGroupStart = initialState;
@@ -187,14 +189,14 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << components.transitionMatrix << '\n';
 #endif
-    STORM_LOG_ASSERT(components.transitionMatrix.getRowGroupCount() == targetState + 2,
-                     "Expect row group count (" << components.transitionMatrix.getRowGroupCount() << ") one more as target state index " << targetState << ")");
 
     storm::models::sparse::StateLabeling labeling(components.transitionMatrix.getRowGroupCount());
     labeling.addLabel("_goal");
     labeling.addLabelToState("_goal", targetState);
-    labeling.addLabel("_violated");
-    labeling.addLabelToState("_violated", violatedState);
+    if (!options.rejectionSampling) {
+        labeling.addLabel("_violated");
+        labeling.addLabelToState("_violated", violatedState);
+    }
     labeling.addLabel("_end");
     labeling.addLabelToState("_end", sinkState);
     labeling.addLabelToState("_end", targetState);
@@ -206,8 +208,8 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<ValueType>::extend(uint32_t observation) {
-    traceSoFar.push_back(observation);
+std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<ValueType>::extend(std::vector<uint32_t> const& observations) {
+    traceSoFar.insert(traceSoFar.end(), observations.begin(), observations.end());
     return transform(traceSoFar);
 }
 
@@ -224,5 +226,6 @@ bool ObservationTraceUnfolder<ValueType>::isRejectionSamplingSet() const {
 template class ObservationTraceUnfolder<double>;
 template class ObservationTraceUnfolder<storm::RationalNumber>;
 template class ObservationTraceUnfolder<storm::RationalFunction>;
+template class ObservationTraceUnfolder<storm::Interval>;
 }  // namespace pomdp
 }  // namespace storm

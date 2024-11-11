@@ -35,7 +35,7 @@ class ObservationTraceUnfolder {
      * @param observation
      * @return
      */
-    std::shared_ptr<storm::models::sparse::Mdp<ValueType>> extend(uint32_t observation);
+    std::shared_ptr<storm::models::sparse::Mdp<ValueType>> extend(std::vector<uint32_t> const& observations);
     /**
      * When using the incremental approach, reset the observations made so far.
      * @param observation The new initial observation
