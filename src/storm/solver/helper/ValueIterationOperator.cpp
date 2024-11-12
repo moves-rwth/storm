@@ -2,7 +2,6 @@
 
 #include <optional>
 
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -31,6 +30,13 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
     matrixColumns.clear();
     matrixValues.reserve(matrix.getNonzeroEntryCount());
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
+    
+    // hasOnlyConstants is only used for Interval matrices, currently only populated for iMCs
+    if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+        applyCache.hasOnlyConstants.clear();
+        applyCache.hasOnlyConstants.grow(matrix.getRowCount());
+    }
+
     if constexpr (!TrivialRowGrouping) {
         matrixColumns.push_back(StartOfRowGroupIndicator);  // indicate start of first row(group)
         for (auto groupIndex : indexRange<Backward>(0, this->rowGroupIndices->size() - 1)) {
@@ -47,11 +53,6 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
         }
     } else {
         if constexpr (std::is_same<ValueType, storm::Interval>::value) {
-            applyCache.hasOnlyConstants.clear();
-            applyCache.hasOnlyConstants.grow(matrix.getRowCount());
-            // TODO Implement hasTwoSuccessors
-            // applyCache.hasTwoSuccessors.clear();
-            // applyCache.hasTwoSuccessors.grow(matrix.getRowCount());
             matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
             for (auto rowIndex : indexRange<Backward>(0, numRows)) {
                 bool hasOnlyConstants = true;

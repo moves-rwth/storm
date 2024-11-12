@@ -326,9 +326,6 @@ class ValueIterationOperator {
             return result;
         }
 
-        // TODO I think this is a problem if we have probabilities and a state that is going to the vector, we don't count that
-        // Currently "fixed in preprocessing"
-        // It's different for rewards (same problem somewhere else, search for word "octopus" in codebase)
         SolutionType remainingValue{storm::utility::one<SolutionType>()};
         uint64_t orderCounter = 0;
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
@@ -460,7 +457,6 @@ class ValueIterationOperator {
     struct ApplyCache<storm::Interval, Dummy> {
         mutable std::vector<std::pair<SolutionType, std::pair<SolutionType, uint64_t>>> robustOrder;
         storage::BitVector hasOnlyConstants;
-        storage::BitVector hasTwoSuccessors;
     };
 
     /*!

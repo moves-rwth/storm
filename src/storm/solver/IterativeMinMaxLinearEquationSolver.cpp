@@ -1,6 +1,8 @@
 #include <functional>
 #include <limits>
+#include <type_traits>
 
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
@@ -116,9 +118,14 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSolve
 
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperator() const {
-    if (!viOperator) {
-        viOperator = std::make_shared<helper::ValueIterationOperator<ValueType, std::is_same_v<ValueType, storm::Interval>, SolutionType>>();
-        viOperator->setMatrixBackwards(*this->A);
+    if (!viOperatorTriv && !viOperatorNontriv) {
+        if (this->A->hasTrivialRowGrouping()) {
+            viOperatorTriv = std::make_shared<helper::ValueIterationOperator<ValueType, true, SolutionType>>();
+            viOperatorTriv->setMatrixBackwards(*this->A);
+        } else {
+            viOperatorNontriv = std::make_shared<helper::ValueIterationOperator<ValueType, false, SolutionType>>();
+            viOperatorNontriv->setMatrixBackwards(*this->A);
+        }
     }
     if (this->choiceFixedForRowGroup) {
         // Ignore those rows that are not selected
@@ -126,14 +133,18 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
         auto callback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
             return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
         };
-        viOperator->setIgnoredRows(true, callback);
+        if (viOperatorTriv) {
+            viOperatorTriv->setIgnoredRows(true, callback);
+        } else if (viOperatorNontriv) {
+            viOperatorNontriv->setIgnoredRows(true, callback);
+        }
     }
 }
 
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b,
                                                                                     OptimizationDirection const& dir, bool updateX, bool robust) const {
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+    if (std::is_same_v<ValueType, storm::Interval> && this->A->hasTrivialRowGrouping()) {
         // Create robust scheduler index if it doesn't exist yet
         if (!this->robustSchedulerIndex) {
             this->robustSchedulerIndex = std::vector<uint64_t>(x.size(), 0);
@@ -161,12 +172,21 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractSchedu
     }
 
     // Set the correct choices.
-    STORM_LOG_WARN_COND(viOperator, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
-    if (!viOperator) {
+    STORM_LOG_WARN_COND(!viOperatorTriv && !viOperatorNontriv, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
+    if (!viOperatorTriv && !viOperatorNontriv) {
         setUpViOperator();
     }
-    storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, std::is_same_v<ValueType, storm::Interval>> schedHelper(viOperator);
-    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
+    if (viOperatorTriv) {
+        if constexpr (std::is_same<ValueType, storm::Interval>() && std::is_same<SolutionType, double>()) {
+            storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, true> schedHelper(viOperatorTriv);
+            schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
+        } else {
+            STORM_LOG_ERROR("SchedulerTrackingHelper not implemented for this setting (trivial row grouping but not Interval->double).");
+        }
+    } else if (viOperatorNontriv) {
+        storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, false> schedHelper(viOperatorNontriv);
+        schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
+    }
 }
 
 template<typename ValueType, typename SolutionType>
@@ -525,7 +545,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         setUpViOperator();
 
-        helper::OptimisticValueIterationHelper<ValueType, false> oviHelper(viOperator);
+        helper::OptimisticValueIterationHelper<ValueType, false> oviHelper(viOperatorNontriv);
         auto prec = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
         std::optional<ValueType> lowerBound, upperBound;
         if (this->hasLowerBound()) {
@@ -619,28 +639,56 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
     }
 
-    storm::solver::helper::ValueIterationHelper<ValueType, std::is_same_v<ValueType, storm::Interval>, SolutionType> viHelper(viOperator);
-    uint64_t numIterations{0};
-    auto viCallback = [&](SolverStatus const& current) {
-        this->showProgressIterative(numIterations);
-        return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
-    };
-    this->startMeasureProgress();
-    auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
-                              storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                              env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
-    this->reportStatus(status, numIterations);
+    // This code duplication is necessary because the helper class is different for the two cases.
+    if (this->A->hasTrivialRowGrouping()) {
+        storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
-    // If requested, we store the scheduler for retrieval.
-    if (this->isTrackSchedulerSet()) {
-        this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+        uint64_t numIterations{0};
+        auto viCallback = [&](SolverStatus const& current) {
+            this->showProgressIterative(numIterations);
+            return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
+        };
+        this->startMeasureProgress();
+        auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
+                                storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
+                                env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+        this->reportStatus(status, numIterations);
+
+        // If requested, we store the scheduler for retrieval.
+        if (this->isTrackSchedulerSet()) {
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+        }
+
+        if (!this->isCachingEnabled()) {
+            clearCache();
+        }
+
+        return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
+    } else {
+        storm::solver::helper::ValueIterationHelper<ValueType, false, SolutionType> viHelper(viOperatorNontriv);
+
+        uint64_t numIterations{0};
+        auto viCallback = [&](SolverStatus const& current) {
+            this->showProgressIterative(numIterations);
+            return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
+        };
+        this->startMeasureProgress();
+        auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
+                                storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
+                                env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+        this->reportStatus(status, numIterations);
+
+        // If requested, we store the scheduler for retrieval.
+        if (this->isTrackSchedulerSet()) {
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+        }
+
+        if (!this->isCachingEnabled()) {
+            clearCache();
+        }
+
+        return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
     }
-
-    if (!this->isCachingEnabled()) {
-        clearCache();
-    }
-
-    return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
 }
 
 template<typename ValueType, typename SolutionType>
@@ -663,7 +711,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return false;
     } else {
         setUpViOperator();
-        helper::IntervalIterationHelper<ValueType, false> iiHelper(viOperator);
+        helper::IntervalIterationHelper<ValueType, false> iiHelper(viOperatorNontriv);
         auto prec = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
         auto lowerBoundsCallback = [&](std::vector<SolutionType>& vector) { this->createLowerBoundsVector(vector); };
         auto upperBoundsCallback = [&](std::vector<SolutionType>& vector) { this->createUpperBoundsVector(vector); };
@@ -727,7 +775,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                       numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
         this->startMeasureProgress();
-        helper::SoundValueIterationHelper<ValueType, false> sviHelper(viOperator);
+        helper::SoundValueIterationHelper<ValueType, false> sviHelper(viOperatorNontriv);
         std::optional<storm::storage::BitVector> optionalRelevantValues;
         if (this->hasRelevantValues()) {
             optionalRelevantValues = this->getRelevantValues();
@@ -806,14 +854,14 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
 
         if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-            exactOp = viOperator;
+            exactOp = viOperatorNontriv;
             impreciseOp = std::make_shared<helper::ValueIterationOperator<double, false>>();
             impreciseOp->setMatrixBackwards(this->A->template toValueType<double>(), &this->A->getRowGroupIndices());
             if (this->choiceFixedForRowGroup) {
                 impreciseOp->setIgnoredRows(true, fixedChoicesCallback);
             }
         } else if constexpr (std::is_same_v<ValueType, double>) {
-            impreciseOp = viOperator;
+            impreciseOp = viOperatorNontriv;
             exactOp = std::make_shared<helper::ValueIterationOperator<storm::RationalNumber, false>>();
             exactOp->setMatrixBackwards(this->A->template toValueType<storm::RationalNumber>(), &this->A->getRowGroupIndices());
             if (this->choiceFixedForRowGroup) {
@@ -848,7 +896,11 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache() const {
     auxiliaryRowGroupVector.reset();
-    viOperator.reset();
+    if (viOperatorNontriv) {
+        viOperatorNontriv.reset();
+    } else if (viOperatorTriv) {
+        viOperatorTriv.reset();
+    }
     StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache();
 }
 
