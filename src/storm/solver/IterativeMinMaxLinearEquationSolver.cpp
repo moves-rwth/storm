@@ -172,7 +172,8 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractSchedu
     }
 
     // Set the correct choices.
-    STORM_LOG_WARN_COND(!viOperatorTriv && !viOperatorNontriv, "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
+    STORM_LOG_WARN_COND(!viOperatorTriv && !viOperatorNontriv,
+                        "Expected VI operator to be initialized for scheduler extraction. Initializing now, but this is inefficient.");
     if (!viOperatorTriv && !viOperatorNontriv) {
         setUpViOperator();
     }
@@ -650,8 +651,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         };
         this->startMeasureProgress();
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
-                                storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+                                  storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
+                                  env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -674,8 +675,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         };
         this->startMeasureProgress();
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
-                                storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+                                  storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
+                                  env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.

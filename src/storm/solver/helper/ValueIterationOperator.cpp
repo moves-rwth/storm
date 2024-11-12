@@ -30,7 +30,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
     matrixColumns.clear();
     matrixValues.reserve(matrix.getNonzeroEntryCount());
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
-    
+
     // hasOnlyConstants is only used for Interval matrices, currently only populated for iMCs
     if constexpr (std::is_same<ValueType, storm::Interval>::value) {
         applyCache.hasOnlyConstants.clear();
