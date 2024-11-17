@@ -3,6 +3,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
@@ -273,10 +274,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
     ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
     ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-
-    return storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeConditionalProbabilities(
-        env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-        this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector());
+    if constexpr (std::is_same_v<storm::Interval, ValueType>) {
+        throw exceptions::NotImplementedException() << "Conditional Probabilities are not supported with interval models";
+    } else {
+        return storm::modelchecker::computeConditionalProbabilities(env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask),
+                                                                    this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(),
+                                                                    leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector());
+    }
 }
 
 template<typename SparseMdpModelType>
