@@ -35,6 +35,8 @@ class ModelCheckerSettings : public ModuleSettings {
      */
     std::string getLtl2daTool() const;
 
+    std::string getConditionalAlgorithm() const;  // TODO: do this properly
+
     // The name of the module.
     static const std::string moduleName;
 
@@ -42,6 +44,7 @@ class ModelCheckerSettings : public ModuleSettings {
     // Define the string names of the options as constants.
     static const std::string filterRewZeroOptionName;
     static const std::string ltl2daToolOptionName;
+    static const std::string conditionalAlgorithmOptionName;
 };
 
 }  // namespace modules

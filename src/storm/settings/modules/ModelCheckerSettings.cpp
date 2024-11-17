@@ -14,6 +14,7 @@ namespace modules {
 const std::string ModelCheckerSettings::moduleName = "modelchecker";
 const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
 const std::string ModelCheckerSettings::ltl2daToolOptionName = "ltl2datool";
+const std::string ModelCheckerSettings::conditionalAlgorithmOptionName = "conditional";
 
 ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false,
@@ -27,6 +28,10 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
                                          "filename", "A script that can be called with a prefix formula and a name for the output automaton.")
                                          .build())
                         .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, conditionalAlgorithmOptionName, false, "The used algorithm for conditional probabilities.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("alg", "name.").build())
+                        .build());
 }
 
 bool ModelCheckerSettings::isFilterRewZeroSet() const {
@@ -39,6 +44,12 @@ bool ModelCheckerSettings::isLtl2daToolSet() const {
 
 std::string ModelCheckerSettings::getLtl2daTool() const {
     return this->getOption(ltl2daToolOptionName).getArgumentByName("filename").getValueAsString();
+}
+
+std::string ModelCheckerSettings::getConditionalAlgorithm() const {  // TODO
+    return this->getOption(conditionalAlgorithmOptionName).getHasOptionBeenSet()
+               ? this->getOption(conditionalAlgorithmOptionName).getArgumentByName("alg").getValueAsString()
+               : "default";
 }
 
 }  // namespace modules
