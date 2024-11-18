@@ -145,7 +145,8 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
         };
         if (viOperatorTriv) {
             viOperatorTriv->setIgnoredRows(true, callback);
-        } else if (viOperatorNontriv) {
+        }
+        if (viOperatorNontriv) {
             viOperatorNontriv->setIgnoredRows(true, callback);
         }
     }
@@ -194,7 +195,8 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractSchedu
         } else {
             STORM_LOG_ERROR("SchedulerTrackingHelper not implemented for this setting (trivial row grouping but not Interval->double).");
         }
-    } else if (viOperatorNontriv) {
+    }
+    if (viOperatorNontriv) {
         storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, false> schedHelper(viOperatorNontriv);
         schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
     }
@@ -907,10 +909,11 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache() const {
     auxiliaryRowGroupVector.reset();
+    if (viOperatorTriv) {
+        viOperatorTriv.reset();
+    }
     if (viOperatorNontriv) {
         viOperatorNontriv.reset();
-    } else if (viOperatorTriv) {
-        viOperatorTriv.reset();
     }
     StandardMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache();
 }
