@@ -120,9 +120,19 @@ template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperator() const {
     if (!viOperatorTriv && !viOperatorNontriv) {
         if (this->A->hasTrivialRowGrouping()) {
+            // The trivial row grouping minmax operator makes sense over intervals.
             viOperatorTriv = std::make_shared<helper::ValueIterationOperator<ValueType, true, SolutionType>>();
             viOperatorTriv->setMatrixBackwards(*this->A);
+            if constexpr (!std::is_same_v<ValueType, storm::Interval>) {
+                // It might be that someone is using a minmaxlinearequationsolver with an advanced VI algorithm
+                // but is just passing a DTMC over doubles. In this case we need to populate this VI operator.
+                // It behaves exactly the same as the trivial row grouping operator, but it is currently hardcoded
+                // to be used by, e.g., optimistic value iteration.
+                viOperatorNontriv = std::make_shared<helper::ValueIterationOperator<ValueType, false, SolutionType>>();
+                viOperatorNontriv->setMatrixBackwards(*this->A);
+            }
         } else {
+            // The nontrivial row grouping minmax operator makes sense for MDPs.
             viOperatorNontriv = std::make_shared<helper::ValueIterationOperator<ValueType, false, SolutionType>>();
             viOperatorNontriv->setMatrixBackwards(*this->A);
         }
