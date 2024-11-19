@@ -69,7 +69,11 @@ class IterativeMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationS
     std::unique_ptr<LinearEquationSolverFactory<SolutionType>> linearEquationSolverFactory;
 
     // possibly cached data
-    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, std::is_same_v<ValueType, storm::Interval>, SolutionType>> viOperator;
+
+    // two different VI operators, one for trivialrowgrouping, one without
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, true, SolutionType>> viOperatorTriv;
+    mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, false, SolutionType>> viOperatorNontriv;
+
     mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;  // A.rowGroupCount() entries
 };
 

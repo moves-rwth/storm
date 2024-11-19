@@ -239,19 +239,6 @@ template<typename ValueType, typename SolutionType>
 std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create(
     Environment const& env) const {
     std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
-    // if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-    //     // TODO: consider robust minMax solver methods and corresponding entries in the environment.
-    //     auto method = env.solver().minMax().getMethod();
-    //     if (method == MinMaxMethod::ValueIteration) {
-    //         result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>(
-    //             std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>());
-    //     } else if (method == MinMaxMethod::Topological) {
-    //         result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>();
-    //     }
-    //     result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType, true>>(
-    //         std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>());
-    //     result->setRequirementsChecked(this->isRequirementsCheckedSet());
-    //     return result;
     // TODO some minmax linear equation solvers only support SolutionType == ValueType.
     auto method = env.solver().minMax().getMethod();
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||

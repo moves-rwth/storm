@@ -108,7 +108,7 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
                                                                                             std::vector<uint64_t>& schedulerStorage, bool robust,
                                                                                             std::vector<SolutionType>* operandOut,
                                                                                             boost::optional<std::vector<uint64_t>> const& robustIndices) const {
-    // TODO is this correct??? only for "antagonistic" robust uncertainty??
+    // TODO this currently assumes antagonistic intervals <-> !TrivialRowGrouping
     if (maximize(dir)) {
         if (robust && !TrivialRowGrouping) {
             return computeScheduler<storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage,
