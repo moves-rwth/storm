@@ -77,7 +77,7 @@ class SparseParametricModelSimplifier {
 
     std::shared_ptr<SparseModelType> simplifiedModel;
     std::shared_ptr<storm::logic::Formula const> simplifiedFormula;
-    bool skipConstantDeterministicStateElimination = true;
+    bool skipConstantDeterministicStateElimination = false;
 };
 }  // namespace transformer
 }  // namespace storm
