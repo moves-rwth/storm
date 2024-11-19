@@ -203,9 +203,9 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
 template<typename ParametricType>
 std::pair<typename storm::storage::ParameterRegion<ParametricType>::CoefficientType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>
 RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                                              storm::solver::OptimizationDirection const& dir,
-                                                              std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
-                                                              std::function<bool(CoefficientType)> rejectInstance) {
+                                                                    storm::solver::OptimizationDirection const& dir,
+                                                                    std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
+                                                                    std::function<bool(CoefficientType)> rejectInstance) {
     auto progress = PartitioningProgress<CoefficientType>(region.area());
 
     // Holds the initial region as well as all considered (sub)-regions and their annotations as a tree
@@ -314,9 +314,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValue(Environment const&
         return storm::solver::minimize(dir) ? newValue >= value - usedPrecision : newValue <= value + usedPrecision;
     };
 
-    auto rejectInstance = [&](CoefficientType currentValue) {
-        return boundInvariant && !boundInvariant->isSatisfied(currentValue);
-    };
+    auto rejectInstance = [&](CoefficientType currentValue) { return boundInvariant && !boundInvariant->isSatisfied(currentValue); };
 
     return computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance);
 }
@@ -330,13 +328,9 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
     storm::solver::OptimizationDirection dir =
         isLowerBound(bound.comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
     // We pass the bound as an invariant; as soon as it is obtained, we can stop the search.
-    auto acceptGlobalBound = [&](CoefficientType value, CoefficientType newValue) {
-        return bound.isSatisfied(newValue);
-    };
+    auto acceptGlobalBound = [&](CoefficientType value, CoefficientType newValue) { return bound.isSatisfied(newValue); };
 
-    auto rejectInstance = [&](CoefficientType currentValue) {
-        return !bound.isSatisfied(currentValue);
-    };
+    auto rejectInstance = [&](CoefficientType currentValue) { return !bound.isSatisfied(currentValue); };
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
     STORM_LOG_DEBUG("Reported extremal value " << res);

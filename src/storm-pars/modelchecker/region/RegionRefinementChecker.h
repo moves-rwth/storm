@@ -66,7 +66,8 @@ class RegionRefinementChecker {
      * @param env
      * @param region The region in which to optimize
      * @param dir The direction in which to optimize
-     * @param acceptGlobalBound input is a (1) proposed global bound on the value and (2) a new value, output whether we will accept the new value if the global bound holds
+     * @param acceptGlobalBound input is a (1) proposed global bound on the value and (2) a new value, output whether we will accept the new value if the global
+     * bound holds
      * @param rejectInstance input some value from the parameter space, output whether we will reject because this exists
      * @return
      */
@@ -74,7 +75,6 @@ class RegionRefinementChecker {
                                                                      storm::solver::OptimizationDirection const& dir,
                                                                      std::function<bool(CoefficientType, CoefficientType)> acceptGlobalBound,
                                                                      std::function<bool(CoefficientType)> rejectInstance);
-
 
     /*!
      * Finds the extremal value within the given region and with the given precision.
