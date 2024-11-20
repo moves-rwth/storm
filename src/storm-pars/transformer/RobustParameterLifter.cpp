@@ -261,7 +261,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     CoefficientType c;
     auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(
-        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()), carl::rootfinder::SplittingStrategy::ABERTH);
+        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()),
+        carl::rootfinder::SplittingStrategy::ABERTH);
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
         CoefficientType rootCoefficient;
