@@ -8,6 +8,7 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
+#include "storm/utility/Stopwatch.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
@@ -243,9 +244,12 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     // @see doi.org/10.1007/978-3-642-54862-8_43
     STORM_LOG_THROW(goal.relevantValues().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
                     "Only one initial state is supported for conditional probabilities");
+    storm::utility::Stopwatch sw(true);
     auto normalFormData = internal::obtainNormalForm(env, goal.direction(), transitionMatrix, backwardTransitions, targetStates, conditionStates);
+    STORM_PRINT_AND_LOG("Time for obtaining the normal form:" << sw << ".\n");
 
-    // Then, we solve the induced problem using the selected algorithm.
+    sw.restart();
+    // Then, we solve the induced problem using the selected algorithm[p
     auto const initialState = *goal.relevantValues().begin();
     ValueType initialStateValue = -storm::utility::one<ValueType>();
     auto const algString = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>().getConditionalAlgorithm();
@@ -264,6 +268,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " + algString);
     }
+    STORM_PRINT_AND_LOG("Time for analyzing the normal form:" << sw << ".\n");
     return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, initialStateValue));
 }
 
