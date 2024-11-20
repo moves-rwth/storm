@@ -261,7 +261,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     UniPoly polynomial, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     CoefficientType c;
     auto const& carlRoots = carl::rootfinder::realRoots<CoefficientType, CoefficientType>(
-        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()));
+        polynomial, carl::Interval<CoefficientType>(utility::zero<CoefficientType>(), utility::one<CoefficientType>()), carl::rootfinder::SplittingStrategy::ABERTH);
     std::set<CoefficientType> zeroes = {};
     for (carl::RealAlgebraicNumber<CoefficientType> const& root : carlRoots) {
         CoefficientType rootCoefficient;
@@ -475,7 +475,7 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
             if (derivative.nominator().totalDegree() < 4) {
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
-                zeroes = zeroesSMT(transition, p);
+                zeroes = zeroesSMT(derivative, p);
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {
