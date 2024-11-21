@@ -2,9 +2,9 @@
 
 #include <map>
 
-#include "storm/adapters/RationalNumberForward.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
