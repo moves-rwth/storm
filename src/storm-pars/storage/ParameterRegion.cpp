@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/constants.h"
@@ -174,8 +175,9 @@ typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<Parame
             result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
         } else {
             // HACK to get regions with zero area to work correctly
+            // (It's a hack but it's a harmless one for now, as regions with zero area do not exist without discrete parameters)
             // This area represents half of the area of the region
-            result *= utility::convertNumber<CoefficientType>(RationalNumber(1, 2));
+            result *= utility::convertNumber<CoefficientType>(RationalNumber(1) / RationalNumber(2));
         }
     }
     return result;
