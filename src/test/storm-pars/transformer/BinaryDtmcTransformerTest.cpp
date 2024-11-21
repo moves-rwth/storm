@@ -90,7 +90,7 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     auto resultPLASimple = plaSimple->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     // no <= defined for RationalFunctions I suppose
-    ASSERT_TRUE(resultPLA < resultPLASimple || resultPLA == resultPLASimple) << "Worse PLA result with simplified DTMC";
+    ASSERT_TRUE(storm::utility::isAlmostZero(resultPLA - resultPLASimple)) << "Worse PLA result with simplified DTMC";
 
     // Check that simpleDtmc is in fact simple
     for (uint64_t state = 0; state < simpleDtmc->getTransitionMatrix().getRowCount(); ++state) {
