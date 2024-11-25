@@ -290,7 +290,7 @@ jobs:
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v3
+      - uses: dawidd6/action-send-mail@v4
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587
