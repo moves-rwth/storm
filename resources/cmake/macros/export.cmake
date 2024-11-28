@@ -24,8 +24,8 @@ endforeach()
 include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/stormConfigVersion.cmake
-     VERSION 0.1.0
-     COMPATIBILITY SameMajorVersion )
+     VERSION ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.${STORM_VERSION_TWEAK}
+     COMPATIBILITY SameMinorVersion )
 
 # For the build tree
 set(CONF_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
