@@ -2,6 +2,12 @@
 
 namespace storm {
 namespace pomdp {
+
+class ObservationTraceUnfolderOptions {
+   public:
+    bool rejectionSampling = true;
+};
+
 /**
  * Observation-trace unrolling to allow model checking for monitoring.
  * This approach is outlined in  Junges, Hazem, Seshia  -- Runtime Monitoring for Markov Decision Processes
@@ -17,7 +23,7 @@ class ObservationTraceUnfolder {
      * @param exprManager an Expression Manager
      */
     ObservationTraceUnfolder(storm::models::sparse::Pomdp<ValueType> const& model, std::vector<ValueType> const& risk,
-                             std::shared_ptr<storm::expressions::ExpressionManager>& exprManager);
+                             std::shared_ptr<storm::expressions::ExpressionManager>& exprManager, ObservationTraceUnfolderOptions const& options);
     /**
      * Transform in one shot
      * @param observations
@@ -36,13 +42,17 @@ class ObservationTraceUnfolder {
      */
     void reset(uint32_t observation);
 
+    bool isRejectionSamplingSet() const;
+
    private:
     storm::models::sparse::Pomdp<ValueType> const& model;
     std::vector<ValueType> risk;  // TODO reconsider holding this as a reference, but there were some strange bugs
     std::shared_ptr<storm::expressions::ExpressionManager>& exprManager;
     std::vector<storm::storage::BitVector> statesPerObservation;
     std::vector<uint32_t> traceSoFar;
-    storm::expressions::Variable svvar;
+    storm::expressions::Variable svvar;  // Maps to the old state (explicit encoding)
+    storm::expressions::Variable tsvar;  // Maps to the time step
+    ObservationTraceUnfolderOptions options;
 };
 
 }  // namespace pomdp
