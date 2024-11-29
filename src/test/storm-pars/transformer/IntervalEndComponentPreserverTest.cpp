@@ -112,28 +112,38 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     // also, minimizing solver1 is what we want to avoid
 }
 
-TEST(IntervalEndComponentPreserver, Simple) {
+class IntervalEndComponentPreserverTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+
+TEST(IntervalEndComponentPreserverTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserver, BRP) {
+TEST(IntervalEndComponentPreserverTest, BRP) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F \"error\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserver, Crowds) {
+TEST(IntervalEndComponentPreserverTest, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserver, NAND) {
+TEST(IntervalEndComponentPreserverTest, NAND) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

@@ -59,6 +59,9 @@ class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
     }
     virtual void SetUp() {
         carl::VariablePool::getInstance().clear();
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
     }
     virtual void TearDown() {
         carl::VariablePool::getInstance().clear();
