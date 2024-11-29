@@ -132,7 +132,7 @@ void testModelB(std::string programFile, std::string formulaAsString, std::strin
     }
 }
 
-class BinaryDtmcTransformer : public ::testing::Test {
+class BinaryDtmcTransformerTest : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
@@ -141,7 +141,7 @@ class BinaryDtmcTransformer : public ::testing::Test {
     }
 };
 
-DISABLED_TEST_F(BinaryDtmcTransformer, Crowds) {
+TEST_F(BinaryDtmcTransformerTest, DISABLED_Crowds) {
     // for some reason this test fails on some machines (on debian 12, but not on ubuntu 22.04)
     // probably some exact model checking thing? no clue
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
@@ -149,13 +149,13 @@ DISABLED_TEST_F(BinaryDtmcTransformer, Crowds) {
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelB(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(BinaryDtmcTransformer, Nand) {
+TEST_F(BinaryDtmcTransformerTest, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelB(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(BinaryDtmcTransformer, Brp) {
+TEST_F(BinaryDtmcTransformerTest, Brp) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F \"error\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
