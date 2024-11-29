@@ -271,7 +271,6 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
             // Improve (global) under-approximation of extremal value
             // Check whether this region contains a new 'good' value and set this value if that is the case
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
-            std::cout << "Value is " << value << " currValue is " << currValue << std::endl;
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
                 if (rejectInstance(value)) {
