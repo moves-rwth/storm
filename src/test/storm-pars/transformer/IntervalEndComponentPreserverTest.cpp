@@ -121,7 +121,6 @@ class IntervalEndComponentPreserverTest : public ::testing::Test {
     }
 };
 
-
 TEST(IntervalEndComponentPreserverTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
