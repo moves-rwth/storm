@@ -121,28 +121,28 @@ class IntervalEndComponentPreserverTest : public ::testing::Test {
     }
 };
 
-TEST(IntervalEndComponentPreserverTest, Simple) {
+TEST_F(IntervalEndComponentPreserverTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserverTest, BRP) {
+TEST_F(IntervalEndComponentPreserverTest, BRP) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F \"error\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserverTest, Crowds) {
+TEST_F(IntervalEndComponentPreserverTest, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModelInterval(programFile, formulaAsString, constantsAsString);
 }
 
-TEST(IntervalEndComponentPreserverTest, NAND) {
+TEST_F(IntervalEndComponentPreserverTest, NAND) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
