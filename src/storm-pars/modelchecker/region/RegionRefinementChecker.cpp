@@ -293,8 +293,8 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         }
     }
 
-    STORM_LOG_INFO("Region partitioning for extremal value terminated after analyzing "
-                   << numOfAnalyzedRegions << " regions.\n\t" << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.");
+    std::cout << "Region partitioning for extremal value terminated after analyzing "
+                   << numOfAnalyzedRegions << " regions.\n\t" << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.\n";
     return valueValuation;
 }
 
