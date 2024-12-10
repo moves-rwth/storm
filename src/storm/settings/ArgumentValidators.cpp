@@ -84,7 +84,7 @@ bool FileValidator::isValid(std::string const& filename) {
                         "Unable to read from non-existing file '" << filename << "'.");
 
         // Now that we know it's a file, we can check its readability.
-        STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filename), storm::exceptions::IllegalArgumentValueException,
+        STORM_LOG_THROW(storm::io::fileExistsAndIsReadable(filename), storm::exceptions::IllegalArgumentValueException,
                         "Unable to read from file '" << filename << "'.");
 
         return true;

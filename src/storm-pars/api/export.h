@@ -17,7 +17,7 @@ inline void exportParametricResultToFile(std::optional<storm::RationalFunction> 
                                          storm::OptionalRef<storm::analysis::ConstraintCollector<storm::RationalFunction> const> const& constraintCollector,
                                          std::string const& path) {
     std::ofstream filestream;
-    storm::utility::openFile(path, filestream);
+    storm::io::openFile(path, filestream);
     if (constraintCollector.has_value()) {
         filestream << "$Parameters: ";
         auto const& vars = constraintCollector->getVariables();
@@ -48,7 +48,7 @@ inline void exportParametricResultToFile(std::optional<storm::RationalFunction> 
                        [](carl::Formula<typename storm::Polynomial::PolyType> const& c) -> std::string { return c.toString(); });
         std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
     }
-    storm::utility::closeFile(filestream);
+    storm::io::closeFile(filestream);
 }
 }  // namespace api
 }  // namespace storm

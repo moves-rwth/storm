@@ -28,7 +28,7 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
                                                    boost::optional<std::set<std::string>> const& propertyFilter) {
     // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
     std::vector<storm::jani::Property> properties;
-    if (storm::utility::fileExistsAndIsReadable(inputString)) {
+    if (storm::io::fileExistsAndIsReadable(inputString)) {
         STORM_LOG_INFO("Loading properties from file: " << inputString << '\n');
         properties = formulaParser.parseFromFile(inputString);
     } else {

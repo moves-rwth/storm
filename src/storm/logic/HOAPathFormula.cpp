@@ -75,9 +75,9 @@ void HOAPathFormula::gatherReferencedRewardModels(std::set<std::string>& referen
 
 storm::automata::DeterministicAutomaton::ptr HOAPathFormula::readAutomaton() const {
     std::ifstream in;
-    storm::utility::openFile(automatonFile, in);
+    storm::io::openFile(automatonFile, in);
     storm::automata::DeterministicAutomaton::ptr automaton = storm::automata::DeterministicAutomaton::parse(in);
-    storm::utility::closeFile(in);
+    storm::io::closeFile(in);
     for (auto& ap : automaton->getAPSet().getAPs()) {
         STORM_LOG_THROW(apToFormulaMap.find(ap) != apToFormulaMap.end(), storm::exceptions::ExpressionEvaluationException,
                         "For '" << automatonFile << "' HOA automaton, expression for atomic proposition '" << ap << "' is missing.");

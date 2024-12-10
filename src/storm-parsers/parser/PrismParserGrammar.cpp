@@ -21,7 +21,7 @@ namespace parser {
 storm::prism::Program PrismParserGrammar::parse(std::string const& filename, bool prismCompatibility) {
     // Open file and initialize result.
     std::ifstream inputFileStream;
-    storm::utility::openFile(filename, inputFileStream);
+    storm::io::openFile(filename, inputFileStream);
     storm::prism::Program result;
 
     // Now try to parse the contents of the file.
@@ -30,16 +30,16 @@ storm::prism::Program PrismParserGrammar::parse(std::string const& filename, boo
         result = parseFromString(fileContent, filename, prismCompatibility);
     } catch (storm::exceptions::WrongFormatException& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     } catch (std::exception& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     }
 
     // Close the stream in case everything went smoothly and return result.
-    storm::utility::closeFile(inputFileStream);
+    storm::io::closeFile(inputFileStream);
     return result;
 }
 

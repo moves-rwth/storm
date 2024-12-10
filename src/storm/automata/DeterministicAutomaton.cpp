@@ -96,9 +96,9 @@ DeterministicAutomaton::ptr DeterministicAutomaton::parse(std::istream& in) {
 
 DeterministicAutomaton::ptr DeterministicAutomaton::parseFromFile(const std::string& filename) {
     std::ifstream in;
-    storm::utility::openFile(filename, in);
+    storm::io::openFile(filename, in);
     auto da = parse(in);
-    storm::utility::closeFile(in);
+    storm::io::closeFile(in);
 
     STORM_LOG_INFO("Deterministic automaton from HOA file '" << filename << "' has " << da->getNumberOfStates() << " states, " << da->getAPSet().size()
                                                              << " atomic propositions and " << *da->getAcceptance()->getAcceptanceExpression()
