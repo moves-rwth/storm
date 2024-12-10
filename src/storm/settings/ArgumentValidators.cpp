@@ -8,6 +8,7 @@
 #include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/io/file.h"
 #include "storm/settings/Argument.h"
 #include "storm/utility/macros.h"
 
@@ -83,8 +84,8 @@ bool FileValidator::isValid(std::string const& filename) {
                         "Unable to read from non-existing file '" << filename << "'.");
 
         // Now that we know it's a file, we can check its readability.
-        std::ifstream istream(filename);
-        STORM_LOG_THROW(istream.good(), storm::exceptions::IllegalArgumentValueException, "Unable to read from file '" << filename << "'.");
+        STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filename), storm::exceptions::IllegalArgumentValueException,
+                        "Unable to read from file '" << filename << "'.");
 
         return true;
     } else if (mode == Mode::Writable) {

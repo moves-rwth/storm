@@ -49,7 +49,7 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(
     std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
     // If the given input string looks like a file (containing a dot and there exists a file with that name),
     // we try to parse it as a file, otherwise we assume it's a region string.
-    if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
+    if (inputString.find(".") != std::string::npos && storm::utility::fileExistsAndIsReadable(inputString)) {
         return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables);
     } else {
         return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables);

@@ -2,18 +2,14 @@
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/properties.h"
-
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/io/file.h"
+#include "storm/logic/Formula.h"
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 #include "storm/storage/SymbolicModelDescription.h"
-
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/logic/Formula.h"
-
 #include "storm/utility/cli.h"
 
 namespace storm {
@@ -32,7 +28,7 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
                                                    boost::optional<std::set<std::string>> const& propertyFilter) {
     // If the given property is a file, we parse it as a file, otherwise we assume it's a property.
     std::vector<storm::jani::Property> properties;
-    if (std::ifstream(inputString).good()) {
+    if (storm::utility::fileExistsAndIsReadable(inputString)) {
         STORM_LOG_INFO("Loading properties from file: " << inputString << '\n');
         properties = formulaParser.parseFromFile(inputString);
     } else {
