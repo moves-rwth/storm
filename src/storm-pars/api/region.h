@@ -359,6 +359,7 @@ void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckRes
             filestream << res.second << ": " << res.first << '\n';
         }
     }
+    storm::io::closeFile(filestream);
 }
 
 }  // namespace api

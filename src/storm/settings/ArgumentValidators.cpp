@@ -89,11 +89,11 @@ bool FileValidator::isValid(std::string const& filename) {
 
         return true;
     } else if (mode == Mode::Writable) {
-        std::ofstream filestream(filename);
+        std::ofstream filestream;
+        storm::io::openFile(filename, filestream, false, true);
         STORM_LOG_THROW(filestream.is_open(), storm::exceptions::IllegalArgumentValueException, "Could not open file '" << filename << "' for writing.");
-        filestream.close();
+        storm::io::closeFile(filestream);
         std::remove(filename.c_str());
-
         return true;
     }
     return false;
