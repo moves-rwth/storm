@@ -32,6 +32,12 @@ std::vector<storm::jani::Property> parseProperties(storm::parser::FormulaParser&
         STORM_LOG_INFO("Loading properties from file: " << inputString << '\n');
         properties = formulaParser.parseFromFile(inputString);
     } else {
+        // File does not exists -> parse as property string
+        // Provide warning if string could potentially be a property file
+        if (inputString.find(".prop") != std::string::npos || inputString.find(".pctl") != std::string::npos ||
+            inputString.find(".prctl") != std::string::npos || inputString.find(".csl") != std::string::npos) {
+            STORM_LOG_WARN("File with name '" << inputString << "' does not exist. Trying to parse as property string.");
+        }
         properties = formulaParser.parseFromString(inputString);
     }
 
@@ -46,8 +52,7 @@ std::vector<storm::jani::Property> parseProperties(std::string const& inputStrin
     } catch (storm::exceptions::WrongFormatException const& e) {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                         e.what() << "Note that the used API function does not have access to model variables. If the property you tried to parse contains "
-                                    "model variables, it will not "
-                                    "be parsed correctly.");
+                                    "model variables, it will not be parsed correctly.");
     }
 }
 
