@@ -887,9 +887,9 @@ bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, std::set<sto
         STORM_LOG_DEBUG("Export SMT Solver Call (" << iteration << ")");
         std::string filepath = options.getExportSATCallsPath() + "call_" + std::to_string(iteration) + ".smt2";
         std::ofstream filestream;
-        storm::utility::openFile(filepath, filestream);
+        storm::io::openFile(filepath, filestream);
         filestream << smtSolver->getSmtLibString() << '\n';
-        storm::utility::closeFile(filestream);
+        storm::io::closeFile(filestream);
     }
 
     STORM_LOG_DEBUG("Call to SMT Solver (" << iteration << ")");

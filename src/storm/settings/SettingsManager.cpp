@@ -555,12 +555,12 @@ std::map<std::string, std::vector<std::string>> SettingsManager::parseConfigFile
     std::map<std::string, std::vector<std::string>> result;
 
     std::ifstream input;
-    storm::utility::openFile(filename, input);
+    storm::io::openFile(filename, input);
 
     bool globalScope = true;
     std::string activeModule = "";
     uint_fast64_t lineNumber = 1;
-    for (std::string line; storm::utility::getline(input, line); ++lineNumber) {
+    for (std::string line; storm::io::getline(input, line); ++lineNumber) {
         // If the first character of the line is a "[", we expect the settings of a new module to start and
         // the line to be of the shape [<module>].
         if (line.at(0) == '[') {
@@ -655,7 +655,7 @@ std::map<std::string, std::vector<std::string>> SettingsManager::parseConfigFile
         }
     }
 
-    storm::utility::closeFile(input);
+    storm::io::closeFile(input);
     return result;
 }
 

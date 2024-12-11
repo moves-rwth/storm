@@ -36,7 +36,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
     // Load file
     STORM_LOG_INFO("Reading from file " << filename);
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
     std::string line;
 
     // Initialize
@@ -51,7 +51,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
     std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
     // Parse header
-    while (storm::utility::getline(file, line)) {
+    while (storm::io::getline(file, line)) {
         if (line.empty() || boost::starts_with(line, "//")) {
             continue;
         }
@@ -68,7 +68,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         } else if (line == "@parameters") {
             // Parse parameters
             STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             if (line != "") {
                 std::vector<std::string> parameters;
                 boost::split(parameters, line, boost::is_any_of(" "));
@@ -81,7 +81,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
 
         } else if (line == "@placeholders") {
             // Parse placeholders
-            while (storm::utility::getline(file, line)) {
+            while (storm::io::getline(file, line)) {
                 size_t posColon = line.find(':');
                 STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
                 std::string placeName = line.substr(0, posColon - 1);
@@ -99,16 +99,16 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         } else if (line == "@reward_models") {
             // Parse reward models
             STORM_LOG_THROW(rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             boost::split(rewardModelNames, line, boost::is_any_of("\t "));
         } else if (line == "@nr_states") {
             // Parse no. of states
             STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             nrStates = parseNumber<size_t>(line);
         } else if (line == "@nr_choices") {
             STORM_LOG_THROW(nrChoices == 0, storm::exceptions::WrongFormatException, "Number of actions declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             nrChoices = parseNumber<size_t>(line);
         } else if (line == "@model") {
             // Parse rest of the model
@@ -125,7 +125,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         }
     }
     // Done parsing
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
 
     // Build model
     return storm::utility::builder::buildModelFromComponents(type, std::move(*modelComponents));
@@ -167,7 +167,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     uint64_t lineNumber = 0;
     bool firstState = true;
     bool firstActionForState = true;
-    while (storm::utility::getline(file, line)) {
+    while (storm::io::getline(file, line)) {
         lineNumber++;
         if (boost::starts_with(line, "//")) {
             continue;

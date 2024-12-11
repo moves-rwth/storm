@@ -63,13 +63,15 @@ TEST(DAProductBuilderTest_aUb, Dtmc) {
     storm::transformer::DAProductBuilder productBuilder(*da, apLabels);
     auto product = productBuilder.build(*dtmc, dtmc->getInitialStates());
 
-    // std::ofstream modelDot("model.dot");
+    // std::ofstream modelDot;
+    // storm::io::openFile("model.dot", modelDot);
     // dtmc->writeDotToStream(modelDot);
-    // modelDot.close();
+    // storm::io::closeFile(modelDot);
 
-    // std::ofstream productDot("product.dot");
+    // std::ofstream productDot;
+    // storm::io::openFile("product.dot", modelDot);
     // product->getProductModel().writeDotToStream(productDot);
-    // productDot.close();
+    // storm::io::closeFile(productDot);
 
     // product->printMapping(std::cout);
 

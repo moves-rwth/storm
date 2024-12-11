@@ -503,7 +503,7 @@ void DFTASFChecker::addMarkovianConstraints() {
 
 void DFTASFChecker::toFile(std::string const &filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     stream << "; time point variables\n";
     for (auto const &timeVarEntry : timePointVariables) {
         stream << "(declare-fun " << varNames[timeVarEntry.second] << "() Int)\n";
@@ -533,7 +533,7 @@ void DFTASFChecker::toFile(std::string const &filename) {
         stream << "(assert " << constraint->toSmtlib2(varNames) << ")\n";
     }
     stream << "(check-sat)\n";
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 void DFTASFChecker::toSolver() {

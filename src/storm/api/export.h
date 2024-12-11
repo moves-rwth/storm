@@ -25,32 +25,32 @@ template<typename ValueType>
 void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename,
                             std::vector<std::string> const& parameterNames = {}, bool allowPlaceholders = true) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
-    storm::exporter::DirectEncodingOptions options;
+    storm::io::openFile(filename, stream);
+    storm::io::DirectEncodingOptions options;
     options.allowPlaceholders = allowPlaceholders;
-    storm::exporter::explicitExportSparseModel(stream, model, parameterNames, options);
-    storm::utility::closeFile(stream);
+    storm::io::explicitExportSparseModel(stream, model, parameterNames, options);
+    storm::io::closeFile(stream);
 }
 
 template<storm::dd::DdType Type, typename ValueType>
 void exportSymbolicModelAsDrdd(std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> const& model, std::string const& filename) {
-    storm::exporter::explicitExportSymbolicModel(filename, model);
+    storm::io::explicitExportSymbolicModel(filename, model);
 }
 
 template<typename ValueType>
 void exportSparseModelAsDot(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, size_t maxWidth = 30) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     model->writeDotToStream(stream, maxWidth);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<typename ValueType>
 void exportSparseModelAsJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     model->writeJsonToStream(stream);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -62,21 +62,21 @@ template<typename ValueType>
 void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::storage::Scheduler<ValueType> const& scheduler,
                      std::string const& filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     std::string jsonFileExtension = ".json";
     if (filename.size() > 4 && std::equal(jsonFileExtension.rbegin(), jsonFileExtension.rend(), filename.rbegin())) {
         scheduler.printJsonToStream(stream, model, false, true);
     } else {
         scheduler.printToStream(stream, model, false, true);
     }
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<typename ValueType>
 inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
                                     std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     if (checkResult->isExplicitQualitativeCheckResult()) {
         auto j = checkResult->asExplicitQualitativeCheckResult().toJson<storm::RationalNumber>(model->getOptionalStateValuations(), model->getStateLabeling());
         stream << storm::dumpJson(j);
@@ -86,7 +86,7 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
         auto j = checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations(), model->getStateLabeling());
         stream << storm::dumpJson(j);
     }
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<>

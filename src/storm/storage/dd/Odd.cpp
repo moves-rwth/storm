@@ -126,7 +126,7 @@ void Odd::oldToNewIndexRec(uint_fast64_t oldOffset, storm::dd::Odd const& oldOdd
 
 void Odd::exportToDot(std::string const& filename) const {
     std::ofstream dotFile;
-    storm::utility::openFile(filename, dotFile);
+    storm::io::openFile(filename, dotFile);
 
     // Print header.
     dotFile << "digraph \"ODD\" {\n"
@@ -166,7 +166,7 @@ void Odd::exportToDot(std::string const& filename) const {
     }
 
     dotFile << "}\n";
-    storm::utility::closeFile(dotFile);
+    storm::io::closeFile(dotFile);
 }
 
 void Odd::exportToText(std::string const& filename) const {

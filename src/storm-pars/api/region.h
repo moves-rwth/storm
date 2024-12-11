@@ -49,7 +49,7 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(
     std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
     // If the given input string looks like a file (containing a dot and there exists a file with that name),
     // we try to parse it as a file, otherwise we assume it's a region string.
-    if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
+    if (inputString.find(".") != std::string::npos && storm::io::fileExistsAndIsReadable(inputString)) {
         return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables);
     } else {
         return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables);
@@ -353,12 +353,13 @@ void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckRes
                     "Can not export region check result: The given checkresult does not have the expected type.");
 
     std::ofstream filestream;
-    storm::utility::openFile(filename, filestream);
+    storm::io::openFile(filename, filestream);
     for (auto const& res : regionCheckResult->getRegionResults()) {
         if (!onlyConclusiveResults || res.second == storm::modelchecker::RegionResult::AllViolated || res.second == storm::modelchecker::RegionResult::AllSat) {
             filestream << res.second << ": " << res.first << '\n';
         }
     }
+    storm::io::closeFile(filestream);
 }
 
 }  // namespace api

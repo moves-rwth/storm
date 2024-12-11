@@ -21,7 +21,7 @@ namespace storm {
 namespace parser {
 
 MappedFile::MappedFile(const char* filename) {
-    STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filename), storm::exceptions::FileIoException,
+    STORM_LOG_THROW(storm::io::fileExistsAndIsReadable(filename), storm::exceptions::FileIoException,
                     "Error while reading " << filename << ": The file does not exist or is not readable.");
 
 #if defined LINUX || defined MACOSX

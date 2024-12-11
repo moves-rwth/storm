@@ -286,12 +286,12 @@ std::string IOSettings::getExportBuildFilename() const {
     return this->getOption(exportBuildOptionName).getArgumentByName("file").getValueAsString();
 }
 
-storm::exporter::ModelExportFormat IOSettings::getExportBuildFormat() const {
+storm::io::ModelExportFormat IOSettings::getExportBuildFormat() const {
     auto format = this->getOption(exportBuildOptionName).getArgumentByName("format").getValueAsString();
     if (format == "auto") {
-        return storm::exporter::getModelExportFormatFromFileExtension(getExportBuildFilename());
+        return storm::io::getModelExportFormatFromFileExtension(getExportBuildFilename());
     } else {
-        return storm::exporter::getModelExportFormatFromString(format);
+        return storm::io::getModelExportFormatFromString(format);
     }
 }
 

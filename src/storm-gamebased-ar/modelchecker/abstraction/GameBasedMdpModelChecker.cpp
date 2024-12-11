@@ -1,17 +1,32 @@
 #include "storm-gamebased-ar/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
+#include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
+#include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
+#include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
+#include "storm-gamebased-ar/abstraction/jani/JaniMenuGameAbstractor.h"
+#include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
+#include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidModelException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/file.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/solver/StandardGameSolver.h"
+#include "storm/solver/SymbolicGameSolver.h"
+#include "storm/storage/ExplicitGameStrategyPair.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableSetPredicateSplitter.h"
-
-#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -20,36 +35,9 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
-#include "storm-gamebased-ar/abstraction/jani/JaniMenuGameAbstractor.h"
-#include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
-
-#include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
-#include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/environment/Environment.h"
-#include "storm/solver/StandardGameSolver.h"
-#include "storm/solver/SymbolicGameSolver.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/utility/macros.h"
 #include "storm/utility/prism.h"
-
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidModelException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/modelchecker/results/CheckResult.h"
 
 namespace storm::gbar {
 namespace modelchecker {
@@ -989,9 +977,11 @@ class ExplicitGameExporter {
                       ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, storage::ExplicitGameStrategyPair const* minStrategyPair,
                       storage::ExplicitGameStrategyPair const* maxStrategyPair) {
         // Export game as json.
-        std::ofstream outfile(filename);
+        std::ofstream outfile;
+        storm::io::openFile(filename, outfile);
         exportGame(outfile, player1Groups, player2Groups, transitionMatrix, initialStates, constraintStates, targetStates, quantitativeResult, minStrategyPair,
                    maxStrategyPair);
+        storm::io::closeFile(outfile);
     }
 
     void setShowNonStrategyAlternatives(bool value) {

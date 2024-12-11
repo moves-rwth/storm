@@ -472,14 +472,14 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                         std::string stateInfo = getStateValuations().getStateInfo(state);
                         std::vector<std::string> results;
                         boost::split(results, stateInfo, [](char c) { return c == ','; });
-                        storm::utility::outputFixedWidth(outStream, results, maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, results, maxWidthLabel);
                     }
                     outStream << ": ";
 
                     // Now print the state labeling to the stream if requested.
                     if (includeLabeling) {
                         outStream << "{";
-                        storm::utility::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
                         outStream << "}";
                     }
 

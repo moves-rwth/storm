@@ -136,7 +136,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
         while (i < 10 && orderItr != monResults.end()) {
             std::ofstream dotOutfile;
             std::string name = dotOutfileName + std::to_string(i);
-            utility::openFile(name, dotOutfile);
+            storm::io::openFile(name, dotOutfile);
             dotOutfile << "Assumptions:\n";
             auto assumptionItr = orderItr->second.second.begin();
             while (assumptionItr != orderItr->second.second.end()) {
@@ -146,7 +146,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostre
             }
             dotOutfile << '\n';
             orderItr->first->dotOutputToFile(dotOutfile);
-            utility::closeFile(dotOutfile);
+            storm::io::closeFile(dotOutfile);
             i++;
             orderItr++;
         }

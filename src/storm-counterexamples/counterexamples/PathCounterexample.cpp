@@ -29,7 +29,7 @@ void PathCounterexample<ValueType>::writeToStream(std::ostream& out) const {
                 out << ": " << model->getStateValuations().getStateInfo(*it);
             }
             out << ": {";
-            storm::utility::outputFixedWidth(out, model->getLabelsOfState(*it), 0);
+            storm::io::outputFixedWidth(out, model->getLabelsOfState(*it), 0);
             out << "}\n";
         }
     }

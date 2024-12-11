@@ -310,7 +310,7 @@ uint64_t WinningRegion::getStorageSize() const {
 
 void WinningRegion::storeToFile(std::string const& path, std::string const& preamble, bool append) const {
     std::ofstream file;
-    storm::utility::openFile(path, file, append);
+    storm::io::openFile(path, file, append);
     file << ":preamble\n";
     file << preamble << '\n';
     file << ":winningregion\n";
@@ -331,19 +331,19 @@ void WinningRegion::storeToFile(std::string const& path, std::string const& prea
         }
         file << '\n';
     }
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
 }
 
 std::pair<WinningRegion, std::string> WinningRegion::loadFromFile(std::string const& path) {
     std::ifstream file;
     std::vector<uint64_t> observationSizes;
-    storm::utility::openFile(path, file);
+    storm::io::openFile(path, file);
     std::string line;
     uint64_t state = 0;  // 0 = expect preamble
     uint64_t observation = 0;
     WinningRegion wr({1});
     std::stringstream preamblestream;
-    while (std::getline(file, line)) {
+    while (storm::io::getline(file, line)) {
         if (boost::starts_with(line, "#")) {
             continue;
         }
@@ -375,7 +375,7 @@ std::pair<WinningRegion, std::string> WinningRegion::loadFromFile(std::string co
             ++observation;
         }
     }
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
     return {wr, preamblestream.str()};
 }
 

@@ -635,20 +635,20 @@ void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
     if (ioSettings.isExportBuildSet()) {
         switch (ioSettings.getExportBuildFormat()) {
-            case storm::exporter::ModelExportFormat::Dot:
+            case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
-            case storm::exporter::ModelExportFormat::Drn:
+            case storm::io::ModelExportFormat::Drn:
                 storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(),
                                                    input.model ? input.model.get().getParameterNames() : std::vector<std::string>(),
                                                    !ioSettings.isExplicitExportPlaceholdersDisabled());
                 break;
-            case storm::exporter::ModelExportFormat::Json:
+            case storm::io::ModelExportFormat::Json:
                 storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Exporting sparse models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                                "Exporting sparse models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
     }
 
@@ -675,15 +675,15 @@ void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueT
 
     if (ioSettings.isExportBuildSet()) {
         switch (ioSettings.getExportBuildFormat()) {
-            case storm::exporter::ModelExportFormat::Dot:
+            case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSymbolicModelAsDot(model, ioSettings.getExportBuildFilename());
                 break;
-            case storm::exporter::ModelExportFormat::Drdd:
+            case storm::io::ModelExportFormat::Drdd:
                 storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportBuildFilename());
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Exporting symbolic models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                                "Exporting symbolic models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
     }
 

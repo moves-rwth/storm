@@ -107,7 +107,7 @@ std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionPars
     std::string const& fileName, std::set<VariableType> const& consideredVariables) {
     // Open file and initialize result.
     std::ifstream inputFileStream;
-    storm::utility::openFile(fileName, inputFileStream);
+    storm::io::openFile(fileName, inputFileStream);
 
     std::vector<storm::storage::ParameterRegion<ParametricType>> result;
 
@@ -117,12 +117,12 @@ std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionPars
         result = parseMultipleRegions(fileContent, consideredVariables);
     } catch (std::exception& e) {
         // In case of an exception properly close the file before passing exception.
-        storm::utility::closeFile(inputFileStream);
+        storm::io::closeFile(inputFileStream);
         throw e;
     }
 
     // Close the stream in case everything went smoothly and return result.
-    storm::utility::closeFile(inputFileStream);
+    storm::io::closeFile(inputFileStream);
     return result;
 }
 

@@ -37,7 +37,7 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
 
     if (monSettings.isExportMonotonicitySet()) {
-        storm::utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
+        storm::io::openFile(monSettings.getExportMonotonicityFilename(), outfile);
     }
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
     storm::utility::Stopwatch monotonicityWatch(true);
@@ -99,7 +99,7 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
     }
 
     if (monSettings.isExportMonotonicitySet()) {
-        storm::utility::closeFile(outfile);
+        storm::io::closeFile(outfile);
     }
 
     monotonicityWatch.stop();
