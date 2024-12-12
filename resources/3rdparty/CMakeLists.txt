@@ -57,7 +57,8 @@ ExternalProject_Add(
         GIT_TAG bae907b8f6078b1df290729eef946360315bd312
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.1alpha
-		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
+        # First check whether patch was already applied (--reverse --check), otherwise apply patch
+        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch --reverse --check || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
