@@ -4,7 +4,7 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace exporter {
+namespace io {
 
 ModelExportFormat getModelExportFormatFromString(std::string const& input) {
     if (input == "dot") {
@@ -41,5 +41,5 @@ ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filen
     return getModelExportFormatFromString(filename.substr(pos));
 }
 
-}  // namespace exporter
+}  // namespace io
 }  // namespace storm

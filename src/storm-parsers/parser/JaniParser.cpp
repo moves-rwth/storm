@@ -103,9 +103,9 @@ JaniParser<ValueType>::JaniParser(std::string const& jsonstring) : expressionMan
 template<typename ValueType>
 void JaniParser<ValueType>::readFile(std::string const& path) {
     std::ifstream file;
-    storm::utility::openFile(path, file);
+    storm::io::openFile(path, file);
     file >> parsedStructure;
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
 }
 
 template<typename ValueType>
