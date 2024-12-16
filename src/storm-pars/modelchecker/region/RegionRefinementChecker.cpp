@@ -235,10 +235,6 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
     // Helper functions to check if a given result is better than the currently known result
     auto isBetterThanValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
     // acceptGlobalBound is the opposite of this
-    // auto isStrictlyBetterThanValue = [&value, &dir, &convertedPrecision, &absolutePrecision](auto const& newValue) {
-    //     CoefficientType const usedPrecision = convertedPrecision * (absolutePrecision ? storm::utility::one<CoefficientType>() : value);
-    //     return storm::solver::minimize(dir) ? newValue < value - usedPrecision : newValue > value + usedPrecision;
-    // };
 
     // Region Refinement Loop
     uint64_t numOfAnalyzedRegions{0u};
@@ -255,7 +251,6 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         monotonicityBackend->updateMonotonicity(env, currentRegion);
 
         // Compute the bound for this region (unless the known bound is already too weak)
-        // if (!currentBound || isStrictlyBetterThanValue(currentBound.value())) {
         if (!currentBound || !acceptGlobalBound(value, currentBound.value())) {
             // Improve over-approximation of extremal value (within this region)
             currentBound = regionChecker->getBoundAtInitState(env, currentRegion, dir);
@@ -273,7 +268,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
             auto [currValue, currValuation] = regionChecker->getAndEvaluateGoodPoint(env, currentRegion, dir);
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
-                if (rejectInstance(value)) {
+                if (rejectInstance(currValue)) {
                     return valueValuation;
                 }
             }
