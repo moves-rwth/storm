@@ -332,8 +332,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
     auto rejectInstance = [&](CoefficientType currentValue) { return !bound.isSatisfied(currentValue); };
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
-    STORM_LOG_DEBUG("Reported extremal value " << res);
-    // TODO use termination bound instead of initial value?
+    std::cout << "Extremal value: " << res << std::endl;
     return storm::solver::minimize(dir) ? res >= valueToCheck : res <= valueToCheck;
 }
 
