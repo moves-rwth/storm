@@ -288,8 +288,8 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
         }
     }
 
-    std::cout << "Region partitioning for extremal value terminated after analyzing "
-                   << numOfAnalyzedRegions << " regions.\n\t" << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.\n";
+    std::cout << "Region partitioning for extremal value terminated after analyzing " << numOfAnalyzedRegions << " regions.\n\t"
+              << progress.getUndiscoveredPercentage() << "% of the parameter space are not covered.\n";
     return valueValuation;
 }
 
