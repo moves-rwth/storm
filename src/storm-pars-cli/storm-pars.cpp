@@ -349,14 +349,36 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto const& property = input.properties.front();
 
     auto const& rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
-    auto engine = rvs.getRegionCheckEngine();
-    auto splittingHeuristic = rvs.getRegionSplittingHeuristic();
-    auto estimateKind = rvs.getRegionSplittingEstimateMethod();
-    uint64_t maxSplitsPerStep = rvs.isSplittingThresholdSet() ? rvs.getSplittingThreshold() : std::numeric_limits<uint64_t>::max();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
-    auto splittingStrategy = modelchecker::RegionSplittingStrategy(splittingHeuristic, maxSplitsPerStep, estimateKind);
+    auto engine = rvs.getRegionCheckEngine();
+    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+
+    auto splittingStrategy = modelchecker::RegionSplittingStrategy();
+
+    splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
+    splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
+    if (rvs.isSplittingThresholdSet()) {
+        splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
+    }
+
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+
     storm::utility::Stopwatch watch(true);
-    auto const& settings = storm::api::RefinementSettings<ValueType>{model, *(property.getRawFormula()), engine, splittingStrategy, monotonicitySettings};
+
+    auto const& settings = storm::api::RefinementSettings<ValueType>{
+        model,
+        *(property.getRawFormula()),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true,  // allow model simplification
+        graphPreserving,
+        false  // preconditions not yet validated
+    };
+
     if (storm::api::verifyRegion<ValueType>(settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
@@ -416,7 +438,6 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
-    Environment env;
 
     auto settings = storm::api::RefinementSettings<ValueType>{
         model,
