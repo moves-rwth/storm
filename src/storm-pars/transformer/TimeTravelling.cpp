@@ -356,16 +356,16 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsTransitions.createSparseMatrix(), "");
 
 #if WRITE_DTMCS
-        models::sparse::Dtmc<RationalFunction> newnewDTMC(flexibleMatrix.createSparseMatrix().getSubmatrix(false, reachableStates, reachableStates),
-                                                          runningLabeling.getSubLabeling(reachableStates));
-        if (stateRewardVector) {
-            models::sparse::StandardRewardModel<RationalFunction> newRewardModel(*stateRewardVector);
-        }
-        std::ofstream file;
-        file.open("dots/bigstep_" + std::to_string(writeDtmcCounter++) + ".dot");
-        newnewDTMC.writeDotToStream(file);
-        file.close();
-        STORM_LOG_ASSERT(newnewDTMC.getTransitionMatrix().isProbabilistic(), "Written DTMC matrix not proababilistic.");
+    models::sparse::Dtmc<RationalFunction> newnewnewDTMC(flexibleMatrix.createSparseMatrix(), runningLabeling);
+    if (stateRewardVector) {
+        models::sparse::StandardRewardModel<RationalFunction> newRewardModel(*stateRewardVector);
+        newnewnewDTMC.addRewardModel(*stateRewardName, newRewardModel);
+    }
+    std::ofstream file2;
+    storm::io::openFile("dots/travel_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot", file2);
+    newnewnewDTMC.writeDotToStream(file2);
+    storm::io::closeFile(file2);
+    newnewnewDTMC.getTransitionMatrix().isProbabilistic();
 #endif
     }
 

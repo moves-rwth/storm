@@ -286,7 +286,6 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
                 }
                 if (all) {
                     STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                    order->setDoneState(state);
                 }
                 ++itr;
             }
@@ -340,7 +339,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             assert(order->sortStates(&successors).size() == successors.size());
             assert(order->contains(currentState) && order->getNode(currentState) != nullptr);
 
-            if (monRes != nullptr && currentStateMode.second) {
+            if (monRes != nullptr) {
                 for (auto& param : occuringVariablesAtState[currentState]) {
                     checkParOnStateMonRes(currentState, order, param, monRes);
                 }

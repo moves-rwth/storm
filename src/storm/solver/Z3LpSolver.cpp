@@ -276,9 +276,9 @@ ValueType Z3LpSolver<ValueType, RawMode>::getObjectiveValue() const {
 template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     stream << Z3_optimize_to_string(*context, *solver);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<typename ValueType, bool RawMode>

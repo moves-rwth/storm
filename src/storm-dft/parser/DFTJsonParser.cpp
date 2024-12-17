@@ -18,10 +18,10 @@ namespace parser {
 template<typename ValueType>
 storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
     Json jsonInput;
     file >> jsonInput;
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
     return parseJson(jsonInput);
 }
 
