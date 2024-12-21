@@ -164,6 +164,34 @@ storm::RationalNumber const& StateValuations::getRationalValue(storm::storage::s
     return valuation.rationalValues[variableToIndexMap.at(rationalVariable)];
 }
 
+storm::storage::BitVector StateValuations::getBooleanValues(storm::expressions::Variable const& booleanVariable) const {
+    storm::storage::BitVector result(getNumberOfStates(), false);
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        if (getBooleanValue(stateIndex, booleanVariable)) {
+            result.set(stateIndex);
+        }
+    }
+    return result;
+}
+
+std::vector<int64_t> StateValuations::getIntegerValues(storm::expressions::Variable const& integerVariable) const {
+    std::vector<int64_t> result;
+    result.reserve(getNumberOfStates());
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        result.push_back(getIntegerValue(stateIndex, integerVariable));
+    }
+    return result;
+}
+
+std::vector<storm::RationalNumber> StateValuations::getRationalValues(storm::expressions::Variable const& rationalVariable) const {
+    std::vector<storm::RationalNumber> result;
+    result.reserve(getNumberOfStates());
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        result.push_back(getRationalValue(stateIndex, rationalVariable));
+    }
+    return result;
+}
+
 bool StateValuations::isEmpty(storm::storage::sparse::state_type const& stateIndex) const {
     auto const& valuation = valuations[stateIndex];  // Do not use getValuations, as that is only valid after adding stuff.
     return valuation.booleanValues.empty() && valuation.integerValues.empty() && valuation.rationalValues.empty() && valuation.observationLabelValues.empty();
