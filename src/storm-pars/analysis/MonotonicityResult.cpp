@@ -1,5 +1,7 @@
 #include "MonotonicityResult.h"
 
+#include <sstream>
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -67,7 +69,7 @@ typename MonotonicityResult<VariableType>::Monotonicity MonotonicityResult<Varia
 }
 
 template<typename VariableType>
-std::map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> MonotonicityResult<VariableType>::getMonotonicityResult() const {
+std::map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> const& MonotonicityResult<VariableType>::getMonotonicityResult() const {
     return monotonicityResult;
 }
 
@@ -93,36 +95,15 @@ std::pair<std::set<VariableType>, std::set<VariableType>> MonotonicityResult<Var
 
 template<typename VariableType>
 std::string MonotonicityResult<VariableType>::toString() const {
-    std::string result;
+    std::stringstream stream;
     auto countIncr = 0;
     auto countDecr = 0;
     for (auto res : getMonotonicityResult()) {
-        result += res.first.name();
-        switch (res.second) {
-            case MonotonicityResult<VariableType>::Monotonicity::Incr:
-                countIncr++;
-                result += " MonIncr; ";
-                break;
-            case MonotonicityResult<VariableType>::Monotonicity::Decr:
-                countDecr++;
-                result += " MonDecr; ";
-                break;
-            case MonotonicityResult<VariableType>::Monotonicity::Constant:
-                result += " Constant; ";
-                break;
-            case MonotonicityResult<VariableType>::Monotonicity::Not:
-                result += " NotMon; ";
-                break;
-            case MonotonicityResult<VariableType>::Monotonicity::Unknown:
-                result += " Unknown; ";
-                break;
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                                "Could not get a string from the region monotonicity check result. The case has not been implemented");
-        }
+        stream << res.first.name() << " " << res.second << "; ";
+        countIncr += (res.second == Monotonicity::Incr) ? 1 : 0;
+        countDecr += (res.second == Monotonicity::Decr) ? 1 : 0;
     }
-    result = "#Incr: " + std::to_string(countIncr) + " #Decr: " + std::to_string(countDecr) + "\n" + result;
-    return result;
+    return "#Incr: " + std::to_string(countIncr) + " #Decr: " + std::to_string(countDecr) + "\n" + stream.str();
 }
 
 template<typename VariableType>
