@@ -165,9 +165,11 @@ storm::RationalNumber const& StateValuations::getRationalValue(storm::storage::s
 }
 
 storm::storage::BitVector StateValuations::getBooleanValues(storm::expressions::Variable const& booleanVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(booleanVariable) > 0, "Variable " << booleanVariable.getName() << " is not part of this valuation.");
+    auto const varIndex = variableToIndexMap.at(booleanVariable);
     storm::storage::BitVector result(getNumberOfStates(), false);
     for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
-        if (getBooleanValue(stateIndex, booleanVariable)) {
+        if (getValuation(stateIndex).booleanValues[varIndex]) {
             result.set(stateIndex);
         }
     }
@@ -175,19 +177,23 @@ storm::storage::BitVector StateValuations::getBooleanValues(storm::expressions::
 }
 
 std::vector<int64_t> StateValuations::getIntegerValues(storm::expressions::Variable const& integerVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(integerVariable) > 0, "Variable " << integerVariable.getName() << " is not part of this valuation.");
+    auto const varIndex = variableToIndexMap.at(integerVariable);
     std::vector<int64_t> result;
     result.reserve(getNumberOfStates());
     for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
-        result.push_back(getIntegerValue(stateIndex, integerVariable));
+        result.push_back(getValuation(stateIndex).integerValues[varIndex]);
     }
     return result;
 }
 
 std::vector<storm::RationalNumber> StateValuations::getRationalValues(storm::expressions::Variable const& rationalVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(rationalVariable) > 0, "Variable " << rationalVariable.getName() << " is not part of this valuation.");
+    auto const varIndex = variableToIndexMap.at(rationalVariable);
     std::vector<storm::RationalNumber> result;
     result.reserve(getNumberOfStates());
     for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
-        result.push_back(getRationalValue(stateIndex, rationalVariable));
+        result.push_back(getValuation(stateIndex).rationalValues[varIndex]);
     }
     return result;
 }
