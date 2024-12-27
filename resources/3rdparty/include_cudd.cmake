@@ -70,7 +70,7 @@ set(CUDD_VERSION_STRING 3.0.0)
 add_imported_library(cudd SHARED ${CUDD_SHARED_LIBRARY} ${CUDD_INCLUDE_DIR})
 add_imported_library(cudd STATIC ${CUDD_STATIC_LIBRARY} ${CUDD_INCLUDE_DIR})
 
-add_dependencies(resources cudd3)
+add_dependencies(storm_resources cudd3)
 
 if(BUILD_SHARED_LIBS)
 	list(APPEND STORM_DEP_TARGETS cudd_SHARED)
