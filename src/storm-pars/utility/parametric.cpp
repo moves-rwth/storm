@@ -4,19 +4,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace utility {
 namespace parametric {
-
-#ifdef STORM_HAVE_CARL
-template<>
-typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function,
-                                                                                          Valuation<storm::RationalFunction> const& valuation) {
-    return function.evaluate(valuation);
-}
 
 template<>
 typename storm::RationalFunction substitute<storm::RationalFunction>(storm::RationalFunction const& function,
@@ -48,7 +40,6 @@ bool isMultiLinearPolynomial<storm::RationalFunction>(storm::RationalFunction co
     }
     return true;
 }
-#endif
 }  // namespace parametric
 }  // namespace utility
 }  // namespace storm
