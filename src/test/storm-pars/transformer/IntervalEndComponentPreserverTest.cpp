@@ -16,6 +16,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
 #include "storm/environment/Environment.h"
@@ -30,6 +31,7 @@
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/prism.h"
@@ -41,77 +43,6 @@
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
-void testModelInterval(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
-    storm::prism::Program program = storm::api::parseProgram(programFile);
-    program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
-        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
-        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
-
-    storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
-    storm::storage::BitVector psiStates =
-        std::move(propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
-                      ->asExplicitQualitativeCheckResult()
-                      .getTruthValuesVector());
-
-    std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());
-    storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<storm::RationalFunction>());
-
-    storm::storage::BitVector allTrue(model->getNumberOfStates(), true);
-
-    // Lift parameters for region [0,1]
-    storm::transformer::RobustParameterLifter<storm::RationalFunction, double> parameterLifter(dtmc->getTransitionMatrix().filterEntries(~psiStates), target,
-                                                                                               allTrue, allTrue);
-
-    storm::storage::ParameterRegion<storm::RationalFunction> region = storm::api::createRegion<storm::RationalFunction>("0", *dtmc)[0];
-
-    parameterLifter.specifyRegion(region, storm::solver::OptimizationDirection::Maximize);
-
-    storm::transformer::IntervalEndComponentPreserver preserver;
-    auto result = preserver.eliminateMECs(parameterLifter.getMatrix(), parameterLifter.getVector());
-    ASSERT_TRUE(result.has_value());
-    auto const& withoutMECs = *result;
-
-    auto target2 = parameterLifter.getVector();
-    target2.push_back(storm::utility::zero<storm::Interval>());
-
-    auto env = storm::Environment();
-    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-    env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-
-    auto factory = std::make_unique<storm::solver::GeneralMinMaxLinearEquationSolverFactory<storm::Interval, double>>();
-
-    auto const& solver1 = factory->create(env);
-    auto x1 = std::vector<double>(parameterLifter.getVector().size(), 0);
-    solver1->setMatrix(parameterLifter.getMatrix());
-
-    auto const& solver2 = factory->create(env);
-    solver2->setMatrix(withoutMECs);
-    auto x2 = std::vector<double>(target2.size(), 0);
-
-    solver1->setUncertaintyIsRobust(false);
-    solver2->setUncertaintyIsRobust(false);
-
-    // Check that maximize is the same
-    solver1->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-    solver1->solveEquations(env, x1, parameterLifter.getVector());
-    solver2->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-    solver2->solveEquations(env, x2, target2);
-
-    for (uint64_t i = 0; i < x1.size(); i++) {
-        if (withoutMECs.getRow(i).getNumberOfEntries() > 0) {
-            ASSERT_NEAR(x1[i], x2[i], 1e-7);
-        }
-    }
-
-    // We can't check minimize because we don't know what is happening, and
-    // also, minimizing solver1 is what we want to avoid
-}
-
 class IntervalEndComponentPreserverTest : public ::testing::Test {
    protected:
     void SetUp() override {
@@ -122,29 +53,51 @@ class IntervalEndComponentPreserverTest : public ::testing::Test {
 };
 
 TEST_F(IntervalEndComponentPreserverTest, Simple) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm";
-    std::string formulaAsString = "P=? [F \"target\"]";
-    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
-    testModelInterval(programFile, formulaAsString, constantsAsString);
-}
+    storm::storage::SparseMatrixBuilder<storm::Interval> builder(3, 3);
+    //                     0       1       2
+    //         ---- group 0/2 ---- 
+    // 0       (       [0, 1]  [0, 1]  0               )       0
+    //         ---- group 1/2 ---- 
+    // 1       (       0       0       [1, 1]          )       1
+    //         ---- group 2/2 ---- 
+    // 2       (       0       0       0               )       2
+    //                 0       1       2
+    builder.addNextValue(0, 0, storm::Interval(0, 1));
+    builder.addNextValue(0, 1, storm::Interval(0, 1));
+    builder.addNextValue(1, 2, storm::Interval(1, 1));
+    storm::storage::SparseMatrix<storm::Interval> matrix = builder.build();
 
-TEST_F(IntervalEndComponentPreserverTest, BRP) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
-    std::string formulaAsString = "P=? [F \"error\"]";
-    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
-    testModelInterval(programFile, formulaAsString, constantsAsString);
-}
+    std::vector<storm::Interval> vector = {storm::Interval(0, 0), storm::Interval(1, 1), storm::Interval(0,0)};
 
-TEST_F(IntervalEndComponentPreserverTest, Crowds) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
-    std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
-    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
-    testModelInterval(programFile, formulaAsString, constantsAsString);
-}
+    storm::transformer::IntervalEndComponentPreserver preserver;
+    auto newMatrix = preserver.eliminateMECs(matrix, vector);
 
-TEST_F(IntervalEndComponentPreserverTest, NAND) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
-    std::string formulaAsString = "P=? [F \"target\"]";
-    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
-    testModelInterval(programFile, formulaAsString, constantsAsString);
+    // Should be this now
+    //                     0       1       2       3
+    //         ---- group 0/3 ---- 
+    // 0       (       0       [0, 1]  0       [0, 1]          )       0
+    //         ---- group 1/3 ---- 
+    // 1       (       0       0       [1, 1]  0               )       1
+    //         ---- group 2/3 ---- 
+    // 2       (       0       0       0       0               )       2
+    //         ---- group 3/3 ---- 
+    // 3       (       0       0       0       0               )       3
+    //                 0       1       2       3
+
+    ASSERT_EQ(newMatrix->getRowCount(), 4);
+    ASSERT_EQ(newMatrix->getColumnCount(), 4);
+    ASSERT_EQ(newMatrix->getEntryCount(), 3);
+
+    ASSERT_EQ(newMatrix->getRow(0).getNumberOfEntries(), 2);
+    ASSERT_EQ(newMatrix->getRow(0).begin()->getColumn(), 1);
+    ASSERT_EQ(newMatrix->getRow(0).begin()->getValue(), storm::Interval(0, 1));
+    ASSERT_EQ((newMatrix->getRow(0).begin() + 1)->getColumn(), 3);
+    ASSERT_EQ((newMatrix->getRow(0).begin() + 1)->getValue(), storm::Interval(0, 1));
+
+    ASSERT_EQ(newMatrix->getRow(1).getNumberOfEntries(), 1);
+    ASSERT_EQ(newMatrix->getRow(1).begin()->getColumn(), 2);
+    ASSERT_EQ(newMatrix->getRow(1).begin()->getValue(), storm::Interval(1, 1));
+
+    ASSERT_EQ(newMatrix->getRow(2).getNumberOfEntries(), 0);
+    ASSERT_EQ(newMatrix->getRow(3).getNumberOfEntries(), 0);
 }

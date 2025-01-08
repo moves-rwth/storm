@@ -76,6 +76,7 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
             for (auto const& state : groupSet) {
                 builder.addNextValue(row, state, Interval(0, 1));
             }
+            builder.addNextValue(row, sinkState, Interval(0, 1));
         }
     }
 
