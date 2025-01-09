@@ -93,9 +93,10 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     reset();
 
+    std::cout << "Eliminating: " << allowModelSimplifications << graphPreserving << std::endl;
     if (allowModelSimplifications && graphPreserving) {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmc);
-        if constexpr (Robust) {
+        if (!graphPreserving) {
             simplifier.setSkipConstantDeterministicStateElimination(true);
         }
         if (!simplifier.simplify(checkTask.getFormula())) {
