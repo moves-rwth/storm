@@ -55,11 +55,11 @@ class IntervalEndComponentPreserverTest : public ::testing::Test {
 TEST_F(IntervalEndComponentPreserverTest, Simple) {
     storm::storage::SparseMatrixBuilder<storm::Interval> builder(3, 3);
     //                     0       1       2
-    //         ---- group 0/2 ---- 
+    //         ---- group 0/2 ----
     // 0       (       [0, 1]  [0, 1]  0               )       0
-    //         ---- group 1/2 ---- 
+    //         ---- group 1/2 ----
     // 1       (       0       0       [1, 1]          )       1
-    //         ---- group 2/2 ---- 
+    //         ---- group 2/2 ----
     // 2       (       0       0       0               )       2
     //                 0       1       2
     builder.addNextValue(0, 0, storm::Interval(0, 1));
@@ -67,20 +67,20 @@ TEST_F(IntervalEndComponentPreserverTest, Simple) {
     builder.addNextValue(1, 2, storm::Interval(1, 1));
     storm::storage::SparseMatrix<storm::Interval> matrix = builder.build();
 
-    std::vector<storm::Interval> vector = {storm::Interval(0, 0), storm::Interval(1, 1), storm::Interval(0,0)};
+    std::vector<storm::Interval> vector = {storm::Interval(0, 0), storm::Interval(1, 1), storm::Interval(0, 0)};
 
     storm::transformer::IntervalEndComponentPreserver preserver;
     auto newMatrix = preserver.eliminateMECs(matrix, vector);
 
     // Should be this now
     //                     0       1       2       3
-    //         ---- group 0/3 ---- 
+    //         ---- group 0/3 ----
     // 0       (       0       [0, 1]  0       [0, 1]          )       0
-    //         ---- group 1/3 ---- 
+    //         ---- group 1/3 ----
     // 1       (       0       0       [1, 1]  0               )       1
-    //         ---- group 2/3 ---- 
+    //         ---- group 2/3 ----
     // 2       (       0       0       0       0               )       2
-    //         ---- group 3/3 ---- 
+    //         ---- group 3/3 ----
     // 3       (       0       0       0       0               )       3
     //                 0       1       2       3
 
