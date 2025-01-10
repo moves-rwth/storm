@@ -105,10 +105,6 @@ bool SparseParametricModelSimplifier<SparseModelType>::simplifyForCumulativeRewa
 template<typename SparseModelType>
 std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(
     SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName) {
-    if (this->skipConstantDeterministicStateElimination) {
-        return std::make_shared<SparseModelType>(model.getTransitionMatrix(), model.getStateLabeling(), model.getRewardModels());
-    }
-
     storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
     auto backwardsSparseMatrix = sparseMatrix.transpose();
 
@@ -132,11 +128,12 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
                     break;
                 }
             }
-            // TODO: HACK to make matrix stochastic
-            for (auto const& entry : backwardsSparseMatrix.getRowGroup(state)) {
-                if (!storm::utility::isConstant(entry.getValue())) {
-                    selectedStates.set(state, false);
-                    break;
+            if (state && this->preserveParametricTransitions) {
+                for (auto const& entry : backwardsSparseMatrix.getRowGroup(state)) {
+                    if (!storm::utility::isConstant(entry.getValue())) {
+                        selectedStates.set(state, false);
+                        break;
+                    }
                 }
             }
         } else {
@@ -167,13 +164,13 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
 }
 
 template<typename SparseModelType>
-void SparseParametricModelSimplifier<SparseModelType>::setSkipConstantDeterministicStateElimination(bool skipConstantDeterministicStateElimination) {
-    this->skipConstantDeterministicStateElimination = skipConstantDeterministicStateElimination;
+void SparseParametricModelSimplifier<SparseModelType>::setPreserveParametricTransitions(bool preserveParametricTransitions) {
+    this->preserveParametricTransitions = preserveParametricTransitions;
 }
 
 template<typename SparseModelType>
-bool SparseParametricModelSimplifier<SparseModelType>::isSkipConstantDeterministicStateEliminationSet() const {
-    return this->skipConstantDeterministicStateElimination;
+bool SparseParametricModelSimplifier<SparseModelType>::isPreserveParametricTransitionsSet() const {
+    return this->preserveParametricTransitions;
 }
 
 template class SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>;

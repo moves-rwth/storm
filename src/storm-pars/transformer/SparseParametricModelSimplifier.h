@@ -41,16 +41,16 @@ class SparseParametricModelSimplifier {
     std::shared_ptr<storm::logic::Formula const> getSimplifiedFormula() const;
 
     /**
-     * Set whether to skip constant deterministic state elimination (i.e. for robust PLA, where it returns unfavourable MCs).
+     * Set whether to preserve parametric transions (i.e. for robust PLA, where it returns unfavourable MCs).
      *
-     * @param skipConstantDeterministicStateElimination
+     * @param preserveParametricTransitions
      */
-    void setSkipConstantDeterministicStateElimination(bool skipConstantDeterministicStateElimination);
+    void setPreserveParametricTransitions(bool preserveParametricTransitions);
 
     /**
-     * Whether this SparseParametricDtmcSimplifier skips constant deterministic state elimination.
+     * Whether this SparseParametricDtmcSimplifier preserves parametric transitions.
      */
-    bool isSkipConstantDeterministicStateEliminationSet() const;
+    bool isPreserveParametricTransitionsSet() const;
 
    protected:
     // Perform the simplification for the corresponding formula type
@@ -77,7 +77,7 @@ class SparseParametricModelSimplifier {
 
     std::shared_ptr<SparseModelType> simplifiedModel;
     std::shared_ptr<storm::logic::Formula const> simplifiedFormula;
-    bool skipConstantDeterministicStateElimination = false;
+    bool preserveParametricTransitions = false;
 };
 }  // namespace transformer
 }  // namespace storm
