@@ -110,6 +110,7 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
     }
 
     storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
+    auto backwardsSparseMatrix = sparseMatrix.transpose();
 
     // get the action-based reward values
     std::vector<typename SparseModelType::ValueType> actionRewards;
@@ -131,6 +132,13 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
                     break;
                 }
             }
+            // TODO: HACK to make matrix stochastic
+            for (auto const& entry : backwardsSparseMatrix.getRowGroup(state)) {
+                if (!storm::utility::isConstant(entry.getValue())) {
+                    selectedStates.set(state, false);
+                    break;
+                }
+            }
         } else {
             selectedStates.set(state, false);
         }
@@ -138,7 +146,7 @@ std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType
 
     // invoke elimination and obtain resulting transition matrix
     storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrix(sparseMatrix);
-    storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(sparseMatrix.transpose(), true);
+    storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(backwardsSparseMatrix, true);
     storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminator(
         flexibleMatrix, flexibleBackwardTransitions, actionRewards);
     for (auto state : selectedStates) {

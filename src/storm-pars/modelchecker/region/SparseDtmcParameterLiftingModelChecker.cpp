@@ -95,9 +95,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
     if (allowModelSimplifications && graphPreserving) {
         auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmc);
-        if (!graphPreserving || !transformer::TimeTravelling::lastSavedAnnotations.empty()) {
-            simplifier.setSkipConstantDeterministicStateElimination(true);
-        }
+        // if (Robust) {
+        //     simplifier.setSkipConstantDeterministicStateElimination(true);
+        // }
         if (!simplifier.simplify(checkTask.getFormula())) {
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         }
