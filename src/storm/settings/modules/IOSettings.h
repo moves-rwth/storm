@@ -57,7 +57,7 @@ class IOSettings : public ModuleSettings {
     /*!
      * Retrieves the specified export format for the exportbuild option
      */
-    storm::exporter::ModelExportFormat getExportBuildFormat() const;
+    storm::io::ModelExportFormat getExportBuildFormat() const;
 
     /*!
      * Retrieves whether the export-to-dot option for jani was set.

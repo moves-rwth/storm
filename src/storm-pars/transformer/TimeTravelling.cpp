@@ -151,9 +151,9 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
             newnewDTMC.addRewardModel(*stateRewardName, newRewardModel);
         }
         std::ofstream file;
-        file.open("dots/jipconvert_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot");
+        storm::io::openFile("dots/jipconvert_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot", file);
         newnewDTMC.writeDotToStream(file);
-        file.close();
+        storm::io::closeFile(file);
         // newnewDTMC.writeDotToStream(std::cout);
         newnewDTMC.getTransitionMatrix().isProbabilistic();
 #endif
@@ -328,9 +328,9 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
         newnewnewDTMC.addRewardModel(*stateRewardName, newRewardModel);
     }
     std::ofstream file2;
-    file2.open("dots/travel_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot");
+    storm::io::openFile("dots/travel_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot", file2);
     newnewnewDTMC.writeDotToStream(file2);
-    file2.close();
+    storm::io::closeFile(file2);
     newnewnewDTMC.getTransitionMatrix().isProbabilistic();
 #endif
 

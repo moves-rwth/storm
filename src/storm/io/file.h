@@ -6,7 +6,7 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-namespace utility {
+namespace io {
 
 /*!
  * Open the given file for writing.
@@ -92,5 +92,5 @@ inline std::basic_istream<CharT, Traits>& getline(std::basic_istream<CharT, Trai
     return res;
 }
 
-}  // namespace utility
+}  // namespace io
 }  // namespace storm

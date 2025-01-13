@@ -126,7 +126,7 @@ std::map<storm::storage::sparse::state_type, ValueType> SparseDtmcPrctlHelper<Va
             headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
         }
         headers.push_back("Result");
-        storm::utility::exportDataToCSVFile<ValueType, std::string, std::string>(
+        storm::io::exportDataToCSVFile<ValueType, std::string, std::string>(
             storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
     }
 

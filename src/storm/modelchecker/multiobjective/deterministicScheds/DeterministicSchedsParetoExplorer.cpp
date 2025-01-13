@@ -680,7 +680,7 @@ storm::utility::zero<GeometryValueType>()), std::vector<GeometryValueType>(objec
         for(auto const& v : underApproxVertices) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathUnderApproximation().get(), pointsForPlotting,
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathUnderApproximation().get(), pointsForPlotting,
 columnHeaders);
     }
 
@@ -691,7 +691,7 @@ columnHeaders);
         for(auto const& v : overApproxVertices) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathOverApproximation().get(), pointsForPlotting,
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathOverApproximation().get(), pointsForPlotting,
 columnHeaders);
     }
 
@@ -701,7 +701,7 @@ columnHeaders);
         for(auto const& v : paretoPoints) {
             pointsForPlotting.push_back(storm::utility::vector::convertNumericVector<double>(v));
         }
-        storm::utility::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathParetoPoints().get(), pointsForPlotting, columnHeaders);
+        storm::io::exportDataToCSVFile<double, std::string>(env.modelchecker().multi().getPlotPathParetoPoints().get(), pointsForPlotting, columnHeaders);
     }
 };
      */

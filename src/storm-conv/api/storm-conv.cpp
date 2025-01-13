@@ -142,17 +142,17 @@ void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani:
 
 void exportPrismToFile(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     stream << program << '\n';
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 
     if (!properties.empty()) {
-        storm::utility::openFile(filename + ".props", stream);
+        storm::io::openFile(filename + ".props", stream);
         for (auto const& prop : properties) {
             stream << prop.asPrismSyntax() << '\n';
             STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
         }
-        storm::utility::closeFile(stream);
+        storm::io::closeFile(stream);
     }
 }
 void printPrismToStream(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::ostream& ostream) {
