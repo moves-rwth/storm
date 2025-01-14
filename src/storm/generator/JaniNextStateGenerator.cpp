@@ -307,7 +307,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
         std::vector<std::vector<uint64_t>> allValues;
         for (auto const& aRef : this->parallelAutomata) {
             auto const& aInitLocs = aRef.get().getInitialLocationIndices();
-            allValues.template emplace_back(aInitLocs.begin(), aInitLocs.end());
+            allValues.emplace_back(aInitLocs.begin(), aInitLocs.end());
         }
         uint64_t locEndIndex = allValues.size();
         for (auto const& intVar : this->variableInformation.integerVariables) {
