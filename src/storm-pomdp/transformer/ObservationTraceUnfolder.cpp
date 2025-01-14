@@ -58,18 +58,18 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #endif
 
     uint64_t newStateIndex = 0;
-    uint64_t violatedState = newStateIndex;
+    uint64_t const violatedState = newStateIndex;
     if (!options.rejectionSampling) {
         // The violated state is only used if we do no use the rejection semantics.
         ++newStateIndex;
     }
     // Add this initial state:
-    uint64_t initialState = newStateIndex;
+    uint64_t const initialState = newStateIndex;
     ++newStateIndex;
 
     unfoldedToOldNextStep[initialState] = actualInitialStates.getNextSetIndex(0);
 
-    uint64_t resetDestination = options.rejectionSampling ? initialState : violatedState;  // Should be initial state for the standard semantics.
+    uint64_t const resetDestination = options.rejectionSampling ? initialState : violatedState;  // Should be initial state for the standard semantics.
     storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, true, true);
 
     // TODO only add this state if it is actually reachable / rejection sampling
