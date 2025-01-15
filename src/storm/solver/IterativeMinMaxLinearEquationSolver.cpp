@@ -630,10 +630,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
         storm::Environment const& environmentOfSolver = environmentOfSolverStorage ? *environmentOfSolverStorage : env;
 
-        solveInducedEquationSystem(environmentOfSolver, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b, dir);
-        // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
-        // always less-or-equal (greater-or-equal) than the actual solution.
-        guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
+        bool success = solveInducedEquationSystem(environmentOfSolver, linEqSolver, this->getInitialScheduler(), x, *auxiliaryRowGroupVector, b, dir);
+        if (success) {
+            // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
+            // always less-or-equal (greater-or-equal) than the actual solution.
+            guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
+        }
     } else if (!this->hasUniqueSolution()) {
         if (maximize(dir)) {
             this->createLowerBoundsVector(x);

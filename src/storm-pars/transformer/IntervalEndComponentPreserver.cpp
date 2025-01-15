@@ -72,6 +72,7 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
                     groupSet.insert(stateRepresentingGroup);
                 }
             }
+            STORM_LOG_DEBUG("Transformed group of size " << groupSet.size() << " for state " << row);
             // Insert interval [0, 1] to all of these states
             for (auto const& state : groupSet) {
                 builder.addNextValue(row, state, Interval(0, 1));

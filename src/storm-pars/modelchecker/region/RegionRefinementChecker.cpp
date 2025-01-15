@@ -15,6 +15,7 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
 namespace storm::modelchecker {
@@ -269,6 +270,7 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(Environment 
             if (isBetterThanValue(currValue)) {
                 valueValuation = {currValue, currValuation};
                 if (rejectInstance(currValue)) {
+                    STORM_LOG_INFO("Found rejecting instance " << currValuation << " with value " << currValue);
                     return valueValuation;
                 }
             }
