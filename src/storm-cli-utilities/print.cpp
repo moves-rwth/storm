@@ -19,11 +19,11 @@
 #ifdef STORM_HAVE_MSAT
 #include "mathsat.h"
 #endif
-#ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
-#endif
 #ifdef STORM_HAVE_SMTRAT
 #include "lib/smtrat.h"
+#endif
+#ifdef STORM_HAVE_SOPLEX
+#include "soplex.h"
 #endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
@@ -116,11 +116,11 @@ void printVersion() {
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
 #endif
-#ifdef STORM_HAVE_SOPLEX
-    STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
-#endif
 #ifdef STORM_HAVE_SMTRAT
     STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
+#endif
+#ifdef STORM_HAVE_SOPLEX
+    STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_SPOT
     STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
