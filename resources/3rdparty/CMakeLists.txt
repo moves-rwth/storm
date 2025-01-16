@@ -423,7 +423,7 @@ list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
 #############################################################
 
 set(STORM_HAVE_SMTRAT OFF)
-if(USE_SMTRAT)
+if(STORM_USE_SMTRAT)
 	find_package(smtrat QUIET REQUIRED)
 	if(smtrat_FOUND)
 		set(STORM_HAVE_SMTRAT ON)
