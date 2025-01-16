@@ -1,7 +1,7 @@
-#ifndef STORM_UTILITY_PARAMETRIC_H
-#define STORM_UTILITY_PARAMETRIC_H
+#pragma once
 
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/utility/constants.h"
 
 #include <map>
 #include <set>
@@ -26,7 +26,6 @@ struct CoefficientType {
     typedef void type;
 };
 
-#ifdef STORM_HAVE_CARL
 template<>
 struct VariableType<storm::RationalFunction> {
     typedef storm::RationalFunctionVariable type;
@@ -35,16 +34,21 @@ template<>
 struct CoefficientType<storm::RationalFunction> {
     typedef storm::RationalFunctionCoefficient type;
 };
-#endif
 
 template<typename FunctionType>
 using Valuation = std::map<typename VariableType<FunctionType>::type, typename CoefficientType<FunctionType>::type>;
 
 /*!
- * Evaluates the given function wrt. the given valuation
+ * Evaluates the given function wrt. the given valuation and returns the required type.
  */
-template<typename FunctionType>
-typename CoefficientType<FunctionType>::type evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation);
+template<typename ReturnType, typename FunctionType>
+ReturnType evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation) {
+    if constexpr (std::is_same<ReturnType, typename CoefficientType<FunctionType>::type>::value) {
+        return function.evaluate(valuation);
+    } else {
+        return storm::utility::convertNumber<ReturnType>(function.evaluate(valuation));
+    }
+}
 
 /*!
  * Evaluates the given function wrt. the given valuation
@@ -71,8 +75,5 @@ template<typename FunctionType>
 bool isMultiLinearPolynomial(FunctionType const& function);
 
 }  // namespace parametric
-
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_PARAMETRIC_H */
