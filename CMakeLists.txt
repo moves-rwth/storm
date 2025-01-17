@@ -72,9 +72,9 @@ set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optiona
 MARK_AS_ADVANCED(GUROBI_ROOT)
 # Eigen is shipped
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
-option(STORM_USE_MSAT "Sets whether MathSAT should be used." OFF)
-set(MSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT (optional).")
-MARK_AS_ADVANCED(MSAT_ROOT)
+option(STORM_USE_MATHSAT "Sets whether MathSAT should be used." OFF)
+set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT (optional).")
+MARK_AS_ADVANCED(MATHSAT_ROOT)
 option(STORM_USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
 mark_as_advanced(STORM_USE_SMTRAT)
 set(SMTRAT_ROOT "" CACHE STRING "A hint to the root directory of SMT-RAT (optional).")

@@ -37,7 +37,7 @@ in stdenv.mkDerivation {
 
   cmakeFlags =  genCmakeOption tbbSupport "STORM_USE_INTELTBB"
     ++ genCmakeOption ltoSupport "STORM_USE_LTO"
-    ++ optional mathsatSupport "-DMSAT_ROOT=${mathsat}" ;
+    ++ optional mathsatSupport "-DSTORM_USE_MATHSAT=ON -DMATHSAT_ROOT=${mathsat}" ;
 
   postPatch = ''
     sed -f ${l3ppCmakeSed} -i resources/3rdparty/CMakeLists.txt

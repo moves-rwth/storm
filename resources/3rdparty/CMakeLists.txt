@@ -466,23 +466,7 @@ endif()
 ##
 #############################################################
 
-if (STORM_USE_MSAT)
-    if(${OPERATING_SYSTEM} MATCHES "Linux")
-        find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_SHARED)
-    else()
-        # on MacOS, the .dylib file has some hard coded path (Version 5.5.4).
-        # we thus link statically
-        find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_STATIC)
-    endif()
-    message (STATUS "Storm - Linking with MathSAT.")
-    set(STORM_HAVE_MSAT ON)
-else()
-    set(STORM_HAVE_MSAT OFF)
-endif()
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_mathsat.cmake)
 
 #############################################################
 ##
