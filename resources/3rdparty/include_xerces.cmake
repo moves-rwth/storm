@@ -1,4 +1,4 @@
-if(STORM_USE_XERCESC)
+if(STORM_USE_XERCES)
 	find_package(XercesC QUIET)
     if(XercesC_FOUND)
         message(STATUS "Storm - Use system version of xerces.")
@@ -26,5 +26,5 @@ if(STORM_USE_XERCESC)
 else()
     set(STORM_HAVE_XERCES OFF)
     message (STATUS "Storm - Building without Xerces disables parsing XML formats (for GSPNs)")
-endif(STORM_USE_XERCESC)
+endif(STORM_USE_XERCES)
 
