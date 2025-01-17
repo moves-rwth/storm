@@ -16,8 +16,8 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/graph.h"
+#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/solver.h"
 
 class Cudd {
@@ -37,7 +37,7 @@ class GraphTestAR : public ::testing::Test {
 
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_MSAT
+#ifndef STORM_HAVE_MATHSAT
         GTEST_SKIP() << "MathSAT not available.";
 #endif
     }
