@@ -99,7 +99,7 @@ void printVersion() {
 
     // Print linked dependencies
 #ifdef STORM_HAVE_CARL
-    STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
+    STORM_PRINT("Linked with CArL-Storm v" << STORM_CARL_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");

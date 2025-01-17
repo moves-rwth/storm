@@ -86,9 +86,9 @@ set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost 1.65.1 QUIET REQUIRED COMPONENTS filesystem system)
 if (NOT Boost_FOUND)
     if (Boost_VERSION)
-	message(FATAL_ERROR "The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
+	message(FATAL_ERROR "Storm - The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
     else ()
-   	message(FATAL_ERROR "Boost was not found.")
+        message(FATAL_ERROR "Storm - Boost was not found.")
     endif ()
 endif ()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -184,7 +184,7 @@ set(STORM_HAVE_Z3 ${Z3_FOUND})
 
 if(Z3_FOUND)
     if(NOT EXISTS "${Z3_INCLUDE_DIR}/z3_version.h")
-        message(FATAL_ERROR "No file z3_version.h found in ${Z3_INCLUDE_DIR}.")
+        message(FATAL_ERROR "Storm - No file z3_version.h found in ${Z3_INCLUDE_DIR}.")
     endif()
 
     # Parse z3 version from version file
@@ -204,8 +204,8 @@ if(Z3_FOUND)
         list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
 
         if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
-            message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-            message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+            message (WARNING "Storm - Can link against Z3 version 4.10.1, see issue 252.")
+            message(WARNING "Storm - Could not link with Z3. Building of Prism/JANI models will not be supported.")
             set(Z3_FOUND FALSE)
         else()
             # Check whether the version of z3 supports optimization
@@ -256,11 +256,11 @@ if (STORM_USE_GUROBI)
             list(APPEND STORM_DEP_TARGETS GUROBI_SHARED)
         else()
             # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
+            message(FATAL_ERROR "Storm - Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
         endif()
     else()
     	# The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number ...
-        message(FATAL_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories). If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
+        message(FATAL_ERROR "Storm - Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories). If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -271,8 +271,8 @@ endif()
 ##	CUDD
 ##
 #############################################################
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 #############################################################
 ##
@@ -300,7 +300,7 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
             message(WARNING "Storm - Library for carl location is not found but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
             set(STORM_SHIPPED_CARL ON)
         else()
-            message(FATAL_ERROR "Library location for carl is not found, did you build carl?")
+            message(FATAL_ERROR "Storm - Library location for carl is not found, did you build carl?")
         endif()
     elseif(EXISTS ${carlLOCATION})
         #empty on purpose
@@ -309,17 +309,17 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
             message(WARNING "Storm - File ${carlLOCATION} does not exist but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
             set(STORM_SHIPPED_CARL ON)
         else()
-            message(FATAL_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+            message(FATAL_ERROR "Storm - File ${carlLOCATION} does not exist, did you build carl?")
         endif()
     endif()
     if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
         message(STATUS "Storm - Found carl-storm version")
         # empty on purpose. Maybe put a warning here?
         if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
-            message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
+            message(FATAL_ERROR "Storm - Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
         endif()
     else()
-        message(FATAL_ERROR "We only support a diverged version of carl, indicated by Carl version 14.x. These versions can be found at https://github.com/moves-rwth/carl-storm. 
+        message(FATAL_ERROR "Storm - We only support a diverged version of carl, indicated by carl version 14.x. These versions can be found at https://github.com/moves-rwth/carl-storm.
 			      On this system, we found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
     endif()
 
@@ -393,7 +393,7 @@ if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.22")
     # This version is too old for forward declarations and updating requires moving the git,
     # so we warn users but start warning them now.
     set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
+    message(WARNING "Storm - Uses an outdated repo for carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
 elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.23")
     # This version is too old for forward declarations, but we keep supporting it for the moment.
     set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
@@ -402,10 +402,10 @@ else()
 endif()
 
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
-	message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+	message(FATAL_ERROR "Storm - Cannot use CLN numbers if carl is build without.")
 endif()
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
+    message(FATAL_ERROR "Storm - Cannot use CLN numbers if carl is build without GiNaC.")
 endif()
 
 # The library that needs symbols must be first, then the library that resolves the symbol.
@@ -418,23 +418,23 @@ list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
 
 #############################################################
 ##
-##      SMT-RAT
+##      SMT-RAT (optional)
 ##
 #############################################################
 
-set(STORM_HAVE_SMTRAT OFF)
-if(STORM_USE_SMTRAT)
-	find_package(smtrat QUIET REQUIRED)
-	if(smtrat_FOUND)
-		set(STORM_HAVE_SMTRAT ON)
-		message(STATUS "Storm - Linking with smtrat.")
-    	include_directories("${smtrat_INCLUDE_DIR}")
-    	list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
-	else()
-		message(FATAL_ERROR "Storm - SMT-RAT was requested but not found")
-	endif()
+if (STORM_USE_SMTRAT)
+    find_package(smtrat QUIET REQUIRED)
+    set(STORM_HAVE_SMTRAT ${smtrat_FOUND})
+    if(smtrat_FOUND)
+        message(STATUS "Storm - Linking with SMT-RAT.")
+        include_directories("${smtrat_INCLUDE_DIR}")
+        list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+    else()
+        message(FATAL_ERROR "Storm - SMT-RAT was requested but not found.")
+    endif()
+else()
+    set(STORM_HAVE_SMTRAT OFF)
 endif()
-
 
 #############################################################
 ##
@@ -466,28 +466,23 @@ endif()
 ##
 #############################################################
 
-if ("${MSAT_ROOT}" STREQUAL "")
-    set(ENABLE_MSAT OFF)
-else()
-    set(ENABLE_MSAT ON)
-endif()
-
-# MathSAT Defines
-set(STORM_HAVE_MSAT ${ENABLE_MSAT})
-if (ENABLE_MSAT)
-    message (STATUS "Storm - Linking with MathSAT.")
+if (STORM_USE_MSAT)
     if(${OPERATING_SYSTEM} MATCHES "Linux")
         find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
         add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
         list(APPEND STORM_DEP_TARGETS msat_SHARED)
     else()
-		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
-		# we thus link statically
+        # on MacOS, the .dylib file has some hard coded path (Version 5.5.4).
+        # we thus link statically
         find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
         add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
         list(APPEND STORM_DEP_TARGETS msat_STATIC)
     endif()
-endif(ENABLE_MSAT)
+    message (STATUS "Storm - Linking with MathSAT.")
+    set(STORM_HAVE_MSAT ON)
+else()
+    set(STORM_HAVE_MSAT OFF)
+endif()
 
 #############################################################
 ##
@@ -516,7 +511,7 @@ elseif (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
     if( EXISTS "${STORM_QVBS_ROOT}/index.json")
         set(STORM_HAVE_QVBS ON)
     else()
-        message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+        message(FATAL_ERROR "Storm - No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
     endif()
 endif()
 if (STORM_HAVE_QVBS)
@@ -646,29 +641,29 @@ if (STORM_USE_INTELTBB)
         message(STATUS "Storm - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
         message(STATUS "Storm - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
         set(STORM_HAVE_INTELTBB ON)
-	# Under Linux libtbb.so contains a linker script to libtbb.so.2 instead of a symlink.
-	# This breaks CMake.
+        # Under Linux libtbb.so contains a linker script to libtbb.so.2 instead of a symlink.
+        # This breaks CMake.
         # As a workaround we manually try to add the necessary suffix ".2" to the so file and hope for the best.
-	if (LINUX)
-		# Check if the library is a linker script which only links to the correct library
-		# Read first bytes of file
-		file(READ "${TBB_LIBRARY}" TMPTXT LIMIT 128)
-		# Check if file starts with "INPUT (libtbb.so.2)"
-		if("${TMPTXT}" MATCHES "INPUT \\(libtbb\\.so\\.(.*)\\)")
-			# Manually set library by adding the suffix from the linker script.
-			# CMAKE_MATCH_1 contains the parsed suffix.
-			set(TBB_LIB_LINUX "${TBB_LIBRARY}.${CMAKE_MATCH_1}")
-			set(TBB_MALLOC_LIB_LINUX "${TBB_MALLOC_LIBRARY}.${CMAKE_MATCH_1}")
-			if (EXISTS "${TBB_LIB_LINUX}")
-				set(TBB_LIBRARY ${TBB_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB library in manually set path ${TBB_LIBRARY}.")
-			endif()
-			if (EXISTS "${TBB_MALLOC_LIB_LINUX}")
-				set(TBB_MALLOC_LIBRARY ${TBB_MALLOC_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB malloc library in manually set path ${TBB_MALLOC_LIBRARY}.")
-			endif()
-		endif()
-	endif()
+        if (LINUX)
+            # Check if the library is a linker script which only links to the correct library
+            # Read first bytes of file
+            file(READ "${TBB_LIBRARY}" TMPTXT LIMIT 128)
+            # Check if file starts with "INPUT (libtbb.so.2)"
+            if("${TMPTXT}" MATCHES "INPUT \\(libtbb\\.so\\.(.*)\\)")
+                # Manually set library by adding the suffix from the linker script.
+                # CMAKE_MATCH_1 contains the parsed suffix.
+                set(TBB_LIB_LINUX "${TBB_LIBRARY}.${CMAKE_MATCH_1}")
+                set(TBB_MALLOC_LIB_LINUX "${TBB_MALLOC_LIBRARY}.${CMAKE_MATCH_1}")
+                if (EXISTS "${TBB_LIB_LINUX}")
+                    set(TBB_LIBRARY ${TBB_LIB_LINUX})
+                    message(STATUS "Storm - Using Intel TBB library in manually set path ${TBB_LIBRARY}.")
+                endif()
+                if (EXISTS "${TBB_MALLOC_LIB_LINUX}")
+                    set(TBB_MALLOC_LIBRARY ${TBB_MALLOC_LIB_LINUX})
+                    message(STATUS "Storm - Using Intel TBB malloc library in manually set path ${TBB_MALLOC_LIBRARY}.")
+                endif()
+            endif()
+        endif()
 
         add_imported_library(tbb SHARED ${TBB_LIBRARY} ${TBB_INCLUDE_DIRS})
         list(APPEND STORM_DEP_TARGETS tbb_SHARED)
