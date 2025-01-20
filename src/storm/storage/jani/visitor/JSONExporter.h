@@ -75,6 +75,8 @@ class FormulaToJaniJson : public storm::logic::FormulaVisitor {
     virtual boost::any visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
     virtual boost::any visit(storm::logic::HOAPathFormula const& f, boost::any const& data) const;
+    virtual boost::any visit(storm::logic::DiscountedCumulativeRewardFormula const& f, boost::any const& data) const;
+    virtual boost::any visit(storm::logic::DiscountedTotalRewardFormula const& f, boost::any const& data) const;
 
    private:
     FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) {}
