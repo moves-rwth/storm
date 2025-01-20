@@ -5,8 +5,13 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
+
+#include <boost/spirit/home/support/char_class.hpp>
+#include <boost/spirit/home/support/common_terminals.hpp>
+
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/graph.h"
+#include "utility/Stopwatch.h"
 
 namespace storm {
 namespace storage {
@@ -131,6 +136,25 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
 
     while (true) {
         performSccDecomposition(transitionMatrix, sccDecOptions, sccDecRes, sccDecCache);
+        // maps the index of every ecScc to the position of its first state in the ecSccStates vector
+        std::vector<uint64_t> ecSccIndexToStateIndex(sccDecRes.sccCount);
+        std::vector<uint64_t> ecSccSize(sccDecRes.sccCount);
+        // flattened vector that contains all potential states of end components
+        std::vector<uint64_t> ecSccStates(sccDecRes.nonTrivialStates.getNumberOfSetBits());
+
+        for (auto state: sccDecRes.nonTrivialStates) {
+            ecSccSize[sccDecRes.stateToSccMapping[state]]++;
+        }
+
+        for (uint64_t i = 0; i < sccDecRes.sccCount-1; i++) {
+            ecSccIndexToStateIndex[i+1] = ecSccIndexToStateIndex[i] + ecSccSize[i];
+        }
+        std::vector<uint64_t> offset(sccDecRes.sccCount);
+
+        for (auto state: remainingEcCandidates) {
+            auto const sccIndex = sccDecRes.stateToSccMapping[state];
+            ecSccStates[ecSccIndexToStateIndex[sccIndex] + offset[sccIndex]++] = state;
+        }
 
         remainingEcCandidates = sccDecRes.nonTrivialStates;
         storm::storage::BitVector ecSccIndices(sccDecRes.sccCount, true);
@@ -163,11 +187,10 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         ecSccIndices &= nonTrivSccIndices;
         for (auto sccIndex : ecSccIndices) {
             MaximalEndComponent newMec;
-            for (auto state : remainingEcCandidates) {
-                // skip states from different SCCs
-                if (sccDecRes.stateToSccMapping[state] != sccIndex) {
-                    continue;
-                }
+            uint64_t first_state = ecSccIndexToStateIndex[sccIndex];
+            uint64_t last_state = first_state + ecSccSize[sccIndex] - 1;
+            for (uint64_t i = first_state; i <= last_state; i++) {
+                uint64_t state = ecSccStates[i];
                 // This is no longer a candidate
                 remainingEcCandidates.set(state, false);
                 // Add choices to the MEC
