@@ -6,12 +6,8 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 
-#include <boost/spirit/home/support/char_class.hpp>
-#include <boost/spirit/home/support/common_terminals.hpp>
-
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/graph.h"
-#include "utility/Stopwatch.h"
 
 namespace storm {
 namespace storage {
