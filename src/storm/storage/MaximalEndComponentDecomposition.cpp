@@ -138,12 +138,12 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         // flattened vector that contains all potential states of end components
         std::vector<uint64_t> ecSccStates(sccDecRes.nonTrivialStates.getNumberOfSetBits());
 
-        for (auto state: sccDecRes.nonTrivialStates) {
+        for (auto state : sccDecRes.nonTrivialStates) {
             ecSccSize[sccDecRes.stateToSccMapping[state]]++;
         }
 
-        for (uint64_t i = 0; i < sccDecRes.sccCount-1; i++) {
-            ecSccIndexToStateIndex[i+1] = ecSccIndexToStateIndex[i] + ecSccSize[i];
+        for (uint64_t i = 0; i < sccDecRes.sccCount - 1; i++) {
+            ecSccIndexToStateIndex[i + 1] = ecSccIndexToStateIndex[i] + ecSccSize[i];
         }
         std::vector<uint64_t> offset(sccDecRes.sccCount);
 
