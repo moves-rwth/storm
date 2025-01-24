@@ -108,7 +108,7 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
 
         for (uint64_t i = 0; i < transitionMatrix.getRowGroupCount(); i++) {
             uint64_t mec_index = state_to_mec[i];
-            if (mec_index != MAX && is_amec[mec_index]) {
+            if (mec_index == MAX || is_amec[mec_index]) {
                 allowed.set(i, false);
             }
         }

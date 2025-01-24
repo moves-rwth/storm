@@ -147,11 +147,6 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         }
         std::vector<uint64_t> offset(sccDecRes.sccCount);
 
-        for (auto state: remainingEcCandidates) {
-            auto const sccIndex = sccDecRes.stateToSccMapping[state];
-            ecSccStates[ecSccIndexToStateIndex[sccIndex] + offset[sccIndex]++] = state;
-        }
-
         remainingEcCandidates = sccDecRes.nonTrivialStates;
         storm::storage::BitVector ecSccIndices(sccDecRes.sccCount, true);
         storm::storage::BitVector nonTrivSccIndices(sccDecRes.sccCount, false);
@@ -159,6 +154,7 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
         for (auto state : remainingEcCandidates) {
             auto const sccIndex = sccDecRes.stateToSccMapping[state];
             nonTrivSccIndices.set(sccIndex, true);
+            ecSccStates[ecSccIndexToStateIndex[sccIndex] + offset[sccIndex]++] = state;
             bool stateCanStayInScc = false;
             for (auto const choice : transitionMatrix.getRowGroupIndices(state)) {
                 if (!ecChoices.get(choice)) {
