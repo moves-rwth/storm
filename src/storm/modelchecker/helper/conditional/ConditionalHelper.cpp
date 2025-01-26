@@ -12,6 +12,7 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
+#include "storm/utility/Extremum.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -364,10 +365,13 @@ class WeightedDiffComputer {
 
             // Put the row processing into a lambda for avoiding code duplications
             auto processRow = [&](uint64_t origRowIndex) {
-                // Find out the target and condition probabilities for this row
+                // We make two passes. First, we find out the probability to reach an eliminated initial component state
+                ValueType const eliminatedInitialComponentProbability = transitionMatrix.getConstrainedRowSum(origRowIndex, eliminatedInitialComponentStates);
+                // Second, we insert the submatrix entries and find out the target and condition probabilities for this row
                 ValueType targetProbability = storm::utility::zero<ValueType>();
                 ValueType conditionProbability = storm::utility::zero<ValueType>();
                 bool rowSumIsLess1 = false;
+                bool initialStateEntryInserted = false;
                 for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
                         STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero");
@@ -379,8 +383,19 @@ class WeightedDiffComputer {
                         } else {
                             conditionProbability += scaledTargetValue;  // for terminal, non-condition states, the condition value equals the target value
                         }
-                    } else {
-                        matrixBuilder.addNextValue(currentRow, stateToMatrixIndexMap[entry.getColumn()], entry.getValue());
+                    } else if (!eliminatedInitialComponentStates.get(entry.getColumn())) {
+                        auto const columnIndex = stateToMatrixIndexMap[entry.getColumn()];
+                        if (!initialStateEntryInserted && columnIndex >= initialStateInSubmatrix) {
+                            if (columnIndex == initialStateInSubmatrix) {
+                                matrixBuilder.addNextValue(currentRow, initialStateInSubmatrix, eliminatedInitialComponentProbability + entry.getValue());
+                            } else {
+                                matrixBuilder.addNextValue(currentRow, initialStateInSubmatrix, eliminatedInitialComponentProbability);
+                                matrixBuilder.addNextValue(currentRow, columnIndex, entry.getValue());
+                            }
+                            initialStateEntryInserted = true;
+                        } else {
+                            matrixBuilder.addNextValue(currentRow, columnIndex, entry.getValue());
+                        }
                     }
                 }
                 if (rowSumIsLess1) {
@@ -421,7 +436,7 @@ class WeightedDiffComputer {
 
     SolutionType computeWeightedDiff(storm::Environment const& env, storm::OptimizationDirection const dir, ValueType const& targetWeight,
                                      ValueType const& conditionWeight) const {
-        auto rowValues = createScaledVector(targetWeight, targetRowValues, -conditionWeight, conditionRowValues);
+        auto rowValues = createScaledVector(targetWeight, targetRowValues, conditionWeight, conditionRowValues);
 
         // Initialize the solution vector.
         std::vector<SolutionType> x(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
@@ -460,36 +475,64 @@ class WeightedDiffComputer {
     uint64_t initialStateInSubmatrix;
 };
 
+enum class BisectionMethodBounds { Simple, Advanced };
 template<typename ValueType, typename SolutionType = ValueType>
-SolutionType computeViaBinarySearch(Environment const& env, uint64_t const initialState, storm::solver::OptimizationDirection const dir,
-                                    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, NormalFormData<ValueType> const& normalForm) {
+SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds boundOption, uint64_t const initialState,
+                                 storm::solver::OptimizationDirection const dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                 NormalFormData<ValueType> const& normalForm) {
     SolutionType const precision = storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision());
     bool const relative = env.solver().minMax().getRelativeTerminationCriterion();
 
     WeightedDiffComputer wdc(initialState, transitionMatrix, normalForm);
-    SolutionType lowerBound = storm::utility::zero<ValueType>();
-    SolutionType upperBound = storm::utility::one<ValueType>();
+    SolutionType pMin{storm::utility::zero<SolutionType>()};
+    SolutionType pMax{storm::utility::one<SolutionType>()};
+    if (boundOption == BisectionMethodBounds::Advanced) {
+        pMin = wdc.computeWeightedDiff(env, storm::OptimizationDirection::Minimize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        pMax = wdc.computeWeightedDiff(env, storm::OptimizationDirection::Maximize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        STORM_LOG_INFO("Conditioning event bounds:\n\t Lower bound: " << storm::utility::convertNumber<double>(pMin)
+                                                                      << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(pMax) << "\n\n");
+    }
+    storm::utility::Extremum<storm::OptimizationDirection::Maximize, SolutionType> lowerBound = storm::utility::zero<ValueType>();
+    storm::utility::Extremum<storm::OptimizationDirection::Minimize, SolutionType> upperBound = storm::utility::one<ValueType>();
     storm::Environment absEnv = env;
     absEnv.solver().minMax().setRelativeTerminationCriterion(false);
     for (uint64_t iterationCount = 1; true; ++iterationCount) {
-        SolutionType const middle = (lowerBound + upperBound) / 2;
-        SolutionType const middleValue = wdc.computeWeightedDiff(env, dir, storm::utility::one<ValueType>(), middle);
-        if (middleValue >= storm::utility::zero<ValueType>()) {
-            lowerBound = middle;
+        SolutionType const middle = (*lowerBound + *upperBound) / 2;
+        SolutionType const middleValue = wdc.computeWeightedDiff(env, dir, storm::utility::one<ValueType>(), -middle);
+        if (boundOption == BisectionMethodBounds::Simple) {
+            if (middleValue >= storm::utility::zero<ValueType>()) {
+                lowerBound &= middle;
+            }
+            if (middleValue <= storm::utility::zero<ValueType>()) {
+                upperBound &= middle;
+            }
+        } else {
+            STORM_LOG_ASSERT(boundOption == BisectionMethodBounds::Advanced, "Unknown bisection method bounds");
+            if (middleValue >= storm::utility::zero<ValueType>()) {
+                lowerBound &= middle + (middleValue / pMax);
+                upperBound &= middle + (middleValue / pMin);
+            }
+            if (middleValue <= storm::utility::zero<ValueType>()) {
+                lowerBound &= middle + (middleValue / pMin);
+                upperBound &= middle + (middleValue / pMax);
+            }
         }
-        if (middleValue <= storm::utility::zero<ValueType>()) {
-            upperBound = middle;
-        }
-        SolutionType const boundDiff = upperBound - lowerBound;
-        STORM_LOG_INFO("Iteration #" << iterationCount << ":\n\t Lower bound: " << storm::utility::convertNumber<double>(lowerBound)
-                                     << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(upperBound)
+        SolutionType const boundDiff = *upperBound - *lowerBound;
+        STORM_LOG_INFO("Iteration #" << iterationCount << ":\n\t Lower bound: " << storm::utility::convertNumber<double>(*lowerBound)
+                                     << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(*upperBound)
                                      << ",\n\t Difference:  " << storm::utility::convertNumber<double>(boundDiff)
                                      << ",\n\t Middle val:  " << storm::utility::convertNumber<double>(middleValue) << "\n\n");
-        if (boundDiff <= (relative ? (precision * lowerBound) : precision)) {
+        if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
+            STORM_PRINT_AND_LOG("Bisection method converged after " << iterationCount << " iterations.\n");
+            STORM_PRINT_AND_LOG("Difference is " << std::setprecision(std::numeric_limits<double>::digits10) << storm::utility::convertNumber<double>(boundDiff)
+                                                 << ".\n");
+            if (std::is_same_v<ValueType, storm::RationalNumber> && storm::utility::isZero(boundDiff)) {
+                STORM_PRINT_AND_LOG("Result is exact.");
+            }
             break;
         }
     }
-    return (lowerBound + upperBound) / 2;
+    return (*lowerBound + *upperBound) / 2;
 }
 
 }  // namespace internal
@@ -532,8 +575,10 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         sw.restart();
         if (algString == "restart" || algString == "default") {
             initialStateValue = internal::computeViaRestartMethod(env, *goal.relevantValues().begin(), goal.direction(), transitionMatrix, normalFormData);
-        } else if (algString == "binary") {
-            initialStateValue = internal::computeViaBinarySearch(env, *goal.relevantValues().begin(), goal.direction(), transitionMatrix, normalFormData);
+        } else if (algString == "bisection" || algString == "bisection-advanced") {
+            auto const boundOption = (algString == "bisection" ? internal::BisectionMethodBounds::Simple : internal::BisectionMethodBounds::Advanced);
+            initialStateValue =
+                internal::computeViaBisection(env, boundOption, *goal.relevantValues().begin(), goal.direction(), transitionMatrix, normalFormData);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " + algString);
         }
