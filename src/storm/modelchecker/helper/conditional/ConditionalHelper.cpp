@@ -456,6 +456,68 @@ class WeightedDiffComputer {
         return x[initialStateInSubmatrix];
     }
 
+    auto getInternalInitialState() const {
+        return initialStateInSubmatrix;
+    }
+
+    void evaluateScheduler(storm::Environment const& env, std::vector<uint64_t>& scheduler, std::vector<SolutionType>& targetResults,
+                           std::vector<SolutionType>& conditionResults) const {
+        if (scheduler.empty()) {
+            scheduler.resize(submatrix.getRowGroupCount(), 0);
+        }
+        if (targetResults.empty()) {
+            targetResults.resize(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        }
+        if (conditionResults.empty()) {
+            conditionResults.resize(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        }
+        // apply the scheduler
+        storm::solver::GeneralLinearEquationSolverFactory<ValueType> factory;
+        bool const convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+        auto scheduledMatrix = submatrix.selectRowsFromRowGroups(scheduler, convertToEquationSystem);
+        if (convertToEquationSystem) {
+            scheduledMatrix.convertToEquationSystem();
+        }
+        auto solver = factory.create(env, std::move(scheduledMatrix));
+        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        solver->setCachingEnabled(true);
+
+        std::vector<ValueType> subB(submatrix.getRowGroupCount());
+        storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
+        solver->solveEquations(env, targetResults, subB);
+
+        storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
+        solver->solveEquations(env, conditionResults, subB);
+    }
+
+    template<OptimizationDirection Dir>
+    bool improveScheduler(std::vector<uint64_t>& scheduler, ValueType const& lambda, std::vector<SolutionType> const& targetResults,
+                          std::vector<SolutionType> const& conditionResults) {
+        bool improved = false;
+        for (uint64_t rowGroupIndex = 0; rowGroupIndex < scheduler.size(); ++rowGroupIndex) {
+            storm::utility::Extremum<Dir, ValueType> groupValue;
+            uint64_t optimalRowIndex{0};
+            ValueType scheduledValue;
+            for (auto rowIndex : submatrix.getRowGroupIndices(rowGroupIndex)) {
+                ValueType rowValue = targetRowValues[rowIndex] - lambda * conditionRowValues[rowIndex];
+                for (auto const& entry : submatrix.getRow(rowIndex)) {
+                    rowValue += entry.getValue() * (targetResults[entry.getColumn()] - lambda * conditionResults[entry.getColumn()]);
+                }
+                if (rowIndex == scheduler[rowGroupIndex] + submatrix.getRowGroupIndices()[rowGroupIndex]) {
+                    scheduledValue = rowValue;
+                }
+                if (groupValue &= rowValue) {
+                    optimalRowIndex = rowIndex;
+                }
+            }
+            if (scheduledValue != *groupValue) {
+                scheduler[rowGroupIndex] = optimalRowIndex - submatrix.getRowGroupIndices()[rowGroupIndex];
+                improved = true;
+            }
+        }
+        return improved;
+    }
+
    private:
     std::vector<ValueType> createScaledVector(ValueType const& w1, std::vector<ValueType> const& v1, ValueType const& w2,
                                               std::vector<ValueType> const& v2) const {
@@ -535,6 +597,33 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
     return (*lowerBound + *upperBound) / 2;
 }
 
+template<typename ValueType, typename SolutionType = ValueType>
+SolutionType computeViaPolicyIteration(Environment const& env, uint64_t const initialState, storm::solver::OptimizationDirection const dir,
+                                       storm::storage::SparseMatrix<ValueType> const& transitionMatrix, NormalFormData<ValueType> const& normalForm) {
+    WeightedDiffComputer wdc(initialState, transitionMatrix, normalForm);
+
+    std::vector<uint64_t> scheduler;
+    std::vector<SolutionType> targetResults, conditionResults;
+    for (uint64_t iterationCount = 1; true; ++iterationCount) {
+        wdc.evaluateScheduler(env, scheduler, targetResults, conditionResults);
+        STORM_LOG_ASSERT(targetResults[wdc.getInternalInitialState()] <= conditionResults[wdc.getInternalInitialState()],
+                         "Target value must be less or equal than condition value");  // todo: floats??
+        ValueType const lambda = storm::utility::isZero(conditionResults[wdc.getInternalInitialState()])
+                                     ? storm::utility::zero<ValueType>()
+                                     : ValueType(targetResults[wdc.getInternalInitialState()] / conditionResults[wdc.getInternalInitialState()]);
+        bool schedulerChanged{false};
+        if (storm::solver::minimize(dir)) {
+            schedulerChanged = wdc.template improveScheduler<storm::OptimizationDirection::Minimize>(scheduler, lambda, targetResults, conditionResults);
+        } else {
+            schedulerChanged = wdc.template improveScheduler<storm::OptimizationDirection::Maximize>(scheduler, lambda, targetResults, conditionResults);
+        }
+        if (!schedulerChanged) {
+            STORM_PRINT_AND_LOG("Policy iteration converged after " << iterationCount << " iterations.\n");
+            return lambda;
+        }
+    }
+}
+
 }  // namespace internal
 
 template<typename ValueType, typename SolutionType>
@@ -579,6 +668,8 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
             auto const boundOption = (algString == "bisection" ? internal::BisectionMethodBounds::Simple : internal::BisectionMethodBounds::Advanced);
             initialStateValue =
                 internal::computeViaBisection(env, boundOption, *goal.relevantValues().begin(), goal.direction(), transitionMatrix, normalFormData);
+        } else if (algString == "pi") {
+            initialStateValue = internal::computeViaPolicyIteration(env, *goal.relevantValues().begin(), goal.direction(), transitionMatrix, normalFormData);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unknown conditional probability algorithm: " + algString);
         }
