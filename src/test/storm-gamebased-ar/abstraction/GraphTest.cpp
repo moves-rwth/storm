@@ -16,8 +16,8 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/utility/graph.h"
 #include "storm/storage/expressions/Expression.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
 class Cudd {
