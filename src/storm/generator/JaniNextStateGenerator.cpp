@@ -54,8 +54,6 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
       hasStateActionRewards(false),
       evaluateRewardExpressionsAtEdges(false),
       evaluateRewardExpressionsAtDestinations(false) {
-    STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::NotSupportedException,
-                    "JANI next-state generator cannot generate choice labels.");
 
     auto features = this->model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
@@ -1022,6 +1020,10 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
         }
 
+        if (this->options.isBuildChoiceLabelsSet()) {
+            choice.addLabel(model.getAction(outputActionIndex).getName());
+        }
+
         // Now, check whether there is one more command combination to consider.
         bool movedIterator = false;
         for (uint64_t j = 0; !movedIterator && j < iteratorList.size(); ++j) {
@@ -1070,8 +1072,9 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                         continue;
                     }
 
+                    uint64_t actionIndex = outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex();
                     result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second,
-                                                                outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(),
+                                                                actionIndex,
                                                                 automatonIndex, state, stateToIdCallback));
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
@@ -1079,10 +1082,15 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                         EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
                     }
+
+                    if (this->getOptions().isBuildChoiceLabelsSet()) {
+                        result.back().addLabel(model.getAction(actionIndex).getName());
+                    }
                 }
             }
         } else {
             // If the element has more than one set of edges, we need to perform a synchronization.
+            // TODO I (SJ) do not fully understand the meaning of this assertion; after all, it is about the output.
             STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
 
             uint64_t outputActionIndex = outputAndEdges.first.get();
