@@ -16,14 +16,14 @@
 #ifdef STORM_HAVE_GUROBI
 #include "gurobi_c.h"
 #endif
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 #include "mathsat.h"
-#endif
-#ifdef STORM_HAVE_SOPLEX
-#include "soplex.h"
 #endif
 #ifdef STORM_HAVE_SMTRAT
 #include "lib/smtrat.h"
+#endif
+#ifdef STORM_HAVE_SOPLEX
+#include "soplex.h"
 #endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
@@ -99,7 +99,7 @@ void printVersion() {
 
     // Print linked dependencies
 #ifdef STORM_HAVE_CARL
-    STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
+    STORM_PRINT("Linked with CArL-Storm v" << STORM_CARL_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
@@ -111,16 +111,16 @@ void printVersion() {
     STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
                                                                 << TBB_INTERFACE_VERSION << ").\n");
 #endif
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
 #endif
-#ifdef STORM_HAVE_SOPLEX
-    STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
-#endif
 #ifdef STORM_HAVE_SMTRAT
     STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
+#endif
+#ifdef STORM_HAVE_SOPLEX
+    STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_SPOT
     STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
