@@ -13,7 +13,6 @@
 #include "storm/logic/Formula.h"
 #include "storm/solver/LinearEquationSolver.h"
 
-#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/Stopwatch.h"
