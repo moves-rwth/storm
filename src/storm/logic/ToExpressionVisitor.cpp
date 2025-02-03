@@ -138,5 +138,13 @@ boost::any ToExpressionVisitor::visit(UntilFormula const&, boost::any const&) co
 boost::any ToExpressionVisitor::visit(HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
+
+boost::any ToExpressionVisitor::visit(DiscountedCumulativeRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
+
+boost::any ToExpressionVisitor::visit(DiscountedTotalRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+}
 }  // namespace logic
 }  // namespace storm
