@@ -86,9 +86,32 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
     std::size_t accMECs = 0;
     std::size_t allMECs = 0;
 
+    // Compute MECs for the entire MDP
+    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions);
+    // Is true if a MEC contains an accepting end component
+    storm::storage::BitVector is_amec(mecs.size());
+    uint64_t MAX = std::numeric_limits<uint64_t>::max();
+    // Maps every state to the MEC it is in, or to MAX
+    std::vector<uint64_t> state_to_mec(transitionMatrix.getRowGroupCount(), MAX);
+    uint64_t mec_counter = 0;
+
+    for (auto const& mec : mecs) {
+        for (auto const& stateChoicePair : mec) {
+            state_to_mec[stateChoicePair.first] = mec_counter;
+        }
+        mec_counter++;
+    }
+
     for (auto const& conjunction : dnf) {
         // Determine the set of states of the subMDP that can satisfy the condition, remove all states that would violate Fins in the conjunction.
         storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
+
+        for (uint64_t i = 0; i < transitionMatrix.getRowGroupCount(); i++) {
+            uint64_t mec_index = state_to_mec[i];
+            if (mec_index == MAX || is_amec[mec_index]) {
+                allowed.set(i, false);
+            }
+        }
 
         for (auto const& literal : conjunction) {
             if (literal->isTRUE()) {
@@ -155,6 +178,9 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
 
             if (accepting) {
                 accMECs++;
+
+                uint64_t mec_index = state_to_mec[(*mec.begin()).first];
+                is_amec.set(mec_index);
 
                 for (auto const& stateChoicePair : mec) {
                     acceptingStates.set(stateChoicePair.first);
