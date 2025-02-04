@@ -362,7 +362,7 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
             } else {
                 underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n");
+                STORM_LOG_INFO("Heuristically selected an under-approximation MDP size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n");
             }
         }
 
@@ -1047,7 +1047,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
 
     unfoldingStatus = Status::Exploring;
     if (options.useClipping) {
-        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n");
+        STORM_LOG_INFO("Use Belief Clipping with grid beliefs \n");
         statistics.nrClippingAttempts = 0;
         statistics.nrClippedStates = 0;
     }
@@ -1089,11 +1089,11 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
         }
         if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
             printUpdateStopwatch.restart();
-            STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### "
-                                       << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
+            STORM_LOG_INFO("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### "
+                                  << underApproximation->getUnexploredStates().size() << " beliefs queued\n");
             if (underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping) {
-                STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
-                                                                << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
+                STORM_LOG_INFO("##### Clipping Attempts: " << statistics.nrClippingAttempts.value() << " ##### "
+                                                           << "Clipped States: " << statistics.nrClippedStates.value() << "\n");
             }
         }
         if (unfoldingControl == UnfoldingControl::Pause && !stateStored) {
@@ -1277,7 +1277,7 @@ bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
     underApproximation->finishExploration();
     statistics.underApproximationBuildTime.stop();
     printUpdateStopwatch.stop();
-    STORM_PRINT_AND_LOG("Finished exploring under-approximation MDP.\nStart analysis...\n");
+    STORM_LOG_INFO("Finished exploring under-approximation MDP.\nStart analysis...\n");
     unfoldingStatus = Status::ModelExplorationFinished;
     statistics.underApproximationCheckTime.start();
     underApproximation->computeValuesOfExploredMdp(env, min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
@@ -1455,6 +1455,12 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPTy
 std::shared_ptr<storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType>>
 BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveBeliefExplorer() {
     return interactiveUnderApproximationExplorer;
+}
+
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::setFMSchedValueList(
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> valueList) {
+    interactiveUnderApproximationExplorer->setFMSchedValueList(valueList);
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>

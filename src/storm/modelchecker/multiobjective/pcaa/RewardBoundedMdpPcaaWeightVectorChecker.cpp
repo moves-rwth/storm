@@ -119,7 +119,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
         for (uint64_t i = 0; i < this->objectives.size(); ++i) {
             headers.push_back("obj" + std::to_string(i));
         }
-        storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>(
+        storm::io::exportDataToCSVFile<ValueType, ValueType, std::string>(
             storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData,
             weightVector, headers);
     }

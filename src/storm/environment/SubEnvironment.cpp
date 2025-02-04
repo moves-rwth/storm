@@ -58,6 +58,7 @@ template class SubEnvironment<NativeSolverEnvironment>;
 template class SubEnvironment<LongRunAverageSolverEnvironment>;
 template class SubEnvironment<TimeBoundedSolverEnvironment>;
 template class SubEnvironment<MinMaxSolverEnvironment>;
+template class SubEnvironment<MinMaxLpSolverEnvironment>;
 template class SubEnvironment<MultiplierEnvironment>;
 template class SubEnvironment<OviSolverEnvironment>;
 template class SubEnvironment<GameSolverEnvironment>;

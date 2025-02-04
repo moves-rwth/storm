@@ -230,7 +230,7 @@ void SmtlibSmtSolver::init() {
 
     if (storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().isExportSmtLibScriptSet()) {
         STORM_LOG_DEBUG("The SMT-LIBv2 commands are exportet to the given file");
-        storm::utility::openFile(storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getExportSmtLibScriptPath(), commandFile);
+        storm::io::openFile(storm::settings::getModule<storm::settings::modules::Smt2SmtSolverSettings>().getExportSmtLibScriptPath(), commandFile);
         isCommandFileOpen = true;
         // TODO also close file
     }

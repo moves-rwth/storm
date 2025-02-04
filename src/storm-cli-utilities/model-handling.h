@@ -635,20 +635,20 @@ void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
     if (ioSettings.isExportBuildSet()) {
         switch (ioSettings.getExportBuildFormat()) {
-            case storm::exporter::ModelExportFormat::Dot:
+            case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
-            case storm::exporter::ModelExportFormat::Drn:
+            case storm::io::ModelExportFormat::Drn:
                 storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(),
                                                    input.model ? input.model.get().getParameterNames() : std::vector<std::string>(),
                                                    !ioSettings.isExplicitExportPlaceholdersDisabled());
                 break;
-            case storm::exporter::ModelExportFormat::Json:
+            case storm::io::ModelExportFormat::Json:
                 storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Exporting sparse models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                                "Exporting sparse models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
     }
 
@@ -675,15 +675,15 @@ void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueT
 
     if (ioSettings.isExportBuildSet()) {
         switch (ioSettings.getExportBuildFormat()) {
-            case storm::exporter::ModelExportFormat::Dot:
+            case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSymbolicModelAsDot(model, ioSettings.getExportBuildFilename());
                 break;
-            case storm::exporter::ModelExportFormat::Drdd:
+            case storm::io::ModelExportFormat::Drdd:
                 storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportBuildFilename());
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Exporting symbolic models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                                "Exporting symbolic models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
     }
 
@@ -954,20 +954,26 @@ inline void printModelCheckingProperty(storm::jani::Property const& property) {
 }
 
 template<typename ValueType>
-void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property,
-                 storm::utility::Stopwatch* watch = nullptr) {
+void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::logic::Formula const& filterStatesFormula,
+                 storm::modelchecker::FilterType const& filterType, storm::utility::Stopwatch* watch = nullptr) {
     if (result) {
         std::stringstream ss;
-        ss << "'" << *property.getFilter().getStatesFormula() << "'";
+        ss << "'" << filterStatesFormula << "'";
         STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort" : "Result")
-                    << " (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
-        printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
+                    << " (for " << (filterStatesFormula.isInitialFormula() ? "initial" : ss.str()) << " states): ");
+        printFilteredResult<ValueType>(result, filterType);
         if (watch) {
             STORM_PRINT("Time for model checking: " << *watch << ".\n");
         }
     } else {
         STORM_LOG_ERROR("Property is unsupported by selected engine/settings.\n");
     }
+}
+
+template<typename ValueType>
+void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property,
+                 storm::utility::Stopwatch* watch = nullptr) {
+    printResult<ValueType>(result, *property.getFilter().getStatesFormula(), property.getFilter().getFilterType(), watch);
 }
 
 using VerificationCallbackType = std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula,
@@ -1062,38 +1068,32 @@ void computeStateValues(std::string const& description, std::function<std::uniqu
         STORM_LOG_ERROR("Computation had no result.");
         return;
     }
-    watch.stop();
     // Now process the (potentially filtered) result
     if (input.properties.empty()) {
         // Do not apply any filtering, consider result for *all* states
         postprocessingCallback(result);
-        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
-        STORM_PRINT("Time for model checking: " << watch << ".\n");
+        printResult<ValueType>(result, *storm::logic::Formula::getTrueFormula(), storm::modelchecker::FilterType::VALUES, &watch);
     } else {
         // Each property identifies a subset of states to which we restrict (aka filter) the state-value result to
         auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
-        for (auto const& property : properties) {
+        for (uint64_t propertyIndex = 0; propertyIndex < properties.size(); ++propertyIndex) {
+            auto const& property = properties[propertyIndex];
             // As the property serves as filter, it should (a) be qualitative and should (b) not consider a filter itself.
             if (!property.getRawFormula()->hasQualitativeResult()) {
                 STORM_LOG_ERROR("Property " << property.getRawFormula() << " can not be used for filtering states as it does not have a qualitative result.");
                 continue;
             }
-            STORM_LOG_WARN_COND(property.getFilter().isDefault(), "Ignoring filter of property " << property << " as those are unsupported in this context.");
 
             // Invoke verification algorithm on filtering property
-            printModelCheckingProperty(property);
-            storm::utility::Stopwatch propertyWatch(true);
             auto propertyFilter = verifyProperty<ValueType>(property.getRawFormula(), storm::logic::Formula::getTrueFormula(), verificationCallback);
-            propertyWatch.stop();
-            propertyWatch.add(watch);
 
             if (propertyFilter) {
                 // Filter and process result
                 std::unique_ptr<storm::modelchecker::CheckResult> filteredResult = result->clone();
                 filteredResult->filter(propertyFilter->asQualitativeCheckResult());
                 postprocessingCallback(filteredResult);
-                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *filteredResult << '\n');
-                STORM_PRINT("Time for model checking: " << propertyWatch << ".\n");
+                printResult<ValueType>(filteredResult, *property.getRawFormula(), property.getFilter().getFilterType(),
+                                       propertyIndex == properties.size() - 1 ? &watch : nullptr);
             }
         }
     }

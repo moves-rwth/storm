@@ -41,7 +41,7 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
             arrowOrigin = "\"" + arrowOrigin + "c\"";
             outStream << "\t" << arrowOrigin << " [shape = \"point\"]\n";
             outStream << "\t" << i << " -> " << arrowOrigin << " [label= \"{";
-            storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
+            storm::io::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
             outStream << "}\"];\n";
         }
 

@@ -6,6 +6,7 @@
 #include <functional>
 #include <iterator>
 #include <ostream>
+#include <ranges>
 #include <vector>
 
 namespace storm {
@@ -27,11 +28,13 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = uint_fast64_t;
         using difference_type = std::ptrdiff_t;
         using pointer = uint_fast64_t*;
         using reference = uint_fast64_t&;
+
+        const_iterator();
 
         /*!
          * Constructs an iterator over the indices of the set bits in the given bit vector, starting and
@@ -66,6 +69,14 @@ class BitVector {
          * @return A reference to this iterator.
          */
         const_iterator& operator++();
+
+        /*!
+         * Increases the position of the iterator to the position of the next bit that is set to true in the
+         * underlying bit vector.
+         *
+         * @return A copy of the iterator before incrementing
+         */
+        const_iterator operator++(int);
 
         /*!
          * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
@@ -117,7 +128,7 @@ class BitVector {
 
        public:
         // Define iterator
-        using iterator_category = std::input_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
         using value_type = uint_fast64_t;
         using difference_type = std::ptrdiff_t;
         using pointer = uint_fast64_t*;
@@ -133,6 +144,7 @@ class BitVector {
          * first bit upon construction.
          * @param lowerBound The index at which to abort the iteration process.
          */
+        const_reverse_iterator();
         const_reverse_iterator(uint64_t const* dataPtr, uint64_t upperBound, uint64_t lowerBound = 0ull, bool setOnFirstBit = true);
         const_reverse_iterator(const_reverse_iterator const& other);
         const_reverse_iterator& operator=(const_reverse_iterator const& other);
@@ -142,6 +154,12 @@ class BitVector {
          * @return A reference to this iterator.
          */
         const_reverse_iterator& operator++();
+
+        /*!
+         * Lets the iterator point to the previous bit with value 1
+         * @return A copy of the iterator before incrementing.
+         */
+        const_reverse_iterator operator++(int);
 
         /*!
          * Lets the iterator point to the n'th previous bit with value 1
@@ -760,6 +778,8 @@ class BitVector {
     // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
     static const uint_fast64_t mod64mask = (1 << 6) - 1;
 };
+
+static_assert(std::ranges::forward_range<BitVector>);
 
 struct FNV1aBitVectorHash {
     std::size_t operator()(storm::storage::BitVector const& bv) const;

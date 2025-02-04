@@ -15,11 +15,10 @@ DiscreteTimePrismProgramSimulator<ValueType>::DiscreteTimePrismProgramSimulator(
       currentState(),
       stateGenerator(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options)),
       zeroRewards(stateGenerator->getNumberOfRewardModels(), storm::utility::zero<ValueType>()),
-      lastActionRewards(zeroRewards) {
+      lastActionRewards(zeroRewards),
+      stateToId(stateGenerator->getStateSize()),
+      idToState() {
     // Current state needs to be overwritten to actual initial state.
-    // But first, let us create a state generator.
-
-    clearStateCaches();
     resetToInitial();
 }
 

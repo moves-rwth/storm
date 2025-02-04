@@ -73,7 +73,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::GSVI
     SolverStatus status{SolverStatus::InProgress};
     while (status == SolverStatus::InProgress) {
         ++numIterations;
-        if (viOperator->template applyInPlace(operand, offsets, backend)) {
+        if (viOperator->applyInPlace(operand, offsets, backend)) {
             status = SolverStatus::Converged;
         } else if (iterationCallback) {
             status = iterationCallback(status, operand);
@@ -210,7 +210,7 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
         }
         while (numIterations < maxIters) {
             ++numIterations;
-            if (viOperator->template applyInPlace(vu, offsets, backend)) {
+            if (viOperator->applyInPlace(vu, offsets, backend)) {
                 if (backend.allDown()) {
                     return SolverStatus::Converged;
                 } else {
