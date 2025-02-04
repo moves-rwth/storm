@@ -88,9 +88,7 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 include(FetchContent)
 FETCHCONTENT_DECLARE(
         carl
-        #SOURCE_DIR /Users/junges/carl
-        GIT_REPOSITORY https://github.com/sjunges/carl-storm.git
-        GIT_TAG  cmakeupdates
+        GIT_REPOSITORY https://github.com/moves-rwth/carl-storm.git
 )
 SET(EXCLUDE_TESTS_FROM_ALL ON)
 SET(CARL_COMPILE_RELEASE ON)

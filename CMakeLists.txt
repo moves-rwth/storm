@@ -527,7 +527,7 @@ endif()
 include(resources/3rdparty/CMakeLists.txt)
 
 # Include Doxygen
-# include(resources/doxygen/CMakeLists.txt)
+include(resources/doxygen/CMakeLists.txt)
 
 #############################################################
 ##
@@ -619,8 +619,11 @@ set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 add_dependencies(check tests)
 add_dependencies(check-verbose tests)
-# Apply code formatting
-# add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+
+if(PROJECT_IS_TOP_LEVEL)
+	# Apply code formatting
+	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+endif()
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
