@@ -43,7 +43,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
         LOG_INSTALL ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
     )
-    add_dependencies(resources spot)
+    add_dependencies(storm_resources spot)
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
     set(SPOT_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/")
     set(SPOT_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT})
