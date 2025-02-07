@@ -21,6 +21,7 @@ ARG no_threads=1
 
 # Specify Storm configuration (ON/OFF)
 ARG gurobi_support="ON"
+ARG mathsat_support="ON"
 ARG soplex_support="ON"
 ARG spot_support="ON"
 ARG developer="OFF"
@@ -48,6 +49,7 @@ WORKDIR /opt/storm/build
 RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
              -DSTORM_USE_GUROBI=$gurobi_support \
+             -DSTORM_USE_MATHSAT=$mathsat_support \
              -DSTORM_USE_SOPLEX=$soplex_support \
              -DSTORM_USE_SPOT_SYSTEM=$spot_support \
              -DSTORM_DEVELOPER=$developer \
