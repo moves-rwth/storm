@@ -75,7 +75,7 @@ class ParameterLifter {
 
     std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
 
-    std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
+    std::map<VariableType, std::set<uint_fast64_t>> const& getOccuringStatesAtVariable() const;
 
     uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
     uint_fast64_t getOriginalStateNumber(uint_fast64_t newState) const;
