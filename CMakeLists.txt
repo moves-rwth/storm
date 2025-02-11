@@ -13,7 +13,6 @@ include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
 include(ProcessorCount)
-include(resources/3rdparty/fetch_carl.cmake)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -54,7 +53,7 @@ option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used 
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
 export_option(STORM_USE_CLN_RF)
-option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
+option(STORM_BUILD_SHARED_LIBS "Build the Storm library dynamically" ON)
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
 option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
@@ -207,7 +206,7 @@ endif()
 message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
-if(BUILD_SHARED_LIBS)
+if(STORM_BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
     message(STATUS "Storm - Build dynamic libraries.")
 else()
@@ -234,11 +233,13 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
 	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
-		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
-		# Stack checks are known to produce errors with the following Clang versions:
-		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
-		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+			message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+			# Stack checks are known to produce errors with the following Clang versions:
+			# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+			# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		endif()
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)
@@ -413,9 +414,6 @@ if (STORM_DEVELOPER)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-documentation-unknown-command")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-noreturn")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-prototypes")
-
-
-
 		endif ()
 	else ()
 	    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")

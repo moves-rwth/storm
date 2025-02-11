@@ -63,6 +63,6 @@ add_dependencies(storm copy_resources_headers)
 
 
 # installation
-install(TARGETS storm EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+install(TARGETS storm RUNTIME_DEPENDENCIES EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib FRAMEWORK DESTINATION lib)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include/storm
 		FILES_MATCHING PATTERN "*.h")

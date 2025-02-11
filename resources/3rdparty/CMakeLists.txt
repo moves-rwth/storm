@@ -73,7 +73,45 @@ storm_add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}" 
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
 
+#############################################################
+##
+##	Boost
+##
+#############################################################
 
+# Boost Option variables
+set(Boost_USE_STATIC_LIBS ${USE_BOOST_STATIC_LIBRARIES})
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_NO_BOOST_CMAKE ON)
+set(Boost_NO_WARN_NEW_VERSIONS ON)
+
+find_package(Boost 1.65.1 QUIET REQUIRED COMPONENTS filesystem system)
+if (NOT Boost_FOUND)
+    if (Boost_VERSION)
+        message(FATAL_ERROR "The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
+    else ()
+        message(FATAL_ERROR "Boost was not found.")
+    endif ()
+endif ()
+if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
+    set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+endif ()
+
+if (${Boost_VERSION} VERSION_GREATER_EQUAL "1.81.0")
+    message(STATUS "Storm - Using workaround for Boost >= 1.81")
+    add_compile_options(-DBOOST_PHOENIX_STL_TUPLE_H_) # or add compile_definitions?
+endif()
+
+set(CNTVAR 1)
+foreach(BOOSTLIB ${Boost_LIBRARIES})
+    add_imported_library(target-boost-${CNTVAR} SHARED ${BOOSTLIB} ${Boost_INCLUDE_DIRS})
+    list(APPEND STORM_DEP_TARGETS target-boost-${CNTVAR}_SHARED)
+    MATH(EXPR CNTVAR "${CNTVAR}+1")
+endforeach()
+message(STATUS "Storm - Using boost ${Boost_VERSION} (library version ${Boost_LIB_VERSION}).")
+# set the information for the config header
+set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 
 #############################################################
@@ -242,10 +280,64 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 #############################################################
 ##
-##      carl
+##      carl (including cln and ginac)
 ##
 #############################################################
+# Boost must have been configured above. It would be good to check that.
 
+set(STORM_HAVE_CARL OFF)
+set(CARL_MINVERSION "14.26")
+set(CARL_C14VERSION "14")
+
+include(FetchContent)
+FETCHCONTENT_DECLARE(
+        carl
+        SOURCE_DIR /Users/junges/carl
+        # GIT_REPOSITORY https://github.com/moves-rwth/carl-storm.git
+)
+SET(EXCLUDE_TESTS_FROM_ALL ON)
+SET(THREAD_SAFE ON)
+SET(Boost_NO_SYSTEM_PATHS ON)
+SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS})
+SET(BOOST_LIBRARYDIR ${Boost_LIBRARY_DIRS})
+SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(CARL_LIB_INSTALL_DIR "lib/storm")
+SET(CARL_INCLUDE_INSTALL_DIR "include/storm")
+SET(CARL_EXPORT_TO_CMAKE OFF)
+FETCHCONTENT_MAKEAVAILABLE(carl)
+
+
+include(${carl_BINARY_DIR}/carlConfig.cmake)
+#
+set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+message(STATUS "carl version ${carl_VERSION} use cln: ${STORM_HAVE_CLN}")
+set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
+#
+add_dependencies(storm_resources lib_carl)
+set(STORM_HAVE_CARL ON)
+set(STORM_CARL_SUPPORTS_FWD_DECL ON)
+
+
+# The library that needs symbols must be first, then the library that resolves the symbol.
+list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
+
+
+if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
+    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+endif()
+if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
+    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
+endif()
+
+
+if(STORM_HAVE_CLN)
+    get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+endif()
+
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+    list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
+endif()
 
 
 get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
@@ -254,14 +346,6 @@ get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES
 get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
 get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
 get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
-
-
-
-#############################################################
-##
-##	cln
-##
-#############################################################
 
 
 #############################################################
