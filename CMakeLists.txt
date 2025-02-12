@@ -1,15 +1,11 @@
 cmake_minimum_required (VERSION 3.22)
 
-set(CMAKE_CXX_STANDARD 20)
-
 # Set project name
 project (storm CXX C)
 
-# Add base folder for better inclusion paths
-#  include_directories("${PROJECT_SOURCE_DIR}/src")
-
 # Add the resources/cmake folder to Module Search Path for FindTBB.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+add_custom_target(storm_resources)
 
 include(ExternalProject)
 include(RegisterSourceGroup)
@@ -17,6 +13,8 @@ include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
 include(ProcessorCount)
+
+set(CMAKE_CXX_STANDARD 20)
 
 #############################################################
 ##
@@ -55,7 +53,7 @@ option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used 
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
 export_option(STORM_USE_CLN_RF)
-option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
+option(STORM_BUILD_SHARED_LIBS "Build the Storm library dynamically" ON)
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
 option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
@@ -208,7 +206,7 @@ endif()
 message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
-if(BUILD_SHARED_LIBS)
+if(STORM_BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
     message(STATUS "Storm - Build dynamic libraries.")
 else()
@@ -235,11 +233,13 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
 	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
-		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
-		# Stack checks are known to produce errors with the following Clang versions:
-		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
-		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+			message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+			# Stack checks are known to produce errors with the following Clang versions:
+			# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+			# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		endif()
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)
@@ -414,9 +414,6 @@ if (STORM_DEVELOPER)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-documentation-unknown-command")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-noreturn")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-prototypes")
-
-
-
 		endif ()
 	else ()
 	    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
@@ -483,7 +480,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 # the RPATH to be used when installing
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -560,14 +557,17 @@ if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
 	set(STORM_VERSION_DIRTY DirtyState::Unknown)
+	set(STORM_VERSION_TWEAK 0)
 	include(version.cmake)
 	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
 	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
+		set(STORM_VERSION_TWEAK 1)
 	else()
 		set(STORM_VERSION_DIRTY "DirtyState::Clean")
+		set(STORM_VERSION_TWEAK 0)
 	endif()
 endif()
 
@@ -608,9 +608,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Add the binary dir include directory for storm-config.h
-include_directories("${PROJECT_BINARY_DIR}/include")
-
 include(CTest)
 # Compiles all tests
 add_custom_target(tests)
@@ -620,8 +617,11 @@ set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 add_dependencies(check tests)
 add_dependencies(check-verbose tests)
-# Apply code formatting
-add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+
+if(PROJECT_IS_TOP_LEVEL)
+	# Apply code formatting
+	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+endif()
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
@@ -632,8 +632,8 @@ export_option(STORM_HAVE_GUROBI)
 
 include(export)
 
-install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
-install(FILES ${CMAKE_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES ${PROJECT_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)
