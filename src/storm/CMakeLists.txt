@@ -33,6 +33,7 @@ endif(ADDITIONAL_LINK_DIRS)
 # Create libstorm.
 add_library(storm SHARED ${STORM_3RDPARTY_SOURCES} ${STORM_SOURCES} ${STORM_HEADERS})
 target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
+set_target_properties(storm VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 # Remove define symbol for shared libstorm.
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "")
 add_dependencies(storm storm_resources)
