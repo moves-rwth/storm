@@ -933,6 +933,7 @@ storm::Interval convertNumber(double const& number) {
     return storm::Interval(number);
 }
 
+#if defined(STORM_HAVE_GMP)
 template<>
 storm::Interval convertNumber(storm::GmpRationalNumber const& n) {
     return storm::Interval(convertNumber<double>(n));
@@ -943,6 +944,7 @@ storm::GmpRationalNumber convertNumber(storm::Interval const& number) {
     STORM_LOG_ASSERT(number.isPointInterval(), "Interval must be a point interval to convert");
     return convertNumber<storm::GmpRationalNumber>(number.lower());
 }
+#endif
 
 #if defined(STORM_HAVE_CLN)
 template<>

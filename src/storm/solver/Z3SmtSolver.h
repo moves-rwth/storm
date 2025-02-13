@@ -48,7 +48,7 @@ class Z3SmtSolver : public SmtSolver {
 
     virtual void add(storm::expressions::Expression const& assertion) override;
 
-    virtual void addNotCurrentModel() override;
+    virtual void addNotCurrentModel(bool performSolverReset = true) override;
 
     virtual CheckResult check() override;
 

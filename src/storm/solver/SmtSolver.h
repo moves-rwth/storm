@@ -126,7 +126,7 @@ class SmtSolver {
     /*!
      * If supported by the solver, this function tells the SMT solver to produce a model different from the current model.
      */
-    virtual void addNotCurrentModel();
+    virtual void addNotCurrentModel(bool performSolverReset = true);
 
     /*!
      * Checks whether the conjunction of assertions that are currently on the solver's stack is satisfiable.
