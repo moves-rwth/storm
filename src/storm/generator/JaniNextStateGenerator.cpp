@@ -84,6 +84,19 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
             hasNonTrivialRewardExpressions = hasNonTrivialRewardExpressions || this->model.isNonTrivialRewardModelExpression(rewardModelName);
         }
     }
+    // If a transient variable has a non-zero default value, we also consider that non-trivial.
+    // In those cases, lifting edge destination assignments to the edges would mean that reward is collected twice:
+    // once at the edge (assigned value), once at the edge destinations (default value).
+    if (!hasNonTrivialRewardExpressions) {
+        for (auto const& rewExpr : rewardExpressions) {
+            STORM_LOG_ASSERT(rewExpr.second.isVariable(), "Expected trivial reward expression to be a variable. Got " << rewExpr.second << " instead.");
+            auto const& var = this->model.getGlobalVariables().getVariable(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+            if (var.isTransient() && var.hasInitExpression() && !storm::utility::isZero(var.getInitExpression().evaluateAsRational())) {
+                hasNonTrivialRewardExpressions = true;
+                break;
+            }
+        }
+    }
 
     // We try to lift the edge destination assignments to the edges as this reduces the number of evaluator calls.
     // However, this will only be helpful if there are no assignment levels and only trivial reward expressions.
@@ -307,7 +320,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
         std::vector<std::vector<uint64_t>> allValues;
         for (auto const& aRef : this->parallelAutomata) {
             auto const& aInitLocs = aRef.get().getInitialLocationIndices();
-            allValues.template emplace_back(aInitLocs.begin(), aInitLocs.end());
+            allValues.emplace_back(aInitLocs.begin(), aInitLocs.end());
         }
         uint64_t locEndIndex = allValues.size();
         for (auto const& intVar : this->variableInformation.integerVariables) {

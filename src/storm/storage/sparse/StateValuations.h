@@ -102,6 +102,21 @@ class StateValuations : public storm::models::sparse::StateAnnotation {
     bool isEmpty(storm::storage::sparse::state_type const& stateIndex) const;
 
     /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    storm::storage::BitVector getBooleanValues(storm::expressions::Variable const& booleanVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    std::vector<int64_t> getIntegerValues(storm::expressions::Variable const& integerVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    std::vector<storm::RationalNumber> getRationalValues(storm::expressions::Variable const& rationalVariable) const;
+
+    /*!
      * Returns a string representation of the valuation.
      *
      * @param selectedVariables If given, only the informations for the variables in this set are processed.

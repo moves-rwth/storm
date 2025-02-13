@@ -258,9 +258,10 @@ class Program : public LocatedInformation {
     /*!
      * Retrieves all expression variables used by this program.
      *
+     * @param includeConstants Whether to include constants in the set of expression variables.
      * @return The set of expression variables used by this program.
      */
-    std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+    std::set<storm::expressions::Variable> getAllExpressionVariables(bool includeConstants = true) const;
 
     /*!
      * Retrieves a list of expressions that characterize the legal ranges of all variables.

@@ -15,13 +15,12 @@ namespace storm {
 namespace storage {
 
 storm::json<storm::RationalNumber> readQvbsJsonFile(std::string const& filePath) {
-    STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException,
-                    "QVBS json file " << filePath << " was not found.");
+    STORM_LOG_THROW(storm::io::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException, "QVBS json file " << filePath << " was not found.");
     storm::json<storm::RationalNumber> result;
     std::ifstream file;
-    storm::utility::openFile(filePath, file);
+    storm::io::openFile(filePath, file);
     file >> result;
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
     return result;
 }
 

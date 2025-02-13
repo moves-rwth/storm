@@ -25,12 +25,12 @@ uint tryReadFromSlurm() {
 
 uint tryReadFromCgroups() {
     std::string const filename = "/sys/fs/cgroup/cpu.max";
-    if (storm::utility::fileExistsAndIsReadable(filename)) {
+    if (storm::io::fileExistsAndIsReadable(filename)) {
         std::ifstream inputFileStream;
-        storm::utility::openFile(filename, inputFileStream);
+        storm::io::openFile(filename, inputFileStream);
         std::string contents;
-        storm::utility::getline(inputFileStream, contents);
-        storm::utility::closeFile(inputFileStream);
+        storm::io::getline(inputFileStream, contents);
+        storm::io::closeFile(inputFileStream);
 
         auto pos1 = contents.data();
         char* pos2;

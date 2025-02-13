@@ -513,7 +513,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(
                         deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
 
                     // Compute the estimate for this objective
-                    if (!storm::utility::isZero(weightVector[objIndex])) {
+                    if (!storm::utility::isZero(weightVector[objIndex]) && !storm::utility::isZero(sumOfWeightsOfUncheckedObjectives)) {
                         objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
                         ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
                         if (storm::solver::minimize(obj.formula->getOptimalityType())) {

@@ -6,7 +6,7 @@
 #include "storm/models/sparse/Model.h"
 
 namespace storm {
-namespace exporter {
+namespace io {
 
 struct DirectEncodingOptions {
     bool allowPlaceholders = true;
@@ -50,5 +50,5 @@ std::unordered_map<ValueType, std::string> generatePlaceholders(std::shared_ptr<
  */
 template<typename ValueType>
 void writeValue(std::ostream& os, ValueType value, std::unordered_map<ValueType, std::string> const& placeholders);
-}  // namespace exporter
+}  // namespace io
 }  // namespace storm

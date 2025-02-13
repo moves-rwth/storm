@@ -133,7 +133,7 @@ void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::os
                     outStream << " [ label = \"{";
                 }
                 arrowHasLabel = true;
-                storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(rowIndex), maxWidthLabel);
+                storm::io::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(rowIndex), maxWidthLabel);
                 outStream << "}";
             }
             if (arrowHasLabel) {
