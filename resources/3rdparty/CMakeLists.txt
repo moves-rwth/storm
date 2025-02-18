@@ -125,8 +125,6 @@ message (STATUS "Storm - Including ExprTk.")
 storm_add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk" "")
 list(APPEND STORM_DEP_TARGETS ExprTk)
 
-
-
 #############################################################
 ##
 ##	Parallel Hashmap
@@ -135,24 +133,8 @@ list(APPEND STORM_DEP_TARGETS ExprTk)
 
 # Use the shipped version of Parallel Hashmap
 message (STATUS "Storm - Including Parallel Hashmap.")
-set(PHMAP_INCLUDE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap/parallel_hashmap")
-file(GLOB PHMAP_HEADERS "${PHMAP_INCLUDE_DIR}/*.h")
-
-# Add the parallel_hashmap headers to the headers that are copied to the include directory in the build directory.
-set(PHMAP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/parallel_hashmap)
-include_directories("${PHMAP_BINDIR_DIR}")
-foreach(HEADER ${PHMAP_HEADERS})
-    string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
-    string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
-    string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
-    add_custom_command(
-        OUTPUT ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${PHMAP_BINDIR_DIR}/parallel_hashmap
-        COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
-        DEPENDS ${PHMAP_INCLUDE_DIR}/${HEADER_FILENAME}
-    )
-    list(APPEND PHMAP_BINDIR_HEADERS ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME})
-endforeach()
+storm_add_imported_library_interface(phmap "${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap" "")
+list(APPEND STORM_DEP_TARGETS phmap)
 
 #############################################################
 ##
@@ -162,7 +144,8 @@ endforeach()
 
 # Use the shipped version of cpphoafparser
 message (STATUS "Storm - Including cpphoafparser 0.99.2")
-include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
+storm_add_imported_library_interface(cppHOAparser "${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include" "")
+list(APPEND STORM_DEP_TARGETS cppHOAparser)
 
 #############################################################
 ##
@@ -285,6 +268,16 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 #############################################################
 # Boost must have been configured above. It would be good to check that.
 
+
+# Set compile flags for dependencies
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+    set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
+    set(SHIPPED_CARL_USE_GINAC ON)
+else()
+    set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
+    set(SHIPPED_CARL_USE_GINAC OFF)
+endif()
+
 set(STORM_HAVE_CARL OFF)
 set(CARL_MINVERSION "14.26")
 set(CARL_C14VERSION "14")
@@ -292,8 +285,8 @@ set(CARL_C14VERSION "14")
 include(FetchContent)
 FETCHCONTENT_DECLARE(
         carl
-        SOURCE_DIR /Users/junges/carl
-        # GIT_REPOSITORY https://github.com/moves-rwth/carl-storm.git
+        GIT_REPOSITORY ${STORM_CARL_GIT_REPO}
+        GIT_TAG ${STORM_CARL_GIT_TAG}
 )
 SET(EXCLUDE_TESTS_FROM_ALL ON)
 SET(THREAD_SAFE ON)
@@ -339,43 +332,41 @@ if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
     list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
 endif()
 
-
-get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
-get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
-get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
-get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
-
+#
+#get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
+#get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
+#get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+#get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+#get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
+#get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
+#
 
 #############################################################
 ##
 ##	MathSAT (optional)
 ##
 #############################################################
-
-if ("${MSAT_ROOT}" STREQUAL "")
-    set(ENABLE_MSAT OFF)
-else()
-    set(ENABLE_MSAT ON)
-endif()
-
-# MathSAT Defines
-set(STORM_HAVE_MSAT ${ENABLE_MSAT})
-if (ENABLE_MSAT)
-    message (STATUS "Storm - Linking with MathSAT.")
-    if(${OPERATING_SYSTEM} MATCHES "Linux")
-        find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_SHARED)
+if (STORM_USE_MATHSAT)
+    find_package(MATHSAT QUIET)
+    if(MATHSAT_FOUND)
+        set(STORM_HAVE_MATHSAT ON)
+        if(${OPERATING_SYSTEM} MATCHES "Linux")
+            add_imported_library(mathsat SHARED ${MATHSAT_LIBRARIES} ${MATHSAT_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS mathsat_SHARED)
+            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_SHARED}; include: ${MATHSAT_INCLUDE_DIRS})")
+        else()
+            # on macOS, the .dylib file has some hard coded path (Version 5.5.4) and we therefore link statically
+            add_imported_library(mathsat STATIC ${MATHSAT_LIB} ${MATHSAT_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS mathsat_STATIC)
+            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_STATIC}; include: ${MATHSAT_INCLUDE_DIRS})")
+        endif()
     else()
-		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
-		# we thus link statically
-        find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_STATIC)
+        set(STORM_HAVE_MATHSAT OFF)
+        message(FATAL_ERROR "Storm - MathSAT library requested but was not found. Make sure that MATHSAT_ROOT points to the correct directory.")
     endif()
-endif(ENABLE_MSAT)
+else()
+    set(STORM_HAVE_MATHSAT OFF)
+endif()
 
 #############################################################
 ##
@@ -441,12 +432,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 ##	Sylvan
 ##
 #############################################################
-
-if(STORM_SHIPPED_CARL)
-    set(sylvan_dep carl)
-else()
-    set(sylvan_dep lib_carl)
-endif()
 
 if (STORM_DEBUG_SYLVAN)
     set(SYLVAN_BUILD_TYPE "Debug")
@@ -522,67 +507,14 @@ list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
 
 #############################################################
 ##
-##	Intel Threading Building Blocks (optional)
-##
-#############################################################
-
-set(STORM_HAVE_INTELTBB OFF)
-if (STORM_USE_INTELTBB)
-    find_package(TBB QUIET REQUIRED)
-
-    if (TBB_FOUND)
-        message(STATUS "Storm - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-        message(STATUS "Storm - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
-        set(STORM_HAVE_INTELTBB ON)
-	# Under Linux libtbb.so contains a linker script to libtbb.so.2 instead of a symlink.
-	# This breaks CMake.
-        # As a workaround we manually try to add the necessary suffix ".2" to the so file and hope for the best.
-	if (LINUX)
-		# Check if the library is a linker script which only links to the correct library
-		# Read first bytes of file
-		file(READ "${TBB_LIBRARY}" TMPTXT LIMIT 128)
-		# Check if file starts with "INPUT (libtbb.so.2)"
-		if("${TMPTXT}" MATCHES "INPUT \\(libtbb\\.so\\.(.*)\\)")
-			# Manually set library by adding the suffix from the linker script.
-			# CMAKE_MATCH_1 contains the parsed suffix.
-			set(TBB_LIB_LINUX "${TBB_LIBRARY}.${CMAKE_MATCH_1}")
-			set(TBB_MALLOC_LIB_LINUX "${TBB_MALLOC_LIBRARY}.${CMAKE_MATCH_1}")
-			if (EXISTS "${TBB_LIB_LINUX}")
-				set(TBB_LIBRARY ${TBB_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB library in manually set path ${TBB_LIBRARY}.")
-			endif()
-			if (EXISTS "${TBB_MALLOC_LIB_LINUX}")
-				set(TBB_MALLOC_LIBRARY ${TBB_MALLOC_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB malloc library in manually set path ${TBB_MALLOC_LIBRARY}.")
-			endif()
-		endif()
-	endif()
-
-        add_imported_library(tbb SHARED ${TBB_LIBRARY} ${TBB_INCLUDE_DIRS})
-        list(APPEND STORM_DEP_TARGETS tbb_SHARED)
-        add_imported_library(tbb_malloc SHARED ${TBB_MALLOC_LIBRARY} ${TBB_INCLUDE_DIRS})
-        list(APPEND STORM_DEP_TARGETS tbb_malloc_SHARED)
-
-    else(TBB_FOUND)
-        message(FATAL_ERROR "Storm - TBB was requested, but not found.")
-    endif(TBB_FOUND)
-endif(STORM_USE_INTELTBB)
-
-#############################################################
-##
 ##	Threads
 ##
 #############################################################
 
-find_package(Threads QUIET REQUIRED)
-if (NOT Threads_FOUND)
-    message(FATAL_ERROR "Storm - Threads was requested, but not found.")
-endif()
-include_directories(${THREADS_INCLUDE_DIRS})
-list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-if (STORM_USE_COTIRE)
-    target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
-endif(STORM_USE_COTIRE)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+list(APPEND STORM_DEP_TARGETS Threads::Threads)
 
 
 add_custom_target(copy_resources_headers DEPENDS ${PHMAP_BINDIR_HEADERS})

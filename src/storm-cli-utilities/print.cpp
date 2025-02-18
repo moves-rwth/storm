@@ -16,7 +16,7 @@
 #ifdef STORM_HAVE_GUROBI
 #include "gurobi_c.h"
 #endif
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 #include "mathsat.h"
 #endif
 #ifdef STORM_HAVE_SOPLEX
@@ -111,7 +111,7 @@ void printVersion() {
     STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
                                                                 << TBB_INTERFACE_VERSION << ").\n");
 #endif
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
