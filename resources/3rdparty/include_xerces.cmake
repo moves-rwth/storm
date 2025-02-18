@@ -1,7 +1,7 @@
 if(STORM_USE_XERCES)
 	find_package(XercesC QUIET)
     if(XercesC_FOUND)
-        message(STATUS "Storm - Use system version of xerces.")
+        message(STATUS "Storm (GSPN) - Use system version of xerces.")
         set(STORM_HAVE_XERCES ON)
         include_directories(${XercesC_INCLUDE_DIRS})
         if(APPLE)
@@ -16,15 +16,15 @@ if(STORM_USE_XERCES)
 
 
         # find_package(CURL)
-        message (STATUS "Storm - Linking with Xerces-c ${XercesC_VERSION}: ${XercesC_LIBRARIES}")
+        message (STATUS "Storm (GSPN) - Linking with Xerces-c ${XercesC_VERSION}: ${XercesC_LIBRARIES}")
 
         list(APPEND STORM_GSPN_LINK_LIBRARIES ${XercesC_LIBRARIES} ${COREFOUNDATION_LIBRARY} ${CORESERVICES_LIBRARY} ${CURL_LIBRARIES})
     else()
         set(STORM_HAVE_XERCES OFF)
-        message (STATUS "Storm - Could not find Xerces, will disable parsing XML formats (for GSPNs)")
+        message (STATUS "Storm (GSPN) - Could not find Xerces, will disable parsing XML formats (for GSPNs)")
     endif()
 else()
     set(STORM_HAVE_XERCES OFF)
-    message (STATUS "Storm - Building without Xerces disables parsing XML formats (for GSPNs)")
+    message (STATUS "Storm (GSPN) - Building without Xerces disables parsing XML formats (for GSPNs)")
 endif(STORM_USE_XERCES)
 
