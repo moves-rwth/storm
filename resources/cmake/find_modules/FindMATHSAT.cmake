@@ -1,4 +1,4 @@
-- Try to find libmathsat
+# Try to find libmathsat
 # Once done this will define
 #  MATHSAT_FOUND - System has mathsat
 #  MATHSAT_INCLUDE_DIRS - The mathsat include directory
