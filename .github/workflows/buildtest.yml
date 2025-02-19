@@ -4,8 +4,8 @@ name: Build Test
 
 on:
   schedule:
-      # run daily
-      - cron: '0 6 * * *'
+    # run daily
+    - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
   pull_request:
@@ -26,62 +26,67 @@ jobs:
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
              Gurobi: "ON",
+             Mathsat: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
              Gurobi: "ON",
+             Mathsat: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
              Gurobi: "ON",
+             Mathsat: "ON",
              Soplex: "ON",
              Spot: "ON",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
              Gurobi: "OFF",
+             Mathsat: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT="
-            }
+             cmakeArgs: ""
+          }
           - {name: "Minimal dependencies",
-            baseImg: "storm-basesystem:minimal_dependencies",
-            buildType: "Debug",
+             baseImg: "storm-basesystem:minimal_dependencies",
+             buildType: "Debug",
              Gurobi: "OFF",
+             Mathsat: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT="
-            }
+             cmakeArgs: ""
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -91,6 +96,7 @@ jobs:
             --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
+            --build-arg mathsat_support="${{ matrix.config.Mathsat }}" \
             --build-arg soplex_support="${{ matrix.config.Soplex }}" \
             --build-arg spot_support="${{ matrix.config.Spot }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
@@ -129,21 +135,23 @@ jobs:
           - {name: "GCC",
              buildType: "Debug",
              Gurobi: "OFF",
+             Mathsat: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_USE_SPOT_SHIPPED=ON",
              packages: ""
-            }
+          }
           - {name: "Clang",
              buildType: "Debug",
              Gurobi: "OFF",
+             Mathsat: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_USE_SPOT_SHIPPED=ON",
              packages: "clang"
-            }
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -154,6 +162,7 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
+            --build-arg mathsat_support="${{ matrix.config.Mathsat }}" \
             --build-arg soplex_support="${{ matrix.config.Soplex }}" \
             --build-arg spot_support="${{ matrix.config.Spot }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
@@ -185,7 +194,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-12", "ubuntu-22.04", "ubuntu-24.04"]
+        distro: ["debian-12", "ubuntu-24.04"]
         buildType: ["Release"]
     steps:
       - name: Git clone
@@ -196,6 +205,7 @@ jobs:
             --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
             --build-arg gurobi_support="OFF" \
+            --build-arg mathsat_support="OFF" \
             --build-arg soplex_support="OFF" \
             --build-arg spot_support="OFF" \
             --build-arg no_threads=${NR_JOBS}
@@ -229,12 +239,12 @@ jobs:
              dockerTag: "ci-debug",
              baseImg: "storm-dependencies:latest-debug",
              Developer: "ON"
-            }
+          }
           - {name: "Release",
              dockerTag: "ci",
              baseImg: "storm-dependencies:latest",
              Developer: "OFF"
-            }
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -251,7 +261,7 @@ jobs:
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments gurobi_support, mathsat_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
 
