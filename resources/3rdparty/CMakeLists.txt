@@ -516,5 +516,3 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 list(APPEND STORM_DEP_TARGETS Threads::Threads)
 
-
-add_custom_target(copy_resources_headers DEPENDS ${PHMAP_BINDIR_HEADERS})

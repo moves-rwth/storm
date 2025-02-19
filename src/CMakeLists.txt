@@ -1,7 +1,3 @@
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
 add_custom_target(binaries)
 
 add_subdirectory(storm)
@@ -12,7 +8,6 @@ add_subdirectory(storm-parsers)
 add_subdirectory(storm-version-info)
 add_subdirectory(storm-cli-utilities)
 add_subdirectory(storm-cli)
-# Additional libraries
 add_subdirectory(storm-conv)
 add_subdirectory(storm-conv-cli)
 add_subdirectory(storm-dft)

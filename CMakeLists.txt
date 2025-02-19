@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.22)
+cmake_minimum_required (VERSION 3.23)
 
 # Set project name
 project (storm CXX C)
@@ -101,10 +101,10 @@ mark_as_advanced(CMAKE_OSX_SYSROOT)
 mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 
 # Offer the user the choice of overriding the installation directories
-set(INCLUDE_INSTALL_DIR include/ CACHE PATH "Installation directory for header files" )
-set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
+set(STORM_INCLUDE_INSTALL_DIR include/storm CACHE PATH "Installation directory for header files" )
+set(STORM_LIB_INSTALL_DIR lib/storm CACHE PATH "Installation directory for libraries")
 #set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
-set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
+set(STORM_BIN_INSTALL_DIR lib/storm CACHE PATH "Installation directory for executables")
 
 
 # Install dir for cmake files (info for other libraries that include Storm)
