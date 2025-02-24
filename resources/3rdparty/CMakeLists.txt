@@ -1,4 +1,8 @@
-add_custom_target(resources)
+
+if(PROJECT_TOP_LEVEL)
+    add_custom_target(resources)
+    add_dependencies(resources storm_resources)
+endif()
 add_custom_target(test-resources)
 
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
@@ -27,7 +31,7 @@ ExternalProject_Add(
 )
 ExternalProject_Get_Property(l3pp_ext source_dir)
 set(l3pp_INCLUDE "${source_dir}/")
-add_imported_library_interface(l3pp "${l3pp_INCLUDE}")
+storm_add_imported_library_interface(l3pp "${l3pp_INCLUDE}" "")
 list(APPEND STORM_DEP_TARGETS l3pp)
 add_dependencies(l3pp l3pp_ext)
 
@@ -37,7 +41,7 @@ add_dependencies(l3pp l3pp_ext)
 ##
 #############################################################
 
-add_imported_library_interface(gmm "${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include")
+storm_add_imported_library_interface(gmm "${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include" "")
 list(APPEND STORM_DEP_TARGETS gmm)
 
 #############################################################
@@ -65,11 +69,9 @@ ExternalProject_Add(
         INSTALL_COMMAND ""
         LOG_INSTALL ON
 )
-add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}")
+storm_add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}" "")
 list(APPEND STORM_DEP_TARGETS StormEigen)
 add_dependencies(StormEigen eigen_src)
-
-
 
 #############################################################
 ##
@@ -82,13 +84,14 @@ set(Boost_USE_STATIC_LIBS ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_BOOST_CMAKE ON)
+set(Boost_NO_WARN_NEW_VERSIONS ON)
 
 find_package(Boost 1.65.1 QUIET REQUIRED COMPONENTS filesystem system)
 if (NOT Boost_FOUND)
     if (Boost_VERSION)
-	message(FATAL_ERROR "The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
+        message(FATAL_ERROR "The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
     else ()
-   	message(FATAL_ERROR "Boost was not found.")
+        message(FATAL_ERROR "Boost was not found.")
     endif ()
 endif ()
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
@@ -97,7 +100,7 @@ endif ()
 
 if (${Boost_VERSION} VERSION_GREATER_EQUAL "1.81.0")
     message(STATUS "Storm - Using workaround for Boost >= 1.81")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_PHOENIX_STL_TUPLE_H_")
+    add_compile_options(-DBOOST_PHOENIX_STL_TUPLE_H_) # or add compile_definitions?
 endif()
 
 set(CNTVAR 1)
@@ -110,6 +113,7 @@ message(STATUS "Storm - Using boost ${Boost_VERSION} (library version ${Boost_LI
 # set the information for the config header
 set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
+
 #############################################################
 ##
 ##	ExprTk
@@ -118,10 +122,8 @@ set(STORM_BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}")
 
 # Use the shipped version of ExprTK
 message (STATUS "Storm - Including ExprTk.")
-add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk")
+storm_add_imported_library_interface(ExprTk "${STORM_3RDPARTY_SOURCE_DIR}/exprtk" "")
 list(APPEND STORM_DEP_TARGETS ExprTk)
-
-
 
 #############################################################
 ##
@@ -131,24 +133,8 @@ list(APPEND STORM_DEP_TARGETS ExprTk)
 
 # Use the shipped version of Parallel Hashmap
 message (STATUS "Storm - Including Parallel Hashmap.")
-set(PHMAP_INCLUDE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap/parallel_hashmap")
-file(GLOB PHMAP_HEADERS "${PHMAP_INCLUDE_DIR}/*.h")
-
-# Add the parallel_hashmap headers to the headers that are copied to the include directory in the build directory.
-set(PHMAP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/parallel_hashmap)
-include_directories("${PHMAP_BINDIR_DIR}")
-foreach(HEADER ${PHMAP_HEADERS})
-    string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
-    string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
-    string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
-    add_custom_command(
-        OUTPUT ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${PHMAP_BINDIR_DIR}/parallel_hashmap
-        COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
-        DEPENDS ${PHMAP_INCLUDE_DIR}/${HEADER_FILENAME}
-    )
-    list(APPEND PHMAP_BINDIR_HEADERS ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME})
-endforeach()
+storm_add_imported_library_interface(phmap "${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap" "")
+list(APPEND STORM_DEP_TARGETS phmap)
 
 #############################################################
 ##
@@ -158,7 +144,8 @@ endforeach()
 
 # Use the shipped version of cpphoafparser
 message (STATUS "Storm - Including cpphoafparser 0.99.2")
-include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
+storm_add_imported_library_interface(cppHOAparser "${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include" "")
+list(APPEND STORM_DEP_TARGETS cppHOAparser)
 
 #############################################################
 ##
@@ -168,7 +155,7 @@ include_directories("${STORM_3RDPARTY_SOURCE_DIR}/cpphoafparser-0.99.2/include")
 
 #use the shipped version of modernjson
 message (STATUS "Storm - Including ModernJSON.")
-add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/include/")
+storm_add_imported_library_interface(ModernJSON "${STORM_3RDPARTY_SOURCE_DIR}/modernjson/include/" "")
 list(APPEND STORM_DEP_TARGETS ModernJSON)
 
 #############################################################
@@ -276,218 +263,110 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 #############################################################
 ##
-##      carl
+##      carl (including cln and ginac)
 ##
 #############################################################
+# Boost must have been configured above. It would be good to check that.
+
+
+# Set compile flags for dependencies
+if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
+    set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
+    set(SHIPPED_CARL_USE_GINAC ON)
+else()
+    set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
+    set(SHIPPED_CARL_USE_GINAC OFF)
+endif()
 
 set(STORM_HAVE_CARL OFF)
 set(CARL_MINVERSION "14.26")
 set(CARL_C14VERSION "14")
-if (NOT STORM_FORCE_SHIPPED_CARL)
-    if (NOT "${STORM_CARL_DIR_HINT}" STREQUAL "")
-		find_package(carl QUIET PATHS ${STORM_CARL_DIR_HINT} NO_DEFAULT_PATH)
-    endif()
-	if (NOT carl_FOUND)
-		find_package(carl QUIET)
-    endif()
-endif()
 
-set(STORM_SHIPPED_CARL OFF)
-if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
-    get_target_property(carlLOCATION lib_carl LOCATION)
-    if("${carlLOCATION}" STREQUAL "carlLOCATION-NOTFOUND")
-        if(EXISTS ${STORM_3RDPARTY_BINARY_DIR}/carl)
-            message(WARNING "Storm - Library for carl location is not found but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
-            set(STORM_SHIPPED_CARL ON)
-        else()
-            message(FATAL_ERROR "Library location for carl is not found, did you build carl?")
-        endif()
-    elseif(EXISTS ${carlLOCATION})
-        #empty on purpose
-    else()
-        if(EXISTS ${STORM_3RDPARTY_BINARY_DIR}/carl)
-            message(WARNING "Storm - File ${carlLOCATION} does not exist but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
-            set(STORM_SHIPPED_CARL ON)
-        else()
-            message(FATAL_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
-        endif()
-    endif()
-    if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
-        message(STATUS "Storm - Found carl-storm version")
-        # empty on purpose. Maybe put a warning here?
-        if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
-            message(FATAL_ERROR "Carl version outdated. We require ${CARL_MINVERSION}. Found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
-        endif()
-    else()
-        message(FATAL_ERROR "We only support a diverged version of carl, indicated by Carl version 14.x. These versions can be found at https://github.com/moves-rwth/carl-storm. 
-			      On this system, we found ${carl_VERSION_MAJOR}.${carl_VERSION_MINOR} at ${carlLOCATION}")
-    endif()
+include(FetchContent)
+FETCHCONTENT_DECLARE(
+        carl
+        GIT_REPOSITORY ${STORM_CARL_GIT_REPO}
+        GIT_TAG ${STORM_CARL_GIT_TAG}
+)
+SET(EXCLUDE_TESTS_FROM_ALL ON)
+SET(THREAD_SAFE ON)
+SET(Boost_NO_SYSTEM_PATHS ON)
+SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS})
+SET(BOOST_LIBRARYDIR ${Boost_LIBRARY_DIRS})
+SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(CARL_LIB_INSTALL_DIR "lib/storm")
+SET(CARL_INCLUDE_INSTALL_DIR "include/storm")
+SET(CARL_EXPORT_TO_CMAKE OFF)
+FETCHCONTENT_MAKEAVAILABLE(carl)
 
-    set(STORM_HAVE_CARL ON)
-    message(STATUS "Storm - Use system version of carl.")
-    message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
-    set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-    set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-else()
-    set(STORM_SHIPPED_CARL ON)
-endif()
 
-if (STORM_SHIPPED_CARL)
-	# The first external project will be built at *configure stage*
-	message(STATUS "Carl - Start of config process")
-	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
-	execute_process(
-	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}" "-DUse_CLN_NUMBERS=${SHIPPED_CARL_USE_CLN_NUMBERS}" "-DUse_GINAC=${SHIPPED_CARL_USE_GINAC}"
-	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
-	OUTPUT_VARIABLE carlconfig_out
-	RESULT_VARIABLE carlconfig_result)
+include(${carl_BINARY_DIR}/carlConfig.cmake)
+#
+set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+message(STATUS "carl version ${carl_VERSION} use cln: ${STORM_HAVE_CLN}")
+set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
+#
+add_dependencies(storm_resources lib_carl)
+set(STORM_HAVE_CARL ON)
+set(STORM_CARL_SUPPORTS_FWD_DECL ON)
 
-	if(NOT carlconfig_result)
-		message(STATUS "${carlconfig_out}")
-	endif()
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target carl-config
-		WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
-		OUTPUT_VARIABLE carlconfig_out
-		RESULT_VARIABLE carlconfig_result
-		)
-		if(NOT carlconfig_result)
-		message(STATUS "${carlconfig_out}")
-	endif()
-    message(STATUS "Carl - End of config process")
 
-    message(STATUS "Storm - Using shipped version of carl.")
-    ExternalProject_Add(
-            carl
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
-            CONFIGURE_COMMAND ""
-            BUILD_IN_SOURCE 1
-            BUILD_COMMAND make lib_carl -j${STORM_RESOURCES_BUILD_JOBCOUNT}
-            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
-            LOG_BUILD ON
-			LOG_INSTALL ON
-            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
-    )
-    include(${STORM_3RDPARTY_BINARY_DIR}/carl/carlConfig.cmake)
+# The library that needs symbols must be first, then the library that resolves the symbol.
+list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
 
-    set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-    set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-
-	add_dependencies(resources carl)
-    set(carl_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/include/")
-    set(carl_DIR "${STORM_3RDPARTY_BINARY_DIR}/carl/")
-    set(carl_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
-    set(STORM_HAVE_CARL ON)
-
-    message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
-
-    # install the carl dynamic library if we built it
-    if(MACOSX)
-        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
-    else()
-        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}.${carl_VERSION} DESTINATION lib)
-    endif()
-endif()
-
-if("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.22")
-    # This version is too old for forward declarations and updating requires moving the git,
-    # so we warn users but start warning them now.
-    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-    message(WARNING "Uses an outdated repo for Carl. Carl is now hosted at https://github.com/moves-rwth/carl-storm")
-elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_EQUAL "14.23")
-    # This version is too old for forward declarations, but we keep supporting it for the moment.
-    set(STORM_CARL_SUPPORTS_FWD_DECL OFF)
-else()
-    set(STORM_CARL_SUPPORTS_FWD_DECL ON)
-endif()
 
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
-	message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
 endif()
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
     message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
 endif()
 
-# The library that needs symbols must be first, then the library that resolves the symbol.
-list(APPEND STORM_DEP_IMP_TARGETS lib_carl)
+
+if(STORM_HAVE_CLN)
+    get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+endif()
+
 if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
     list(APPEND STORM_DEP_IMP_TARGETS GINAC_SHARED CLN_SHARED)
 endif()
-list(APPEND STORM_DEP_IMP_TARGETS GMPXX_SHARED GMP_SHARED)
 
-
-#############################################################
-##
-##      SMT-RAT
-##
-#############################################################
-
-set(STORM_HAVE_SMTRAT OFF)
-if(USE_SMTRAT)
-	find_package(smtrat QUIET REQUIRED)
-	if(smtrat_FOUND)
-		set(STORM_HAVE_SMTRAT ON)
-		message(STATUS "Storm - Linking with smtrat.")
-    	include_directories("${smtrat_INCLUDE_DIR}")
-    	list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
-	else()
-		message(FATAL_ERROR "Storm - SMT-RAT was requested but not found")
-	endif()
-endif()
-
-
-#############################################################
-##
-##	gmp
-##
-#############################################################
-
-get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
-get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
-get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
-get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
-
-
-#############################################################
-##
-##	cln
-##
-#############################################################
-
-if(STORM_HAVE_CLN)
-	get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
-endif()
+#
+#get_target_property(GMPXX_LIB GMPXX_SHARED IMPORTED_LIB_LOCATION)
+#get_target_property(GMP_LIB GMP_SHARED IMPORTED_LIB_LOCATION)
+#get_target_property(GMPXX_INCLUDE_DIR GMPXX_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+#get_target_property(GMP_INCLUDE_DIR GMP_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+#get_filename_component(GMP_LIB_LOCATION ${GMP_LIB} DIRECTORY)
+#get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
+#
 
 #############################################################
 ##
 ##	MathSAT (optional)
 ##
 #############################################################
-
-if ("${MSAT_ROOT}" STREQUAL "")
-    set(ENABLE_MSAT OFF)
-else()
-    set(ENABLE_MSAT ON)
-endif()
-
-# MathSAT Defines
-set(STORM_HAVE_MSAT ${ENABLE_MSAT})
-if (ENABLE_MSAT)
-    message (STATUS "Storm - Linking with MathSAT.")
-    if(${OPERATING_SYSTEM} MATCHES "Linux")
-        find_library(MSAT_LIB mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat SHARED ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_SHARED)
+if (STORM_USE_MATHSAT)
+    find_package(MATHSAT QUIET)
+    if(MATHSAT_FOUND)
+        set(STORM_HAVE_MATHSAT ON)
+        if(${OPERATING_SYSTEM} MATCHES "Linux")
+            add_imported_library(mathsat SHARED ${MATHSAT_LIBRARIES} ${MATHSAT_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS mathsat_SHARED)
+            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_SHARED}; include: ${MATHSAT_INCLUDE_DIRS})")
+        else()
+            # on macOS, the .dylib file has some hard coded path (Version 5.5.4) and we therefore link statically
+            add_imported_library(mathsat STATIC ${MATHSAT_LIB} ${MATHSAT_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS mathsat_STATIC)
+            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_STATIC}; include: ${MATHSAT_INCLUDE_DIRS})")
+        endif()
     else()
-		# on macOS, the .dylib file has some hard coded path (Version 5.5.4).
-		# we thus link statically
-        find_library(MSAT_LIB NAMES libmathsat${STATIC_EXT} mathsat PATHS "${MSAT_ROOT}/lib")
-        add_imported_library(msat STATIC ${MSAT_LIB} "${MSAT_ROOT}/include")
-        list(APPEND STORM_DEP_TARGETS msat_STATIC)
+        set(STORM_HAVE_MATHSAT OFF)
+        message(FATAL_ERROR "Storm - MathSAT library requested but was not found. Make sure that MATHSAT_ROOT points to the correct directory.")
     endif()
-endif(ENABLE_MSAT)
+else()
+    set(STORM_HAVE_MATHSAT OFF)
+endif()
 
 #############################################################
 ##
@@ -508,7 +387,7 @@ if (STORM_LOAD_QVBS)
             INSTALL_COMMAND ""
             LOG_INSTALL ON
     )
-    add_dependencies(resources download_qvbs)
+    add_dependencies(storm_resources download_qvbs)
     set(STORM_HAVE_QVBS ON)
     ExternalProject_Get_Property(download_qvbs source_dir)
     set(STORM_QVBS_ROOT "${source_dir}/benchmarks")
@@ -554,12 +433,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 ##
 #############################################################
 
-if(STORM_SHIPPED_CARL)
-    set(sylvan_dep carl)
-else()
-    set(sylvan_dep lib_carl)
-endif()
-
 if (STORM_DEBUG_SYLVAN)
     set(SYLVAN_BUILD_TYPE "Debug")
 else()
@@ -571,14 +444,14 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
+        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_BINARY_DIR} -DBUILD_SHARED_LIBS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
         INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         LOG_CONFIGURE ON
         LOG_BUILD ON
-        DEPENDS ${sylvan_dep}
+        DEPENDS lib_carl
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
         BUILD_ALWAYS 1
 )
@@ -634,67 +507,12 @@ list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
 
 #############################################################
 ##
-##	Intel Threading Building Blocks (optional)
-##
-#############################################################
-
-set(STORM_HAVE_INTELTBB OFF)
-if (STORM_USE_INTELTBB)
-    find_package(TBB QUIET REQUIRED)
-
-    if (TBB_FOUND)
-        message(STATUS "Storm - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-        message(STATUS "Storm - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
-        set(STORM_HAVE_INTELTBB ON)
-	# Under Linux libtbb.so contains a linker script to libtbb.so.2 instead of a symlink.
-	# This breaks CMake.
-        # As a workaround we manually try to add the necessary suffix ".2" to the so file and hope for the best.
-	if (LINUX)
-		# Check if the library is a linker script which only links to the correct library
-		# Read first bytes of file
-		file(READ "${TBB_LIBRARY}" TMPTXT LIMIT 128)
-		# Check if file starts with "INPUT (libtbb.so.2)"
-		if("${TMPTXT}" MATCHES "INPUT \\(libtbb\\.so\\.(.*)\\)")
-			# Manually set library by adding the suffix from the linker script.
-			# CMAKE_MATCH_1 contains the parsed suffix.
-			set(TBB_LIB_LINUX "${TBB_LIBRARY}.${CMAKE_MATCH_1}")
-			set(TBB_MALLOC_LIB_LINUX "${TBB_MALLOC_LIBRARY}.${CMAKE_MATCH_1}")
-			if (EXISTS "${TBB_LIB_LINUX}")
-				set(TBB_LIBRARY ${TBB_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB library in manually set path ${TBB_LIBRARY}.")
-			endif()
-			if (EXISTS "${TBB_MALLOC_LIB_LINUX}")
-				set(TBB_MALLOC_LIBRARY ${TBB_MALLOC_LIB_LINUX})
-				message(STATUS "Storm - Using Intel TBB malloc library in manually set path ${TBB_MALLOC_LIBRARY}.")
-			endif()
-		endif()
-	endif()
-
-        add_imported_library(tbb SHARED ${TBB_LIBRARY} ${TBB_INCLUDE_DIRS})
-        list(APPEND STORM_DEP_TARGETS tbb_SHARED)
-        add_imported_library(tbb_malloc SHARED ${TBB_MALLOC_LIBRARY} ${TBB_INCLUDE_DIRS})
-        list(APPEND STORM_DEP_TARGETS tbb_malloc_SHARED)
-
-    else(TBB_FOUND)
-        message(FATAL_ERROR "Storm - TBB was requested, but not found.")
-    endif(TBB_FOUND)
-endif(STORM_USE_INTELTBB)
-
-#############################################################
-##
 ##	Threads
 ##
 #############################################################
 
-find_package(Threads QUIET REQUIRED)
-if (NOT Threads_FOUND)
-    message(FATAL_ERROR "Storm - Threads was requested, but not found.")
-endif()
-include_directories(${THREADS_INCLUDE_DIRS})
-list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-if (STORM_USE_COTIRE)
-    target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
-endif(STORM_USE_COTIRE)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+list(APPEND STORM_DEP_TARGETS Threads::Threads)
 
-
-add_custom_target(copy_resources_headers DEPENDS ${PHMAP_BINDIR_HEADERS})

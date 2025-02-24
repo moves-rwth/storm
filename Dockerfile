@@ -26,6 +26,7 @@ ARG spot_support="ON"
 ARG developer="OFF"
 ARG cln_exact="OFF"
 ARG cln_ratfunc="ON"
+ARG mathsat_support="ON"
 ARG all_sanitizers="OFF"
 
 # Specify additional CMake arguments for Storm
@@ -48,6 +49,7 @@ WORKDIR /opt/storm/build
 RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
              -DSTORM_USE_GUROBI=$gurobi_support \
+             -DSTORM_USE_MATHSAT=$mathsat_support \
              -DSTORM_USE_SOPLEX=$soplex_support \
              -DSTORM_USE_SPOT_SYSTEM=$spot_support \
              -DSTORM_DEVELOPER=$developer \

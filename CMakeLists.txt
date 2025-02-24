@@ -1,15 +1,11 @@
-cmake_minimum_required (VERSION 3.22)
-
-set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required (VERSION 3.23)
 
 # Set project name
 project (storm CXX C)
 
-# Add base folder for better inclusion paths
-#  include_directories("${PROJECT_SOURCE_DIR}/src")
-
-# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
+# Add the resources/cmake folder to Module Search Path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+add_custom_target(storm_resources)
 
 include(ExternalProject)
 include(RegisterSourceGroup)
@@ -17,6 +13,8 @@ include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
 include(ProcessorCount)
+
+set(CMAKE_CXX_STANDARD 20)
 
 #############################################################
 ##
@@ -35,14 +33,10 @@ MARK_AS_ADVANCED(STORM_PORTABLE)
 option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be used (advanced)." OFF)
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." OFF)
-option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
+set(STORM_CARL_GIT_REPO "https://github.com/sjunges/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
+set(STORM_CARL_GIT_TAG "cmakeupdates" CACHE STRING "For fetching carl: which git tag to use")
 option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
 option(STORM_USE_SOPLEX "Sets whether Soplex should be used." OFF)
-set(STORM_CARL_DIR_HINT "" CACHE STRING "A hint where the preferred CArL version can be found. If CArL cannot be found there, it is searched in the OS's default paths.")
-option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to be used no matter whether carl is found or not." OFF)
-MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
-option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
-mark_as_advanced(USE_SMTRAT)
 option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
 option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
@@ -55,7 +49,7 @@ option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used 
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
 export_option(STORM_USE_CLN_RF)
-option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
+option(STORM_BUILD_SHARED_LIBS "Build the Storm library dynamically" ON)
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
 option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
@@ -64,7 +58,9 @@ MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
-set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
+option(STORM_USE_XERCES "Sets whether MathSat should be included." OFF)
+set(MATHSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
+MARK_AS_ADVANCED(MATHSAT_ROOT)
 set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
 MARK_AS_ADVANCED(SPOT_ROOT)
 option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
@@ -72,12 +68,16 @@ set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Veri
 MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
-set(USE_XERCESC ${XML_SUPPORT})
+option(STORM_USE_XERCES "Sets whether Xerces should be included." ON)
+set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
+MARK_AS_ADVANCED(XERCESC_ROOT)
+
 mark_as_advanced(USE_XERCESC)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+
 
 
 if (STORM_COMPILE_WITH_ALL_SANITIZERS)
@@ -101,10 +101,10 @@ mark_as_advanced(CMAKE_OSX_SYSROOT)
 mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 
 # Offer the user the choice of overriding the installation directories
-set(INCLUDE_INSTALL_DIR include/ CACHE PATH "Installation directory for header files" )
-set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
+set(STORM_INCLUDE_INSTALL_DIR include/storm CACHE PATH "Installation directory for header files" )
+set(STORM_LIB_INSTALL_DIR lib/storm CACHE PATH "Installation directory for libraries")
 #set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
-set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
+set(STORM_BIN_INSTALL_DIR lib/storm CACHE PATH "Installation directory for executables")
 
 
 # Install dir for cmake files (info for other libraries that include Storm)
@@ -178,37 +178,19 @@ else()
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 
-# Set compile flags for dependencies
-if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
-	set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
-	set(SHIPPED_CARL_USE_GINAC ON)
-else()
-	set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
-	set(SHIPPED_CARL_USE_GINAC OFF)
-endif()
-
-# Warning for Apple Silicon
-if(APPLE_SILICON)
-	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report any issues to support@stormchecker.org.")
-endif()
 
 
-set(DYNAMIC_EXT ".so")
 set(STATIC_EXT ".a")
 set(LIB_PREFIX "lib")
 if(MACOSX)
 	set(DYNAMIC_EXT ".dylib")
-	set(STATIC_EXT ".a")
-	set(LIB_PREFIX "lib")
-elseif (WIN32)
-	set(DYNAMIC_EXT ".dll")
-	set(STATIC_EXT ".lib")
-	set(LIB_PREFIX "")
+else()
+	set(DYNAMIC_EXT ".so")
 endif()
 message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
-if(BUILD_SHARED_LIBS)
+if(STORM_BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
     message(STATUS "Storm - Build dynamic libraries.")
 else()
@@ -235,11 +217,13 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
 	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
-		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
-		# Stack checks are known to produce errors with the following Clang versions:
-		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
-		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+			message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+			# Stack checks are known to produce errors with the following Clang versions:
+			# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+			# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
+		endif()
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)
@@ -414,9 +398,6 @@ if (STORM_DEVELOPER)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-documentation-unknown-command")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-noreturn")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-prototypes")
-
-
-
 		endif ()
 	else ()
 	    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
@@ -483,7 +464,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 # the RPATH to be used when installing
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -560,14 +541,17 @@ if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
 	set(STORM_VERSION_DIRTY DirtyState::Unknown)
+	set(STORM_VERSION_TWEAK 0)
 	include(version.cmake)
 	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
 	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
+		set(STORM_VERSION_TWEAK 1)
 	else()
 		set(STORM_VERSION_DIRTY "DirtyState::Clean")
+		set(STORM_VERSION_TWEAK 0)
 	endif()
 endif()
 
@@ -608,9 +592,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Add the binary dir include directory for storm-config.h
-include_directories("${PROJECT_BINARY_DIR}/include")
-
 include(CTest)
 # Compiles all tests
 add_custom_target(tests)
@@ -620,8 +601,11 @@ set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 add_dependencies(check tests)
 add_dependencies(check-verbose tests)
-# Apply code formatting
-add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+
+if(PROJECT_IS_TOP_LEVEL)
+	# Apply code formatting
+	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+endif()
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
@@ -632,8 +616,8 @@ export_option(STORM_HAVE_GUROBI)
 
 include(export)
 
-install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
-install(FILES ${CMAKE_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(FILES ${PROJECT_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)
