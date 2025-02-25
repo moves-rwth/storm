@@ -125,7 +125,7 @@ class ModelInstantiator {
     typename std::enable_if<!std::is_same<PMT, ConstantSparseModelType>::value>::type instantiate_helper(
         storm::utility::parametric::Valuation<ParametricType> const& valuation) {
         for (auto& functionResult : this->functions) {
-            functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+            functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
         }
     }
 
