@@ -13,12 +13,9 @@
 // The directory of the sources from which Storm was built.
 #define STORM_SOURCE_DIR "@PROJECT_SOURCE_DIR@"
 // The directory in which Storm was built.
-#define STORM_BUILD_DIR "@CMAKE_BINARY_DIR@"
+#define STORM_BUILD_DIR "@PROJECT_BINARY_DIR@"
 // The directory of the test resources used in the tests (model files, ...).
 #define STORM_TEST_RESOURCES_DIR "@STORM_TEST_RESOURCES_DIR@"
-
-// Boost include directory used during compilation.
-#define STORM_BOOST_INCLUDE_DIR "@STORM_BOOST_INCLUDE_DIR@"
 // Carl include directory used during compilation.
 #define STORM_CARL_INCLUDE_DIR "@carl_INCLUDE_DIR@"
 
@@ -59,8 +56,6 @@
 // ###
 // Whether CLN is available and to be used
 #cmakedefine STORM_HAVE_CLN
-// Include directory for CLN headers
-#cmakedefine CLN_INCLUDE_DIR "@CLN_INCLUDE_DIR@"
 // Whether Storm uses CLN for rationals and rational functions
 #cmakedefine STORM_USE_CLN_EA
 #cmakedefine STORM_USE_CLN_RF

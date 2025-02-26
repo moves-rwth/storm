@@ -7,7 +7,7 @@ file(GLOB_RECURSE STORM_SOURCES ${PROJECT_SOURCE_DIR}/src/storm/*/*.cpp)
 file(GLOB_RECURSE STORM_HEADERS RELATIVE "${PROJECT_SOURCE_DIR}/src/storm" ${PROJECT_SOURCE_DIR}/src/storm/*.h )
 
 # Additional include files like the storm-config.h
-file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/*.h)
+file(GLOB_RECURSE STORM_BUILD_HEADERS ${PROJECT_BINARY_DIR}/include/storm-config.h)
 
 ###############################################################################
 ##                                                                            
@@ -23,9 +23,15 @@ target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
 set_target_properties(storm PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 add_dependencies(storm storm_resources)
 #The library that needs symbols must be first, then the library that resolves the symbol.
-target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_LINK_LIBRARIES})
+target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS} ${STORM_LINK_LIBRARIES})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # installation
-install(TARGETS storm RUNTIME_DEPENDENCIES EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib FRAMEWORK DESTINATION lib FILE_SET fs_storm_headers FILE_SET fs_storm_configured_headers)
+install(TARGETS storm RUNTIME_DEPENDENCIES
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        LIBRARY DESTINATION ${STORM_LIB_INSTALL_DIR}
+        FRAMEWORK DESTINATION  ${STORM_LIB_INSTALL_DIR}
+        FILE_SET fs_storm_headers DESTINATION ${STORM_INCLUDE_INSTALL_DIR}
+        FILE_SET fs_storm_configured_headers DESTINATION ${STORM_INCLUDE_INSTALL_DIR})

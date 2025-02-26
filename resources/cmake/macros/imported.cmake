@@ -14,7 +14,7 @@ macro(storm_add_imported_library_interface name include install_include)
 endmacro(storm_add_imported_library_interface)
 
 macro(add_imported_library name type lib include)
-# Workaround from https://cmake.org/Bug/view.php?id=15052
+# Workaround from https://gitlab.kitware.com/cmake/cmake/-/issues/15052
 	file(MAKE_DIRECTORY "${include}")
 	if("${lib}" STREQUAL "")
 		if("${type}" STREQUAL "SHARED")

@@ -5,7 +5,7 @@ include(InstallRequiredSystemLibraries)
 
 ### general settings
 set(CPACK_PACKAGE_NAME "Storm")
-set(CPACK_PACKAGE_VENDOR "RWTH Aachen University")
+set(CPACK_PACKAGE_VENDOR "Storm Developers")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Storm - A probabilistic model checker written in C++.")
 set(CPACK_PACKAGE_CONTACT "support@stormchecker.org")
 

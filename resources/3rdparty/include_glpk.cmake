@@ -2,7 +2,7 @@ find_package(GLPK QUIET)
 if(GLPK_FOUND)
     message (STATUS "Storm - Using system version of glpk.")
 else()
-    message (STATUS "Storm - Using shipped version of glpk.")
+    message (WARNING "Storm - Using shipped version of glpk / This is not tested / Most likely broken.")
     set(GLPK_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/glpk-5.0/lib)
 	
 	# Set sysroot to circumvent problems in macOS "Mojave" (or higher) where the header files are no longer in /usr/include
@@ -34,5 +34,11 @@ endif()
 set(STORM_HAVE_GLPK ON)
 message (STATUS "Storm - Linking with glpk ${GLPK_VERSION_STRING}")
 
-add_imported_library(glpk SHARED ${GLPK_LIBRARIES} ${GLPK_INCLUDE_DIR})
-list(APPEND STORM_DEP_TARGETS glpk_SHARED)
+add_library(glpk SHARED IMPORTED)
+set_target_properties(
+        glpk
+        PROPERTIES
+        IMPORTED_LOCATION ${GLPK_LIBRARIES}
+        INTERFACE_INCLUDE_DIRECTORIES ${GLPK_INCLUDE_DIR}
+)
+list(APPEND STORM_DEP_IMP_TARGETS glpk)

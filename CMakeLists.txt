@@ -4,11 +4,11 @@ cmake_minimum_required (VERSION 3.23)
 project (storm CXX C)
 
 # Add the resources/cmake folder to Module Search Path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${STORM_CMAKE_FIND_MODULES}" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
 add_custom_target(storm_resources)
 
 include(ExternalProject)
-include(RegisterSourceGroup)
 include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
@@ -23,7 +23,8 @@ set(CMAKE_CXX_STANDARD 20)
 #############################################################
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
-option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
+# TODO revert to standard on
+option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." OFF)
 MARK_AS_ADVANCED(STORM_USE_LTO)
 option(STORM_USE_THIN_LTO "Sets whether thin link-time optimizations are enabled (faster compile times than normal LTO)." OFF)
 MARK_AS_ADVANCED(STORM_USE_THIN_LTO)
@@ -32,7 +33,6 @@ MARK_AS_ADVANCED(STORM_PORTABLE)
 # Force POPCNT is helpful for portable code targetting platforms with SSE4.2 operation support.
 option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be used (advanced)." OFF)
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
-option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." OFF)
 set(STORM_CARL_GIT_REPO "https://github.com/sjunges/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
 set(STORM_CARL_GIT_TAG "cmakeupdates" CACHE STRING "For fetching carl: which git tag to use")
 option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
@@ -40,8 +40,6 @@ option(STORM_USE_SOPLEX "Sets whether Soplex should be used." OFF)
 option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
 option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
-option(FORCE_COLOR "Force color output" OFF)
-mark_as_advanced(FORCE_COLOR)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
@@ -58,7 +56,7 @@ MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
-option(STORM_USE_XERCES "Sets whether MathSat should be included." OFF)
+option(STORM_USE_MATHSAT "Sets whether MathSat should be included." OFF)
 set(MATHSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
 MARK_AS_ADVANCED(MATHSAT_ROOT)
 set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
@@ -71,14 +69,11 @@ set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the li
 option(STORM_USE_XERCES "Sets whether Xerces should be included." ON)
 set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
 MARK_AS_ADVANCED(XERCESC_ROOT)
-
 mark_as_advanced(USE_XERCESC)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
-
-
 
 if (STORM_COMPILE_WITH_ALL_SANITIZERS)
     set(STORM_COMPILE_WITH_ADDRESS_SANITIZER ON)
@@ -103,29 +98,20 @@ mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 # Offer the user the choice of overriding the installation directories
 set(STORM_INCLUDE_INSTALL_DIR include/storm CACHE PATH "Installation directory for header files" )
 set(STORM_LIB_INSTALL_DIR lib/storm CACHE PATH "Installation directory for libraries")
-#set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
-set(STORM_BIN_INSTALL_DIR lib/storm CACHE PATH "Installation directory for executables")
-
-
-# Install dir for cmake files (info for other libraries that include Storm)
-set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
-set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
-
-# Add CMake install prefix
-foreach(p LIB BIN INCLUDE CMAKE)
-  set(var ${p}_INSTALL_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
-message(STATUS "Storm - CMake install dir: ${CMAKE_INSTALL_DIR}")
+set(STORM_BIN_INSTALL_DIR bin/storm CACHE PATH "Installation directory for executables")
+set(STORM_CMAKE_INSTALL_DIR lib/cmake/storm CACHE PATH  "Installation directory for CMake files")
+set(STORM_RESOURCE_INCLUDE_INSTALL_DIR include/storm/resources/ CACHE PATH "Installation directory for dependency header files")
+set(STORM_RESOURCE_LIBRARY_INSTALL_DIR lib/storm/resources/ CACHE PATH "Installation directory for depency library files")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
 if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
-    endif()
+	endif()
+	# TODO Do this more targeted
     add_definitions(-DSTORM_DEV)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
@@ -177,8 +163,6 @@ else()
 	set(LINUX 1)
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
-
-
 
 set(STATIC_EXT ".a")
 set(LIB_PREFIX "lib")
@@ -267,10 +251,6 @@ endif()
 ##
 #############################################################
 if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
-    if(FORCE_COLOR)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
-    endif()
-
 	if (LINUX)
 		set(CLANG_STDLIB libstdc++)
     else()
@@ -288,9 +268,6 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
     endif()
 elseif (STORM_COMPILER_GCC)
-    if(FORCE_COLOR)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
-    endif()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
@@ -475,20 +452,9 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##	Generator specific settings
 ##
 #############################################################
-if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-	message(WARNING "Using the XCode Project Generator has previously yielded problems. See https://github.com/moves-rwth/storm/issues/65. We recommend using the command line or an IDE with native CMAKE support, such as CLION.")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-endif()
-
 # Display information about build configuration.
 message(STATUS "Storm - Using compiler configuration ${STORM_COMPILER_ID} ${STORM_COMPILER_VERSION}.")
-if (STORM_DEVELOPER)
-	message(STATUS "Storm - CXX Flags: ${CMAKE_CXX_FLAGS}")
-	message(STATUS "Storm - CXX Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
-	message(STATUS "Storm - CXX Release Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
-	message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
-endif()
+message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 
 #############################################################
 #############################################################
@@ -616,8 +582,9 @@ export_option(STORM_HAVE_GUROBI)
 
 include(export)
 
-install(FILES ${PROJECT_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
-install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
-install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(DIRECTORY ${STORM_CMAKE_FIND_MODULES} DESTINATION ${STORM_CMAKE_INSTALL_DIR})
+install(FILES ${PROJECT_BINARY_DIR}/stormConfig.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
+install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)

@@ -17,6 +17,7 @@ In case a new patch needs to be created follow these steps:
 6. Resolve issues, make changes, and commit them
 7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
 8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
+
 ## GLPK
 
 To update GLPK, download the new sources from [here](https://ftp.gnu.org/gnu/glpk/) and put them into `$STORM_DIR/resources/3rdparty/glpk-5.0`.

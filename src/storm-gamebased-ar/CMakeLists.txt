@@ -8,11 +8,15 @@ target_sources(storm-gamebased-ar
 		PUBLIC
 		FILE_SET fs_storm_gbar_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_GBAR_HEADERS})
 target_precompile_headers(storm-gamebased-ar REUSE_FROM storm)
+set_target_properties(storm-gamebased-ar PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-gamebased-ar PUBLIC storm)
 
 list(APPEND STORM_TARGETS storm-gamebased-ar)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
 # installation
-install(TARGETS storm-gamebased-ar EXPORT storm_Targets RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL FILE_SET fs_storm_gbar_headers)
-
+install(TARGETS storm-gamebased-ar EXPORT storm_Targets
+		RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+		LIBRARY DESTINATION ${STORM_LIB_INSTALL_DIR}
+		FRAMEWORK DESTINATION  ${STORM_LIB_INSTALL_DIR}
+		FILE_SET fs_storm_gbar_headers DESTINATION ${STORM_INCLUDE_INSTALL_DIR})
