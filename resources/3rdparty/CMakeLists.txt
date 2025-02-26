@@ -305,7 +305,6 @@ SET(CARL_LIB_INSTALL_DIR "lib/storm")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
-SET(CARL_EIGEN3_TARGET eigen3storm)
 FETCHCONTENT_MAKEAVAILABLE(carl)
 
 include(${carl_BINARY_DIR}/carlConfig.cmake)
