@@ -128,7 +128,7 @@ std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expres
     } else {
 #ifdef STORM_HAVE_Z3
         smtSolverType = storm::solver::SmtSolverType::Z3;
-#elif STORM_HAVE_MATHSAT
+#elif defined STORM_HAVE_MATHSAT
         smtSolverType = storm::solver::SmtSolverType::Mathsat;
 #else
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Requested an SMT solver but none was installed.");
