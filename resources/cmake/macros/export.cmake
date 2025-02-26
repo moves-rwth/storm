@@ -1,13 +1,5 @@
 # Add all targets to the build-tree export set
-export(TARGETS ${STORM_TARGETS} ${STORM_DEP_TARGETS} FILE "${PROJECT_BINARY_DIR}/stormTargets.cmake")
-
-# Export the package for use from the build-tree
-# (this registers the build-tree with a global CMake-registry)
-#if(EXPORT_TO_CMAKE)
-#	message(STATUS "Registered with cmake")
-#	set(CMAKE_EXPORT_PACKAGE_REGISTRY ON)
-#	export(PACKAGE storm)
-#endif()
+export(EXPORT storm_Targets FILE "${PROJECT_BINARY_DIR}/stormTargets.cmake")
 
 set(DEP_TARGETS "")
 foreach(dt ${STORM_DEP_TARGETS})

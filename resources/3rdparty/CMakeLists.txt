@@ -307,10 +307,11 @@ SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
 FETCHCONTENT_MAKEAVAILABLE(carl)
 
-include(${carl_BINARY_DIR}/carlConfig.cmake)
+#include(${carl_BINARY_DIR}/carlConfig.cmake)
 #
-set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
+# TODO I would like to read these variables
+set(STORM_HAVE_CLN ON )#${CARL_USE_CLN_NUMBERS})
+set(STORM_HAVE_GINAC ON ) #${CARL_USE_GINAC})
 message(STATUS "storm -- using carl version ${carl_VERSION} (cln: ${STORM_HAVE_CLN}, ginac: ${STORM_HAVE_GINAC})")
 #
 add_dependencies(storm_resources lib_carl)
@@ -319,9 +320,6 @@ set(STORM_HAVE_CARL ON)
 # This flag is currently required to pick the right carl adapter.
 # TODO It can be removed as the old versions that did not support forward declarations are no longer supported either way.
 set(STORM_CARL_SUPPORTS_FWD_DECL ON)
-
-
-# The library that needs symbols must be first, then the library that resolves the symbol.
 list(APPEND STORM_FETCHED_TARGETS lib_carl)
 
 # Some checks to see whether we correctly configured carl.
