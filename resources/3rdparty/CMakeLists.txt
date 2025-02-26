@@ -84,7 +84,7 @@ ExternalProject_Add(
         LOG_INSTALL ON
 )
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(eigen3storm eigen_sr)
+add_dependencies(eigen3storm eigen_src)
 # note that we include without StormEigen
 target_include_directories(eigen3storm INTERFACE
         $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}>
