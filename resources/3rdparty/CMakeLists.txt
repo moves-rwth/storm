@@ -307,11 +307,11 @@ SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
 FETCHCONTENT_MAKEAVAILABLE(carl)
 
-#include(${carl_BINARY_DIR}/carlConfig.cmake)
+include(${carl_BINARY_DIR}/carlConfig.cmake)
 #
 # TODO I would like to read these variables
-set(STORM_HAVE_CLN ON )#${CARL_USE_CLN_NUMBERS})
-set(STORM_HAVE_GINAC ON ) #${CARL_USE_GINAC})
+set(STORM_HAVE_CLN ON ${CARL_USE_CLN_NUMBERS})
+set(STORM_HAVE_GINAC ON ${CARL_USE_GINAC})
 message(STATUS "storm -- using carl version ${carl_VERSION} (cln: ${STORM_HAVE_CLN}, ginac: ${STORM_HAVE_GINAC})")
 #
 add_dependencies(storm_resources lib_carl)

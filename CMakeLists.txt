@@ -380,6 +380,10 @@ if (STORM_DEVELOPER)
 	    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+
+		# Do not warn about problems internally to GCC 12
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnostringop-overflow=")
+
 	endif ()
 else()
 	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
