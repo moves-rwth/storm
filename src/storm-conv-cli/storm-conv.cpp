@@ -326,18 +326,22 @@ bool parseOptions(const int argc, const char* argv[]) {
         storm::settings::mutableManager().setFromConfigurationFile(general.getConfigFilename());
     }
 
-    bool result = true;
+    bool terminate = false;
     if (general.isHelpSet()) {
         storm::settings::manager().printHelp(general.getHelpFilterExpression());
-        result = false;
+        terminate = true;
     }
 
     if (general.isVersionSet()) {
         storm::cli::printVersion();
-        result = false;
+        terminate = true;
+    }
+    if (terminate) {
+        exit(0); // Terminate after help and version output with success.
+        // TODO: Issue 674 discusses that this may not be ideal.
     }
 
-    return result;
+    return true;
 }
 
 /*!

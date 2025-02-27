@@ -28,19 +28,22 @@ bool parseOptions(const int argc, const char* argv[]) {
     }
 
     storm::settings::modules::GeneralSettings const& general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-
-    bool result = true;
+    bool terminate = false;
     if (general.isHelpSet()) {
-        storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpFilterExpression());
-        result = false;
+        storm::settings::manager().printHelp(general.getHelpFilterExpression());
+        terminate = true;
     }
 
     if (general.isVersionSet()) {
-        printVersion();
-        result = false;
+        storm::cli::printVersion();
+        terminate = true;
     }
-
-    return result;
+    if (terminate) {
+        exit(0); // Terminate after help and version output with success.
+        // TODO: Issue 674 discusses that this may not be ideal.
+    }
+    
+    return true;
 }
 
 void setResourceLimits() {
