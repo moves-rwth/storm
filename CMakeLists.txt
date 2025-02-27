@@ -271,6 +271,9 @@ elseif (STORM_COMPILER_GCC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+
+	# Do not warn about problems internally to GCC 12
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -Wno-stringop-overflow=")
 endif ()
 
 if (STORM_USE_THIN_LTO)
@@ -381,8 +384,6 @@ if (STORM_DEVELOPER)
 		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 		set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
 
-		# Do not warn about problems internally to GCC 12
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnostringop-overflow=")
 
 	endif ()
 else()
