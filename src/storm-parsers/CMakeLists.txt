@@ -13,6 +13,7 @@ target_sources(storm-parsers
         FILE_SET fs_storm_parsers_headers TYPE HEADERS BASE_DIRS "${PROJECT_SOURCE_DIR}/src" FILES ${STORM_PARSER_HEADERS})
 target_precompile_headers(storm-parsers REUSE_FROM storm)
 set_target_properties(storm-parsers PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
+set_target_properties(storm-parsers PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 target_link_libraries(storm-parsers PUBLIC storm)
 
 list(APPEND STORM_TARGETS storm-parsers)

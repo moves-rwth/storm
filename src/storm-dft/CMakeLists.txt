@@ -11,6 +11,7 @@ target_sources(storm-dft
 target_precompile_headers(storm-dft REUSE_FROM storm)
 set_target_properties(storm-dft PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-dft PUBLIC storm storm-gspn storm-conv storm-parsers storm-pars ${STORM_DFT_LINK_LIBRARIES})
+set_target_properties(storm-dft PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 
 list(APPEND STORM_TARGETS storm-dft)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)

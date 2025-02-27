@@ -12,6 +12,7 @@ set_target_properties(storm-counterexamples PROPERTIES
         VERSION ${STORM_VERSION}
         SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-counterexamples PUBLIC storm)
+set_target_properties(storm-counterexamples PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 
 list(APPEND STORM_TARGETS storm-counterexamples)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)

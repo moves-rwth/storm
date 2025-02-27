@@ -70,9 +70,6 @@
 // Whether Z3 uses standard integers
 #cmakedefine STORM_Z3_API_USES_STANDARD_INTEGERS
 // Version of Z3 used by Storm.
-#define STORM_Z3_VERSION_MAJOR @STORM_Z3_VERSION_MAJOR@
-#define STORM_Z3_VERSION_MINOR @STORM_Z3_VERSION_MINOR@
-#define STORM_Z3_VERSION_PATCH @STORM_Z3_VERSION_PATCH@
 #define STORM_Z3_VERSION @Z3_VERSION@
 
 
@@ -89,5 +86,5 @@
 #cmakedefine STORM_HAVE_INTELTBB
 // Whether LTL model checking shall be enabled
 #ifdef STORM_HAVE_SPOT
-        #define STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+   #define STORM_HAVE_LTL_MODELCHECKING_SUPPORT
 #endif // STORM_HAVE_SPOT

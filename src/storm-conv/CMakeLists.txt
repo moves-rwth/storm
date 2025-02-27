@@ -11,6 +11,7 @@ target_sources(storm-conv
 target_precompile_headers(storm-conv REUSE_FROM storm)
 set_target_properties(storm-conv PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-conv PUBLIC storm)
+set_target_properties(storm-conv PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.
 
 list(APPEND STORM_TARGETS storm-conv)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)

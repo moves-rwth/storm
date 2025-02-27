@@ -21,6 +21,7 @@ target_sources(storm PUBLIC FILE_SET fs_storm_headers TYPE HEADERS BASE_DIRS "${
 target_sources(storm PUBLIC FILE_SET fs_storm_configured_headers TYPE HEADERS BASE_DIRS "${PROJECT_BINARY_DIR}/include" FILES ${STORM_BUILD_HEADERS})
 target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
 set_target_properties(storm PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
+set_target_properties(storm PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.
 add_dependencies(storm storm_resources)
 #The library that needs symbols must be first, then the library that resolves the symbol.
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS} ${STORM_LINK_LIBRARIES})
