@@ -98,35 +98,38 @@ void printVersion() {
 #endif
 
     // Print linked dependencies
-#ifdef STORM_HAVE_CARL
-    STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
-#endif
+STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
+#else
+    STORM_PRINT("Not linked with GLPK.\n");
 #endif
 #ifdef STORM_HAVE_GUROBI
     STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
-#endif
-#ifdef STORM_HAVE_INTELTBB
-    STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
-                                                                << TBB_INTERFACE_VERSION << ").\n");
+#else
+    STORM_PRINT("Not linked with Gurobi.\n");
 #endif
 #ifdef STORM_HAVE_MATHSAT
     char* msatVersion = msat_get_version();
     STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
+#else
+    STORM_PRINT("Not linked with MathSat.\n");
 #endif
 #ifdef STORM_HAVE_SOPLEX
     STORM_PRINT("Linked with Soplex v" << SOPLEX_VERSION << ".\n");
-#endif
-#ifdef STORM_HAVE_SMTRAT
-    STORM_PRINT("Linked with SMT-RAT v" << SMTRAT_VERSION << ".\n");
+#else
+    STORM_PRINT("Not linked with Soplex.\n");
 #endif
 #ifdef STORM_HAVE_SPOT
     STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
+#else
+    STORM_PRINT("Not linked with Spot.\n");
 #endif
 #ifdef STORM_HAVE_XERCES
     STORM_PRINT("Linked with Xerces-C v" << gXercesMajVersion << "." << gXercesMinVersion << "." << gXercesRevision << ".\n");
+#else
+    STORM_PRINT("Not linked with Xerces-C.\n");
 #endif
 #ifdef STORM_HAVE_Z3
     unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
@@ -137,7 +140,10 @@ void printVersion() {
 #else
     STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
 #endif
+#else
+    STORM_PRINT("Not linked with Z3 Theorem Prover\n");
 #endif
+    STORM_PRINT("[...]\n");
 }
 
 void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
