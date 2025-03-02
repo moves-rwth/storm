@@ -202,14 +202,9 @@ list(APPEND STORM_DEP_TARGETS ModernJSON)
 #############################################################
 
 find_package(Z3 QUIET 4.8.7 NO_MODULE)
-
+# Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
 if(TARGET z3::libz3)
     set(STORM_HAVE_Z3 ON)
-
-    # TODO remove STORM_HAVE_Z3_OPTIMIZE checks
-    # TODO remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
-    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
-    set(STORM_HAVE_Z3_OPTIMIZE ON)
 
     set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
