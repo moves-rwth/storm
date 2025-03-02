@@ -273,7 +273,7 @@ elseif (STORM_COMPILER_GCC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 
 	# Do not warn about problems internally to GCC 12
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -Wno-stringop-overflow")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow")
 endif ()
 
 if (STORM_USE_THIN_LTO)

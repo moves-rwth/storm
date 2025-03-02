@@ -87,10 +87,12 @@ set_target_properties(sylvan PROPERTIES PUBLIC_HEADER "${SYLVAN_STORM_HEADERS}")
 # STORMCHANGED This is changed by storm as carl requires c++14
 target_compile_features(sylvan PUBLIC c_std_11 cxx_std_14)
 
+# STORMCHANGED Removed the extra warnings from the debug build, temporarily.
 target_compile_options(sylvan PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
         -pipe -march=native
-        $<$<CONFIG:Debug>:-O0 -Wall -Wextra>>
+        #$<$<CONFIG:Debug>:-O0 -Wall -Wextra>>
+        $<$<CONFIG:Debug>:-O0>>
         $<$<CXX_COMPILER_ID:MSVC>:
         $<$<CONFIG:Debug>:/Od /Wall /Zi>>
 )
