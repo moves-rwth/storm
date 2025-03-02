@@ -42,7 +42,7 @@ bool parseOptions(const int argc, const char* argv[]) {
         exit(0); // Terminate after help and version output with success.
         // TODO: Issue 674 discusses that this may not be ideal.
     }
-    
+
     return true;
 }
 

@@ -223,9 +223,44 @@ if(TARGET z3::libz3)
         list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
     endif()
 else()
-    message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
+    # Debian and Ubuntu packages are as of Debian 14 and Ubuntu 24.04 very old,
+    # such that no Cmake config files are provided. For the time being, we use a FindZ3.cmake script.
+    find_package(Z3 QUIET 4.8.7)
+
+    if (Z3_FOUND)
+        set(STORM_HAVE_Z3 ON)
+
+        set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
+
+        if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
+            message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
+            message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+            set(Z3_FOUND FALSE)
+        else()
+            # Check whether the version of z3 supports optimization
+            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+
+            add_library(z3 SHARED IMPORTED)
+            set_target_properties(
+                    z3
+                    PROPERTIES
+                    IMPORTED_LOCATION ${Z3_LIBRARIES}
+                    INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
+            )
+            list(APPEND STORM_DEP_IMP_TARGETS z3)
+        endif()
+    else()
+        message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
+    endif()
 endif()
 
+
+if (Z3_FOUND)
+    # TODO remove STORM_HAVE_Z3_OPTIMIZE checks
+    # TODO remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
+    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+    set(STORM_HAVE_Z3_OPTIMIZE ON)
+endif()
 
 #############################################################
 ##
