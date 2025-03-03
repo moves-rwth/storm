@@ -151,7 +151,6 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
         }
 
         // If requested, we store the scheduler for retrieval.
-        // TODO when is this code called??????? im a bit confused
         if (this->isTrackSchedulerSet()) {
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());

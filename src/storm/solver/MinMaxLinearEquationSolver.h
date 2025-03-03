@@ -206,6 +206,14 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
 
     /// For interval models, this index points into the schedulerChoices and is a state -> index map.
+    /// In an MDP, the scheduler choices are just one number for each row group
+    /// - the row that was chosen. In an iMC (this is currently the only
+    /// interval model that supports extracting schedulers here), a scheduler is
+    /// an order of entries within a single row. In the current representation,
+    /// the schedulerChoices from robustSchedulerIndex[i] to
+    /// robustSchedulerIndex[i+1] (exclusive) are this permutation. So, the
+    /// robustSchedulerIndex[i] currently just counts how many matrix entries
+    /// come before row i.
     mutable boost::optional<std::vector<uint_fast64_t>> robustSchedulerIndex;
 
     /// A scheduler that can be used by solvers that require a valid initial scheduler.

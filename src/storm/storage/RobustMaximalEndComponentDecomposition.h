@@ -3,7 +3,6 @@
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/Decomposition.h"
-#include "storm/storage/RobustMaximalEndComponent.h"
 #include "storm/storage/StronglyConnectedComponent.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/OptionalRef.h"
@@ -34,6 +33,7 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      *
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
+     * @param vector The vector of the system of equations (e.g. rewards or probabilities to go to target).
      */
     RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& vector);
@@ -45,6 +45,7 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      * @param transitionMatrix The transition relation of model to decompose into MECs.
      * @param backwardTransition The reversed transition relation.
      * @param states The states of the subsystem to decompose.
+     * @param vector The vector of the system of equations (e.g. rewards or probabilities to go to target).
      */
     RobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& vector,
@@ -101,7 +102,7 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
      * @param transitionMatrix The transition matrix representing the system whose subsystem to decompose into MECs.
      * @param backwardTransitions The reversed transition relation.
      * @param states The states of the subsystem to decompose. If not given, all states are considered.
-     * @param choices The choices of the subsystem to decompose. If not given, all choices are considered.
+     * @param vector The vector of the system of equations (e.g. rewards or probabilities to go to target).
      *
      */
     void performRobustMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
