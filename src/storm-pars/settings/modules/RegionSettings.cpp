@@ -14,6 +14,7 @@ const std::string RegionSettings::moduleName = "region";
 const std::string regionOptionName = "region";
 const std::string regionShortOptionName = "reg";
 const std::string regionBoundOptionName = "regionbound";
+const std::string notGraphPreservingName = "not-graph-preserving";
 
 RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.")
@@ -27,6 +28,10 @@ RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
                                          "regionbound", "The bound for the region result for all variables: 0+bound <= var <=1-bound")
                                          .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, notGraphPreservingName, false,
+                                                   "Enables mode in which the region might not preserve the graph structure of the parametric model.")
                         .build());
 }
 
@@ -44,6 +49,10 @@ bool RegionSettings::isRegionBoundSet() const {
 
 std::string RegionSettings::getRegionBoundString() const {
     return this->getOption(regionBoundOptionName).getArgumentByName("regionbound").getValueAsString();
+}
+
+bool RegionSettings::isNotGraphPreservingSet() const {
+    return this->getOption(notGraphPreservingName).getHasOptionBeenSet();
 }
 
 }  // namespace modules
