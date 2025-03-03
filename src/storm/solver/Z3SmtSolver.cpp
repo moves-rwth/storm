@@ -121,7 +121,7 @@ void Z3SmtSolver::add(storm::expressions::Expression const& assertion) {
 #endif
 }
 
-void Z3SmtSolver::addNotCurrentModel() {
+void Z3SmtSolver::addNotCurrentModel(bool performSolverReset) {
 #ifdef STORM_HAVE_Z3
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
@@ -138,10 +138,12 @@ void Z3SmtSolver::addNotCurrentModel() {
         }
     }
     // https://stackoverflow.com/questions/78261966/z3-non-incremental-search-for-multiple-models-works-incremental-search-does-no
-    auto const allAssertions = this->solver->assertions();
-    solver->reset();
-    for (auto const& assertion : allAssertions) {
-        solver->add(assertion);
+    if (performSolverReset) {
+        auto const allAssertions = this->solver->assertions();
+        solver->reset();
+        for (auto const& assertion : allAssertions) {
+            solver->add(assertion);
+        }
     }
     this->solver->add(!notThisModel);
 #else

@@ -654,16 +654,16 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
     }
 
+    uint64_t numIterations{0};
+    auto viCallback = [&](SolverStatus const& current) {
+        this->showProgressIterative(numIterations);
+        return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
+    };
+    this->startMeasureProgress();
     // This code duplication is necessary because the helper class is different for the two cases.
     if (this->A->hasTrivialRowGrouping()) {
         storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
-        uint64_t numIterations{0};
-        auto viCallback = [&](SolverStatus const& current) {
-            this->showProgressIterative(numIterations);
-            return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
-        };
-        this->startMeasureProgress();
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
                                   env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
@@ -682,12 +682,6 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
     } else {
         storm::solver::helper::ValueIterationHelper<ValueType, false, SolutionType> viHelper(viOperatorNontriv);
 
-        uint64_t numIterations{0};
-        auto viCallback = [&](SolverStatus const& current) {
-            this->showProgressIterative(numIterations);
-            return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
-        };
-        this->startMeasureProgress();
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
                                   env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());

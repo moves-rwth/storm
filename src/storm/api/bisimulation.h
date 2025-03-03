@@ -1,6 +1,5 @@
 #pragma once
 
-#include <any>
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"

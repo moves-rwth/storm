@@ -487,11 +487,13 @@ std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
     return this->globalIntegerVariables;
 }
 
-std::set<storm::expressions::Variable> Program::getAllExpressionVariables() const {
+std::set<storm::expressions::Variable> Program::getAllExpressionVariables(bool includeConstants) const {
     std::set<storm::expressions::Variable> result;
 
-    for (auto const& constant : constants) {
-        result.insert(constant.getExpressionVariable());
+    if (includeConstants) {
+        for (auto const& constant : constants) {
+            result.insert(constant.getExpressionVariable());
+        }
     }
     for (auto const& variable : globalBooleanVariables) {
         result.insert(variable.getExpressionVariable());

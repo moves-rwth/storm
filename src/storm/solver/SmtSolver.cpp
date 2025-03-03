@@ -97,7 +97,7 @@ std::string SmtSolver::getSmtLibString() const {
     return "ERROR";
 }
 
-void SmtSolver::addNotCurrentModel() {
+void SmtSolver::addNotCurrentModel(bool performSolverReset) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This solver does not support model generation.");
 }
 
