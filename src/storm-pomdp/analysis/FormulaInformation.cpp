@@ -25,8 +25,9 @@ FormulaInformation::FormulaInformation() : type(Type::Unsupported) {
 
 FormulaInformation::FormulaInformation(Type const& type, storm::solver::OptimizationDirection const& dir, std::optional<std::string> const& rewardModelName)
     : type(type), optimizationDirection(dir), rewardModelName(rewardModelName) {
-    STORM_LOG_ASSERT(!this->rewardModelName.has_value() || this->type == Type::NonNestedExpectedRewardFormula,
-                     "Got a reward model name for a non-reward formula.");
+    STORM_LOG_ASSERT(
+        !this->rewardModelName.has_value() || this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::DiscountedTotalRewardFormula,
+        "Got a reward model name for a non-reward formula.");
 }
 
 FormulaInformation::Type const& FormulaInformation::getType() const {
@@ -39,6 +40,10 @@ bool FormulaInformation::isNonNestedReachabilityProbability() const {
 
 bool FormulaInformation::isNonNestedExpectedRewardFormula() const {
     return type == Type::NonNestedExpectedRewardFormula;
+}
+
+bool FormulaInformation::isDiscountedTotalRewardFormula() const {
+    return type == Type::DiscountedTotalRewardFormula;
 }
 
 bool FormulaInformation::isUnsupported() const {
@@ -57,7 +62,8 @@ typename FormulaInformation::StateSet const& FormulaInformation::getSinkStates()
 }
 
 std::string const& FormulaInformation::getRewardModelName() const {
-    STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula, "Reward model requested for unexpected formula type.");
+    STORM_LOG_ASSERT(this->type == Type::NonNestedExpectedRewardFormula || this->type == Type::DiscountedTotalRewardFormula,
+                     "Reward model requested for unexpected formula type.");
     return rewardModelName.value();
 }
 
