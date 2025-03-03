@@ -1,11 +1,9 @@
-#ifndef STORM_SOLVER_GLPKLPSOLVER_H_
-#define STORM_SOLVER_GLPKLPSOLVER_H_
+#pragma once
 
 #include <map>
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/LpSolver.h"
 
-// To detect whether the usage of glpk is possible, this include is neccessary.
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GLPK
@@ -14,7 +12,6 @@
 
 namespace storm {
 namespace solver {
-#ifdef STORM_HAVE_GLPK
 /*!
  * A class that implements the LpSolver interface using glpk as the background solver.
  */
@@ -94,8 +91,10 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
     virtual ValueType getMILPGap(bool relative) const override;
 
    private:
+#ifdef STORM_HAVE_GLPK
     // The glpk LP problem.
     glp_prob* lp;
+#endif
 
     // A mapping from variables to their indices.
     std::conditional_t<RawMode, std::vector<int>, std::map<storm::expressions::Variable, int>> variableToIndexMap;
@@ -117,112 +116,6 @@ class GlpkLpSolver : public LpSolver<ValueType, RawMode> {
     };
     std::vector<IncrementalLevel> incrementalData;
 };
-#else
-// If glpk is not available, we provide a stub implementation that emits an error if any of its methods is called.
-class GlpkLpSolver : public LpSolver {
-   public:
-    GlpkLpSolver(std::string const& name, OptimizationDirection const& modelSense) {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
 
-    GlpkLpSolver(std::string const& name) : LpSolver(MINIMIZE) {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    GlpkLpSolver(OptimizationDirection const& modelSense) : LpSolver(modelSense) {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    GlpkLpSolver() : LpSolver(MINIMIZE) {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual ~GlpkLpSolver() {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void update() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void addConstraint(std::string const& name, storm::expressions::Expression const& constraint) override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void optimize() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual bool isInfeasible() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual bool isUnbounded() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual bool isOptimal() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual ValueType getContinuousValue(storm::expressions::Variable const& variable) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual bool getBinaryValue(storm::expressions::Variable const& variable) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual ValueType getObjectiveValue() const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void writeModelToFile(std::string const& filename) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void push() override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual void pop() override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual ValueType getMILPGap(bool relative) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-
-    virtual ValueType getMILPGap(bool relative) const override {
-        throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that "
-                                                              "requires this support. Please choose a version of support with glpk support.";
-    }
-};
-#endif
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_GLPKLPSOLVER_H_ */

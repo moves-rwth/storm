@@ -67,7 +67,15 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
     this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers))
+#ifdef STORM_HAVE_GUROBI
+                                         .setDefaultValueString("gurobi")
+#elif defined STORM_HAVE_SOPLEX
+                                         .setDefaultValueString("soplex")
+#elif defined STORM_HAVE_GLPK
                                          .setDefaultValueString("glpk")
+#else
+                                         .setDefaultValueString("z3")
+#endif
                                          .build())
                         .build());
 
