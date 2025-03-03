@@ -254,11 +254,11 @@ jobs:
         run: |
           docker exec ci bash -c "git clone "https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure & make starter project via fetch/source-dir
+      - name: Configure and make starter project via fetch/source-dir
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build-fetch; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
           docker exec ci bash -c "cd /opt/storm-starter/build-fetch make -j ${NR_JOBS}"
-          
+  deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
     strategy:

@@ -224,9 +224,6 @@ else()
 
     if (Z3_FOUND)
         set(STORM_HAVE_Z3 ON)
-
-        set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
-
         if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
             message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
             message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
