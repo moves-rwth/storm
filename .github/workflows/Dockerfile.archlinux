@@ -70,5 +70,4 @@ RUN make storm -j $no_threads
 # (This can be skipped or adapted depending on custom needs)
 RUN make binaries -j $no_threads
 
-# Set path
-ENV PATH="/opt/storm/build/bin:$PATH"
+WORKDIR /opt/storm
