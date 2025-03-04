@@ -1,14 +1,45 @@
+#include "storm-pars/utility/parametric.h"
+
 #include <string>
 
-#include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace utility {
 namespace parametric {
+
+// Partially instantiated function
+template<typename ReturnType>
+ReturnType evaluateRationalFunction(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    if constexpr (std::is_same<ReturnType, typename CoefficientType<storm::RationalFunction>::type>::value) {
+        return function.evaluate(valuation);
+    } else {
+        return storm::utility::convertNumber<ReturnType>(function.evaluate(valuation));
+    }
+}
+
+template<>
+double evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    return evaluateRationalFunction<double>(function, valuation);
+}
+
+#if defined(STORM_HAVE_CLN)
+template<>
+ClnRationalNumber evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    return evaluateRationalFunction<ClnRationalNumber>(function, valuation);
+}
+#endif
+
+#if defined(STORM_HAVE_GMP)
+template<>
+GmpRationalNumber evaluate(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation) {
+    return evaluateRationalFunction<GmpRationalNumber>(function, valuation);
+}
+#endif
 
 template<>
 typename storm::RationalFunction substitute<storm::RationalFunction>(storm::RationalFunction const& function,

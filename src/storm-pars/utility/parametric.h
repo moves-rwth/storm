@@ -1,7 +1,6 @@
 #pragma once
 
 #include "storm/adapters/RationalFunctionForward.h"
-#include "storm/utility/constants.h"
 
 #include <map>
 #include <set>
@@ -42,13 +41,7 @@ using Valuation = std::map<typename VariableType<FunctionType>::type, typename C
  * Evaluates the given function wrt. the given valuation and returns the required type.
  */
 template<typename ReturnType, typename FunctionType>
-ReturnType evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation) {
-    if constexpr (std::is_same<ReturnType, typename CoefficientType<FunctionType>::type>::value) {
-        return function.evaluate(valuation);
-    } else {
-        return storm::utility::convertNumber<ReturnType>(function.evaluate(valuation));
-    }
-}
+ReturnType evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation);
 
 /*!
  * Evaluates the given function wrt. the given valuation
