@@ -55,6 +55,14 @@ GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name, Optimiza
     this->maxMILPGapRelative = true;
 }
 
+#else
+
+template<typename ValueType, bool RawMode>
+GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const&, OptimizationDirection const&) {
+    // Throw nothing in a constructor.
+}
+#endif
+
 template<typename ValueType, bool RawMode>
 GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(std::string const& name) : GlpkLpSolver(name, OptimizationDirection::Minimize) {
     // Intentionally left empty.
@@ -72,13 +80,16 @@ GlpkLpSolver<ValueType, RawMode>::GlpkLpSolver(OptimizationDirection const& optD
 
 template<typename ValueType, bool RawMode>
 GlpkLpSolver<ValueType, RawMode>::~GlpkLpSolver() {
+#ifdef STORM_HAVE_GLPK
     // Dispose of all objects allocated dynamically by glpk.
     glp_delete_prob(this->lp);
     glp_free_env();
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 int getGlpkType(typename GlpkLpSolver<ValueType, RawMode>::VariableType const& type) {
+#ifdef STORM_HAVE_GLPK
     switch (type) {
         case GlpkLpSolver<ValueType, RawMode>::VariableType::Continuous:
             return GLP_CV;
@@ -89,6 +100,10 @@ int getGlpkType(typename GlpkLpSolver<ValueType, RawMode>::VariableType const& t
     }
     STORM_LOG_ASSERT(false, "Unexpected variable type.");
     return -1;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
@@ -96,6 +111,7 @@ typename GlpkLpSolver<ValueType, RawMode>::Variable GlpkLpSolver<ValueType, RawM
                                                                                                   std::optional<ValueType> const& lowerBound,
                                                                                                   std::optional<ValueType> const& upperBound,
                                                                                                   ValueType objectiveFunctionCoefficient) {
+#ifdef STORM_HAVE_GLPK
     Variable resultVar;
     if constexpr (RawMode) {
         resultVar = variableToIndexMap.size();
@@ -135,6 +151,10 @@ typename GlpkLpSolver<ValueType, RawMode>::Variable GlpkLpSolver<ValueType, RawM
     }
 
     return resultVar;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
@@ -144,6 +164,7 @@ void GlpkLpSolver<ValueType, RawMode>::update() const {
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
+#ifdef STORM_HAVE_GLPK
     // Add the row that will represent this constraint.
     int constraintIndex = glp_add_rows(this->lp, 1);
     glp_set_row_name(this->lp, constraintIndex, name.c_str());
@@ -214,13 +235,18 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
     glp_set_mat_row(this->lp, constraintIndex, variableIndices.size() - 1, variableIndices.data(), coefficients.data());
 
     this->currentModelHasBeenOptimized = false;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Indicator Constraints not supported for SoPlex.");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Indicator constraints are not supported for GLPK.");
 }
 
+#ifdef STORM_HAVE_GLPK
 // Method used within the MIP solver to terminate early
 void callback(glp_tree* t, void* info) {
     auto& mipgap = *static_cast<std::pair<double, bool>*>(info);
@@ -238,9 +264,11 @@ void callback(glp_tree* t, void* info) {
         glp_ios_terminate(t);
     }
 }
+#endif
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::optimize() const {
+#ifdef STORM_HAVE_GLPK
     // First, reset the flags.
     this->isInfeasibleFlag = false;
     this->isUnboundedFlag = false;
@@ -312,10 +340,15 @@ void GlpkLpSolver<ValueType, RawMode>::optimize() const {
 
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to optimize glpk model (" << error << ").");
     this->currentModelHasBeenOptimized = true;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isInfeasible() const {
+#ifdef STORM_HAVE_GLPK
     if (!this->currentModelHasBeenOptimized) {
         throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isInfeasible: model has not been optimized.";
     }
@@ -325,10 +358,15 @@ bool GlpkLpSolver<ValueType, RawMode>::isInfeasible() const {
     } else {
         return glp_get_status(this->lp) == GLP_INFEAS || glp_get_status(this->lp) == GLP_NOFEAS;
     }
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::isUnbounded() const {
+#ifdef STORM_HAVE_GLPK
     if (!this->currentModelHasBeenOptimized) {
         throw storm::exceptions::InvalidStateException() << "Illegal call to GlpkLpSolver::isUnbounded: model has not been optimized.";
     }
@@ -338,6 +376,10 @@ bool GlpkLpSolver<ValueType, RawMode>::isUnbounded() const {
     } else {
         return glp_get_status(this->lp) == GLP_UNBND;
     }
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
@@ -351,6 +393,7 @@ bool GlpkLpSolver<ValueType, RawMode>::isOptimal() const {
 
 template<typename ValueType, bool RawMode>
 ValueType GlpkLpSolver<ValueType, RawMode>::getContinuousValue(Variable const& variable) const {
+#ifdef STORM_HAVE_GLPK
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
@@ -366,10 +409,15 @@ ValueType GlpkLpSolver<ValueType, RawMode>::getContinuousValue(Variable const& v
         value = glp_get_col_prim(this->lp, static_cast<int>(variableIndex));
     }
     return storm::utility::convertNumber<ValueType>(value);
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
-int_fast64_t GlpkLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable) const {
+int64_t GlpkLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable) const {
+#ifdef STORM_HAVE_GLPK
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
@@ -390,10 +438,15 @@ int_fast64_t GlpkLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& v
     STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(),
                          "Illegal value for integer variable in GLPK solution (" << value << "). Difference to nearest int is " << diff);
     return static_cast<int_fast64_t>(roundedValue);
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 bool GlpkLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable) const {
+#ifdef STORM_HAVE_GLPK
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
@@ -420,10 +473,15 @@ bool GlpkLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable) 
     }
 
     return static_cast<bool>(value);
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 ValueType GlpkLpSolver<ValueType, RawMode>::getObjectiveValue() const {
+#ifdef STORM_HAVE_GLPK
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get glpk solution from unbounded model.");
@@ -438,15 +496,25 @@ ValueType GlpkLpSolver<ValueType, RawMode>::getObjectiveValue() const {
     }
 
     return storm::utility::convertNumber<ValueType>(value);
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
+#ifdef STORM_HAVE_GLPK
     glp_write_lp(this->lp, 0, filename.c_str());
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::push() {
+#ifdef STORM_HAVE_GLPK
     if constexpr (RawMode) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode");
     } else {
@@ -454,10 +522,15 @@ void GlpkLpSolver<ValueType, RawMode>::push() {
         lvl.firstConstraintIndex = glp_get_num_rows(this->lp) + 1;
         incrementalData.push_back(lvl);
     }
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::pop() {
+#ifdef STORM_HAVE_GLPK
     if constexpr (RawMode) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Incremental LP solving not supported in raw mode");
     } else {
@@ -510,6 +583,10 @@ void GlpkLpSolver<ValueType, RawMode>::pop() {
             }
         }
     }
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
+                                                          "requires this support. Please choose a version with GLPK support.";
+#endif
 }
 
 template<typename ValueType, bool RawMode>
@@ -532,6 +609,6 @@ template class GlpkLpSolver<double, true>;
 template class GlpkLpSolver<double, false>;
 template class GlpkLpSolver<storm::RationalNumber, true>;
 template class GlpkLpSolver<storm::RationalNumber, false>;
-#endif
+
 }  // namespace solver
 }  // namespace storm
