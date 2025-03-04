@@ -555,15 +555,16 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 #############################################################
 
 if(STORM_SHIPPED_CARL)
-    set(sylvan_dep carl)
+	set(sylvan_dep carl)
 else()
-    set(sylvan_dep lib_carl)
+	set(sylvan_dep lib_carl)
 endif()
 
 if (STORM_DEBUG_SYLVAN)
-    set(SYLVAN_BUILD_TYPE "Debug")
+	set(SYLVAN_BUILD_TYPE "Debug")
+	message(WARNING "Storm - Building Sylvan in DEBUG mode.")
 else()
-    set(SYLVAN_BUILD_TYPE "Release")
+	set(SYLVAN_BUILD_TYPE "Release")
 endif()
 
 ExternalProject_Add(
