@@ -237,7 +237,7 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
     this->currentModelHasBeenOptimized = false;
 #else
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with GLPK support.";
+                                                          "requires this support. Please choose a version with GLPK support.";
 #endif
 }
 
