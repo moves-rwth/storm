@@ -508,7 +508,7 @@ void GlpkLpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filen
     glp_write_lp(this->lp, 0, filename.c_str());
 #else
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GLPK. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with GLPK support.";
+                                                          "requires this support. Please choose a version with GLPK support.";
 #endif
 }
 
