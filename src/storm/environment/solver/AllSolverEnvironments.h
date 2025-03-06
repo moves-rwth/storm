@@ -4,6 +4,7 @@
 #include "storm/environment/solver/GameSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"

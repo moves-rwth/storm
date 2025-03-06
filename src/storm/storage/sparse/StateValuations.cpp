@@ -147,6 +147,7 @@ StateValuations::StateValueIterator StateValuations::StateValueIteratorRange::en
 bool StateValuations::getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const {
     auto const& valuation = getValuation(stateIndex);
     STORM_LOG_ASSERT(variableToIndexMap.count(booleanVariable) > 0, "Variable " << booleanVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(booleanVariable.hasBooleanType(), "Variable " << booleanVariable.getName() << " has no Boolean type.");
     return valuation.booleanValues[variableToIndexMap.at(booleanVariable)];
 }
 
@@ -154,6 +155,7 @@ int64_t const& StateValuations::getIntegerValue(storm::storage::sparse::state_ty
                                                 storm::expressions::Variable const& integerVariable) const {
     auto const& valuation = getValuation(stateIndex);
     STORM_LOG_ASSERT(variableToIndexMap.count(integerVariable) > 0, "Variable " << integerVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(integerVariable.hasIntegerType(), "Variable " << integerVariable.getName() << " has no integer type.");
     return valuation.integerValues[variableToIndexMap.at(integerVariable)];
 }
 
@@ -161,7 +163,45 @@ storm::RationalNumber const& StateValuations::getRationalValue(storm::storage::s
                                                                storm::expressions::Variable const& rationalVariable) const {
     auto const& valuation = getValuation(stateIndex);
     STORM_LOG_ASSERT(variableToIndexMap.count(rationalVariable) > 0, "Variable " << rationalVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(rationalVariable.hasRationalType(), "Variable " << rationalVariable.getName() << " has no rational type.");
     return valuation.rationalValues[variableToIndexMap.at(rationalVariable)];
+}
+
+storm::storage::BitVector StateValuations::getBooleanValues(storm::expressions::Variable const& booleanVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(booleanVariable) > 0, "Variable " << booleanVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(booleanVariable.hasBooleanType(), "Variable " << booleanVariable.getName() << " has no Boolean type.");
+    auto const varIndex = variableToIndexMap.at(booleanVariable);
+    storm::storage::BitVector result(getNumberOfStates(), false);
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        if (getValuation(stateIndex).booleanValues[varIndex]) {
+            result.set(stateIndex);
+        }
+    }
+    return result;
+}
+
+std::vector<int64_t> StateValuations::getIntegerValues(storm::expressions::Variable const& integerVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(integerVariable) > 0, "Variable " << integerVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(integerVariable.hasIntegerType(), "Variable " << integerVariable.getName() << " has no integer type.");
+    auto const varIndex = variableToIndexMap.at(integerVariable);
+    std::vector<int64_t> result;
+    result.reserve(getNumberOfStates());
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        result.push_back(getValuation(stateIndex).integerValues[varIndex]);
+    }
+    return result;
+}
+
+std::vector<storm::RationalNumber> StateValuations::getRationalValues(storm::expressions::Variable const& rationalVariable) const {
+    STORM_LOG_ASSERT(variableToIndexMap.count(rationalVariable) > 0, "Variable " << rationalVariable.getName() << " is not part of this valuation.");
+    STORM_LOG_ASSERT(rationalVariable.hasRationalType(), "Variable " << rationalVariable.getName() << " has no rational type.");
+    auto const varIndex = variableToIndexMap.at(rationalVariable);
+    std::vector<storm::RationalNumber> result;
+    result.reserve(getNumberOfStates());
+    for (uint64_t stateIndex = 0; stateIndex < getNumberOfStates(); ++stateIndex) {
+        result.push_back(getValuation(stateIndex).rationalValues[varIndex]);
+    }
+    return result;
 }
 
 bool StateValuations::isEmpty(storm::storage::sparse::state_type const& stateIndex) const {

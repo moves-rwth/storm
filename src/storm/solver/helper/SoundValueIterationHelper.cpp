@@ -331,7 +331,7 @@ typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData Sound
 
     while (true) {
         ++numIterations;
-        viOperator->template applyInPlace(xy, offsets, backend);
+        viOperator->applyInPlace(xy, offsets, backend);
         SVIData data{SolverStatus::InProgress, xy, backend.a(), backend.b()};
         if (data.checkConvergence(convergenceCheckState, getNextConvergenceCheckState, relative, precision)) {
             return SVIData{SolverStatus::Converged, xy, backend.a(), backend.b()};

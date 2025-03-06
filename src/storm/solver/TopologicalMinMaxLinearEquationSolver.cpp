@@ -99,6 +99,21 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 this->schedulerChoices = std::vector<uint64_t>(x.size());
             }
         }
+        std::optional<storm::storage::BitVector> newRelevantValues;
+        if (env.solver().topological().isExtendRelevantValues() && this->hasRelevantValues() &&
+            this->sortedSccDecomposition->size() < this->A->getRowGroupCount()) {
+            newRelevantValues = this->getRelevantValues();
+            // Extend the relevant values towards those that have an incoming transition from another SCC
+            std::vector<uint64_t> rowGroupToScc = this->sortedSccDecomposition->computeStateToSccIndexMap(this->A->getRowGroupCount());
+            for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
+                auto currScc = rowGroupToScc[rowGroup];
+                for (auto const& successor : this->A->getRowGroup(rowGroup)) {
+                    if (rowGroupToScc[successor.getColumn()] != currScc) {
+                        newRelevantValues->set(successor.getColumn(), true);
+                    }
+                }
+            }
+        }
         storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
         storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
         uint64_t sccIndex = 0;
@@ -122,10 +137,10 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                     } else {
                         auto row = this->A->getRowGroupIndices()[group] + this->getInitialScheduler()[group];
                         sccRowsAsBitVector.set(row, true);
-                        STORM_LOG_INFO("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
+                        STORM_LOG_TRACE("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
                     }
                 }
-                returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;
+                returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b, newRelevantValues) && returnValue;
             }
             ++sccIndex;
             progress.updateProgress(sccIndex);
@@ -261,13 +276,16 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveFullyC
     this->sccSolver->setMatrix(*this->A);
     this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
     this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
-    this->sccSolver->setBoundsFromOtherSolver(*this);
     this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
     if (this->hasInitialScheduler()) {
         auto choices = this->getInitialScheduler();
         this->sccSolver->setInitialScheduler(std::move(choices));
     }
+    if (this->hasRelevantValues()) {
+        this->sccSolver->setRelevantValues(this->getRelevantValues());
+    }
     auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
+    this->sccSolver->setBoundsFromOtherSolver(*this);
     if (req.upperBounds() && this->hasUpperBound()) {
         req.clearUpperBounds();
     }
@@ -295,7 +313,8 @@ template<typename ValueType, typename SolutionType>
 bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir,
                                                                               storm::storage::BitVector const& sccRowGroups,
                                                                               storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX,
-                                                                              std::vector<ValueType> const& globalB) const {
+                                                                              std::vector<ValueType> const& globalB,
+                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
     // Set up the SCC solver
     if (!this->sccSolver) {
         this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
@@ -304,6 +323,9 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
     this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
     this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
     this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
+    if (globalRelevantValues) {
+        this->sccSolver->setRelevantValues((*globalRelevantValues) % sccRowGroups);
+    }
 
     storm::storage::SparseMatrix<ValueType> sccA;
     if (this->choiceFixedForRowGroup) {
@@ -348,27 +370,26 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
         sccB.push_back(std::move(bi));
     }
 
+    auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
+    this->sccSolver->clearBounds();
     // lower/upper bounds
     if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
         this->sccSolver->setLowerBound(this->getLowerBound());
+        req.clearLowerBounds();
     } else if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
         this->sccSolver->setLowerBounds(storm::utility::vector::filterVector(this->getLowerBounds(), sccRowGroups));
+        req.clearLowerBounds();
     }
     if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
         this->sccSolver->setUpperBound(this->getUpperBound());
+        req.clearUpperBounds();
     } else if (this->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
         this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), sccRowGroups));
+        req.clearUpperBounds();
     }
 
     // Requirements
-    auto req = this->sccSolver->getRequirements(sccSolverEnvironment, dir);
-    if (req.upperBounds() && this->hasUpperBound()) {
-        req.clearUpperBounds();
-    }
-    if (req.lowerBounds() && this->hasLowerBound()) {
-        req.clearLowerBounds();
-    }
-    if (req.validInitialScheduler() && this->hasInitialScheduler()) {
+    if (req.validInitialScheduler() && (this->hasInitialScheduler() || this->hasNoEndComponents())) {
         req.clearValidInitialScheduler();
     }
     if (req.uniqueSolution() && this->hasUniqueSolution()) {

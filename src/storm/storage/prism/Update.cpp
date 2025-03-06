@@ -17,8 +17,12 @@ Update::Update(uint_fast64_t globalIndex, storm::expressions::Expression const& 
       assignments(assignments),
       variableToAssignmentIndexMap(),
       globalIndex(globalIndex) {
-    STORM_LOG_ASSERT(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0,
-                     "Negative likelihood expressions are not allowed.");
+    STORM_LOG_ASSERT(
+        [&likelihoodExpression]() {
+            auto simplified = likelihoodExpression.simplify();
+            return !simplified.isLiteral() || simplified.evaluateAsRational() >= 0;
+        }(),
+        "Negative likelihood expressions are not allowed.");
     std::sort(this->assignments.begin(), this->assignments.end(), [](storm::prism::Assignment const& assignment1, storm::prism::Assignment const& assignment2) {
         bool smaller = assignment1.getVariable().getType().isBooleanType() && !assignment2.getVariable().getType().isBooleanType();
         if (!smaller) {
@@ -79,10 +83,9 @@ Update Update::substitute(std::map<storm::expressions::Variable, storm::expressi
     for (auto const& assignment : this->getAssignments()) {
         newAssignments.emplace_back(assignment.substitute(substitution));
     }
-    auto newLikelihoodExpression = this->getLikelihoodExpression().substitute(substitution);
-    STORM_LOG_THROW(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException,
+    auto newLikelihoodExpression = this->getLikelihoodExpression().substitute(substitution).simplify();
+    STORM_LOG_THROW(!newLikelihoodExpression.isLiteral() || newLikelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException,
                     "Substitution yielding negative probabilities in '" << this->getLikelihoodExpression() << "' are not allowed.");
-    // FIXME: The expression could be simplified, but 1/K (where K is an int) is then resolved to 0, which is incorrect (for probabilities).
     return Update(this->getGlobalIndex(), newLikelihoodExpression, newAssignments, this->getFilename(), this->getLineNumber());
 }
 
@@ -92,8 +95,8 @@ Update Update::substituteNonStandardPredicates() const {
     for (auto const& assignment : this->getAssignments()) {
         newAssignments.emplace_back(assignment.substituteNonStandardPredicates());
     }
-    auto newLikelihoodExpression = this->getLikelihoodExpression().substituteNonStandardPredicates();
-    STORM_LOG_THROW(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException,
+    auto newLikelihoodExpression = this->getLikelihoodExpression().substituteNonStandardPredicates().simplify();
+    STORM_LOG_THROW(!newLikelihoodExpression.isLiteral() || newLikelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException,
                     "Substitution yielding negative probabilities in '" << this->getLikelihoodExpression() << "' are not allowed.");
     return Update(this->getGlobalIndex(), newLikelihoodExpression, newAssignments, this->getFilename(), this->getLineNumber());
 }

@@ -55,103 +55,93 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::SparseLTLSchedulerHe
 
 template<typename ValueType, bool Nondeterministic>
 void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices(
-    automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& mec,
-    std::vector<automata::AcceptanceCondition::acceptance_expr::ptr> const& conjunction, typename transformer::DAProduct<productModelType>::ptr product) {
-    // Save all states contained in this MEC and find out whether there is some overlap with another, already processed accepting mec
-    storm::storage::BitVector mecStates(product->getProductModel().getNumberOfStates(), false);
-    storm::storage::BitVector overlapStates;
+    automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& acceptingEc,
+    storm::storage::MaximalEndComponent const& containingMec, std::vector<automata::AcceptanceCondition::acceptance_expr::ptr> const& conjunction,
+    typename transformer::DAProduct<productModelType>::ptr product) {
+    STORM_LOG_ASSERT(std::all_of(acceptingEc.begin(), acceptingEc.end(),
+                                 [&containingMec](auto const& accStateChoicesPair) { return containingMec.containsState(accStateChoicesPair.first); }),
+                     "All states in the acceptingEC must be contained in the containing mec.");
+    storm::storage::BitVector acceptingEcStates(product->getProductModel().getNumberOfStates(), false);
+    for (auto const& [state, _] : acceptingEc) {
+        acceptingEcStates.set(state);
+    }
 
-    for (auto const& stateChoicePair : mec) {
-        if (_accInfSets[stateChoicePair.first].is_initialized()) {
-            overlapStates.resize(product->getProductModel().getNumberOfStates(), false);
-            overlapStates.set(stateChoicePair.first);
-        } else {
-            mecStates.set(stateChoicePair.first);
+    // Catch the case where there are states in the containing MEC that are not in the accepting EC
+    if (acceptingEc.size() < containingMec.size()) {
+        storm::storage::BitVector remainingMecStates(product->getProductModel().getNumberOfStates(), false);
+        for (auto const& [state, _] : containingMec) {
+            if (!acceptingEcStates.get(state)) {
+                remainingMecStates.set(state);
+            }
+        }
+        // Compute a scheduler that, with prob=1 reaches the overlap states
+        storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
+        storm::utility::graph::computeSchedulerProb1E<ValueType>(remainingMecStates, product->getProductModel().getTransitionMatrix(),
+                                                                 product->getProductModel().getBackwardTransitions(), remainingMecStates, acceptingEcStates,
+                                                                 mecScheduler);
+
+        // Extract scheduler choices
+        for (auto pState : remainingMecStates) {
+            this->_producedChoices.insert(
+                {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET), mecScheduler.getChoice(pState)});
         }
     }
 
-    if (!overlapStates.empty()) {
-        // If all the states in mec are overlapping, we are done already.
-        if (!mecStates.empty()) {
-            // Simply Reach the overlapStates almost surely
-            // set inf sets
-            for (auto mecState : mecStates) {
-                STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
-                _accInfSets[mecState] = std::set<uint_fast64_t>({DEFAULT_INFSET});
-            }
-
-            // Define scheduler choices for the states in this MEC (that are not in any other MEC)
-            // Compute a scheduler that, with prob=1 reaches the overlap states
-            storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
-            storm::utility::graph::computeSchedulerProb1E<ValueType>(mecStates, product->getProductModel().getTransitionMatrix(),
-                                                                     product->getProductModel().getBackwardTransitions(), mecStates, overlapStates,
-                                                                     mecScheduler);
-
-            // Extract scheduler choices
-            for (auto pState : mecStates) {
-                this->_producedChoices.insert(
-                    {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET), mecScheduler.getChoice(pState)});
-            }
-        }
-    } else {
-        // No overlap! Let's do actual work.
-
-        // We know the MEC satisfied the conjunction: Save InfSets.
-        std::set<uint_fast64_t> infSetIds;
-        for (auto const& literal : conjunction) {
-            if (literal->isAtom()) {
-                const cpphoafparser::AtomAcceptance& atom = literal->getAtom();
-                if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
-                    storm::storage::BitVector infSet;
-                    if (atom.isNegated()) {
-                        infSet = ~acceptance.getAcceptanceSet(atom.getAcceptanceSet());
-                    } else {
-                        infSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
-                    }
-                    // Save new InfSet
-                    infSetIds.insert(_infSets.getOrCreateIndex(std::move(infSet)));
+    // Set choices for the accepting EC. We know the conjunction is satisfied: Save InfSets.
+    std::set<uint_fast64_t> infSetIds;
+    for (auto const& literal : conjunction) {
+        if (literal->isAtom()) {
+            const cpphoafparser::AtomAcceptance& atom = literal->getAtom();
+            if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
+                storm::storage::BitVector infSet;
+                if (atom.isNegated()) {
+                    infSet = ~acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                } else {
+                    infSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
                 }
-                // A TEMPORAL_FIN atom can be ignored at this point since the mec is already known to only contain "allowed" states
+                // Save new InfSet
+                infSetIds.insert(_infSets.getOrCreateIndex(std::move(infSet)));
             }
-            // TRUE literals can be ignored since those will be satisfied anyway
-            // FALSE literals are not possible here since the MEC is known to be accepting.
+            // A TEMPORAL_FIN atom can be ignored at this point since the mec is already known to only contain "allowed" states
         }
-        if (infSetIds.empty()) {
-            // There might not be any infSet at this point (e.g. because all literals are TEMPORAL_FIN atoms). We need at least one infset, though
-            infSetIds.insert(_infSets.getOrCreateIndex(storm::storage::BitVector(product->getProductModel().getNumberOfStates(), true)));
+        // TRUE literals can be ignored since those will be satisfied anyway
+        // FALSE literals are not possible here since the MEC is known to be accepting.
+    }
+    if (infSetIds.empty()) {
+        // There might not be any infSet at this point (e.g. because all literals are TEMPORAL_FIN atoms). We need at least one infset, though
+        infSetIds.insert(_infSets.getOrCreateIndex(storm::storage::BitVector(product->getProductModel().getNumberOfStates(), true)));
+    }
+
+    //  Save the InfSets into the _accInfSets for states in this MEC
+    for (auto const& mecState : acceptingEcStates) {
+        STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
+        _accInfSets[mecState].emplace(infSetIds);
+    }
+
+    // Define scheduler choices for the states in this MEC (that are not in any other MEC)
+    // The resulting scheduler will  visit each InfSet inf often
+    for (uint_fast64_t id : infSetIds) {
+        // Scheduler that satisfies the MEC acceptance condition
+        storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
+
+        storm::storage::BitVector infStatesWithinMec = _infSets.get(id) & acceptingEcStates;
+        // States not in InfSet: Compute a scheduler that, with prob=1, reaches the infSet via mecStates
+        storm::utility::graph::computeSchedulerProb1E<ValueType>(acceptingEcStates, product->getProductModel().getTransitionMatrix(),
+                                                                 product->getProductModel().getBackwardTransitions(), acceptingEcStates, infStatesWithinMec,
+                                                                 mecScheduler);
+
+        // States that already reached the InfSet
+        for (auto pState : infStatesWithinMec) {
+            // Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting MEC.
+            mecScheduler.setChoice(
+                *acceptingEc.getChoicesForState(pState).begin() - product->getProductModel().getTransitionMatrix().getRowGroupIndices()[pState], pState);
         }
 
-        //  Save the InfSets into the _accInfSets for states in this MEC
-        for (auto const& mecState : mecStates) {
-            STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
-            _accInfSets[mecState].emplace(infSetIds);
-        }
-
-        // Define scheduler choices for the states in this MEC (that are not in any other MEC)
-        // The resulting scheduler will  visit each InfSet inf often
-        for (uint_fast64_t id : infSetIds) {
-            // Scheduler that satisfies the MEC acceptance condition
-            storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
-
-            storm::storage::BitVector infStatesWithinMec = _infSets.get(id) & mecStates;
-            // States not in InfSet: Compute a scheduler that, with prob=1, reaches the infSet via mecStates
-            storm::utility::graph::computeSchedulerProb1E<ValueType>(mecStates, product->getProductModel().getTransitionMatrix(),
-                                                                     product->getProductModel().getBackwardTransitions(), mecStates, infStatesWithinMec,
-                                                                     mecScheduler);
-
-            // States that already reached the InfSet
-            for (auto pState : infStatesWithinMec) {
-                // Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting MEC.
-                mecScheduler.setChoice(*mec.getChoicesForState(pState).begin() - product->getProductModel().getTransitionMatrix().getRowGroupIndices()[pState],
-                                       pState);
-            }
-
-            // Extract scheduler choices
-            for (auto pState : mecStates) {
-                // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
-                this->_producedChoices.insert(
-                    {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
-            }
+        // Extract scheduler choices
+        for (auto pState : acceptingEcStates) {
+            // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
+            this->_producedChoices.insert(
+                {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
         }
     }
 }

@@ -22,6 +22,8 @@ std::string toString(MinMaxMethod m) {
             return "optimisticvalueiteration";
         case MinMaxMethod::ViToPi:
             return "vi-to-pi";
+        case MinMaxMethod::ViToLp:
+            return "vi-to-lp";
         case MinMaxMethod::Acyclic:
             return "vi-to-pi";
     }

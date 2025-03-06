@@ -57,7 +57,8 @@ ExternalProject_Add(
         GIT_TAG bae907b8f6078b1df290729eef946360315bd312
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.4.1alpha
-		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
+        # First check whether patch was already applied (--reverse --check), otherwise apply patch
+        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch --reverse --check || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -554,15 +555,16 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 #############################################################
 
 if(STORM_SHIPPED_CARL)
-    set(sylvan_dep carl)
+	set(sylvan_dep carl)
 else()
-    set(sylvan_dep lib_carl)
+	set(sylvan_dep lib_carl)
 endif()
 
 if (STORM_DEBUG_SYLVAN)
-    set(SYLVAN_BUILD_TYPE "Debug")
+	set(SYLVAN_BUILD_TYPE "Debug")
+	message(WARNING "Storm - Building Sylvan in DEBUG mode.")
 else()
-    set(SYLVAN_BUILD_TYPE "Release")
+	set(SYLVAN_BUILD_TYPE "Release")
 endif()
 
 ExternalProject_Add(
@@ -570,7 +572,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
+        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DSYLVAN_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
