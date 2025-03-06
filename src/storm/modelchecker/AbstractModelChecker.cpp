@@ -164,21 +164,17 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Env
                                                                              CheckTask<storm::logic::Formula, SolutionType> const& checkTask) {
     storm::logic::Formula const& rewardFormula = checkTask.getFormula();
     if (rewardFormula.isCumulativeRewardFormula()) {
-        if (rewardFormula.isDiscountedCumulativeRewardFormula()) {
-            return this->computeDiscountedCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedCumulativeRewardFormula()));
-        } else {
-            return this->computeCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asCumulativeRewardFormula()));
-        }
+        return this->computeCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asCumulativeRewardFormula()));
+    } else if (rewardFormula.isDiscountedCumulativeRewardFormula()) {
+        return this->computeDiscountedCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedCumulativeRewardFormula()));
     } else if (rewardFormula.isInstantaneousRewardFormula()) {
         return this->computeInstantaneousRewards(env, checkTask.substituteFormula(rewardFormula.asInstantaneousRewardFormula()));
     } else if (rewardFormula.isReachabilityRewardFormula()) {
         return this->computeReachabilityRewards(env, checkTask.substituteFormula(rewardFormula.asReachabilityRewardFormula()));
     } else if (rewardFormula.isTotalRewardFormula()) {
-        if (rewardFormula.isDiscountedTotalRewardFormula()) {
-            return this->computeDiscountedTotalRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedTotalRewardFormula()));
-        } else {
             return this->computeTotalRewards(env, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
-        }
+    } else if (rewardFormula.isDiscountedTotalRewardFormula()) {
+        return this->computeDiscountedTotalRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedTotalRewardFormula()));
     } else if (rewardFormula.isLongRunAverageRewardFormula()) {
         return this->computeLongRunAverageRewards(env, checkTask.substituteFormula(rewardFormula.asLongRunAverageRewardFormula()));
     } else if (rewardFormula.isConditionalRewardFormula()) {

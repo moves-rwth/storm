@@ -18,7 +18,11 @@ class DiscountedCumulativeRewardFormula : public CumulativeRewardFormula {
 
     virtual ~DiscountedCumulativeRewardFormula() = default;
 
-    bool isDiscountedCumulativeRewardFormula() const override;
+    virtual bool isDiscountedCumulativeRewardFormula() const override;
+
+    virtual bool isCumulativeRewardFormula() const override;
+
+    void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;
 
     std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
 

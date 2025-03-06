@@ -18,7 +18,11 @@ class DiscountedTotalRewardFormula : public TotalRewardFormula {
 
     virtual bool isDiscountedTotalRewardFormula() const override;
 
+    virtual bool isTotalRewardFormula() const override;
+
     virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
+
+    void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;
 
     storm::expressions::Expression const& getDiscountFactor() const;
 

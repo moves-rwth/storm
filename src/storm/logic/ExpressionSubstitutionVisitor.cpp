@@ -109,8 +109,18 @@ boost::any ExpressionSubstitutionVisitor::visit(DiscountedCumulativeRewardFormul
     if (f.hasRewardAccumulation()) {
         optionalRewardAccumulation = f.getRewardAccumulation();
     }
+    return std::static_pointer_cast<Formula>(std::make_shared<DiscountedCumulativeRewardFormula>(substitutionFunction(f.getDiscountFactor()), bounds,
+                                                                                                 timeBoundReferences, optionalRewardAccumulation));
+}
+
+boost::any ExpressionSubstitutionVisitor::visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const {
+    auto const& substitutionFunction = *boost::any_cast<std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const*>(data);
+    boost::optional<RewardAccumulation> optionalRewardAccumulation;
+    if (f.hasRewardAccumulation()) {
+        optionalRewardAccumulation = f.getRewardAccumulation();
+    }
     return std::static_pointer_cast<Formula>(
-        std::make_shared<DiscountedCumulativeRewardFormula>(f.getDiscountFactor(), bounds, timeBoundReferences, optionalRewardAccumulation));
+        std::make_shared<DiscountedTotalRewardFormula>(substitutionFunction(f.getDiscountFactor()), optionalRewardAccumulation));
 }
 
 boost::any ExpressionSubstitutionVisitor::visit(InstantaneousRewardFormula const& f, boost::any const& data) const {

@@ -6,6 +6,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FormulaVisitor.h"
 
 #include "storm/utility/macros.h"
@@ -15,11 +16,14 @@ namespace logic {
 DiscountedTotalRewardFormula::DiscountedTotalRewardFormula(storm::expressions::Expression const discountFactor,
                                                            boost::optional<RewardAccumulation> rewardAccumulation)
     : TotalRewardFormula(rewardAccumulation), discountFactor(discountFactor) {
-    // Intentionally left empty.
 }
 
 bool DiscountedTotalRewardFormula::isDiscountedTotalRewardFormula() const {
     return true;
+}
+
+bool DiscountedTotalRewardFormula::isTotalRewardFormula() const {
+    return false;
 }
 
 std::ostream& DiscountedTotalRewardFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
@@ -32,6 +36,10 @@ std::ostream& DiscountedTotalRewardFormula::writeToStream(std::ostream& out, boo
     return out;
 }
 
+void DiscountedTotalRewardFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+    this->getDiscountFactor().gatherVariables(usedVariables);
+}
+
 storm::expressions::Expression const& DiscountedTotalRewardFormula::getDiscountFactor() const {
     return discountFactor;
 }
@@ -40,6 +48,7 @@ template<>
 double DiscountedTotalRewardFormula::getDiscountFactor() const {
     checkNoVariablesInDiscountFactor(discountFactor);
     double value = discountFactor.evaluateAsDouble();
+    STORM_LOG_THROW(value > 0 && value < 1, storm::exceptions::InvalidPropertyException, "Discount factor must be strictly between 0 and 1.");
     return value;
 }
 
@@ -47,6 +56,7 @@ template<>
 storm::RationalNumber DiscountedTotalRewardFormula::getDiscountFactor() const {
     checkNoVariablesInDiscountFactor(discountFactor);
     storm::RationalNumber value = discountFactor.evaluateAsRational();
+    STORM_LOG_THROW(value > 0 && value < 1, storm::exceptions::InvalidPropertyException, "Discount factor must be strictly between 0 and 1.");
     return value;
 }
 

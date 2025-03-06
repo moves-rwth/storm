@@ -45,6 +45,7 @@ template<typename ValueType, bool TrivialRowGrouping>
 bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueIteration(storm::Environment const& env,
                                                                                          std::optional<OptimizationDirection> dir, std::vector<ValueType>& x,
                                                                                          std::vector<ValueType> const& b) const {
+    setUpViOperator();
     // This is currently missing progress indications, we can add them later
     storm::solver::helper::DiscountedValueIterationHelper<ValueType, TrivialRowGrouping> viHelper(viOperator);
     uint64_t numIterations{0};

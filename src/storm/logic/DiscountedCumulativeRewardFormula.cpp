@@ -31,9 +31,20 @@ bool DiscountedCumulativeRewardFormula::isDiscountedCumulativeRewardFormula() co
     return true;
 }
 
+bool DiscountedCumulativeRewardFormula::isCumulativeRewardFormula() const {
+    return false;
+}
+
 void DiscountedCumulativeRewardFormula::checkNoVariablesInDiscountFactor(storm::expressions::Expression const& factor) {
     STORM_LOG_THROW(!factor.containsVariables(), storm::exceptions::InvalidOperationException,
                     "Cannot evaluate discount factor '" << factor << "' as it contains undefined constants.");
+}
+
+void DiscountedCumulativeRewardFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+    for (unsigned i = 0; i < this->getDimension(); ++i) {
+        this->getBound(i).gatherVariables(usedVariables);
+    }
+    this->getDiscountFactor().gatherVariables(usedVariables);
 }
 
 storm::expressions::Expression const& DiscountedCumulativeRewardFormula::getDiscountFactor() const {
@@ -44,6 +55,7 @@ template<>
 double DiscountedCumulativeRewardFormula::getDiscountFactor() const {
     checkNoVariablesInDiscountFactor(discountFactor);
     double value = discountFactor.evaluateAsDouble();
+    STORM_LOG_THROW(value > 0 && value < 1, storm::exceptions::InvalidPropertyException, "Discount factor must be strictly between 0 and 1.");
     return value;
 }
 
@@ -51,6 +63,7 @@ template<>
 storm::RationalNumber DiscountedCumulativeRewardFormula::getDiscountFactor() const {
     checkNoVariablesInDiscountFactor(discountFactor);
     storm::RationalNumber value = discountFactor.evaluateAsRational();
+    STORM_LOG_THROW(value > 0 && value < 1, storm::exceptions::InvalidPropertyException, "Discount factor must be strictly between 0 and 1.");
     return value;
 }
 

@@ -403,7 +403,7 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-    multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound);
+    multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor);
 
     return result;
 }
@@ -430,7 +430,6 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     std::vector<ValueType> x = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
     b = rewardModel.getTotalRewardVector(transitionMatrix);
     storm::modelchecker::helper::DiscountingHelper<ValueType, true> discountingHelper(transitionMatrix, discountFactor);
-    discountingHelper.setUpViOperator();
     discountingHelper.solveWithDiscountedValueIteration(env, std::nullopt, x, b);
     return std::vector<ValueType>(std::move(x));
 }

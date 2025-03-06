@@ -15,8 +15,6 @@ class DiscountingHelper : public SingleValueModelCheckerHelper<ValueType, storm:
     DiscountingHelper(storm::storage::SparseMatrix<ValueType> const& A, ValueType discountFactor);
     DiscountingHelper(storm::storage::SparseMatrix<ValueType> const& A, ValueType discountFactor, bool trackScheduler);
 
-    void setUpViOperator() const;
-
     bool solveWithDiscountedValueIteration(Environment const& env, std::optional<OptimizationDirection> dir, std::vector<ValueType>& x,
                                            std::vector<ValueType> const& b) const;
 
@@ -35,6 +33,8 @@ class DiscountingHelper : public SingleValueModelCheckerHelper<ValueType, storm:
     bool isTrackSchedulerSet() const;
 
    private:
+    void setUpViOperator() const;
+
     void showProgressIterative(uint64_t iteration) const;
 
     void extractScheduler(std::vector<ValueType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir, bool robust) const;
