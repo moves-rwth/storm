@@ -179,9 +179,9 @@ void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::createSorte
 
 template<typename ValueType, typename SolutionType>
 bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveTrivialScc(uint64_t const& sccState, OptimizationDirection dir,
-                                                                                     std::vector<ValueType>& globalX,
+                                                                                     std::vector<SolutionType>& globalX,
                                                                                      std::vector<ValueType> const& globalB) const {
-    ValueType& xi = globalX[sccState];
+    SolutionType& xi = globalX[sccState];
     if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[sccState]) {
         // if the choice in the scheduler is fixed we only update for the fixed choice
         uint_fast64_t row = this->A->getRowGroupIndices()[sccState] + this->getInitialScheduler()[sccState];
@@ -312,7 +312,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveFullyC
 template<typename ValueType, typename SolutionType>
 bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir,
                                                                               storm::storage::BitVector const& sccRowGroups,
-                                                                              storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX,
+                                                                              storm::storage::BitVector const& sccRows, std::vector<SolutionType>& globalX,
                                                                               std::vector<ValueType> const& globalB,
                                                                               std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
     // Set up the SCC solver
@@ -434,6 +434,8 @@ void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::clearCache(
 // Explicitly instantiate the min max linear equation solver.
 template class TopologicalMinMaxLinearEquationSolver<double>;
 template class TopologicalMinMaxLinearEquationSolver<storm::RationalNumber>;
+// TODO implement topological mode for intervals
+// template class TopologicalMinMaxLinearEquationSolver<storm::Interval, double>;
 
 }  // namespace solver
 }  // namespace storm
