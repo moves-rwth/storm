@@ -399,11 +399,16 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlHelper<DdType, ValueType>::computeRe
     return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
 template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,17 +1,16 @@
 #pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
+#include <parallel_hashmap/phmap.h>
 #include <boost/optional.hpp>
 #include <set>
 
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
-
 #include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/Variable.h"
-
+#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
 #include "storm/storage/dd/cudd/utility.h"
-
-#include <parallel_hashmap/phmap.h>
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {
@@ -88,3 +87,4 @@ class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm
+#endif

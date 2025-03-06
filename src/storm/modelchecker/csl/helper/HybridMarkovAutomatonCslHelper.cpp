@@ -94,6 +94,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntil
 
 // Explicit instantiations.
 
+#ifdef STORM_HAVE_CUDD
 // Cudd, double.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model,
@@ -106,7 +107,9 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates,
     storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 // Sylvan, double.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model,
@@ -132,7 +135,7 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-
+#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -31,8 +31,13 @@ SymbolicQualitativeResult<Type> const& SymbolicQualitativeResultMinMax<Type>::ge
     return getProb1(storm::OptimizationDirection::Maximize);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQualitativeResultMinMax<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicQualitativeResultMinMax<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

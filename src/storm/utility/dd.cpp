@@ -94,31 +94,34 @@ storm::dd::Bdd<Type> getRowColumnDiagonal(
     return ddManager.getIdentity(rowColumnMetaVariablePairs, false);
 }
 
+#ifdef STORM_HAVE_CUDD
 template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, uint64_t> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates,
                                                                                              storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions,
                                                                                              std::set<storm::expressions::Variable> const& rowMetaVariables,
                                                                                              std::set<storm::expressions::Variable> const& columnMetaVariables);
-template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, uint64_t> computeReachableStates(
-    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions,
-    std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
-
 template storm::dd::Bdd<storm::dd::DdType::CUDD> computeBackwardsReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates,
                                                                                  storm::dd::Bdd<storm::dd::DdType::CUDD> const& constraintStates,
                                                                                  storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions,
                                                                                  std::set<storm::expressions::Variable> const& rowMetaVariables,
                                                                                  std::set<storm::expressions::Variable> const& columnMetaVariables);
+template storm::dd::Bdd<storm::dd::DdType::CUDD> getRowColumnDiagonal(
+    storm::dd::DdManager<storm::dd::DdType::CUDD> const& ddManager,
+    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
+template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, uint64_t> computeReachableStates(
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions,
+    std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
 template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeBackwardsReachableStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates,
                                                                                    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& constraintStates,
                                                                                    storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions,
                                                                                    std::set<storm::expressions::Variable> const& rowMetaVariables,
                                                                                    std::set<storm::expressions::Variable> const& columnMetaVariables);
-
-template storm::dd::Bdd<storm::dd::DdType::CUDD> getRowColumnDiagonal(
-    storm::dd::DdManager<storm::dd::DdType::CUDD> const& ddManager,
-    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
 template storm::dd::Bdd<storm::dd::DdType::Sylvan> getRowColumnDiagonal(
     storm::dd::DdManager<storm::dd::DdType::Sylvan> const& ddManager,
     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+#endif
 
 }  // namespace dd
 }  // namespace utility

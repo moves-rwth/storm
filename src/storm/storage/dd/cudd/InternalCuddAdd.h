@@ -1,17 +1,17 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
 #include <functional>
 #include <memory>
 #include <set>
 #include <unordered_map>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
-
 #include "storm/storage/expressions/Variable.h"
 
 // Include the C++-interface of CUDD.
@@ -831,4 +831,4 @@ class InternalAdd<DdType::CUDD, ValueType> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_ */
+#endif

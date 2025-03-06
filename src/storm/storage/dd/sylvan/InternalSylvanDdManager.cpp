@@ -1,20 +1,17 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include <cmath>
 #include <iostream>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/SylvanSettings.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/sylvan.h"
-
-#include "storm-config.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/SylvanSettings.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
@@ -283,3 +280,4 @@ template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<
 
 }  // namespace dd
 }  // namespace storm
+#endif

@@ -145,9 +145,14 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeRea
         env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
-template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
 template class SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+#endif
+
 }  // namespace modelchecker
 }  // namespace storm

@@ -485,12 +485,14 @@ typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::share
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class Model<storm::dd::DdType::CUDD, double>;
-template class Model<storm::dd::DdType::Sylvan, double>;
-
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::CUDD, double>>>::type
 Model<storm::dd::DdType::CUDD, double>::toValueType<double>() const;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class Model<storm::dd::DdType::Sylvan, double>;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, double>::toValueType<double>() const;
@@ -503,6 +505,7 @@ Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType<storm::Ra
 template typename std::enable_if<!std::is_same<storm::RationalNumber, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm

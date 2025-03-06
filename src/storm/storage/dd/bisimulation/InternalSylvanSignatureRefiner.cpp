@@ -1,14 +1,11 @@
 #include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
 
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
-
+#ifdef STORM_HAVE_SYLVAN
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
-
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "sylvan_cache.h"
 
 namespace storm {
@@ -376,3 +373,4 @@ template class InternalSignatureRefiner<storm::dd::DdType::Sylvan, storm::Ration
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm
+#endif

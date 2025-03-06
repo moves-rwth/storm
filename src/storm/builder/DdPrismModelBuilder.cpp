@@ -1613,11 +1613,14 @@ storm::dd::Bdd<Type> DdPrismModelBuilder<Type, ValueType>::createInitialStatesDe
 }
 
 // Explicitly instantiate the symbolic model builder.
+#ifdef STORM_HAVE_CUDD
 template class DdPrismModelBuilder<storm::dd::DdType::CUDD>;
-template class DdPrismModelBuilder<storm::dd::DdType::Sylvan>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class DdPrismModelBuilder<storm::dd::DdType::Sylvan>;
 template class DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class DdPrismModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-
+#endif
 }  // namespace builder
 }  // namespace storm

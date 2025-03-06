@@ -40,11 +40,15 @@ template class ModelCheckerHelper<double, storm::models::ModelRepresentation::Sp
 template class ModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::Sparse>;
 template class ModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::Sparse>;
 
+#ifdef STORM_HAVE_CUDD
+template class ModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class ModelCheckerHelper<double, storm::models::ModelRepresentation::DdSylvan>;
 template class ModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::DdSylvan>;
 template class ModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::DdSylvan>;
-
-template class ModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+#endif
 
 }  // namespace helper
 }  // namespace modelchecker

@@ -1,20 +1,17 @@
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include <boost/functional/hash.hpp>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/PairHash.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/PairHash.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {
@@ -647,3 +644,4 @@ template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalBdd<DdType
     InternalAdd<DdType::Sylvan, storm::RationalFunction> const& thenAdd, InternalAdd<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
 }  // namespace dd
 }  // namespace storm
+#endif

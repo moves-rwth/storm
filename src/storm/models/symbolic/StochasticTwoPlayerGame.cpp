@@ -105,9 +105,12 @@ uint64_t StochasticTwoPlayerGame<Type, ValueType>::getNumberOfPlayer2States() co
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>>
 StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;

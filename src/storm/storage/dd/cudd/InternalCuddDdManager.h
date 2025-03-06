@@ -1,12 +1,13 @@
-#ifndef STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
-#define STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
 #include <boost/optional.hpp>
 #include <functional>
 
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
-
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
 
@@ -179,4 +180,4 @@ class InternalDdManager<DdType::CUDD> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_INTERNALCUDDDDMANAGER_H_ */
+#endif

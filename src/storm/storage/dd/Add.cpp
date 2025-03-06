@@ -1222,25 +1222,27 @@ typename std::enable_if<!std::is_same<TargetValueType, ValueType>::value, Add<Li
     return Add<LibraryType, TargetValueType>(this->getDdManager(), internalAdd.template toValueType<TargetValueType>(), this->getContainedMetaVariables());
 }
 
+#ifdef STORM_HAVE_CUDD
 template class Add<storm::dd::DdType::CUDD, double>;
 template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, double> const& add);
 template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
 
-template class Add<storm::dd::DdType::Sylvan, double>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
-template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
-
-#ifdef STORM_HAVE_CARL
 template class Add<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::CUDD, storm::RationalNumber> const& add);
-
-template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
-template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
 template Add<storm::dd::DdType::CUDD, storm::RationalNumber> Add<storm::dd::DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
 template Add<storm::dd::DdType::CUDD, double> Add<storm::dd::DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
+template class Add<storm::dd::DdType::Sylvan, double>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, double> const& add);
+template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
+
+template class Add<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+template std::ostream& operator<<(std::ostream& out, Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& add);
+template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
 template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<storm::RationalNumber>()
     const;
@@ -1248,5 +1250,6 @@ template Add<storm::dd::DdType::Sylvan, storm::RationalNumber> Add<storm::dd::Dd
 template Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template Add<storm::dd::DdType::Sylvan, double> Add<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType<double>() const;
 #endif
+
 }  // namespace dd
 }  // namespace storm

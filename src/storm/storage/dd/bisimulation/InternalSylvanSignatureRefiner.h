@@ -1,15 +1,15 @@
 #pragma once
 
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
+#include <parallel_hashmap/phmap.h>
 
 #include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/Variable.h"
-
+#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/utility.h"
-
-#include <parallel_hashmap/phmap.h>
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {
@@ -80,3 +80,4 @@ class InternalSignatureRefiner<storm::dd::DdType::Sylvan, ValueType> : public In
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm
+#endif

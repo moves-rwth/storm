@@ -260,25 +260,33 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> SymbolicMaToS
     return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(components));
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
+
+template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::CUDD, double>;
+
+template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::CUDD, double>;
+
+template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
 template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::CUDD, double>;
 template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, double>;
 template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicMdpToSparseMdpTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::CUDD, double>;
 template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, double>;
 template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::CUDD, double>;
 template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, double>;
 template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace transformer
 }  // namespace storm

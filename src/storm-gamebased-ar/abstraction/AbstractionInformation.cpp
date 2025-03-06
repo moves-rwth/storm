@@ -604,24 +604,27 @@ storm::dd::Bdd<DdType> AbstractionInformation<DdType>::encodeLocation(storm::exp
     return this->getDdManager().getEncoding(locationVariable, locationIndex);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class AbstractionInformation<storm::dd::DdType::CUDD>;
-template class AbstractionInformation<storm::dd::DdType::Sylvan>;
-
 template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>
 AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::CUDD> const& choice) const;
+template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>>
+AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables,
+                                                                                       storm::dd::Bdd<storm::dd::DdType::CUDD> const& choices) const;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
+template class AbstractionInformation<storm::dd::DdType::Sylvan>;
 template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>
 AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choice) const;
 template std::map<uint_fast64_t, std::pair<storm::storage::BitVector, storm::RationalNumber>>
 AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choice) const;
-
-template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>>
-AbstractionInformation<storm::dd::DdType::CUDD>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables,
-                                                                                       storm::dd::Bdd<storm::dd::DdType::CUDD> const& choices) const;
 template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, double>>>
 AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables,
                                                                                          storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
 template std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, storm::RationalNumber>>>
 AbstractionInformation<storm::dd::DdType::Sylvan>::decodeChoicesToUpdateSuccessorMapping(std::set<storm::expressions::Variable> const& player2Variables,
                                                                                          storm::dd::Bdd<storm::dd::DdType::Sylvan> const& choices) const;
+#endif
 }  // namespace abstraction
 }  // namespace storm::gbar

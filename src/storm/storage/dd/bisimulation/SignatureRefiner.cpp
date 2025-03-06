@@ -1,7 +1,6 @@
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
 
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
 #include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
 
@@ -39,11 +38,15 @@ Partition<DdType, ValueType> SignatureRefiner<DdType, ValueType>::refine(Partiti
     return result;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SignatureRefiner<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class SignatureRefiner<storm::dd::DdType::Sylvan, double>;
 template class SignatureRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SignatureRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace bisimulation
 }  // namespace dd

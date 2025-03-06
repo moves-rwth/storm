@@ -155,10 +155,13 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
 }
 
 // Explicitly instantiate the model checker.
+#ifdef STORM_HAVE_CUDD
 template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double>>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double>>;
-
 template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
-
+#endif
 }  // namespace modelchecker
 }  // namespace storm

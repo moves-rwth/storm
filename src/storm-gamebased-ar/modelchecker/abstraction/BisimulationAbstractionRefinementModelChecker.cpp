@@ -130,10 +130,15 @@ void BisimulationAbstractionRefinementModelChecker<ModelType>::refineAbstractMod
     this->bisimulation->compute(10);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
 template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
 template class BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#endif
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

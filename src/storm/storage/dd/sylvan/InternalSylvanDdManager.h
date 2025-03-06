@@ -1,16 +1,15 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
-
-#include <boost/optional.hpp>
-
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/InternalDdManager.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#pragma once
 
 #include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
+#include <boost/optional.hpp>
+
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalDdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace dd {
@@ -170,4 +169,4 @@ class InternalDdManager<DdType::Sylvan> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_ */
+#endif

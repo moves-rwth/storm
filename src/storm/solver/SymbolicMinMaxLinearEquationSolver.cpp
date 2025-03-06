@@ -606,13 +606,19 @@ GeneralSymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>::create() co
     return std::make_unique<SymbolicMinMaxLinearEquationSolver<DdType, ValueType>>();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+
+template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
 template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
-template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
 template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class GeneralSymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
 
 }  // namespace solver
 }  // namespace storm

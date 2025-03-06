@@ -393,11 +393,15 @@ std::pair<storm::expressions::Variable, storm::expressions::Variable> Partition<
     return std::make_pair(blockVariables[0], blockVariables[1]);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class Partition<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class Partition<storm::dd::DdType::Sylvan, double>;
 template class Partition<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class Partition<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace bisimulation
 }  // namespace dd

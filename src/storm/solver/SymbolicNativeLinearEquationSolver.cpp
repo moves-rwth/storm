@@ -343,14 +343,21 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     return std::make_unique<SymbolicNativeLinearEquationSolver<DdType, ValueType>>();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, double>;
 template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
-template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
 template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
 template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
+template class SymbolicNativeLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+
 template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class SymbolicNativeLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
+
 }  // namespace solver
 }  // namespace storm
