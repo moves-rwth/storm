@@ -1,8 +1,6 @@
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"

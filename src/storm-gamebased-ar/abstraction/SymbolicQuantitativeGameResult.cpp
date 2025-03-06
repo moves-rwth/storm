@@ -1,4 +1,6 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQuantitativeGameResult.h"
+
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm::gbar {
