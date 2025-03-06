@@ -15,8 +15,7 @@ namespace storm {
 namespace logic {
 DiscountedTotalRewardFormula::DiscountedTotalRewardFormula(storm::expressions::Expression const discountFactor,
                                                            boost::optional<RewardAccumulation> rewardAccumulation)
-    : TotalRewardFormula(rewardAccumulation), discountFactor(discountFactor) {
-}
+    : TotalRewardFormula(rewardAccumulation), discountFactor(discountFactor) {}
 
 bool DiscountedTotalRewardFormula::isDiscountedTotalRewardFormula() const {
     return true;

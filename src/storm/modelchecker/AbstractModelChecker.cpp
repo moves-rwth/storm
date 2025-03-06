@@ -172,7 +172,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Env
     } else if (rewardFormula.isReachabilityRewardFormula()) {
         return this->computeReachabilityRewards(env, checkTask.substituteFormula(rewardFormula.asReachabilityRewardFormula()));
     } else if (rewardFormula.isTotalRewardFormula()) {
-            return this->computeTotalRewards(env, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
+        return this->computeTotalRewards(env, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
     } else if (rewardFormula.isDiscountedTotalRewardFormula()) {
         return this->computeDiscountedTotalRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedTotalRewardFormula()));
     } else if (rewardFormula.isLongRunAverageRewardFormula()) {
