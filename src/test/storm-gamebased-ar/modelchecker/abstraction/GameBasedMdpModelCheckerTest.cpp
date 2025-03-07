@@ -30,7 +30,7 @@ class GameBasedMdpModelCheckerTest : public ::testing::Test {
 
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_MSAT
+#ifndef STORM_HAVE_MATHSAT
         GTEST_SKIP() << "MathSAT not available.";
 #endif
     }
