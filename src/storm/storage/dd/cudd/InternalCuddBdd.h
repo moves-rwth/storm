@@ -1,17 +1,19 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
+#pragma once
+
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
 
 #include <functional>
 #include <memory>
 #include <set>
 #include <unordered_map>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/InternalBdd.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -560,4 +562,4 @@ struct hash<storm::dd::InternalBdd<storm::dd::DdType::CUDD>> {
 };
 }  // namespace std
 
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_ */
+#endif

@@ -108,11 +108,15 @@ bool NondeterministicModelPartitionRefiner<DdType, ValueType>::refineWrtStateAct
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class NondeterministicModelPartitionRefiner<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, double>;
 template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class NondeterministicModelPartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace bisimulation
 }  // namespace dd

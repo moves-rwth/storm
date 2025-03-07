@@ -1,16 +1,14 @@
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 
-#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/macros.h"
-
+#ifdef STORM_HAVE_SYLVAN
 #include <cmath>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
@@ -210,11 +208,8 @@ void AddIterator<DdType::Sylvan, ValueType>::treatNextInCube() {
 
 template class AddIterator<DdType::Sylvan, double>;
 template class AddIterator<DdType::Sylvan, uint_fast64_t>;
-
 template class AddIterator<DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
 template class AddIterator<DdType::Sylvan, storm::RationalFunction>;
-#endif
 }  // namespace dd
 }  // namespace storm
+#endif

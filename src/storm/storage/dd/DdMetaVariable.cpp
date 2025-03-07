@@ -147,7 +147,13 @@ void DdMetaVariable<LibraryType>::precomputeLowestIndex() {
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class DdMetaVariable<DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class DdMetaVariable<DdType::Sylvan>;
+#endif
+
 }  // namespace dd
 }  // namespace storm

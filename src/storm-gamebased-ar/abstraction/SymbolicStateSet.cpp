@@ -19,8 +19,13 @@ storm::dd::Bdd<Type> const& SymbolicStateSet<Type>::getStates() const {
     return states;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicStateSet<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicStateSet<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

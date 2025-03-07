@@ -38,11 +38,15 @@ DeterministicModel<Type, ValueType>::DeterministicModel(
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class DeterministicModel<storm::dd::DdType::CUDD>;
-template class DeterministicModel<storm::dd::DdType::Sylvan>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class DeterministicModel<storm::dd::DdType::Sylvan>;
 template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class DeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace symbolic
 }  // namespace models

@@ -1,20 +1,18 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
 #include <set>
 #include <unordered_map>
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/Odd.h"
-
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
 #include "storm/storage/expressions/Variable.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace storage {
@@ -834,14 +832,12 @@ class InternalAdd<DdType::Sylvan, ValueType> {
      */
     static MTBDD getLeaf(storm::RationalNumber const& value);
 
-#ifdef STORM_HAVE_CARL
     /*!
      * Retrieves the sylvan representation of the given storm::Rat�onalFunction.
      *
      * @return The sylvan node for the given value.
      */
     static MTBDD getLeaf(storm::RationalFunction const& value);
-#endif
 
     // The manager responsible for this MTBDD.
     InternalDdManager<DdType::Sylvan> const* ddManager;
@@ -852,4 +848,4 @@ class InternalAdd<DdType::Sylvan, ValueType> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_ */
+#endif

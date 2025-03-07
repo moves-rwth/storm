@@ -165,13 +165,18 @@ std::unique_ptr<SparseInfiniteHorizonHelper<ValueType, Nondeterministic>> Hybrid
     return result;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class HybridInfiniteHorizonHelper<double, storm::dd::DdType::CUDD, false>;
 template class HybridInfiniteHorizonHelper<double, storm::dd::DdType::CUDD, true>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class HybridInfiniteHorizonHelper<double, storm::dd::DdType::Sylvan, false>;
 template class HybridInfiniteHorizonHelper<double, storm::dd::DdType::Sylvan, true>;
 template class HybridInfiniteHorizonHelper<storm::RationalNumber, storm::dd::DdType::Sylvan, false>;
 template class HybridInfiniteHorizonHelper<storm::RationalNumber, storm::dd::DdType::Sylvan, true>;
 template class HybridInfiniteHorizonHelper<storm::RationalFunction, storm::dd::DdType::Sylvan, false>;
+#endif
 
 }  // namespace helper
 }  // namespace modelchecker

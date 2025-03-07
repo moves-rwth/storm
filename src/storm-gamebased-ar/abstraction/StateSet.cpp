@@ -19,11 +19,15 @@ SymbolicStateSet<Type>& StateSet::asSymbolicStateSet() {
     return static_cast<SymbolicStateSet<Type>&>(*this);
 }
 
+#ifdef STORM_HAVE_CUDD
 template SymbolicStateSet<storm::dd::DdType::CUDD> const& StateSet::asSymbolicStateSet() const;
 template SymbolicStateSet<storm::dd::DdType::CUDD>& StateSet::asSymbolicStateSet();
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template SymbolicStateSet<storm::dd::DdType::Sylvan> const& StateSet::asSymbolicStateSet() const;
 template SymbolicStateSet<storm::dd::DdType::Sylvan>& StateSet::asSymbolicStateSet();
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

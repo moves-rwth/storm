@@ -548,6 +548,7 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
     }
 };
 
+#if defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
 typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
                          SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
                          JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
@@ -559,6 +560,36 @@ typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironme
                          DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
                          DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
     TestingTypes;
+#elif defined(STORM_HAVE_CUDD) && !defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
+                         SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
+                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
+                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
+                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
+                         HybridCuddDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
+                         HybridCuddDoubleOptimisticValueIterationEnvironment, DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment,
+                         DdCuddDoublePolicyIterationEnvironment>
+    TestingTypes;
+#elif !defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
+                         SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
+                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
+                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
+                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
+                         HybridSylvanDoubleValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
+                         DdSylvanRationalRationalSearchEnvironment>
+    TestingTypes;
+#else
+typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
+                         SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
+                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
+                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
+                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment>
+    TestingTypes;
+#endif
 
 TYPED_TEST_SUITE(MdpPrctlModelCheckerTest, TestingTypes, );
 

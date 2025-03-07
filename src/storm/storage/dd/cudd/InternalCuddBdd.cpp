@@ -1,14 +1,14 @@
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
 
+#ifdef STORM_HAVE_CUDD
+
 #include <boost/functional/hash.hpp>
 
-#include "storm/storage/dd/Odd.h"
-#include "storm/storage/dd/cudd/InternalCuddDdManager.h"
-
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/PairHash.h"
-
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -613,9 +613,7 @@ storm::expressions::Variable InternalBdd<DdType::CUDD>::toExpressionRec(
 
 template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
-#ifdef STORM_HAVE_CARL
 template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalBdd<DdType::CUDD>::toAdd() const;
-#endif
 
 template void InternalBdd<DdType::CUDD>::filterExplicitVectorRec<double>(DdNode const* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel,
                                                                          bool complement, uint_fast64_t maxLevel,
@@ -642,3 +640,4 @@ template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalBdd<DdType::CU
                                                                                          InternalAdd<DdType::CUDD, storm::RationalNumber> const& elseAdd) const;
 }  // namespace dd
 }  // namespace storm
+#endif

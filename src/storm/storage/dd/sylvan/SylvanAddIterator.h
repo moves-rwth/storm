@@ -1,12 +1,13 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_
-#define STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
 #include <unordered_map>
 
+#include "storm/adapters/sylvan.h"
 #include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
-#include "storm/adapters/sylvan.h"
 
 namespace storm {
 namespace dd {
@@ -160,4 +161,4 @@ class AddIterator<DdType::Sylvan, ValueType> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_ */
+#endif

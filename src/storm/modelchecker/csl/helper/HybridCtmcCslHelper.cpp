@@ -514,6 +514,7 @@ storm::dd::Add<DdType, ValueType> HybridCtmcCslHelper::computeProbabilityMatrix(
 
 // Explicit instantiations.
 
+#ifdef STORM_HAVE_CUDD
 // Cudd, double.
 template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant,
@@ -548,7 +549,9 @@ template storm::dd::Add<storm::dd::DdType::CUDD, double> HybridCtmcCslHelper::co
     storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& maybeStates,
     double uniformizationRate);
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 // Sylvan, double.
 template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant,
@@ -662,7 +665,7 @@ template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> Hybr
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& transitionMatrix,
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& maybeStates,
     storm::RationalFunction uniformizationRate);
-
+#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

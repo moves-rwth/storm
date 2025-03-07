@@ -252,11 +252,16 @@ storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::co
     return computeReachabilityRewards(env, model, transitionMatrix, rewardModel, targetStates, qualitative, startValues);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
 template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

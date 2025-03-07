@@ -1700,11 +1700,13 @@ bool MenuGameRefiner<Type, ValueType>::addedAllGuards() const {
     return addedAllGuardsFlag;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
 // Currently, this instantiation does not work.
 // template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif

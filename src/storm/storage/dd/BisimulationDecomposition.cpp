@@ -184,12 +184,16 @@ void BisimulationDecomposition<DdType, ValueType, ExportValueType>::refineWrtRew
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class BisimulationDecomposition<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class BisimulationDecomposition<storm::dd::DdType::Sylvan, double>;
 template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
 template class BisimulationDecomposition<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace dd
 }  // namespace storm

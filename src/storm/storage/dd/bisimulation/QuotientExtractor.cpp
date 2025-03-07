@@ -67,6 +67,7 @@ class InternalRepresentativeComputerBase {
     storm::dd::Bdd<DdType> partitionBdd;
 };
 
+#ifdef STORM_HAVE_CUDD
 template<>
 class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalRepresentativeComputerBase<storm::dd::DdType::CUDD> {
    public:
@@ -158,7 +159,9 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
     ::DdManager* ddman;
     phmap::flat_hash_map<DdNode const*, bool> visitedNodes;
 };
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template<>
 class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public InternalRepresentativeComputerBase<storm::dd::DdType::Sylvan> {
    public:
@@ -239,6 +242,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public Interna
 
     phmap::flat_hash_map<BDD, bool> visitedNodes;
 };
+#endif
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
 class InternalSparseQuotientExtractor;
@@ -431,6 +435,7 @@ class InternalSparseQuotientExtractorBase {
     std::vector<uint64_t> rowPermutation;
 };
 
+#ifdef STORM_HAVE_CUDD
 template<typename ValueType>
 class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
    public:
@@ -677,7 +682,9 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : publ
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
     phmap::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
 };
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template<typename ValueType, typename ExportValueType>
 class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, ExportValueType>
     : public InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType, ExportValueType> {
@@ -900,6 +907,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
     phmap::flat_hash_map<BDD, uint64_t> blockToOffset;
 };
+#endif
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat)
@@ -1341,12 +1349,16 @@ QuotientExtractor<DdType, ValueType, ExportValueType>::extractQuotientUsingOrigi
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class QuotientExtractor<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class QuotientExtractor<storm::dd::DdType::Sylvan, double>;
 template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
 template class QuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace bisimulation
 }  // namespace dd

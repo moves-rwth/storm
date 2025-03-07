@@ -1,21 +1,17 @@
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
-#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm-config.h"
 
 namespace storm {
 namespace dd {
@@ -1400,11 +1396,9 @@ std::string InternalAdd<DdType::Sylvan, ValueType>::getStringId() const {
 
 template class InternalAdd<DdType::Sylvan, double>;
 template class InternalAdd<DdType::Sylvan, uint_fast64_t>;
-
 template class InternalAdd<DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
 template class InternalAdd<DdType::Sylvan, storm::RationalFunction>;
-#endif
+
 }  // namespace dd
 }  // namespace storm
+#endif

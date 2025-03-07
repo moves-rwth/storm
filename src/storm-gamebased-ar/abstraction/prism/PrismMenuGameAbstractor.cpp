@@ -323,11 +323,15 @@ void PrismMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
 }
 
 // Explicitly instantiate the class.
+#ifdef STORM_HAVE_CUDD
 template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
+
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

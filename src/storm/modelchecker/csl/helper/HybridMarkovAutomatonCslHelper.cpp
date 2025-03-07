@@ -1,28 +1,23 @@
 #include "storm/modelchecker/csl/helper/HybridMarkovAutomatonCslHelper.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
-
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/solver/SolveGoal.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/solver/SolveGoal.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -94,6 +89,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntil
 
 // Explicit instantiations.
 
+#ifdef STORM_HAVE_CUDD
 // Cudd, double.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model,
@@ -106,7 +102,9 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates,
     storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 // Sylvan, double.
 template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model,
@@ -132,7 +130,7 @@ template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBou
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates,
     storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-
+#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
