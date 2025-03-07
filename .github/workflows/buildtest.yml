@@ -180,8 +180,8 @@ jobs:
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
-  distroTests:
-    name: Distro Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
+  linuxTests:
+    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -218,6 +218,68 @@ jobs:
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+
+  macTests:
+    name: macOS Tests (${{ matrix.config.name }})
+    strategy:
+      matrix:
+        config:
+          - {name: "XCode 14.3, Intel, Release",
+             distro: "macos-13",
+             xcode: "14.3",
+             buildType: "Release"
+            }
+          - {name: "XCode 15.4, ARM, Release",
+             distro: "macos-14",
+             xcode: "15.4",
+             buildType: "Release"
+            }
+          - {name: "XCode 16.2, ARM, Release",
+             distro: "macos-15",
+             xcode: "16.2",
+             buildType: "Release"
+            }
+        buildType: ["Release"]
+    runs-on: ${{ matrix.config.distro }}
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.config.xcode }}
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        # cmake and gmp are already installed
+        run: |
+          brew update
+          brew install automake boost cln ginac glpk hwloc z3 xerces-c
+      - name: Configure storm
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}"
+      - name: Build storm
+        working-directory: ./build
+        run: make binaries -j ${NR_JOBS}
+
+      # A bit hacky... but its usefulness has been proven in production
+      - name: Check release makeflags
+        working-directory: ./build
+        if: matrix.config.buildType == 'Release'
+        run: |
+          ./bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)
+          ./bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)
+      - name: Check debug makeflags
+        working-directory: ./build
+        if: matrix.config.buildType == 'Debug'
+        run: |
+          ./bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)
+
+      - name: Build tests
+        working-directory: ./build
+        run: make -j ${NR_JOBS}
+      - name: Run tests
+        working-directory: ./build
+        run: ctest test--output-on-failure
 
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
@@ -285,7 +347,7 @@ jobs:
   notify:
     name: Email notification
     runs-on: ubuntu-latest
-    needs: [indepthTests, compilerTests, distroTests, deploy]
+    needs: [indepthTests, compilerTests, linuxTests, macTests, deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
