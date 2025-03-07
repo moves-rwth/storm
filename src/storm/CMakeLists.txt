@@ -24,7 +24,7 @@ set_target_properties(storm PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STOR
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.
 add_dependencies(storm storm_resources)
 #The library that needs symbols must be first, then the library that resolves the symbol.
-target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS} ${STORM_LINK_LIBRARIES})
+target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS})
 list(APPEND STORM_TARGETS storm)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 

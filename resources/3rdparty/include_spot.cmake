@@ -1,13 +1,13 @@
 set(STORM_HAVE_SPOT OFF)
 
-if(STORM_USE_SPOT_SYSTEM)
+if(TRUE)
     # try to find Spot on the system
     if (NOT "${SPOT_ROOT}" STREQUAL "")
         message(STATUS "Storm - searching for Spot in ${SPOT_ROOT}")
-		find_package(SPOT QUIET PATHS ${SPOT_ROOT} NO_DEFAULT_PATH)
+        find_package(SPOT QUIET PATHS ${SPOT_ROOT} NO_DEFAULT_PATH)
     endif()
-	if (NOT SPOT_FOUND)
-		find_package(SPOT QUIET)
+    if (NOT SPOT_FOUND)
+        find_package(SPOT QUIET)
     endif()
 
     if (SPOT_FOUND)
@@ -16,37 +16,48 @@ if(STORM_USE_SPOT_SYSTEM)
         if(NOT BUDDY_LIBRARY)
             message(FATAL_ERROR "Storm - Did not find BUDDY library that should ship with spot. To work around this, you may disable the system version Spot with '-DSTORM_USE_SPOT_SYSTEM=OFF'.")
         endif()
-        set(SPOT_LIBRARIES "${SPOT_LIBRARIES};${BUDDY_LIBRARY}")
+
+        add_library(Storm::spot-bddx UNKNOWN IMPORTED)
+        set_target_properties(Storm::spot-bddx PROPERTIES
+                IMPORTED_LOCATION ${BUDDY_LIBRARY})
+
+        add_library(Storm::spot UNKNOWN IMPORTED)
+        set_target_properties(Storm::spot PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${SPOT_INCLUDE_DIR}"
+                IMPORTED_LOCATION "${SPOT_LIBRARIES}"
+                INTERFACE_LINK_LIBRARIES Storm::spot-bddx
+        )
+
         message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
+        list(APPEND STORM_DEP_IMP_TARGETS Storm::spot)
+
         set(STORM_HAVE_SPOT ON)
-    elseif(NOT STORM_USE_SPOT_SHIPPED)
-        message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_USE_SPOT_SHIPPED to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT. Unset STORM_USE_SPOT_SYSTEM to silence this warning.")
     endif()
-elseif()
 endif()
 
 set(STORM_SHIPPED_SPOT OFF)
-if(NOT STORM_HAVE_SPOT)
-
-    # download and install shipped Spot
+if(FALSE)
+    # download and install shipped Spot as shared libraries.
+    # Note that configuring static libraries requires various dependencies which was rather cumbersome.
+    # As of '25/3, SJ did not get this to work.
     ExternalProject_Add(spot
         URL https://www.lrde.epita.fr/dload/spot/spot-2.12.tar.gz # When updating, also change version output below
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python --enable-static --disable-shared
-            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
+        BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}
     )
     add_dependencies(storm_resources spot)
 
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-    set(SPOT_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT}")
+    set(SPOT_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
     set(SPOT_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
@@ -56,12 +67,12 @@ if(NOT STORM_HAVE_SPOT)
     add_library(Storm::spot-bddx SHARED IMPORTED)
     set_target_properties(Storm::spot-bddx PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
-            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT})
+            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT})
 
     add_library(Storm::spot SHARED IMPORTED)
     set_target_properties(Storm::spot PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
-            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT}
+            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
             INTERFACE_LINK_LIBRARIES Storm::spot-bddx
     )
 
@@ -72,7 +83,12 @@ if(NOT STORM_HAVE_SPOT)
 
 
     list(APPEND STORM_DEP_IMP_TARGETS Storm::spot)
+    add_dependencies(storm_resources Storm::spot  )
 
     message(STATUS "Storm - Using shipped version of Spot 2.12 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
+endif()
+
+if(NOT STORM_HAVE_SPOT)
+    message("Storm - Not using Spot.")
 endif()
