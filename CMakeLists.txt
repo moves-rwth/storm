@@ -1,4 +1,7 @@
 cmake_minimum_required (VERSION 3.23)
+if (NOT ${CMAKE_VERSION} VERSION_LESS 3.24)
+	cmake_policy(VERSION 3.24)
+endif()
 
 # Set project name
 project (storm CXX C)

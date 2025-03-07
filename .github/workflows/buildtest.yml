@@ -109,18 +109,18 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
 
       # A bit hacky... but its usefulness has been proven in production
-#      - name: Check release makeflags
-#        if: matrix.config.buildType == 'Release'
-#        run: |
-#          docker exec ci bash -c " grep -e \"-g\"  /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; test $? -eq 1 || (echo \"Error: Unexpected flag \'-g\' for release build.\" && false)"
-#          docker exec ci bash -c " grep -e \"-O3\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make  || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-#          docker exec ci bash -c " grep -e \"-DNDEBUG\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-#      - name: Check debug makeflags
-#        if: matrix.config.buildType == 'Debug'
-#        run: |
-#          docker exec ci bash -c "if ! grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      - name: Check release makeflags
+        if: matrix.config.buildType == 'Release'
+        run: |
+          docker exec ci bash -c " grep -e \"-g\"  /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; test $? -eq 1 || (echo \"Error: Unexpected flag \'-g\' for release build.\" && false)"
+          docker exec ci bash -c " grep -e \"-O3\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make  || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
+          docker exec ci bash -c " grep -e \"-DNDEBUG\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+      - name: Check debug makeflags
+        if: matrix.config.buildType == 'Debug'
+        run: |
+          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
@@ -177,18 +177,18 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
 
       # A bit hacky... but its usefulness has been proven in production
-#      - name: Check release makeflags
-#        if: matrix.config.buildType == 'Release'
-#        run: |
-#          docker exec ci bash -c "if grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-#      - name: Check debug makeflags
-#        if: matrix.config.buildType == 'Debug'
-#        run: |
-#          docker exec ci bash -c "if ! grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      - name: Check release makeflags
+        if: matrix.config.buildType == 'Release'
+        run: |
+          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
+      - name: Check debug makeflags
+        if: matrix.config.buildType == 'Debug'
+        run: |
+          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
@@ -201,6 +201,14 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+      - name: Checkout starter-project
+        run: |
+          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
+          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
+      - name: Configure and make starter project via fetch/source-dir
+        run: |
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build-fetch; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-fetch make -j ${NR_JOBS}"
   distroTests:
     name: Distro Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
     runs-on: ubuntu-latest
@@ -226,18 +234,18 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
 
         # A bit hacky... but its usefulness has been proven in production
-#      - name: Check release makeflags
-#        if: matrix.buildType == 'Release'
-#        run: |
-#          docker exec ci bash -c "if grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-#      - name: Check debug makeflags
-#        if: matrix.buildType == 'Debug'
-#        run: |
-#          docker exec ci bash -c "if ! grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      - name: Check release makeflags
+        if: matrix.buildType == 'Release'
+        run: |
+          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
+      - name: Check debug makeflags
+        if: matrix.buildType == 'Debug'
+        run: |
+          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
@@ -252,7 +260,7 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Checkout starter-project
         run: |
-          docker exec ci bash -c "git clone "https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
+          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
       - name: Configure and make starter project via fetch/source-dir
         run: |
@@ -295,18 +303,18 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
 
         # A bit hacky... but its usefulness has been proven in production
-#      - name: Check release makeflags
-#        if: matrix.buildType.name == 'Release'
-#        run: |
-#          docker exec ci bash -c "if grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-#          docker exec ci bash -c "if ! grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-#      - name: Check debug makeflags
-#        if: matrix.buildType.name == 'Debug'
-#        run: |
-#          docker exec ci bash -c "if ! grep -q e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-#          docker exec ci bash -c "if grep -q e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      - name: Check release makeflags
+        if: matrix.buildType.name == 'Release'
+        run: |
+          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
+      - name: Check debug makeflags
+        if: matrix.buildType.name == 'Debug'
+        run: |
+          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
+          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
@@ -319,6 +327,14 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+      - name: Checkout starter-project
+        run: |
+          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
+          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
+      - name: Configure and make starter project via fetch/source-dir
+        run: |
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build-fetch; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-fetch make -j ${NR_JOBS}"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'

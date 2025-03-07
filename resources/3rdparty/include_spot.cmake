@@ -26,7 +26,7 @@ elseif()
 endif()
 
 set(STORM_SHIPPED_SPOT OFF)
-if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
+if(NOT STORM_HAVE_SPOT)
 
     # download and install shipped Spot
     ExternalProject_Add(spot
@@ -35,27 +35,44 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python
-        BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python --enable-static --disable-shared
+            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT}
     )
     add_dependencies(storm_resources spot)
+
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-    set(SPOT_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/")
-    set(SPOT_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT})
-    set(SPOT_LIBRARIES "${SPOT_LIBRARIES};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
+    set(SPOT_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT}")
+    set(SPOT_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
+    file(MAKE_DIRECTORY ${SPOT_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
+
+    add_library(Storm::spot-bddx SHARED IMPORTED)
+    set_target_properties(Storm::spot-bddx PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
+            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${STATIC_EXT})
+
+    add_library(Storm::spot SHARED IMPORTED)
+    set_target_properties(Storm::spot PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
+            IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${STATIC_EXT}
+            INTERFACE_LINK_LIBRARIES Storm::spot-bddx
+    )
+
+    install(FILES ${SPOT_LIBRARIES} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+    install(DIRECTORY ${SPOT_INCLUDE_DIR}/ DESTINATION ${SPOT_INSTALL_DIR}
+            FILES_MATCHING PATTERN "*.h" PATTERN "*.hh" PATTERN ".git" EXCLUDE)
+
+
+
+    list(APPEND STORM_DEP_IMP_TARGETS Storm::spot)
+
     message(STATUS "Storm - Using shipped version of Spot 2.12 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
-endif()
-
-if (STORM_HAVE_SPOT)
-    include_directories("${SPOT_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${SPOT_LIBRARIES})
 endif()
