@@ -69,8 +69,7 @@ storm::RationalNumber DiscountedCumulativeRewardFormula::getDiscountFactor() con
 
 std::ostream& DiscountedCumulativeRewardFormula::writeToStream(std::ostream& out, bool /*allowParentheses*/) const {
     // No parentheses necessary
-    out << "Cdiscount=";
-    out << discountFactor;
+    out << "C";
     if (hasRewardAccumulation()) {
         out << "[" << getRewardAccumulation() << "]";
     }
@@ -103,6 +102,8 @@ std::ostream& DiscountedCumulativeRewardFormula::writeToStream(std::ostream& out
     if (this->isMultiDimensional()) {
         out << "}";
     }
+    out << "discount=";
+    out << discountFactor;
     return out;
 }
 

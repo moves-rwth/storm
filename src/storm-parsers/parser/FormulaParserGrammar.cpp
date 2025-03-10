@@ -176,8 +176,8 @@ void FormulaParserGrammar::initialize() {
 
     // Quantitative path formulae (reward)
     discountedCumulativeRewardFormula =
-        (qi::lit("Cdiscount=") >> expressionParser >>
-         timeBounds)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedCumulativeRewardFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+        (qi::lit("C") >> timeBounds >> qi::lit("discount=") >>
+         expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedCumulativeRewardFormula, phoenix::ref(*this), qi::_2, qi::_1)];
     discountedCumulativeRewardFormula.name("discounted cumulative reward formula");
     discountedTotalRewardFormula =
         (qi::lit("Cdiscount=") >>
