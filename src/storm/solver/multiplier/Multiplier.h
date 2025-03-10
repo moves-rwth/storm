@@ -123,8 +123,8 @@ class Multiplier {
                                    uint64_t n) const;
 
     /*!
-     * Performs repeated matrix-vector multiplication x' = A*x + b, minimizes/maximizes over the row groups
-     * so that the resulting vector has the size of number of row groups of A and multiplies the vector by a scalar factor.
+     * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
+     * so that the resulting vector has the size of number of row groups of A. Vector x is scaled by factor in each iteration.
      *
      * @param dir The direction for the reduction step.
      * @param x The input vector with which to multiply the matrix. Its length must be equal
