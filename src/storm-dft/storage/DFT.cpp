@@ -41,6 +41,11 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                         sparesAndBes.insert(modelem);
                     }
                 }
+                if (std::find(sparesAndBes.begin(), sparesAndBes.end(), elem->id()) != sparesAndBes.end()) {
+                    STORM_LOG_WARN("Spare module '" << spareReprs->name() << "' also contains the parent SPARE-gate '" << elem->name()
+                                                    << "'. This can prevent proper activation of the spare module. Consider introducing dependencies to "
+                                                       "properly separate the spare module from the SPARE-gate.");
+                }
                 mModules.insert(std::make_pair(spareReprs->id(), storm::dft::storage::DftModule(spareReprs->id(), sparesAndBes)));
             }
         } else if (elem->isDependency()) {
@@ -99,6 +104,9 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
 
     // Set relevant events: empty list corresponds to only setting the top-level event as relevant
     setRelevantEvents({}, false);
+
+    STORM_LOG_DEBUG("DFT elements:\n" << getElementsString());
+    STORM_LOG_DEBUG("DFT modules:\n" << getModulesString());
 }
 
 template<typename ValueType>
