@@ -41,11 +41,6 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                         sparesAndBes.insert(modelem);
                     }
                 }
-                if (std::find(sparesAndBes.begin(), sparesAndBes.end(), elem->id()) != sparesAndBes.end()) {
-                    STORM_LOG_WARN("Spare module '" << spareReprs->name() << "' also contains the parent SPARE-gate '" << elem->name()
-                                                    << "'. This can prevent proper activation of the spare module. Consider introducing dependencies to "
-                                                       "properly separate the spare module from the SPARE-gate.");
-                }
                 mModules.insert(std::make_pair(spareReprs->id(), storm::dft::storage::DftModule(spareReprs->id(), sparesAndBes)));
             }
         } else if (elem->isDependency()) {
@@ -80,9 +75,6 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
             auto& spareModule = module.second;
             auto const& spareModuleElements = spareModule.getElements();
             if (std::find(spareModuleElements.begin(), spareModuleElements.end(), topModuleId) != spareModuleElements.end()) {
-                STORM_LOG_WARN("Elements of spare module '"
-                               << getElement(spareModule.getRepresentative())->name()
-                               << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                 spareModule.clear();
             }
         }
