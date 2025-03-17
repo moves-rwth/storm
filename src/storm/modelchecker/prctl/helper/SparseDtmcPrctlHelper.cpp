@@ -403,7 +403,7 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-    multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor);
+    multiplier->repeatedMultiplyWithFactor(env, result, &totalRewardVector, stepBound, discountFactor);
 
     return result;
 }
