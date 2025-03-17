@@ -45,6 +45,7 @@
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -1007,6 +1008,29 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
     ValueType discountFactor, ModelCheckerHint const& hint) {
+    // If the solver is set to force exact results, throw an error if the method is not explicitly set to a value iteration type.
+    if (env.solver().isForceExact()) {
+        if (!(env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::ValueIteration ||
+              env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::SoundValueIteration ||
+              env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::OptimisticValueIteration ||
+              env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::IntervalIteration)) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact solving of discounted total reward objectives is currently not supported.");
+        } else {
+            STORM_LOG_WARN("The selected solution method does not guarantee exact results. Results are precise up to precision "
+                           << env.solver().minMax().getPrecision() << ".");
+        }
+    }
+    // If a method is set that is not value-iteration-based, throw an error.
+    if (!(env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::ValueIteration ||
+          env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::SoundValueIteration ||
+          env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::OptimisticValueIteration ||
+          env.solver().minMax().getMethod() == storm::solver::MinMaxMethod::IntervalIteration)) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                        "Solving discounted total reward objectives is currently only supported using value-iteration-based methods.");
+    }
+    STORM_LOG_WARN_COND(env.solver().minMax().getMethod() != storm::solver::MinMaxMethod::IntervalIteration,
+                        "Interval iteration is not supported for discounted total reward objectives. Falling back to value iteration. Note that value "
+                        "iteration guarantees soundness for discounted objectives.");
     std::vector<ValueType> b;
 
     std::vector<SolutionType> x = std::vector<SolutionType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
