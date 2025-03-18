@@ -1,7 +1,7 @@
 if (STORM_USE_SOPLEX)
     find_package(soplex)
 
-    IF(SOPLEX_FOUND)
+    IF(TARGET libsoplex-pic)
         get_target_property(soplexLOC libsoplex-pic LOCATION)
         get_target_property(soplexINCLUDE libsoplex-pic INTERFACE_INCLUDE_DIRECTORIES)
         MESSAGE(STATUS "Storm - Linking with SoPlex version ${soplex_VERSION}: (libary: ${soplexLOC}; include: ${soplexINCLUDE})")

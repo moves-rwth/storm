@@ -36,6 +36,7 @@ WORKDIR /opt/storm/build
 RUN cmake .. -DCMAKE_BUILD_TYPE=Release \
              -DSTORM_PORTABLE=ON \
              -DSTORM_USE_GUROBI=ON \
+             -DSTORM_USE_MATHSAT=ON \
              -DSTORM_USE_SOPLEX=ON \
              -DSTORM_USE_SPOT_SYSTEM=ON
 
