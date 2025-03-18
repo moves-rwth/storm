@@ -368,10 +368,15 @@ std::unique_ptr<CheckResult> SymbolicMdpPrctlHelper<DdType, ValueType>::computeR
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, startValues);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
 template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
+
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -61,12 +61,16 @@ std::shared_ptr<Mdp<Type, NewValueType>> Mdp<Type, ValueType>::toValueType() con
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class Mdp<storm::dd::DdType::CUDD, double>;
-template class Mdp<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class Mdp<storm::dd::DdType::Sylvan, double>;
 template class Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<Mdp<storm::dd::DdType::Sylvan, double>> Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
 template class Mdp<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace symbolic
 }  // namespace models

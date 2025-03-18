@@ -100,11 +100,15 @@ template class SingleValueModelCheckerHelper<double, storm::models::ModelReprese
 template class SingleValueModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::Sparse>;
 template class SingleValueModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::Sparse>;
 
+#ifdef STORM_HAVE_CUDD
+template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::DdSylvan>;
 template class SingleValueModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::DdSylvan>;
 template class SingleValueModelCheckerHelper<storm::RationalFunction, storm::models::ModelRepresentation::DdSylvan>;
-
-template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::DdCudd>;
+#endif
 
 }  // namespace helper
 }  // namespace modelchecker

@@ -193,6 +193,7 @@ template ExplicitParetoCurveCheckResult<double> const& CheckResult::asExplicitPa
 template LexicographicCheckResult<double>& CheckResult::asLexicographicCheckResult();
 template LexicographicCheckResult<double> const& CheckResult::asLexicographicCheckResult() const;
 
+#ifdef STORM_HAVE_CUDD
 template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>& CheckResult::asSymbolicQualitativeCheckResult();
 template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asSymbolicQualitativeCheckResult() const;
 template SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>& CheckResult::asSymbolicQuantitativeCheckResult();
@@ -201,7 +202,9 @@ template SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double>& CheckR
 template SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double> const& CheckResult::asSymbolicParetoCurveCheckResult() const;
 template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>& CheckResult::asHybridQuantitativeCheckResult();
 template HybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double> const& CheckResult::asHybridQuantitativeCheckResult() const;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>& CheckResult::asSymbolicQualitativeCheckResult();
 template SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan> const& CheckResult::asSymbolicQualitativeCheckResult() const;
 template SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asSymbolicQuantitativeCheckResult();
@@ -214,6 +217,7 @@ template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>& Chec
 template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asSymbolicParetoCurveCheckResult() const;
 template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asHybridQuantitativeCheckResult();
 template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asHybridQuantitativeCheckResult() const;
+#endif
 
 #ifdef STORM_HAVE_CARL
 template QuantitativeCheckResult<storm::RationalNumber>& CheckResult::asQuantitativeCheckResult();

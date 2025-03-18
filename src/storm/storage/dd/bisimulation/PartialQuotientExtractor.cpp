@@ -161,10 +161,12 @@ std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> Partial
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class PartialQuotientExtractor<storm::dd::DdType::CUDD, double>;
-template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
+#endif
 
-#ifdef STORM_HAVE_CARL
+#ifdef STORM_HAVE_SYLVAN
+template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;

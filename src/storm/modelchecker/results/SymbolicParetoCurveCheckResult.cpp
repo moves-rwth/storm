@@ -68,9 +68,14 @@ storm::dd::Bdd<Type> const& SymbolicParetoCurveCheckResult<Type, ValueType>::get
     return state;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicParetoCurveCheckResult<storm::dd::DdType::CUDD, double>;
-template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double>;
 template class SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
+
 }  // namespace modelchecker
 }  // namespace storm

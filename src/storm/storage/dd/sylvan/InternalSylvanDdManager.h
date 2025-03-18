@@ -1,16 +1,15 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
-
-#include <boost/optional.hpp>
-
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/dd/InternalDdManager.h"
-
-#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#pragma once
 
 #include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
+#include <boost/optional.hpp>
+
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalDdManager.h"
+#include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace dd {
@@ -167,39 +166,7 @@ class InternalDdManager<DdType::Sylvan> {
     static uint_fast64_t nextFreeVariableIndex;
 };
 
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
-#endif
-
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
-#endif
-
-template<>
-InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
-
-template<>
-InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
-
-#ifdef STORM_HAVE_CARL
-template<>
-InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
-#endif
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_ */
+#endif

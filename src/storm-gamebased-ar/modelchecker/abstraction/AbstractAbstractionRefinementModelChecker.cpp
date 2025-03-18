@@ -999,10 +999,15 @@ std::unique_ptr<storm::modelchecker::CheckResult> AbstractAbstractionRefinementM
             lowerBounds.getValueVector().getDdManager().getConstant(storm::utility::convertNumber<ValueType>(std::string("2.0"))));
 }
 
+#ifdef STORM_HAVE_CUDD
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#endif
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

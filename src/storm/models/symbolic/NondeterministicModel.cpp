@@ -112,10 +112,12 @@ storm::dd::Bdd<Type> NondeterministicModel<Type, ValueType>::getQualitativeTrans
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
-template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
+#endif
 
-#ifdef STORM_HAVE_CARL
+#ifdef STORM_HAVE_SYLVAN
+template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
 template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif

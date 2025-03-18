@@ -122,13 +122,14 @@ storm::dd::Add<DdType, ValueType> SymbolicEquationSolver<DdType, ValueType>::get
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicEquationSolver<storm::dd::DdType::CUDD, double>;
-template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, double>;
-
-#ifdef STORM_HAVE_CARL
 template class SymbolicEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
-template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, double>;
+template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
 }  // namespace solver

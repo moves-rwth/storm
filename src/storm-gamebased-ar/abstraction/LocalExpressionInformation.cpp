@@ -229,10 +229,15 @@ std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<DdType> c
     return out;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class LocalExpressionInformation<storm::dd::DdType::CUDD>;
-template class LocalExpressionInformation<storm::dd::DdType::Sylvan>;
-
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::CUDD> const& partition);
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
+template class LocalExpressionInformation<storm::dd::DdType::Sylvan>;
 template std::ostream& operator<<(std::ostream& out, LocalExpressionInformation<storm::dd::DdType::Sylvan> const& partition);
+#endif
+
 }  // namespace abstraction
 }  // namespace storm::gbar

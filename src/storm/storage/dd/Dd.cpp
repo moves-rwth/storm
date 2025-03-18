@@ -91,7 +91,13 @@ std::set<storm::expressions::Variable> Dd<LibraryType>::subtractMetaVariables(st
     return metaVariables;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class Dd<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class Dd<storm::dd::DdType::Sylvan>;
+#endif
+
 }  // namespace dd
 }  // namespace storm

@@ -368,11 +368,28 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     }
 };
 
+#if defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
 typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
                          GBJaniHybridSylvanGmmxxGmresEnvironment, GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment,
                          GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment, DistrSparseEigenDoubleLUEnvironment,
                          ValueIterationSparseEnvironment, SoundEnvironment>
     TestingTypes;
+#elif defined(STORM_HAVE_CUDD) && !defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
+                         GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment, GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment,
+                         DistrSparseEigenDoubleLUEnvironment, ValueIterationSparseEnvironment, SoundEnvironment>
+    TestingTypes;
+#elif !defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridSylvanGmmxxGmresEnvironment,
+                         GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment, GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment,
+                         DistrSparseEigenDoubleLUEnvironment, ValueIterationSparseEnvironment, SoundEnvironment>
+    TestingTypes;
+#else
+typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBSparseEigenDGmresEnvironment,
+                         GBSparseEigenDoubleLUEnvironment, GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment,
+                         DistrSparseEigenDoubleLUEnvironment, ValueIterationSparseEnvironment, SoundEnvironment>
+    TestingTypes;
+#endif
 
 TYPED_TEST_SUITE(LraCtmcCslModelCheckerTest, TestingTypes, );
 

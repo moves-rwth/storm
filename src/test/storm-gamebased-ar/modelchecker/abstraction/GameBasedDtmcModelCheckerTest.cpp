@@ -38,7 +38,15 @@ class GameBasedDtmcModelCheckerTest : public ::testing::Test {
     }
 };
 
+#if defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
 typedef ::testing::Types<Cudd, Sylvan> TestingTypes;
+#elif defined(STORM_HAVE_CUDD) && !defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<Cudd> TestingTypes;
+#elif !defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<Sylvan> TestingTypes;
+#else
+typedef ::testing::Types<> TestingTypes;
+#endif
 TYPED_TEST_SUITE(GameBasedDtmcModelCheckerTest, TestingTypes, );
 
 TYPED_TEST(GameBasedDtmcModelCheckerTest, Die) {

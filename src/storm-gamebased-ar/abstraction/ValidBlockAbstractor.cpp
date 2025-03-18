@@ -142,8 +142,13 @@ storm::dd::Bdd<DdType> ValidBlockAbstractor<DdType>::getSourceStateBdd(storm::so
     return result;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class ValidBlockAbstractor<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class ValidBlockAbstractor<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

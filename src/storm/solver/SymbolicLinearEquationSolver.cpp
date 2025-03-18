@@ -163,24 +163,30 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, double>;
 template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
 
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
+
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
 template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class GeneralSymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace solver
 }  // namespace storm

@@ -123,7 +123,13 @@ void SymbolicQualitativeCheckResult<Type>::filter(QualitativeCheckResult const& 
     this->states &= filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>;
+#endif
+
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,20 +1,17 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
+#ifdef STORM_HAVE_SYLVAN
 #include <cmath>
 #include <iostream>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/SylvanSettings.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/sylvan.h"
-
-#include "storm-config.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/SylvanSettings.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
@@ -267,13 +264,20 @@ uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const 
     return nextFreeVariableIndex;
 }
 
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
+template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
 template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
 template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
 template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
-#ifdef STORM_HAVE_CARL
 template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-#endif
+
 }  // namespace dd
 }  // namespace storm
+#endif

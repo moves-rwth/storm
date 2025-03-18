@@ -10,7 +10,12 @@ BottomStateResult<DdType>::BottomStateResult(storm::dd::Bdd<DdType> const& state
     // Intentionally left empty.
 }
 
+#ifdef STORM_HAVE_CUDD
 template struct BottomStateResult<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template struct BottomStateResult<storm::dd::DdType::Sylvan>;
+#endif
 }  // namespace abstraction
 }  // namespace storm::gbar

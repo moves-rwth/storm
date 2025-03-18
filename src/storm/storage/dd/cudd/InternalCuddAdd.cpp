@@ -1,15 +1,14 @@
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
 
+#ifdef STORM_HAVE_CUDD
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/Odd.h"
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -879,11 +878,10 @@ template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, double>::to
 template class InternalAdd<DdType::CUDD, uint_fast64_t>;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalAdd<DdType::CUDD, uint_fast64_t>::toValueType<uint_fast64_t>() const;
 
-#ifdef STORM_HAVE_CARL
 template class InternalAdd<DdType::CUDD, storm::RationalNumber>;
 template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<storm::RationalNumber>() const;
 template InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, double>::toValueType<storm::RationalNumber>() const;
 template InternalAdd<DdType::CUDD, double> InternalAdd<DdType::CUDD, storm::RationalNumber>::toValueType<double>() const;
-#endif
 }  // namespace dd
 }  // namespace storm
+#endif

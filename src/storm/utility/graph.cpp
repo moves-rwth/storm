@@ -2393,8 +2393,8 @@ template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMat
                                                        std::vector<uint64_t> const& firstStates);
 #endif
 
+#ifdef STORM_HAVE_CUDD
 // Instantiations for CUDD.
-
 template storm::dd::Bdd<storm::dd::DdType::CUDD> performProbGreater0(storm::models::symbolic::Model<storm::dd::DdType::CUDD, double> const& model,
                                                                      storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix,
                                                                      storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates,
@@ -2491,9 +2491,10 @@ template SymbolicGameProb01Result<storm::dd::DdType::CUDD> performProb1(
     storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy,
     storm::OptimizationDirection const& player2Strategy, bool producePlayer1Strategy, bool producePlayer2Strategy,
     boost::optional<storm::dd::Bdd<storm::dd::DdType::CUDD>> const& player1Candidates);
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 // Instantiations for Sylvan (double).
-
 template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProbGreater0(storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double> const& model,
                                                                        storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix,
                                                                        storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
@@ -2591,7 +2592,6 @@ template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb1(
     bool producePlayer2Strategy, boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
 
 // Instantiations for Sylvan (rational number).
-
 template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProbGreater0(
     storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
@@ -2689,7 +2689,6 @@ template SymbolicGameProb01Result<storm::dd::DdType::Sylvan> performProb1(
     boost::optional<storm::dd::Bdd<storm::dd::DdType::Sylvan>> const& player1Candidates);
 
 // Instantiations for Sylvan (rational function).
-
 template storm::dd::Bdd<storm::dd::DdType::Sylvan> performProbGreater0(
     storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
@@ -2772,6 +2771,7 @@ template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<sto
     storm::models::symbolic::NondeterministicModel<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates,
     storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
+#endif
 
 }  // namespace graph
 }  // namespace utility

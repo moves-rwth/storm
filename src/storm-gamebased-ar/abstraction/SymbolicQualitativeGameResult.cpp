@@ -15,7 +15,13 @@ storm::dd::Bdd<Type> const& SymbolicQualitativeGameResult<Type>::getStates() con
     return this->getPlayer1States();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQualitativeGameResult<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicQualitativeGameResult<storm::dd::DdType::Sylvan>;
+#endif
+
 }  // namespace abstraction
 }  // namespace storm::gbar

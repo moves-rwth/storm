@@ -14,8 +14,13 @@ storm::dd::Bdd<Type> const& SymbolicQualitativeMdpResult<Type>::getStates() cons
     return states;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQualitativeMdpResult<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicQualitativeMdpResult<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

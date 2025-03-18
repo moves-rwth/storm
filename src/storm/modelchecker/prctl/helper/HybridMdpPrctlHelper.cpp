@@ -785,10 +785,14 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
     return computeReachabilityRewards(env, dir, model, transitionMatrix, rewardModel, targetStates, qualitative);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class HybridMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
-template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
 template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
 
 }  // namespace helper
 }  // namespace modelchecker

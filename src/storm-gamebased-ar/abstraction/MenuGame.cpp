@@ -84,10 +84,12 @@ bool MenuGame<Type, ValueType>::hasLabel(std::string const&) const {
     return false;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class MenuGame<storm::dd::DdType::CUDD, double>;
-template class MenuGame<storm::dd::DdType::Sylvan, double>;
+#endif
 
-#ifdef STORM_HAVE_CARL
+#ifdef STORM_HAVE_SYLVAN
+template class MenuGame<storm::dd::DdType::Sylvan, double>;
 template class MenuGame<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction

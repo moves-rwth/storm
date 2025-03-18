@@ -234,8 +234,13 @@ boost::any ExpressionTranslator<DdType>::visit(RationalLiteralExpression const&,
                     "Expressions of this kind are currently not supported by the abstraction expression translator.");
 }
 
+#ifdef STORM_HAVE_CUDD
 template class ExpressionTranslator<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class ExpressionTranslator<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

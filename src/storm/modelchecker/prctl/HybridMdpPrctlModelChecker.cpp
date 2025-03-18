@@ -196,10 +196,14 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
-template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+#endif
 
 }  // namespace modelchecker
 }  // namespace storm

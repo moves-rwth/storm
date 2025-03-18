@@ -21,8 +21,13 @@ SymbolicQualitativeResult<Type> const& SymbolicQualitativeGameResultMinMax<Type>
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicQualitativeGameResultMinMax<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

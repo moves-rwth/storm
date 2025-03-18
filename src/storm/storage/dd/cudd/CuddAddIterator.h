@@ -1,6 +1,8 @@
-#ifndef STORM_STORAGE_DD_CUDDADDITERATOR_H_
-#define STORM_STORAGE_DD_CUDDADDITERATOR_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_CUDD
 #include <cstdint>
 #include <memory>
 #include <set>
@@ -137,4 +139,4 @@ class AddIterator<DdType::CUDD, ValueType> {
 }  // namespace dd
 }  // namespace storm
 
-#endif /* STORM_STORAGE_DD_CUDDADDITERATOR_H_ */
+#endif

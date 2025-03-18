@@ -154,17 +154,23 @@ std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> 
     return std::make_unique<SymbolicEliminationLinearEquationSolver<DdType, ValueType>>();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, double>;
 template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::CUDD, storm::RationalNumber>;
+
+template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
 template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicEliminationLinearEquationSolver<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
-template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::CUDD, storm::RationalNumber>;
 template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicEliminationLinearEquationSolverFactory<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace solver
 }  // namespace storm

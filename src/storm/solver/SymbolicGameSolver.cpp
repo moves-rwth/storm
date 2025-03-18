@@ -182,13 +182,19 @@ std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> SymbolicGame
                                                                rowColumnMetaVariablePairs, player1Variables, player2Variables));
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SymbolicGameSolver<storm::dd::DdType::CUDD, double>;
+
+template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SymbolicGameSolver<storm::dd::DdType::Sylvan, double>;
 template class SymbolicGameSolver<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 
-template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
 template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
 template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+#endif
 
 }  // namespace solver
 }  // namespace storm

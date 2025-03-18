@@ -221,12 +221,16 @@ StandardRewardModel<Type, NewValueType> StandardRewardModel<Type, ValueType>::to
         this->hasTransitionRewards() ? boost::make_optional(this->getTransitionRewardMatrix().template toValueType<NewValueType>()) : boost::none);
 }
 
+#ifdef STORM_HAVE_CUDD
 template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
-template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
 template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template StandardRewardModel<storm::dd::DdType::Sylvan, double> StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
 template class StandardRewardModel<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace symbolic
 }  // namespace models
