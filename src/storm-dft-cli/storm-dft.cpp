@@ -1,5 +1,6 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-dft/parser/BEOrderParser.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
@@ -138,6 +139,12 @@ void processOptions() {
         std::string importanceMeasureName{""};
         if (isImportanceMeasureSet) {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
+        // Set variable ordering
+        if (dftIOSettings.isVariableOrderingFileSet()) {
+            auto beOrder = storm::dft::parser::BEOrderParser<ValueType>::parseBEOrder(dftIOSettings.getVariableOrderingFilename(), *dft);
+            dft->setBEOrder(beOrder);
         }
 
         auto const additionalRelevantEventNames{faultTreeSettings.getRelevantEvents()};

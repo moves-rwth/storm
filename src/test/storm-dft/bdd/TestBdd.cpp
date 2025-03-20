@@ -1,21 +1,12 @@
-#include <gmm/gmm_std.h>
+#include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include <vector>
-
-#include "storm-config.h"
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include "storm-parsers/api/properties.h"
-#include "storm/api/properties.h"
-#include "storm/settings/SettingMemento.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-#include "storm/utility/vector.h"
-#include "test/storm_gtest.h"
 
 namespace {
 

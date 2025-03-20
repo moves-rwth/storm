@@ -3,6 +3,7 @@
 #include <map>
 
 #include "storm/adapters/sylvan.h"
+#include "storm/io/file.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
 
@@ -145,7 +146,7 @@ class SylvanBddManager {
      * \param filename
      * The name of the file the dot graph is written to
      */
-    static void exportBddToDot(sylvan::Bdd const &bdd, std::string const &filename) {
+    void exportBddToDot(sylvan::Bdd const &bdd, std::string const &filename) const {
         FILE *filePointer = fopen(filename.c_str(), "w+");
 
         // fopen returns a nullptr on failure
@@ -154,6 +155,13 @@ class SylvanBddManager {
         } else {
             bdd.PrintDot(filePointer);
             fclose(filePointer);
+            std::ofstream filestream;
+            storm::io::openFile(filename.c_str(), filestream, true);
+            filestream << "// Mapping from BDD nodes to DFT BEs as follows: \n";
+            for (auto const &[index, name] : indexToName) {
+                filestream << "// " << index << " -> " << name << '\n';
+            }
+            storm::io::closeFile(filestream);
         }
     }
 
