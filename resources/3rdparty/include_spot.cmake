@@ -53,7 +53,7 @@ if(NOT SPOT_FOUND AND STORM_USE_SPOT_SHIPPED)
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
+        CONFIGURE_COMMAND touch aclocal.m4 Makefile.am configure Makefile.i;  ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
         BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             COMMAND ${SPOT_RPATH_FIX_COMMAND}

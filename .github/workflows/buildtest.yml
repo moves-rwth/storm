@@ -288,7 +288,11 @@ jobs:
              xcode: "16.2",
              buildType: "Release"
             }
-        buildType: ["Release"]
+          - { name: "XCode 16.2, ARM, Debug",
+              distro: "macos-15",
+              xcode: "16.2",
+              buildType: "Debug"
+          }
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
@@ -315,16 +319,16 @@ jobs:
         working-directory: ./build
         if: matrix.config.buildType == 'Release'
         run: |
-          if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi
-          if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi
-          if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi
+          if grep -q -e '-g' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi
+          if ! grep -q -e '-O3' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi
+          if ! grep -q -e '-DNDEBUG' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi
       - name: Check debug makeflags
         working-directory: ./build
         if: matrix.config.buildType == 'Debug'
         run: |
-          if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
-          if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
-          if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
+          if ! grep -q -e '-g' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
+          if grep -q -e '-O3' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
+          if grep -q -e '-DNDEBUG' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
 
       - name: Build tests
         working-directory: ./build
