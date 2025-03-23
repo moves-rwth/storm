@@ -62,7 +62,8 @@ set(SYLVAN_STORM_SOURCES
 )
 target_sources(sylvan PRIVATE
 ${SYLVAN_SYLVAN_STORM_HEADERS} ${SYLVAN_STORM_SOURCES})
-# TODO why are the headers private
+## STORMCHANGED why are the headers additionally added as private sources here?
+## -- to comply with twhat is done with sthe SYLVAN_HDRS above.
 
 ## END STORMCHANGED
 
@@ -80,9 +81,8 @@ else()
 endif()
 
 set_target_properties(sylvan PROPERTIES VERSION ${sylvan_VERSION} SOVERSION ${sylvan_VERSION_MAJOR})
-set_target_properties(sylvan PROPERTIES PUBLIC_HEADER "${SYLVAN_HDRS}")
-## Stormchanged line below added
-set_target_properties(sylvan PROPERTIES PUBLIC_HEADER "${SYLVAN_STORM_HEADERS}")
+## Stormchanged line below added SYLVAN_STORM_HEADERS
+set_target_properties(sylvan PROPERTIES PUBLIC_HEADER "${SYLVAN_HDRS};${SYLVAN_STORM_HEADERS}")
 
 # STORMCHANGED This is changed by storm as carl requires c++14
 target_compile_features(sylvan PUBLIC c_std_11 cxx_std_14)
@@ -186,7 +186,7 @@ write_basic_package_version_file(
 )
 
 
-#TODO this file has not been updated, so I guess we could disable this.
+#Remark: this file has not been updated, so I guess we could disable this.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sylvan.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/sylvan.pc" @ONLY)
 
 install(
@@ -196,7 +196,7 @@ install(
         DESTINATION ${SYLVAN_INSTALL_LIBDIR}/cmake/sylvan
 )
 
-#TODO this file has not been updated, so I guess we could disable this.
+#Remark: this file has not been updated, so I guess we could disable this.
 install(
         FILES
         ${CMAKE_CURRENT_BINARY_DIR}/sylvan.pc

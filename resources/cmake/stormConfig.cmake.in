@@ -15,15 +15,16 @@ if(_IMPORT_PREFIX STREQUAL "/")
 endif()
 
 
-
-
 set(STORM_RESOURCE_INCLUDE_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_INCLUDE_INSTALL_DIR@")
 set(STORM_RESOURCE_LIBRARY_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_LIBRARY_INSTALL_DIR@")
 
 
 include("${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake")
+if(NOT TARGET lib_carl)
+    message(FATAL_ERROR "Including ${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake did not define target lib_carl.")
+endif()
+set(storm_carl_DIR "${CMAKE_CURRENT_LIST_DIR}")
 include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
-
 
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
@@ -60,6 +61,23 @@ set_target_properties(
 		INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
 )
 
+
+if(@STORM_SHIPPED_SPOT@)
+    add_library(Storm::spot-bddx STATIC IMPORTED)
+        set_target_properties(Storm::spot-bddx PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
+                IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx.0@DYNAMIC_EXT@
+                )
+
+    add_library(Storm::spot STATIC IMPORTED)
+    set_target_properties(Storm::spot PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
+            IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libspot.0@DYNAMIC_EXT@
+            INTERFACE_LINK_LIBRARIES Storm::spot-bddx
+    )
+else()
+    find_dependency(spot)
+endif()
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 if(NOT TARGET storm)

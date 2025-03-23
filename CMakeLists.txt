@@ -178,8 +178,8 @@ if(MACOSX)
 else()
 	set(DYNAMIC_EXT ".so")
 endif()
-message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
-message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
+message(VERBOSE "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(VERBOSE "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
 if(STORM_BUILD_SHARED_LIBS)
     set(LIB_EXT ${DYNAMIC_EXT})
@@ -326,6 +326,8 @@ endif()
 if (STORM_DEVELOPER)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 	if (STORM_ALLWARNINGS)
+		# With gcc, we already set (almost) all warnings.
+		# With Clang, we can even go further using Weverything, which is not always helpful, which is why these options are guarded by  STORM_ALL_WARNINGS
 		if (CLANG)
 		    # Enable strictly every warning and then disable selected ones.
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
@@ -451,7 +453,8 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 # the RPATH to be used when installing
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm")
+# TODO move these to the right targets rather than setting them globally.
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -484,33 +487,38 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-# Include Doxygen
-include(resources/doxygen/CMakeLists.txt)
-
+if(PROJECT_IS_TOP_LEVEL)
+	# Include Doxygen
+	include(resources/doxygen/CMakeLists.txt)
+endif()
 #############################################################
 ##
 ##	CMake-generated Config File for Storm
 ##
 #############################################################
 
-# try to obtain the current version from git.
-include(GetGitRevisionDescription)
-get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
-git_describe(STORM_GIT_VERSION_STRING)
+if (PROJECT_IS_TOP_LEVEL)
+	# try to obtain the current version from git.
+	include(GetGitRevisionDescription)
+	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
+	git_describe(STORM_GIT_VERSION_STRING)
 
-# parse the git tag into variables
-# start with major.minor.patch
-string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
-set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
-set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
-set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
-set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
-# parse rest of the form (-label)-commitsahead-hash(-appendix)
-string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
-set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
-set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
-set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
-set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
+	# parse the git tag into variables
+	# start with major.minor.patch
+	string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
+	set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+	set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
+	set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
+	set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
+	# parse rest of the form (-label)-commitsahead-hash(-appendix)
+	string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
+	set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
+	set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
+	set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
+	set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
+else()
+	set(STORM_GIT_VERSION_STRING "NOTFOUND")
+endif()
 
 # check whether the git version lookup failed
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
@@ -568,15 +576,17 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-include(CTest)
-# Compiles all tests
-add_custom_target(tests)
-# Compiles and runs all tests
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
-set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
-add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
-add_dependencies(check tests)
-add_dependencies(check-verbose tests)
+if(PROJECT_IS_TOP_LEVEL)
+	include(CTest)
+	# Compiles all tests
+	add_custom_target(tests)
+	# Compiles and runs all tests
+	add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+	set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
+	add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
+	add_dependencies(check tests)
+	add_dependencies(check-verbose tests)
+endif()
 
 if(PROJECT_IS_TOP_LEVEL)
 	# Apply code formatting

@@ -1,5 +1,5 @@
 file(GLOB_RECURSE STORM_POMDP_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-pomdp/*/*.cpp)
-file(GLOB_RECURSE STORM_POMDP_HEADERS RELATIVE " ${PROJECT_SOURCE_DIR}/src/storm-pomdp"  ${PROJECT_SOURCE_DIR}/src/storm-pomdp/*/*.h)
+file(GLOB_RECURSE STORM_POMDP_HEADERS RELATIVE "${PROJECT_SOURCE_DIR}/src/storm-pomdp"  ${PROJECT_SOURCE_DIR}/src/storm-pomdp/*/*.h)
 
 # Create storm-pomdp.
 add_library(storm-pomdp SHARED)

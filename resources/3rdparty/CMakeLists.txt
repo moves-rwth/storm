@@ -93,7 +93,7 @@ target_include_directories(eigen3storm INTERFACE
 install(TARGETS eigen3storm EXPORT storm_Targets)
 install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/StormEigen
-        FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
+        PATTERN ".git" EXCLUDE)
 list(APPEND STORM_DEP_TARGETS eigen3storm)
 
 #############################################################
@@ -127,7 +127,7 @@ set(exprTk_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/exprtk)
 add_library(exprTk INTERFACE) # Not imported, we are in control of the sources.
 target_include_directories(exprTk INTERFACE
         $<BUILD_INTERFACE:${exprTk_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:${exprTk_INSTALL_DIR}>
+        $<INSTALL_INTERFACE:${exprTk_INSTALL_DIR}/exprtk>
 )
 install(TARGETS exprTk EXPORT storm_Targets)
 install(DIRECTORY ${exprTk_SOURCE_DIR}
@@ -257,7 +257,7 @@ endif()
 #############################################################
 ##
 ##	glpk
-##  TODO currently requires pre-installed and requires custom findpackage
+##
 #############################################################
 
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_glpk.cmake)
@@ -301,8 +301,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 ##      carl (including cln and ginac)
 ##
 #############################################################
-# TODO Boost might need to have been configured above. It would be good to check that.
-
 # Set compile flags for dependencies
 # TODO probably broken.
 if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
@@ -325,20 +323,16 @@ FETCHCONTENT_DECLARE(
 )
 SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
-SET(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS}) #TODO not sure whether we still need this. It would be good to feed the boost::headers target into carl though
-SET(BOOST_LIBRARYDIR ${Boost_LIBRARY_DIRS}) #TODO not sure whether we still need this
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(CARL_LIB_INSTALL_DIR "lib/storm")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
 FETCHCONTENT_MAKEAVAILABLE(carl)
-
 include(${carl_BINARY_DIR}/carlConfig.cmake)
-#
-# TODO I would like to read these variables
-set(STORM_HAVE_CLN ON ${CARL_USE_CLN_NUMBERS})
-set(STORM_HAVE_GINAC ON ${CARL_USE_GINAC})
+# Read variables from this config.
+set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
+set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 message(STATUS "storm -- using carl version ${carl_VERSION} (cln: ${STORM_HAVE_CLN}, ginac: ${STORM_HAVE_GINAC})")
 #
 add_dependencies(storm_resources lib_carl)
@@ -440,7 +434,7 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_soplex.cmake)
 #############################################################
 ##
 ##	Spot
-##  TODO
+##
 #############################################################
 
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
