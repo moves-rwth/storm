@@ -196,8 +196,8 @@ endif()
 #############################################################
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.2)
-		message(FATAL_ERROR "Clang version must be at least 3.2.")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+		message(FATAL_ERROR "Clang version must be at least 10.0")
 	endif()
 
 	set(STORM_COMPILER_CLANG ON)
@@ -205,16 +205,14 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(STORM_COMPILER_ID "clang")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
-		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
-	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
-		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
-			message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
-			# Stack checks are known to produce errors with the following Clang versions:
-			# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
-			# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
-		endif()
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.0.3)
+		message(FATAL_ERROR "AppleClang version must be at least 14.0.3 (Xcode version 14.3).")
+	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+		message(WARNING "Disabling stack checks for AppleClang version < 15.0")
+		# Stack checks are known to produce errors with the following Clang versions:
+		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)
@@ -224,8 +222,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(GCC ON)
 	# using GCC
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		message(FATAL_ERROR "gcc version must be at least 5.0.")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+		message(FATAL_ERROR "gcc version must be at least 10.0.")
 	endif()
 
 	set(STORM_COMPILER_GCC ON)
