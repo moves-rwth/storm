@@ -61,6 +61,7 @@ if(NOT SPOT_FOUND AND STORM_USE_SPOT_SHIPPED)
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
+        LOG_OUTPUT_ON_FAILURE ON
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.0${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0${DYNAMIC_EXT}
     )
     add_dependencies(storm_resources spot)
