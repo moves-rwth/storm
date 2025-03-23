@@ -31,7 +31,6 @@ const std::string CoreSettings::ddLibraryOptionName = "ddlib";
 const std::string CoreSettings::intelTbbOptionName = "enable-tbb";
 const std::string CoreSettings::intelTbbOptionShortName = "tbb";
 
-
 std::string getDefaultLpSolverAsString() {
     // TODO: We currently never set Gurobi as a default LP solver as
     // its availability is depending on the license, which may be confusing.
