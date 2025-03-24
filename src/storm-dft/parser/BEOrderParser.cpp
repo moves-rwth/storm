@@ -1,4 +1,4 @@
-#include "BEOrderParser.h"
+#include "storm-dft/parser/BEOrderParser.h"
 
 #include <boost/algorithm/string.hpp>
 
