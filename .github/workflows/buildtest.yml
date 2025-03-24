@@ -264,10 +264,11 @@ jobs:
         run: |
           docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project via fetch/source-dir
+      - name: Configure and make starter project on installed storm.
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build-fetch; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-fetch make -j ${NR_JOBS}"
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-installed make -j ${NR_JOBS}"
+          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
   macTests:
     name: macOS Tests (${{ matrix.config.name }})
     strategy:
@@ -329,13 +330,21 @@ jobs:
           if ! grep -q -e '-g' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
           if grep -q -e '-O3' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
           if grep -q -e '-DNDEBUG' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
-
       - name: Build tests
         working-directory: ./build
         run: make -j ${NR_JOBS}
       - name: Run tests
         working-directory: ./build
         run: ctest test--output-on-failure
+      - name: Install storm
+        working-directory: ./build
+        run: make install
+      - name: Run installed storm
+        working-directory: .
+        run: |
+          mv /opt/storm/build /opt/storm/build-backup
+          /usr/local/bin/storm --version"
+          mv /opt/storm/build-backup /opt/storm/build
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
@@ -401,10 +410,11 @@ jobs:
         run: |
           docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project via fetch/source-dir
+      - name: Configure and make starter project on installed storm.
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-fetch; cd build-fetch; cmake -DFETCHCONTENT_SOURCE_DIR_STORM=/opt/storm .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-fetch; make -j ${NR_JOBS}"
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-installed make -j ${NR_JOBS}"
+          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'

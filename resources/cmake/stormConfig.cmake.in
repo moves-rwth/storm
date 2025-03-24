@@ -49,10 +49,6 @@ if(${STORM_HAVE_SOPLEX})
     find_dependency(soplex)
 endif()
 
-
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH_save}")
-unset(CMAKE_MODULE_PATH_save)
-
 add_library(cudd3 STATIC IMPORTED)
 set_target_properties(
 		cudd3
@@ -63,21 +59,33 @@ set_target_properties(
 
 
 if(@STORM_SHIPPED_SPOT@)
-    add_library(Storm::spot-bddx STATIC IMPORTED)
-        set_target_properties(Storm::spot-bddx PROPERTIES
+    add_library(Storm::Spot-bddx STATIC IMPORTED)
+        set_target_properties(Storm::Spot-bddx PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
                 IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx.0@DYNAMIC_EXT@
                 )
 
-    add_library(Storm::spot STATIC IMPORTED)
-    set_target_properties(Storm::spot PROPERTIES
+    add_library(Storm::Spot STATIC IMPORTED)
+    set_target_properties(Storm::Spot PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
             IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libspot.0@DYNAMIC_EXT@
-            INTERFACE_LINK_LIBRARIES Storm::spot-bddx
+            INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
     )
 else()
-    find_dependency(spot)
+    find_dependency(Spot)
+    add_library(Storm::Spot UNKNOWN IMPORTED)
+    set_target_properties(
+    		Storm::Spot
+    		PROPERTIES
+    		IMPORTED_LOCATION ${Spot_LIBRARIES}
+    		INTERFACE_INCLUDE_DIRECTORIES ${Spot_INCLUDE_DIR}
+    )
+
 endif()
+
+
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH_save}")
+unset(CMAKE_MODULE_PATH_save)
 
 # Our library dependencies (contains definitions for IMPORTED targets)
 if(NOT TARGET storm)
