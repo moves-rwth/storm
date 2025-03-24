@@ -205,6 +205,7 @@ find_package(Z3 QUIET 4.8.7 NO_MODULE)
 # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
 if(TARGET z3::libz3)
     set(STORM_HAVE_Z3 ON)
+    set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
 
     set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
@@ -223,7 +224,10 @@ else()
     find_package(Z3 QUIET 4.8.7)
 
     if (Z3_FOUND)
+
         set(STORM_HAVE_Z3 ON)
+        set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
+
         if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
             message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
             message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")

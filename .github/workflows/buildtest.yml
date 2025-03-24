@@ -207,9 +207,11 @@ jobs:
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
       - name: Configure and make starter project on installed storm.
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed make -j ${NR_JOBS}"
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
           docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   linuxTests:
     name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
@@ -266,9 +268,11 @@ jobs:
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
       - name: Configure and make starter project on installed storm.
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed make -j ${NR_JOBS}"
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
           docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
   macTests:
     name: macOS Tests (${{ matrix.config.name }})
     strategy:
@@ -338,13 +342,13 @@ jobs:
         run: ctest test--output-on-failure
       - name: Install storm
         working-directory: ./build
-        run: make install
+        run: sudo make install
       - name: Run installed storm
         working-directory: .
         run: |
-          mv /opt/storm/build /opt/storm/build-backup
+          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
           /usr/local/bin/storm --version"
-          mv /opt/storm/build-backup /opt/storm/build
+          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
@@ -412,9 +416,11 @@ jobs:
           docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
       - name: Configure and make starter project on installed storm.
         run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed make -j ${NR_JOBS}"
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE .."
+          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
           docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
