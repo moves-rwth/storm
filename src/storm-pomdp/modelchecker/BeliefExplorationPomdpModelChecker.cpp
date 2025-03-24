@@ -2,7 +2,6 @@
 
 #include <tuple>
 
-#include "../../storm/api/export.h"
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
@@ -13,7 +12,6 @@
 
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/vector.h"
 
 #include "storm/environment/Environment.h"
