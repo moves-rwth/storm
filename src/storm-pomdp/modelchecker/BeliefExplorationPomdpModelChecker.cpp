@@ -2,6 +2,7 @@
 
 #include <tuple>
 
+#include "../../storm/api/export.h"
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
@@ -539,7 +540,10 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                             auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                             transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                         } else if (label.rfind("mem_node", 0) == 0) {
-                            newLabeling.addLabelToState("finite_mem", i);
+                            if (!newLabeling.containsLabel("finite_mem_" + label.substr(9, 1))) {
+                                newLabeling.addLabel("finite_mem_" + label.substr(9, 1));
+                            }
+                            newLabeling.addLabelToState("finite_mem_" + label.substr(9, 1), i);
                             newLabeling.addLabelToState("cutoff", i);
                         } else {
                             newLabeling.addLabelToState(label, i);
