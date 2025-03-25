@@ -41,7 +41,7 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
     if (APPLE)
         set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
     else()
-        set(Spot_RPATH_FIX_COMMAND ":")
+        set(Spot_RPATH_FIX_COMMAND "ls .")
     endif()
 
     # download and install shipped Spot as shared libraries.

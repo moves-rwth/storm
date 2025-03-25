@@ -81,6 +81,7 @@ ExternalProject_Add(
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
+        LOG_DOWNLOAD ON
         LOG_INSTALL ON
 )
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
@@ -252,8 +253,8 @@ endif()
 
 
 if (Z3_FOUND)
-    # TODO remove STORM_HAVE_Z3_OPTIMIZE checks
-    # TODO remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
+    # TODO We may remove STORM_HAVE_Z3_OPTIMIZE checks
+    # TODO We may remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
     set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
     set(STORM_HAVE_Z3_OPTIMIZE ON)
 endif()
@@ -269,26 +270,28 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_glpk.cmake)
 #############################################################
 ##
 ##	Gurobi (optional)
-##  TODO
+##
 #############################################################
 
-if (STORM_USE_GUROBI)
-    find_package(GUROBI QUIET REQUIRED)
+find_package(GUROBI QUIET)
+if(GUROBI_FOUND)
     set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
-    if (GUROBI_FOUND)
-		if (EXISTS ${GUROBI_LIBRARY})
-            message (STATUS "Storm - Linking with Gurobi (${GUROBI_CXX_LIBRARY}).")
-            add_imported_library(GUROBI SHARED ${GUROBI_LIBRARY} ${GUROBI_INCLUDE_DIRS})
-            list(APPEND STORM_DEP_IMP_TARGETS GUROBI_SHARED)
-        else()
-            # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
-        endif()
+    if (EXISTS ${GUROBI_LIBRARY})
+        message (STATUS "Storm - Linking with Gurobi (${GUROBI_CXX_LIBRARY}).")
+        add_library(GUROBI UNKNOWN IMPORTED)
+        set_target_properties(
+                GUROBI
+                PROPERTIES
+                IMPORTED_LOCATION ${GUROBI_LIBRARY}
+                INTERFACE_INCLUDE_DIRECTORIES ${GUROBI_INCLUDE_DIRS}
+        )
+        list(APPEND STORM_DEP_IMP_TARGETS GUROBI)
     else()
-    	# The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number ...
-        message(FATAL_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories). If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
+        # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
+        message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 11.0.0, please contact the Storm developers.")
     endif()
 else()
+    message (STATUS "Storm - Not linking with Gurobi. ")
     set(STORM_HAVE_GUROBI OFF)
 endif()
 
@@ -306,7 +309,6 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 ##
 #############################################################
 # Set compile flags for dependencies
-# TODO probably broken.
 if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
     set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
     set(SHIPPED_CARL_USE_GINAC ON)
@@ -470,14 +472,12 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 #############################################################
 ##
 ##	Google Test gtest
-##  TODO (not urgent, tests are not installed either way)
+##
 #############################################################
+## This is still old cmake, but as it is not installed, it is not as relevant.
 set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
 ExternalProject_Add(
         googletest
-        #For downloads (may be useful later!)
-        #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
-        #TIMEOUT 10
         DOWNLOAD_COMMAND ""
         SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/googletest"
         # Force the same output paths for debug and release builds so that
