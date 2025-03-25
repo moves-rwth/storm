@@ -52,6 +52,7 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
     # Note that configuring static libraries requires various dependencies which was rather cumbersome.
     # As of '25/3, SJ did not get this to work.
     ExternalProject_Add(Spot
+
         URL https://www.lrde.epita.fr/dload/spot/spot-2.13.tar.gz # When updating, also change version output below
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
@@ -79,7 +80,6 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
     set(STORM_SHIPPED_SPOT ON)
 
     file(MAKE_DIRECTORY ${Spot_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
-
     add_library(Storm::Spot-bddx SHARED IMPORTED)
     set_target_properties(Storm::Spot-bddx PROPERTIES
             INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
