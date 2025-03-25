@@ -347,7 +347,7 @@ jobs:
         working-directory: .
         run: |
           mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
-          /usr/local/bin/storm --version"
+          /usr/local/bin/storm --version
           mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})

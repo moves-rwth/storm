@@ -485,8 +485,8 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-SET(STORM_HAVE_LP_SOLVER (STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE))
-
+set(STORM_HAVE_LP_SOLVER (${STORM_HAVE_GLPK} OR ${STORM_HAVE_GUROBI} OR ${STORM_HAVE_SOPLEX} OR ${STORM_HAVE_Z3_OPTIMIZE}))
+message(STATUS "Storm -- compiled with an LP solver? ${STORM_HAVE_LP_SOLVER}")
 
 if(PROJECT_IS_TOP_LEVEL)
 	# Include Doxygen
