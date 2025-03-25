@@ -349,6 +349,19 @@ jobs:
           mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
           /usr/local/bin/storm --version
           mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
+      - name: Checkout starter-project
+        working-directory: .
+        run: |
+          cd ..; git clone https://github.com/sjunges/storm-project-starter-cpp storm-starter" 
+          cd storm-starter; git checkout cmakeupdates
+      - name: Configure and make starter project on installed storm.
+        working-directory: .
+        run: |
+          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
+          cd ../storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  ..
+          cd ../storm-starter/build-installed; make -j ${NR_JOBS}
+          ../storm-starter/build-installed/bin/starter-project
+          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest

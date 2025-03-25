@@ -40,8 +40,12 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
     # Spot does not set library IDs with an rpath but with an absolute path.
     if (APPLE)
         set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+        set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+        set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
     else()
-        set(Spot_RPATH_FIX_COMMAND "ls .")
+        set(Spot_RPATH_FIX_COMMAND "ls .") #no op
+        set(BDDX_RPATH_FIX_COMMAND1 "ls .") #no op
+        set(BDDX_RPATH_FIX_COMMAND2 "ls .") #no op
     endif()
 
     # download and install shipped Spot as shared libraries.
@@ -53,11 +57,12 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-        CONFIGURE_COMMAND touch aclocal.m4 Makefile.am configure Makefile.i COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
         BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             COMMAND ${Spot_RPATH_FIX_COMMAND}
-           # COMMAND ${BDDX_RPATH_FIX_COMMAND}
+            COMMAND ${BDDX_RPATH_FIX_COMMAND1}
+            COMMAND ${BDDX_RPATH_FIX_COMMAND2}
         LOG_DOWNLOAD ON
         LOG_CONFIGURE ON
         LOG_BUILD ON
