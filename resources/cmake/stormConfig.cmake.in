@@ -110,6 +110,19 @@ if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?
 endif()
 
 
+if(@STORM_HAVE_MATHSAT@)
+    set(MATHSAT_ROOT @MATHSAT_ROOT@)
+    find_dependency(MATHSAT)
+    add_library(mathsat UNKNOWN IMPORTED)
+    set_target_properties(
+            mathsat
+            PROPERTIES
+            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
+    )
+endif()
+
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH_save}")
 unset(CMAKE_MODULE_PATH_save)
 

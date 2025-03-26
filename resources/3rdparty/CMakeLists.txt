@@ -365,7 +365,6 @@ endif()
 find_package(MATHSAT QUIET)
 if(MATHSAT_FOUND)
     set(STORM_HAVE_MATHSAT ON)
-    # on macOS, the .dylib file has some hard coded path (Version 5.5.4) and we therefore link statically
     add_library(mathsat SHARED IMPORTED)
     set_target_properties(
             mathsat
@@ -377,7 +376,11 @@ if(MATHSAT_FOUND)
     message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_}; include: ${MATHSAT_INCLUDE_DIRS})")
 else()
     set(STORM_HAVE_MATHSAT OFF)
-    message(FATAL_ERROR "Storm - MathSAT library requested but was not found. Make sure that MATHSAT_ROOT points to the correct directory.")
+    if(${MATHSAT_ROOT} STREQUAL "")
+        message(STATUS "Storm - MathSAT not found.")
+    else()
+        message(WARNING "Storm - MathSAT not found, even though MATHSAT_ROOT is set.")
+    endif()
 endif()
 
 
