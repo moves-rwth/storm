@@ -43,9 +43,9 @@ if(NOT Spot_FOUND AND STORM_USE_SPOT_SHIPPED)
         set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
         set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
     else()
-        set(Spot_RPATH_FIX_COMMAND "ls .") #no op
-        set(BDDX_RPATH_FIX_COMMAND1 "ls .") #no op
-        set(BDDX_RPATH_FIX_COMMAND2 "ls .") #no op
+        set(Spot_RPATH_FIX_COMMAND "true") #no op
+        set(BDDX_RPATH_FIX_COMMAND1 "true") #no op
+        set(BDDX_RPATH_FIX_COMMAND2 "true") #no op
     endif()
 
     # download and install shipped Spot as shared libraries.
