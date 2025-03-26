@@ -57,13 +57,13 @@ if(@STORM_HAVE_GLPK@)
     )
 endif()
 
-if(${STORM_HAVE_XERCES})
+if(@STORM_HAVE_XERCES@) # STORM_HAVE_XERCES
     find_dependency(XercesC)
 endif()
-if(${STORM_HAVE_SOPLEX})
+if(@STORM_HAVE_SOPLEX@) # STORM_HAVE_SOPLEX
     find_dependency(soplex)
 endif()
-if(@STORM_HAVE_GUROBI@)
+if(@STORM_HAVE_GUROBI@) # STORM_HAVE_GUROBI
     find_dependency(GUROBI)
     add_library(GUROBI UNKNOWN IMPORTED)
     set_target_properties(

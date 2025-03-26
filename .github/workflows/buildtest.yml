@@ -210,7 +210,7 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
           docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   linuxTests:
@@ -271,7 +271,7 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
           docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
   macTests:
     name: macOS Tests (${{ matrix.config.name }})
@@ -352,7 +352,7 @@ jobs:
       - name: Checkout starter-project
         working-directory: .
         run: |
-          cd ..; git clone https://github.com/sjunges/storm-project-starter-cpp storm-starter" 
+          cd ..; git clone https://github.com/sjunges/storm-project-starter-cpp storm-starter
           cd storm-starter; git checkout cmakeupdates
       - name: Configure and make starter project on installed storm.
         working-directory: .
@@ -360,7 +360,7 @@ jobs:
           mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
           cd ../storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  ..
           cd ../storm-starter/build-installed; make -j ${NR_JOBS}
-          ../storm-starter/build-installed/bin/starter-project
+          ../storm-starter/build-installed/bin/starter-project ${GITHUB_WORKSPACE}/resources/examples/testfiles/brp-16-2.pm 'P=? [F s=5]'
           mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
@@ -432,7 +432,7 @@ jobs:
           docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE .."
           docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project"
+          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)

@@ -360,30 +360,27 @@ endif()
 #############################################################
 ##
 ##	MathSAT (optional)
-##  TODO: To be updated
 ##
 #############################################################
-if (STORM_USE_MATHSAT)
-    find_package(MATHSAT QUIET)
-    if(MATHSAT_FOUND)
-        set(STORM_HAVE_MATHSAT ON)
-        if(${OPERATING_SYSTEM} MATCHES "Linux")
-            add_imported_library(mathsat SHARED ${MATHSAT_LIBRARIES} ${MATHSAT_INCLUDE_DIRS})
-            list(APPEND STORM_DEP_TARGETS mathsat_SHARED)
-            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_SHARED}; include: ${MATHSAT_INCLUDE_DIRS})")
-        else()
-            # on macOS, the .dylib file has some hard coded path (Version 5.5.4) and we therefore link statically
-            add_imported_library(mathsat STATIC ${MATHSAT_LIB} ${MATHSAT_INCLUDE_DIRS})
-            list(APPEND STORM_DEP_TARGETS mathsat_STATIC)
-            message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_STATIC}; include: ${MATHSAT_INCLUDE_DIRS})")
-        endif()
-    else()
-        set(STORM_HAVE_MATHSAT OFF)
-        message(FATAL_ERROR "Storm - MathSAT library requested but was not found. Make sure that MATHSAT_ROOT points to the correct directory.")
-    endif()
+find_package(MATHSAT QUIET)
+if(MATHSAT_FOUND)
+    set(STORM_HAVE_MATHSAT ON)
+    # on macOS, the .dylib file has some hard coded path (Version 5.5.4) and we therefore link statically
+    add_library(mathsat SHARED IMPORTED)
+    set_target_properties(
+            mathsat
+            PROPERTIES
+            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
+    )
+    list(APPEND STORM_DEP_IMP_TARGETS mathsat)
+    message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_}; include: ${MATHSAT_INCLUDE_DIRS})")
 else()
     set(STORM_HAVE_MATHSAT OFF)
+    message(FATAL_ERROR "Storm - MathSAT library requested but was not found. Make sure that MATHSAT_ROOT points to the correct directory.")
 endif()
+
+
 
 #############################################################
 ##
