@@ -29,7 +29,7 @@ include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
 
-find_dependency(Boost)
+find_dependency(Boost QUIET)
 if(@STORM_HAVE_Z3@)
     if(@STORM_Z3_CONFIG@)
         find_dependency(Z3 4.8.7 NO_MODULE)
@@ -111,8 +111,8 @@ endif()
 
 
 if(@STORM_HAVE_MATHSAT@)
-    set(MATHSAT_ROOT @MATHSAT_ROOT@)
-    find_dependency(MATHSAT)
+    set(MATHSAT_ROOT "@MATHSAT_ROOT@")
+    find_dependency(MATHSAT QUIET)
     add_library(mathsat UNKNOWN IMPORTED)
     set_target_properties(
             mathsat

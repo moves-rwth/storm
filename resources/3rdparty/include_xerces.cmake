@@ -1,4 +1,4 @@
-if(STORM_USE_XERCES)
+if(NOT STORM_DISABLE_XERCES)
     find_package(XercesC QUIET)
     if(TARGET XercesC::XercesC)
         set(STORM_HAVE_XERCES ON)
@@ -11,5 +11,5 @@ if(STORM_USE_XERCES)
 else()
     set(STORM_HAVE_XERCES OFF)
     message (STATUS "Storm - Building without Xerces disables parsing XML formats (for GSPNs)")
-endif(STORM_USE_XERCES)
+endif()
 

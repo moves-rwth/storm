@@ -273,22 +273,27 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_glpk.cmake)
 ##
 #############################################################
 
-find_package(GUROBI QUIET)
-if(GUROBI_FOUND)
-    set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
-    if (EXISTS ${GUROBI_LIBRARY})
-        message (STATUS "Storm - Linking with Gurobi (${GUROBI_CXX_LIBRARY}).")
-        add_library(GUROBI UNKNOWN IMPORTED)
-        set_target_properties(
-                GUROBI
-                PROPERTIES
-                IMPORTED_LOCATION ${GUROBI_LIBRARY}
-                INTERFACE_INCLUDE_DIRECTORIES ${GUROBI_INCLUDE_DIRS}
-        )
-        list(APPEND STORM_DEP_IMP_TARGETS GUROBI)
+if(NOT STORM_DISABLE_GUROBI)
+    find_package(GUROBI QUIET)
+    if(GUROBI_FOUND)
+        set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
+        if (EXISTS ${GUROBI_LIBRARY})
+            message (STATUS "Storm - Linking with Gurobi (${GUROBI_CXX_LIBRARY}).")
+            add_library(GUROBI UNKNOWN IMPORTED)
+            set_target_properties(
+                    GUROBI
+                    PROPERTIES
+                    IMPORTED_LOCATION ${GUROBI_LIBRARY}
+                    INTERFACE_INCLUDE_DIRECTORIES ${GUROBI_INCLUDE_DIRS}
+            )
+            list(APPEND STORM_DEP_IMP_TARGETS GUROBI)
+        else()
+            # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
+            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 11.0.0, please contact the Storm developers.")
+        endif()
     else()
-        # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-        message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 11.0.0, please contact the Storm developers.")
+        message (STATUS "Storm - Not linking with Gurobi. ")
+        set(STORM_HAVE_GUROBI OFF)
     endif()
 else()
     message (STATUS "Storm - Not linking with Gurobi. ")
@@ -362,25 +367,30 @@ endif()
 ##	MathSAT (optional)
 ##
 #############################################################
-find_package(MATHSAT QUIET)
-if(MATHSAT_FOUND)
-    set(STORM_HAVE_MATHSAT ON)
-    add_library(mathsat SHARED IMPORTED)
-    set_target_properties(
-            mathsat
-            PROPERTIES
-            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
-            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
-    )
-    list(APPEND STORM_DEP_IMP_TARGETS mathsat)
-    message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_}; include: ${MATHSAT_INCLUDE_DIRS})")
+if(NOT STORM_DISABLE_MATHSAT)
+    find_package(MATHSAT QUIET)
+    if(MATHSAT_FOUND)
+        set(STORM_HAVE_MATHSAT ON)
+        add_library(mathsat SHARED IMPORTED)
+        set_target_properties(
+                mathsat
+                PROPERTIES
+                IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
+        )
+        list(APPEND STORM_DEP_IMP_TARGETS mathsat)
+        message(STATUS "Storm - Linking with MathSAT: (library: ${mathsat_}; include: ${MATHSAT_INCLUDE_DIRS})")
+    else()
+        set(STORM_HAVE_MATHSAT OFF)
+        if(MATHSAT_ROOT STREQUAL "")
+            message(STATUS "Storm - MathSAT not found.")
+        else()
+            message(WARNING "Storm - MathSAT not found, even though MATHSAT_ROOT is set.")
+        endif()
+    endif()
 else()
     set(STORM_HAVE_MATHSAT OFF)
-    if(MATHSAT_ROOT STREQUAL "")
-        message(STATUS "Storm - MathSAT not found.")
-    else()
-        message(WARNING "Storm - MathSAT not found, even though MATHSAT_ROOT is set.")
-    endif()
+    message(STATUS "Storm - Not linking with MathSat.")
 endif()
 
 

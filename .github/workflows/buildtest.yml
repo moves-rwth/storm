@@ -25,10 +25,10 @@ jobs:
           - {name: "GMP exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Mathsat: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
@@ -38,10 +38,10 @@ jobs:
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Mathsat: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "OFF",
@@ -51,10 +51,10 @@ jobs:
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Mathsat: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "ON",
@@ -64,26 +64,26 @@ jobs:
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Mathsat: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
              cmakeArgs: ""
           }
-          - {name: "Minimal dependencies",
+          - {name: "Minimal dependencies (without CLN!)",
              baseImg: "storm-basesystem:minimal_dependencies",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Mathsat: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
              Developer: "ON",
              ClnExact: "OFF",
-             ClnRatfunc: "ON",
+             ClnRatfunc: "OFF",
              AllSanitizers: "ON",
              cmakeArgs: ""
           }
@@ -95,10 +95,10 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
-            --build-arg mathsat_support="${{ matrix.config.Mathsat }}" \
-            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
-            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
+            --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
+            --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
+            --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
             --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
@@ -154,20 +154,20 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Mathsat: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_USE_SPOT_SHIPPED=ON",
              packages: ""
           }
           - {name: "Clang",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Mathsat: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_USE_SPOT_SHIPPED=ON",
              packages: "clang"
@@ -181,10 +181,10 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
-            --build-arg mathsat_support="${{ matrix.config.Mathsat }}" \
-            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
-            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
+            --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
+            --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
+            --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
             --build-arg packages="${{ matrix.config.packages }}" \
@@ -245,10 +245,10 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
-            --build-arg gurobi_support="OFF" \
-            --build-arg mathsat_support="OFF" \
-            --build-arg soplex_support="OFF" \
-            --build-arg spot_support="OFF" \
+            --build-arg disable_gurobi="ON" \
+            --build-arg disable_mathsat="ON" \
+            --build-arg disable_spot="ON" \
+            --build-arg disable_soplex="ON" \
             --build-arg no_threads=${NR_JOBS}
             # Omitting arguments developer, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
       - name: Run Docker
