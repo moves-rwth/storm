@@ -190,10 +190,12 @@ bool MenuGameAbstractor<DdType, ValueType>::hasTargetStateExpression() const {
     return this->targetStateExpression.isInitialized();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class MenuGameAbstractor<storm::dd::DdType::CUDD, double>;
-template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
+#endif
 
-#ifdef STORM_HAVE_CARL
+#ifdef STORM_HAVE_SYLVAN
+template class MenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
 template class MenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction

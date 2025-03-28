@@ -1,9 +1,9 @@
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 
+#ifdef STORM_HAVE_CUDD
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CuddSettings.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace dd {
@@ -229,3 +229,4 @@ template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getC
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
 }  // namespace dd
 }  // namespace storm
+#endif

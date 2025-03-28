@@ -161,11 +161,15 @@ std::chrono::high_resolution_clock::duration PartitionRefiner<DdType, ValueType>
     return totalRefinementTime;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class PartitionRefiner<storm::dd::DdType::CUDD, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
 template class PartitionRefiner<storm::dd::DdType::Sylvan, double>;
 template class PartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class PartitionRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace bisimulation
 }  // namespace dd

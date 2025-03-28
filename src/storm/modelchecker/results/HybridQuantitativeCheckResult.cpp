@@ -1,14 +1,12 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -283,10 +281,15 @@ void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
 }
 
 // Explicitly instantiate the class.
+#ifdef STORM_HAVE_CUDD
 template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
-template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
 template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+
 }  // namespace modelchecker
 }  // namespace storm

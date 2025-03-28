@@ -153,9 +153,12 @@ void AutomatonAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template class AutomatonAbstractor<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class AutomatonAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class AutomatonAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace jani

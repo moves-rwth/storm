@@ -333,11 +333,15 @@ void JaniMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
 }
 
 // Explicitly instantiate the class.
+#ifdef STORM_HAVE_CUDD
 template class JaniMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class JaniMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
+
 }  // namespace jani
 }  // namespace abstraction
 }  // namespace storm::gbar

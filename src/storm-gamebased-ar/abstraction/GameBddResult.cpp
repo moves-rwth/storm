@@ -15,8 +15,13 @@ GameBddResult<DdType>::GameBddResult(storm::dd::Bdd<DdType> const& gameBdd, uint
     // Intentionally left empty.
 }
 
+#ifdef STORM_HAVE_CUDD
 template struct GameBddResult<storm::dd::DdType::CUDD>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template struct GameBddResult<storm::dd::DdType::Sylvan>;
+#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

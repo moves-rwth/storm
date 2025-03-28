@@ -1,12 +1,13 @@
 #include "storm/storage/dd/cudd/CuddAddIterator.h"
+
+#ifdef STORM_HAVE_CUDD
+#include <cmath>
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/macros.h"
-
 #include "storm/utility/constants.h"
-
-#include <cmath>
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
@@ -218,9 +219,8 @@ std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CU
 
 template class AddIterator<DdType::CUDD, double>;
 template class AddIterator<DdType::CUDD, uint_fast64_t>;
-
-#ifdef STORM_HAVE_CARL
 template class AddIterator<DdType::CUDD, storm::RationalNumber>;
-#endif
+
 }  // namespace dd
 }  // namespace storm
+#endif

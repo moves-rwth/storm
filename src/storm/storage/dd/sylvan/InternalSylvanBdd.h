@@ -1,19 +1,19 @@
-#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
-#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
+#pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
 #include <functional>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
+#include "storm/adapters/sylvan.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalAdd.h"
 #include "storm/storage/dd/InternalBdd.h"
-
-#include "storm/adapters/sylvan.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace storage {
@@ -547,4 +547,4 @@ struct hash<storm::dd::InternalBdd<storm::dd::DdType::Sylvan>> {
 };
 }  // namespace std
 
-#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_ */
+#endif

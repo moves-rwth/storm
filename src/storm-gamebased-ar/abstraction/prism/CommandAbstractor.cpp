@@ -784,11 +784,15 @@ void CommandAbstractor<DdType, ValueType>::notifyGuardIsPredicate() {
     skipBottomStates = true;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class CommandAbstractor<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class CommandAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class CommandAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
+
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

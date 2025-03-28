@@ -268,11 +268,17 @@ endif()
 
 #############################################################
 ##
-##	CUDD
+##	CUDD (optional)
 ##
 #############################################################
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
+if(STORM_USE_CUDD)
+    include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
+    set(STORM_HAVE_CUDD ON)
+else()
+    message (WARNING "Storm - Building without CUDD support.")
+    set(STORM_HAVE_CUDD OFF)
+endif()
 
 #############################################################
 ##
@@ -550,51 +556,57 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 
 #############################################################
 ##
-##	Sylvan
+##	Sylvan (optional)
 ##
 #############################################################
 
-if(STORM_SHIPPED_CARL)
-	set(sylvan_dep carl)
+if(STORM_USE_SYLVAN)
+    if(STORM_SHIPPED_CARL)
+        set(sylvan_dep carl)
+    else()
+        set(sylvan_dep lib_carl)
+    endif()
+
+    if (STORM_DEBUG_SYLVAN)
+        set(SYLVAN_BUILD_TYPE "Debug")
+        message(WARNING "Storm - Building Sylvan in DEBUG mode.")
+    else()
+        set(SYLVAN_BUILD_TYPE "Release")
+    endif()
+
+    ExternalProject_Add(
+            sylvan
+            DOWNLOAD_COMMAND ""
+            PREFIX "sylvan"
+            SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
+            CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DSYLVAN_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
+            BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
+            BUILD_IN_SOURCE 0
+            INSTALL_COMMAND ""
+            INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
+            LOG_CONFIGURE ON
+            LOG_BUILD ON
+            DEPENDS ${sylvan_dep}
+            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
+            BUILD_ALWAYS 1
+    )
+    # BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
+
+    ExternalProject_Get_Property(sylvan source_dir)
+    ExternalProject_Get_Property(sylvan binary_dir)
+    set(sylvan_INCLUDE_DIR "${source_dir}/src")
+    set(sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
+    message(STATUS "Storm - Using shipped version of sylvan.")
+    message(STATUS "Storm - Linking with sylvan.")
+    add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
+    add_dependencies(sylvan_STATIC sylvan)
+
+    list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
+    set(STORM_HAVE_SYLVAN ON)
 else()
-	set(sylvan_dep lib_carl)
+    message (WARNING "Storm - Building without Sylvan support.")
+    set(STORM_HAVE_SYLVAN OFF)
 endif()
-
-if (STORM_DEBUG_SYLVAN)
-	set(SYLVAN_BUILD_TYPE "Debug")
-	message(WARNING "Storm - Building Sylvan in DEBUG mode.")
-else()
-	set(SYLVAN_BUILD_TYPE "Release")
-endif()
-
-ExternalProject_Add(
-        sylvan
-        DOWNLOAD_COMMAND ""
-        PREFIX "sylvan"
-        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DPROJECT_NAME=storm -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DSYLVAN_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DSYLVAN_GMP=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
-        BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
-        BUILD_IN_SOURCE 0
-        INSTALL_COMMAND ""
-        INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
-        LOG_CONFIGURE ON
-        LOG_BUILD ON
-        DEPENDS ${sylvan_dep}
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
-        BUILD_ALWAYS 1
-)
-# BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
-
-ExternalProject_Get_Property(sylvan source_dir)
-ExternalProject_Get_Property(sylvan binary_dir)
-set(sylvan_INCLUDE_DIR "${source_dir}/src")
-set(sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
-message(STATUS "Storm - Using shipped version of sylvan.")
-message(STATUS "Storm - Linking with sylvan.")
-add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
-add_dependencies(sylvan_STATIC sylvan)
-
-list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 #############################################################
 ##

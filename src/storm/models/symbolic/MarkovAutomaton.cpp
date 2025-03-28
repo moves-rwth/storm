@@ -135,13 +135,17 @@ std::shared_ptr<MarkovAutomaton<Type, NewValueType>> MarkovAutomaton<Type, Value
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class MarkovAutomaton<storm::dd::DdType::CUDD, double>;
-template class MarkovAutomaton<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class MarkovAutomaton<storm::dd::DdType::Sylvan, double>;
 template class MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<MarkovAutomaton<storm::dd::DdType::Sylvan, double>> MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType()
     const;
 template class MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace symbolic
 }  // namespace models

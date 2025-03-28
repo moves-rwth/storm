@@ -173,9 +173,12 @@ AbstractionInformation<DdType> const& StateSetAbstractor<DdType, ValueType>::get
     return abstractionInformation.get();
 }
 
+#ifdef STORM_HAVE_CUDD
 template class StateSetAbstractor<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class StateSetAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class StateSetAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 #endif
 }  // namespace abstraction

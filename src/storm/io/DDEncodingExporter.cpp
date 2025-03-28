@@ -26,14 +26,18 @@ void explicitExportSymbolicModel(std::string const& filename, std::shared_ptr<st
     }
 }
 
+#ifdef STORM_HAVE_CUDD
 template void explicitExportSymbolicModel<storm::dd::DdType::CUDD, double>(
     std::string const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>> sparseModel);
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template void explicitExportSymbolicModel<storm::dd::DdType::Sylvan, double>(
     std::string const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> sparseModel);
-
 template void explicitExportSymbolicModel<storm::dd::DdType::Sylvan, storm::RationalNumber>(
     std::string const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>> sparseModel);
 template void explicitExportSymbolicModel<storm::dd::DdType::Sylvan, storm::RationalFunction>(
     std::string const&, std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>> sparseModel);
+#endif
 }  // namespace io
 }  // namespace storm

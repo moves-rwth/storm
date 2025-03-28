@@ -298,9 +298,23 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
     }
 };
 
+#if defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
 typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment,
                          SparseNativeSorEnvironment, HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment, HybridSylvanGmmxxGmresEnvironment>
     TestingTypes;
+#elif defined(STORM_HAVE_CUDD) && !defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment,
+                         SparseNativeSorEnvironment, HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment>
+    TestingTypes;
+#elif !defined(STORM_HAVE_CUDD) && defined(STORM_HAVE_SYLVAN)
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment,
+                         SparseNativeSorEnvironment, HybridSylvanGmmxxGmresEnvironment>
+    TestingTypes;
+#else
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment,
+                         SparseNativeSorEnvironment>
+    TestingTypes;
+#endif
 
 TYPED_TEST_SUITE(CtmcCslModelCheckerTest, TestingTypes, );
 

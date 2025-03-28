@@ -2469,10 +2469,14 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     return result;
 }
 
+#ifdef STORM_HAVE_CUDD
 template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;
-template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
 template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 }  // namespace builder
 }  // namespace storm

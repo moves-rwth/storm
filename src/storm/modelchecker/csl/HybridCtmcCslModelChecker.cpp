@@ -1,8 +1,6 @@
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
@@ -173,11 +171,14 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
 }
 
 // Explicitly instantiate the model checker.
+#ifdef STORM_HAVE_CUDD
 template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
-template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
 template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 template class HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
-
+#endif
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,7 +1,8 @@
 #include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
 
-#include "storm/storage/dd/DdManager.h"
+#ifdef STORM_HAVE_CUDD
 
+#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
 
@@ -404,3 +405,4 @@ template class InternalSignatureRefiner<storm::dd::DdType::CUDD, double>;
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm
+#endif

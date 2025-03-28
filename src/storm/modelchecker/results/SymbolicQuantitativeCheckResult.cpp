@@ -205,10 +205,15 @@ void SymbolicQuantitativeCheckResult<Type, ValueType>::oneMinus() {
 }
 
 // Explicitly instantiate the class.
+#ifdef STORM_HAVE_CUDD
 template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
-template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
 template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+
 }  // namespace modelchecker
 }  // namespace storm

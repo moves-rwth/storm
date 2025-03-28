@@ -109,12 +109,16 @@ std::shared_ptr<Ctmc<Type, NewValueType>> Ctmc<Type, ValueType>::toValueType() c
 }
 
 // Explicitly instantiate the template class.
+#ifdef STORM_HAVE_CUDD
 template class Ctmc<storm::dd::DdType::CUDD, double>;
-template class Ctmc<storm::dd::DdType::Sylvan, double>;
+#endif
 
+#ifdef STORM_HAVE_SYLVAN
+template class Ctmc<storm::dd::DdType::Sylvan, double>;
 template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template std::shared_ptr<Ctmc<storm::dd::DdType::Sylvan, double>> Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType() const;
 template class Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
 
 }  // namespace symbolic
 }  // namespace models

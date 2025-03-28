@@ -175,15 +175,22 @@ storm::dd::Add<DdType, ValueType> const& SignatureComputer<DdType, ValueType>::g
     return boost::get<storm::dd::Add<DdType, ValueType>>(this->transitionMatrix01.get());
 }
 
+#ifdef STORM_HAVE_CUDD
 template class SignatureIterator<storm::dd::DdType::CUDD, double>;
+
+template class SignatureComputer<storm::dd::DdType::CUDD, double>;
+#endif
+
+#ifdef STORM_HAVE_SYLVAN
 template class SignatureIterator<storm::dd::DdType::Sylvan, double>;
 template class SignatureIterator<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SignatureIterator<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
-template class SignatureComputer<storm::dd::DdType::CUDD, double>;
 template class SignatureComputer<storm::dd::DdType::Sylvan, double>;
 template class SignatureComputer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class SignatureComputer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+#endif
+
 }  // namespace bisimulation
 }  // namespace dd
 }  // namespace storm
