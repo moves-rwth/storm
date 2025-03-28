@@ -14,16 +14,18 @@ if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/_deps/carl-build/carlConfig.cmake")
+set(STORM_RESOURCE_INCLUDE_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_INCLUDE_INSTALL_DIR@")
+set(STORM_RESOURCE_LIBRARY_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_LIBRARY_INSTALL_DIR@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake")
 if(NOT TARGET lib_carl)
-    message(FATAL_ERROR "Including _deps/carl-build/carlConfig.cmake did not define target lib_carl.")
+    message(FATAL_ERROR "Including ${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake did not define target lib_carl.")
 endif()
-set(storm_carl_DIR "_deps/carl-build")
-include("${CMAKE_CURRENT_LIST_DIR}/_deps/sylvanfetch-build/src/cmake/sylvan-config.cmake")
+set(storm_carl_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
 
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
-# Note that this currently assumes that the sources are not moved away from the build tree.
-list(INSERT CMAKE_MODULE_PATH 0 "@PROJECT_SOURCE_DIR@/resources/cmake/find_modules/")
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
 
 find_dependency(Boost QUIET)
 if(@STORM_HAVE_Z3@)
@@ -74,8 +76,8 @@ add_library(cudd3 STATIC IMPORTED)
 set_target_properties(
 		cudd3
 		PROPERTIES
-		IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd@STATIC_EXT@
-		INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/resources/3rdparty/cudd-3.0.0/include/
+		IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libcudd@STATIC_EXT@
+		INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
 )
 
 if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?

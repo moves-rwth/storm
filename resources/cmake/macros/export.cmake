@@ -21,19 +21,13 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/stormConfigVersion.
 configure_package_config_file(
         resources/cmake/stormConfig.cmake.in
         ${PROJECT_BINARY_DIR}/stormConfig.cmake
-        INSTALL_DESTINATION ${STORM_CMAKE_INSTALL_DIR}
-        PATH_VARS STORM_INCLUDE_INSTALL_DIR
+        INSTALL_DESTINATION ${PROJECT_BINARY_DIR}
+        PATH_VARS PROJECT_BINARY_DIR
 )
-#
-# # For the install tree
-# TODO is this needed maybe?
-#set(CONF_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include/")
-##file(RELATIVE_PATH REL_INCLUDE_DIR "${STORM_CMAKE_INSTALL_DIR}" "${STORM_INCLUDE_INSTALL_DIR}")
-##set(CONF_INCLUDE_DIRS "\${storm_CMAKE_DIR}/${REL_INCLUDE_DIR}/storm")
-#
-#configure_package_config_file(
-#    resources/cmake/stormConfig.cmake.in
-#    ${PROJECT_BINARY_DIR}/stormConfig.install.cmake
-#    INSTALL_DESTINATION ${STORM_CMAKE_INSTALL_DIR}
-#    PATH_VARS STORM_INCLUDE_INSTALL_DIR
-#)
+
+configure_package_config_file(
+    resources/cmake/stormConfig.cmake.install.in
+    ${PROJECT_BINARY_DIR}/stormConfig.cmake.install
+    INSTALL_DESTINATION ${STORM_CMAKE_INSTALL_DIR}
+    PATH_VARS STORM_INCLUDE_INSTALL_DIR
+)

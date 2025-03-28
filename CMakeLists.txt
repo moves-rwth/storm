@@ -600,7 +600,7 @@ export_option(STORM_HAVE_GUROBI)
 include(export)
 
 install(DIRECTORY ${STORM_CMAKE_FIND_MODULES} DESTINATION ${STORM_CMAKE_INSTALL_DIR})
-install(FILES ${PROJECT_BINARY_DIR}/stormConfig.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/stormConfig.cmake.install DESTINATION ${STORM_CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
 install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 

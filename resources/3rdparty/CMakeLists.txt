@@ -335,6 +335,7 @@ FETCHCONTENT_DECLARE(
 SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(USE_GINAC ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(CARL_LIB_INSTALL_DIR "lib/storm")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
