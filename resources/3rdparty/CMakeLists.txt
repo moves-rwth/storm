@@ -105,7 +105,7 @@ list(APPEND STORM_DEP_TARGETS eigen3storm)
 
 # Boost Option variables
 set(Boost_NO_WARN_NEW_VERSIONS ON)
-find_package(Boost 1.65.1 QUIET REQUIRED)
+find_package(Boost 1.70.0 QUIET REQUIRED NO_MODULE)
 if (${Boost_VERSION} VERSION_GREATER_EQUAL "1.81.0")
     message(STATUS "Storm - Using workaround for Boost >= 1.81")
     add_compile_options(-DBOOST_PHOENIX_STL_TUPLE_H_) # or add compile_definitions?
@@ -202,32 +202,14 @@ list(APPEND STORM_DEP_TARGETS ModernJSON)
 ##
 #############################################################
 
-find_package(Z3 QUIET 4.8.7 NO_MODULE)
-# Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
-if(TARGET z3::libz3)
-    set(STORM_HAVE_Z3 ON)
-    set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
-
-    set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
-
-    if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
-        message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
-        message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
-        set(Z3_FOUND FALSE)
-    else()
-        # Check whether the version of z3 supports optimization
-        message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
-        list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
-    endif()
-else()
-    # Debian and Ubuntu packages are as of Debian 14 and Ubuntu 24.04 very old,
-    # such that no Cmake config files are provided. For the time being, we use a FindZ3.cmake script.
-    find_package(Z3 QUIET 4.8.7)
-
-    if (Z3_FOUND)
-
+if(NOT STORM_DISABLE_Z3)
+    find_package(Z3 QUIET 4.8.7 NO_MODULE)
+    # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
+    if(TARGET z3::libz3)
         set(STORM_HAVE_Z3 ON)
-        set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
+        set(STORM_Z3_CONFIG ON) # For the config file, did we include z3 via a config (yes)
+
+        set(Z3_VERSION "${Z3_VERSION_MAJOR}.${Z3_VERSION_MINOR}.${Z3_VERSION_PATCH}")
 
         if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
             message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
@@ -236,21 +218,42 @@ else()
         else()
             # Check whether the version of z3 supports optimization
             message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
-
-            add_library(z3 SHARED IMPORTED)
-            set_target_properties(
-                    z3
-                    PROPERTIES
-                    IMPORTED_LOCATION ${Z3_LIBRARIES}
-                    INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
-            )
-            list(APPEND STORM_DEP_IMP_TARGETS z3)
+            list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
         endif()
     else()
-        message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
-    endif()
-endif()
+        # Debian and Ubuntu packages are as of Debian 14 and Ubuntu 24.04 very old,
+        # such that no Cmake config files are provided. For the time being, we use a FindZ3.cmake script.
+        find_package(Z3 QUIET 4.8.7)
 
+        if (Z3_FOUND)
+
+            set(STORM_HAVE_Z3 ON)
+            set(STORM_Z3_CONFIG OFF) # For the config file, did we include z3 via a config (no)
+
+            if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
+                message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
+                message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+                set(Z3_FOUND FALSE)
+            else()
+                # Check whether the version of z3 supports optimization
+                message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+
+                add_library(z3 SHARED IMPORTED)
+                set_target_properties(
+                        z3
+                        PROPERTIES
+                        IMPORTED_LOCATION ${Z3_LIBRARIES}
+                        INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
+                )
+                list(APPEND STORM_DEP_IMP_TARGETS z3)
+            endif()
+        else()
+            message (WARNING "Storm - Z3 not found. Building of Prism/JANI models will not be supported.")
+        endif()
+    endif()
+else()
+    message (WARNING "Storm - Z3 not linked. Building of Prism/JANI models will not be supported.")
+endif()
 
 if (Z3_FOUND)
     # TODO We may remove STORM_HAVE_Z3_OPTIMIZE checks

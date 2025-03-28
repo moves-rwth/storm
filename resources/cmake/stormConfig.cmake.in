@@ -25,7 +25,7 @@ set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
 # Note that this currently assumes that the sources are not moved away from the build tree.
 list(INSERT CMAKE_MODULE_PATH 0 "@PROJECT_SOURCE_DIR@/resources/cmake/find_modules/")
 
-find_dependency(Boost QUIET)
+find_dependency(Boost QUIET NO_MODULE)
 if(@STORM_HAVE_Z3@)
     if(@STORM_Z3_CONFIG@)
         find_dependency(Z3 4.8.7 NO_MODULE)
