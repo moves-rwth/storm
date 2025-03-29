@@ -290,7 +290,7 @@ jobs:
         run: |
           docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build'  .."
           docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'
+          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
       - name: Run installed storm
