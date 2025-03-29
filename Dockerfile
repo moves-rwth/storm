@@ -20,9 +20,10 @@ ARG build_type=Release
 ARG no_threads=1
 
 # Specify Storm configuration (ON/OFF)
-ARG gurobi_support="ON"
-ARG soplex_support="ON"
-ARG spot_support="ON"
+ARG disable_gurobi="OFF"
+ARG disable_soplex="OFF"
+ARG disable_spot="OFF"
+ARG disable_mathsat="OFF"
 ARG developer="OFF"
 ARG cln_exact="OFF"
 ARG cln_ratfunc="ON"
@@ -47,9 +48,10 @@ WORKDIR /opt/storm/build
 # Configure Storm
 RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
-             -DSTORM_USE_GUROBI=$gurobi_support \
-             -DSTORM_USE_SOPLEX=$soplex_support \
-             -DSTORM_USE_SPOT_SYSTEM=$spot_support \
+             -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+             -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
+             -DSTORM_DISABLE_SOPLEX=$disable_spot \
+             -DSTORM_DISABLE_SPOT=$disable_spot \
              -DSTORM_DEVELOPER=$developer \
              -DSTORM_USE_CLN_EA=$cln_exact \
              -DSTORM_USE_CLN_RF=$cln_ratfunc \
@@ -65,5 +67,4 @@ RUN make storm -j $no_threads
 # (This can be skipped or adapted depending on custom needs)
 RUN make binaries -j $no_threads
 
-# Set path
-ENV PATH="/opt/storm/build/bin:$PATH"
+WORKDIR /opt/storm

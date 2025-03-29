@@ -6,7 +6,7 @@
 #include "storm/adapters/MathsatExpressionAdapter.h"
 #include "storm/solver/SmtSolver.h"
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 #include "mathsat.h"
 #endif
 
@@ -33,7 +33,7 @@ class MathsatSmtSolver : public SmtSolver {
         bool enableInterpolantGeneration = false;
     };
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     class MathsatAllsatModelReference : public SmtSolver::ModelReference {
        public:
         MathsatAllsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, msat_term* model,
@@ -51,7 +51,7 @@ class MathsatSmtSolver : public SmtSolver {
     };
 #endif
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     class MathsatModelReference : public SmtSolver::ModelReference {
        public:
         MathsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env,
@@ -110,7 +110,7 @@ class MathsatSmtSolver : public SmtSolver {
    private:
     storm::expressions::SimpleValuation convertMathsatModelToValuation();
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     // The MathSAT environment.
     msat_env env;
 
