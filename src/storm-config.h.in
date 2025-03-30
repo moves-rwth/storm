@@ -48,6 +48,12 @@
 // Whether SoPlex is available and to be used
 #cmakedefine STORM_HAVE_SOPLEX
 
+// Whether CUDD is available and to be used
+#cmakedefine STORM_HAVE_CUDD
+
+// Whether Sylvan is available and to be used
+#cmakedefine STORM_HAVE_SYLVAN
+
 // Whether benchmarks from QVBS can be used as input
 #cmakedefine STORM_HAVE_QVBS
 

@@ -1,14 +1,14 @@
-#ifndef STORM_STORAGE_DD_BDD_H_
-#define STORM_STORAGE_DD_BDD_H_
+#pragma once
 
 #include <functional>
 
+#include "storm/storage/BitVector.h"
+#include "storm/storage/PairHash.h"
 #include "storm/storage/dd/Dd.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/storage/PairHash.h"
 #include "storm/storage/dd/InternalBdd.h"
 #include "storm/storage/dd/cudd/InternalCuddBdd.h"
+#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
 namespace logic {
@@ -451,5 +451,3 @@ struct hash<storm::dd::Bdd<LibraryType>> {
     }
 };
 }  // namespace std
-
-#endif /* STORM_STORAGE_DD_BDD_H_ */
