@@ -1,5 +1,5 @@
 project(carlext)
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.22)
 include(ExternalProject)
 
 option(STORM_3RDPARTY_BINARY_DIR "3rd party bin dir")
