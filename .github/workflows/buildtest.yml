@@ -25,9 +25,11 @@ jobs:
           - {name: "GMP exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
+             Cudd: "ON",
              Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
+             Sylvan: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
@@ -37,9 +39,11 @@ jobs:
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
+             Cudd: "ON",
              Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
+             Sylvan: "ON",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "OFF",
@@ -49,9 +53,11 @@ jobs:
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
+             Cudd: "ON",
              Gurobi: "ON",
              Soplex: "ON",
              Spot: "ON",
+             Sylvan: "ON",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "ON",
@@ -61,9 +67,11 @@ jobs:
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
+             Cudd: "OFF",
              Gurobi: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
+             Sylvan: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
@@ -73,9 +81,11 @@ jobs:
           - {name: "Minimal dependencies",
             baseImg: "storm-basesystem:minimal_dependencies",
             buildType: "Debug",
+             Cudd: "OFF",
              Gurobi: "OFF",
              Soplex: "OFF",
              Spot: "OFF",
+             Sylvan: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
@@ -90,9 +100,11 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg cudd_support="${{ matrix.config.Cudd }}" \
             --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
             --build-arg soplex_support="${{ matrix.config.Soplex }}" \
             --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg sylvan_support="${{ matrix.config.Sylvan }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
             --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
@@ -160,7 +172,7 @@ jobs:
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
             --build-arg packages="${{ matrix.config.packages }}" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments cudd_support, sylvan_support, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
 
