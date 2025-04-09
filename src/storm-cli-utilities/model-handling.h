@@ -516,15 +516,6 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
             result = buildModelSparse<ValueType>(input, buildSettings);
         }
 
-        // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Entry point.
-        uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
-        if (DEBUG_THESIS_BENCHMARK != 0) {
-            STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
-                            "MEC decomposition benchmarking is only available for symbolic models.");
-            doMecBenchmark<DdType, ValueType>((storm::models::ModelBase const&)*result, DEBUG_THESIS_BENCHMARK);
-            exit(0);
-        }
-
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
@@ -1292,6 +1283,17 @@ std::shared_ptr<storm::models::ModelBase> buildPreprocessModelWithValueTypeAndDd
     std::shared_ptr<storm::models::ModelBase> model;
     if (!buildSettings.isNoBuildModelSet()) {
         model = buildModel<DdType, BuildValueType>(input, ioSettings, mpi);
+
+        // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Entry point.
+        auto builderType = storm::utility::getBuilderType(mpi.engine);
+        uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
+        if (DEBUG_THESIS_BENCHMARK != 0) {
+            STORM_LOG_THROW(builderType == storm::builder::BuilderType::Dd, storm::exceptions::InvalidSettingsException,
+                            "MEC decomposition benchmarking is only available for symbolic models.");
+            doMecBenchmark<DdType, BuildValueType>((storm::models::ModelBase const&)*model, DEBUG_THESIS_BENCHMARK);
+            return model;
+        }
+
     }
 
     if (model) {
@@ -1299,6 +1301,7 @@ std::shared_ptr<storm::models::ModelBase> buildPreprocessModelWithValueTypeAndDd
     }
 
     STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
+
 
     if (model) {
         auto preprocessingResult = preprocessModel<DdType, BuildValueType, VerificationValueType>(model, input, mpi);
@@ -1313,6 +1316,13 @@ std::shared_ptr<storm::models::ModelBase> buildPreprocessModelWithValueTypeAndDd
 template<storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
 std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     auto model = buildPreprocessModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, mpi);
+
+    // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Early exit.
+    uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
+    if (DEBUG_THESIS_BENCHMARK != 0) {
+        return model;
+    }
+
     if (model) {
         exportModel<DdType, BuildValueType>(model, input);
     }
@@ -1333,6 +1343,13 @@ void processInputWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessi
     } else {
         std::shared_ptr<storm::models::ModelBase> model =
             buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, mpi);
+
+        // THESIS DATA GATHERING [rmnt] - Benchmarking the Symbolic MEC decomposition algorithms. Early exit.
+        uint64_t DEBUG_THESIS_BENCHMARK = storm::settings::getModule<storm::settings::modules::DebugSettings>().forceMECDecompositionAlgorithm();
+        if (DEBUG_THESIS_BENCHMARK != 0) {
+            return;
+        }
+
         if (model) {
             if (counterexampleSettings.isCounterexampleSet()) {
                 generateCounterexamples<VerificationValueType>(model, input);
