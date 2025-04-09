@@ -12,7 +12,7 @@ This is a custom fork of Storm for my Bachelor and Master Thesis at IIT Delhi, t
 - `src/storm/storage/SymbolicSCCDecomposition.h` and `src/storm/storage/SymbolicSCCDecomposition_stats.h` contain symbolic SCC decomposition algorithm implementations
 - `src/storm/storage/THESIS_DEBUG.h` contains miscellaneous definitions for the algorithms we benchmarked.
 
-To run any of the symbolic MEC decomposition algorithms, call the `storm` binary as usual, adding the argument `--benchmarkForceMECDecompositionAlgorithm <n>` with `n = 1,2,3` for `NAIVE, LOCKSTEP, INTERLEAVE`. Using `n = 4,5,6` also counts and outputs the number of symbolic operations performed by the `NAIVE, LOCKSTEP, INTERLEAVE` algorithms. Usual Storm GitHub README is below.
+To run any of the symbolic MEC decomposition algorithms, call the `storm` binary as usual, adding the argument `--benchmarkForceMECDecompositionAlgorithm <n>` with `n = 1,3,5` for `NAIVE, LOCKSTEP, INTERLEAVE`. Using `n = 2,4,6` also counts and outputs the number of symbolic operations performed by the `NAIVE, LOCKSTEP, INTERLEAVE` algorithms. Usual Storm GitHub README is below.
 
 Usage
 -----------------------------
