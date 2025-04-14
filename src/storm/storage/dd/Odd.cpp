@@ -148,7 +148,6 @@ void Odd::exportToDot(std::string const& filename) const {
 
     for (auto const& levelNodes : levelToOddNodesMap) {
         dotFile << "{ rank = same; \"" << levelNodes.first << "\"\n";
-        ;
         for (auto const& node : levelNodes.second) {
             dotFile << "\"" << node << "\";\n";
         }

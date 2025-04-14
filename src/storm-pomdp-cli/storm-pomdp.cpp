@@ -1,18 +1,12 @@
-#include "storm/utility/initialize.h"
+#include <typeinfo>
 
+#include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/model-handling.h"
+#include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm-pomdp-cli/settings/PomdpSettings.h"
-#include "storm/analysis/GraphConditions.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-cli-utilities/model-handling.h"
-
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
@@ -27,16 +21,17 @@
 #include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-
-#include <typeinfo>
+#include "storm/utility/initialize.h"
 
 namespace storm {
 namespace pomdp {
@@ -461,10 +456,24 @@ void processOptions() {
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
     switch (mpi.ddType) {
         case storm::dd::DdType::CUDD:
+#ifdef STORM_HAVE_CUDD
             processOptionsWithDdLib<storm::dd::DdType::CUDD>(symbolicInput, mpi);
+#else
+            STORM_LOG_THROW(
+                false, storm::exceptions::MissingLibraryException,
+                "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                "of Storm with CUDD support.");
+#endif
             break;
         case storm::dd::DdType::Sylvan:
+#ifdef STORM_HAVE_SYLVAN
             processOptionsWithDdLib<storm::dd::DdType::Sylvan>(symbolicInput, mpi);
+#else
+            STORM_LOG_THROW(
+                false, storm::exceptions::MissingLibraryException,
+                "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a version "
+                "of Storm with Sylvan support.");
+#endif
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Dd Type.");

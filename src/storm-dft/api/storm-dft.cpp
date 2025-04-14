@@ -1,15 +1,15 @@
 #include "storm-dft/api/storm-dft.h"
 
-#include "storm-conv/api/storm-conv.h"
-#include "storm-conv/settings/modules/JaniExportSettings.h"
-#include "storm-dft/settings/modules/DftGspnSettings.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
-
 #include <memory>
 #include <vector>
+
+#include "storm-conv/api/storm-conv.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/modelchecker/DftModularizationChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/settings/modules/DftGspnSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/storage/SylvanBddManager.h"
@@ -25,6 +25,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
                    bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                    std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
+#ifdef STORM_HAVE_SYLVAN
     if (calculateMttf) {
         if (mttfAlgorithmName == "proceeding") {
             std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft, mttfStepsize, mttfPrecision) << '\n';
@@ -159,6 +160,11 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
             }
         }
     });
+#else
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                    "version of Storm with Sylvan support.");
+#endif
 }
 
 template<>
@@ -167,7 +173,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunct
                    bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                    std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supported for this data type.");
 }
 
 template<typename ValueType>

@@ -53,7 +53,6 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
     ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-    ;
     ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
     STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
@@ -251,7 +250,6 @@ std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<S
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
     ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-    ;
     ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
     std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(

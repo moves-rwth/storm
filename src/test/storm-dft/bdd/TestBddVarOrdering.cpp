@@ -8,6 +8,7 @@
 namespace {
 
 TEST(TestBddVarOrdering, VariableOrdering) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
     auto transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager)};
@@ -36,9 +37,13 @@ TEST(TestBddVarOrdering, VariableOrdering) {
     EXPECT_EQ("x1", manager->getName(2));
     EXPECT_EQ("x3", manager->getName(3));
     EXPECT_EQ(7ul, bdd.NodeCount());
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST(TestBddVarOrdering, OrderParser) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
 
     // Load variable ordering
@@ -59,6 +64,9 @@ TEST(TestBddVarOrdering, OrderParser) {
     EXPECT_EQ("x1", manager->getName(2));
     EXPECT_EQ("x3", manager->getName(3));
     EXPECT_EQ(7ul, bdd.NodeCount());
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 }  // namespace

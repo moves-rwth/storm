@@ -41,6 +41,7 @@ class SylvanBddManager {
      */
     ~SylvanBddManager() = default;
 
+#ifdef STORM_HAVE_SYLVAN
     /*!
      * All code that manipulates DDs shall be called through this function.
      * This is generally needed to set-up the correct context.
@@ -164,13 +165,40 @@ class SylvanBddManager {
             storm::io::closeFile(filestream);
         }
     }
+#else
+    void execute(std::function<void()> const &f) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    uint32_t createVariable(std::string const name) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    uint32_t getIndex(std::string const name) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+
+    std::string getName(uint32_t const index) const {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     storm::dd::InternalDdManager<storm::dd::DdType::Sylvan> internalManager{};
     uint32_t nextFreeVariableIndex{0};
 
     std::map<std::string, uint32_t> nameToIndex{};
     std::map<uint32_t, std::string> indexToName{};
+#endif
 };
 
 }  // namespace storage
