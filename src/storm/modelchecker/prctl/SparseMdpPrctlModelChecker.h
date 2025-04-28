@@ -38,10 +38,14 @@ class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<Sparse
                                                                          CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env,
                                                                   CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> computeDiscountedCumulativeRewards(
+        Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(
         Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeTotalRewards(Environment const& env,
                                                              CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> computeDiscountedTotalRewards(
+        Environment const& env, CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env,
                                                                     CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env,
