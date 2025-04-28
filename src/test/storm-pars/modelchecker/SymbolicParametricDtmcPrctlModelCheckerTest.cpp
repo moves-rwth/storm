@@ -18,6 +18,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
 TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
+#ifdef STORM_HAVE_SYLVAN
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
 
@@ -83,4 +84,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die_RationalFunction_Sylvan) {
 
     EXPECT_EQ(storm::utility::convertNumber<storm::RationalFunctionCoefficient>(quantitativeResult4.sum().evaluate(instantiation)),
               storm::utility::convertNumber<storm::RationalFunctionCoefficient>(std::string("11/3")));
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
