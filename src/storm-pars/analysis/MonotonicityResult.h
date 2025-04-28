@@ -5,6 +5,7 @@
 #include <set>
 
 #include <memory>
+#include "storm-pars/analysis/MonotonicityKind.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/BitVector.h"
 
@@ -13,16 +14,7 @@ namespace analysis {
 template<typename VariableType>
 class MonotonicityResult {
    public:
-    /*!
-     * The results of monotonicity checking for a single Parameter Region
-     */
-    enum class Monotonicity {
-        Incr,     /*!< the result is monotonically increasing */
-        Decr,     /*!< the result is monotonically decreasing */
-        Constant, /*!< the result is constant */
-        Not,      /*!< the result is not monotonic */
-        Unknown   /*!< the monotonicity result is unknown */
-    };
+    using Monotonicity = storm::analysis::MonotonicityKind;
 
     /*!
      * Constructs a new MonotonicityResult object.
@@ -59,7 +51,7 @@ class MonotonicityResult {
      *
      * @return The parameter / Monotonicity map
      */
-    std::map<VariableType, Monotonicity> getMonotonicityResult() const;
+    std::map<VariableType, Monotonicity> const& getMonotonicityResult() const;
 
     void splitBasedOnMonotonicity(std::set<VariableType> const& consideredVariables, std::set<VariableType>& monotoneIncr, std::set<VariableType>& monotoneDecr,
                                   std::set<VariableType>& notMontone) const;

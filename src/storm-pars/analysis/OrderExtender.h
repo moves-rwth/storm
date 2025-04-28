@@ -39,7 +39,7 @@ class OrderExtender {
      * @param bottomStates The bottom states of the order.
      * @param matrix The matrix of the considered model.
      */
-    OrderExtender(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
+    OrderExtender(storm::storage::BitVector const& topStates, storm::storage::BitVector const& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
     /*!
      * Creates an order based on the given formula.
@@ -66,11 +66,11 @@ class OrderExtender {
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
                                                                                  std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
 
-    void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues);
-    void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues);
-    void setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues);
-    void setMinValuesInit(std::vector<ConstantType>& minValues);
-    void setMaxValuesInit(std::vector<ConstantType>& minValues);
+    void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues, std::vector<ConstantType>&& maxValues);
+    void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues);
+    void setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& maxValues);
+    void setMinValuesInit(std::vector<ConstantType>&& minValues);
+    void setMaxValuesInit(std::vector<ConstantType>&& minValues);
 
     void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
