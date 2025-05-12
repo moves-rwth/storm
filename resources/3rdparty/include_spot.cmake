@@ -27,21 +27,24 @@ endif()
 
 set(STORM_SHIPPED_SPOT OFF)
 if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
-
-    # download and install shipped Spot
+    # Set Spot version
+    set(SPOT_SHIPPED_VERSION 2.13)
+    # Download and install shipped Spot
     ExternalProject_Add(spot
-        URL https://www.lrde.epita.fr/dload/spot/spot-2.13.tar.gz # When updating, also change version output below
+        URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
+        # First check whether patch was already applied (--reverse --check), otherwise apply patch
+        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch --reverse --check || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch
         CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python
         BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT} ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}
     )
     add_dependencies(resources spot)
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
@@ -51,7 +54,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
-    message(STATUS "Storm - Using shipped version of Spot 2.13 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
+    message(STATUS "Storm - Using shipped version of Spot ${SPOT_SHIPPED_VERSION} (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
 endif()
 
