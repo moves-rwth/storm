@@ -36,13 +36,15 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
+        # First check whether patch was already applied (--reverse --check), otherwise apply patch
+        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch --reverse --check || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch
         CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python
         BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         LOG_CONFIGURE ON
         LOG_BUILD ON
         LOG_INSTALL ON
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT} ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}
     )
     add_dependencies(resources spot)
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")

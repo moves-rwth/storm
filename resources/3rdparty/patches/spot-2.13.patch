@@ -1,0 +1,24 @@
+From d3eaf192ab1e377d60960a7f233ae3c3c3bf9145 Mon Sep 17 00:00:00 2001
+From: Matthias Volk <m.volk@tue.nl>
+Date: Thu, 8 May 2025 21:31:02 +0200
+Subject: [PATCH] Added missing include
+
+---
+ spot/priv/robin_hood.hh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/spot/priv/robin_hood.hh b/spot/priv/robin_hood.hh
+index a4bc8beae..f7f212597 100644
+--- a/spot/priv/robin_hood.hh
++++ b/spot/priv/robin_hood.hh
+@@ -39,6 +39,7 @@
+ #define ROBIN_HOOD_VERSION_PATCH 5  // for backwards-compatible bug fixes
+ 
+ #include <algorithm>
++#include <cstdint>
+ #include <cstdlib>
+ #include <cstring>
+ #include <functional>
+-- 
+2.49.0
+
