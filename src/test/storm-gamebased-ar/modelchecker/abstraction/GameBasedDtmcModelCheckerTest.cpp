@@ -17,11 +17,23 @@
 
 class Cudd {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
 };
 
 class Sylvan {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
 };
 
@@ -35,6 +47,7 @@ class GameBasedDtmcModelCheckerTest : public ::testing::Test {
 #ifndef STORM_HAVE_MSAT
         GTEST_SKIP() << "MathSAT not available.";
 #endif
+        TestType::checkLibraryAvailable();
     }
 };
 

@@ -1,41 +1,21 @@
 #pragma once
 
-#include "storm/api/storm.h"
+#include <type_traits>
 
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-gamebased-ar/api/verification.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/ExpressionParser.h"
-
-#include "storm/io/file.h"
-#include "storm/utility/AutomaticSettings.h"
-#include "storm/utility/Engine.h"
-#include "storm/utility/NumberTraits.h"
-#include "storm/utility/SignalHandler.h"
-#include "storm/utility/macros.h"
-
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/initialize.h"
-
-#include <type_traits>
-
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Property.h"
-
+#include "storm/api/storm.h"
 #include "storm/builder/BuilderType.h"
-
-#include "storm/models/ModelBase.h"
-
 #include "storm/environment/Environment.h"
-
 #include "storm/exceptions/OptionParserException.h"
-
+#include "storm/io/file.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-
+#include "storm/models/ModelBase.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -48,10 +28,17 @@
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/Qvbs.h"
+#include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
-
+#include "storm/utility/AutomaticSettings.h"
+#include "storm/utility/Engine.h"
+#include "storm/utility/NumberTraits.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/initialize.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace cli {
@@ -1430,26 +1417,41 @@ void processInputWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessi
 
 template<typename ValueType>
 void processInputWithValueType(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    if (mpi.ddType == storm::dd::DdType::CUDD) {
-        STORM_LOG_ASSERT(mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision &&
-                             mpi.buildValueType == ModelProcessingInformation::ValueType::FinitePrecision && (std::is_same<ValueType, double>::value),
-                         "Unexpected value type for Dd library cudd.");
-        processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, mpi);
-    } else {
-        STORM_LOG_ASSERT(mpi.ddType == storm::dd::DdType::Sylvan, "Unknown DD library.");
-        if (mpi.buildValueType == mpi.verificationValueType) {
-            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, mpi);
-        } else {
-            // Right now, we only require (buildType == Exact and verificationType == FinitePrecision).
-            // We exclude all other combinations to safe a few template instantiations.
-            STORM_LOG_THROW((std::is_same<ValueType, double>::value) && mpi.buildValueType == ModelProcessingInformation::ValueType::Exact,
-                            storm::exceptions::InvalidArgumentException, "Unexpected combination of buildValueType and verificationValueType");
-#ifdef STORM_HAVE_CARL
-            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input, mpi);
+    switch (mpi.ddType) {
+        case storm::dd::DdType::CUDD:
+#ifdef STORM_HAVE_CUDD
+            STORM_LOG_ASSERT(mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision &&
+                                 mpi.buildValueType == ModelProcessingInformation::ValueType::FinitePrecision && (std::is_same<ValueType, double>::value),
+                             "Unexpected value type for Dd library CUDD.");
+            processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, mpi);
 #else
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unexpected buildValueType.");
+            STORM_LOG_THROW(
+                false, storm::exceptions::MissingLibraryException,
+                "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                "of Storm with CUDD support.");
 #endif
-        }
+            break;
+        case storm::dd::DdType::Sylvan:
+#ifdef STORM_HAVE_SYLVAN
+            if (mpi.buildValueType == mpi.verificationValueType) {
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, mpi);
+            } else {
+                // Right now, we only require (buildType == Exact and verificationType == FinitePrecision).
+                // We exclude all other combinations to safe a few template instantiations.
+                STORM_LOG_THROW((std::is_same<ValueType, double>::value) && mpi.buildValueType == ModelProcessingInformation::ValueType::Exact,
+                                storm::exceptions::InvalidArgumentException, "Unexpected combination of buildValueType and verificationValueType");
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input, mpi);
+            }
+#else
+            STORM_LOG_THROW(
+                false, storm::exceptions::MissingLibraryException,
+                "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a version "
+                "of Storm with Sylvan support.");
+#endif
+            break;
+        default:
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Dd Type.");
+            break;
     }
 }
 }  // namespace cli
