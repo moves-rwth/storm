@@ -676,7 +676,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
         //      = sum_{j=i+1}^{n} foxGlynnResult.weights[j]  for i=0,...,n-1
         // and then sets foxGlynnResult.totalWeight = v / uniformizationRate.
         // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
-        uint64_t l{0ull}, r{foxGlynnResult.weights.size()};
+        uint64_t l{0ull}, r{foxGlynnResult.weights.size() - 1};
         ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
         while (l < r) {
             if (foxGlynnResult.weights[l] < foxGlynnResult.weights[r]) {
