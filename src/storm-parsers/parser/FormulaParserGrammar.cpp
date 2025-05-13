@@ -43,7 +43,7 @@ void FormulaParserGrammar::initialize() {
     noAmbiguousNonAssociativeOperator.name("no ambiguous non-associative operator");
     identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
     identifier.name("identifier");
-    label %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]];
+    label %= qi::as_string[qi::raw[qi::lexeme[+(qi::char_ - qi::char_('"') - qi::eol)]]];
     label.name("label");
     quotedString %= qi::as_string[qi::lexeme[qi::omit[qi::char_('"')] > qi::raw[*(!qi::char_('"') >> qi::char_)] > qi::omit[qi::lit('"')]]];
     quotedString.name("quoted string");
