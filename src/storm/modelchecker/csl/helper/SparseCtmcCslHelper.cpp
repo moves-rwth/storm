@@ -674,7 +674,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
         // The following computes a vector v such that
         // v[i] = foxGlynnResult.totalWeight - sum_{j=0}^{i} foxGlynnResult.weights[j]
         //      = sum_{j=i+1}^{n-1} foxGlynnResult.weights[j]  for i=0,...,n-1
-        // and then sets foxGlynnResult.totalWeight = v / uniformizationRate.
+        // and then sets foxGlynnResult.weights = v / uniformizationRate.
         // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
         uint64_t l{0ull}, r{foxGlynnResult.weights.size() - 1};
         ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
@@ -687,6 +687,10 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
                 auto const tmp = foxGlynnResult.weights[r];
                 foxGlynnResult.weights[r] = sumRight / uniformizationRate;
                 sumRight += tmp;
+                if (r == 0) {
+                    // Avoid underflow for unsigned int
+                    break;
+                }
                 --r;
             }
         }
