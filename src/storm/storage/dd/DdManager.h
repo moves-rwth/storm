@@ -1,22 +1,21 @@
-#ifndef STORM_STORAGE_DD_DDMANAGER_H_
-#define STORM_STORAGE_DD_DDMANAGER_H_
+#pragma once
 
 #include <boost/optional.hpp>
 #include <functional>
 #include <set>
 #include <unordered_map>
 
+#include "storm-config.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/MetaVariablePosition.h"
-
-#include "storm/storage/expressions/Variable.h"
-
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {
@@ -413,5 +412,3 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_DDMANAGER_H_ */

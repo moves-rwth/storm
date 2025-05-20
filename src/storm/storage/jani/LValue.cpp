@@ -86,7 +86,6 @@ LValue LValue::changeAssignmentVariables(std::map<Variable const*, std::referenc
 
 std::string LValue::getName() const {
     std::string result = getVariable().getName();
-    ;
     if (isArrayAccess()) {
         for (auto const& i : arrayIndexVector) {
             result += "[" + i.toString() + "]";

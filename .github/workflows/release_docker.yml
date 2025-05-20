@@ -39,7 +39,7 @@ jobs:
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments cudd_support, gurobi_support, soplex_support, spot_support, sylvan_support, cln_exact, cln_ratfunc, all_sanitizers
       - name: Login to Docker Hub
         # Only login if using original repo
         if: github.repository_owner == 'moves-rwth'

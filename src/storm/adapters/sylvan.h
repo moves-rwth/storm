@@ -1,5 +1,8 @@
 #pragma once
 
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_SYLVAN
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wzero-length-array"
@@ -47,3 +50,5 @@ bool sylvan_mtbdd_matches_variable_index(MTBDD node, uint64_t variableIndex, int
 
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
+
+#endif
