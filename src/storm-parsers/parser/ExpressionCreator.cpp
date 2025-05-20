@@ -243,9 +243,18 @@ storm::expressions::Expression ExpressionCreator::createRationalLiteralExpressio
     }
 }
 
-storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int64_t value, bool&) const {
-    if (this->createExpressions) {
-        return manager.integer(value);
+storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(storm::RationalNumber const& value, bool&, bool& overflow) const {
+    STORM_LOG_ASSERT(storm::utility::isInteger(value), "Expected integer value.");
+    auto const min = storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<int64_t>::min());
+    auto const max = storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<int64_t>::max());
+    overflow = value < min || value > max;
+    if (overflow) {
+        STORM_LOG_ERROR("Overflow when parsing integer literal '"
+                        << value << "' as a 64 bit integer. Consider appending '.0' to the number to parse it as an (arbitrary precision) float.");
+        // parsing failure is triggered by the calling parser
+        return manager.boolean(false);
+    } else if (this->createExpressions) {
+        return manager.integer(storm::utility::convertNumber<int64_t>(value));
     } else {
         return manager.boolean(false);
     }

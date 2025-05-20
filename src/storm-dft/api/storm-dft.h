@@ -73,6 +73,19 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
 }
 
 /*!
+ * Check whether the DFT has potential modeling issues.
+ *
+ * @param dft DFT.
+ * @return Pair where the first entry is true iff the DFT has potential modeling issues. The second entry contains the warning messages for the issues.
+ */
+template<typename ValueType>
+std::pair<bool, std::string> hasPotentialModelingIssues(storm::dft::storage::DFT<ValueType> const& dft) {
+    std::stringstream stream;
+    bool modelingIssues = storm::dft::utility::DftValidator<ValueType>::hasPotentialModelingIssues(dft, stream);
+    return std::pair<bool, std::string>(modelingIssues, stream.str());
+}
+
+/*!
  * Apply transformations for DFT.
  *
  * @param dft DFT.
