@@ -28,7 +28,7 @@ endif()
 set(STORM_SHIPPED_SPOT OFF)
 if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
     # Set Spot version
-    set(SPOT_SHIPPED_VERSION 2.13)
+    set(SPOT_SHIPPED_VERSION 2.13.1)
     # Download and install shipped Spot
     ExternalProject_Add(spot
         URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
@@ -36,8 +36,6 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-        # First check whether patch was already applied (--reverse --check), otherwise apply patch
-        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch --reverse --check || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/spot-2.13.patch
         CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python
         BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
