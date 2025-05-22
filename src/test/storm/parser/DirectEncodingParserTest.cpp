@@ -97,3 +97,25 @@ TEST(DirectEncodingParserTest, IntervalDtmcTest) {
     ASSERT_EQ(613ul, dtmc->getNumberOfStates());
     EXPECT_TRUE(modelPtr->hasUncertainty());
 }
+
+TEST(DirectEncodingParserTest, PomdpParsing) {
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/pomdp/maze2_sl0.drn");
+
+    // Test if parsed correctly.
+    ASSERT_EQ(storm::models::ModelType::Pomdp, modelPtr->getType());
+    ASSERT_EQ(15ul, modelPtr->getNumberOfStates());
+    ASSERT_EQ(66ul, modelPtr->getNumberOfTransitions());
+    ASSERT_EQ(54ul, modelPtr->as<storm::models::sparse::Mdp<double>>()->getNumberOfChoices());
+    ASSERT_TRUE(modelPtr->hasLabel("init"));
+    ASSERT_EQ(1ul, modelPtr->getInitialStates().getNumberOfSetBits());
+    ASSERT_TRUE(modelPtr->hasLabel("bad"));
+    ASSERT_EQ(2ul, modelPtr->getStates("bad").getNumberOfSetBits());
+    ASSERT_TRUE(modelPtr->hasLabel("goal"));
+    ASSERT_EQ(1ul, modelPtr->getStates("goal").getNumberOfSetBits());
+    ASSERT_EQ(1ul, modelPtr->getNumberOfRewardModels());
+    ASSERT_TRUE(modelPtr->hasRewardModel("rew"));
+    ASSERT_TRUE(!modelPtr->getRewardModel("rew").hasStateRewards());
+    ASSERT_TRUE(modelPtr->getRewardModel("rew").hasStateActionRewards());
+    ASSERT_TRUE(!modelPtr->getRewardModel("rew").isAllZero());
+}
