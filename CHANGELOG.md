@@ -4,6 +4,32 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Version 1.10.x
+--------------
+
+## Version 1.10.0 (2025/05)
+- Improved `LpMinMaxLinearEquationSolver`, set relevant values in topological solvers.
+- Speed up of MEC decomposition by adjusting loops.
+- Minor improvements for steady-state properties.
+- Improved access to state valuations.
+- Improved parsing: detect and handle integer overflows in expression parsing, and handle irrational probability expressions.
+- Limit Sylvan threads to 1 on Apple Silicon.
+- Bug fixes in computation of cumulative rewards, transient variables in JANI, SMGs with non-synchronizing but labeled actions, in `SparseCbAchievabilityQuery` and `PcaaWeightVectorChecker`.
+- Updated shipped dependencies: Eigen, ExprTk, Spot.
+- `storm-dft`: Set BDD variable ordering for SFT from file.
+- `storm-dft`: Warning on potential modeling issues.
+- `storm-dft`: Bug fixes in DFT representant computation and failable elements.
+- `storm-pars`: Bug fixes in monotonicity computation.
+- `storm-pomdp`: Added cut-off memory node information.
+- `storm-pomdp`: Extended handling of terminal states.
+- `storm-pomdp`: Improved output.
+- Developer: Require at least CMake version 3.22.
+- Developer: Revised includes.
+- Developer: GLPK is optional.
+- Developer: `BitVector` conforms to `std::ranges::range` concept.
+- Developer: Improved CI tests and added builds on macOS.
+
+
 Version 1.9.x
 -------------
 
