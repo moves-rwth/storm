@@ -70,6 +70,8 @@ option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and instal
 set(SPOT_ROOT "" CACHE STRING "A hint to the root directory of Spot.")
 MARK_AS_ADVANCED(SPOT_ROOT)
 option(STORM_DISABLE_SOPLEX "Sets whether linking with Soplex should be disabled." OFF)
+set(SOPLEX_ROOT "" CACHE STRING "A hint to the root directory of Soplex.")
+MARK_AS_ADVANCED(SOPLEX_ROOT)
 option(STORM_DISABLE_XERCES "Sets whether linking with Xerces should be disabled." OFF)
 set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
 mark_as_advanced(XERCESC_ROOT)
