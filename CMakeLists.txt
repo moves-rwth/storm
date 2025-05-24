@@ -27,8 +27,7 @@ set(CMAKE_CXX_STANDARD 20)
 ## Compilation options.
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
-# TODO revert to standard on
-option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." OFF)
+option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
 MARK_AS_ADVANCED(STORM_USE_LTO)
 option(STORM_USE_THIN_LTO "Sets whether thin link-time optimizations are enabled (faster compile times than normal LTO)." OFF)
 MARK_AS_ADVANCED(STORM_USE_THIN_LTO)
