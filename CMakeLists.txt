@@ -64,6 +64,7 @@ option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
 option(STORM_DISABLE_MATHSAT "Sets whether linking with MathSat should be disabled." OFF)
 set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT.")
+MARK_AS_ADVANCED(MATHSAT_ROOT)
 option(STORM_DISABLE_SPOT "Sets whether linking with Spot should be disabled." OFF)
 option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available)." OFF)
 set(SPOT_ROOT "" CACHE STRING "A hint to the root directory of Spot.")
