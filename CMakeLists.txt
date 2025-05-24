@@ -62,6 +62,7 @@ set(STORM_CARL_GIT_REPO "https://github.com/sjunges/carl-storm.git" CACHE STRING
 set(STORM_CARL_GIT_TAG "e16e865a934853459d68d30e13e494b74db1fc0b" CACHE STRING "For fetching carl: which git tag to use")
 option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled." OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
+MARK_AS_ADVANCED(GUROBI_ROOT)
 option(STORM_DISABLE_MATHSAT "Sets whether linking with MathSat should be disabled." OFF)
 set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT.")
 MARK_AS_ADVANCED(MATHSAT_ROOT)
