@@ -63,7 +63,7 @@ set(SYLVAN_STORM_SOURCES
 target_sources(sylvan PRIVATE
 ${SYLVAN_SYLVAN_STORM_HEADERS} ${SYLVAN_STORM_SOURCES})
 ## STORMCHANGED why are the headers additionally added as private sources here?
-## -- to comply with twhat is done with sthe SYLVAN_HDRS above.
+## -- to comply with what is done with the SYLVAN_HDRS above.
 
 ## END STORMCHANGED
 
