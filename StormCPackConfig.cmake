@@ -6,7 +6,7 @@ include(InstallRequiredSystemLibraries)
 ### general settings
 set(CPACK_PACKAGE_NAME "Storm")
 set(CPACK_PACKAGE_VENDOR "Storm Developers")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Storm - A probabilistic model checker written in C++.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Storm - A Modern Probabilistic Model Checker.")
 set(CPACK_PACKAGE_CONTACT "support@stormchecker.org")
 
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
