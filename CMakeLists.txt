@@ -58,8 +58,8 @@ set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Veri
 MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
-set(STORM_CARL_GIT_REPO "https://github.com/sjunges/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-set(STORM_CARL_GIT_TAG "e16e865a934853459d68d30e13e494b74db1fc0b" CACHE STRING "For fetching carl: which git tag to use")
+set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
+set(STORM_CARL_GIT_TAG "14.29" CACHE STRING "For fetching carl: which git tag to use")
 option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled." OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
 MARK_AS_ADVANCED(GUROBI_ROOT)
@@ -120,8 +120,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
-	endif()
-	# TODO Do this more targeted
+    endif()
+    # TODO Do this more targeted
     add_definitions(-DSTORM_DEV)
 	set(STORM_DEBUG_CUDD ON)
 	set(STORM_DEBUG_SYLVAN ON)

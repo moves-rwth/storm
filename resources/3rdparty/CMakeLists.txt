@@ -252,7 +252,7 @@ if(NOT STORM_DISABLE_Z3)
         endif()
     endif()
 else()
-    message (WARNING "Storm - Z3 not linked. Building of Prism/JANI models will not be supported.")
+    message (WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
 if (Z3_FOUND)
@@ -338,7 +338,8 @@ FETCHCONTENT_DECLARE(
 SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
-SET(USE_GINAC ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
+SET(PORTABLE ${STORM_PORTABLE})
 SET(CARL_LIB_INSTALL_DIR "lib/storm")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
@@ -358,12 +359,11 @@ set(STORM_HAVE_CARL ON)
 set(STORM_CARL_SUPPORTS_FWD_DECL ON)
 list(APPEND STORM_FETCHED_TARGETS lib_carl)
 
-# Some checks to see whether we correctly configured carl.
-if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+if((STORM_USE_CLN_EA OR STORM_USE_CLN_RF) AND NOT STORM_HAVE_CLN)
+    message(FATAL_ERROR "Storm - Cannot use CLN numbers if carl is build without CLN.")
 endif()
-if(STORM_USE_CLN_RF AND NOT STORM_HAVE_GINAC)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
+if((STORM_USE_CLN_EA OR STORM_USE_CLN_RF) AND NOT STORM_HAVE_GINAC)
+    message(FATAL_ERROR "Storm - Cannot use CLN numbers if carl is build without GiNaC.")
 endif()
 
 #############################################################

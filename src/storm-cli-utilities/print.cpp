@@ -143,7 +143,7 @@ void printVersion() {
 #else
     STORM_PRINT("Not linked with Z3 Theorem Prover\n");
 #endif
-    STORM_PRINT("[...]\n");
+    STORM_PRINT("\n");
 }
 
 void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
