@@ -16,7 +16,7 @@ if(GLPK_FOUND)
     list(APPEND STORM_DEP_IMP_TARGETS glpk)
 
 else()
-    message (WARNING "Storm - Not using GLPK.")
+    message (WARNING "Storm - Not linking with GLPK.")
 endif()
 
 

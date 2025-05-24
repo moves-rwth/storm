@@ -10,7 +10,7 @@ target_sources(storm-gamebased-ar
 target_precompile_headers(storm-gamebased-ar REUSE_FROM storm)
 set_target_properties(storm-gamebased-ar PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 target_link_libraries(storm-gamebased-ar PUBLIC storm)
-set_target_properties(storm-gamebased-ar PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.a
+set_target_properties(storm-gamebased-ar PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 
 list(APPEND STORM_TARGETS storm-gamebased-ar)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)

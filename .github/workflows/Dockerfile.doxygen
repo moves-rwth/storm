@@ -34,11 +34,7 @@ WORKDIR /opt/storm/build
 
 # Configure Storm
 RUN cmake .. -DCMAKE_BUILD_TYPE=Release \
-             -DSTORM_PORTABLE=ON \
-             -DSTORM_USE_GUROBI=ON \
-             -DSTORM_USE_MATHSAT=ON \
-             -DSTORM_USE_SOPLEX=ON \
-             -DSTORM_USE_SPOT_SYSTEM=ON
+             -DSTORM_PORTABLE=ON
 
 # Build Doxygen
 RUN make doc -j $no_threads
