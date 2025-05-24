@@ -348,7 +348,7 @@ include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
 set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
 set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-message(STATUS "storm -- using carl version ${carl_VERSION} (cln: ${STORM_HAVE_CLN}, ginac: ${STORM_HAVE_GINAC})")
+message(STATUS "Storm - Using carl version ${carl_VERSION} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
 #
 add_dependencies(storm_resources lib_carl)
 # TODO this old flag is no longer really relevant as CARL must always be present.
