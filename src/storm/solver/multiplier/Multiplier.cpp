@@ -13,7 +13,6 @@
 #include "storm/exceptions/NotImplementedException.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/solver/multiplier/ViOperatorMultiplier.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
@@ -95,27 +94,7 @@ std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Envi
         type = MultiplierType::Native;
     }
 
-    // Adjust the multiplier type if an eqsolver was specified but not a multiplier
-    if (!env.solver().isLinearEquationSolverTypeSetFromDefaultValue() && env.solver().multiplier().isTypeSetFromDefault()) {
-        bool changed = false;
-        if (env.solver().getLinearEquationSolverType() == EquationSolverType::Gmmxx && type != MultiplierType::Gmmxx) {
-            type = MultiplierType::Gmmxx;
-            changed = true;
-        } else if (env.solver().getLinearEquationSolverType() == EquationSolverType::Native && type != MultiplierType::Native) {
-            type = MultiplierType::Native;
-            changed = true;
-        }
-        STORM_LOG_INFO_COND(!changed, "Selecting '" + toString(type) +
-                                          "' as the multiplier type to match the selected equation solver. If you want to override this, please explicitly "
-                                          "specify a different multiplier type.");
-    }
-
     switch (type) {
-        case MultiplierType::Gmmxx:
-            if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-                throw storm::exceptions::NotImplementedException() << "Gmm not supported with intervals.";
-            }
-            return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
         case MultiplierType::ViOperator:
             if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || std::is_same_v<ValueType, storm::Interval>) {
                 throw storm::exceptions::NotImplementedException() << "VI Operator multiplier not supported with given value type.";
