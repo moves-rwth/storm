@@ -30,7 +30,7 @@ class GmmxxMultiplier : public Multiplier<ValueType> {
     virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                               std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
                                               bool backwards = true) const override;
-    virtual void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const override;
+    void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const;
     virtual void clearCache() const override;
 
    private:

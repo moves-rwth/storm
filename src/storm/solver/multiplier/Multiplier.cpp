@@ -14,6 +14,7 @@
 
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/GmmxxMultiplier.h"
+#include "storm/solver/multiplier/ViOperatorMultiplier.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -74,15 +75,25 @@ void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, Op
 }
 
 template<typename ValueType>
-void Multiplier<ValueType>::multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2,
-                                         ValueType& val2) const {
-    multiplyRow(rowIndex, x1, val1);
-    multiplyRow(rowIndex, x2, val2);
+
+std::vector<ValueType>& Multiplier<ValueType>::provideCachedVector(uint64_t size) const {
+    if (this->cachedVector) {
+        this->cachedVector->resize(size);
+    } else {
+        this->cachedVector = std::make_unique<std::vector<ValueType>>(size);
+    }
+    return *this->cachedVector;
 }
 
 template<typename ValueType>
 std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) {
     auto type = env.solver().multiplier().getType();
+
+    // Adjust the type if the ValueType is not supported
+    if (type == MultiplierType::ViOperator && (std::is_same_v<ValueType, storm::RationalFunction> || std::is_same_v<ValueType, storm::Interval>)) {
+        STORM_LOG_INFO("Switching multiplier type from 'vioperator' to 'native' because the given ValueType is not supported by the VI Operator multiplier.");
+        type = MultiplierType::Native;
+    }
 
     // Adjust the multiplier type if an eqsolver was specified but not a multiplier
     if (!env.solver().isLinearEquationSolverTypeSetFromDefaultValue() && env.solver().multiplier().isTypeSetFromDefault()) {
@@ -105,6 +116,15 @@ std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Envi
                 throw storm::exceptions::NotImplementedException() << "Gmm not supported with intervals.";
             }
             return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
+        case MultiplierType::ViOperator:
+            if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || std::is_same_v<ValueType, storm::Interval>) {
+                throw storm::exceptions::NotImplementedException() << "VI Operator multiplier not supported with given value type.";
+            }
+            if (matrix.hasTrivialRowGrouping()) {
+                return std::make_unique<ViOperatorMultiplier<ValueType, true>>(matrix);
+            } else {
+                return std::make_unique<ViOperatorMultiplier<ValueType, false>>(matrix);
+            }
         case MultiplierType::Native:
             return std::make_unique<NativeMultiplier<ValueType>>(matrix);
     }

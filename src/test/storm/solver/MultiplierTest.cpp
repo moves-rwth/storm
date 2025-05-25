@@ -30,6 +30,17 @@ class GmmxxEnvironment {
     }
 };
 
+class ViOperatorEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
+        return env;
+    }
+};
+
 template<typename TestType>
 class MultiplierTest : public ::testing::Test {
    public:
@@ -49,7 +60,7 @@ class MultiplierTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<NativeEnvironment, GmmxxEnvironment> TestingTypes;
+typedef ::testing::Types<NativeEnvironment, GmmxxEnvironment, ViOperatorEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(MultiplierTest, TestingTypes, );
 

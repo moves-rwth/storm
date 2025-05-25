@@ -15,7 +15,7 @@ const std::string MultiplierSettings::moduleName = "multiplier";
 const std::string MultiplierSettings::multiplierTypeOptionName = "type";
 
 MultiplierSettings::MultiplierSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> multiplierTypes = {"native", "gmmxx"};
+    std::vector<std::string> multiplierTypes = {"native", "gmmxx", "vioperator"};
     this->addOption(storm::settings::OptionBuilder(moduleName, multiplierTypeOptionName, true, "Sets which type of multiplier is preferred.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplier.")
@@ -31,6 +31,8 @@ storm::solver::MultiplierType MultiplierSettings::getMultiplierType() const {
         return storm::solver::MultiplierType::Native;
     } else if (type == "gmmxx") {
         return storm::solver::MultiplierType::Gmmxx;
+    } else if (type == "vioperator") {
+        return storm::solver::MultiplierType::ViOperator;
     }
 
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplier type '" << type << "'.");

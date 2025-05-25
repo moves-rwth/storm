@@ -36,6 +36,8 @@ std::string toString(MultiplierType t) {
             return "Native";
         case MultiplierType::Gmmxx:
             return "Gmmxx";
+        case MultiplierType::ViOperator:
+            return "ViOperator";
     }
     return "invalid";
 }

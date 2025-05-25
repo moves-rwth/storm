@@ -27,9 +27,8 @@ class NativeMultiplier : public Multiplier<ValueType> {
     virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                               std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
                                               bool backwards = true) const override;
-    virtual void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const override;
-    virtual void multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2,
-                              ValueType& val2) const override;
+    void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const;
+    void multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2, ValueType& val2) const;
 
    private:
     bool parallelize(Environment const& env) const;
