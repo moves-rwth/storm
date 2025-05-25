@@ -39,7 +39,6 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> mdp =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Mdp<storm::RationalNumber>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
-    ;
 
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 

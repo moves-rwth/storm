@@ -20,9 +20,11 @@ ARG build_type=Release
 ARG no_threads=1
 
 # Specify Storm configuration (ON/OFF)
+ARG cudd_support="ON"
 ARG gurobi_support="ON"
 ARG soplex_support="ON"
 ARG spot_support="ON"
+ARG sylvan_support="ON"
 ARG developer="OFF"
 ARG cln_exact="OFF"
 ARG cln_ratfunc="ON"
@@ -47,9 +49,11 @@ WORKDIR /opt/storm/build
 # Configure Storm
 RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
+             -DSTORM_USE_CUDD=$cudd_support \
              -DSTORM_USE_GUROBI=$gurobi_support \
              -DSTORM_USE_SOPLEX=$soplex_support \
              -DSTORM_USE_SPOT_SYSTEM=$spot_support \
+             -DSTORM_USE_SYLVAN=$sylvan_support \
              -DSTORM_DEVELOPER=$developer \
              -DSTORM_USE_CLN_EA=$cln_exact \
              -DSTORM_USE_CLN_RF=$cln_ratfunc \

@@ -1,20 +1,19 @@
-#ifndef STORM_STORAGE_DD_ADD_H_
-#define STORM_STORAGE_DD_ADD_H_
+#pragma once
 
 #include <functional>
 #include <map>
 
+#include "storm-config.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/Dd.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/dd/InternalAdd.h"
+#include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/Odd.h"
-
+#include "storm/storage/dd/cudd/CuddAddIterator.h"
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
-
-#include "storm/storage/dd/cudd/CuddAddIterator.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
-
-#include "storm-config.h"
 
 namespace storm {
 namespace dd {
@@ -829,5 +828,3 @@ class Add : public Dd<LibraryType> {
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_ADD_H_ */

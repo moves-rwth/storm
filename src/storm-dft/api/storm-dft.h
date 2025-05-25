@@ -14,7 +14,6 @@
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
 #include "storm-dft/utility/RelevantEvents.h"
-
 #include "storm-gspn/api/storm-gspn.h"
 
 namespace storm::dft {

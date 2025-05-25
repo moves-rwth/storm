@@ -22,11 +22,23 @@
 
 class Cudd {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
 };
 
 class Sylvan {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
 };
 
@@ -40,6 +52,7 @@ class GraphTestAR : public ::testing::Test {
 #ifndef STORM_HAVE_MSAT
         GTEST_SKIP() << "MathSAT not available.";
 #endif
+        TestType::checkLibraryAvailable();
     }
 };
 
@@ -429,7 +442,6 @@ TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     storm::dd::Add<DdType, double> stateDistributionsUnderStrategies =
         (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>())
             .sumAbstract(game.getColumnVariables());
-    ;
     EXPECT_EQ(2831ull, stateDistributionsUnderStrategies.getNonZeroCount());
 
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).

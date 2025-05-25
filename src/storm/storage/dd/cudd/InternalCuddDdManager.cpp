@@ -1,13 +1,15 @@
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 
+#include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CuddSettings.h"
-
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
 
+#ifdef STORM_HAVE_CUDD
 InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), numberOfDdVariables(0) {
     this->cuddManager.SetMaxMemory(
         static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
@@ -216,6 +218,122 @@ cudd::Cudd const& InternalDdManager<DdType::CUDD>::getCuddManager() const {
 uint_fast64_t InternalDdManager<DdType::CUDD>::getNumberOfDdVariables() const {
     return numberOfDdVariables;
 }
+
+#else
+
+InternalDdManager<DdType::CUDD>::InternalDdManager() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalDdManager<DdType::CUDD>::~InternalDdManager() {
+    // Intentionally left empty.
+}
+
+InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddOne() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddEncodingLessOrEqualThan(uint64_t bound, InternalBdd<DdType::CUDD> const& cube,
+                                                                                         uint64_t numberOfDdVariables) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddZero() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getAddUndefined() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstant(ValueType const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<>
+InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+std::vector<InternalBdd<DdType::CUDD>> InternalDdManager<DdType::CUDD>::createDdVariables(uint64_t numberOfLayers,
+                                                                                          boost::optional<uint_fast64_t> const& position) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalDdManager<DdType::CUDD>::supportsOrderedInsertion() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalDdManager<DdType::CUDD>::allowDynamicReordering(bool value) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+bool InternalDdManager<DdType::CUDD>::isDynamicReorderingAllowed() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalDdManager<DdType::CUDD>::triggerReordering() {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalDdManager<DdType::CUDD>::debugCheck() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+void InternalDdManager<DdType::CUDD>::execute(std::function<void()> const& f) const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+uint_fast64_t InternalDdManager<DdType::CUDD>::getNumberOfDdVariables() const {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+#endif
 
 template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddOne() const;
 template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddOne() const;

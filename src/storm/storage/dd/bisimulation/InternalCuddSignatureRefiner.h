@@ -1,17 +1,15 @@
 #pragma once
 
+#include "storm-config.h"
+
+#include <parallel_hashmap/phmap.h>
 #include <boost/optional.hpp>
 #include <set>
 
-#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
-
 #include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/Variable.h"
-
+#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
 #include "storm/storage/dd/cudd/utility.h"
-
-#include <parallel_hashmap/phmap.h>
+#include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {
@@ -43,6 +41,7 @@ class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
                                                          Signature<storm::dd::DdType::CUDD, ValueType> const& signature);
 
    private:
+#ifdef STORM_HAVE_CUDD
     void clearCaches();
 
     std::pair<storm::dd::Add<storm::dd::DdType::CUDD, ValueType>, boost::optional<storm::dd::Add<storm::dd::DdType::CUDD, ValueType>>> refine(
@@ -83,6 +82,7 @@ class InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType> {
 
     // The cache used to identify which old block numbers have already been reused.
     phmap::flat_hash_map<DdNode const*, ReuseWrapper> reuseBlocksCache;
+#endif
 };
 
 }  // namespace bisimulation
