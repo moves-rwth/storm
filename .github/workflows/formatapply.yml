@@ -1,6 +1,7 @@
-name: apply-code-format
+name: Apply code format
 
-on: [ workflow_dispatch ]
+on:
+  workflow_dispatch:
 
 jobs:
   build:

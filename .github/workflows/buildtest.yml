@@ -4,8 +4,8 @@ name: Build Test
 
 on:
   schedule:
-      # run daily
-      - cron: '0 6 * * *'
+    # run daily
+    - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
   pull_request:
@@ -88,7 +88,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
             --build-arg soplex_support="${{ matrix.config.Soplex }}" \
@@ -193,7 +193,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
             --build-arg gurobi_support="OFF" \
             --build-arg soplex_support="OFF" \
@@ -220,26 +220,25 @@ jobs:
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
   macTests:
-    name: macOS Tests (${{ matrix.config.name }})
+    name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     strategy:
       matrix:
         config:
-          - {name: "XCode 14.3, Intel, Release",
+          - {name: "XCode 14.3, Intel",
              distro: "macos-13",
              xcode: "14.3",
-             buildType: "Release"
+             buildType: "Debug"
             }
-          - {name: "XCode 15.4, ARM, Release",
+          - {name: "XCode 15.4, ARM",
              distro: "macos-14",
              xcode: "15.4",
-             buildType: "Release"
+             buildType: "Debug"
             }
-          - {name: "XCode 16.3, ARM, Release",
+          - {name: "XCode 16.3, ARM",
              distro: "macos-15",
              xcode: "16.3",
-             buildType: "Release"
+             buildType: "Debug"
             }
-        buildType: ["Release"]
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
@@ -281,6 +280,7 @@ jobs:
         working-directory: ./build
         run: ctest test--output-on-failure
 
+
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
@@ -308,7 +308,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
-            --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
             --build-arg build_type="${{ matrix.buildType.name }}" \
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
@@ -336,7 +336,10 @@ jobs:
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
       - name: Deploy storm
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
