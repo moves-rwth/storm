@@ -313,7 +313,7 @@ class ValueIterationOperator {
 
         applyCache.robustOrder.clear();
 
-        if (applyCache.hasOnlyConstants.get(offsetIndex)) {
+        if (applyCache.hasOnlyConstants.size() > 0 && applyCache.hasOnlyConstants.get(offsetIndex)) {
             for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
                 auto const lower = matrixValueIt->lower();
                 if constexpr (isPair<OperandType>::value) {
