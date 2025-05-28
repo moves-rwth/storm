@@ -102,7 +102,7 @@ option(SYLVAN_PORTABLE "Build portable" OFF)
 if(NOT SYLVAN_PORTABLE)
     target_compile_options(sylvan PRIVATE
             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-            -march=native>
+            -march=native>)
 endif()
             
 target_include_directories(sylvan PUBLIC
