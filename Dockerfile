@@ -1,19 +1,21 @@
-# Base Dockerfile for using Storm
-#################################
+# Dockerfile for Storm
+######################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
 # A different base image can be set from the commandline with:
-# --build-arg BASE_IMG=<new_base_image>
+# --build-arg BASE_IMAGE=<new_base_image>
 
 # Set base image
-ARG BASE_IMG=movesrwth/storm-dependencies:latest
-ARG BASE_PLATFORM=linux/amd64
-FROM --platform=$BASE_PLATFORM  $BASE_IMG
-MAINTAINER Matthias Volk <m.volk@tue.nl>
+ARG BASE_IMAGE=movesrwth/storm-dependencies:latest
+FROM $BASE_IMAGE
+LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
-# Specify configurations
-# These configurations can be set from the commandline with:
-# --build-arg <config_name>=<value>
+
+# Configuration arguments
+#########################
+# The arguments can be set from the commandline with:
+# --build-arg <arg_name>=<value>
+
 # CMake build type
 ARG build_type=Release
 # Specify number of threads to use for parallel compilation
@@ -50,7 +52,7 @@ RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
              -DSTORM_DISABLE_GUROBI=$disable_gurobi \
              -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
-             -DSTORM_DISABLE_SOPLEX=$disable_spot \
+             -DSTORM_DISABLE_SOPLEX=$disable_soplex \
              -DSTORM_DISABLE_SPOT=$disable_spot \
              -DSTORM_DEVELOPER=$developer \
              -DSTORM_USE_CLN_EA=$cln_exact \

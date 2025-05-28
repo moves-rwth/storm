@@ -252,7 +252,7 @@ if(NOT STORM_DISABLE_Z3)
         endif()
     endif()
 else()
-    message (WARNING "Storm - Z3 not linked. Building of Prism/JANI models will not be supported.")
+    message (WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
 if (Z3_FOUND)
@@ -326,7 +326,7 @@ else()
 endif()
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "14.28")
+set(CARL_MINVERSION "14.29")
 set(CARL_C14VERSION "14")
 
 include(FetchContent)
@@ -338,7 +338,8 @@ FETCHCONTENT_DECLARE(
 SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
-SET(USE_GINAC ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
+SET(PORTABLE ${STORM_PORTABLE})
 SET(CARL_LIB_INSTALL_DIR "lib/storm")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
@@ -348,7 +349,7 @@ include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
 set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
 set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
-message(STATUS "storm -- using carl version ${carl_VERSION} (cln: ${STORM_HAVE_CLN}, ginac: ${STORM_HAVE_GINAC})")
+message(STATUS "Storm - Using carl version ${carl_VERSION} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
 #
 add_dependencies(storm_resources lib_carl)
 # TODO this old flag is no longer really relevant as CARL must always be present.

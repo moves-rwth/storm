@@ -254,7 +254,7 @@ storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression
         // parsing failure is triggered by the calling parser
         return manager.boolean(false);
     } else if (this->createExpressions) {
-        { return manager.integer(storm::utility::convertNumber<int64_t>(value)); }
+        return manager.integer(storm::utility::convertNumber<int64_t>(value));
     } else {
         return manager.boolean(false);
     }

@@ -100,7 +100,7 @@ void printVersion() {
     // Print linked dependencies
     STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
 #ifdef STORM_HAVE_GLPK
-    STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
+    STORM_PRINT("Linked with GLPK v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
 #else
     STORM_PRINT("Not linked with GLPK.\n");
 #endif
@@ -143,7 +143,7 @@ void printVersion() {
 #else
     STORM_PRINT("Not linked with Z3 Theorem Prover\n");
 #endif
-    STORM_PRINT("[...]\n");
+    STORM_PRINT("\n");
 }
 
 void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {

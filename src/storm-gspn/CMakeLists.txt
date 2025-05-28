@@ -12,7 +12,6 @@ set_target_properties(storm-gspn PROPERTIES VERSION ${STORM_VERSION} SOVERSION $
 target_link_libraries(storm-gspn PUBLIC storm storm-conv storm-parsers ${STORM_GSPN_LINK_LIBRARIES})
 set_target_properties(storm-gspn PROPERTIES DEFINE_SYMBOL "")  # to avoid problems with pch on linux.
 
-# Remove define symbol for shared libstorm.
 list(APPEND STORM_TARGETS storm-gspn)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 

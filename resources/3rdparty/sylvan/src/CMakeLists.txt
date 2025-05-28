@@ -61,9 +61,9 @@ set(SYLVAN_STORM_SOURCES
         sylvan_storm_rational_number.c
 )
 target_sources(sylvan PRIVATE
-${SYLVAN_SYLVAN_STORM_HEADERS} ${SYLVAN_STORM_SOURCES})
+               ${SYLVAN_SYLVAN_STORM_HEADERS} ${SYLVAN_STORM_SOURCES})
 ## STORMCHANGED why are the headers additionally added as private sources here?
-## -- to comply with twhat is done with sthe SYLVAN_HDRS above.
+## -- to comply with what is done with the SYLVAN_HDRS above.
 
 ## END STORMCHANGED
 
@@ -118,7 +118,7 @@ if(SYLVAN_USE_MMAP)
     include(CheckSymbolExists)
     check_symbol_exists(mmap "sys/mman.h" HAVE_MMAP)
     if(NOT HAVE_MMAP)
-        message(WARNING " mmap not found: disabling mmap support")
+        message(WARNING "Sylvan - mmap not found: disabling mmap support")
         set(SYLVAN_USE_MMAP OFF)
     else()
         set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "SYLVAN_USE_MMAP")

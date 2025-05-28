@@ -1,4 +1,4 @@
-if(NOT STORM_DISABLE_SPOT)
+if(NOT STORM_DISABLE_SOPLEX)
     find_package(soplex)
 
     IF(TARGET libsoplex-pic)
@@ -9,12 +9,10 @@ if(NOT STORM_DISABLE_SPOT)
         list(APPEND STORM_DEP_TARGETS libsoplex-pic)
     ELSE()
         set(STORM_HAVE_SOPLEX OFF)
-        MESSAGE(STATUS "Storm not linking with SoPlex!")
+        MESSAGE(STATUS "Storm - Not linking with SoPlex.")
     ENDIF()
 else()
     set(STORM_HAVE_SOPLEX OFF)
-    MESSAGE(STATUS "Storm not linking with SoPlex!")
+    MESSAGE(STATUS "Storm - Not linking with SoPlex.")
 endif()
-
-
 
