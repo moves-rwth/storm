@@ -104,13 +104,7 @@ if(NOT SYLVAN_PORTABLE)
             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
             -march=native>
 endif()
-
-
-
-target_compile_options(sylvan PRIVATE
-        -march=native
-)
-
+            
 target_include_directories(sylvan PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
         $<INSTALL_INTERFACE:include>
