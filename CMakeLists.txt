@@ -4,7 +4,10 @@ if (NOT ${CMAKE_VERSION} VERSION_LESS 3.24)
 endif()
 
 # Set project name
-project (storm CXX C)
+project (storm
+		LANGUAGES CXX C
+		VERSION 1.9.0.1)
+# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 
 # Add the resources/cmake folder to Module Search Path
 set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
@@ -494,78 +497,57 @@ endif()
 ##	CMake-generated Config File for Storm
 ##
 #############################################################
-
 if (PROJECT_IS_TOP_LEVEL)
 	# try to obtain the current version from git.
 	include(GetGitRevisionDescription)
 	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
 	git_describe(STORM_GIT_VERSION_STRING)
 
-	# parse the git tag into variables
-	# start with major.minor.patch
+	# Trying to figure out if there git has changed.
 	string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
-	set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
-	set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
-	set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
+	# No longer used, but help understanding the regex.
+	#set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+	#set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
+	#set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
 	set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
 	# parse rest of the form (-label)-commitsahead-hash(-appendix)
 	string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
-	set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
-	set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
-	set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
+	# No longer used, but structure helps understanding the regex.
+	#set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
+	#set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
+	#set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
 	set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
-else()
-	set(STORM_GIT_VERSION_STRING "NOTFOUND")
 endif()
+
 
 # check whether the git version lookup failed
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
-	set(STORM_VERSION_SOURCE "VersionSource::Static")
-	set(STORM_VERSION_COMMITS_AHEAD 0)
 	set(STORM_VERSION_DIRTY DirtyState::Unknown)
-	set(STORM_VERSION_TWEAK 0)
-	include(version.cmake)
-	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
-	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
-		set(STORM_VERSION_TWEAK 1)
 	else()
 		set(STORM_VERSION_DIRTY "DirtyState::Clean")
-		set(STORM_VERSION_TWEAK 0)
 	endif()
-endif()
-
-# check whether there is a label ('alpha', 'pre', etc.)
-if ("${STORM_VERSION_LABEL}" STREQUAL "")
-	set(STORM_VERSION_LABEL_STRING "")
-else()
-	set(STORM_VERSION_LABEL_STRING "-${STORM_VERSION_LABEL}")
-endif()
-
-# check for development version with commits ahead of latest tag
-if(STORM_VERSION_COMMITS_AHEAD)
-	set(STORM_VERSION_DEV "true")
-	set(STORM_VERSION_DEV_STRING " (dev)")
-	if ("${STORM_VERSION_LABEL}" STREQUAL "")
-		# increase patch number to indicate newer version
-		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
-	else()
-		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
-	endif()
-else()
-	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DEV "false")
-	set(STORM_VERSION_DEV_STRING "")
-	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
 endif()
 
 # set final Storm version
-set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
-set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
+set(STORM_VERSION ${CMAKE_PROJECT_VERSION})
+set(STORM_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
+set(STORM_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
+set(STORM_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
+if(CMAKE_PROJECT_VERSION_TWEAK GREATER 0)
+	set(STORM_VERSION_DEV 1)
+else()
+	set(STORM_VERSION_DEF 0)
+endif()
 
-message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+set(STORM_VERSION_STRING "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}")
+if(STORM_VERSION_DEV GREATER 0)
+	set(STORM_VERSION_STRING "${STORM_VERSION_STRING} (dev)")
+endif()
+
+message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (git hash: ${STORM_VERSION_GIT_HASH})")
 
 
 # Configure a header file to pass some of the CMake settings to the source code

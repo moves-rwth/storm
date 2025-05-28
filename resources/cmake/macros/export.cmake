@@ -17,7 +17,6 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/stormConfigVersion.
      VERSION ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.${STORM_VERSION_TWEAK}
      COMPATIBILITY SameMinorVersion )
 
-
 configure_package_config_file(
         resources/cmake/stormConfig.cmake.in
         ${PROJECT_BINARY_DIR}/stormConfig.cmake
@@ -30,4 +29,9 @@ configure_package_config_file(
     ${PROJECT_BINARY_DIR}/stormConfig.cmake.install
     INSTALL_DESTINATION ${STORM_CMAKE_INSTALL_DIR}
     PATH_VARS STORM_INCLUDE_INSTALL_DIR
+)
+
+configure_file(
+    resources/cmake/stormOptions.cmake.in
+    ${PROJECT_BINARY_DIR}/stormOptions.cmake
 )

@@ -88,13 +88,27 @@ set_target_properties(sylvan PROPERTIES PUBLIC_HEADER "${SYLVAN_HDRS};${SYLVAN_S
 target_compile_features(sylvan PUBLIC c_std_11 cxx_std_14)
 
 # STORMCHANGED Removed the extra warnings from the debug build, temporarily.
+# STORMCHANGED Removed -march=native from this line and added the ability to set it below.
 target_compile_options(sylvan PRIVATE
         $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
-        -pipe -march=native
+        -pipe
         #$<$<CONFIG:Debug>:-O0 -Wall -Wextra>>
         $<$<CONFIG:Debug>:-O0>>
         $<$<CXX_COMPILER_ID:MSVC>:
         $<$<CONFIG:Debug>:/Od /Wall /Zi>>
+)
+#STORMCHANGED Added ability to disable portable flag
+option(SYLVAN_PORTABLE "Build portable" OFF)
+if(NOT SYLVAN_PORTABLE)
+    target_compile_options(sylvan PRIVATE
+            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+            -march=native>
+endif()
+
+
+
+target_compile_options(sylvan PRIVATE
+        -march=native
 )
 
 target_include_directories(sylvan PUBLIC
