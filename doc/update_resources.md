@@ -70,7 +70,7 @@ Remove directories that are not needed, e.g, `rm -r doc examples html css benchm
 
 ## Spot
 
-To update (shipped version of Spot), just change the url in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
+To update (shipped version of Spot), just change the `SPOT_SHIPPED_VERSION` in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
 
 
 ## Sylvan & Lace
