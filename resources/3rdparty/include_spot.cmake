@@ -49,11 +49,12 @@ if(NOT STORM_DISABLE_SPOT)
         endif()
 
         # download and install shipped Spot as shared libraries.
+        # set Spot version
+        set(SPOT_SHIPPED_VERSION 2.13.1)
         # Note that configuring static libraries requires various dependencies which was rather cumbersome.
         # As of '25/3, SJ did not get this to work.
         ExternalProject_Add(Spot
-
-            URL https://www.lrde.epita.fr/dload/spot/spot-2.13.tar.gz # When updating, also change version output below
+            URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
             DOWNLOAD_NO_PROGRESS TRUE
             DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src

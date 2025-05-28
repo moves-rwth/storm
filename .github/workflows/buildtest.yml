@@ -93,7 +93,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMG=movesrwth/${{ matrix.config.baseImg }} \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
             --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
@@ -149,6 +149,7 @@ jobs:
           docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
           docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project --help" ## TODO using --help as running the starter-project requires Z3.
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
     # Run on latest Archlinux version to get most recent compiler versions
@@ -253,7 +254,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
-            --build-arg BASE_IMG=movesrwth/storm-basesystem:${{ matrix.distro }} \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
             --build-arg disable_gurobi="ON" \
             --build-arg disable_mathsat="ON" \
@@ -305,31 +306,27 @@ jobs:
           docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
           docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+
   macTests:
-    name: macOS Tests (${{ matrix.config.name }})
+    name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     strategy:
       matrix:
         config:
-          - {name: "XCode 14.3, Intel, Release",
+          - {name: "XCode 14.3, Intel",
              distro: "macos-13",
              xcode: "14.3",
-             buildType: "Release"
+             buildType: "Debug"
             }
-          - {name: "XCode 15.4, ARM, Release",
+          - {name: "XCode 15.4, ARM",
              distro: "macos-14",
              xcode: "15.4",
-             buildType: "Release"
+             buildType: "Debug"
             }
-          - {name: "XCode 16.2, ARM, Release",
+          - {name: "XCode 16.3, ARM",
              distro: "macos-15",
-             xcode: "16.2",
-             buildType: "Release"
+             xcode: "16.3",
+             buildType: "Debug"
             }
-          - { name: "XCode 16.2, ARM, Debug",
-              distro: "macos-15",
-              xcode: "16.2",
-              buildType: "Debug"
-          }
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
@@ -400,6 +397,7 @@ jobs:
           make -j ${NR_JOBS}
           ./bin/starter-project ${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'
           mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
+
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
@@ -427,7 +425,7 @@ jobs:
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
-            --build-arg BASE_IMG=movesrwth/${{ matrix.buildType.baseImg }} \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
             --build-arg build_type="${{ matrix.buildType.name }}" \
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
@@ -480,7 +478,10 @@ jobs:
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
       - name: Deploy storm
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
@@ -496,7 +497,7 @@ jobs:
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v4
+      - uses: dawidd6/action-send-mail@v5
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587
