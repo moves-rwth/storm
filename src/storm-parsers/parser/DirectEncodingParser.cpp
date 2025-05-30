@@ -236,9 +236,12 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     STORM_LOG_TRACE("State observation " << observation);
                     modelComponents->observabilityClasses.value()[state] = std::stoi(observation);
                     line = line.substr(posEndObservation + 1);
-                    STORM_LOG_THROW(line.starts_with(" "), storm::exceptions::WrongFormatException,
-                                    "Expected whitespace after observation in line " << lineNumber);
-                    line = line.substr(1);
+                    if (!line.empty()) {
+                        STORM_LOG_THROW(line.starts_with(" "), storm::exceptions::WrongFormatException,
+                                        "Expected whitespace after observation in line " << lineNumber);
+
+                        line = line.substr(1);
+                    }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
                 }
