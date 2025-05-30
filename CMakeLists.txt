@@ -1,28 +1,33 @@
-cmake_minimum_required (VERSION 3.22)
-
-set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required (VERSION 3.23)
+if (NOT ${CMAKE_VERSION} VERSION_LESS 3.24)
+	cmake_policy(VERSION 3.24)
+endif()
 
 # Set project name
-project (storm CXX C)
+project (storm
+		LANGUAGES CXX C
+		VERSION 1.9.0.1)
+# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 
-# Add base folder for better inclusion paths
-#  include_directories("${PROJECT_SOURCE_DIR}/src")
-
-# Add the resources/cmake folder to Module Search Path for FindTBB.cmake
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+# Add the resources/cmake folder to Module Search Path
+set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${STORM_CMAKE_FIND_MODULES}" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
+add_custom_target(storm_resources)
 
 include(ExternalProject)
-include(RegisterSourceGroup)
 include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
 include(ProcessorCount)
+
+set(CMAKE_CXX_STANDARD 20)
 
 #############################################################
 ##
 ##	CMake options of Storm
 ##
 #############################################################
+## Compilation options.
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
@@ -34,53 +39,53 @@ MARK_AS_ADVANCED(STORM_PORTABLE)
 # Force POPCNT is helpful for portable code targetting platforms with SSE4.2 operation support.
 option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be used (advanced)." OFF)
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
-option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." OFF)
-option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
-option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
-option(STORM_USE_SOPLEX "Sets whether Soplex should be used." OFF)
-set(STORM_CARL_DIR_HINT "" CACHE STRING "A hint where the preferred CArL version can be found. If CArL cannot be found there, it is searched in the OS's default paths.")
-option(STORM_FORCE_SHIPPED_CARL "Sets whether the shipped version of carl is to be used no matter whether carl is found or not." OFF)
-MARK_AS_ADVANCED(STORM_FORCE_SHIPPED_CARL)
-option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
-mark_as_advanced(USE_SMTRAT)
-option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
-option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
-option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
-option(FORCE_COLOR "Force color output" OFF)
-mark_as_advanced(FORCE_COLOR)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
-option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
-export_option(STORM_USE_CLN_EA)
-option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
-export_option(STORM_USE_CLN_RF)
-option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
-option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
-MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
-option(STORM_DEBUG_SYLVAN "Build Sylvan in debug mode." OFF)
-MARK_AS_ADVANCED(STORM_DEBUG_SYLVAN)
-option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
-export_option(STORM_EXCLUDE_TESTS_FROM_ALL)
-MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
-set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
-set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
-set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
-set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
-set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
-MARK_AS_ADVANCED(SPOT_ROOT)
-option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
-set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")
-MARK_AS_ADVANCED(STORM_QVBS_ROOT)
-set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
-set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
-set(USE_XERCESC ${XML_SUPPORT})
-mark_as_advanced(USE_XERCESC)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
+export_option(STORM_USE_CLN_EA)
+option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
+export_option(STORM_USE_CLN_RF)
 
+## Configuration setup.
+option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
+export_option(STORM_EXCLUDE_TESTS_FROM_ALL)
+MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
+option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
+set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")
+MARK_AS_ADVANCED(STORM_QVBS_ROOT)
+
+## Configuring dependencies
+set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
+set(STORM_CARL_GIT_TAG "14.29" CACHE STRING "For fetching carl: which git tag to use")
+option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled." OFF)
+set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
+MARK_AS_ADVANCED(GUROBI_ROOT)
+option(STORM_DISABLE_MATHSAT "Sets whether linking with MathSat should be disabled." OFF)
+set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT.")
+MARK_AS_ADVANCED(MATHSAT_ROOT)
+option(STORM_DISABLE_SPOT "Sets whether linking with Spot should be disabled." OFF)
+option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available)." OFF)
+set(SPOT_ROOT "" CACHE STRING "A hint to the root directory of Spot.")
+MARK_AS_ADVANCED(SPOT_ROOT)
+option(STORM_DISABLE_SOPLEX "Sets whether linking with Soplex should be disabled." OFF)
+set(SOPLEX_ROOT "" CACHE STRING "A hint to the root directory of Soplex.")
+MARK_AS_ADVANCED(SOPLEX_ROOT)
+option(STORM_DISABLE_XERCES "Sets whether linking with Xerces should be disabled." OFF)
+set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
+mark_as_advanced(XERCESC_ROOT)
+option(STORM_DISABLE_Z3  "Sets whether linking with Spot should be disabled." Z3)
+set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3.")
+mark_as_advanced(Z3_ROOT)
+
+option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
+MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
+option(STORM_DEBUG_SYLVAN "Build Sylvan in debug mode." OFF)
+MARK_AS_ADVANCED(STORM_DEBUG_SYLVAN)
 
 if (STORM_COMPILE_WITH_ALL_SANITIZERS)
     set(STORM_COMPILE_WITH_ADDRESS_SANITIZER ON)
@@ -103,31 +108,22 @@ mark_as_advanced(CMAKE_OSX_SYSROOT)
 mark_as_advanced(CMAKE_OSX_DEPLOYMENT_TARGET)
 
 # Offer the user the choice of overriding the installation directories
-set(INCLUDE_INSTALL_DIR include/ CACHE PATH "Installation directory for header files" )
-set(LIB_INSTALL_DIR lib/ CACHE PATH "Installation directory for libraries")
-#set(SYSCONFIG_INSTALL_DIR etc/carl/  CACHE PATH "Installation for system configuration files)
-set(BIN_INSTALL_DIR lib/ CACHE PATH "Installation directory for executables")
-
-
-# Install dir for cmake files (info for other libraries that include Storm)
-set(DEF_INSTALL_CMAKE_DIR "lib/CMake/storm")
-set(CMAKE_INSTALL_DIR ${DEF_INSTALL_CMAKE_DIR} CACHE PATH  "Installation directory for CMake files")
-
-# Add CMake install prefix
-foreach(p LIB BIN INCLUDE CMAKE)
-  set(var ${p}_INSTALL_DIR)
-  if(NOT IS_ABSOLUTE "${${var}}")
-    set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-  endif()
-endforeach()
-
-message(STATUS "Storm - CMake install dir: ${CMAKE_INSTALL_DIR}")
+set(STORM_INCLUDE_INSTALL_DIR include/storm CACHE PATH "Installation directory for header files" )
+set(STORM_LIB_INSTALL_DIR lib/storm CACHE PATH "Installation directory for libraries")
+set(STORM_BIN_INSTALL_DIR bin/storm CACHE PATH "Installation directory for executables")
+set(STORM_CMAKE_INSTALL_DIR lib/cmake/storm CACHE PATH  "Installation directory for CMake files")
+set(STORM_RESOURCE_INCLUDE_INSTALL_DIR include/storm/resources/ CACHE PATH "Installation directory for dependency header files")
+set(STORM_RESOURCE_LIBRARY_INSTALL_DIR lib/storm/resources/ CACHE PATH "Installation directory for depency library files")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # If the STORM_DEVELOPER option was turned on, by default we target a debug version, otherwise a release version.
 if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
     endif()
+    # TODO Do this more targeted
     add_definitions(-DSTORM_DEV)
 	set(STORM_DEBUG_CUDD ON)
 	set(STORM_DEBUG_SYLVAN ON)
@@ -182,43 +178,15 @@ else()
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 
-# Set compile flags for dependencies
-if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
-	set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
-	set(SHIPPED_CARL_USE_GINAC ON)
-else()
-	set(SHIPPED_CARL_USE_CLN_NUMBERS OFF)
-	set(SHIPPED_CARL_USE_GINAC OFF)
-endif()
-
-# Warning for Apple Silicon
-if(APPLE_SILICON)
-	message(WARNING "Compiling natively on Apple Silicon is experimental. Please report any issues to support@stormchecker.org.")
-endif()
-
-
-set(DYNAMIC_EXT ".so")
 set(STATIC_EXT ".a")
 set(LIB_PREFIX "lib")
 if(MACOSX)
 	set(DYNAMIC_EXT ".dylib")
-	set(STATIC_EXT ".a")
-	set(LIB_PREFIX "lib")
-elseif (WIN32)
-	set(DYNAMIC_EXT ".dll")
-	set(STATIC_EXT ".lib")
-	set(LIB_PREFIX "")
-endif()
-message(STATUS "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
-message(STATUS "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
-
-if(BUILD_SHARED_LIBS)
-    set(LIB_EXT ${DYNAMIC_EXT})
-    message(STATUS "Storm - Build dynamic libraries.")
 else()
-    set(LIB_EXT ${STATIC_EXT})
-    message(STATUS "Storm - Build static libraries.")
+	set(DYNAMIC_EXT ".so")
 endif()
+message(VERBOSE "Storm - Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(VERBOSE "Storm - Assuming extension for static libraries: ${STATIC_EXT}")
 
 #############################################################
 ##
@@ -287,10 +255,6 @@ endif()
 ##
 #############################################################
 if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
-    if(FORCE_COLOR)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
-    endif()
-
 	if (LINUX)
 		set(CLANG_STDLIB libstdc++)
     else()
@@ -298,7 +262,6 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
     endif()
 
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
-    set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
     if(LINUX)
         set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
@@ -308,12 +271,12 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
     endif()
 elseif (STORM_COMPILER_GCC)
-    if(FORCE_COLOR)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
-    endif()
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+
+	# Do not warn about problems internally to GCC 12
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow")
 endif ()
 
 if (STORM_USE_THIN_LTO)
@@ -359,6 +322,8 @@ endif()
 if (STORM_DEVELOPER)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 	if (STORM_ALLWARNINGS)
+		# With gcc, we already set (almost) all warnings.
+		# With Clang, we can even go further using Weverything, which is not always helpful, which is why these options are guarded by  STORM_ALL_WARNINGS
 		if (CLANG)
 		    # Enable strictly every warning and then disable selected ones.
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
@@ -418,9 +383,6 @@ if (STORM_DEVELOPER)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-documentation-unknown-command")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-noreturn")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-prototypes")
-
-
-
 		endif ()
 	else ()
 	    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
@@ -487,7 +449,8 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 # the RPATH to be used when installing
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+# TODO move these to the right targets rather than setting them globally.
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -498,20 +461,9 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##	Generator specific settings
 ##
 #############################################################
-if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-	message(WARNING "Using the XCode Project Generator has previously yielded problems. See https://github.com/moves-rwth/storm/issues/65. We recommend using the command line or an IDE with native CMAKE support, such as CLION.")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-endif()
-
 # Display information about build configuration.
 message(STATUS "Storm - Using compiler configuration ${STORM_COMPILER_ID} ${STORM_COMPILER_VERSION}.")
-if (STORM_DEVELOPER)
-	message(STATUS "Storm - CXX Flags: ${CMAKE_CXX_FLAGS}")
-	message(STATUS "Storm - CXX Debug Flags: ${CMAKE_CXX_FLAGS_DEBUG}")
-	message(STATUS "Storm - CXX Release Flags: ${CMAKE_CXX_FLAGS_RELEASE}")
-	message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
-endif()
+message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 
 #############################################################
 #############################################################
@@ -531,43 +483,50 @@ endif()
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-# Include Doxygen
-include(resources/doxygen/CMakeLists.txt)
+if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE)
+	set(STORM_HAVE_LP_SOLVER ON)
+	message(STATUS "Storm -- compiled with an LP solver!")
+else()
+	set(STORM_HAVE_LP_SOLVER OFF)
+	message(WARNING "Storm -- compiled without LP solver! This may yield errors at run time.")
+endif()
 
+if(PROJECT_IS_TOP_LEVEL)
+	# Include Doxygen
+	include(resources/doxygen/CMakeLists.txt)
+endif()
 #############################################################
 ##
 ##	CMake-generated Config File for Storm
 ##
 #############################################################
+if (PROJECT_IS_TOP_LEVEL)
+	# try to obtain the current version from git.
+	include(GetGitRevisionDescription)
+	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
+	git_describe(STORM_GIT_VERSION_STRING)
 
-# try to obtain the current version from git.
-include(GetGitRevisionDescription)
-get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
-git_describe(STORM_GIT_VERSION_STRING)
+	# Trying to figure out if there git has changed.
+	string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
+	# No longer used, but help understanding the regex.
+	#set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+	#set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
+	#set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
+	set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
+	# parse rest of the form (-label)-commitsahead-hash(-appendix)
+	string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
+	# No longer used, but structure helps understanding the regex.
+	#set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
+	#set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
+	#set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
+	set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
+endif()
 
-# parse the git tag into variables
-# start with major.minor.patch
-string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
-set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
-set(STORM_VERSION_MINOR "${CMAKE_MATCH_2}")
-set(STORM_VERSION_PATCH "${CMAKE_MATCH_3}")
-set(STORM_GIT_VERSION_REST "${CMAKE_MATCH_4}")
-# parse rest of the form (-label)-commitsahead-hash(-appendix)
-string(REGEX MATCH "^(\\-([a-z][a-z0-9\\.]+))?\\-([0-9]+)\\-([a-z0-9]+)(\\-.*)?$" STORM_VERSION_REST_MATCH "${STORM_GIT_VERSION_REST}")
-set(STORM_VERSION_LABEL "${CMAKE_MATCH_2}") # might be empty
-set(STORM_VERSION_COMMITS_AHEAD "${CMAKE_MATCH_3}")
-set(STORM_VERSION_TAG_HASH "${CMAKE_MATCH_4}") # is not used
-set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 
 # check whether the git version lookup failed
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
-	set(STORM_VERSION_SOURCE "VersionSource::Static")
-	set(STORM_VERSION_COMMITS_AHEAD 0)
 	set(STORM_VERSION_DIRTY DirtyState::Unknown)
-	include(version.cmake)
-	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
-	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
 		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
 	else()
@@ -575,35 +534,23 @@ else()
 	endif()
 endif()
 
-# check whether there is a label ('alpha', 'pre', etc.)
-if ("${STORM_VERSION_LABEL}" STREQUAL "")
-	set(STORM_VERSION_LABEL_STRING "")
-else()
-	set(STORM_VERSION_LABEL_STRING "-${STORM_VERSION_LABEL}")
-endif()
-
-# check for development version with commits ahead of latest tag
-if(STORM_VERSION_COMMITS_AHEAD)
-	set(STORM_VERSION_DEV "true")
-	set(STORM_VERSION_DEV_STRING " (dev)")
-	if ("${STORM_VERSION_LABEL}" STREQUAL "")
-		# increase patch number to indicate newer version
-		MATH(EXPR STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}+1")
-	else()
-		set(STORM_VERSION_DEV_PATCH "${STORM_VERSION_PATCH}")
-	endif()
-else()
-	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DEV "false")
-	set(STORM_VERSION_DEV_STRING "")
-	set(STORM_VERSION_DEV_PATCH ${STORM_VERSION_PATCH})
-endif()
-
 # set final Storm version
-set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_DEV_PATCH}")
-set(STORM_VERSION_STRING "${STORM_VERSION}${STORM_VERSION_LABEL_STRING}${STORM_VERSION_DEV_STRING}")
+set(STORM_VERSION ${CMAKE_PROJECT_VERSION})
+set(STORM_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
+set(STORM_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
+set(STORM_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
+if(CMAKE_PROJECT_VERSION_TWEAK GREATER 0)
+	set(STORM_VERSION_DEV 1)
+else()
+	set(STORM_VERSION_DEF 0)
+endif()
 
-message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}${STORM_VERSION_LABEL_STRING} + ${STORM_VERSION_COMMITS_AHEAD} commits), building from git: ${STORM_VERSION_GIT_HASH} (dirty: ${STORM_VERSION_DIRTY}).")
+set(STORM_VERSION_STRING "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}")
+if(STORM_VERSION_DEV GREATER 0)
+	set(STORM_VERSION_STRING "${STORM_VERSION_STRING} (dev)")
+endif()
+
+message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (git hash: ${STORM_VERSION_GIT_HASH})")
 
 
 # Configure a header file to pass some of the CMake settings to the source code
@@ -612,20 +559,22 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Add the binary dir include directory for storm-config.h
-include_directories("${PROJECT_BINARY_DIR}/include")
+if(PROJECT_IS_TOP_LEVEL)
+	include(CTest)
+	# Compiles all tests
+	add_custom_target(tests)
+	# Compiles and runs all tests
+	add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
+	set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
+	add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
+	add_dependencies(check tests)
+	add_dependencies(check-verbose tests)
+endif()
 
-include(CTest)
-# Compiles all tests
-add_custom_target(tests)
-# Compiles and runs all tests
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
-set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
-add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
-add_dependencies(check tests)
-add_dependencies(check-verbose tests)
-# Apply code formatting
-add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+if(PROJECT_IS_TOP_LEVEL)
+	# Apply code formatting
+	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+endif()
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
@@ -633,11 +582,14 @@ add_subdirectory(src)
 export_option(STORM_HAVE_XERCES)
 export_option(STORM_HAVE_SPOT)
 export_option(STORM_HAVE_GUROBI)
+export_option(STORM_HAVE_SOPLEX)
+export_option(STORM_HAVE_Z3)
 
 include(export)
 
-install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
-install(FILES ${CMAKE_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_DIR})
-install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${CMAKE_INSTALL_DIR})
+install(DIRECTORY ${STORM_CMAKE_FIND_MODULES} DESTINATION ${STORM_CMAKE_INSTALL_DIR})
+install(FILES ${PROJECT_BINARY_DIR}/stormConfig.cmake.install DESTINATION ${STORM_CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
+install(FILES ${PROJECT_BINARY_DIR}/stormConfigVersion.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
+install(EXPORT storm_Targets FILE stormTargets.cmake DESTINATION ${STORM_CMAKE_INSTALL_DIR})
 
 include(StormCPackConfig.cmake)
