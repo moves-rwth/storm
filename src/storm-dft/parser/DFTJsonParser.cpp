@@ -157,8 +157,6 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
 
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
     // Set relevant events
     dft.setRelevantEvents(relevantEvents, false);
     STORM_LOG_DEBUG("Relevant events: " << dft.getRelevantEventsString());

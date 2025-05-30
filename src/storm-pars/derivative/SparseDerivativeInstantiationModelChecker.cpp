@@ -17,7 +17,6 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
-#include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"

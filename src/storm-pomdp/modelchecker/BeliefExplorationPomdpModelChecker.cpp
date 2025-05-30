@@ -12,7 +12,6 @@
 
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/vector.h"
 
 #include "storm/environment/Environment.h"
@@ -539,7 +538,10 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                             auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                             transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                         } else if (label.rfind("mem_node", 0) == 0) {
-                            newLabeling.addLabelToState("finite_mem", i);
+                            if (!newLabeling.containsLabel("finite_mem_" + label.substr(9, 1))) {
+                                newLabeling.addLabel("finite_mem_" + label.substr(9, 1));
+                            }
+                            newLabeling.addLabelToState("finite_mem_" + label.substr(9, 1), i);
                             newLabeling.addLabelToState("cutoff", i);
                         } else {
                             newLabeling.addLabelToState(label, i);
@@ -650,7 +652,10 @@ void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefM
                                     auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                     transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                                 } else if (label.rfind("mem_node", 0) == 0) {
-                                    newLabeling.addLabelToState("finite_mem", i);
+                                    if (!newLabeling.containsLabel("finite_mem_" + label.substr(9, 1))) {
+                                        newLabeling.addLabel("finite_mem_" + label.substr(9, 1));
+                                    }
+                                    newLabeling.addLabelToState("finite_mem_" + label.substr(9, 1), i);
                                     newLabeling.addLabelToState("cutoff", i);
                                 } else {
                                     newLabeling.addLabelToState(label, i);

@@ -25,7 +25,7 @@ DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo 
         this->setUses(spareId, elem->children()[0]->id());
     }
 
-    // Initialize activation
+    // Initialize activation and set failable BEs
     propagateActivation(mDft.getTopLevelIndex());
 
     // Initialize currently failable BEs

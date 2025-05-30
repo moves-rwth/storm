@@ -150,10 +150,7 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
     storm::io::closeFile(file);
 
     // Build DFT
-    storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
-    return dft;
+    return builder.build();
 }
 
 template<typename ValueType>
