@@ -6,7 +6,7 @@ endif()
 # Set project name
 project (storm
 		LANGUAGES CXX C
-		VERSION 1.9.0.1)
+		VERSION 1.10.0.1)
 # Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 
 # Add the resources/cmake folder to Module Search Path
@@ -70,7 +70,7 @@ option(STORM_DISABLE_MATHSAT "Sets whether linking with MathSat should be disabl
 set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT.")
 MARK_AS_ADVANCED(MATHSAT_ROOT)
 option(STORM_DISABLE_SPOT "Sets whether linking with Spot should be disabled." OFF)
-option(STORM_SPOT_FORCE_SHIPPED "Sets whether system versions of Spot should be ignored." OFF)
+option(STORM_SPOT_FORCE_SHIPPED "Sets whether system versions of Spot should be ignored (if available)." OFF)
 set(SPOT_ROOT "" CACHE STRING "A hint to the root directory of Spot.")
 MARK_AS_ADVANCED(SPOT_ROOT)
 option(STORM_DISABLE_SOPLEX "Sets whether linking with Soplex should be disabled." OFF)
@@ -536,22 +536,23 @@ else()
 endif()
 
 # set final Storm version
-set(STORM_VERSION ${CMAKE_PROJECT_VERSION})
-set(STORM_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
-set(STORM_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
-set(STORM_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
-if(CMAKE_PROJECT_VERSION_TWEAK GREATER 0)
+
+set(STORM_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(STORM_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(STORM_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(STORM_VERSION "${PROJECT_VERSIONSTORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
+if(PROJECT_VERSION_TWEAK GREATER 0)
 	set(STORM_VERSION_DEV 1)
 else()
-	set(STORM_VERSION_DEF 0)
+	set(STORM_VERSION_DEV 0)
 endif()
 
-set(STORM_VERSION_STRING "${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}")
+set(STORM_VERSION_STRING "${STORM_VERSION}")
 if(STORM_VERSION_DEV GREATER 0)
 	set(STORM_VERSION_STRING "${STORM_VERSION_STRING} (dev)")
 endif()
 
-message(STATUS "Storm - Version is ${STORM_VERSION_STRING} (git hash: ${STORM_VERSION_GIT_HASH})")
+message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
 
 
 # Configure a header file to pass some of the CMake settings to the source code
