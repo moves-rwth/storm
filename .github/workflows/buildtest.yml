@@ -52,6 +52,7 @@ jobs:
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
+             disable_gmm: "OFF",
              disable_gurobi: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
