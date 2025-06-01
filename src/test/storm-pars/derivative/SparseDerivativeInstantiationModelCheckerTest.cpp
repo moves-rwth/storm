@@ -98,7 +98,11 @@ class SparseDerivativeInstantiationModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<RationalGmmxxEnvironment, DoubleGmmxxEnvironment, RationalEigenEnvironment, DoubleEigenEnvironment> TestingTypes;
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    RationalGmmxxEnvironment, DoubleGmmxxEnvironment,
+#endif
+    RationalEigenEnvironment, DoubleEigenEnvironment> TestingTypes;
 }  // namespace
 
 TYPED_TEST_SUITE(SparseDerivativeInstantiationModelCheckerTest, TestingTypes, );

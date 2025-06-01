@@ -123,7 +123,11 @@ class ConditionalDtmcPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<GmmxxDoubleGmresEnvironment, EigenDoubleDGmresEnvironment, EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment,
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    GmmxxDoubleGmresEnvironment, EigenDoubleDGmresEnvironment,
+#endif
+                         EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment,
                          NativeWalkerChaeEnvironment>
     TestingTypes;
 

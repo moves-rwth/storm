@@ -112,7 +112,11 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseSoundEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    SparseGmmxxGmresIluEnvironment,
+#endif
+                         SparseSoundEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(ExpectedVisitingTimesCtmcCslModelCheckerTest, TestingTypes, );
 

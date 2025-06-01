@@ -22,6 +22,7 @@ ARG build_type=Release
 ARG no_threads=1
 
 # Specify Storm configuration (ON/OFF)
+ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
 ARG disable_soplex="OFF"
 ARG disable_spot="OFF"
@@ -50,6 +51,7 @@ WORKDIR /opt/storm/build
 # Configure Storm
 RUN cmake .. -DCMAKE_BUILD_TYPE=$build_type \
              -DSTORM_PORTABLE=ON \
+             -DSTORM_DISABLE_GMM=$disable_gmm \
              -DSTORM_DISABLE_GUROBI=$disable_gurobi \
              -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
              -DSTORM_DISABLE_SOPLEX=$disable_soplex \

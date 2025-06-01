@@ -15,7 +15,7 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
    * [Github Actions](https://github.com/moves-rwth/storm/actions/) should run successfully.
 
 4. Set new storm version:
-   * Set new storm version in `version.cmake`
+   * Set new storm version in the root `CMakeList.cmake`
 
 5. Set new tag in Git (assuming that the new version is X.Y.Z and that the remote "origin" is the github repo):
    ```console

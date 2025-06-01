@@ -1,5 +1,5 @@
 if(NOT STORM_DISABLE_SOPLEX)
-    find_package(soplex)
+    find_package(soplex QUIET)
 
     IF(TARGET libsoplex-pic)
         set(STORM_HAVE_SOPLEX ON)

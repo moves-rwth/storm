@@ -104,6 +104,11 @@ void printVersion() {
 #else
     STORM_PRINT("Not linked with GLPK.\n");
 #endif
+#ifdef STORM_HAVE_GMM
+    STORM_PRINT("Linked with GMM.\n");
+#else
+    STORM_PRINT("Not linked with GMM.\n");
+#endif
 #ifdef STORM_HAVE_GUROBI
     STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
 #else

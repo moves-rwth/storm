@@ -368,9 +368,13 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
-                         GBJaniHybridSylvanGmmxxGmresEnvironment, GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment,
-                         GBSparseNativeSorEnvironment, DistrSparseGmmxxGmresIluEnvironment, DistrSparseEigenDoubleLUEnvironment,
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
+                         GBJaniHybridSylvanGmmxxGmresEnvironment, DistrSparseGmmxxGmresIluEnvironment,
+#endif
+                         GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment,
+                         GBSparseNativeSorEnvironment, DistrSparseEigenDoubleLUEnvironment,
                          ValueIterationSparseEnvironment, SoundEnvironment>
     TestingTypes;
 

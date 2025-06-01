@@ -68,6 +68,7 @@ jobs:
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
+             disable_gmm: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
@@ -81,6 +82,7 @@ jobs:
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
+             disable_gmm: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
@@ -95,6 +97,7 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
             --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
             --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
@@ -112,9 +115,9 @@ jobs:
       - name: Check release makeflags
         if: matrix.config.buildType == 'Release'
         run: |
-          docker exec ci bash -c " grep -e \"-g\"  /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; test $? -eq 1 || (echo \"Error: Unexpected flag \'-g\' for release build.\" && false)"
-          docker exec ci bash -c " grep -e \"-O3\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make  || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          docker exec ci bash -c " grep -e \"-DNDEBUG\" /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
+          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
+          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
       - name: Check debug makeflags
         if: matrix.config.buildType == 'Debug'
         run: |
@@ -160,6 +163,7 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
+             disable_gmm: "ON",
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
@@ -170,6 +174,7 @@ jobs:
           }
           - {name: "Clang",
              buildType: "Debug",
+             disable_gmm: "ON",
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
@@ -187,6 +192,7 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
             --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
             --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \

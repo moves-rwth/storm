@@ -47,17 +47,23 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 ##
 #############################################################
 
-message (STATUS "Storm - Including gmm 5.2.")
-add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
-target_include_directories(gmm INTERFACE
-        $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include>
-        $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm>
-)
-install(TARGETS gmm EXPORT storm_Targets)
-install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include/
-        DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm
-        FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
-list(APPEND STORM_DEP_TARGETS gmm)
+if(NOT STORM_DISABLE_GMM)
+    message (STATUS "Storm - Including gmm 5.2.")
+    add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
+    target_include_directories(gmm INTERFACE
+            $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include>
+            $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm>
+    )
+    install(TARGETS gmm EXPORT storm_Targets)
+    install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include/
+            DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm
+            FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
+    list(APPEND STORM_DEP_TARGETS gmm)
+    set(STORM_HAVE_GMM ON)
+else()
+    message (WARNING "Storm - Skipping gmm.")
+    set(STORM_HAVE_GMM OFF)
+endif()
 
 #############################################################
 ##
@@ -340,8 +346,8 @@ SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
 SET(PORTABLE ${STORM_PORTABLE})
-SET(CARL_LIB_INSTALL_DIR "lib/storm")
-SET(CARL_INCLUDE_INSTALL_DIR "include/storm") # maybe use resources folder /carl instead for consistency?
+SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
+SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
 FETCHCONTENT_MAKEAVAILABLE(carl)

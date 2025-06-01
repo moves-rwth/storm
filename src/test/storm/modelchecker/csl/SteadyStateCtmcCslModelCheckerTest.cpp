@@ -120,7 +120,11 @@ class SteadyStateCtmcCslModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, SparseSoundEvtEnvironment, SparseClassicEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    SparseGmmxxGmresIluEnvironment,
+#endif
+                         SparseSoundEvtEnvironment, SparseClassicEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(SteadyStateCtmcCslModelCheckerTest, TestingTypes, );
 
