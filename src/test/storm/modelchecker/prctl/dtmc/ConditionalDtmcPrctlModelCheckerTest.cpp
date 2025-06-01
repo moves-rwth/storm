@@ -127,8 +127,7 @@ typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
     GmmxxDoubleGmresEnvironment, EigenDoubleDGmresEnvironment,
 #endif
-                         EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment,
-                         NativeWalkerChaeEnvironment>
+    EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment, NativeWalkerChaeEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes, );

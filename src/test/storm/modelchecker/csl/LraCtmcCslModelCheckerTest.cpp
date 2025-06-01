@@ -370,12 +370,11 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
 
 typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
-    GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment,
-                         GBJaniHybridSylvanGmmxxGmresEnvironment, DistrSparseGmmxxGmresIluEnvironment,
+    GBSparseGmmxxGmresIluEnvironment, GBJaniSparseGmmxxGmresIluEnvironment, GBJaniHybridCuddGmmxxGmresEnvironment, GBJaniHybridSylvanGmmxxGmresEnvironment,
+    DistrSparseGmmxxGmresIluEnvironment,
 #endif
-                         GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment,
-                         GBSparseNativeSorEnvironment, DistrSparseEigenDoubleLUEnvironment,
-                         ValueIterationSparseEnvironment, SoundEnvironment>
+    GBSparseEigenDGmresEnvironment, GBSparseEigenDoubleLUEnvironment, GBSparseNativeSorEnvironment, DistrSparseEigenDoubleLUEnvironment,
+    ValueIterationSparseEnvironment, SoundEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LraCtmcCslModelCheckerTest, TestingTypes, );

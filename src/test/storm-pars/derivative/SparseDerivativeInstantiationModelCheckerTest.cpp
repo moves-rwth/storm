@@ -102,7 +102,8 @@ typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
     RationalGmmxxEnvironment, DoubleGmmxxEnvironment,
 #endif
-    RationalEigenEnvironment, DoubleEigenEnvironment> TestingTypes;
+    RationalEigenEnvironment, DoubleEigenEnvironment>
+    TestingTypes;
 }  // namespace
 
 TYPED_TEST_SUITE(SparseDerivativeInstantiationModelCheckerTest, TestingTypes, );

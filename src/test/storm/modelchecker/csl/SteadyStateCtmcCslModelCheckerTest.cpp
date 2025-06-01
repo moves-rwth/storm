@@ -124,7 +124,8 @@ typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
     SparseGmmxxGmresIluEnvironment,
 #endif
-                         SparseSoundEvtEnvironment, SparseClassicEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+    SparseSoundEvtEnvironment, SparseClassicEnvironment, SparseEigenRationalLuEnvironment>
+    TestingTypes;
 
 TYPED_TEST_SUITE(SteadyStateCtmcCslModelCheckerTest, TestingTypes, );
 

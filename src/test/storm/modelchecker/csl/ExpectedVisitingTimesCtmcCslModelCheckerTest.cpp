@@ -116,7 +116,8 @@ typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
     SparseGmmxxGmresIluEnvironment,
 #endif
-                         SparseSoundEnvironment, SparseEigenRationalLuEnvironment> TestingTypes;
+    SparseSoundEnvironment, SparseEigenRationalLuEnvironment>
+    TestingTypes;
 
 TYPED_TEST_SUITE(ExpectedVisitingTimesCtmcCslModelCheckerTest, TestingTypes, );
 

@@ -300,10 +300,10 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
 
 typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
-    SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment,
-                          HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment, HybridSylvanGmmxxGmresEnvironment,
+    SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment,
+    HybridSylvanGmmxxGmresEnvironment,
 #endif
-                         SparseNativeSorEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment>
+    SparseNativeSorEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(CtmcCslModelCheckerTest, TestingTypes, );

@@ -176,11 +176,10 @@ class LraDtmcPrctlModelCheckerTest : public ::testing::Test {
 
 typedef ::testing::Types<
 #ifdef STORM_HAVE_GMM
-    GBGmmxxDoubleGmresEnvironment, GBEigenDoubleDGmresEnvironment,DistrGmmxxDoubleGmresEnvironment,
+    GBGmmxxDoubleGmresEnvironment, GBEigenDoubleDGmresEnvironment, DistrGmmxxDoubleGmresEnvironment,
 #endif
-    GBEigenRationalLUEnvironment, GBNativeSorEnvironment,
-                         GBNativeWalkerChaeEnvironment,  DistrEigenRationalLUEnvironment, DistrNativeWalkerChaeEnvironment,
-                         ValueIterationEnvironment>
+    GBEigenRationalLUEnvironment, GBNativeSorEnvironment, GBNativeWalkerChaeEnvironment, DistrEigenRationalLUEnvironment, DistrNativeWalkerChaeEnvironment,
+    ValueIterationEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LraDtmcPrctlModelCheckerTest, TestingTypes, );
