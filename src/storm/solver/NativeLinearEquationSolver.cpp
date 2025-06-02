@@ -7,6 +7,7 @@
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
 #include "storm/solver/helper/RationalSearchHelper.h"
@@ -537,6 +538,30 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
 }
 
 template<typename ValueType>
+bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration(const Environment& env, std::vector<ValueType>& x,
+                                                                                     const std::vector<ValueType>& b) const {
+    if (!this->cachedRowVector) {
+        this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+    }
+
+    std::vector<ValueType>* lowerX = &x;
+    this->createLowerBoundsVector(*lowerX);
+    this->createUpperBoundsVector(this->cachedRowVector, this->getMatrixRowCount());
+    std::vector<ValueType>* upperX = this->cachedRowVector.get();
+
+    storm::solver::helper::GuessingValueIterationHelper<ValueType> helper(*this->A);
+    auto [status, numIters] = helper.solveEquations(*lowerX, *upperX, b, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                                             env.solver().native().getMaximalNumberOfIterations(),
+                                             boost::none);  // No optimization dir
+    auto two = storm::utility::convertNumber<ValueType>(2.0);
+    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+        *lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    this->reportStatus(status, numIters);
+    // this->logIterations(statusIters.first == SolverStatus::Converged, statusIters.first == SolverStatus::TerminatedEarly, statusIters.second);
+    return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
+}
+
+template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environment const& env, std::vector<ValueType>& x,
                                                                          std::vector<ValueType> const& b) const {
     // Set up two value iteration operators. One for exact and one for imprecise computations
@@ -618,6 +643,8 @@ bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment c
             return this->solveEquationsSoundValueIteration(env, x, b);
         case NativeLinearEquationSolverMethod::OptimisticValueIteration:
             return this->solveEquationsOptimisticValueIteration(env, x, b);
+        case NativeLinearEquationSolverMethod::GuessingValueIteration:
+            return this->solveEquationsGuessingValueIteration(env, x, b);
         case NativeLinearEquationSolverMethod::IntervalIteration:
             return this->solveEquationsIntervalIteration(env, x, b);
         case NativeLinearEquationSolverMethod::RationalSearch:
@@ -632,7 +659,7 @@ LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEqua
     auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
     if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration ||
         method == NativeLinearEquationSolverMethod::OptimisticValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch ||
-        method == NativeLinearEquationSolverMethod::IntervalIteration) {
+        method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
         return LinearEquationSolverProblemFormat::FixedPointSystem;
     } else {
         return LinearEquationSolverProblemFormat::EquationSystem;
@@ -643,7 +670,7 @@ template<typename ValueType>
 LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
     LinearEquationSolverRequirements requirements;
     auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
-    if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
+    if (method == NativeLinearEquationSolverMethod::IntervalIteration || method == NativeLinearEquationSolverMethod::GuessingValueIteration) {
         requirements.requireBounds();
     } else if (method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::OptimisticValueIteration) {
         requirements.requireLowerBounds();
