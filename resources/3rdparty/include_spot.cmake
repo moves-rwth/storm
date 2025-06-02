@@ -101,7 +101,7 @@ if(NOT STORM_DISABLE_SPOT)
         list(APPEND STORM_DEP_IMP_TARGETS Storm::Spot)
         add_dependencies(storm_resources Storm::Spot )
 
-        message(STATUS "Storm - Using shipped version of Spot 2.13 (include: ${Spot_INCLUDE_DIR}, library ${Spot_LIBRARIES}).")
+        message(STATUS "Storm - Using shipped version of Spot ${SPOT_SHIPPED_VERSION} (include: ${Spot_INCLUDE_DIR}, library ${Spot_LIBRARIES}).")
 
     endif()
 endif()
