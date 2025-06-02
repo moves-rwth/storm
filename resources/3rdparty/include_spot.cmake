@@ -69,6 +69,7 @@ if(NOT STORM_DISABLE_SPOT)
         ExternalProject_Add(Spot
             URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
             DOWNLOAD_NO_PROGRESS TRUE
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
             DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
