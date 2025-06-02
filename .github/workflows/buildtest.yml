@@ -167,7 +167,6 @@ jobs:
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
-             disable_spot: "ON",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
              packages: ""
@@ -178,7 +177,6 @@ jobs:
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
-             disable_spot: "ON",
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
              packages: "clang"
