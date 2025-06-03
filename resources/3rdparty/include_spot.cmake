@@ -53,16 +53,16 @@ if(NOT STORM_DISABLE_SPOT)
         endif()
 
         # Search for autotools
-        set(SPOT_AUTOTOOLS_LOCATIONS "")
-        foreach (TOOL_VAR AUTORECONF ACLOCAL AUTOMAKE AUTOCONF AUTOHEADER)
-            string(TOLOWER ${TOOL_VAR} PROG_NAME)
-            find_program(${TOOL_VAR} ${PROG_NAME})
-            if (NOT ${TOOL_VAR})
-                message(FATAL_ERROR "Cannot find ${PROG_NAME}, cannot compile Spot.")
-            endif()
-            mark_as_advanced(${TOOL_VAR})
-            string(APPEND SPOT_AUTOTOOLS_LOCATIONS "${TOOL_VAR}=${${TOOL_VAR}};")
-        endforeach()
+#        set(SPOT_AUTOTOOLS_LOCATIONS "")
+#        foreach (TOOL_VAR AUTORECONF ACLOCAL AUTOMAKE AUTOCONF AUTOHEADER)
+#            string(TOLOWER ${TOOL_VAR} PROG_NAME)
+#            find_program(${TOOL_VAR} ${PROG_NAME})
+#            if (NOT ${TOOL_VAR})
+#                message(FATAL_ERROR "Cannot find ${PROG_NAME}, cannot compile Spot.")
+#            endif()
+#            mark_as_advanced(${TOOL_VAR})
+#            string(APPEND SPOT_AUTOTOOLS_LOCATIONS "${TOOL_VAR}=${${TOOL_VAR}};")
+#        endforeach()
 
         # download and install shipped Spot as shared libraries.
         # set Spot version
