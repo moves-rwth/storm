@@ -12,9 +12,9 @@
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
-#include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/RationalSearchHelper.h"
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
@@ -80,8 +80,7 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::getMe
     }
     STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
                         method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration ||
-                        method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::GuessingValueIteration ||
-                        method == MinMaxMethod::ViToPi,
+                        method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi,
                     storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method '" << toString(method) << "'.");
     return method;
 }
@@ -609,25 +608,24 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
 template<typename ValueType, typename SolutionType>
 bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquationsGuessingValueIteration(Environment const& env, OptimizationDirection dir,
-                                                                                                          std::vector<SolutionType>& x,
-                                                                                                          std::vector<ValueType> const& b) const {
+                                                                                                        std::vector<SolutionType>& x,
+                                                                                                        std::vector<ValueType> const& b) const {
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement binary search value iteration for interval-based models.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement guessing value iteration for interval-based models.");
         return false;
     } else {
         setUpViOperator();
 
-        auto &lowerX = x;
+        auto& lowerX = x;
         auto upperX = std::make_unique<std::vector<SolutionType>>(x.size());
 
-        storm::solver::helper::GuessingValueIterationHelper<ValueType> helper(*this->A);
+        storm::solver::helper::GuessingValueIterationHelper<ValueType, false> helper(viOperator, *this->A);
 
         // x has to start with a lower bound.
         this->createLowerBoundsVector(lowerX);
         this->createUpperBoundsVector(*upperX);
 
-        auto statusIters = helper.solveEquations(lowerX, *upperX, b,
-                                                 storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
+        auto statusIters = helper.solveEquations(lowerX, *upperX, b, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
                                                  env.solver().minMax().getMaximalNumberOfIterations(), dir);
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(

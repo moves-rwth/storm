@@ -1,19 +1,16 @@
-#include <numeric>
-#include <queue>
 #include "GuessingValueIterationHelper.h"
 
-#include "storm/environment/solver/OviSolverEnvironment.h"
+#include "storm/storage/SparseMatrix.h"
+
+#include "storm/utility/Extremum.h"
 #include "storm/utility/ProgressMeasurement.h"
-#include "storm/utility/SignalHandler.h"
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 
 #include "storm/utility/macros.h"
 
-namespace storm {
-namespace solver {
-namespace helper {
+namespace storm::solver::helper {
 
 namespace gviinternal {
 
@@ -35,7 +32,6 @@ IterationHelper<ValueType>::IterationHelper(const storage::SparseMatrix<ValueTyp
         rowIndications.push_back(matrixValues.size());
     }
     rowGroupIndices = &matrix.getRowGroupIndices();
-    //    fillSortedRowGroups()
 }
 
 template<typename ValueType>
@@ -75,79 +71,6 @@ IndexType IterationHelper<ValueType>::selectRowGroupToGuess(const std::vector<Va
 }
 
 template<typename ValueType>
-template<bool minimizeDir, bool lower>
-ValueType IterationHelper<ValueType>::iterate(std::vector<ValueType>& x, const std::vector<ValueType>& b, const IndexType& guessRowGroup) {
-    auto i = static_cast<IndexType>(x.size());
-    while (i > guessRowGroup + 1) {
-        --i;
-        ValueType newX = multiplyRowGroup<minimizeDir>(i, x, b);
-        x[i] = lower ? std::max(x[i], newX) : std::min(x[i], newX);
-    }
-    --i;
-    while (i > 0) {
-        --i;
-        ValueType newX = multiplyRowGroup<minimizeDir>(i, x, b);
-        x[i] = lower ? std::max(x[i], newX) : std::min(x[i], newX);
-    }
-    return multiplyRowGroup<minimizeDir>(guessRowGroup, x, b);
-}
-
-template<typename ValueType>
-template<bool minimizeDir, bool lower>
-void IterationHelper<ValueType>::iterate(std::vector<ValueType>& x, const std::vector<ValueType>& b) {
-    auto i = static_cast<IndexType>(x.size());
-    while (i > 0) {
-        --i;
-        ValueType newX = multiplyRowGroup<minimizeDir>(i, x, b);
-
-        x[i] = lower ? std::max(x[i], newX) : std::min(x[i], newX);
-    }
-}
-
-template<typename ValueType>
-template<bool minimizeDir>
-ValueType IterationHelper<ValueType>::multiplyRowGroup(const IndexType& rowGroupIndex, const std::vector<ValueType>& x, const std::vector<ValueType>& b) {
-    auto row = (*rowGroupIndices)[rowGroupIndex];
-    const auto rowEnd = (*rowGroupIndices)[rowGroupIndex + 1];
-    STORM_LOG_ASSERT(row < rowEnd, "Empty row group not expected.");
-    ValueType xRes = multiplyRow(row, x, b[row]);
-    for (; row != rowEnd; ++row) {
-        ValueType xCur = multiplyRow(row, x, b[row]);
-        xRes = minimizeDir ? std::min(xRes, xCur) : std::max(xRes, xCur);
-    }
-    return xRes;
-}
-template<typename ValueType>
-ValueType IterationHelper<ValueType>::multiplyRow(const IndexType& rowIndex, const std::vector<ValueType>& x, const ValueType& bi) {
-    auto xRes = bi;
-
-    auto itV = matrixValues.begin() + rowIndications[rowIndex];
-    const auto itVEnd = matrixValues.begin() + rowIndications[rowIndex + 1];
-    auto itC = matrixColumns.begin() + rowIndications[rowIndex];
-
-    for (; itV != itVEnd; ++itV, ++itC) {
-        xRes += *itV * x[*itC];
-    }
-    return xRes;
-}
-template<typename ValueType>
-template<bool lower>
-ValueType IterationHelper<ValueType>::iterate(storm::solver::OptimizationDirection dir, std::vector<ValueType>& x, const std::vector<ValueType>& b,
-                                              const IndexType& guessRowGroup) {
-    if (minimize(dir))
-        return iterate<true, lower>(x, b, guessRowGroup);
-    else
-        return iterate<false, lower>(x, b, guessRowGroup);
-}
-template<typename ValueType>
-template<bool lower>
-void IterationHelper<ValueType>::iterate(storm::solver::OptimizationDirection dir, std::vector<ValueType>& x, const std::vector<ValueType>& b) {
-    if (minimize(dir))
-        iterate<true, lower>(x, b);
-    else
-        iterate<false, lower>(x, b);
-}
-template<typename ValueType>
 ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) {
     auto itL = lower.begin();
     const auto itLEnd = lower.end();
@@ -159,19 +82,6 @@ ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower
         result = std::max(result, length);
     }
     return result;
-}
-
-template<typename ValueType>
-void IterationHelper<ValueType>::sortRows(std::vector<ValueType>& b) {
-    sortedRows.clear();
-    sortedRows.reserve(rowGroupIndices->size() - 1);
-    storm::storage::BitVector visited(rowGroupIndices->size() - 1);
-    for (IndexType r = 0; r < rowGroupIndices->size() - 1; r++) {
-        for (auto row = (*rowGroupIndices)[r]; row < (*rowGroupIndices)[r + 1]; row++) {
-            if (b[row] != 0)
-                sortedRows.push_back(r);
-        }
-    }
 }
 
 template<typename ValueType>
@@ -189,51 +99,104 @@ ValueType IterationHelper<ValueType>::getSumLength(std::vector<ValueType>& lower
 
 }  // namespace gviinternal
 
-template<typename ValueType>
-typename GuessingValueIterationHelper<ValueType>::IndexType GuessingValueIterationHelper<ValueType>::selectRowGroupToGuess(
-    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX) {
+template<typename ValueType, storm::OptimizationDirection Dir>
+class GVIBackend {
+   public:
+    ValueType xGuessed, yGuessed;
+
+    GVIBackend() {}
+    GVIBackend(uint64_t guessedRowGroup) : guessedRowGroup(guessedRowGroup) {}
+
+    void startNewIteration() {}
+
+    void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        xBest = std::move(value.first);
+        yBest = std::move(value.second);
+    }
+
+    void nextRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
+        xBest &= std::move(value.first);
+        yBest &= std::move(value.second);
+    }
+
+    void applyUpdate(ValueType& xCurr, ValueType& yCurr, [[maybe_unused]] uint64_t rowGroup) {
+        if (guessedRowGroup && rowGroup == *guessedRowGroup) {
+            xGuessed = *xBest;
+            yGuessed = *yBest;
+            return;
+        }
+        xCurr = std::max(xCurr, *xBest);
+        yCurr = std::min(yCurr, *yBest);
+    }
+
+    void endOfIteration() const {}
+
+    bool constexpr converged() const {
+        return false;
+    }
+
+    bool constexpr abort() const {
+        return false;
+    }
+
+   private:
+    storm::utility::Extremum<Dir, ValueType> xBest, yBest;
+    std::optional<uint64_t> guessedRowGroup;
+};
+
+template<typename ValueType, bool TrivialRowGrouping>
+IndexType GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::selectRowGroupToGuess(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX) {
     return iterationHelper.selectRowGroupToGuess(lowerX, upperX);
 }
 
-template<typename ValueType>
-std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::tryVerify(
-    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, boost::optional<storm::solver::OptimizationDirection> dir,
-    GuessingValueIterationHelper::IndexType rowGroupToGuess, ValueType guessValue, uint64_t maxOverallIterations, ValueType precision) {
-    copy(lowerX, guessLower);
-    copy(upperX, guessUpper);
+template<typename ValueType, bool TrivialRowGrouping>
+template<OptimizationDirection Dir>
+void GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::applyInPlace(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX,
+                                                                               const std::vector<ValueType>& b, GVIBackend<ValueType, Dir>& backend) {
+    std::pair<std::vector<ValueType>, std::vector<ValueType>> xy;
+    xy.first.swap(lowerX);
+    xy.second.swap(upperX);
+    viOperator->applyInPlace(xy, b, backend);
+    lowerX.swap(xy.first);
+    upperX.swap(xy.second);
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+template<OptimizationDirection Dir>
+std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::tryVerify(std::vector<ValueType>& lowerX,
+                                                                                                         std::vector<ValueType>& upperX,
+                                                                                                         const std::vector<ValueType>& b,
+                                                                                                         IndexType rowGroupToGuess, ValueType guessValue,
+                                                                                                         uint64_t maxOverallIterations, ValueType precision) {
+    guessLower = lowerX;
+    guessUpper = upperX;
     guessLower[rowGroupToGuess] = guessUpper[rowGroupToGuess] = guessValue;
     uint64_t iterations = 0;
     ValueType sumLengthBefore = 0, maxLengthBefore = 0;
+    GVIBackend<ValueType, Dir> guessingBackend(rowGroupToGuess);
+    GVIBackend<ValueType, Dir> iiBackend;
 
-    bool shouldCheckConvergence = false;
     while (iterations < maxOverallIterations) {
         ++iterations;
-        iterationHelper.template iterate<true>(dir.get(), lowerX, b);
-        iterationHelper.template iterate<false>(dir.get(), upperX, b);
-        auto rowGroupLower = iterationHelper.template iterate<true>(dir.get(), guessLower, b, rowGroupToGuess);
-        if (guessValue <= rowGroupLower) {
-            copy(guessLower, lowerX);
-            lowerX[rowGroupToGuess] = rowGroupLower;
+        applyInPlace<Dir>(lowerX, upperX, b, iiBackend);
+        applyInPlace<Dir>(guessLower, guessUpper, b, guessingBackend);
+        auto guessedNewLower = guessingBackend.xGuessed;
+        auto guessedNewUpper = guessingBackend.yGuessed;
+        if (guessValue <= guessedNewLower) {
+            lowerX = guessLower;
+            lowerX[rowGroupToGuess] = guessedNewLower;
             return {SolverStatus::TerminatedEarly, iterations};
         }
-        auto rowGroupUpper = iterationHelper.template iterate<false>(dir.get(), guessUpper, b, rowGroupToGuess);
-        if (rowGroupUpper <= guessValue) {
-            copy(guessUpper, upperX);
-            upperX[rowGroupToGuess] = rowGroupUpper;
+        if (guessedNewUpper <= guessValue) {
+            upperX = guessUpper;
+            upperX[rowGroupToGuess] = guessedNewUpper;
             return {SolverStatus::TerminatedEarly, iterations};
         }
 
-        auto maxLength = iterationHelper.getMaxLength(guessLower, guessUpper);
-
-        if (maxLength == maxLengthBefore) {
-            auto sumLength = iterationHelper.getSumLength(guessLower, guessUpper);
-            if (shouldCheckConvergence && sumLength == sumLengthBefore) {
-                return {SolverStatus::Aborted, iterations};
-            }
-            shouldCheckConvergence = true;
-            sumLengthBefore = sumLength;
-        }
-        maxLengthBefore = maxLength;
+        auto sumLength = iterationHelper.getSumLength(guessLower, guessUpper);
+        if (sumLength == sumLengthBefore)
+            return {SolverStatus::Aborted, iterations};
+        sumLengthBefore = sumLength;
 
         if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
             return {SolverStatus::Converged, iterations};
@@ -242,27 +205,34 @@ std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::tryVe
     return {SolverStatus::MaximalIterationsExceeded, iterations};
 }
 
-template<typename ValueType>
-std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::solveEquations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX,
-                                                                                              const std::vector<ValueType>& b, ValueType precision,
-                                                                                              uint64_t maxOverallIterations,
-                                                                                              boost::optional<storm::solver::OptimizationDirection> dir) {
-    if (!dir)
-        dir = OptimizationDirection::Minimize;
-    //    std::cerr << std::fixed << std::setprecision(15);
-    auto [status, iterations] = doIterations(dir.get(), lowerX, upperX, b, std::min((uint64_t)lowerX.size(), maxOverallIterations), precision);
+template<typename ValueType, bool TrivialRowGrouping>
+std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, ValueType precision, uint64_t maxOverallIterations,
+    boost::optional<storm::solver::OptimizationDirection> dir) {
+    if (!dir.has_value() || minimize(dir.get()))
+        return solveEquations<OptimizationDirection::Minimize>(lowerX, upperX, b, precision, maxOverallIterations);
+    else
+        return solveEquations<OptimizationDirection::Maximize>(lowerX, upperX, b, precision, maxOverallIterations);
+}
+
+template<typename ValueType, bool TrivialRowGrouping>
+template<OptimizationDirection Dir>
+std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, ValueType precision, uint64_t maxOverallIterations) {
+    // do n iterations first
+    auto [status, iterations] = doIterations<Dir>(lowerX, upperX, b, std::min(static_cast<uint64_t>(lowerX.size()), maxOverallIterations), precision);
     if (status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly)
         return {SolverStatus::Converged, iterations};
     while (iterations < maxOverallIterations) {
         auto rowGroupToGuess = selectRowGroupToGuess(lowerX, upperX);
         bool didVerify = false;
         for (int den = 2; den < 30 && !didVerify; ++den) {
-            for (int num = 1; num < den && !didVerify; num++) {
+            for (int num = 1; num < den; num++) {
                 if (std::gcd(num, den) != 1)
                     continue;
                 auto guessValue = (lowerX[rowGroupToGuess] * num + upperX[rowGroupToGuess] * (den - num)) / den;
                 auto [solverStatus, verifyIterations] =
-                    this->tryVerify(lowerX, upperX, b, dir, rowGroupToGuess, guessValue, maxOverallIterations - iterations, precision);
+                    tryVerify<Dir>(lowerX, upperX, b, rowGroupToGuess, guessValue, maxOverallIterations - iterations, precision);
                 iterations += verifyIterations;
                 if (solverStatus == SolverStatus::TerminatedEarly || solverStatus == SolverStatus::Converged) {
                     didVerify = true;
@@ -271,13 +241,12 @@ std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::solve
             }
         }
         if (!didVerify && iterations < maxOverallIterations) {
-            auto [status, iterationsDone] = doIterations(dir.get(), lowerX, upperX, b, maxOverallIterations - iterations, precision);
+            auto [status, iterationsDone] = doIterations<Dir>(lowerX, upperX, b, maxOverallIterations - iterations, precision);
             iterations += iterationsDone;
             if (status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly)
                 break;
         } else {
-            auto maxLength = iterationHelper.getMaxLength(lowerX, upperX);
-            if (maxLength < 2 * precision)
+            if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision)
                 break;
         }
     }
@@ -285,47 +254,30 @@ std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::solve
     return {SolverStatus::Converged, iterations};
 }
 
-template<typename ValueType>
-void GuessingValueIterationHelper<ValueType>::copy(std::vector<ValueType>& from, std::vector<ValueType>& to) {
-    if (to.size() != from.size())
-        to.resize(from.size());
-    auto itF = from.begin();
-    auto itFEnd = from.end();
-    auto itT = to.begin();
-
-    for (; itF != itFEnd; ++itF, ++itT) {
-        *itT = *itF;
-    }
-}
-
-template<typename ValueType>
-GuessingValueIterationHelper<ValueType>::GuessingValueIterationHelper(const storage::SparseMatrix<ValueType>& matrix) : iterationHelper(matrix) {
+template<typename ValueType, bool TrivialRowGrouping>
+GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::GuessingValueIterationHelper(
+    std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator, const storage::SparseMatrix<ValueType>& matrix)
+    : viOperator(viOperator), iterationHelper(matrix) {
     // Intentionally left empty.
 }
-template<typename ValueType>
-std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::doIterations(storm::solver::OptimizationDirection dir,
-                                                                                            std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX,
-                                                                                            const std::vector<ValueType>& b, uint64_t maxIterations,
-                                                                                            const ValueType& precision) {
+
+template<typename ValueType, bool TrivialRowGrouping>
+template<OptimizationDirection Dir>
+std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIterations(
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t maxIterations, const ValueType& precision) {
     ValueType sumLengthBefore = 0, maxLengthBefore = 0;
-    bool shouldCheckConvergence = false;
     uint64_t iterations = 0;
+    GVIBackend<ValueType, Dir> iiBackend;
     while (iterations < maxIterations) {
-        iterationHelper.template iterate<true>(dir, lowerX, b);
-        iterationHelper.template iterate<false>(dir, upperX, b);
+        applyInPlace<Dir>(lowerX, upperX, b, iiBackend);
         ++iterations;
 
-        auto maxLength = iterationHelper.getMaxLength(lowerX, upperX);
-        if (maxLength == maxLengthBefore) {
-            auto sumLength = iterationHelper.getSumLength(lowerX, upperX);
-            if (shouldCheckConvergence && sumLengthBefore == sumLength)
-                return {SolverStatus::TerminatedEarly, iterations};
-            shouldCheckConvergence = true;
-            sumLengthBefore = sumLength;
-        }
-        maxLengthBefore = maxLength;
+        auto sumLength = iterationHelper.getSumLength(lowerX, upperX);
+        if (sumLengthBefore == sumLength)
+            return {SolverStatus::TerminatedEarly, iterations};
+        sumLengthBefore = sumLength;
 
-        if (maxLength < 2 * precision) {
+        if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
             return {SolverStatus::Converged, iterations};
         }
     }
@@ -333,8 +285,8 @@ std::pair<SolverStatus, uint64_t> GuessingValueIterationHelper<ValueType>::doIte
     return {SolverStatus::MaximalIterationsExceeded, iterations};
 }
 
-template class GuessingValueIterationHelper<double>;
-template class GuessingValueIterationHelper<storm::RationalNumber>;
-}  // namespace helper
-}  // namespace solver
-}  // namespace storm
+template class GuessingValueIterationHelper<double, true>;
+template class GuessingValueIterationHelper<double, false>;
+template class GuessingValueIterationHelper<storm::RationalNumber, true>;
+template class GuessingValueIterationHelper<storm::RationalNumber, false>;
+}  // namespace storm::solver::helper

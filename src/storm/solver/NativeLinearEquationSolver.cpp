@@ -539,20 +539,21 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
 
 template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration(const Environment& env, std::vector<ValueType>& x,
-                                                                                     const std::vector<ValueType>& b) const {
+                                                                                 const std::vector<ValueType>& b) const {
     if (!this->cachedRowVector) {
         this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
     }
+    setUpViOperator();
 
     std::vector<ValueType>* lowerX = &x;
     this->createLowerBoundsVector(*lowerX);
     this->createUpperBoundsVector(this->cachedRowVector, this->getMatrixRowCount());
     std::vector<ValueType>* upperX = this->cachedRowVector.get();
 
-    storm::solver::helper::GuessingValueIterationHelper<ValueType> helper(*this->A);
+    storm::solver::helper::GuessingValueIterationHelper<ValueType, true> helper(viOperator, *this->A);
     auto [status, numIters] = helper.solveEquations(*lowerX, *upperX, b, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
-                                             env.solver().native().getMaximalNumberOfIterations(),
-                                             boost::none);  // No optimization dir
+                                                    env.solver().native().getMaximalNumberOfIterations(),
+                                                    boost::none);  // No optimization dir
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });

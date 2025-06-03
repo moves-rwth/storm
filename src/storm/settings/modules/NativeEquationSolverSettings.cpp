@@ -26,9 +26,12 @@ const std::string NativeEquationSolverSettings::powerMethodMultiplicationStyleOp
 const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
 NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methods = {"jacobi", "gaussseidel",              "sor", "walkerchae",
-                                        "power",  "sound-value-iteration",    "svi", "optimistic-value-iteration",
-                                        "ovi",    "guessing-value-iteration", "gvi", "interval-iteration",
+    std::vector<std::string> methods = {"jacobi", "gaussseidel",
+                                        "sor",    "walkerchae",
+                                        "power",  "sound-value-iteration",
+                                        "svi",    "optimistic-value-iteration",
+                                        "ovi",    "guessing-value-iteration",
+                                        "gvi",    "interval-iteration",
                                         "ii",     "ratsearch"};
     this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true,
                                                    "The method to be used for solving linear equation systems with the native engine.")
