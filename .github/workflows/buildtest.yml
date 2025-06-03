@@ -375,7 +375,7 @@ jobs:
         run: make -j ${NR_JOBS}
       - name: Run tests
         working-directory: ./build
-        run: ctest test--output-on-failure
+        run: ctest test --output-on-failure
       - name: Checkout starter-project
         working-directory: .
         run: |

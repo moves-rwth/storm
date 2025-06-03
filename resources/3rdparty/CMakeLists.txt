@@ -350,6 +350,9 @@ SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
+# We do not want to build or own version of ginac and cln, it adds levels of complexity that we currently do not want to handle.
+SET(ALLOW_SHIPPED_CLN OFF)
+SET(ALLOW_SHIPPED_GINAC OFF)
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
