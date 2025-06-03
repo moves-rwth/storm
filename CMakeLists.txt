@@ -491,10 +491,10 @@ include(resources/3rdparty/CMakeLists.txt)
 
 if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE)
 	set(STORM_HAVE_LP_SOLVER ON)
-	message(STATUS "Storm -- compiled with an LP solver!")
+	message(STATUS "Storm - Compiled with an LP solver.")
 else()
 	set(STORM_HAVE_LP_SOLVER OFF)
-	message(WARNING "Storm -- compiled without LP solver! This may yield errors at run time.")
+	message(WARNING "Storm - Compiled without an LP solver. This may yield errors at run time.")
 endif()
 
 if(PROJECT_IS_TOP_LEVEL)

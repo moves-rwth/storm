@@ -49,6 +49,18 @@ if(NOT STORM_DISABLE_SPOT)
             set(BDDX_RPATH_FIX_COMMAND2 "true") #no op
         endif()
 
+        # Search for autotools
+        set(SPOT_AUTOTOOLS_LOCATIONS "")
+        foreach (TOOL_VAR AUTORECONF ACLOCAL AUTOMAKE AUTOCONF AUTOHEADER)
+            string(TOLOWER ${TOOL_VAR} PROG_NAME)
+            find_program(${TOOL_VAR} ${PROG_NAME})
+            if (NOT ${TOOL_VAR})
+                message(FATAL_ERROR "Cannot find ${PROG_NAME}, cannot compile Spot.")
+            endif()
+            mark_as_advanced(${TOOL_VAR})
+            string(APPEND SPOT_AUTOTOOLS_LOCATIONS "${TOOL_VAR}=${${TOOL_VAR}};")
+        endforeach()
+
         # download and install shipped Spot as shared libraries.
         # set Spot version
         set(SPOT_SHIPPED_VERSION 2.13.1)
@@ -57,12 +69,13 @@ if(NOT STORM_DISABLE_SPOT)
         ExternalProject_Add(Spot
             URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
             DOWNLOAD_NO_PROGRESS TRUE
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
             DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
             CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
-            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
-            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT} ${SPOT_AUTOTOOLS_LOCATIONS}
+            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT} ${SPOT_AUTOTOOLS_LOCATIONS}
                 COMMAND ${Spot_RPATH_FIX_COMMAND}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND1}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND2}
@@ -101,7 +114,7 @@ if(NOT STORM_DISABLE_SPOT)
         list(APPEND STORM_DEP_IMP_TARGETS Storm::Spot)
         add_dependencies(storm_resources Storm::Spot )
 
-        message(STATUS "Storm - Using shipped version of Spot 2.13 (include: ${Spot_INCLUDE_DIR}, library ${Spot_LIBRARIES}).")
+        message(STATUS "Storm - Using shipped version of Spot ${SPOT_SHIPPED_VERSION} (include: ${Spot_INCLUDE_DIR}, library ${Spot_LIBRARIES}).")
 
     endif()
 endif()
