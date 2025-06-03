@@ -31,6 +31,7 @@ MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(mo
                                                         "ii",          "interval-iteration",
                                                         "svi",         "sound-value-iteration",
                                                         "ovi",         "optimistic-value-iteration",
+                                                        "gvi",         "guessing-value-iteration",
                                                         "topological", "vi-to-pi",
                                                         "vi-to-lp",    "acyclic"};
     this->addOption(
@@ -114,6 +115,8 @@ storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvi
         return storm::solver::MinMaxMethod::SoundValueIteration;
     } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
         return storm::solver::MinMaxMethod::OptimisticValueIteration;
+    } else if (minMaxEquationSolvingTechnique == "guessing-value-iteration" || minMaxEquationSolvingTechnique == "gvi") {
+        return storm::solver::MinMaxMethod::GuessingValueIteration;
     } else if (minMaxEquationSolvingTechnique == "topological") {
         return storm::solver::MinMaxMethod::Topological;
     } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
