@@ -33,6 +33,7 @@ if(NOT STORM_DISABLE_SPOT)
             message(STATUS "Storm - Using system version of Spot ${Spot_VERSION} (include: ${Spot_INCLUDE_DIR}, library: ${Spot_LIBRARIES}).")
             list(APPEND STORM_DEP_IMP_TARGETS Storm::Spot)
 
+            set(SPOTINFIX "") # not relevant!
             set(STORM_HAVE_SPOT ON)
         endif()
     endif()
