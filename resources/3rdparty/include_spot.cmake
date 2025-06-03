@@ -40,6 +40,7 @@ if(NOT STORM_DISABLE_SPOT)
     if(NOT STORM_HAVE_SPOT)
         # Spot does not set library IDs with an rpath but with an absolute path.
         if (APPLE)
+            # We need to work on these .0 versions as otherwise we cannot fix the RPATHs.
             set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
             set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
             set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
@@ -84,12 +85,12 @@ if(NOT STORM_DISABLE_SPOT)
             LOG_BUILD ON
             LOG_INSTALL ON
             LOG_OUTPUT_ON_FAILURE ON
-            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.0${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0${DYNAMIC_EXT}
+            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}
         )
         add_dependencies(storm_resources Spot)
 
         set(Spot_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.0${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0${DYNAMIC_EXT}")
+        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         set(Spot_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
         set(STORM_HAVE_SPOT ON)
         set(STORM_SHIPPED_SPOT ON)
@@ -98,12 +99,12 @@ if(NOT STORM_DISABLE_SPOT)
         add_library(Storm::Spot-bddx SHARED IMPORTED)
         set_target_properties(Storm::Spot-bddx PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0${DYNAMIC_EXT})
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT})
 
         add_library(Storm::Spot SHARED IMPORTED)
         set_target_properties(Storm::Spot PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.0${DYNAMIC_EXT}
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
                 INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
         )
 
