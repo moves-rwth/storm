@@ -13,6 +13,11 @@ project (storm
 set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${STORM_CMAKE_FIND_MODULES}" "${PROJECT_SOURCE_DIR}/resources/cmake/macros")
 add_custom_target(storm_resources)
+if(PROJECT_IS_TOP_LEVEL)
+	add_custom_target(resources)
+	add_dependencies(resources storm_resources)
+endif()
+
 
 include(ExternalProject)
 include(imported)
