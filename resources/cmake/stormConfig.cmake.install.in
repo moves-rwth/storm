@@ -43,7 +43,7 @@ if(@STORM_HAVE_Z3@)  # STORM_HAVE_Z3
     endif()
 endif()
 find_dependency(Threads)
-if(@STORM_HAVE_GLPK@)
+if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     find_dependency(GLPK)
 
     add_library(glpk SHARED IMPORTED)
