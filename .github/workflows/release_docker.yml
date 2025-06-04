@@ -74,7 +74,7 @@ jobs:
             build_type=${{ matrix.image.buildType }}
             developer=${{ matrix.image.developer }}
             no_threads=${{ env.NR_JOBS }}
-            # Omitting arguments cmake_args, disable_gurobi, disable_soplex, disable_mathsat, disable_spot, cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments cmake_args, disable_*, cln_exact, cln_ratfunc, all_sanitizers
           platforms: ${{ matrix.platform.name }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
