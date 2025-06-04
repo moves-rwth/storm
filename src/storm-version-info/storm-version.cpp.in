@@ -1,4 +1,4 @@
-// The file ending with .ccp is auto generated and will be overwritten.
+// The file ending with .cpp is auto generated and will be overwritten.
 // The file is generated from storm-version.cpp.in.
 #include "storm-version-info/storm-version.h"
 
