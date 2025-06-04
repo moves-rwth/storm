@@ -512,7 +512,7 @@ if (PROJECT_IS_TOP_LEVEL)
 	get_git_head_revision(STORM_VERSION_REFSPEC STORM_VERSION_GIT_HASH)
 	git_describe(STORM_GIT_VERSION_STRING)
 
-	# Trying to figure out if there git has changed.
+	# Trying to figure out if the git has changed.
 	string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(.*)$" STORM_VERSION_MATCH "${STORM_GIT_VERSION_STRING}")
 	# No longer used, but help understanding the regex.
 	#set(STORM_VERSION_MAJOR "${CMAKE_MATCH_1}")
