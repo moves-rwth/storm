@@ -1,5 +1,5 @@
 The following steps should be performed before releasing a new storm version.
-Note that in most cases a simultaneous release of [carl](https://github.com/smtrat/carl), [storm](https://github.com/moves-rwth/storm), [pycarl](https://github.com/moves-rwth/pycarl/) and [stormpy](https://github.com/moves-rwth/stormpy/) is preferred.
+Note that in most cases a simultaneous release of [carl](https://github.com/moves-rwth/carl-storm), [storm](https://github.com/moves-rwth/storm), [pycarl](https://github.com/moves-rwth/pycarl/) and [stormpy](https://github.com/moves-rwth/stormpy/) is preferred.
 
 1. Update `CHANGELOG.md`:
    * To get all the commits from an author since the last tag execute:
@@ -9,6 +9,7 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
    * Set release month
 
 2. Update used carl version:
+   * Update `STORM_CARL_GIT_TAG` in `CMakeLists.txt`
    * Maybe update `CARL_MINVERSION` in `resources/3rdparty/CMakeLists.txt`
 
 3. Check that storm builds without errors and all tests are successful:
