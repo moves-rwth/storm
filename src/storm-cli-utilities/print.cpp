@@ -22,9 +22,6 @@
 #ifdef STORM_HAVE_SOPLEX
 #include "soplex.h"
 #endif
-#ifdef STORM_HAVE_SMTRAT
-#include "lib/smtrat.h"
-#endif
 #ifdef STORM_HAVE_SPOT
 #include <spot/misc/version.hh>
 #endif
