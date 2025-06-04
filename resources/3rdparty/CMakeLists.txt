@@ -275,23 +275,28 @@ endif()
 ##
 #############################################################
 
-set(STORM_HAVE_GLPK OFF)
-find_package(GLPK QUIET)
+if(NOT STORM_DISABLE_GLPK)
+    set(STORM_HAVE_GLPK OFF)
+    find_package(GLPK QUIET)
 
-if(GLPK_FOUND)
-    set(STORM_HAVE_GLPK ON)
-    message (STATUS "Storm - Linking with GLPK ${GLPK_VERSION_STRING}")
+    if(GLPK_FOUND)
+        set(STORM_HAVE_GLPK ON)
+        message (STATUS "Storm - Linking with GLPK ${GLPK_VERSION_STRING}")
 
-    add_library(glpk SHARED IMPORTED)
-    set_target_properties(
-            glpk
-            PROPERTIES
-            IMPORTED_LOCATION ${GLPK_LIBRARIES}
-            INTERFACE_INCLUDE_DIRECTORIES ${GLPK_INCLUDE_DIR}
-    )
-    list(APPEND STORM_DEP_IMP_TARGETS glpk)
+        add_library(glpk SHARED IMPORTED)
+        set_target_properties(
+                glpk
+                PROPERTIES
+                IMPORTED_LOCATION ${GLPK_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${GLPK_INCLUDE_DIR}
+        )
+        list(APPEND STORM_DEP_IMP_TARGETS glpk)
+    else()
+        message (WARNING "Storm - Not linking with GLPK.")
+    endif()
 else()
-    message (WARNING "Storm - Not linking with GLPK.")
+    message (STATUS "Storm - Not linking with GLPK.")
+    set(STORM_HAVE_GLPK OFF)
 endif()
 
 
