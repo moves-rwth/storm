@@ -39,6 +39,7 @@ target_include_directories(l3pp INTERFACE
 )
 install(TARGETS l3pp EXPORT storm_Targets)
 install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/l3pp/ DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/l3pp FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
+add_dependencies(storm_resources l3pp)
 list(APPEND STORM_DEP_TARGETS l3pp)
 
 #############################################################
@@ -101,6 +102,7 @@ install(TARGETS eigen3storm EXPORT storm_Targets)
 install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/StormEigen
         PATTERN ".git" EXCLUDE)
+add_dependencies(storm_resources eigen3storm)
 list(APPEND STORM_DEP_TARGETS eigen3storm)
 
 #############################################################
@@ -360,12 +362,12 @@ set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
 set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 message(STATUS "Storm - Using carl version ${carl_VERSION} from ${carl_SOURCE_DIR} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
 #
-add_dependencies(storm_resources lib_carl)
 # TODO this old flag is no longer really relevant as CARL must always be present.
 set(STORM_HAVE_CARL ON)
 # This flag is currently required to pick the right carl adapter.
 # TODO It can be removed as the old versions that did not support forward declarations are no longer supported either way.
 set(STORM_CARL_SUPPORTS_FWD_DECL ON)
+add_dependencies(storm_resources lib_carl)
 list(APPEND STORM_FETCHED_TARGETS lib_carl)
 
 # Some checks to see whether we correctly configured carl.
@@ -490,7 +492,7 @@ SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
 SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
 FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
 
-
+add_dependencies(storm_resources sylvan)
 list(APPEND STORM_FETCHED_TARGETS sylvan)
 
 #############################################################
