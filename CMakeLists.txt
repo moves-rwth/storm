@@ -84,7 +84,7 @@ MARK_AS_ADVANCED(SOPLEX_ROOT)
 option(STORM_DISABLE_XERCES "Sets whether linking with Xerces should be disabled." OFF)
 set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
 mark_as_advanced(XERCESC_ROOT)
-option(STORM_DISABLE_Z3  "Sets whether linking with Spot should be disabled." Z3)
+option(STORM_DISABLE_Z3  "Sets whether linking with Z3 should be disabled." OFF)
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3.")
 mark_as_advanced(Z3_ROOT)
 
