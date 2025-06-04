@@ -16,7 +16,7 @@ if(NOT STORM_DISABLE_SPOT)
             get_filename_component(Spot_LIB_DIR ${Spot_LIBRARIES} DIRECTORY)
             find_library(BUDDY_LIBRARY NAMES libbddx bddx PATHS ${Spot_LIB_DIR} NO_DEFAULT_PATH)
             if(NOT BUDDY_LIBRARY)
-                message(FATAL_ERROR "Storm - Did not find BUDDY library that should ship with Spot. To work around this, you may disable the system version Spot with '-DSTORM_USE_Spot_SYSTEM=OFF'.")
+                message(FATAL_ERROR "Storm - Did not find BUDDY library that should ship with Spot. To work around this, you may force the shipped version of Spot with '-DSTORM_SHIPPED_SPOT=ON'.")
             endif()
 
             add_library(Storm::Spot-bddx UNKNOWN IMPORTED)
