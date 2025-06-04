@@ -11,13 +11,13 @@
 find_package(PkgConfig QUIET)
 PKG_CHECK_MODULES(PC_Spot QUIET Spot)
 
-find_path(Spot_INCLUDE_DIR NAMES Spot/misc/_config.h
+find_path(Spot_INCLUDE_DIR NAMES spot/misc/_config.h
    HINTS
    ${PC_Spot_INCLUDEDIR}
    ${PC_Spot_INCLUDE_DIRS}
    )
 
-find_library(Spot_LIBRARIES NAMES Spot
+find_library(Spot_LIBRARIES NAMES spot
    HINTS
    ${PC_Spot_LIBDIR}
    ${PC_Spot_LIBRARY_DIRS}
@@ -25,8 +25,8 @@ find_library(Spot_LIBRARIES NAMES Spot
 
 if(PC_Spot_VERSION)
     set(Spot_VERSION ${PC_Spot_VERSION})
-elseif(Spot_INCLUDE_DIR AND EXISTS "${Spot_INCLUDE_DIR}/Spot/misc/_config.h")
-    file(STRINGS "${Spot_INCLUDE_DIR}/Spot/misc/_config.h" Spot_VERSION
+elseif(Spot_INCLUDE_DIR AND EXISTS "${Spot_INCLUDE_DIR}/spot/misc/_config.h")
+    file(STRINGS "${Spot_INCLUDE_DIR}/spot/misc/_config.h" Spot_VERSION
          REGEX "^#define[\t ]+Spot_VERSION[\t ]+\".+\"")
     string(REGEX REPLACE "^#define[\t ]+Spot_VERSION[\t ]+\"(.+)\"" "\\1" Spot_VERSION "${Spot_VERSION}")
 endif()
