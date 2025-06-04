@@ -53,18 +53,6 @@ if(NOT STORM_DISABLE_SPOT)
             set(SPOTINFIX "")
         endif()
 
-        # Search for autotools
-#        set(SPOT_AUTOTOOLS_LOCATIONS "")
-#        foreach (TOOL_VAR AUTORECONF ACLOCAL AUTOMAKE AUTOCONF AUTOHEADER)
-#            string(TOLOWER ${TOOL_VAR} PROG_NAME)
-#            find_program(${TOOL_VAR} ${PROG_NAME})
-#            if (NOT ${TOOL_VAR})
-#                message(FATAL_ERROR "Cannot find ${PROG_NAME}, cannot compile Spot.")
-#            endif()
-#            mark_as_advanced(${TOOL_VAR})
-#            string(APPEND SPOT_AUTOTOOLS_LOCATIONS "${TOOL_VAR}=${${TOOL_VAR}};")
-#        endforeach()
-
         # download and install shipped Spot as shared libraries.
         # set Spot version
         set(SPOT_SHIPPED_VERSION 2.13.1)
@@ -78,8 +66,8 @@ if(NOT STORM_DISABLE_SPOT)
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
             PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
             CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
-            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT} ${SPOT_AUTOTOOLS_LOCATIONS}
-            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT} ${SPOT_AUTOTOOLS_LOCATIONS}
+            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 COMMAND ${Spot_RPATH_FIX_COMMAND}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND1}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND2}
