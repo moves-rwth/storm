@@ -3,7 +3,6 @@ find_package(GLPK QUIET)
 
 if(GLPK_FOUND)
     set(STORM_HAVE_GLPK ON)
-    message (STATUS "Storm - Using system version of glpk.")
     message (STATUS "Storm - Linking with glpk ${GLPK_VERSION_STRING}")
 
     add_library(glpk SHARED IMPORTED)
