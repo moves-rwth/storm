@@ -80,8 +80,8 @@ set_target_properties(
 		INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
 )
 
-if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?
-    if(@STORM_SHIPPED_SPOT@)
+if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT
+    if(@STORM_SHIPPED_SPOT@) # STORM_SHIPPED_SPOT
         add_library(Storm::Spot-bddx STATIC IMPORTED)
             set_target_properties(Storm::Spot-bddx PROPERTIES
                     INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
