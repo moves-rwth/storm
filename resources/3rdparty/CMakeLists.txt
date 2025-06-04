@@ -1,4 +1,3 @@
-
 if(PROJECT_TOP_LEVEL)
     add_custom_target(resources)
     add_dependencies(resources storm_resources)
@@ -272,11 +271,29 @@ endif()
 
 #############################################################
 ##
-##	glpk
+##	GLPK (optional)
 ##
 #############################################################
 
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_glpk.cmake)
+set(STORM_HAVE_GLPK OFF)
+find_package(GLPK QUIET)
+
+if(GLPK_FOUND)
+    set(STORM_HAVE_GLPK ON)
+    message (STATUS "Storm - Linking with GLPK ${GLPK_VERSION_STRING}")
+
+    add_library(glpk SHARED IMPORTED)
+    set_target_properties(
+            glpk
+            PROPERTIES
+            IMPORTED_LOCATION ${GLPK_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${GLPK_INCLUDE_DIR}
+    )
+    list(APPEND STORM_DEP_IMP_TARGETS glpk)
+else()
+    message (WARNING "Storm - Not linking with GLPK.")
+endif()
+
 
 #############################################################
 ##
@@ -316,6 +333,7 @@ endif()
 ##	CUDD
 ##
 #############################################################
+
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
 
 
@@ -383,6 +401,7 @@ endif()
 ##	MathSAT (optional)
 ##
 #############################################################
+
 if(NOT STORM_DISABLE_MATHSAT)
     find_package(MATHSAT QUIET)
     if(MATHSAT_FOUND)
@@ -449,23 +468,53 @@ endif()
 
 #############################################################
 ##
-##	Xerces
+##	Xerces (optional)
 ##
 #############################################################
 
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
+if(NOT STORM_DISABLE_XERCES)
+    find_package(XercesC QUIET)
+    if(TARGET XercesC::XercesC)
+        set(STORM_HAVE_XERCES ON)
+        message (STATUS "Storm (GSPN) - Linking with Xerces-c ${XercesC_VERSION}")
+        list(APPEND STORM_GSPN_LINK_LIBRARIES XercesC::XercesC)
+    else()
+        set(STORM_HAVE_XERCES OFF)
+        message (STATUS "Storm - Could not find Xerces, will disable parsing XML formats (for GSPNs)")
+    endif()
+else()
+    set(STORM_HAVE_XERCES OFF)
+    message (STATUS "Storm - Building without Xerces disables parsing XML formats (for GSPNs)")
+endif()
 
 #############################################################
 ##
-##	SoPlex
+##	SoPlex (optional)
 ##
 #############################################################
 
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_soplex.cmake)
+if(NOT STORM_DISABLE_SOPLEX)
+    find_package(soplex QUIET)
+
+    IF(TARGET libsoplex-pic)
+        set(STORM_HAVE_SOPLEX ON)
+        get_target_property(soplexLOC libsoplex-pic LOCATION)
+        get_target_property(soplexINCLUDE libsoplex-pic INTERFACE_INCLUDE_DIRECTORIES)
+        MESSAGE(STATUS "Storm - Linking with SoPlex version ${soplex_VERSION}: (libary: ${soplexLOC}; include: ${soplexINCLUDE})")
+        list(APPEND STORM_DEP_IMP_TARGETS libsoplex-pic)
+    ELSE()
+        set(STORM_HAVE_SOPLEX OFF)
+        MESSAGE(STATUS "Storm - Not linking with SoPlex.")
+    ENDIF()
+else()
+    set(STORM_HAVE_SOPLEX OFF)
+    MESSAGE(STATUS "Storm - Not linking with SoPlex.")
+endif()
+
 
 #############################################################
 ##
-##	Spot
+##	Spot (optional)
 ##
 #############################################################
 
