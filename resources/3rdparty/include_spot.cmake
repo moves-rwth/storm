@@ -40,7 +40,7 @@ if(NOT STORM_DISABLE_SPOT)
 
     if(NOT STORM_HAVE_SPOT)
         # Spot does not set library IDs with an rpath but with an absolute path.
-        if (APPLE)
+        if (MACOSX)
             # We need to work on these .0 versions as otherwise we cannot fix the RPATHs.
             set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
             set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
