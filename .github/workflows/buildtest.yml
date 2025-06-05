@@ -131,7 +131,8 @@ jobs:
             --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
       # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
         if: matrix.config.buildType == 'Release'
@@ -210,7 +211,8 @@ jobs:
             # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
       # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
         if: matrix.config.buildType == 'Release'
@@ -272,7 +274,8 @@ jobs:
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
         # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
         if: matrix.buildType == 'Release'
@@ -357,6 +360,9 @@ jobs:
         run: make binaries -j ${NR_JOBS}
 
       # A bit hacky... but its usefulness has been proven in production
+      - name: Run storm (build tree)
+        working-directory: ./build
+        run: ./bin/storm
       - name: Check release makeflags
         working-directory: ./build
         if: matrix.config.buildType == 'Release'

@@ -82,13 +82,13 @@ set_target_properties(
 
 if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT
     if(@STORM_SHIPPED_SPOT@) # STORM_SHIPPED_SPOT
-        add_library(Storm::Spot-bddx STATIC IMPORTED)
+        add_library(Storm::Spot-bddx SHARED IMPORTED)
             set_target_properties(Storm::Spot-bddx PROPERTIES
                     INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
                     IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx@SPOTINFIX@@DYNAMIC_EXT@
                     )
 
-        add_library(Storm::Spot STATIC IMPORTED)
+        add_library(Storm::Spot SHARED IMPORTED)
         set_target_properties(Storm::Spot PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
                 IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libspot@SPOTINFIX@@DYNAMIC_EXT@
