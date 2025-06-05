@@ -61,49 +61,48 @@ if(NOT STORM_DISABLE_SPOT)
         # Note that configuring static libraries requires various dependencies which was rather cumbersome.
         # As of '25/3, SJ did not get this to work.
         ExternalProject_Add(Spot
-            URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
-            DOWNLOAD_NO_PROGRESS TRUE
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE # Prevents reconfiguration, see https://gitlab.kitware.com/cmake/cmake/-/issues/24003
-            DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
-            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
-            PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-            CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
-            BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
-            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+                URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
+                DOWNLOAD_NO_PROGRESS TRUE
+                DOWNLOAD_EXTRACT_TIMESTAMP TRUE # Prevents reconfiguration, see https://gitlab.kitware.com/cmake/cmake/-/issues/24003
+                DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
+                SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
+                PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
+                CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
+                BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+                INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 COMMAND ${Spot_RPATH_FIX_COMMAND}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND1}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND2}
-            LOG_DOWNLOAD ON
-            LOG_CONFIGURE ON
-            LOG_BUILD ON
-            LOG_INSTALL ON
-            LOG_OUTPUT_ON_FAILURE ON
-            BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}
+                LOG_DOWNLOAD ON
+                LOG_CONFIGURE ON
+                LOG_BUILD ON
+                LOG_INSTALL ON
+                LOG_OUTPUT_ON_FAILURE ON
+                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}
         )
         add_dependencies(storm_resources Spot)
 
         message("STORM_3RDPARTY_BINARY_DIR: ${STORM_3RDPARTY_BINARY_DIR}")
         set(Spot_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.a;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.a")
-#        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
-#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
-#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};
-#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
+        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
+                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
+                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};
+                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         set(Spot_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
         set(STORM_HAVE_SPOT ON)
         set(STORM_SHIPPED_SPOT ON)
 
         file(MAKE_DIRECTORY ${Spot_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
-        add_library(Storm::Spot-bddx STATIC IMPORTED)
+        add_library(Storm::Spot-bddx SHARED IMPORTED)
         target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot-bddx PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.a)
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT})
 
-        add_library(Storm::Spot STATIC IMPORTED)
+        add_library(Storm::Spot SHARED IMPORTED)
         target_link_libraries(Storm::Spot INTERFACE Storm::Spot-bddx)
-        target_include_directories(Storm::Spot INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
+        target_include_directories(Storm::Spot  INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.a
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}
         )
 
         install(FILES ${Spot_LIBRARIES} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
