@@ -460,6 +460,7 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 # the RPATH to be used when installing
 # TODO move these to the right targets rather than setting them globally.
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources")
+SET(CMAKE_BUILD_RPATH "${STORM_3RDPARTY_BINARY_DIR}/spot/lib")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH

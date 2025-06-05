@@ -94,15 +94,15 @@ if(NOT STORM_DISABLE_SPOT)
 
         file(MAKE_DIRECTORY ${Spot_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
         add_library(Storm::Spot-bddx SHARED IMPORTED)
+        target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot-bddx PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
                 IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT})
 
         add_library(Storm::Spot SHARED IMPORTED)
+        target_link_libraries(Storm::Spot Storm::Spot-bddx)
+        target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "${STORM_3RDPARTY_BINARY_DIR}/spot/include/"
                 IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}
-                INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
         )
 
         install(FILES ${Spot_LIBRARIES} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
