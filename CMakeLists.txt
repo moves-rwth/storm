@@ -460,7 +460,6 @@ SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 # the RPATH to be used when installing
 # TODO move these to the right targets rather than setting them globally.
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources")
-SET(CMAKE_BUILD_RPATH "${STORM_3RDPARTY_BINARY_DIR}/spot/lib")
 
 # don't add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -492,6 +491,7 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # In 3rdparty, targets are being defined that can be used
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
+SET(CMAKE_BUILD_RPATH "${STORM_3RDPARTY_BINARY_DIR}/spot/lib")
 
 if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE)
 	set(STORM_HAVE_LP_SOLVER ON)
