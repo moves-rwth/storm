@@ -22,6 +22,7 @@ target_sources(storm PUBLIC FILE_SET fs_storm_configured_headers TYPE HEADERS BA
 target_precompile_headers(storm PRIVATE ${STORM_PRECOMPILED_HEADERS})
 set_target_properties(storm PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 set_target_properties(storm PROPERTIES DEFINE_SYMBOL "") # to avoid problems with pch on linux.
+set_target_properties(storm PROPERTIES BUILD_RPATH ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/)
 add_dependencies(storm storm_resources)
 #The library that needs symbols must be first, then the library that resolves the symbol.
 target_link_libraries(storm PUBLIC ${STORM_DEP_TARGETS} ${STORM_DEP_IMP_TARGETS} ${STORM_FETCHED_TARGETS})
