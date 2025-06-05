@@ -84,25 +84,26 @@ if(NOT STORM_DISABLE_SPOT)
 
         message("STORM_3RDPARTY_BINARY_DIR: ${STORM_3RDPARTY_BINARY_DIR}")
         set(Spot_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
-                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
-                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};
-                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
+        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.a;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.a")
+#        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
+#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};
+#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};
+#                            ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         set(Spot_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
         set(STORM_HAVE_SPOT ON)
         set(STORM_SHIPPED_SPOT ON)
 
         file(MAKE_DIRECTORY ${Spot_INCLUDE_DIR}) # Workaround https://gitlab.kitware.com/cmake/cmake/-/issues/15052
-        add_library(Storm::Spot-bddx SHARED IMPORTED)
+        add_library(Storm::Spot-bddx STATIC IMPORTED)
         target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot-bddx PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT})
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.a)
 
-        add_library(Storm::Spot SHARED IMPORTED)
+        add_library(Storm::Spot STATIC IMPORTED)
         target_link_libraries(Storm::Spot INTERFACE Storm::Spot-bddx)
-        target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
+        target_include_directories(Storm::Spot INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.a
         )
 
         install(FILES ${Spot_LIBRARIES} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
