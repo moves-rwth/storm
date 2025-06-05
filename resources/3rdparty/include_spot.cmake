@@ -99,7 +99,7 @@ if(NOT STORM_DISABLE_SPOT)
                 IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT})
 
         add_library(Storm::Spot SHARED IMPORTED)
-        target_link_libraries(Storm::Spot Storm::Spot-bddx)
+        target_link_libraries(Storm::Spot INTERFACE Storm::Spot-bddx)
         target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot PROPERTIES
                 IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}
