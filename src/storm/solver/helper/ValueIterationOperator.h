@@ -170,7 +170,6 @@ class ValueIterationOperator {
      */
     template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
-        STORM_LOG_ASSERT(getSize(operandIn) == getSize(operandOut), "Input and Output Operands have different sizes.");
         auto const outSize = TrivialRowGrouping ? getSize(operandOut) : rowGroupIndices->size() - 1;
         STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch");
         backend.startNewIteration();
