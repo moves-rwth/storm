@@ -1,10 +1,6 @@
 # Base path for test files
 set(STORM_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/src/test/storm-pomdp")
 
-# Test Sources
-file(GLOB_RECURSE ALL_FILES ${STORM_TESTS_BASE_PATH}/*.h ${STORM_TESTS_BASE_PATH}/*.cpp)
-
-register_source_groups_from_filestructure("${ALL_FILES}" test)
 
 # Note that the tests also need the source files, except for the main file
 include_directories(${GTEST_INCLUDE_DIR})

@@ -1,5 +1,7 @@
-#ifndef STORM_UTILITY_GMM_H_
-#define STORM_UTILITY_GMM_H_
+#pragma once
+#include "storm-config.h"
+
+#ifdef STORM_HAVE_GMM
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -21,4 +23,4 @@
 #pragma GCC diagnostic pop
 #endif
 
-#endif /* STORM_UTILITY_GMM_H_ */
+#endif

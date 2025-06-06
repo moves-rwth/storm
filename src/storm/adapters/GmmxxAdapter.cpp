@@ -10,6 +10,7 @@
 namespace storm {
 namespace adapters {
 
+#ifdef STORM_HAVE_GMM
 template<typename T>
 std::unique_ptr<gmm::csr_matrix<T>> GmmxxAdapter<T>::toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
     uint_fast64_t realNonZeros = matrix.getEntryCount();
@@ -48,6 +49,8 @@ template class GmmxxAdapter<double>;
 #ifdef STORM_HAVE_CARL
 template class GmmxxAdapter<storm::RationalNumber>;
 template class GmmxxAdapter<storm::RationalFunction>;
+#endif
+
 #endif
 
 }  // namespace adapters

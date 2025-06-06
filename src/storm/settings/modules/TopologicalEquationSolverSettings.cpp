@@ -25,6 +25,12 @@ const std::string TopologicalEquationSolverSettings::underlyingEquationSolverOpt
 const std::string TopologicalEquationSolverSettings::underlyingMinMaxMethodOptionName = "minmax";
 const std::string TopologicalEquationSolverSettings::extendRelevantValuesOptionName = "relevant-values";
 
+#ifdef STORM_HAVE_GMM
+const std::string defaultEqSolverString = "gmm++";
+#else
+const std::string defaultEqSolverString = "eigen";
+#endif
+
 TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
     this->addOption(storm::settings::OptionBuilder(moduleName, underlyingEquationSolverOptionName, true,
@@ -32,7 +38,7 @@ TopologicalEquationSolverSettings::TopologicalEquationSolverSettings() : ModuleS
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the used solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver))
-                                         .setDefaultValueString("gmm++")
+                                         .setDefaultValueString(defaultEqSolverString)
                                          .build())
                         .build());
     std::vector<std::string> minMaxSolvingTechniques = {
