@@ -185,12 +185,14 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
              packages: ""
           }
           - {name: "Clang",
              buildType: "Debug",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
              packages: "clang"
@@ -204,6 +206,7 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
             --build-arg packages="${{ matrix.config.packages }}" \
