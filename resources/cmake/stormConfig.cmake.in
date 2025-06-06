@@ -83,13 +83,13 @@ if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?
         add_library(Storm::Spot-bddx SHARED IMPORTED)
             set_target_properties(Storm::Spot-bddx PROPERTIES
                     INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
-                    IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libbddx@SPOTINFIX@@DYNAMIC_EXT@
+                    IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libbddx@DYNAMIC_EXT@
                     )
 
         add_library(Storm::Spot SHARED IMPORTED)
         set_target_properties(Storm::Spot PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
-                IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libspot@SPOTINFIX@@DYNAMIC_EXT@
+                IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libspot@DYNAMIC_EXT@
                 INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
         )
     else()
