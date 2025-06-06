@@ -33,7 +33,6 @@ if(NOT STORM_DISABLE_SPOT)
             message(STATUS "Storm - Using system version of Spot ${Spot_VERSION} (include: ${Spot_INCLUDE_DIR}, library: ${Spot_LIBRARIES}).")
             list(APPEND STORM_DEP_IMP_TARGETS Storm::Spot)
 
-            set(SPOTINFIX "") # not relevant!
             set(STORM_HAVE_SPOT ON)
         endif()
     endif()
@@ -42,17 +41,13 @@ if(NOT STORM_DISABLE_SPOT)
         # Spot does not set library IDs with an rpath but with an absolute path.
         if (MACOSX)
             # We need to work on these .0 versions as otherwise we cannot fix the RPATHs.
-            set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
-            set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
-            set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
-            set(SPOTINFIX ".0")
-            set(SPOTSUFFIX "")
+            set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+            set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+            set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         else()
             set(Spot_RPATH_FIX_COMMAND "true") #no op
             set(BDDX_RPATH_FIX_COMMAND1 "true") #no op
             set(BDDX_RPATH_FIX_COMMAND2 "true") #no op
-            set(SPOTINFIX "")
-            set(SPOTSUFFIX ".0")
         endif()
 
         # download and install shipped Spot as shared libraries.
@@ -78,13 +73,12 @@ if(NOT STORM_DISABLE_SPOT)
                 LOG_BUILD ON
                 LOG_INSTALL ON
                 LOG_OUTPUT_ON_FAILURE ON
-                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}
+                BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}
         )
         add_dependencies(storm_resources Spot)
 
-        message("STORM_3RDPARTY_BINARY_DIR: ${STORM_3RDPARTY_BINARY_DIR}")
         set(Spot_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
-        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
+        set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         set(Spot_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
         set(STORM_HAVE_SPOT ON)
         set(STORM_SHIPPED_SPOT ON)
@@ -93,16 +87,23 @@ if(NOT STORM_DISABLE_SPOT)
         add_library(Storm::Spot-bddx SHARED IMPORTED)
         target_include_directories(Storm::Spot-bddx INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot-bddx PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT})
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT})
 
         add_library(Storm::Spot SHARED IMPORTED)
         target_link_libraries(Storm::Spot INTERFACE Storm::Spot-bddx)
         target_include_directories(Storm::Spot  INTERFACE "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set_target_properties(Storm::Spot PROPERTIES
-                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}
+                IMPORTED_LOCATION ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}
         )
 
         install(FILES ${Spot_LIBRARIES} DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+        # Spot_LIBRARIES are symlinks, install the actual library files as well
+        if (MACOSX)
+                install(FILES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot.0${DYNAMIC_EXT}" "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0${DYNAMIC_EXT}" DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+        else()
+                install(FILES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}.0" "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}.0" DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+                install(FILES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}.0.0.0" "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}.0.0.0" DESTINATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
+        endif()
         install(DIRECTORY ${Spot_INCLUDE_DIR}/ DESTINATION ${Spot_INSTALL_DIR}
                 FILES_MATCHING PATTERN "*.h" PATTERN "*.hh" PATTERN ".git" EXCLUDE)
 
