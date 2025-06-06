@@ -57,9 +57,12 @@ option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used 
 export_option(STORM_USE_CLN_RF)
 
 ## Configuration setup.
-option(STORM_EXCLUDE_TESTS_FROM_ALL "If set, tests will not be compiled by default" OFF )
-export_option(STORM_EXCLUDE_TESTS_FROM_ALL)
-MARK_AS_ADVANCED(STORM_EXCLUDE_TESTS_FROM_ALL)
+option(STORM_BUILD_TESTS "If switched off, tests cannot be built." ON )
+export_option(STORM_BUILD_TESTS)
+MARK_AS_ADVANCED(STORM_BUILD_TESTS)
+option(STORM_BUILD_EXECUTABLES "If switched off, binaries cannot be built." ON)
+export_option(STORM_BUILD_EXECUTABLES)
+MARK_AS_ADVANCED(STORM_BUILD_EXECUTABLES)
 option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
 set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")
 MARK_AS_ADVANCED(STORM_QVBS_ROOT)

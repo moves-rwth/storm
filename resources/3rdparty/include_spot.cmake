@@ -82,7 +82,6 @@ if(NOT STORM_DISABLE_SPOT)
         )
         add_dependencies(storm_resources Spot)
 
-        message("STORM_3RDPARTY_BINARY_DIR: ${STORM_3RDPARTY_BINARY_DIR}")
         set(Spot_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
         set(Spot_LIBRARIES "${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${SPOTINFIX}${DYNAMIC_EXT}${SPOTSUFFIX};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
         set(Spot_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/)
