@@ -448,6 +448,13 @@ if ((NOT COMPILER_CXX_WORKS) OR (NOT COMPILER_C_WORKS))
 	endif()
 endif()
 
+
+####
+# These need to be set before the RPATHs and we want to set RPATHs before building targets.
+set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
+set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
+set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
+
 #############################################################
 ##
 ##	RPATH settings
@@ -460,9 +467,16 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 # when building, don't use the install RPATH already (but only when installing)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
+if (MACOSX)
+	SET(RPATH_ORIGIN_EQUIV "@loader_path")
+else()
+	SET(RPATH_ORIGIN_EQUIV "$ORIGIN")
+endif()
 # the RPATH to be used when installing
 # TODO move these to the right targets rather than setting them globally.
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${CMAKE_INSTALL_PREFIX}/lib/storm;${CMAKE_INSTALL_PREFIX}/lib/storm/resources;${RPATH_ORIGIN_EQUIV};${RPATH_ORIGIN_EQUIV}/resources")
+# TODO this is less than ideal, but we had multiple issues with spot 2.13.1 in 25/06.
+SET(CMAKE_BUILD_RPATH "${STORM_3RDPARTY_BINARY_DIR}/spot/lib")
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -494,7 +508,6 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # In 3rdparty, targets are being defined that can be used
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
-SET(CMAKE_BUILD_RPATH "${STORM_3RDPARTY_BINARY_DIR}/spot/lib")
 
 if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE)
 	set(STORM_HAVE_LP_SOLVER ON)
