@@ -2,6 +2,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/api/storm-pars.h"
+#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/storm.h"
@@ -16,13 +21,6 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm-parsers/api/storm-parsers.h"
-
-#include "storm-pars/analysis/OrderExtender.h"
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 namespace {
 class RationalGmmxxEnvironment {
@@ -143,9 +141,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
         for (auto const& entry : instantiation) {
             auto parameter = entry.first;
             auto derivativeWrtParameter = derivatives[parameter];
-            typename TestType::ConstantType evaluatedDerivative =
-                storm::utility::convertNumber<typename TestType::ConstantType>(derivativeWrtParameter.evaluate(instantiation));
-            resultMap[parameter] = evaluatedDerivative;
+            resultMap[parameter] = storm::utility::parametric::evaluate<typename TestType::ConstantType>(derivativeWrtParameter, instantiation);
         }
         testCases[instantiation] = resultMap;
     }
