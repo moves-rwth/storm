@@ -168,7 +168,7 @@ TEST_F(ExplicitJaniModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
     EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
 
-    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards3.jani").first;
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards4.jani").first;
     options.setBuildChoiceLabels();
     model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
     EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
