@@ -41,11 +41,16 @@ if(NOT STORM_DISABLE_SPOT)
         # Spot does not set library IDs with an rpath but with an absolute path.
         if (MACOSX)
             # We need to work on these .0 versions as otherwise we cannot fix the RPATHs.
-            set(Spot_RPATH_FIX_COMMAND "install_name_tool;-id;@rpath/libspot.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
-            set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@rpath/libbddx.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+            # What we fix here is to ensure that the ids are of the form @rpath/libname
+            # We also update the entry of buddy in spot such that the spot lib looks for buddy in the same folder where it resides.
+            set(SPOT_RPATH_FIX_COMMAND1 "install_name_tool;-id;@rpath/libspot.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+            set(SPOT_RPATH_FIX_COMMAND2 "install_name_tool;-add_rpath;@loader_path;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
+            set(BDDX_RPATH_FIX_COMMAND1 "install_name_tool;-change;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx.0.dylib;@loader_path/libbddx.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT}")
             set(BDDX_RPATH_FIX_COMMAND2 "install_name_tool;-id;@rpath/libbddx.0.dylib;${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
+
         else()
-            set(Spot_RPATH_FIX_COMMAND "true") #no op
+            set(SPOT_RPATH_FIX_COMMAND1 "true") #no op
+            set(SPOT_RPATH_FIX_COMMAND2 "true") #no op
             set(BDDX_RPATH_FIX_COMMAND1 "true") #no op
             set(BDDX_RPATH_FIX_COMMAND2 "true") #no op
         endif()
@@ -65,7 +70,8 @@ if(NOT STORM_DISABLE_SPOT)
                 CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
                 BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
-                COMMAND ${Spot_RPATH_FIX_COMMAND}
+                COMMAND ${SPOT_RPATH_FIX_COMMAND1}
+                COMMAND ${SPOT_RPATH_FIX_COMMAND2}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND1}
                 COMMAND ${BDDX_RPATH_FIX_COMMAND2}
                 LOG_DOWNLOAD ON
