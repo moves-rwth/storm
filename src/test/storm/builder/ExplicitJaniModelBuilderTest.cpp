@@ -161,6 +161,17 @@ TEST_F(ExplicitJaniModelBuilderTest, Mdp) {
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(24ul, model->getNumberOfTransitions());
     EXPECT_EQ(12ul, model->getNumberOfChoices());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.jani").first;
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildChoiceLabels();
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
+    EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards2.jani").first;
+    options.setBuildChoiceLabels();
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel, options).build();
+    EXPECT_EQ(2ul, model->getChoiceLabeling().getNumberOfLabels());
 }
 
 TEST_F(ExplicitJaniModelBuilderTest, Ma) {

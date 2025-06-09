@@ -1020,7 +1020,9 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         }
 
         if (this->options.isBuildChoiceLabelsSet()) {
-            choice.addLabel(model.getAction(outputActionIndex).getName());
+            if (outputActionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                choice.addLabel(model.getAction(outputActionIndex).getName());
+            }
         }
 
         // Now, check whether there is one more command combination to consider.
@@ -1081,7 +1083,9 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                     }
 
                     if (this->getOptions().isBuildChoiceLabelsSet()) {
-                        result.back().addLabel(model.getAction(actionIndex).getName());
+                        if (actionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                            result.back().addLabel(model.getAction(actionIndex).getName());
+                        }
                     }
                 }
             }
