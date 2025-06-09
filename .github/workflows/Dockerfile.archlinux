@@ -1,14 +1,21 @@
-# Base Dockerfile for using Storm on Archlinux
-##############################################
+# Dockerfile for Storm on Archlinux
+###################################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
+# A different base image can be set from the commandline with:
+# --build-arg BASE_IMAGE=<new_base_image>
 
-FROM archlinux:latest
-MAINTAINER Matthias Volk <m.volk@tue.nl>
+# Set base image
+ARG BASE_IMAGE=archlinux:latest
+FROM $BASE_IMAGE
+LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
-# Specify configurations
-# These configurations can be set from the commandline with:
-# --build-arg <config_name>=<value>
+
+# Configuration arguments
+#########################
+# The arguments can be set from the commandline with:
+# --build-arg <arg_name>=<value>
+
 # CMake build type
 ARG build_type=Release
 # Specify number of threads to use for parallel compilation
@@ -28,6 +35,7 @@ ARG cmake_args=""
 
 # Additional Archlinux packages
 ARG packages=""
+
 
 # Install dependencies
 ######################

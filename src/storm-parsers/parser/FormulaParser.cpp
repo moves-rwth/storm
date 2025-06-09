@@ -48,7 +48,7 @@ FormulaParser& FormulaParser::operator=(FormulaParser const& other) {
     this->manager = other.manager;
     this->grammar = std::shared_ptr<FormulaParserGrammar>(new FormulaParserGrammar(this->manager));
     other.grammar->getIdentifiers().for_each(
-        [=](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
+        [this](std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
     return *this;
 }
 

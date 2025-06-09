@@ -75,9 +75,6 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
             auto& spareModule = module.second;
             auto const& spareModuleElements = spareModule.getElements();
             if (std::find(spareModuleElements.begin(), spareModuleElements.end(), topModuleId) != spareModuleElements.end()) {
-                STORM_LOG_WARN("Elements of spare module '"
-                               << getElement(spareModule.getRepresentative())->name()
-                               << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
                 spareModule.clear();
             }
         }
@@ -99,6 +96,9 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
 
     // Set relevant events: empty list corresponds to only setting the top-level event as relevant
     setRelevantEvents({}, false);
+
+    STORM_LOG_DEBUG("DFT elements:\n" << getElementsString());
+    STORM_LOG_DEBUG("DFT modules:\n" << getModulesString());
 }
 
 template<typename ValueType>

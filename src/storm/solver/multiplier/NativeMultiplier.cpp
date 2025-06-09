@@ -30,12 +30,7 @@ void NativeMultiplier<ValueType>::multiply(Environment const& env, std::vector<V
                                            std::vector<ValueType>& result) const {
     std::vector<ValueType>* target = &result;
     if (&x == &result) {
-        if (this->cachedVector) {
-            this->cachedVector->resize(x.size());
-        } else {
-            this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
-        }
-        target = this->cachedVector.get();
+        target = &this->provideCachedVector(x.size());
     }
     if (parallelize(env)) {
         multAddParallel(x, b, *target);
@@ -43,7 +38,7 @@ void NativeMultiplier<ValueType>::multiply(Environment const& env, std::vector<V
         multAdd(x, b, *target);
     }
     if (&x == &result) {
-        std::swap(result, *this->cachedVector);
+        std::swap(result, *target);
     }
 }
 
@@ -63,12 +58,7 @@ void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, Opti
                                                     std::vector<uint_fast64_t>* choices) const {
     std::vector<ValueType>* target = &result;
     if (&x == &result) {
-        if (this->cachedVector) {
-            this->cachedVector->resize(x.size());
-        } else {
-            this->cachedVector = std::make_unique<std::vector<ValueType>>(x.size());
-        }
-        target = this->cachedVector.get();
+        target = &this->provideCachedVector(x.size());
     }
     if (parallelize(env)) {
         multAddReduceParallel(dir, rowGroupIndices, x, b, *target, choices);
@@ -76,7 +66,7 @@ void NativeMultiplier<ValueType>::multiplyAndReduce(Environment const& env, Opti
         multAddReduce(dir, rowGroupIndices, x, b, *target, choices);
     }
     if (&x == &result) {
-        std::swap(result, *this->cachedVector);
+        std::swap(result, *target);
     }
 }
 

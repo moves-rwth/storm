@@ -31,6 +31,19 @@ const std::string CoreSettings::ddLibraryOptionName = "ddlib";
 const std::string CoreSettings::intelTbbOptionName = "enable-tbb";
 const std::string CoreSettings::intelTbbOptionShortName = "tbb";
 
+std::string getDefaultLpSolverAsString() {
+    // TODO: We currently never set Gurobi as a default LP solver as
+    // its availability is depending on the license, which may be confusing.
+    // We track this item in #issue 680.
+#if defined STORM_HAVE_GLPK
+    return "glpk";
+#elif defined STORM_HAVE_SOPLEX
+    return "soplex"
+#else
+    return "z3";
+#endif
+}
+
 CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility::Engine::Sparse) {
     std::vector<std::string> engines;
     for (auto e : storm::utility::getEngines()) {
@@ -67,7 +80,7 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
     this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver.")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(lpSolvers))
-                                         .setDefaultValueString("glpk")
+                                         .setDefaultValueString(getDefaultLpSolverAsString())
                                          .build())
                         .build());
 
