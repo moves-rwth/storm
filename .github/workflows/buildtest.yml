@@ -133,46 +133,38 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
         run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-      # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.config.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-      - name: Check debug makeflags
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
-      - name: Checkout starter-project
-        run: |
-          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
-          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project on intree storm.
-        run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build'  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project --help" ## TODO using --help as running the starter-project requires Z3.
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
       - name: Run installed storm
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Configure and make starter project on installed storm.
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Restore build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project --help" ## TODO using --help as running the starter-project requires Z3.
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   compilerTests:
@@ -216,46 +208,37 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
         run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-      # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.config.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-      - name: Check debug makeflags
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
-
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Checkout starter-project
-        run: |
-          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
-          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project on intree storm.
-        run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build'  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
       - name: Run installed storm
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Configure and make starter project on installed storm.
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   linuxTests:
@@ -279,46 +262,37 @@ jobs:
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
         run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-      - name: Check debug makeflags
-        if: matrix.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
-
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Checkout starter-project
-        run: |
-          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
-          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project on build-tree storm.
-        run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build'  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
       - name: Run installed storm
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Configure and make starter project on installed storm.
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   macTests:
@@ -362,57 +336,43 @@ jobs:
         working-directory: ./build
         run: make binaries -j ${NR_JOBS}
 
-      # A bit hacky... but its usefulness has been proven in production
       - name: Run storm (build tree)
         working-directory: ./build
         run: ./bin/storm
-      - name: Check release makeflags
-        working-directory: ./build
-        if: matrix.config.buildType == 'Release'
-        run: |
-          if grep -q -e '-g' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi
-          if ! grep -q -e '-O3' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi
-          if ! grep -q -e '-DNDEBUG' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi
-      - name: Check debug makeflags
-        working-directory: ./build
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          if ! grep -q -e '-g' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi
-          if grep -q -e '-O3' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi
-          if grep -q -e '-DNDEBUG' src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: false
       - name: Build tests
         working-directory: ./build
         run: make -j ${NR_JOBS}
       - name: Run tests
         working-directory: ./build
         run: ctest test --output-on-failure
-      - name: Checkout starter-project
-        working-directory: .
-        run: |
-          cd ..; git clone https://github.com/sjunges/storm-project-starter-cpp storm-starter
-          cd storm-starter; git checkout cmakeupdates
-      - name: Configure and make starter project on intree storm.
-        working-directory: .
-        run: |
-          cd ../storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT="${GITHUB_WORKSPACE}/build"  ..
-          make -j ${NR_JOBS}
-          ./bin/starter-project ${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: "${GITHUB_WORKSPACE}/build"
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         working-directory: ./build
         run: sudo make install
+      - name: Temporarily move build dir
+        run: |
+          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
       - name: Run installed storm
-        working-directory: .
         run: |
-          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
           /usr/local/bin/storm --version
-          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
-      - name: Configure and make starter project on installed storm.
-        working-directory: .
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: ""
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
         run: |
-          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
-          cd ../storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE  ..
-          make -j ${NR_JOBS}
-          ./bin/starter-project ${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'
           mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
 
   deploy:
@@ -450,47 +410,37 @@ jobs:
             # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
-
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.buildType.name == 'Release'
-        run: |
-          docker exec ci bash -c "if grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-g' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-O3' for release build.\"; exit 1; fi"
-          docker exec ci bash -c "if ! grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-DNDEBUG' for release build.\"; exit 1; fi"
-      - name: Check debug makeflags
-        if: matrix.buildType.name == 'Debug'
-        run: |
-          docker exec ci bash -c "if ! grep -q -e '-g' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Missing flag '-g' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-O3' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-O3' for debug build.\"; exit 1; fi"
-          docker exec ci bash -c "if grep -q -e '-DNDEBUG' /opt/storm/build/src/storm/CMakeFiles/storm.dir/flags.make; then echo \"Error: Unexpected flag '-DNDEBUG' for debug build.\"; exit 1; fi"
-
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType.name }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-      - name: Checkout starter-project
-        run: |
-          docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
-          docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
-      - name: Configure and make starter project on intree storm.
-        run: |
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-intree; cd build-intree; cmake -DNEVER_FETCH_STORM=TRUE -DSTORM_ROOT='/opt/storm/build' .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-intree; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-intree/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
       - name: Run installed storm
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
           docker exec ci bash -c "/usr/local/bin/storm --version"
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
-      - name: Configure and make starter project on installed storm.
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
-          docker exec ci bash -c "cd /opt/storm-starter; mkdir build-installed; cd build-installed; cmake -DNEVER_FETCH_STORM=TRUE .."
-          docker exec ci bash -c "cd /opt/storm-starter/build-installed; make -j ${NR_JOBS}"
-          docker exec ci bash -c "/opt/storm-starter/build-installed/bin/starter-project /opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
           docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
