@@ -48,7 +48,7 @@ class DftInstantiator {
     template<typename PT = ParametricType>
     typename std::enable_if<!std::is_same<PT, ConstantType>::value, ConstantType>::type instantiate_helper(
         ParametricType const& function, storm::utility::parametric::Valuation<ParametricType> const& valuation) {
-        return storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, valuation));
+        return storm::utility::parametric::evaluate<ConstantType>(function, valuation);
     }
 
     /*!
