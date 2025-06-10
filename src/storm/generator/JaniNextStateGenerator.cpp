@@ -1091,7 +1091,8 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
             }
         } else {
             // If the element has more than one set of edges, we need to perform a synchronization.
-            // TODO I (SJ) do not fully understand the meaning of this assertion; after all, it is about the output.
+            // We require that some output action for the synchronisation must have been set before.
+            // This might be the silent action, if the Jani model does not specify an output action.
             STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
 
             uint64_t outputActionIndex = outputAndEdges.first.get();
