@@ -10,6 +10,7 @@ Note that in most cases a simultaneous release of [carl](https://github.com/move
 
 2. Update used carl version:
    * Update `STORM_CARL_GIT_TAG` in `CMakeLists.txt`
+   * Update `carl_tag` in `Dockerfile` and `.github/workflows/Dockerfile.archlinux`
    * Maybe update `CARL_MINVERSION` in `resources/3rdparty/CMakeLists.txt`
 
 3. Check that storm builds without errors and all tests are successful:

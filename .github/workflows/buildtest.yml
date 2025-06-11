@@ -115,6 +115,7 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg carl_tag="master" \
             --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
             --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
@@ -198,6 +199,7 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg carl_tag="master" \
             --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
@@ -256,6 +258,7 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
+            --build-arg carl_tag="master" \
             --build-arg no_threads=${NR_JOBS}
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
       - name: Run Docker
@@ -331,7 +334,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}"
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master"
       - name: Build storm
         working-directory: ./build
         run: make binaries -j ${NR_JOBS}
@@ -404,6 +407,7 @@ jobs:
           docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
             --build-arg build_type="${{ matrix.buildType.name }}" \
+            --build-arg carl_tag="master" \
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}

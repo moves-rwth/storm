@@ -16,11 +16,12 @@ LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 # The arguments can be set from the commandline with:
 # --build-arg <arg_name>=<value>
 
-# CMake build type
-ARG build_type=Release
 # Specify number of threads to use for parallel compilation
 ARG no_threads=1
-
+# CMake build type
+ARG build_type=Release
+# Carl tag to use
+ARG carl_tag="14.29"
 # Specify Storm configuration (ON/OFF)
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
@@ -54,6 +55,7 @@ WORKDIR /opt/storm/build
 # Configure Storm
 RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_PORTABLE=ON \
+          -DSTORM_CARL_GIT_TAG=$carl_tag \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
