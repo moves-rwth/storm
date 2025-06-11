@@ -378,8 +378,9 @@ SET(ALLOW_SHIPPED_GINAC OFF)
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
-set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
-set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
+message(STATUS "${carl_BINARY_DIR}/carlConfig.cmake")
+set(STORM_HAVE_CLN ${CARL_HAVE_CLN})
+set(STORM_HAVE_GINAC ${CARL_HAVE_GINAC})
 message(STATUS "Storm - Using carl version ${carl_VERSION} from ${carl_SOURCE_DIR} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
 #
 # TODO this old flag is no longer really relevant as CARL must always be present.
@@ -392,10 +393,10 @@ list(APPEND STORM_FETCHED_TARGETS lib_carl)
 
 # Some checks to see whether we correctly configured carl.
 if(SHIPPED_CARL_USE_CLN_NUMBERS AND NOT STORM_HAVE_CLN)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without.")
+    message(FATAL_ERROR "Cannot use CLN numbers. Consider installing {cln, ginac} or run cmake with STORM_USE_CLN_EA=OFF and STORM_USE_CLN_RF=OFF. Please also consult the documentation regarding dependencies for more information about prerequisites. ")
 endif()
 if(SHIPPED_CARL_USE_GINAC AND NOT STORM_HAVE_GINAC)
-    message(FATAL_ERROR "Cannot use CLN numbers if carl is build without ginac.")
+    message(FATAL_ERROR "Cannot use CLN numbers without ginac. Consider installing ginac  or run cmake with STORM_USE_CLN_EA=OFF and STORM_USE_CLN_RF=OFF. Please also consult the documentation regarding dependencies for more information about prerequisites.")
 endif()
 
 #############################################################
