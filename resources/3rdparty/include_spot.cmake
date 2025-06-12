@@ -117,6 +117,7 @@ if(NOT STORM_DISABLE_SPOT)
         add_dependencies(storm_resources Storm::Spot )
 
         message(STATUS "Storm - Using shipped version of Spot ${SPOT_SHIPPED_VERSION} (include: ${Spot_INCLUDE_DIR}, library ${Spot_LIBRARIES}).")
+        message(WARNING "Configuring and building SPOT takes significant time in which the build process does not provide any output.")
 
     endif()
 endif()
