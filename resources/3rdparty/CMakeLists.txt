@@ -552,6 +552,8 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 ##	Google Test gtest
 ##
 #############################################################
+
+if(STORM_BUILD_TESTS)
 ## This is still old cmake, but as it is not installed, it is not as relevant.
 set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
 ExternalProject_Add(
@@ -581,6 +583,7 @@ set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/li
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
+endif()
 
 #############################################################
 ##
