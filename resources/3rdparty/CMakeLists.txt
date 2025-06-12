@@ -378,7 +378,6 @@ SET(ALLOW_SHIPPED_GINAC OFF)
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
-message(STATUS "${carl_BINARY_DIR}/carlConfig.cmake")
 set(STORM_HAVE_CLN ${CARL_HAVE_CLN})
 set(STORM_HAVE_GINAC ${CARL_HAVE_GINAC})
 message(STATUS "Storm - Using carl version ${carl_VERSION} from ${carl_SOURCE_DIR} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
