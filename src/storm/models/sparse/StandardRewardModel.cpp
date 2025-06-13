@@ -429,21 +429,32 @@ bool StandardRewardModel<ValueType>::empty() const {
              static_cast<bool>(this->optionalTransitionRewardMatrix));
 }
 
+/*!
+ * Auxiliary function to check if the given predicate is true for any of the reward values in the given reward model.
+ */
+template<typename ValueType>
+bool anyOfRewardValues(StandardRewardModel<ValueType> const& rewardModel, auto const& predicate) {
+    if (rewardModel.hasStateRewards() && std::any_of(rewardModel.getStateRewardVector().begin(), rewardModel.getStateRewardVector().end(), predicate)) {
+        return true;
+    }
+    if (rewardModel.hasStateActionRewards() &&
+        std::any_of(rewardModel.getStateActionRewardVector().begin(), rewardModel.getStateActionRewardVector().end(), predicate)) {
+        return true;
+    }
+    if (rewardModel.hasTransitionRewards()) {
+        for (auto const& entry : rewardModel.getTransitionRewardMatrix()) {
+            if (predicate(entry.getValue())) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 template<typename ValueType>
 bool StandardRewardModel<ValueType>::isAllZero() const {
-    if (hasStateRewards() && !std::all_of(getStateRewardVector().begin(), getStateRewardVector().end(), storm::utility::isZero<ValueType>)) {
-        return false;
-    }
-    if (hasStateActionRewards() && !std::all_of(getStateActionRewardVector().begin(), getStateActionRewardVector().end(), storm::utility::isZero<ValueType>)) {
-        return false;
-    }
-    if (hasTransitionRewards() && !std::all_of(getTransitionRewardMatrix().begin(), getTransitionRewardMatrix().end(),
-                                               [](storm::storage::MatrixEntry<storm::storage::SparseMatrixIndexType, ValueType> entry) {
-                                                   return storm::utility::isZero(entry.getValue());
-                                               })) {
-        return false;
-    }
-    return true;
+    bool const hasNonZeroReward = anyOfRewardValues(*this, [](auto&& value) { return !storm::utility::isZero<ValueType>(value); });
+    return !hasNonZeroReward;
 }
 
 template<typename ValueType>
@@ -452,19 +463,20 @@ bool StandardRewardModel<ValueType>::hasNegativeRewards() const {
         // Rational functions can never be negative.
         STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Checking Rational functions for negativity is not possible.");
         return false;
+    } else {
+        return anyOfRewardValues(*this, [](auto&& value) { return value < storm::utility::zero<ValueType>(); });
     }
-    auto isNegative = [](ValueType const& value) { return value < storm::utility::zero<ValueType>(); };
-    if (hasStateRewards() && std::any_of(getStateRewardVector().begin(), getStateRewardVector().end(), isNegative)) {
-        return true;
+}
+
+template<typename ValueType>
+bool StandardRewardModel<ValueType>::hasPositiveRewards() const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        // Rational functions can never be negative.
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Checking Rational functions for negativity is not possible.");
+        return false;
+    } else {
+        return anyOfRewardValues(*this, [](auto&& value) { return value > storm::utility::zero<ValueType>(); });
     }
-    if (hasStateActionRewards() && std::any_of(getStateActionRewardVector().begin(), getStateActionRewardVector().end(), isNegative)) {
-        return true;
-    }
-    if (hasTransitionRewards() && std::any_of(getTransitionRewardMatrix().begin(), getTransitionRewardMatrix().end(),
-                                              [&isNegative](auto const& entry) { return isNegative(entry.getValue()); })) {
-        return true;
-    }
-    return false;
 }
 
 template<typename ValueType>
