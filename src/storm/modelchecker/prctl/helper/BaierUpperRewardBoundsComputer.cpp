@@ -218,7 +218,7 @@ ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
         for (auto rowIndex : transitionMatrix.getRowGroupIndices(state)) {
             auto const row = transitionMatrix.getRow(rowIndex);
             bool const exitingChoice =
-                std::all_of(row.begin(), row.begin(), [&stateToSccFct, &currScc](auto const& entry) { return currScc != stateToSccFct(entry.getColumn()); });
+                std::all_of(row.begin(), row.end(), [&stateToSccFct, &currScc](auto const& entry) { return currScc != stateToSccFct(entry.getColumn()); });
             if (exitingChoice) {
                 maxRewardExit = std::max(maxRewardExit, rewards[rowIndex]);
             } else {
