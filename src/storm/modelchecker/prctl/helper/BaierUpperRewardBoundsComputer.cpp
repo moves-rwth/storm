@@ -185,24 +185,47 @@ template<typename ValueType>
 ValueType BaierUpperRewardBoundsComputer<ValueType>::computeUpperBound() {
     STORM_LOG_TRACE("Computing upper reward bounds using variant-2 of Baier et al.");
 
+    // Ensure backward transitions are available.
     storm::storage::SparseMatrix<ValueType> computedBackwardTransitions;
     if (!backwardTransitions) {
         computedBackwardTransitions = transitionMatrix.transpose(true);
     }
     auto const& backwardTransRef = backwardTransitions ? *backwardTransitions : computedBackwardTransitions;
 
-    auto expVisits = stateToScc ? computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToScc)
-                                : computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities);
+    // Ensure SCCs are available.
+    std::vector<uint64_t> computedStateToSccVec;
+    std::function<uint64_t(uint64_t)> stateToSccFct;
+    if (this->stateToScc) {
+        stateToSccFct = this->stateToScc;
+    } else {
+        // If no stateToScc function is given, we compute the SCCs from the transition matrix.
+        computedStateToSccVec =
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType>(transitionMatrix).computeStateToSccIndexMap(transitionMatrix.getRowGroupCount());
+        stateToSccFct = [&computedStateToSccVec](uint64_t s) { return computedStateToSccVec[s]; };
+    }
+
+    auto expVisits = computeUpperBoundOnExpectedVisitingTimes(transitionMatrix, backwardTransRef, oneStepTargetProbabilities, stateToSccFct);
 
     ValueType upperBound = storm::utility::zero<ValueType>();
     for (uint64_t state = 0; state < expVisits.size(); ++state) {
-        ValueType maxReward = storm::utility::zero<ValueType>();
-        // By starting the maxReward with zero, negative rewards are essentially ignored which
-        // is necessary to provide a valid upper bound
-        for (auto row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
-            maxReward = std::max(maxReward, rewards[row]);
+        // Get the maximum reward that can be collected in the state.
+        // We distinguish between choices that surely exit the current SCC and those that do not.
+        // The former can only be taken at most once so we do not have to multiply with the upper bound on the expected visits.
+        auto const currScc = stateToSccFct(state);
+        auto maxRewardExit = storm::utility::zero<ValueType>();
+        auto maxRewardStay = storm::utility::zero<ValueType>();
+        // By starting the maxRewards with zero, negative rewards are essentially ignored which is necessary to provide a valid upper bound
+        for (auto rowIndex : transitionMatrix.getRowGroupIndices(state)) {
+            auto const row = transitionMatrix.getRow(rowIndex);
+            bool const exitingChoice =
+                std::all_of(row.begin(), row.begin(), [&stateToSccFct, &currScc](auto const& entry) { return currScc != stateToSccFct(entry.getColumn()); });
+            if (exitingChoice) {
+                maxRewardExit = std::max(maxRewardExit, rewards[rowIndex]);
+            } else {
+                maxRewardStay = std::max(maxRewardStay, rewards[rowIndex]);
+            }
         }
-        upperBound += expVisits[state] * maxReward;
+        upperBound += std::max<ValueType>(expVisits[state] * maxRewardStay, maxRewardExit);
     }
 
     STORM_LOG_TRACE("Baier algorithm for reward bound computation (variant 2) computed bound " << upperBound << ".");
