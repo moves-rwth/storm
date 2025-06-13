@@ -14,7 +14,7 @@ endforeach()
 include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/stormConfigVersion.cmake
-     VERSION ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.${STORM_VERSION_TWEAK}
+     VERSION ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}
      COMPATIBILITY SameMinorVersion )
 
 configure_package_config_file(
