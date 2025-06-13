@@ -333,6 +333,13 @@ class StandardRewardModel {
     bool isAllZero() const;
 
     /*!
+     * Checks whether the reward model has negative rewards.
+     *
+     * @return True iff the reward model has at least one negative reward value
+     */
+    bool hasNegativeRewards() const;
+
+    /*!
      * Checks whether the reward model is compatible with key model characteristics.
      *
      * In detail, the method checks

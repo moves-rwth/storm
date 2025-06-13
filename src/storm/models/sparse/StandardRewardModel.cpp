@@ -447,6 +447,27 @@ bool StandardRewardModel<ValueType>::isAllZero() const {
 }
 
 template<typename ValueType>
+bool StandardRewardModel<ValueType>::hasNegativeRewards() const {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        // Rational functions can never be negative.
+        STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Checking Rational functions for negativity is not possible.");
+        return false;
+    }
+    auto isNegative = [](ValueType const& value) { return value < storm::utility::zero<ValueType>(); };
+    if (hasStateRewards() && std::any_of(getStateRewardVector().begin(), getStateRewardVector().end(), isNegative)) {
+        return true;
+    }
+    if (hasStateActionRewards() && std::any_of(getStateActionRewardVector().begin(), getStateActionRewardVector().end(), isNegative)) {
+        return true;
+    }
+    if (hasTransitionRewards() && std::any_of(getTransitionRewardMatrix().begin(), getTransitionRewardMatrix().end(),
+                                              [&isNegative](auto const& entry) { return isNegative(entry.getValue()); })) {
+        return true;
+    }
+    return false;
+}
+
+template<typename ValueType>
 bool StandardRewardModel<ValueType>::isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const {
     if (hasStateRewards()) {
         if (optionalStateRewardVector.value().size() != nrStates)
