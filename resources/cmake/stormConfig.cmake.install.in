@@ -14,19 +14,21 @@ if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/_deps/carl-build/carlConfig.cmake")
+set(STORM_RESOURCE_INCLUDE_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_INCLUDE_INSTALL_DIR@")
+set(STORM_RESOURCE_LIBRARY_INSTALL_DIR "${_IMPORT_PREFIX}/@STORM_RESOURCE_LIBRARY_INSTALL_DIR@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake")
 if(NOT TARGET lib_carl)
-    message(FATAL_ERROR "Including _deps/carl-build/carlConfig.cmake did not define target lib_carl.")
+    message(FATAL_ERROR "Including ${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake did not define target lib_carl.")
 endif()
-set(storm_carl_DIR "_deps/carl-build")
-include("${CMAKE_CURRENT_LIST_DIR}/_deps/sylvanfetch-build/src/cmake/sylvan-config.cmake")
+set(storm_carl_DIR "${CMAKE_CURRENT_LIST_DIR}")
+include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
 
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
-# Note that this currently assumes that the sources are not moved away from the build tree.
-list(INSERT CMAKE_MODULE_PATH 0 "@PROJECT_SOURCE_DIR@/resources/cmake/find_modules/")
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
 
 find_dependency(Boost QUIET NO_MODULE)
-if(@STORM_HAVE_Z3@)
+if(@STORM_HAVE_Z3@)  # STORM_HAVE_Z3
     if(@STORM_Z3_CONFIG@)
         find_dependency(Z3 4.8.7 NO_MODULE)
     else()
@@ -41,7 +43,7 @@ if(@STORM_HAVE_Z3@)
     endif()
 endif()
 find_dependency(Threads)
-if(@STORM_HAVE_GLPK@)
+if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     find_dependency(GLPK)
 
     add_library(glpk SHARED IMPORTED)
@@ -74,22 +76,22 @@ add_library(cudd3 STATIC IMPORTED)
 set_target_properties(
 		cudd3
 		PROPERTIES
-		IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd@STATIC_EXT@
-		INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/resources/3rdparty/cudd-3.0.0/include/
+		IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libcudd@STATIC_EXT@
+		INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
 )
 
-if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?
-    if(@STORM_SHIPPED_SPOT@)
+if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT
+    if(@STORM_SHIPPED_SPOT@) # STORM_SHIPPED_SPOT
         add_library(Storm::Spot-bddx SHARED IMPORTED)
             set_target_properties(Storm::Spot-bddx PROPERTIES
-                    INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
-                    IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libbddx@DYNAMIC_EXT@
+                    INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
+                    IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx@DYNAMIC_EXT@
                     )
 
         add_library(Storm::Spot SHARED IMPORTED)
         set_target_properties(Storm::Spot PROPERTIES
-                INTERFACE_INCLUDE_DIRECTORIES "@STORM_3RDPARTY_BINARY_DIR@/spot/include/"
-                IMPORTED_LOCATION @STORM_3RDPARTY_BINARY_DIR@/spot/lib/libspot@DYNAMIC_EXT@
+                INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
+                IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libspot@DYNAMIC_EXT@
                 INTERFACE_LINK_LIBRARIES Storm::Spot-bddx
         )
     else()
@@ -106,7 +108,7 @@ if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT?
 endif()
 
 
-if(@STORM_HAVE_MATHSAT@)
+if(@STORM_HAVE_MATHSAT@)  # STORM_HAVE_MATHSAT
     set(MATHSAT_ROOT "@MATHSAT_ROOT@")
     find_dependency(MATHSAT QUIET)
     add_library(mathsat UNKNOWN IMPORTED)

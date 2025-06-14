@@ -22,7 +22,11 @@ class DefaultEnvironment {
     static const bool strictRelationSupport = true;
 
     static bool skip() {
+#ifdef STORM_HAVE_LP_SOLVER
         return false;
+#else
+        return true;
+#endif
     }
 };
 

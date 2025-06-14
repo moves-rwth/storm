@@ -122,13 +122,11 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Syl
     return InternalAdd<DdType::Sylvan, storm::RationalNumber>(this, sylvan::Mtbdd::stormRationalNumberTerminal(storm::utility::one<storm::RationalNumber>()));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
     return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this,
                                                                 sylvan::Mtbdd::stormRationalFunctionTerminal(storm::utility::one<storm::RationalFunction>()));
 }
-#endif
 
 InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
     return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
