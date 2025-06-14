@@ -338,6 +338,7 @@ endif()
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
+export_option(STORM_3RDPARTY_BINARY_DIR) # To support BUILD_RPATH include hacks that we want to get rid off some day.
 
 #############################################################
 ##
