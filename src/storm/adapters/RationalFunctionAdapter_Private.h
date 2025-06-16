@@ -7,6 +7,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#pragma GCC diagnostic ignored "-Wpessimizing-move"
 
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
