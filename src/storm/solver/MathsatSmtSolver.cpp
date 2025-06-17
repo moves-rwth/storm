@@ -7,7 +7,7 @@
 namespace storm {
 namespace solver {
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 MathsatSmtSolver::MathsatAllsatModelReference::MathsatAllsatModelReference(
     storm::expressions::ExpressionManager const& manager, msat_env const& env, msat_term* model,
     std::unordered_map<storm::expressions::Variable, uint_fast64_t> const& variableToSlotMapping)
@@ -115,14 +115,14 @@ std::string MathsatSmtSolver::MathsatModelReference::toString() const {
 
 MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options)
     : SmtSolver(manager)
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
       ,
       expressionAdapter(nullptr),
       lastCheckAssumptions(false),
       lastResult(CheckResult::Unknown)
 #endif
 {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     msat_config config = msat_create_config();
     if (options.enableInterpolantGeneration) {
         msat_set_option(config, "interpolation", "true");
@@ -147,7 +147,7 @@ MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manage
 }
 
 MathsatSmtSolver::~MathsatSmtSolver() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     if (!MSAT_ERROR_ENV(env)) {
         msat_destroy_env(env);
     } else {
@@ -159,7 +159,7 @@ MathsatSmtSolver::~MathsatSmtSolver() {
 }
 
 void MathsatSmtSolver::push() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     msat_push_backtrack_point(env);
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
@@ -167,7 +167,7 @@ void MathsatSmtSolver::push() {
 }
 
 void MathsatSmtSolver::pop() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     msat_pop_backtrack_point(env);
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
@@ -175,7 +175,7 @@ void MathsatSmtSolver::pop() {
 }
 
 void MathsatSmtSolver::pop(uint_fast64_t n) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     SmtSolver::pop(n);
 #else
     (void)n;
@@ -184,7 +184,7 @@ void MathsatSmtSolver::pop(uint_fast64_t n) {
 }
 
 void MathsatSmtSolver::reset() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     msat_reset_env(env);
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without MathSAT support.");
@@ -192,7 +192,7 @@ void MathsatSmtSolver::reset() {
 }
 
 void MathsatSmtSolver::add(storm::expressions::Expression const& e) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     msat_term expression = expressionAdapter->translateExpression(e);
     msat_assert_formula(env, expression);
     if (expressionAdapter->hasAdditionalConstraints()) {
@@ -207,7 +207,7 @@ void MathsatSmtSolver::add(storm::expressions::Expression const& e) {
 }
 
 SmtSolver::CheckResult MathsatSmtSolver::check() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = false;
     switch (msat_solve(env)) {
         case MSAT_SAT:
@@ -227,7 +227,7 @@ SmtSolver::CheckResult MathsatSmtSolver::check() {
 }
 
 SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;
     mathSatAssumptions.reserve(assumptions.size());
@@ -255,7 +255,7 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::ex
 }
 
 SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;
     mathSatAssumptions.reserve(assumptions.size());
@@ -283,7 +283,7 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_l
 }
 
 storm::expressions::SimpleValuation MathsatSmtSolver::getModelAsValuation() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return this->convertMathsatModelToValuation();
@@ -293,7 +293,7 @@ storm::expressions::SimpleValuation MathsatSmtSolver::getModelAsValuation() {
 }
 
 std::shared_ptr<SmtSolver::ModelReference> MathsatSmtSolver::getModel() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return std::shared_ptr<SmtSolver::ModelReference>(new MathsatModelReference(this->getManager(), env, *expressionAdapter));
@@ -302,7 +302,7 @@ std::shared_ptr<SmtSolver::ModelReference> MathsatSmtSolver::getModel() {
 #endif
 }
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValuation() {
     storm::expressions::SimpleValuation stormModel(this->getManager().getSharedPointer());
 
@@ -332,7 +332,7 @@ storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValua
 #endif
 
 std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     std::vector<storm::expressions::SimpleValuation> valuations;
     this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool {
         valuations.push_back(valuation);
@@ -345,7 +345,7 @@ std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::v
 #endif
 }
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 class AllsatValuationCallbackUserData {
    public:
     AllsatValuationCallbackUserData(storm::expressions::ExpressionManager const& manager, storm::adapters::MathsatExpressionAdapter& adapter, msat_env& env,
@@ -426,7 +426,7 @@ class AllsatModelReferenceCallbackUserData {
 
 uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important,
                                        std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
     this->push();
 
@@ -454,7 +454,7 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
 
 uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important,
                                        std::function<bool(SmtSolver::ModelReference&)> const& callback) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
     this->push();
 
@@ -483,7 +483,7 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
 }
 
 std::vector<storm::expressions::Expression> MathsatSmtSolver::getUnsatAssumptions() {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException,
                     "Unable to generate unsatisfiable core of assumptions, because the last check did not determine the formulas to be unsatisfiable.");
     STORM_LOG_THROW(lastCheckAssumptions, storm::exceptions::InvalidStateException,
@@ -506,7 +506,7 @@ std::vector<storm::expressions::Expression> MathsatSmtSolver::getUnsatAssumption
 }
 
 void MathsatSmtSolver::setInterpolationGroup(uint64_t group) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     auto groupIter = this->interpolationGroups.find(group);
     if (groupIter == this->interpolationGroups.end()) {
         int newGroup = msat_create_itp_group(env);
@@ -521,7 +521,7 @@ void MathsatSmtSolver::setInterpolationGroup(uint64_t group) {
 }
 
 storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint64_t> const& groupsA) {
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
     STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException,
                     "Unable to generate interpolant, because the last check did not determine the formulas to be unsatisfiable.");
     STORM_LOG_THROW(!lastCheckAssumptions, storm::exceptions::InvalidStateException,

@@ -329,10 +329,12 @@ class LinearEquationSolverTest : public ::testing::Test {
 typedef ::testing::Types<NativeDoublePowerEnvironment, NativeDoublePowerRegMultEnvironment, NativeDoubleSoundValueIterationEnvironment,
                          NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleIntervalIterationEnvironment, NativeDoubleJacobiEnvironment,
                          NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
-                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment, GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment,
-                         GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment, EigenDGmresDiagonalEnvironment,
-                         EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment, EigenRationalLUEnvironment,
-                         TopologicalEigenRationalLUEnvironment>
+                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment,
+#ifdef STORM_HAVE_GMM
+                         GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment, GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment,
+#endif
+                         EigenDGmresDiagonalEnvironment, EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment,
+                         EigenRationalLUEnvironment, TopologicalEigenRationalLUEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LinearEquationSolverTest, TestingTypes, );

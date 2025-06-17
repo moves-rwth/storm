@@ -1,4 +1,3 @@
-#include <gmm/gmm_std.h>
 
 #include <memory>
 #include <vector>

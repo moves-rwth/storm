@@ -6,6 +6,7 @@ target_link_libraries(storm-pomdp-cli storm-pomdp storm-cli-utilities)
 set_target_properties(storm-pomdp-cli PROPERTIES OUTPUT_NAME "storm-pomdp")
 target_include_directories(storm-pomdp-cli PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_precompile_headers(storm-pomdp-cli REUSE_FROM storm-cli)
+set_target_properties(storm-pomdp-cli PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 
 add_dependencies(binaries storm-pomdp-cli)
 

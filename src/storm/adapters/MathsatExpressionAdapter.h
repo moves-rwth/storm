@@ -5,7 +5,7 @@
 
 #include <stack>
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 #include "mathsat.h"
 #endif
 
@@ -19,7 +19,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 namespace std {
 // Define hashing operator for MathSAT's declarations.
 template<>
@@ -37,7 +37,7 @@ bool operator==(msat_decl decl1, msat_decl decl2);
 namespace storm {
 namespace adapters {
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 
 class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
    public:

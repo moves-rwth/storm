@@ -20,15 +20,6 @@ In case a new patch needs to be created follow these steps:
 8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
 
 
-## GLPK
-
-To update GLPK, download the new sources from [here](https://ftp.gnu.org/gnu/glpk/) and put them into `$STORM_DIR/resources/3rdparty/glpk-5.0`.
-We remove some unnecessary files to reduce the size of the folder:
-1. Remove the folders `doc` and `examples`
-2. Remove these folders from the `SUBDIRS` in `Makefile.am`
-3. Recreate the `configure` script via `autoconf`
-
-
 ## googletest / gtest
 
 To update gtest, simply download the new sources from [here](https://github.com/google/googletest/releases) and put them to `$STORM_DIR/resources/3rdparty/googletest`.
@@ -75,7 +66,7 @@ To update (shipped version of Spot), just change the `SPOT_SHIPPED_VERSION` in `
 
 ## Sylvan & Lace
 
-The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253 (tag 1.7.1)
+The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253 (tag 1.7.1) but with parts of the build system updated to a newer version.
 Our Sylvan version also includes [lace](https://github.com/trolando/lace) which is currently based on commit 3577d983e8c40e276fb8070dc4c12c68940e2f2c (tag 1.4.0)
 To update, you can follow these steps:
 
