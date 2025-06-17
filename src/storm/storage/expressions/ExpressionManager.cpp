@@ -15,11 +15,11 @@ VariableIterator::VariableIterator(ExpressionManager const& manager, std::unorde
     moveUntilNextSelectedElement(false);
 }
 
-bool VariableIterator::operator==(VariableIterator const& other) {
+bool VariableIterator::operator==(VariableIterator const& other) const {
     return this->nameIndexIterator == other.nameIndexIterator;
 }
 
-bool VariableIterator::operator!=(VariableIterator const& other) {
+bool VariableIterator::operator!=(VariableIterator const& other) const {
     return !(*this == other);
 }
 

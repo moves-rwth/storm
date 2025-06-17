@@ -103,11 +103,11 @@ storm::RationalNumber StateValuations::StateValueIterator::getRationalValue() co
     return valuation->rationalValues[variableIt->second];
 }
 
-bool StateValuations::StateValueIterator::operator==(StateValueIterator const& other) {
+bool StateValuations::StateValueIterator::operator==(StateValueIterator const& other) const {
     STORM_LOG_ASSERT(valuation == valuation, "Comparing iterators for different states");
     return variableIt == other.variableIt && labelIt == other.labelIt;
 }
-bool StateValuations::StateValueIterator::operator!=(StateValueIterator const& other) {
+bool StateValuations::StateValueIterator::operator!=(StateValueIterator const& other) const {
     return !(*this == other);
 }
 
