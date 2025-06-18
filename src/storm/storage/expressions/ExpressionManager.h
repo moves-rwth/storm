@@ -36,8 +36,8 @@ class VariableIterator {
     VariableIterator(VariableIterator&& other) = default;
 
     // Define the basic input iterator operations.
-    bool operator==(VariableIterator const& other);
-    bool operator!=(VariableIterator const& other);
+    bool operator==(VariableIterator const& other) const;
+    bool operator!=(VariableIterator const& other) const;
     value_type& operator*();
     VariableIterator& operator++(int);
     VariableIterator& operator++();
