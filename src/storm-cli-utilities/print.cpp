@@ -7,9 +7,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <ctime>
 
-// Includes for the linked libraries and versions header.
-#include "storm/adapters/IntelTbbAdapter.h"
-
 #ifdef STORM_HAVE_GLPK
 #include "glpk.h"
 #endif
