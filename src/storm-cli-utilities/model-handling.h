@@ -1080,7 +1080,8 @@ void computeStateValues(std::string const& description, std::function<std::uniqu
             auto const& property = properties[propertyIndex];
             // As the property serves as filter, it should (a) be qualitative and should (b) not consider a filter itself.
             if (!property.getRawFormula()->hasQualitativeResult()) {
-                STORM_LOG_ERROR("Property " << property.getRawFormula() << " can not be used for filtering states as it does not have a qualitative result.");
+                STORM_LOG_ERROR("Property '" << *property.getRawFormula()
+                                             << "' can not be used for filtering states as it does not have a qualitative result.");
                 continue;
             }
 

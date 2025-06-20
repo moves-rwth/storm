@@ -887,6 +887,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, bool produceScheduler,
     ModelCheckerHint const& hint) {
+    STORM_LOG_THROW(!rewardModel.hasNegativeRewards(), storm::exceptions::NotImplementedException,
+                    "The reward model contains negative rewards. This is not implemented by the total rewards computation.");
     // Reduce to reachability rewards
     if (goal.minimize()) {
         // Identify the states from which no reward can be collected under some scheduler
