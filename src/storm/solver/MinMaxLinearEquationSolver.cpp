@@ -239,7 +239,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         auto method = env.solver().minMax().getMethod();
         if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
             method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
-            method == MinMaxMethod::ViToPi) {
+            method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
             result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>(
                 std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
         } else if (method == MinMaxMethod::Topological) {
@@ -263,7 +263,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     auto method = env.solver().minMax().getMethod();
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
         method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
-        method == MinMaxMethod::ViToPi) {
+        method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(
             std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
     } else if (method == MinMaxMethod::LinearProgramming || method == MinMaxMethod::ViToLp) {
