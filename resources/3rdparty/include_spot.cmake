@@ -57,7 +57,7 @@ if(NOT STORM_DISABLE_SPOT)
 
         # download and install shipped Spot as shared libraries.
         # set Spot version
-        set(SPOT_SHIPPED_VERSION 2.13.1)
+        set(SPOT_SHIPPED_VERSION 2.14)
         # Note that configuring static libraries requires various dependencies which was rather cumbersome.
         # As of '25/3, SJ did not get this to work.
         ExternalProject_Add(Spot
