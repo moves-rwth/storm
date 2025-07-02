@@ -178,6 +178,21 @@ void FlexibleSparseMatrix<ValueType>::filterEntries(storm::storage::BitVector co
 }
 
 template<typename ValueType>
+typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::insertNewRowsAtEnd(
+    typename FlexibleSparseMatrix<ValueType>::index_type numRows) {
+    STORM_LOG_ERROR_COND(this->columnCount == this->getRowCount(), "insertNewRowsAtEnd only works when the FlexibleMatrix is square but column count is "
+                                                                       << columnCount << " and row count is " << this->getRowCount());
+    // ... because otherwise assumptions break when creating the SparseMatrix and we get weird entries for some reason
+    index_type newRowsIndex = data.size();
+    for (index_type i = 0; i < numRows; i++) {
+        row_type newRow;
+        this->data.push_back(newRow);
+    }
+    this->columnCount = getRowCount();
+    return newRowsIndex;
+}
+
+template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createSparseMatrix() {
     uint_fast64_t numEntries = 0;
     for (auto const& row : this->data) {

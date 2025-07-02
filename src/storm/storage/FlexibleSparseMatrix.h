@@ -166,6 +166,13 @@ class FlexibleSparseMatrix {
     void filterEntries(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint);
 
     /*!
+     * Inserts new, empty rows at the end of the FlexibleSparseMatrix.
+     *
+     * @return The index of the first newly inserted row.
+     */
+    index_type insertNewRowsAtEnd(index_type numRows);
+
+    /*!
      * Creates a sparse matrix from the flexible sparse matrix.
      * @return The sparse matrix.
      */

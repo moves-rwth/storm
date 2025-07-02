@@ -2,7 +2,8 @@
 
 #include <optional>
 
-#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
+#include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm::solver::helper {
@@ -29,6 +30,13 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
     matrixColumns.clear();
     matrixValues.reserve(matrix.getNonzeroEntryCount());
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
+
+    // hasOnlyConstants is only used for Interval matrices, currently only populated for iMCs
+    if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+        applyCache.hasOnlyConstants.clear();
+        applyCache.hasOnlyConstants.grow(matrix.getRowCount());
+    }
+
     if constexpr (!TrivialRowGrouping) {
         matrixColumns.push_back(StartOfRowGroupIndicator);  // indicate start of first row(group)
         for (auto groupIndex : indexRange<Backward>(0, this->rowGroupIndices->size() - 1)) {
@@ -44,13 +52,28 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
             matrixColumns.back() = StartOfRowGroupIndicator;  // This is the start of the next row group
         }
     } else {
-        matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
-        for (auto rowIndex : indexRange<Backward>(0, numRows)) {
-            for (auto const& entry : matrix.getRow(rowIndex)) {
-                matrixValues.push_back(entry.getValue());
-                matrixColumns.push_back(entry.getColumn());
+        if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
+            for (auto rowIndex : indexRange<Backward>(0, numRows)) {
+                bool hasOnlyConstants = true;
+                for (auto const& entry : matrix.getRow(rowIndex)) {
+                    ValueType value = entry.getValue();
+                    hasOnlyConstants &= value.upper() == value.lower();
+                    matrixValues.push_back(value);
+                    matrixColumns.push_back(entry.getColumn());
+                }
+                applyCache.hasOnlyConstants.set(rowIndex, hasOnlyConstants);
+                matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
             }
-            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
+        } else {
+            matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of first row
+            for (auto rowIndex : indexRange<Backward>(0, numRows)) {
+                for (auto const& entry : matrix.getRow(rowIndex)) {
+                    matrixValues.push_back(entry.getValue());
+                    matrixColumns.push_back(entry.getColumn());
+                }
+                matrixColumns.push_back(StartOfRowIndicator);  // Indicate start of next row
+            }
         }
     }
 }
