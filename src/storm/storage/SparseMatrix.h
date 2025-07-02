@@ -14,7 +14,6 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/adapters/IntelTbbAdapter.h"
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
 
@@ -914,10 +913,6 @@ class SparseMatrix {
                                    std::vector<value_type> const* summand = nullptr) const;
     void multiplyWithVectorBackward(std::vector<value_type> const& vector, std::vector<value_type>& result,
                                     std::vector<value_type> const* summand = nullptr) const;
-#ifdef STORM_HAVE_INTELTBB
-    void multiplyWithVectorParallel(std::vector<value_type> const& vector, std::vector<value_type>& result,
-                                    std::vector<value_type> const* summand = nullptr) const;
-#endif
 
     /*!
      * Multiplies the matrix with the given vector, reduces it according to the given direction and and writes
@@ -949,14 +944,6 @@ class SparseMatrix {
     template<typename Compare>
     void multiplyAndReduceBackward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
                                    std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
-#ifdef STORM_HAVE_INTELTBB
-    void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                   std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                   std::vector<uint64_t>* choices) const;
-    template<typename Compare>
-    void multiplyAndReduceParallel(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
-                                   std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
-#endif
 
     /*!
      * Multiplies a single row of the matrix with the given vector and returns the result
