@@ -619,31 +619,39 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         auto& lowerX = x;
         auto upperX = std::make_unique<std::vector<SolutionType>>(x.size());
 
-        storm::solver::helper::GuessingValueIterationHelper<ValueType, false> helper(viOperator, *this->A);
+        storm::solver::helper::GuessingValueIterationHelper<ValueType, false> helper(viOperatorNontriv, *this->A);
 
-        // x has to start with a lower bound.
+        uint64_t numIterations{0};
+
+        auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
+            this->showProgressIterative(numIterations);
+            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
+                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
+        };
+
         this->createLowerBoundsVector(lowerX);
         this->createUpperBoundsVector(*upperX);
 
-        auto statusIters = helper.solveEquations(lowerX, *upperX, b, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
-                                                 env.solver().minMax().getMaximalNumberOfIterations(), dir);
+        this->startMeasureProgress();
+        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
+                                                 storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
             lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
 
-        this->reportStatus(statusIters.first, statusIters.second);
+        this->reportStatus(statusIters, numIterations);
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-            this->A->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
         }
 
         if (!this->isCachingEnabled()) {
             clearCache();
         }
 
-        return statusIters.first == SolverStatus::Converged || statusIters.first == SolverStatus::TerminatedEarly;
+        return statusIters == SolverStatus::Converged || statusIters == SolverStatus::TerminatedEarly;
     }
 }
 

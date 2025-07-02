@@ -551,14 +551,27 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     std::vector<ValueType>* upperX = this->cachedRowVector.get();
 
     storm::solver::helper::GuessingValueIterationHelper<ValueType, true> helper(viOperator, *this->A);
-    auto [status, numIters] = helper.solveEquations(*lowerX, *upperX, b, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
-                                                    env.solver().native().getMaximalNumberOfIterations(),
-                                                    boost::none);  // No optimization dir
+
+    uint64_t numIterations{0};
+    auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
+        this->showProgressIterative(numIterations);
+        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
+                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
+    };
+
+    this->startMeasureProgress();
+    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                                        boost::none,  // No optimization dir
+                                        gviCallback);
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
-    this->reportStatus(status, numIters);
-    // this->logIterations(statusIters.first == SolverStatus::Converged, statusIters.first == SolverStatus::TerminatedEarly, statusIters.second);
+    this->reportStatus(status, numIterations);
+
+    if (!this->isCachingEnabled()) {
+        clearCache();
+    }
     return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
 }
 
