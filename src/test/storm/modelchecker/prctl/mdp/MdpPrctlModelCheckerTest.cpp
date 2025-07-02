@@ -164,6 +164,23 @@ class SparseDoubleOptimisticValueIterationEnvironment {
     }
 };
 
+class SparseDoubleGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
+    static const MdpEngine engine = MdpEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setRelativeTerminationCriterion(false);
+        return env;
+    }
+};
+
 class SparseDoubleTopologicalValueIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
@@ -551,13 +568,13 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
 typedef ::testing::Types<SparseDoubleValueIterationViOpGaussSeidelMultEnvironment, SparseDoubleValueIterationViOpRegularMultEnvironment,
                          SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
                          JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
-                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
-                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
-                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
-                         HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
-                         HybridCuddDoubleOptimisticValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment,
-                         DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
-                         DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleGuessingValueIterationEnvironment,
+                         SparseDoubleTopologicalValueIterationEnvironment, SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment,
+                         SparseDoubleViToLPEnvironment, SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment,
+                         SparseRationalRationalSearchEnvironment, HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment,
+                         HybridCuddDoubleSoundValueIterationEnvironment, HybridCuddDoubleOptimisticValueIterationEnvironment,
+                         HybridSylvanRationalPolicyIterationEnvironment, DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment,
+                         DdSylvanDoubleValueIterationEnvironment, DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(MdpPrctlModelCheckerTest, TestingTypes, );
