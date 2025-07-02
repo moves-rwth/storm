@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/optional.hpp>
 #include <vector>
 
 #include "storm/solver/helper/ValueIterationOperator.h"
@@ -69,7 +68,7 @@ class GuessingValueIterationHelper {
      * be 2*epsilon with the provided precision parameters.
      */
     SolverStatus solveEquations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
-                                ValueType precision, boost::optional<storm::solver::OptimizationDirection> dir,
+                                ValueType precision, std::optional<storm::solver::OptimizationDirection> dir,
                                 std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 
    private:

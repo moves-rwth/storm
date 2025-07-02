@@ -562,7 +562,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
 
     this->startMeasureProgress();
     auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
-                                        boost::none,  // No optimization dir
+                                        {},  // No optimization dir
                                         gviCallback);
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(

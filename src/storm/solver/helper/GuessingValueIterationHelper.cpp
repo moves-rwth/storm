@@ -212,8 +212,8 @@ std::pair<VerifyResult, SolverStatus> GuessingValueIterationHelper<ValueType, Tr
 template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveEquations(
     std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, ValueType precision,
-    boost::optional<storm::solver::OptimizationDirection> dir, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
-    if (!dir.has_value() || minimize(dir.get()))
+    std::optional<storm::solver::OptimizationDirection> dir, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
+    if (!dir.has_value() || minimize(dir.value()))
         return solveEquations<OptimizationDirection::Minimize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
     else
         return solveEquations<OptimizationDirection::Maximize>(lowerX, upperX, b, numIterations, precision, iterationCallback);
