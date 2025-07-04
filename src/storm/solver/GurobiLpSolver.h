@@ -29,6 +29,7 @@ class GurobiEnvironment {
      */
     void initialize();
     void setOutput(bool set = false);
+    void setTimeLimit(uint64_t seconds);
 #ifdef STORM_HAVE_GUROBI
     GRBenv* operator*();
 #endif
@@ -130,6 +131,9 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     int_fast64_t getIntegerValue(Variable const& name, uint64_t const& solutionIndex) const;
     bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
     ValueType getObjectiveValue(uint64_t solutionIndex) const;
+
+    // Method for specifying a time limit
+    void setTimeLimit(uint64_t seconds);
 
    private:
 #ifdef STORM_HAVE_GUROBI
