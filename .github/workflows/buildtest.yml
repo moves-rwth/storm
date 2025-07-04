@@ -25,63 +25,88 @@ jobs:
           - {name: "GMP exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "ON",
-             Soplex: "ON",
-             Spot: "ON",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT=/opt/mathsat5"
-            }
+             cmakeArgs: ""
+          }
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest-debug",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_glpk: "ON",
+             disable_gmm: "ON",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
+             disable_xerces: "ON",
+             disable_z3: "ON",
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT="
-            }
-          - {name: "Minimal dependencies",
-            baseImg: "storm-basesystem:minimal_dependencies",
-            buildType: "Debug",
-             Gurobi: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             cmakeArgs: ""
+          }
+          - {name: "Minimal dependencies (without CLN)",
+             baseImg: "storm-basesystem:minimal_dependencies",
+             buildType: "Debug",
+             disable_glpk: "ON",
+             disable_gmm: "ON",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
+             disable_xerces: "ON",
+             disable_z3: "ON",
              Developer: "ON",
              ClnExact: "OFF",
-             ClnRatfunc: "ON",
+             ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: "-DMSAT_ROOT="
-            }
+             cmakeArgs: ""
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -90,9 +115,15 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
-            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
-            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg carl_tag="master" \
+            --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
+            --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
+            --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
+            --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
+            --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
+            --build-arg disable_xerces="${{ matrix.config.disable_xerces }}" \
+            --build-arg disable_z3="${{ matrix.config.disable_z3 }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
             --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
@@ -101,22 +132,41 @@ jobs:
             --build-arg no_threads=${NR_JOBS}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
-      # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.config.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
 
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
@@ -128,22 +178,18 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_USE_SPOT_SHIPPED=ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
              packages: ""
-            }
+          }
           - {name: "Clang",
              buildType: "Debug",
-             Gurobi: "OFF",
-             Soplex: "OFF",
-             Spot: "OFF",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_USE_SPOT_SHIPPED=ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
              packages: "clang"
-            }
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -153,39 +199,56 @@ jobs:
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
-            --build-arg gurobi_support="${{ matrix.config.Gurobi }}" \
-            --build-arg soplex_support="${{ matrix.config.Soplex }}" \
-            --build-arg spot_support="${{ matrix.config.Spot }}" \
+            --build-arg carl_tag="master" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
             --build-arg packages="${{ matrix.config.packages }}" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
-      # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.config.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   linuxTests:
     name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-12", "ubuntu-22.04", "ubuntu-24.04"]
+        distro: ["debian-12", "ubuntu-24.04"]
         buildType: ["Release"]
     steps:
       - name: Git clone
@@ -195,29 +258,45 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
-            --build-arg gurobi_support="OFF" \
-            --build-arg soplex_support="OFF" \
-            --build-arg spot_support="OFF" \
+            --build-arg carl_tag="master" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments developer, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
-
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.buildType == 'Release'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.buildType == 'Debug'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   macTests:
     name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
@@ -250,36 +329,54 @@ jobs:
         # cmake and gmp are already installed
         run: |
           brew update
-          brew install automake boost cln ginac glpk hwloc z3 xerces-c
+          brew install automake boost cln ginac glpk hwloc xerces-c z3
       - name: Configure storm
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}"
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master"
       - name: Build storm
         working-directory: ./build
         run: make binaries -j ${NR_JOBS}
 
-      # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
+      - name: Run storm (build tree)
         working-directory: ./build
-        if: matrix.config.buildType == 'Release'
-        run: |
-          ./bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)
-          ./bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)
-      - name: Check debug makeflags
-        working-directory: ./build
-        if: matrix.config.buildType == 'Debug'
-        run: |
-          ./bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)
-
+        run: ./bin/storm
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: false
       - name: Build tests
         working-directory: ./build
         run: make -j ${NR_JOBS}
       - name: Run tests
         working-directory: ./build
-        run: ctest test--output-on-failure
-
+        run: ctest test --output-on-failure
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: "${GITHUB_WORKSPACE}/build"
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        working-directory: ./build
+        run: sudo make install
+      - name: Temporarily move build dir
+        run: |
+          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
+      - name: Run installed storm
+        run: |
+          /usr/local/bin/storm --version
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: ""
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
 
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
@@ -291,12 +388,12 @@ jobs:
              dockerTag: "ci-debug",
              baseImg: "storm-dependencies:latest-debug",
              Developer: "ON"
-            }
+          }
           - {name: "Release",
              dockerTag: "ci",
              baseImg: "storm-dependencies:latest",
              Developer: "OFF"
-            }
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v4
@@ -310,29 +407,45 @@ jobs:
           docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
             --build-arg build_type="${{ matrix.buildType.name }}" \
+            --build-arg carl_tag="master" \
             --build-arg developer="${{ matrix.buildType.Developer }}" \
             --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
             --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments gurobi_support, soplex_support, spot_support, cln_exact, cln_ratfunc, all_sanitizers
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
-
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.buildType.name == 'Release'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.buildType.name == 'Debug'
-        run: |
-          docker exec ci bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType.name }}
+          docker: true
       - name: Build tests
         run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
@@ -355,7 +468,7 @@ jobs:
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v5
+      - uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

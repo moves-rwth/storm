@@ -7,10 +7,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 
-#include "NativeMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
+
+#include "storm/solver/multiplier/NativeMultiplier.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/multiplier/ViOperatorMultiplier.h"

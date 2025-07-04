@@ -38,17 +38,6 @@
 #ifndef GMM_BLAS_H__
 #define GMM_BLAS_H__
 
-// This Version of gmm++ was modified for Storm.
-// To detect whether the usage of TBB is possible, this include is neccessary.
-#include "storm-config.h"
-
-#ifdef STORM_HAVE_INTELTBB
-#include <new> // This fixes a potential dependency ordering problem between GMM and TBB
-#include "storm/adapters/IntelTbbAdapter.h"
-#include <iterator>
-#endif
-
-
 #include "gmm_scaled.h"
 #include "gmm_transposed.h"
 #include "gmm_conjugated.h"
@@ -1644,166 +1633,6 @@ namespace gmm {
     }
   }
 
-#ifdef STORM_HAVE_INTELTBB
-    // Official Intel Hint on blocked_range vs. linear iterators: http://software.intel.com/en-us/forums/topic/289505
-    template <typename IT1, typename IT2>
-    class forward_range_mult {
-        IT1 my_begin;
-        IT1 my_end;
-        IT2 my_begin_row;
-        size_t my_size;
-    public:
-        IT1 begin() const {return my_begin;}
-        IT2 begin_row() const {return my_begin_row;}
-        IT1 end() const {return my_end;}
-        bool empty() const {return my_begin==my_end;}
-        bool is_divisible() const {return my_size>1;}
-        forward_range_mult( IT1 first, IT1 last, IT2 row_first, size_t size ) : my_begin(first), my_end(last), my_begin_row(row_first), my_size(size) {
-            assert( size==size_t(std::distance( first,last )));
-        }
-        forward_range_mult( IT1 first, IT1 last, IT2 row_first) : my_begin(first), my_end(last), my_begin_row(row_first) {
-            my_size = std::distance( first,last );
-        }
-        forward_range_mult( forward_range_mult& r, tbb::split ) {
-            size_t h = r.my_size/2;
-            my_end = r.my_end;
-            my_begin = r.my_begin;
-            my_begin_row = r.my_begin_row;
-            std::advance( my_begin, h ); // Might be scaling issue
-            std::advance( my_begin_row, h );
-            my_size = r.my_size-h;
-            r.my_end = my_begin;
-            r.my_size = h;
-        }
-    };
-    
-    
-    template <typename L1, typename L2, typename L3>
-    class tbbHelper_mult_by_row {
-        L2 const* my_l2;
-        
-        // Typedefs for Iterator Types
-        typedef typename linalg_traits<L3>::iterator frm_IT1;
-        typedef typename linalg_traits<L1>::const_row_iterator frm_IT2;
-        
-    public:
-        void operator()( const forward_range_mult<frm_IT1, frm_IT2>& r ) const {
-            L2 const& l2 = *my_l2;
-            
-            frm_IT1 it = r.begin();
-            frm_IT1 ite = r.end();
-            frm_IT2 itr = r.begin_row();
-            
-            for (; it != ite; ++it, ++itr) {
-                *it = vect_sp(linalg_traits<L1>::row(itr), l2,
-                              typename linalg_traits<L1>::storage_type(),
-                              typename linalg_traits<L2>::storage_type());
-            }
-        }
-        
-        tbbHelper_mult_by_row(L2 const* l2) :
-        my_l2(l2)
-        {}
-    };
-    
-    template <typename L1, typename L2, typename L3, typename L4>
-    class tbbHelper_mult_add_by_row {
-        L2 const* my_l2;
-        L3 const* my_l3;
-        
-        // Typedefs for Iterator Types
-        typedef typename linalg_traits<L3>::iterator frm_IT1;
-        typedef typename linalg_traits<L1>::const_row_iterator frm_IT2;
-        typedef typename linalg_traits<L4>::const_iterator frm_IT3;
-        
-    public:
-        void operator()( const forward_range_mult<frm_IT1, frm_IT2>& r ) const {
-            L2 const& l2 = *my_l2;
-            
-            frm_IT1 it = r.begin();
-            frm_IT1 ite = r.end();
-            frm_IT2 itr = r.begin_row();
-            frm_IT3 addIt = my_l3->begin();
-            
-            for (; it != ite; ++it, ++itr, ++addIt) {
-                *it = vect_sp(linalg_traits<L1>::row(itr), l2,
-                              typename linalg_traits<L1>::storage_type(),
-                              typename linalg_traits<L2>::storage_type()) + *addIt;
-            }
-        }
-        
-        tbbHelper_mult_add_by_row(L2 const* l2, L2 const* l3) : my_l2(l2), my_l3(l3) {
-            // Intentionally left empty.
-        }
-    };
-
-    
-    template<typename L1, typename L2, typename L3>
-    class TbbMultFunctor {
-    public:
-        TbbMultFunctor(L1 const& l1, L2 const& l2, L3& l3) : l1(l1), l2(l2), l3(l3) {
-            // Intentionally left empty.
-        }
-        
-        void operator()(tbb::blocked_range<unsigned long> const& range) const {
-            auto itr = mat_row_const_begin(l1) + range.begin();
-            auto l2it = l2.begin() + range.begin();
-            auto l3it = l3.begin() + range.begin();
-            auto l3ite = l3.begin() + range.end();
-            
-            for (; l3it != l3ite; ++l3it, ++l2it, ++itr) {
-                *l3it = vect_sp(linalg_traits<L1>::row(itr), l2, typename linalg_traits<L1>::storage_type(), typename linalg_traits<L2>::storage_type());
-            }
-        }
-        
-    private:
-        L1 const& l1;
-        L2 const& l2;
-        L3& l3;
-    };
-    
-  template <typename L1, typename L2, typename L3>
-  void mult_by_row_parallel(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
-    tbb::parallel_for(tbb::blocked_range<unsigned long>(0, vect_size(l3), 10), TbbMultFunctor<L1, L2, L3>(l1, l2, l3));
-  }
-    
-    template<typename L1, typename L2, typename L3, typename L4>
-    class TbbMultAddFunctor {
-    public:
-        TbbMultAddFunctor(L1 const& l1, L2 const& l2, L3 const& l3, L4& l4) : l1(l1), l2(l2), l3(l3), l4(l4) {
-            // Intentionally left empty.
-        }
-        
-        void operator()(tbb::blocked_range<unsigned long> const& range) const {
-            auto itr = mat_row_const_begin(l1) + range.begin();
-            auto l2it = l2.begin() + range.begin();
-            auto l3it = l3.begin() + range.begin();
-            auto l4it = l4.begin() + range.begin();
-            auto l4ite = l4.begin() + range.end();
-            
-            for (; l4it != l4ite; ++l4it, ++l3it, ++l2it, ++itr) {
-                *l4it = vect_sp(linalg_traits<L1>::row(itr), l2, typename linalg_traits<L1>::storage_type(), typename linalg_traits<L2>::storage_type()) + *l3it;
-            }
-        }
-        
-    private:
-        L1 const& l1;
-        L2 const& l2;
-        L3 const& l3;
-        L4& l4;
-    };
-    
-  template <typename L1, typename L2, typename L3, typename L4>
-  void mult_add_by_row_parallel(const L1& l1, const L2& l2, const L3& l3, L4& l4, abstract_dense) {
-    tbb::parallel_for(tbb::blocked_range<unsigned long>(0, vect_size(l4), 10), TbbMultAddFunctor<L1, L2, L3, L4>(l1, l2, l3, l4));
-  }
-  
-  template <typename L1, typename L2, typename L3>
-  void mult_add_by_row_parallel(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
-    tbb::parallel_for(tbb::blocked_range<unsigned long>(0, vect_size(l3), 10), TbbMultAddFunctor<L1, L2, L3, L3>(l1, l2, l3, l3));
-  }
-#endif
-    
   template <typename L1, typename L2, typename L3>
   void mult_by_row(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
     typename linalg_traits<L3>::iterator it=vect_begin(l3), ite=vect_end(l3);
@@ -1852,12 +1681,6 @@ namespace gmm {
   template <typename L1, typename L2, typename L3> inline
   void mult_spec(const L1& l1, const L2& l2, L3& l3, row_major)
   { mult_by_row(l1, l2, l3, typename linalg_traits<L3>::storage_type()); }
-
-#ifdef STORM_HAVE_INTELTBB
-  template <typename L1, typename L2, typename L3> inline
-  void mult_parallel_spec(const L1& l1, const L2& l2, L3& l3, row_major)
-  { mult_by_row_parallel(l1, l2, l3, typename linalg_traits<L3>::storage_type()); }
-#endif
     
   template <typename L1, typename L2, typename L3> inline
   void mult_spec(const L1& l1, const L2& l2, L3& l3, col_major)
@@ -1934,60 +1757,7 @@ namespace gmm {
                     linalg_traits<L1>::sub_orientation>::potype());
     }
   }
-    
-#ifdef STORM_HAVE_INTELTBB
-  /** Multiply. l3 = l1*l2; */
-  template <typename L1, typename L2, typename L3> inline
-  void mult_parallel(const L1& l1, const L2& l2, L3& l3) {
-    size_type m = mat_nrows(l1), n = mat_ncols(l1);
-    if (!m || !n) return;
-    GMM_ASSERT2(n==vect_size(l2), "dimensions mismatch");
-    if (!same_origin(l2, l3)) {
-      mult_parallel_spec(l1, l2, l3, typename principal_orientation_type<typename
-                         linalg_traits<L1>::sub_orientation>::potype());
-    } else {
-      GMM_WARNING2("Warning, temporaries are used for mult\n");
-      typename temporary_vector<L2>::vector_type l2tmp(vect_size(l2));
-      copy(l2, l2tmp);
-      mult_parallel_spec(l1, l2tmp, l3, typename principal_orientation_type<typename
-                         linalg_traits<L1>::sub_orientation>::potype());
-    }
-  }
-    
-  /** Multiply-accumulate. l3 += l1*l2; */
-  template <typename L1, typename L2, typename L3> inline
-  void mult_add_parallel(const L1& l1, const L2& l2, L3& l3) {
-    size_type m = mat_nrows(l1), n = mat_ncols(l1);
-    if (!m || !n) return;
-    GMM_ASSERT2(n==vect_size(l2) && m==vect_size(l3), "dimensions mismatch");
-    if (!same_origin(l2, l3)) {
-      mult_add_parallel_spec(l1, l2, l3, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
-    } else {
-      GMM_WARNING2("Warning, A temporary is used for mult\n");
-      typename temporary_vector<L3>::vector_type temp(vect_size(l2));
-      copy(l2, temp);
-      mult_add_parallel_spec(l1, temp, l3, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
-    }
-  }
-  
-  /** Multiply-accumulate. l4 = l1*l2 + l3; */
-  template <typename L1, typename L2, typename L3, typename L4> inline
-  void mult_add_parallel(const L1& l1, const L2& l2, const L3& l3, L4& l4) {
-    size_type m = mat_nrows(l1), n = mat_ncols(l1);
-    if (!m || !n) return;
-    GMM_ASSERT2(n==vect_size(l2) && m==vect_size(l3) && vect_size(l3) == vect_size(l4), "dimensions mismatch");
-    if (!same_origin(l2, l4) && !same_origin(l3, l4) && !same_origin(l2, l3)) {
-      mult_add_parallel_spec(l1, l2, l3, l4, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
-    } else {
-      GMM_WARNING2("Warning, Multiple temporaries are used for mult\n");
-      typename temporary_vector<L2>::vector_type l2tmp(vect_size(l2));
-      copy(l2, l2tmp);
-      typename temporary_vector<L3>::vector_type l3tmp(vect_size(l3));
-      copy(l3, l3tmp);
-      mult_add_parallel_spec(l1, l2tmp, l3tmp, l4, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
-    }
-  }
-#endif
+
   ///@cond DOXY_SHOW_ALL_FUNCTIONS
 
   template <typename L1, typename L2, typename L3> inline
@@ -2073,15 +1843,6 @@ namespace gmm {
   void mult_add_spec(const L1& l1, const L2& l2, const L3& l3, L4& l4, row_major)
   { mult_add_by_row(l1, l2, l3, l4, typename linalg_traits<L3>::storage_type()); }
 
-#ifdef STORM_HAVE_INTELTBB
-  template <typename L1, typename L2, typename L3, typename L4> inline
-  void mult_add_parallel_spec(const L1& l1, const L2& l2, const L3& l3, L4& l4, row_major)
-  { mult_add_by_row_parallel(l1, l2, l3, l4, typename linalg_traits<L4>::storage_type()); }
-  
-  template <typename L1, typename L2, typename L3> inline
-  void mult_add_parallel_spec(const L1& l1, const L2& l2, L3& l3, row_major)
-  { mult_add_by_row_parallel(l1, l2, l3, typename linalg_traits<L3>::storage_type()); }
-#endif
 
   template <typename L1, typename L2, typename L3> inline
   void mult_add_spec(const L1& l1, const L2& l2, L3& l3, col_major)
