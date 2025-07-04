@@ -702,7 +702,7 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t solutio
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
+        STORMgit_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
