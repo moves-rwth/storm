@@ -707,6 +707,19 @@ storm::expressions::Expression Program::getInitialStatesExpression() const {
     }
 }
 
+bool Program::hasIntervalUpdates() const {
+    for (auto const& module : this->modules) {
+        for (auto const& command : module.getCommands()) {
+            for (auto const& update : command.getUpdates()) {
+                if (update.isLikelihoodInterval()) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 bool Program::specifiesSystemComposition() const {
     return static_cast<bool>(systemCompositionConstruct);
 }
