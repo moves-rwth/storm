@@ -1,9 +1,8 @@
 #pragma once
 
 #include "storm-config.h"
+#include "storm/modelchecker/helper/conditional/ConditionalAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
-
-#include "storm/builder/ExplorationOrder.h"
 
 namespace storm {
 namespace settings {
@@ -35,7 +34,15 @@ class ModelCheckerSettings : public ModuleSettings {
      */
     std::string getLtl2daTool() const;
 
-    std::string getConditionalAlgorithm() const;  // TODO: do this properly
+    /*!
+     * Retrieves whether an algorithm for conditional properties has been set.
+     */
+    bool isConditionalAlgorithmSet() const;
+
+    /*!
+     * Retrieves the specified algorithm for conditional probabilities.
+     */
+    ConditionalAlgorithm getConditionalAlgorithm() const;
 
     // The name of the module.
     static const std::string moduleName;

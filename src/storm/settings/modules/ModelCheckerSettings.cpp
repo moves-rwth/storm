@@ -7,9 +7,10 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
-namespace settings {
-namespace modules {
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/utility/macros.h"
+
+namespace storm::settings::modules {
 
 const std::string ModelCheckerSettings::moduleName = "modelchecker";
 const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
@@ -28,9 +29,14 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
                                          "filename", "A script that can be called with a prefix formula and a name for the output automaton.")
                                          .build())
                         .build());
+
+    std::vector<std::string> const conditionalAlgs = {"default", "restart", "bisection", "bisection-advanced", "pi"};
     this->addOption(storm::settings::OptionBuilder(moduleName, conditionalAlgorithmOptionName, false, "The used algorithm for conditional probabilities.")
                         .setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("alg", "name.").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(conditionalAlgs))
+                                         .setDefaultValueString("default")
+                                         .build())
                         .build());
 }
 
@@ -46,12 +52,12 @@ std::string ModelCheckerSettings::getLtl2daTool() const {
     return this->getOption(ltl2daToolOptionName).getArgumentByName("filename").getValueAsString();
 }
 
-std::string ModelCheckerSettings::getConditionalAlgorithm() const {  // TODO
-    return this->getOption(conditionalAlgorithmOptionName).getHasOptionBeenSet()
-               ? this->getOption(conditionalAlgorithmOptionName).getArgumentByName("alg").getValueAsString()
-               : "default";
+bool ModelCheckerSettings::isConditionalAlgorithmSet() const {
+    return this->getOption(conditionalAlgorithmOptionName).getHasOptionBeenSet();
 }
 
-}  // namespace modules
-}  // namespace settings
-}  // namespace storm
+ConditionalAlgorithm ModelCheckerSettings::getConditionalAlgorithm() const {
+    return conditionalAlgorithmFromString(this->getOption(conditionalAlgorithmOptionName).getArgumentByName("name").getValueAsString());
+}
+
+}  // namespace storm::settings::modules
