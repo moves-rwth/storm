@@ -265,6 +265,8 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidPropertyException,
                     "Cannot compute conditional probabilities on MDPs with more than one initial state.");
+    STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException,
+                    "Conditional probabilities can only be computed for the initial states of the model.");
     STORM_LOG_THROW(conditionalFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException,
                     "Illegal conditional probability formula.");
     STORM_LOG_THROW(conditionalFormula.getConditionFormula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException,

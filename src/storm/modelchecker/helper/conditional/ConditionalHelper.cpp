@@ -298,7 +298,7 @@ SolutionType computeViaRestartMethod(Environment const& env, uint64_t const init
     eliminateEndComponents(selectedStatesInMatrix, false, std::nullopt, matrix, initStateInMatrix, rowsWithSum1, rowValues);
 
     STORM_LOG_INFO("Processed model has " << matrix.getRowGroupCount() << " states and " << matrix.getRowGroupCount() << " choices and "
-                                          << matrix.getEntryCount() << " transitions.\n");
+                                          << matrix.getEntryCount() << " transitions.");
     // Finally, solve the equation system
     return solveMinMaxEquationSystem(env, matrix, rowValues, rowsWithSum1, dir, initStateInMatrix);
 }
@@ -428,7 +428,7 @@ class WeightedReachabilityHelper {
         eliminateEndComponents<ValueType>(allExceptInit, true, std::nullopt, submatrix, initialStateInSubmatrix, rowsWithSum1, targetRowValues,
                                           conditionRowValues);
         STORM_LOG_INFO("Processed model has " << submatrix.getRowGroupCount() << " states and " << submatrix.getRowGroupCount() << " choices and "
-                                              << submatrix.getEntryCount() << " transitions.\n");
+                                              << submatrix.getEntryCount() << " transitions.");
     }
 
     SolutionType computeWeightedDiff(storm::Environment const& env, storm::OptimizationDirection const dir, ValueType const& targetWeight,
@@ -541,7 +541,7 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
     STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
                         "Bisection method does not adequately handle propagation of errors. Result is not necessarily sound.");
     SolutionType const precision = [&env, boundOption]() {
-        if (storm::NumberTraits<SolutionType>::IsExact && env.solver().isForceExact()) {
+        if (storm::NumberTraits<SolutionType>::IsExact || env.solver().isForceExact()) {
             STORM_LOG_WARN_COND(storm::NumberTraits<SolutionType>::IsExact && boundOption == BisectionMethodBounds::Advanced,
                                 "Selected bisection method with exact precision in a setting that might not terminate.");
             return storm::utility::zero<SolutionType>();
@@ -565,17 +565,9 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
     storm::utility::Extremum<storm::OptimizationDirection::Minimize, SolutionType> upperBound = storm::utility::one<ValueType>();
     SolutionType middle = (*lowerBound + *upperBound) / 2;
     for (uint64_t iterationCount = 1; true; ++iterationCount) {
-        if constexpr (storm::NumberTraits<SolutionType>::IsExact) {
-            // find a rational number with a concise representation close to middle and within the bounds
-            auto const exactMiddle = middle;
-            auto numDigits = storm::utility::convertNumber<uint64_t>(
-                storm::utility::floor(storm::utility::log10<SolutionType>(storm::utility::one<SolutionType>() / (*upperBound - *lowerBound))));
-            do {
-                ++numDigits;
-                middle = storm::utility::kwek_mehlhorn::sharpen<SolutionType, SolutionType>(numDigits, exactMiddle);
-            } while (middle <= *lowerBound || middle >= *upperBound);
-        }
+        // evaluate the current middle
         SolutionType const middleValue = wrh.computeWeightedDiff(env, dir, storm::utility::one<ValueType>(), -middle);
+        // update the bounds and new middle value according to the bisection method
         if (boundOption == BisectionMethodBounds::Simple) {
             if (middleValue >= storm::utility::zero<ValueType>()) {
                 lowerBound &= middle;
@@ -595,23 +587,45 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
                 upperBound &= middle + (middleValue / pMax);
             }
             // update middle to the average of the bounds, but scale it according to the middle value (which is in [-1,1])
-            middle = *lowerBound + (1 + middleValue) * (*upperBound - *lowerBound) / 2;
+            middle = *lowerBound + (storm::utility::one<SolutionType>() + middleValue) * (*upperBound - *lowerBound) / 2;
+            STORM_LOG_ASSERT(middle >= *lowerBound && middle <= *upperBound, "Bisection method bounds are inconsistent.");
         }
+        // check for convergence
         SolutionType const boundDiff = *upperBound - *lowerBound;
         STORM_LOG_TRACE("Iteration #" << iterationCount << ":\n\t Lower bound: " << storm::utility::convertNumber<double>(*lowerBound)
                                       << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(*upperBound)
                                       << ",\n\t Difference:  " << storm::utility::convertNumber<double>(boundDiff)
-                                      << ",\n\t Middle val:  " << storm::utility::convertNumber<double>(middleValue) << "\n\n");
+                                      << ",\n\t Middle val:  " << storm::utility::convertNumber<double>(middleValue) << ".");
         if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
             STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations. Difference is "
                                                                << std::setprecision(std::numeric_limits<double>::digits10)
-                                                               << storm::utility::convertNumber<double>(boundDiff) << ".\n");
+                                                               << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
         }
+        // check for early termination
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Bisection solver aborted after " << iterationCount << "iterations. Bound difference is "
-                                                             << storm::utility::convertNumber<double>(boundDiff) << ".\n");
+                                                             << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
+        }
+        // process the middle value for the next iteration
+        if constexpr (storm::NumberTraits<SolutionType>::IsExact) {
+            // find a rational number with a concise representation close to middle and within the bounds
+            auto const exactMiddle = middle;
+            auto numDigits = storm::utility::convertNumber<uint64_t>(
+                storm::utility::floor(storm::utility::log10<SolutionType>(storm::utility::one<SolutionType>() / (*upperBound - *lowerBound))));
+            do {
+                ++numDigits;
+                middle = storm::utility::kwek_mehlhorn::sharpen<SolutionType, SolutionType>(numDigits, exactMiddle);
+            } while (middle <= *lowerBound || middle >= *upperBound);
+        }
+        // Since above code never sets 'middle' to exactly zero or one, we check if that could be necessary after a couple of iterations
+        if (iterationCount == 8) {  // 8 is just a heuristic value, it could be any number
+            if (storm::utility::isZero(*lowerBound)) {
+                middle = storm::utility::zero<SolutionType>();
+            } else if (storm::utility::isOne(*upperBound)) {
+                middle = storm::utility::one<SolutionType>();
+            }
         }
     }
     return (*lowerBound + *upperBound) / 2;
@@ -642,7 +656,7 @@ SolutionType computeViaPolicyIteration(Environment const& env, uint64_t const in
             schedulerChanged = wrh.template improveScheduler<storm::OptimizationDirection::Maximize>(scheduler, lambda, targetResults, conditionResults);
         }
         if (!schedulerChanged) {
-            STORM_LOG_INFO("Policy iteration for conditional probabilities converged after " << iterationCount << " iterations.\n");
+            STORM_LOG_INFO("Policy iteration for conditional probabilities converged after " << iterationCount << " iterations.");
             return lambda;
         }
         if (storm::utility::resources::isTerminate()) {
@@ -650,6 +664,28 @@ SolutionType computeViaPolicyIteration(Environment const& env, uint64_t const in
             return lambda;
         }
     }
+}
+
+template<typename ValueType, typename SolutionType = ValueType>
+std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, NormalFormData<ValueType> const& normalForm) {
+    if (normalForm.terminalStates.get(initialState)) {
+        STORM_LOG_DEBUG("Initial state is terminal.");
+        if (normalForm.conditionStates.get(initialState)) {
+            return normalForm.targetValue(initialState);  // The value is already known, nothing to do.
+        } else {
+            STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::NotSupportedException,
+                            "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
+            // The last case for a terminal initial state is that it is already target and the condition is reachable with non-zero probability.
+            // In this case, all schedulers induce a conditional probability of 1 (or do not reach the condition, i.e., have undefined value)
+            return storm::utility::one<SolutionType>();
+        }
+    } else {
+        // Catch the case where all terminal states have value zero
+        if (normalForm.nonZeroTargetStateValues.empty()) {
+            return storm::utility::zero<SolutionType>();
+        };
+    }
+    return std::nullopt;  // No trivial case applies, we need to compute the value.
 }
 
 }  // namespace internal
@@ -671,10 +707,12 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
 
     // We first translate the problem into a normal form.
     // @see doi.org/10.1007/978-3-642-54862-8_43
+    STORM_LOG_THROW(goal.hasRelevantValues(), storm::exceptions::NotSupportedException,
+                    "No initial state given. Conditional probabilities can only be computed for models with a single initial state.");
     STORM_LOG_THROW(goal.relevantValues().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
                     "Only one initial state is supported for conditional probabilities");
     STORM_LOG_TRACE("Computing conditional probabilities for a model with " << transitionMatrix.getRowGroupCount() << " states and "
-                                                                            << transitionMatrix.getEntryCount() << " transitions.\n");
+                                                                            << transitionMatrix.getEntryCount() << " transitions.");
     // storm::utility::Stopwatch sw(true);
     auto normalFormData = internal::obtainNormalForm(normalFormConstructionEnv, goal.direction(), transitionMatrix, backwardTransitions, goal.relevantValues(),
                                                      targetStates, conditionStates);
@@ -684,17 +722,9 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     STORM_LOG_ASSERT(goal.relevantValues().getNumberOfSetBits() == 1, "Only one initial state is supported for conditional probabilities");
     auto const initialState = *goal.relevantValues().begin();
     ValueType initialStateValue = -storm::utility::one<ValueType>();
-    if (normalFormData.terminalStates.get(initialState)) {
-        if (normalFormData.conditionStates.get(initialState)) {
-            initialStateValue = normalFormData.targetValue(initialState);  // The value is already known, nothing to do.
-        } else {
-            STORM_LOG_THROW(!normalFormData.universalObservationFailureStates.get(initialState), storm::exceptions::NotSupportedException,
-                            "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
-            // The last case for a terminal initial state is that it is already target and the condition is reachable with non-zero probability.
-            // In this case, all schedulers induce a conditional probability of 1 (or do not reach the condition, i.e., have undefined value)
-            initialStateValue = storm::utility::one<ValueType>();
-        }
-        STORM_LOG_INFO("Initial state is terminal.\n");
+    if (auto trivialValue = internal::handleTrivialCases<ValueType, SolutionType>(initialState, normalFormData); trivialValue.has_value()) {
+        initialStateValue = *trivialValue;
+        STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
         STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state");
         auto alg = analysisEnv.modelchecker().getConditionalAlgorithm();
