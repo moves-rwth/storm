@@ -91,7 +91,7 @@ class SparseMdpPrctlHelper {
                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                 storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
                                                                 bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
-    
+
    private:
     static MDPSparseModelCheckingHelperReturnType<SolutionType> computeReachabilityRewardsHelper(
         Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
