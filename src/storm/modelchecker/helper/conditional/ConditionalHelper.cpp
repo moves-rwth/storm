@@ -289,7 +289,7 @@ SolutionType computeViaRestartMethod(Environment const& env, uint64_t const init
     // Eliminate end components in two phases
     // First, we catch all end components that do not contain the initial state. It is possible to stay in those ECs forever
     // without reaching the condition. This is reflected by a backloop to the initial state.
-    storm::storage::BitVector selectedStatesInMatrix(numMaybeChoices, true);
+    storm::storage::BitVector selectedStatesInMatrix(numMaybeStates, true);
     selectedStatesInMatrix.set(initStateInMatrix, false);
     eliminateEndComponents(selectedStatesInMatrix, true, initStateInMatrix, matrix, initStateInMatrix, rowsWithSum1, rowValues);
     // Second, eliminate the remaining ECs. These must involve the initial state and might have been introduced in the previous step.
