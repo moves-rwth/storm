@@ -93,7 +93,7 @@ void GurobiEnvironment::setOutput(bool set) {
 
 void GurobiEnvironment::setTimeLimit(uint64_t seconds) {
 #ifdef STORM_HAVE_GUROBI
-    error = GRBsetintparam(env, "TimeLimit", seconds);
+    int error = GRBsetintparam(env, "TimeLimit", seconds);
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi time limit (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 #endif
@@ -599,8 +599,6 @@ uint64_t GurobiLpSolver<ValueType, RawMode>::getSolutionCount() const {
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
         STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
@@ -629,8 +627,6 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&
 template<typename ValueType, bool RawMode>
 int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
         STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
@@ -662,8 +658,6 @@ int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
         STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
@@ -700,9 +694,7 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORMgit_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
+        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
