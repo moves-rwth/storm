@@ -22,7 +22,7 @@ class SparseDoubleRestartEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::Restart);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Restart);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));  // restart algorithm requires a higher precision
         return env;
     }
@@ -35,7 +35,7 @@ class SparseDoubleBisectionEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::Bisection);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Bisection);
         return env;
     }
 };
@@ -47,7 +47,7 @@ class SparseDoubleBisectionAdvancedEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::BisectionAdvanced);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
         return env;
     }
 };
@@ -59,7 +59,7 @@ class SparseDoublePiEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::PolicyIteration);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::PolicyIteration);
         return env;
     }
 };
@@ -71,7 +71,7 @@ class SparseRationalNumberRestartEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::Restart);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Restart);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));  // restart algorithm requires a higher precision
         return env;
     }
@@ -84,7 +84,7 @@ class SparseRationalNumberBisectionEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::Bisection);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::Bisection);
         return env;
     }
 };
@@ -96,7 +96,7 @@ class SparseRationalNumberBisectionAdvancedEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::BisectionAdvanced);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
         return env;
     }
 };
@@ -108,7 +108,7 @@ class SparseRationalNumberPiEnvironment {
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
-        env.modelchecker().setConditionalAlgorithm(storm::ConditionalAlgorithm::PolicyIteration);
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::PolicyIteration);
         return env;
     }
 };

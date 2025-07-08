@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-config.h"
-#include "storm/modelchecker/helper/conditional/ConditionalAlgorithm.h"
+#include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -42,7 +42,7 @@ class ModelCheckerSettings : public ModuleSettings {
     /*!
      * Retrieves the specified algorithm for conditional probabilities.
      */
-    ConditionalAlgorithm getConditionalAlgorithm() const;
+    ConditionalAlgorithmSetting getConditionalAlgorithmSetting() const;
 
     // The name of the module.
     static const std::string moduleName;

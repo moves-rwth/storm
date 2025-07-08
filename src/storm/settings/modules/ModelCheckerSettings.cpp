@@ -4,11 +4,7 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/macros.h"
 
 namespace storm::settings::modules {
 
@@ -56,8 +52,8 @@ bool ModelCheckerSettings::isConditionalAlgorithmSet() const {
     return this->getOption(conditionalAlgorithmOptionName).getHasOptionBeenSet();
 }
 
-ConditionalAlgorithm ModelCheckerSettings::getConditionalAlgorithm() const {
-    return conditionalAlgorithmFromString(this->getOption(conditionalAlgorithmOptionName).getArgumentByName("name").getValueAsString());
+ConditionalAlgorithmSetting ModelCheckerSettings::getConditionalAlgorithmSetting() const {
+    return conditionalAlgorithmSettingFromString(this->getOption(conditionalAlgorithmOptionName).getArgumentByName("name").getValueAsString());
 }
 
 }  // namespace storm::settings::modules

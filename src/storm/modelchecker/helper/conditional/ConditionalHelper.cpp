@@ -154,7 +154,7 @@ struct NormalFormData {
     // TerminalStates is a superset of conditionStates and dom(nonZeroTargetStateValues).
     // For a terminalState that is not a conditionState, it is impossible to (reach the condition and not reach the target).
 
-    ValueType targetValue(uint64_t state) const {
+    ValueType getTargetValue(uint64_t state) const {
         STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state");
         auto const it = nonZeroTargetStateValues.find(state);
         return it == nonZeroTargetStateValues.end() ? storm::utility::zero<ValueType>() : it->second;
@@ -164,7 +164,7 @@ struct NormalFormData {
         STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state");
         STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state");
         // condition states have fail probability zero
-        return storm::utility::one<ValueType>() - targetValue(state);
+        return storm::utility::one<ValueType>() - getTargetValue(state);
     }
 };
 
@@ -184,8 +184,6 @@ NormalFormData<ValueType> obtainNormalForm(Environment const& env, storm::solver
     auto const targetAndNotCondFailStates = extendedTargetStates & ~(extendedConditionStates | universalObservationFailureStates);
     computeReachabilityProbabilities(env, nonZeroTargetStateValues, dir, transitionMatrix, targetAndNotCondFailStates, allStates, extendedConditionStates);
 
-    auto terminalStates = extendedConditionStates | extendedTargetStates | universalObservationFailureStates;
-
     // get states where the optimal policy reaches the condition with positive probability
     auto terminalStatesThatReachCondition = extendedConditionStates;
     for (auto state : targetAndNotCondFailStates) {
@@ -194,6 +192,8 @@ NormalFormData<ValueType> obtainNormalForm(Environment const& env, storm::solver
         }
     }
 
+    // get the terminal states following the three cases described above
+    auto terminalStates = extendedConditionStates | extendedTargetStates | universalObservationFailureStates;
     if (storm::solver::minimize(dir)) {
         // There can be target states from which (only) the *minimal* probability to reach a condition is zero.
         // For those states, the optimal policy is to enforce observation failure.
@@ -247,7 +247,7 @@ SolutionType computeViaRestartMethod(Environment const& env, uint64_t const init
             bool rowSumIsLess1 = false;
             for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                 if (normalForm.terminalStates.get(entry.getColumn())) {
-                    ValueType const targetValue = normalForm.targetValue(entry.getColumn());
+                    ValueType const targetValue = normalForm.getTargetValue(entry.getColumn());
                     targetProbability += targetValue * entry.getValue();
                     if (normalForm.conditionStates.get(entry.getColumn())) {
                         rowSumIsLess1 = true;
@@ -379,7 +379,7 @@ class WeightedReachabilityHelper {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
                         STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero");
                         rowSumIsLess1 = true;
-                        ValueType const scaledTargetValue = normalForm.targetValue(entry.getColumn()) * entry.getValue();
+                        ValueType const scaledTargetValue = normalForm.getTargetValue(entry.getColumn()) * entry.getValue();
                         targetProbability += scaledTargetValue;
                         if (normalForm.conditionStates.get(entry.getColumn())) {
                             conditionProbability += entry.getValue();  // conditionValue of successor is 1
@@ -671,7 +671,7 @@ std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, Norm
     if (normalForm.terminalStates.get(initialState)) {
         STORM_LOG_DEBUG("Initial state is terminal.");
         if (normalForm.conditionStates.get(initialState)) {
-            return normalForm.targetValue(initialState);  // The value is already known, nothing to do.
+            return normalForm.getTargetValue(initialState);  // The value is already known, nothing to do.
         } else {
             STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::NotSupportedException,
                             "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
@@ -699,10 +699,12 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     auto normalFormConstructionEnv = env;
     auto analysisEnv = env;
     if (env.solver().isForceSoundness()) {
-        normalFormConstructionEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() *
-                                                                 storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10"));
+        // We intuitively have to divide the precision into two parts, one for computations when constructing the normal form and one for the actual analysis.
+        // As the former is usually less numerically challenging, we use a factor of 1/10 for the normal form construction and 9/10 for the analysis.
+        auto const normalFormPrecisionFactor = storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10");
+        normalFormConstructionEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() * normalFormPrecisionFactor);
         analysisEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() *
-                                                   storm::utility::convertNumber<storm::RationalNumber, std::string>("9/10"));
+                                                   (storm::utility::one<storm::RationalNumber>() - normalFormPrecisionFactor));
     }
 
     // We first translate the problem into a normal form.
@@ -727,25 +729,25 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
         STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state");
-        auto alg = analysisEnv.modelchecker().getConditionalAlgorithm();
-        if (alg == ConditionalAlgorithm::Default) {
-            alg = ConditionalAlgorithm::Restart;
+        auto alg = analysisEnv.modelchecker().getConditionalAlgorithmSetting();
+        if (alg == ConditionalAlgorithmSetting::Default) {
+            alg = ConditionalAlgorithmSetting::Restart;
         }
         STORM_LOG_INFO("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg << ".");
         // sw.restart();
         switch (alg) {
-            case ConditionalAlgorithm::Restart:
+            case ConditionalAlgorithmSetting::Restart:
                 initialStateValue = internal::computeViaRestartMethod(analysisEnv, initialState, goal.direction(), transitionMatrix, normalFormData);
                 break;
-            case ConditionalAlgorithm::Bisection:
+            case ConditionalAlgorithmSetting::Bisection:
                 initialStateValue = internal::computeViaBisection(analysisEnv, internal::BisectionMethodBounds::Simple, initialState, goal.direction(),
                                                                   transitionMatrix, normalFormData);
                 break;
-            case ConditionalAlgorithm::BisectionAdvanced:
+            case ConditionalAlgorithmSetting::BisectionAdvanced:
                 initialStateValue = internal::computeViaBisection(analysisEnv, internal::BisectionMethodBounds::Advanced, initialState, goal.direction(),
                                                                   transitionMatrix, normalFormData);
                 break;
-            case ConditionalAlgorithm::PolicyIteration:
+            case ConditionalAlgorithmSetting::PolicyIteration:
                 initialStateValue = internal::computeViaPolicyIteration(analysisEnv, initialState, goal.direction(), transitionMatrix, normalFormData);
                 break;
             default:
