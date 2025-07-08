@@ -263,7 +263,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-    STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidPropertyException,
+    STORM_LOG_THROW(this->getModel().getInitialStates().hasUniqueSetBit(), storm::exceptions::InvalidPropertyException,
                     "Cannot compute conditional probabilities on MDPs with more than one initial state.");
     STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException,
                     "Conditional probabilities can only be computed for the initial states of the model.");

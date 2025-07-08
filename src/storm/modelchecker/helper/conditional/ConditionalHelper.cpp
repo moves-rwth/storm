@@ -711,7 +711,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     // @see doi.org/10.1007/978-3-642-54862-8_43
     STORM_LOG_THROW(goal.hasRelevantValues(), storm::exceptions::NotSupportedException,
                     "No initial state given. Conditional probabilities can only be computed for models with a single initial state.");
-    STORM_LOG_THROW(goal.relevantValues().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(goal.relevantValues().hasUniqueSetBit(), storm::exceptions::NotSupportedException,
                     "Only one initial state is supported for conditional probabilities");
     STORM_LOG_TRACE("Computing conditional probabilities for a model with " << transitionMatrix.getRowGroupCount() << " states and "
                                                                             << transitionMatrix.getEntryCount() << " transitions.");
@@ -721,7 +721,6 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     // sw.stop();
     // STORM_PRINT_AND_LOG("Time for obtaining the normal form: " << sw << ".\n");
     // Then, we solve the induced problem using the selected algorithm
-    STORM_LOG_ASSERT(goal.relevantValues().getNumberOfSetBits() == 1, "Only one initial state is supported for conditional probabilities");
     auto const initialState = *goal.relevantValues().begin();
     ValueType initialStateValue = -storm::utility::one<ValueType>();
     if (auto trivialValue = internal::handleTrivialCases<ValueType, SolutionType>(initialState, normalFormData); trivialValue.has_value()) {
