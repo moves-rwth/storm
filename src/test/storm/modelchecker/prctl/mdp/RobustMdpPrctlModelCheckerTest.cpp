@@ -124,7 +124,7 @@ TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
 }
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
-    expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"]");
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"]", 0.9, 0.9, 0.5, 0.4, true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {

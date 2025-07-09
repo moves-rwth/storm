@@ -17,7 +17,7 @@ class SparseMatrix;
 
 namespace solver {
 
-template<typename ValueType>
+template<typename ValueType, typename SolutionType = ValueType>
 class Multiplier {
    public:
     Multiplier(storm::storage::SparseMatrix<ValueType> const& matrix);
@@ -39,7 +39,8 @@ class Multiplier {
      * @param result The target vector into which to write the multiplication result. Its length must be equal
      * to the number of rows of A. Can be the same as the x vector.
      */
-    virtual void multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const = 0;
+    virtual void multiply(Environment const& env, std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
+                          std::vector<SolutionType>& result) const = 0;
 
     /*!
      * Performs a matrix-vector multiplication in gauss-seidel style.
@@ -50,7 +51,7 @@ class Multiplier {
      * to the number of rows of A.
      * @param backwards if true, the iterations will be performed beginning from the last row and ending at the first row.
      */
-    virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, bool backwards = true) const = 0;
+    virtual void multiplyGaussSeidel(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b, bool backwards = true) const = 0;
 
     /*!
      * Performs a matrix-vector multiplication x' = A*x + b and then minimizes/maximizes over the row groups
@@ -66,10 +67,10 @@ class Multiplier {
      * to the number of rows of A. Can be the same as the x vector.
      * @param choices If given, the choices made in the reduction process are written to this vector.
      */
-    void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType> const& x, std::vector<ValueType> const* b,
-                           std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
+    void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
+                           std::vector<SolutionType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
     virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                   std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result,
+                                   std::vector<SolutionType> const& x, std::vector<ValueType> const* b, std::vector<SolutionType>& result,
                                    std::vector<uint_fast64_t>* choices = nullptr) const = 0;
 
     /*!
@@ -87,10 +88,10 @@ class Multiplier {
      * @param choices If given, the choices made in the reduction process are written to this vector.
      * @param backwards if true, the iterations will be performed beginning from the last rowgroup and ending at the first rowgroup.
      */
-    void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
+    void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
                                       std::vector<uint_fast64_t>* choices = nullptr, bool backwards = true) const;
     virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
-                                              std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
+                                              std::vector<SolutionType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,
                                               bool backwards = true) const = 0;
 
     /*!
@@ -104,7 +105,7 @@ class Multiplier {
      * to the number of rows of A.
      * @param n The number of times to perform the multiplication.
      */
-    void repeatedMultiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const;
+    void repeatedMultiply(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b, uint64_t n) const;
 
     /*!
      * Performs repeated matrix-vector multiplication x' = A*x + b and then minimizes/maximizes over the row groups
@@ -119,23 +120,23 @@ class Multiplier {
      * to the number of rows of A.
      * @param n The number of times to perform the multiplication.
      */
-    void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
+    void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
                                    uint64_t n) const;
 
    protected:
-    std::vector<ValueType>& provideCachedVector(uint64_t size) const;
+    std::vector<SolutionType>& provideCachedVector(uint64_t size) const;
 
-    mutable std::unique_ptr<std::vector<ValueType>> cachedVector;
+    mutable std::unique_ptr<std::vector<SolutionType>> cachedVector;
     storm::storage::SparseMatrix<ValueType> const& matrix;
 };
 
-template<typename ValueType>
+template<typename ValueType, typename SolutionType = ValueType>
 class MultiplierFactory {
    public:
     MultiplierFactory() = default;
     ~MultiplierFactory() = default;
 
-    std::unique_ptr<Multiplier<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix);
+    std::unique_ptr<Multiplier<ValueType, SolutionType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix);
 };
 
 }  // namespace solver

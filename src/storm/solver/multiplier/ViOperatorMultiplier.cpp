@@ -1,6 +1,7 @@
 #include "ViOperatorMultiplier.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -22,12 +23,9 @@ enum class BackendOptimizationDirection { None, Minimize, Maximize };
 template<typename ValueType, BackendOptimizationDirection Dir = BackendOptimizationDirection::None, bool TrackChoices = false>
 class MultiplierBackend {
    public:
-    MultiplierBackend()
-        requires(!TrackChoices)
-        : choiceTracking(std::nullopt) {};
+    MultiplierBackend() requires(!TrackChoices) : choiceTracking(std::nullopt){};
 
-    MultiplierBackend(std::vector<uint64_t>& choices, std::vector<uint64_t> const& rowGroupIndices)
-        requires TrackChoices
+    MultiplierBackend(std::vector<uint64_t>& choices, std::vector<uint64_t> const& rowGroupIndices) requires TrackChoices
         : choiceTracking({choices, rowGroupIndices}) {
         // intentionally left empty.
     }
@@ -108,7 +106,7 @@ class MultiplierBackend {
 template<typename ValueType>
 class PlainMultiplicationBackend {
    public:
-    PlainMultiplicationBackend(std::vector<ValueType>& rowResults) : rowResults(rowResults) {};
+    PlainMultiplicationBackend(std::vector<ValueType>& rowResults) : rowResults(rowResults){};
 
     void startNewIteration() {
         // intentionally left empty.
@@ -144,14 +142,15 @@ class PlainMultiplicationBackend {
 
 }  // namespace detail
 
-template<typename ValueType, bool TrivialRowGrouping>
-ViOperatorMultiplier<ValueType, TrivialRowGrouping>::ViOperatorMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix)
-    : Multiplier<ValueType>(matrix) {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::ViOperatorMultiplier(storm::storage::SparseMatrix<ValueType> const& matrix)
+    : Multiplier<ValueType, SolutionType>(matrix) {
     // Intentionally left empty.
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-typename ViOperatorMultiplier<ValueType, TrivialRowGrouping>::ViOpT& ViOperatorMultiplier<ValueType, TrivialRowGrouping>::initialize() const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+typename ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::ViOpT&
+ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::initialize() const {
     if (!viOperatorFwd) {
         return initialize(false);  // default to backward operator
     } else {
@@ -159,8 +158,9 @@ typename ViOperatorMultiplier<ValueType, TrivialRowGrouping>::ViOpT& ViOperatorM
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-typename ViOperatorMultiplier<ValueType, TrivialRowGrouping>::ViOpT& ViOperatorMultiplier<ValueType, TrivialRowGrouping>::initialize(bool backwards) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+typename ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::ViOpT&
+ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::initialize(bool backwards) const {
     auto& viOp = backwards ? viOperatorBwd : viOperatorFwd;
     if (!viOp) {
         viOp = std::make_unique<ViOpT>();
@@ -173,9 +173,9 @@ typename ViOperatorMultiplier<ValueType, TrivialRowGrouping>::ViOpT& ViOperatorM
     return *viOp;
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiply(Environment const& env, std::vector<ValueType> const& x, std::vector<ValueType> const* b,
-                                                                   std::vector<ValueType>& result) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply(Environment const& env, std::vector<SolutionType> const& x,
+                                                                                 std::vector<ValueType> const* b, std::vector<SolutionType>& result) const {
     if (&result == &x) {
         auto& tmpResult = this->provideCachedVector(x.size());
         multiply(env, x, b, tmpResult);
@@ -183,7 +183,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiply(Environment c
         return;
     }
     auto const& viOp = initialize();
-    detail::PlainMultiplicationBackend<ValueType> backend(result);
+    detail::PlainMultiplicationBackend<SolutionType> backend(result);
     // Below, we just add 'result' as a dummy argument to the apply method.
     // The backend already takes care of filling the result vector while processing the rows.
     if (b) {
@@ -193,12 +193,12 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiply(Environment c
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyGaussSeidel(Environment const& /*env*/, std::vector<ValueType>& x,
-                                                                              std::vector<ValueType> const* b, bool backwards) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiplyGaussSeidel(Environment const& /*env*/, std::vector<SolutionType>& x,
+                                                                                            std::vector<ValueType> const* b, bool backwards) const {
     STORM_LOG_THROW(TrivialRowGrouping, storm::exceptions::NotSupportedException,
                     "This multiplier does not support multiplications without reduction when invoked with non-trivial row groups");
-    detail::MultiplierBackend<ValueType> backend;
+    detail::MultiplierBackend<SolutionType> backend;
     auto const& viOp = initialize(backwards);
     if (b) {
         viOp.applyInPlace(x, *b, backend);
@@ -207,11 +207,12 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyGaussSeidel(En
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir,
-                                                                            std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& x,
-                                                                            std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                                                            std::vector<uint64_t>* choices) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir,
+                                                                                          std::vector<uint64_t> const& rowGroupIndices,
+                                                                                          std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
+                                                                                          std::vector<SolutionType>& result,
+                                                                                          std::vector<uint64_t>* choices) const {
     if (&result == &x) {
         auto& tmpResult = this->provideCachedVector(x.size());
         multiplyAndReduce(env, dir, rowGroupIndices, x, b, tmpResult, choices);
@@ -230,28 +231,27 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyAndReduce(Envi
     };
     if (storm::solver::minimize(dir)) {
         if (choices) {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
             apply(backend);
         } else {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Minimize, false> backend;
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
             apply(backend);
         }
     } else {
         if (choices) {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
             apply(backend);
         } else {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Maximize, false> backend;
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
             apply(backend);
         }
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir,
-                                                                                       std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x,
-                                                                                       std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices,
-                                                                                       bool backwards) const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiplyAndReduceGaussSeidel(
+    Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<SolutionType>& x,
+    std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices, bool backwards) const {
     STORM_LOG_THROW(&rowGroupIndices == &this->matrix.getRowGroupIndices(), storm::exceptions::NotSupportedException,
                     "The row group indices must be the same as the ones stored in the matrix of this multiplier");
     auto const& viOp = initialize(backwards);
@@ -264,28 +264,28 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::multiplyAndReduceGauss
     };
     if (storm::solver::minimize(dir)) {
         if (choices) {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
             apply(backend);
         } else {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Minimize, false> backend;
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
             apply(backend);
         }
     } else {
         if (choices) {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
             apply(backend);
         } else {
-            detail::MultiplierBackend<ValueType, detail::BackendOptimizationDirection::Maximize, false> backend;
+            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
             apply(backend);
         }
     }
 }
 
-template<typename ValueType, bool TrivialRowGrouping>
-void ViOperatorMultiplier<ValueType, TrivialRowGrouping>::clearCache() const {
+template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
+void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::clearCache() const {
     viOperatorBwd.reset();
     viOperatorFwd.reset();
-    Multiplier<ValueType>::clearCache();
+    Multiplier<ValueType, SolutionType>::clearCache();
 };
 
 template class ViOperatorMultiplier<double, true>;
@@ -293,5 +293,11 @@ template class ViOperatorMultiplier<double, false>;
 
 template class ViOperatorMultiplier<storm::RationalNumber, true>;
 template class ViOperatorMultiplier<storm::RationalNumber, false>;
+
+template class ViOperatorMultiplier<storm::Interval, true, double>;
+template class ViOperatorMultiplier<storm::Interval, false, double>;
+
+template class ViOperatorMultiplier<storm::RationalInterval, true, storm::RationalNumber>;
+template class ViOperatorMultiplier<storm::RationalInterval, false, storm::RationalNumber>;
 
 }  // namespace storm::solver

@@ -1,4 +1,5 @@
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
@@ -18,22 +19,20 @@ namespace storm {
 namespace modelchecker {
 namespace helper {
 
-template<typename ValueType>
-SparseNondeterministicStepBoundedHorizonHelper<ValueType>::SparseNondeterministicStepBoundedHorizonHelper(
+template<typename ValueType, typename SolutionType>
+SparseNondeterministicStepBoundedHorizonHelper<ValueType, SolutionType>::SparseNondeterministicStepBoundedHorizonHelper(
     /*storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions*/)
 // transitionMatrix(transitionMatrix), backwardTransitions(backwardTransitions)
 {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-std::vector<ValueType> SparseNondeterministicStepBoundedHorizonHelper<ValueType>::compute(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
-                                                                                          storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                                          storm::storage::BitVector const& phiStates,
-                                                                                          storm::storage::BitVector const& psiStates, uint64_t lowerBound,
-                                                                                          uint64_t upperBound, ModelCheckerHint const& hint) {
-    std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+template<typename ValueType, typename SolutionType>
+std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueType, SolutionType>::compute(
+    Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+    storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+    uint64_t lowerBound, uint64_t upperBound, ModelCheckerHint const& hint) {
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
     storm::storage::BitVector makeZeroColumns;
 
     // Determine the states that have 0 probability of reaching the target states.
@@ -62,15 +61,15 @@ std::vector<ValueType> SparseNondeterministicStepBoundedHorizonHelper<ValueType>
         std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, psiStates);
 
         // Create the vector with which to multiply.
-        std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
+        std::vector<SolutionType> subresult(maybeStates.getNumberOfSetBits());
 
-        auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+        auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
         if (lowerBound == 0) {
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound);
         } else {
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound - lowerBound + 1);
             storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-            auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
+            auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
             b = std::vector<ValueType>(b.size(), storm::utility::zero<ValueType>());
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, lowerBound - 1);
         }
@@ -78,15 +77,15 @@ std::vector<ValueType> SparseNondeterministicStepBoundedHorizonHelper<ValueType>
         storm::utility::vector::setVectorValues(result, maybeStates, subresult);
     }
     if (lowerBound == 0) {
-        storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
+        storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<SolutionType>());
     }
     return result;
 }
 
 template class SparseNondeterministicStepBoundedHorizonHelper<double>;
 template class SparseNondeterministicStepBoundedHorizonHelper<storm::RationalNumber>;
-template class SparseNondeterministicStepBoundedHorizonHelper<storm::Interval>;
-template class SparseNondeterministicStepBoundedHorizonHelper<storm::RationalInterval>;
+template class SparseNondeterministicStepBoundedHorizonHelper<storm::Interval, double>;
+template class SparseNondeterministicStepBoundedHorizonHelper<storm::RationalInterval, storm::RationalNumber>;
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

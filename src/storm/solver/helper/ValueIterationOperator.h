@@ -241,6 +241,15 @@ class ValueIterationOperator {
     }
 
     template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
+    OpT robustInitializeRowRes(std::vector<OpT> const&, OffT const& offsets, uint64_t offsetIndex) const {
+        if constexpr (RobustDirection == OptimizationDirection::Maximize) {
+            return offsets.upper();
+        } else {
+            return offsets.lower();
+        }
+    }
+
+    template<OptimizationDirection RobustDirection, typename OpT, typename OffT>
     OpT robustInitializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
         if constexpr (RobustDirection == OptimizationDirection::Maximize) {
             return offsets[offsetIndex].upper();
@@ -339,7 +348,7 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * lower;
             }
             remainingValue -= lower;
-            SolutionType const diameter = static_cast<SolutionType>(- lower + matrixValueIt->upper());
+            SolutionType const diameter = static_cast<SolutionType>(-lower + matrixValueIt->upper());
             if (!storm::utility::isZero<SolutionType>(diameter)) {
                 applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
@@ -468,7 +477,7 @@ class ValueIterationOperator {
     };
 
     /*!
-     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval.
+     * Cache for robust value iteration, empty struct for other ValueTypes than storm::Interval and storm::RationalInterval.
      */
     ApplyCache<ValueType, int> applyCache;
 
