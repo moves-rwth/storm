@@ -29,11 +29,11 @@ MaximalEndComponent& MaximalEndComponent::operator=(MaximalEndComponent&& other)
     return *this;
 }
 
-bool MaximalEndComponent::operator==(MaximalEndComponent const& other) {
+bool MaximalEndComponent::operator==(MaximalEndComponent const& other) const {
     return stateToChoicesMapping == other.stateToChoicesMapping;
 }
 
-bool MaximalEndComponent::operator!=(MaximalEndComponent const& other) {
+bool MaximalEndComponent::operator!=(MaximalEndComponent const& other) const {
     return stateToChoicesMapping != other.stateToChoicesMapping;
 }
 

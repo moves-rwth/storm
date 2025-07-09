@@ -230,6 +230,10 @@ boost::any ToDiceStringVisitor::visit(UnaryNumericalFunctionExpression const& ex
             expression.getOperand()->accept(*this, data);
             stream << ")";
             break;
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Dice does not support sin/cos functions.");
+            break;
     }
     return boost::any();
 }

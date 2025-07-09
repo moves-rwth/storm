@@ -107,6 +107,26 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
                 storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
+TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, tiny_rewards_negative) {
+    storm::Environment env;
+    env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
+
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards_negative.nm";
+    std::string formulasAsString = "multi(R{\"a\"}max>=0 [C], R{\"b\"}min<=0 [C])";
+
+    // programm, model,  formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, "");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    uint_fast64_t const initState = *mdp->getInitialStates().begin();
+
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[0]->asMultiObjectiveFormula());
+    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+}
+
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";

@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "storm/adapters/GmmxxAdapter.h"
-#include "storm/adapters/gmm.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/utility/SignalHandler.h"
@@ -31,14 +30,24 @@ GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::
 
 template<typename ValueType>
 void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
+#ifdef STORM_HAVE_GMM
     gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
     clearCache();
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>
 void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
+#ifdef STORM_HAVE_GMM
     gmmxxA = storm::adapters::GmmxxAdapter<ValueType>::toGmmxxSparseMatrix(A);
     clearCache();
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>
@@ -50,6 +59,7 @@ GmmxxLinearEquationSolverMethod GmmxxLinearEquationSolver<ValueType>::getMethod(
 
 template<typename ValueType>
 bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+#ifdef STORM_HAVE_GMM
     auto method = getMethod(env);
     auto preconditioner = env.solver().gmmxx().getPreconditioner();
 
@@ -127,6 +137,10 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
 
     STORM_LOG_ERROR("Selected method is not available");
     return false;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>
@@ -136,19 +150,34 @@ LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquat
 
 template<typename ValueType>
 void GmmxxLinearEquationSolver<ValueType>::clearCache() const {
+#ifdef STORM_HAVE_GMM
     iluPreconditioner.reset();
     diagonalPreconditioner.reset();
     LinearEquationSolver<ValueType>::clearCache();
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>
 uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixRowCount() const {
+#ifdef STORM_HAVE_GMM
     return gmmxxA->nr;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>
 uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
+#ifdef STORM_HAVE_GMM
     return gmmxxA->nc;
+#else
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for GMM. Yet, a method was called that "
+                                                          "requires this support.";
+#endif
 }
 
 template<typename ValueType>

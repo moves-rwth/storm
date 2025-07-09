@@ -599,25 +599,16 @@ template<typename T, typename SchedulerValueType>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
                             storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     // Get the states from which we can never exit the rewInfStates, i.e. the states satisfying  Pmax=1 [ G "rewInfStates"]
+    // or, equivalently, the states satisfying Pmin=0 [ F !"rewInfStates"].
+    auto trapStates = performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, rewInfStates, ~rewInfStates);
     // Also set a corresponding choice for all those states
-    storm::storage::BitVector trapStates(rewInfStates.size(), false);
-    auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
-    for (auto state : rewInfStates) {
-        STORM_LOG_ASSERT(nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state] > 0,
-                         "Expected at least one action enabled in state " << state);
-        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-            auto const& row = transitionMatrix.getRow(choice);
-            if (std::all_of(row.begin(), row.end(), [&rewInfStates](auto const& entry) { return rewInfStates.get(entry.getColumn()); })) {
-                trapStates.set(state, true);
-                for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
-                    scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
-                }
-                break;
-            }
-        }
-    }
+    computeSchedulerProb0E(trapStates, transitionMatrix, scheduler);
+
     // All remaining rewInfStates must reach a trapState with positive probability
-    computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, rewInfStates, trapStates, scheduler);
+    auto remainingStates = rewInfStates & ~trapStates;
+    if (!remainingStates.empty()) {
+        computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, remainingStates, trapStates, scheduler);
+    }
 }
 
 template<typename T, typename SchedulerValueType>

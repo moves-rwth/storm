@@ -29,8 +29,8 @@ class BitVectorHashMap {
         BitVectorHashMapIterator(BitVectorHashMap const& map, BitVector::const_iterator indexIt);
 
         // Methods to compare two iterators.
-        bool operator==(BitVectorHashMapIterator const& other);
-        bool operator!=(BitVectorHashMapIterator const& other);
+        bool operator==(BitVectorHashMapIterator const& other) const;
+        bool operator!=(BitVectorHashMapIterator const& other) const;
 
         // Methods to move iterator forward.
         BitVectorHashMapIterator& operator++(int);

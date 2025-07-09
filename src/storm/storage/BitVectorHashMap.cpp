@@ -15,12 +15,12 @@ BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::BitVectorHashMapIte
 }
 
 template<class ValueType, class Hash>
-bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator==(BitVectorHashMapIterator const& other) {
+bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator==(BitVectorHashMapIterator const& other) const {
     return &map == &other.map && *indexIt == *other.indexIt;
 }
 
 template<class ValueType, class Hash>
-bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator!=(BitVectorHashMapIterator const& other) {
+bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator!=(BitVectorHashMapIterator const& other) const {
     return !(*this == other);
 }
 

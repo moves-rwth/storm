@@ -96,13 +96,6 @@ class CoreSettings : public ModuleSettings {
     bool isShowStatisticsSet() const;
 
     /*!
-     * Retrieves whether the option to use Intel TBB is set.
-     *
-     * @return True iff the option was set.
-     */
-    bool isUseIntelTbbSet() const;
-
-    /*!
      * Retrieves the selected engine.
      *
      * @return The selected engine.
@@ -132,8 +125,6 @@ class CoreSettings : public ModuleSettings {
     static const std::string engineOptionName;
     static const std::string engineOptionShortName;
     static const std::string ddLibraryOptionName;
-    static const std::string intelTbbOptionName;
-    static const std::string intelTbbOptionShortName;
 };
 
 }  // namespace modules

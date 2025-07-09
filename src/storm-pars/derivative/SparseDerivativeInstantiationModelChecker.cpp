@@ -17,7 +17,6 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
-#include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -63,10 +62,10 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     // Write results into the placeholders
     for (auto& functionResult : this->functionsUnderived) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
     for (auto& functionResult : this->functionsDerived.at(parameter)) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
 
     auto deltaConstrainedMatrixInstantiated = deltaConstrainedMatricesInstantiated->at(parameter);
@@ -81,7 +80,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     std::vector<ConstantType> instantiatedDerivedOutputVec(derivedOutputVecs->at(parameter).size());
     for (uint_fast64_t i = 0; i < derivedOutputVecs->at(parameter).size(); i++) {
-        instantiatedDerivedOutputVec[i] = utility::convertNumber<ConstantType>(derivedOutputVecs->at(parameter)[i].evaluate(valuation));
+        instantiatedDerivedOutputVec[i] = storm::utility::parametric::evaluate<ConstantType>(derivedOutputVecs->at(parameter)[i], valuation);
     }
 
     instantiationWatch.stop();

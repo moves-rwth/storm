@@ -44,8 +44,8 @@ class StateValuations : public storm::models::sparse::StateAnnotation {
                            typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableEnd,
                            typename std::map<std::string, uint64_t>::const_iterator labelBegin,
                            typename std::map<std::string, uint64_t>::const_iterator labelEnd, StateValuation const* valuation);
-        bool operator==(StateValueIterator const& other);
-        bool operator!=(StateValueIterator const& other);
+        bool operator==(StateValueIterator const& other) const;
+        bool operator!=(StateValueIterator const& other) const;
         StateValueIterator& operator++();
         StateValueIterator& operator--();
 

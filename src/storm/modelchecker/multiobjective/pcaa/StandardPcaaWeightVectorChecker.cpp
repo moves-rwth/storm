@@ -42,6 +42,9 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
     STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException,
                     "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
+    STORM_LOG_WARN_COND(rewardAnalysis.rewardFinitenessType == preprocessing::RewardFinitenessType::AllFinite,
+                        "There might be infinite reward for some scheduler. Multi-objective model checking restricts to schedulers that yield finite reward "
+                        "for all objectives. Be aware that solutions yielding infinite reward are discarded.");
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
     STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,

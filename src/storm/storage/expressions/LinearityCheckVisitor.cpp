@@ -132,6 +132,8 @@ boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& 
             return expression.getOperand()->accept(*this, data);
         case UnaryNumericalFunctionExpression::OperatorType::Floor:
         case UnaryNumericalFunctionExpression::OperatorType::Ceil:
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
             return LinearityStatus::NonLinear;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");
