@@ -1,4 +1,5 @@
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 
@@ -84,6 +85,8 @@ std::vector<ValueType> SparseNondeterministicStepBoundedHorizonHelper<ValueType>
 
 template class SparseNondeterministicStepBoundedHorizonHelper<double>;
 template class SparseNondeterministicStepBoundedHorizonHelper<storm::RationalNumber>;
+template class SparseNondeterministicStepBoundedHorizonHelper<storm::Interval>;
+template class SparseNondeterministicStepBoundedHorizonHelper<storm::RationalInterval>;
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
