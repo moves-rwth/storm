@@ -19,7 +19,8 @@ struct GVIData {
 
 namespace gviinternal {
 
-typedef uint32_t IndexType;
+typedef uint64_t IndexType;
+enum class VerifyResult { Verified, Converged, Unverified };
 
 template<typename ValueType>
 class IterationHelper {
@@ -44,10 +45,6 @@ class IterationHelper {
 
 template<typename ValueType, OptimizationDirection Dir>
 class GVIBackend;
-
-using IndexType = gviinternal::IndexType;
-
-enum class VerifyResult { Verified, Converged, Unverified };
 
 /*!
  * Implements guessing value iteration
@@ -74,7 +71,8 @@ class GuessingValueIterationHelper {
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator;
     gviinternal::IterationHelper<ValueType> iterationHelper;
-    IndexType selectRowGroupToGuess(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX);
+    std::vector<ValueType> guessLower, guessUpper;
+    gviinternal::IndexType selectRowGroupToGuess(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX);
 
     template<OptimizationDirection Dir>
     SolverStatus solveEquations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
@@ -84,9 +82,10 @@ class GuessingValueIterationHelper {
     void applyInPlace(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, GVIBackend<ValueType, Dir>& backend);
 
     template<OptimizationDirection Dir>
-    std::pair<VerifyResult, SolverStatus> tryVerify(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b,
-                                                    uint64_t& numIterations, IndexType rowGroupToGuess, ValueType guessValue, ValueType precision,
-                                                    std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
+    std::pair<gviinternal::VerifyResult, SolverStatus> tryVerify(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX,
+                                                                 const std::vector<ValueType>& b, uint64_t& numIterations,
+                                                                 gviinternal::IndexType rowGroupToGuess, ValueType guessValue, ValueType precision,
+                                                                 std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback);
 
     template<OptimizationDirection Dir>
     SolverStatus doIterations(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,

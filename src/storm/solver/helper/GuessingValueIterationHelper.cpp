@@ -145,7 +145,8 @@ class GVIBackend {
 };
 
 template<typename ValueType, bool TrivialRowGrouping>
-IndexType GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::selectRowGroupToGuess(std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX) {
+gviinternal::IndexType GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::selectRowGroupToGuess(std::vector<ValueType>& lowerX,
+                                                                                                          std::vector<ValueType>& upperX) {
     return iterationHelper.selectRowGroupToGuess(lowerX, upperX);
 }
 
@@ -163,11 +164,12 @@ void GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::applyInPlace(s
 
 template<typename ValueType, bool TrivialRowGrouping>
 template<OptimizationDirection Dir>
-std::pair<VerifyResult, SolverStatus> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::tryVerify(
-    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations, IndexType rowGroupToGuess,
-    ValueType guessValue, ValueType precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
-    auto guessLower = lowerX;
-    auto guessUpper = upperX;
+std::pair<gviinternal::VerifyResult, SolverStatus> GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::tryVerify(
+    std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
+    gviinternal::IndexType rowGroupToGuess, ValueType guessValue, ValueType precision,
+    std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
+    guessLower = lowerX;
+    guessUpper = upperX;
     guessLower[rowGroupToGuess] = guessUpper[rowGroupToGuess] = guessValue;
     ValueType sumLengthBefore = 0, maxLengthBefore = 0;
     GVIBackend<ValueType, Dir> guessingBackend(rowGroupToGuess);
@@ -183,30 +185,30 @@ std::pair<VerifyResult, SolverStatus> GuessingValueIterationHelper<ValueType, Tr
         if (guessValue <= guessedNewLower) {
             lowerX = guessLower;
             lowerX[rowGroupToGuess] = guessedNewLower;
-            return {VerifyResult::Verified, status};
+            return {gviinternal::VerifyResult::Verified, status};
         }
         if (guessedNewUpper <= guessValue) {
             upperX = guessUpper;
             upperX[rowGroupToGuess] = guessedNewUpper;
-            return {VerifyResult::Verified, status};
+            return {gviinternal::VerifyResult::Verified, status};
         }
 
         auto sumLength = iterationHelper.getSumLength(guessLower, guessUpper);
         if (sumLength == sumLengthBefore) {
             // nothing changed. abort the verification
-            return {VerifyResult::Unverified, status};
+            return {gviinternal::VerifyResult::Unverified, status};
         }
         sumLengthBefore = sumLength;
 
         if (iterationHelper.getMaxLength(lowerX, upperX) < 2 * precision) {
-            return {VerifyResult::Converged, status};
+            return {gviinternal::VerifyResult::Converged, status};
         }
 
         if (iterationCallback) {
             status = iterationCallback({lowerX, upperX, status});
         }
     }
-    return {VerifyResult::Unverified, status};
+    return {gviinternal::VerifyResult::Unverified, status};
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
@@ -239,7 +241,7 @@ SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::solveE
                 auto guessValue = (lowerX[rowGroupToGuess] * num + upperX[rowGroupToGuess] * (den - num)) / den;
                 auto [verifyResult, verifyStatus] = tryVerify<Dir>(lowerX, upperX, b, numIterations, rowGroupToGuess, guessValue, precision, iterationCallback);
                 status = verifyStatus;
-                if (verifyResult == VerifyResult::Verified || verifyResult == VerifyResult::Converged) {
+                if (verifyResult == gviinternal::VerifyResult::Verified || verifyResult == gviinternal::VerifyResult::Converged) {
                     didVerify = true;
                     break;
                 }
