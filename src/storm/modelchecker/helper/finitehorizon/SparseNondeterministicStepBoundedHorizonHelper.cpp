@@ -62,7 +62,6 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
         uint64_t subresultSize;
 
         if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
-            std::cout << "Chose interval branch" << std::endl;
             // For intervals, we cannot remove all non maybe states as that would lead to the upper probability of rows summing to below 1.
             // Instead we only drop all outgoing transitions of non maybe states.
             // See src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.cpp:624 for more details.
@@ -90,7 +89,6 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
 
             storm::storage::SparseMatrix<ValueType> submatrix;
             if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
-                std::cout << "Chose interval branch again" << std::endl;
                 submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
             } else {
                 submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
