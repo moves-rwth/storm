@@ -6,7 +6,7 @@
 
 #include "storm/storage/jani/Model.h"
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 TEST(JaniModelTest, FlattenComposition) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));

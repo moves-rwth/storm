@@ -352,9 +352,9 @@ void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::
         ConstantType& placeholder = collectedFunctionValuationPlaceholder.second;
         auto concreteValuations = abstrValuation.getConcreteValuations(region);
         auto concreteValuationIt = concreteValuations.begin();
-        placeholder = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
+        placeholder = storm::utility::parametric::evaluate<ConstantType>(function, *concreteValuationIt);
         for (++concreteValuationIt; concreteValuationIt != concreteValuations.end(); ++concreteValuationIt) {
-            ConstantType currentResult = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
+            ConstantType currentResult = storm::utility::parametric::evaluate<ConstantType>(function, *concreteValuationIt);
             if (storm::solver::minimize(dirForUnspecifiedParameters)) {
                 placeholder = std::min(placeholder, currentResult);
             } else {

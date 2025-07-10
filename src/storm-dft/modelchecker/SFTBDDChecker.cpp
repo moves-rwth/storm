@@ -1,4 +1,3 @@
-#include <gmm/gmm_std.h>
 
 #include <memory>
 #include <vector>
@@ -316,7 +315,7 @@ void SFTBDDChecker::chunkCalculationTemplate(std::vector<ValueType> const &timep
             // Vectorize known BETypes
             // fallback to getUnreliability() otherwise
             if (be->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
-                auto const failureRate{std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType>>(be)->activeFailureRate()};
+                auto const failureRate{std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be)->activeFailureRate()};
 
                 // exponential distribution
                 // p(T <= t) = 1 - exp(-lambda*t)

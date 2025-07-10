@@ -1,5 +1,6 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-dft/parser/BEOrderParser.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
@@ -49,6 +50,9 @@ void processOptions() {
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(*dft, false);
     STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second);
+    // Warn about potential modeling issues
+    auto modelingIssues = storm::dft::api::hasPotentialModelingIssues(*dft);
+    STORM_LOG_WARN_COND(!modelingIssues.first, modelingIssues.second);
 
     // Transformation to GSPN
     if (dftGspnSettings.isTransformToGspn()) {
@@ -138,6 +142,12 @@ void processOptions() {
         std::string importanceMeasureName{""};
         if (isImportanceMeasureSet) {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
+        // Set variable ordering
+        if (dftIOSettings.isVariableOrderingFileSet()) {
+            auto beOrder = storm::dft::parser::BEOrderParser<ValueType>::parseBEOrder(dftIOSettings.getVariableOrderingFilename(), *dft);
+            dft->setBEOrder(beOrder);
         }
 
         auto const additionalRelevantEventNames{faultTreeSettings.getRelevantEvents()};

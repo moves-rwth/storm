@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gmm/gmm_std.h>
-
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <memory>

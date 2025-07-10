@@ -131,7 +131,7 @@ class ModelInstantiator {
                 auto const& annotation = transformer::TimeTravelling::lastSavedAnnotations.at(functionResult.first);
                 functionResult.second = annotation.evaluate(storm::utility::convertNumber<ConstantType>(valuation.at(annotation.getParameter())));
             } else {
-                functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+                functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
             }
         }
     }

@@ -1,5 +1,6 @@
 # Update shipped third party resources
 
+
 ## Eigen
 
 In Eigen, we have adapted `SparseLU` to work with scalar types that do not default construct from a double (like CLN numbers) or that do not have an operator< or std::abs
@@ -17,13 +18,7 @@ In case a new patch needs to be created follow these steps:
 6. Resolve issues, make changes, and commit them
 7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
 8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
-## GLPK
 
-To update GLPK, download the new sources from [here](https://ftp.gnu.org/gnu/glpk/) and put them into `$STORM_DIR/resources/3rdparty/glpk-5.0`.
-We remove some unnecessary files to reduce the size of the folder:
-1. Remove the folders `doc` and `examples`
-2. Remove these folders from the `SUBDIRS` in `Makefile.am`
-3. Recreate the `configure` script via `autoconf`
 
 ## googletest / gtest
 
@@ -36,6 +31,12 @@ grep GOOGLETEST_VERSION $STORM_DIR/resources/3rdparty/googletest/CMakeLists.txt
 ```
 
 We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. Note that our code might not be compatible with future versions of gtest.
+
+
+## Gurobi
+
+To support newer versions of Gurobi, adapt `$STORM_DIR/resources/cmake/find_modules/FindGUROBI.cmake` with the new version numbers.
+
 
 ## nlohmann/json for Modern C++
 
@@ -60,12 +61,12 @@ Remove directories that are not needed, e.g, `rm -r doc examples html css benchm
 
 ## Spot
 
-To update (shipped version of Spot), just change the url in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
+To update (shipped version of Spot), just change the `SPOT_SHIPPED_VERSION` in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.
 
 
 ## Sylvan & Lace
 
-The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253 (tag 1.7.1)
+The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253 (tag 1.7.1) but with parts of the build system updated to a newer version.
 Our Sylvan version also includes [lace](https://github.com/trolando/lace) which is currently based on commit 3577d983e8c40e276fb8070dc4c12c68940e2f2c (tag 1.4.0)
 To update, you can follow these steps:
 

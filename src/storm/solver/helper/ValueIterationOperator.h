@@ -170,15 +170,12 @@ class ValueIterationOperator {
      */
     template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
-        STORM_LOG_ASSERT(getSize(operandIn) == getSize(operandOut), "Input and Output Operands have different sizes.");
-        auto const operandSize = getSize(operandIn);
-        STORM_LOG_ASSERT(
-            TrivialRowGrouping || rowGroupIndices->size() == operandSize + 1,
-            "Number of rowGroupIndices (" << rowGroupIndices << " ) does not match size of the operand vector plus one (" << operandSize + 1 << ")");
+        auto const outSize = TrivialRowGrouping ? getSize(operandOut) : rowGroupIndices->size() - 1;
+        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch");
         backend.startNewIteration();
         auto matrixValueIt = matrixValues.cbegin();
         auto matrixColumnIt = matrixColumns.cbegin();
-        for (auto groupIndex : indexRange<Backward>(0, operandSize)) {
+        for (auto groupIndex : indexRange<Backward>(0, outSize)) {
             STORM_LOG_ASSERT(matrixColumnIt != matrixColumns.end(), "VI Operator in invalid state.");
             STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
             if constexpr (TrivialRowGrouping) {
@@ -220,6 +217,11 @@ class ValueIterationOperator {
     }
 
     // Auxiliary methods to deal with various OperandTypes and OffsetTypes
+
+    template<typename OpT>
+    OpT initializeRowRes(std::vector<OpT> const&, OpT const& offsets, uint64_t offsetIndex) const {
+        return offsets;
+    }
 
     template<typename OpT, typename OffT>
     OpT initializeRowRes(std::vector<OpT> const&, std::vector<OffT> const& offsets, uint64_t offsetIndex) const {
@@ -313,7 +315,7 @@ class ValueIterationOperator {
 
         applyCache.robustOrder.clear();
 
-        if (applyCache.hasOnlyConstants.get(offsetIndex)) {
+        if (applyCache.hasOnlyConstants.size() > 0 && applyCache.hasOnlyConstants.get(offsetIndex)) {
             for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt) {
                 auto const lower = matrixValueIt->lower();
                 if constexpr (isPair<OperandType>::value) {
@@ -467,17 +469,17 @@ class ValueIterationOperator {
     /*!
      * Bitmask that indicates the start of a row in the 'matrixColumns' vector
      */
-    IndexType const StartOfRowIndicator = 1ull << 63;  // 10000..0
+    static constexpr IndexType StartOfRowIndicator = 1ull << 63;  // 10000..0
 
     /*!
      * Bitmask that indicates the start of a row group in the 'matrixColumns' vector
      */
-    IndexType const StartOfRowGroupIndicator = StartOfRowIndicator + (1ull << 62);  // 11000..0
+    static constexpr IndexType StartOfRowGroupIndicator = StartOfRowIndicator + (1ull << 62);  // 11000..0
 
     /*!
      * Ignored rows are encoded by adding the number of skipped entries to the row indicator. This Bitmask helps to get the number of skipped entries
      */
-    IndexType const SkipNumEntriesMask = ~StartOfRowGroupIndicator;  // 00111..1
+    static constexpr IndexType SkipNumEntriesMask = ~StartOfRowGroupIndicator;  // 00111..1
 };
 
 }  // namespace solver::helper
