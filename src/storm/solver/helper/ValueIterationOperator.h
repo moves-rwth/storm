@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -322,6 +323,8 @@ class ValueIterationOperator {
         STORM_LOG_ASSERT(*matrixColumnIt >= StartOfRowIndicator, "VI Operator in invalid state.");
         SolutionType result{robustInitializeRowRes<RobustDirection>(operand, offsets, offsetIndex)};
 
+        std::cout << "Robust value iteration apply row robust start" << std::endl;
+
         applyCache.robustOrder.clear();
 
         if (applyCache.hasOnlyConstants.size() > 0 && applyCache.hasOnlyConstants.get(offsetIndex)) {
@@ -341,6 +344,7 @@ class ValueIterationOperator {
         uint64_t orderCounter = 0;
         for (++matrixColumnIt; *matrixColumnIt < StartOfRowIndicator; ++matrixColumnIt, ++matrixValueIt, ++orderCounter) {
             SolutionType const lower = matrixValueIt->lower();
+            std::cout << "Robust value iteration: lower = " << lower << std::endl;
             if constexpr (isPair<OperandType>::value) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Value Iteration is not implemented with pairs and interval-models.");
                 // Notice the unclear semantics here in terms of how to order things.
@@ -357,11 +361,15 @@ class ValueIterationOperator {
             return result;
         }
 
+        std::cout << "Robust value iteration: remaining value = " << remainingValue << std::endl;
+
         static AuxCompare<RobustDirection> cmp;
         std::sort(applyCache.robustOrder.begin(), applyCache.robustOrder.end(), cmp);
 
         for (auto const& pair : applyCache.robustOrder) {
             SolutionType availableMass = std::min(pair.second.first, remainingValue);
+            std::cout << "Robust value iteration: available mass = " << availableMass << " for diameter " << pair.second.first << " and remaining value "
+                      << remainingValue << std::endl;
             result += availableMass * pair.first;
             remainingValue -= availableMass;
             if (storm::utility::isZero(remainingValue)) {

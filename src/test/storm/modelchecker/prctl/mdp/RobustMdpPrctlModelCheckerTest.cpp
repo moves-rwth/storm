@@ -168,9 +168,9 @@ TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
 }
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
-    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.9, 0.9, 0.9, 0.9, true);
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber(9, 10),
-                       storm::RationalNumber(9, 10), storm::RationalNumber(9, 10), storm::RationalNumber(9, 10), true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.5, 0.5, 0.5, 0.5, true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber(1, 2),
+                       storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {

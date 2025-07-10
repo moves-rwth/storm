@@ -6,6 +6,7 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/storage/BitVector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -56,19 +57,45 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
     STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " non-target states with probability greater 0.");
 
     if (!maybeStates.empty()) {
-        // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-        storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false, makeZeroColumns);
-        std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, psiStates);
+        storm::storage::SparseMatrix<ValueType> submatrix;
+        std::vector<ValueType> b;
+        uint64_t subresultSize;
+
+        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+            std::cout << "Chose interval branch" << std::endl;
+            // For intervals, we cannot remove all non maybe states as that would lead to the upper probability of rows summing to below 1.
+            // Instead we only drop all outgoing transitions of non maybe states.
+            // See src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.cpp:624 for more details.
+            submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
+
+            storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates));
+
+            subresultSize = transitionMatrix.getRowCount();
+        } else {
+            // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
+            submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false, makeZeroColumns);
+
+            b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, psiStates);
+            subresultSize = maybeStates.getNumberOfSetBits();
+        }
 
         // Create the vector with which to multiply.
-        std::vector<SolutionType> subresult(maybeStates.getNumberOfSetBits());
+        std::vector<SolutionType> subresult(subresultSize);
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
         if (lowerBound == 0) {
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound);
         } else {
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound - lowerBound + 1);
-            storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
+
+            storm::storage::SparseMatrix<ValueType> submatrix;
+            if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+                std::cout << "Chose interval branch again" << std::endl;
+                submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
+            } else {
+                submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
+            }
+
             auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
             b = std::vector<ValueType>(b.size(), storm::utility::zero<ValueType>());
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, lowerBound - 1);
