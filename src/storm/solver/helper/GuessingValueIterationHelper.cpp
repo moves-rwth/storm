@@ -15,41 +15,22 @@ namespace storm::solver::helper {
 namespace gviinternal {
 
 template<typename ValueType>
-IterationHelper<ValueType>::IterationHelper(const storage::SparseMatrix<ValueType>& matrix) {
-    STORM_LOG_THROW(static_cast<uint64_t>(std::numeric_limits<IndexType>::max()) > matrix.getRowCount() + 1, storm::exceptions::NotSupportedException,
-                    "Matrix dimensions too large.");
-    STORM_LOG_THROW(static_cast<uint64_t>(std::numeric_limits<IndexType>::max()) > matrix.getEntryCount(), storm::exceptions::NotSupportedException,
-                    "Matrix dimensions too large.");
-    matrixValues.reserve(matrix.getNonzeroEntryCount());
-    matrixColumns.reserve(matrix.getColumnCount());
-    rowIndications.reserve(matrix.getRowCount() + 1);
-    rowIndications.push_back(0);
-    for (IndexType r = 0; r < static_cast<IndexType>(matrix.getRowCount()); ++r) {
-        for (auto const& entry : matrix.getRow(r)) {
-            matrixValues.push_back(entry.getValue());
-            matrixColumns.push_back(entry.getColumn());
-        }
-        rowIndications.push_back(matrixValues.size());
-    }
-    rowGroupIndices = &matrix.getRowGroupIndices();
-}
+IterationHelper<ValueType>::IterationHelper(const storage::SparseMatrix<ValueType>& matrix_) : matrix(matrix_) {}
 
 template<typename ValueType>
-void IterationHelper<ValueType>::swipeWeights(std::vector<ValueType>& weights) {
+void IterationHelper<ValueType>::swipeWeights() {
+    const auto& rowGroupIndices = matrix.getRowGroupIndices();
     IndexType i = weights.size();
     while (i > 0) {
         --i;
 
-        auto den = storm::utility::convertNumber<ValueType>((*rowGroupIndices)[i + 1] - (*rowGroupIndices)[i]);
+        auto den = storm::utility::convertNumber<ValueType>(rowGroupIndices[i + 1] - rowGroupIndices[i]);
         auto weightOnGroup = weights[i] / den;
         weights[i] = 0;
 
-        for (auto row = (*rowGroupIndices)[i]; row < (*rowGroupIndices)[i + 1]; ++row) {
-            auto itV = matrixValues.begin() + rowIndications[row];
-            auto itVEnd = matrixValues.begin() + rowIndications[row + 1];
-            auto itC = matrixColumns.begin() + rowIndications[row];
-            for (; itV != itVEnd; ++itV, ++itC) {
-                weights[*itC] += weightOnGroup * *itV;
+        for (auto row = rowGroupIndices[i]; row < rowGroupIndices[i + 1]; ++row) {
+            for (auto const& entry : matrix.getRow(row)) {
+                weights[entry.getColumn()] += weightOnGroup * entry.getValue();
             }
         }
     }
@@ -57,13 +38,13 @@ void IterationHelper<ValueType>::swipeWeights(std::vector<ValueType>& weights) {
 
 template<typename ValueType>
 IndexType IterationHelper<ValueType>::selectRowGroupToGuess(const std::vector<ValueType>& lowerX, const std::vector<ValueType>& upperX) {
-    std::vector<ValueType> weights(upperX);
+    weights = upperX;
     // upper - lower
     storm::utility::vector::addScaledVector<ValueType, ValueType>(weights, lowerX, -1);
 
     std::vector<ValueType> additiveWeights(weights.size(), 0);
     for (int i = 0; i < 50; i++) {
-        swipeWeights(weights);
+        swipeWeights();
         storm::utility::vector::addScaledVector(additiveWeights, weights, 1);
     }
 
@@ -71,7 +52,7 @@ IndexType IterationHelper<ValueType>::selectRowGroupToGuess(const std::vector<Va
 }
 
 template<typename ValueType>
-ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) {
+ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const {
     auto itL = lower.begin();
     const auto itLEnd = lower.end();
     auto itU = upper.begin();
@@ -85,7 +66,7 @@ ValueType IterationHelper<ValueType>::getMaxLength(std::vector<ValueType>& lower
 }
 
 template<typename ValueType>
-ValueType IterationHelper<ValueType>::getSumLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) {
+ValueType IterationHelper<ValueType>::getSumLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const {
     ValueType sum = 0;
     auto itL = lower.begin();
     const auto itLEnd = lower.end();

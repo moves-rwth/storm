@@ -25,20 +25,19 @@ enum class VerifyResult { Verified, Converged, Unverified };
 template<typename ValueType>
 class IterationHelper {
    public:
-    IterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix);
+    IterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix_);
 
     IndexType selectRowGroupToGuess(const std::vector<ValueType>& lowerX, const std::vector<ValueType>& upperX);
 
-    ValueType getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper);
-    ValueType getSumLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper);
+    ValueType getMaxLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const;
+    ValueType getSumLength(std::vector<ValueType>& lower, std::vector<ValueType>& upper) const;
 
    private:
-    std::vector<ValueType> matrixValues;
-    std::vector<IndexType> matrixColumns;
-    std::vector<IndexType> rowIndications;
-    std::vector<uint64_t> const* rowGroupIndices;
+    storm::storage::SparseMatrix<ValueType> const& matrix;
+    // this is only used to avoid reallocations
+    std::vector<ValueType> weights;
 
-    void swipeWeights(std::vector<ValueType>& weights);
+    void swipeWeights();
 };
 
 }  // namespace gviinternal
