@@ -1566,7 +1566,13 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
 
             // Check all updates.
             for (auto const& update : command.getUpdates()) {
-                containedVariables = update.getLikelihoodExpression().getVariables();
+                containedVariables.clear();
+                if (update.isLikelihoodInterval()) {
+                    update.getLikelihoodExpressionInterval().first.gatherVariables(containedVariables);
+                    update.getLikelihoodExpressionInterval().second.gatherVariables(containedVariables);
+                } else {
+                    update.getLikelihoodExpression().gatherVariables(containedVariables);
+                }
                 illegalVariables.clear();
                 std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(),
                                     std::inserter(illegalVariables, illegalVariables.begin()));

@@ -38,6 +38,8 @@ Update::Update(uint_fast64_t globalIndex, ExpressionPair const& likelihoodExpres
       assignments(assignments),
       variableToAssignmentIndexMap(),
       globalIndex(globalIndex) {
+    STORM_LOG_ASSERT(likelihoodExpressions.first.isInitialized(), "likelihoodExpression must be initialized");
+    // Note: likelihoodExpressions.second might be uninitialized in which case we're having a non-interval likelihood
     STORM_LOG_ASSERT(isValidLikelihood(likelihoodExpressions.first),
                      "Negative likelihood expressions are not allowed. Got " << likelihoodExpressions.first << ".");
     STORM_LOG_ASSERT(isValidLikelihood(likelihoodExpressions.second),

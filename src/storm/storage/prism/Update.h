@@ -25,10 +25,11 @@ class Update : public LocatedInformation {
     Update(uint_fast64_t globalIndex, storm::expressions::Expression const& likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments,
            std::string const& filename = "", uint_fast64_t lineNumber = 0);
     /*!
-     * Creates an update with the given expression specifying the likelihood and assignments.
+     * Creates an update with the given expression specifying the likelihood (possibly as an interval) and assignments.
+     * The likelihood is assumed to be an interval iff likelihoodExpressionInterval.second.isInitialized() holds.
      *
      * @param globalIndex The global index of the update.
-     * @param likelihoodExpression An expression specifying the likelihood of this update.
+     * @param likelihoodExpression expressions specifying the likelihood of this update.
      * @param assignments A assignments to variables.
      * @param filename The filename in which the update is defined.
      * @param lineNumber The line number in which the update is defined.
@@ -44,7 +45,7 @@ class Update : public LocatedInformation {
     Update& operator=(Update&& other) = default;
 
     bool isLikelihoodInterval() const;
-    
+
     /*!
      * Retrieves the expression for the likelihood of this update.
      *

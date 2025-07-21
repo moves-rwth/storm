@@ -250,6 +250,7 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
     qi::rule<Iterator, storm::prism::Command(GlobalProgramInformation&), qi::locals<bool>, Skipper> commandDefinition;
     qi::rule<Iterator, std::vector<storm::prism::Update>(GlobalProgramInformation&), Skipper> updateListDefinition;
     qi::rule<Iterator, storm::prism::Update(GlobalProgramInformation&), Skipper> updateDefinition;
+    qi::rule<Iterator, typename storm::prism::Update::ExpressionPair, Skipper> likelihoodDefinition;
     qi::rule<Iterator, std::vector<storm::prism::Assignment>(), Skipper> assignmentDefinitionList;
     qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
     qi::rule<Iterator, std::string(), Skipper> knownActionName;
@@ -379,8 +380,9 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
                                                           storm::expressions::Expression rewardValueExpression,
                                                           GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Assignment createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const;
-    storm::prism::Update createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments,
-                                      GlobalProgramInformation& globalProgramInformation) const;
+    storm::prism::Update createUpdate(typename storm::prism::Update::ExpressionPair likelihoodExpressions,
+                                      std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const;
+
     storm::prism::Command createCommand(bool markovianCommand, boost::optional<std::string> const& actionName, storm::expressions::Expression guardExpression,
                                         std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const;
     storm::prism::Command createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const;

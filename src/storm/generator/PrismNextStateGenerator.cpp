@@ -24,6 +24,14 @@
 
 #include "storm/utility/vector.h"
 
+namespace carl {
+template<>
+unsigned long rationalize<unsigned long>(double i) {
+    assert(false);  // todo: this prevents a linker error that I haven't located so far.
+    return 0;
+}
+}  // namespace carl
+
 namespace storm {
 namespace generator {
 
@@ -41,6 +49,8 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
     STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException,
                     "The explicit next-state generator currently does not support custom system compositions.");
+    STORM_LOG_THROW(storm::IsIntervalType<ValueType> || !this->program.hasIntervalUpdates(), storm::exceptions::WrongFormatException,
+                    "The provided PRISM program contains interval updates, which are not supported by the chosen value type.");
 
     // Only after checking validity of the program, we initialize the variable information.
     this->checkValid();
@@ -48,7 +58,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     this->initializeSpecialStates();
 
     // Create a proper evaluator.
-    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
+    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<BaseValueType>>(program.getManager());
 
     if (this->options.isBuildAllRewardModelsSet()) {
         for (auto const& rewardModel : this->program.getRewardModels()) {
@@ -592,6 +602,22 @@ PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(ui
     return result;
 }
 
+template<typename ValueType>
+ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, auto const& evaluator) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        if (update.isLikelihoodInterval()) {
+            auto lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
+            auto upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
+            return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
+        } else {
+            return evaluator.asRational(update.getLikelihoodExpression());
+        }
+    } else {
+        STORM_LOG_ASSERT(!update.isLikelihoodInterval(), "Unexpected interval likelihood for non-interval model in update " << update << ".");
+        return evaluator.asRational(update.getLikelihoodExpression());
+    }
+}
+
 template<typename ValueType, typename StateType>
 std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state,
                                                                                                      StateToIdCallback stateToIdCallback,
@@ -641,7 +667,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                 storm::prism::Update const& update = command.getUpdate(k);
 
-                ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
+                ValueType probability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
                 if (probability != storm::utility::zero<ValueType>()) {
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
@@ -854,7 +880,7 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
         storm::prism::Command const& command = *iteratorList[position];
         for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
             storm::prism::Update const& update = command.getUpdate(j);
-            generateSynchronizedDistribution(applyUpdate(state, update), probability * this->evaluator->asRational(update.getLikelihoodExpression()),
+            generateSynchronizedDistribution(applyUpdate(state, update), probability * evaluateLikelihoodExpression<ValueType>(update, *this->evaluator),
                                              position + 1, iteratorList, distribution, stateToIdCallback);
         }
     }
@@ -1014,7 +1040,7 @@ storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluat
 }
 
 template<typename ValueType, typename StateType>
-void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result) const {
+void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<BaseValueType>& result) const {
     for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
         result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());
     }
@@ -1074,10 +1100,8 @@ bool PrismNextStateGenerator<ValueType, StateType>::isCommandPotentiallySynchron
 }
 
 template class PrismNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class PrismNextStateGenerator<storm::RationalNumber>;
 template class PrismNextStateGenerator<storm::RationalFunction>;
-#endif
+template class PrismNextStateGenerator<storm::Interval>;
 }  // namespace generator
 }  // namespace storm
