@@ -5,11 +5,17 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
+#pragma GCC diagnostic ignored "-Wpessimizing-move"
+
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
 #include <carl/core/Relation.h>
 #include <carl/core/VariablePool.h>
+
+#pragma GCC diagnostic pop
 
 namespace carl {
 // Define hash values for all polynomials and rational function.

@@ -124,6 +124,11 @@ class SmtSolver {
     void add(std::initializer_list<storm::expressions::Expression> const& assertions);
 
     /*!
+     * If supported by the solver, this function tells the SMT solver to produce a model different from the current model.
+     */
+    virtual void addNotCurrentModel(bool performSolverReset = true);
+
+    /*!
      * Checks whether the conjunction of assertions that are currently on the solver's stack is satisfiable.
      *
      * @return Sat if the conjunction of the asserted expressions is satisfiable, Unsat if it is unsatisfiable

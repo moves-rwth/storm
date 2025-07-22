@@ -103,6 +103,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
             return this->keepRewards;
         }
 
+        void setKeepRewards(bool keepRewards) {
+            this->keepRewards = keepRewards;
+        }
+
         bool isOptimizationDirectionSet() const {
             return static_cast<bool>(optimalityType);
         }
