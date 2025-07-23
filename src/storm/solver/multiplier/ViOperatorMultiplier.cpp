@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -222,28 +223,36 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     STORM_LOG_THROW(&rowGroupIndices == &this->matrix.getRowGroupIndices(), storm::exceptions::NotSupportedException,
                     "The row group indices must be the same as the ones stored in the matrix of this multiplier");
     auto const& viOp = initialize();
-    auto apply = [&]<typename BT>(BT& backend) {
-        if (b) {
-            viOp.apply(x, result, *b, backend);
+    auto apply = [&]<typename BT>(BT& backend, OptimizationDirection od) {
+        if (od == OptimizationDirection::Minimize) {
+            if (b) {
+                viOp.template applyRobust<OptimizationDirection::Minimize>(x, result, *b, backend);
+            } else {
+                viOp.template applyRobust<OptimizationDirection::Minimize>(x, result, storm::utility::zero<ValueType>(), backend);
+            }
         } else {
-            viOp.apply(x, result, storm::utility::zero<ValueType>(), backend);
+            if (b) {
+                viOp.template applyRobust<OptimizationDirection::Maximize>(x, result, *b, backend);
+            } else {
+                viOp.template applyRobust<OptimizationDirection::Maximize>(x, result, storm::utility::zero<ValueType>(), backend);
+            }
         }
     };
     if (storm::solver::minimize(dir)) {
         if (choices) {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend);
+            apply(backend, OptimizationDirection::Maximize);
         } else {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
-            apply(backend);
+            apply(backend, OptimizationDirection::Maximize);
         }
     } else {
         if (choices) {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend);
+            apply(backend, OptimizationDirection::Minimize);
         } else {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
-            apply(backend);
+            apply(backend, OptimizationDirection::Minimize);
         }
     }
 }
