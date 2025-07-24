@@ -91,6 +91,14 @@ void GurobiEnvironment::setOutput(bool set) {
 #endif
 }
 
+void GurobiEnvironment::setTimeLimit(uint64_t seconds) {
+#ifdef STORM_HAVE_GUROBI
+    int error = GRBsetintparam(env, "TimeLimit", seconds);
+    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                    "Unable to set Gurobi time limit (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+#endif
+}
+
 #ifdef STORM_HAVE_GUROBI
 
 template<typename ValueType, bool RawMode>
@@ -591,11 +599,7 @@ uint64_t GurobiLpSolver<ValueType, RawMode>::getSolutionCount() const {
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException,
+        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
@@ -623,11 +627,7 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getContinuousValue(Variable const&
 template<typename ValueType, bool RawMode>
 int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException,
+        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
@@ -658,11 +658,7 @@ int_fast64_t GurobiLpSolver<ValueType, RawMode>::getIntegerValue(Variable const&
 template<typename ValueType, bool RawMode>
 bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable, uint64_t const& solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException,
+        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
@@ -698,11 +694,7 @@ bool GurobiLpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getObjectiveValue(uint64_t solutionIndex) const {
     if (!this->isOptimal()) {
-        STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from infeasible model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException,
-                        "Unable to get Gurobi solution from unbounded model (" << GRBgeterrormsg(**environment) << ").");
-        STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException,
+        STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidAccessException,
                         "Unable to get Gurobi solution from unoptimized model (" << GRBgeterrormsg(**environment) << ").");
     }
     STORM_LOG_ASSERT(solutionIndex < getSolutionCount(), "Invalid solution index.");
@@ -742,6 +734,11 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     } else {
         return storm::utility::abs<ValueType>(result * getObjectiveValue());
     }
+}
+
+template<typename ValueType, bool RawMode>
+void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t seconds) {
+    environment->setTimeLimit(seconds);
 }
 
 #else
@@ -908,6 +905,13 @@ void GurobiLpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, boo
 
 template<typename ValueType, bool RawMode>
 ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
+                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+}
+
+t
+template<typename ValueType, bool RawMode>
+void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of storm with Gurobi support.";
 }
