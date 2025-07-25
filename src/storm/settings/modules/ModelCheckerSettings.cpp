@@ -4,16 +4,14 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
-namespace settings {
-namespace modules {
+namespace storm::settings::modules {
 
 const std::string ModelCheckerSettings::moduleName = "modelchecker";
 const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
 const std::string ModelCheckerSettings::ltl2daToolOptionName = "ltl2datool";
+const std::string ModelCheckerSettings::conditionalAlgorithmOptionName = "conditional";
 
 ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false,
@@ -25,6 +23,15 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
                                          "filename", "A script that can be called with a prefix formula and a name for the output automaton.")
+                                         .build())
+                        .build());
+
+    std::vector<std::string> const conditionalAlgs = {"default", "restart", "bisection", "bisection-advanced", "pi"};
+    this->addOption(storm::settings::OptionBuilder(moduleName, conditionalAlgorithmOptionName, false, "The used algorithm for conditional probabilities.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(conditionalAlgs))
+                                         .setDefaultValueString("default")
                                          .build())
                         .build());
 }
@@ -41,6 +48,12 @@ std::string ModelCheckerSettings::getLtl2daTool() const {
     return this->getOption(ltl2daToolOptionName).getArgumentByName("filename").getValueAsString();
 }
 
-}  // namespace modules
-}  // namespace settings
-}  // namespace storm
+bool ModelCheckerSettings::isConditionalAlgorithmSet() const {
+    return this->getOption(conditionalAlgorithmOptionName).getHasOptionBeenSet();
+}
+
+ConditionalAlgorithmSetting ModelCheckerSettings::getConditionalAlgorithmSetting() const {
+    return conditionalAlgorithmSettingFromString(this->getOption(conditionalAlgorithmOptionName).getArgumentByName("name").getValueAsString());
+}
+
+}  // namespace storm::settings::modules
