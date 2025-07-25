@@ -335,6 +335,84 @@ inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput co
     return mpi;
 }
 
+auto castAndApply(std::shared_ptr<storm::models::ModelBase> const& model, auto const& callback) {
+    STORM_LOG_ASSERT(model, "Tried to cast a model that does not exist.");
+
+    // Helper to actually perform the cast once value type and model representation type is known
+    auto castAndApplyImpl = [&model, &callback]<typename TargetModelType> {
+        auto res = model->template as<TargetModelType>();
+        STORM_LOG_ASSERT(res, "Casting model pointer failed unexpectedly.");
+        return callback(res);
+    };
+
+    // Helper to branch on type of model representation
+    auto castAndApplyVT = [&]<typename ValueType> {
+        if (model->isSparseModel()) {
+            return castAndApplyImpl.template operator()<storm::models::sparse::Model<ValueType>>();
+        } else {
+            auto ddType = model->getDdType();
+            STORM_LOG_ASSERT(model->isSymbolicModel() && ddType.has_value(), "Unexpected model representation");
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                // Avoiding a couple of unnecessary template instantiations
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Symbolic interval models are currently not supported.");
+            } else {
+                using enum storm::dd::DdType;
+                if (*ddType == CUDD) {
+                    if constexpr (std::is_same_v<ValueType, double>) {
+                        return castAndApplyImpl.template operator()<storm::models::symbolic::Model<CUDD, ValueType>>();
+                    }
+                }
+                STORM_LOG_ASSERT(*ddType == Sylvan, "Unexpected Dd type");
+                return castAndApplyImpl.template operator()<storm::models::symbolic::Model<Sylvan, ValueType>>();
+            }
+        }
+    };
+
+    // branch on type of value representation
+    if (model->supportsParameters()) {
+        return castAndApplyVT.template operator()<storm::RationalFunction>();
+    } else if (model->isExact()) {
+        return castAndApplyVT.template operator()<storm::RationalNumber>();
+    } else if (model->supportsUncertainty()) {
+        return castAndApplyVT.template operator()<storm::Interval>();
+    } else {
+        return castAndApplyVT.template operator()<double>();
+    }
+}
+
+auto applyValueType(ModelProcessingInformation::ValueType vt, auto const& callback) {
+    using enum ModelProcessingInformation::ValueType;
+    switch (vt) {
+        case FinitePrecision:
+            return callback.template operator()<double>();
+        case Exact:
+            return callback.template operator()<storm::RationalNumber>();
+        case Parametric:
+            return callback.template operator()<storm::RationalFunction>();
+    }
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected value type.");
+}
+
+auto applyDdLibValueType(storm::dd::DdType dd, ModelProcessingInformation::ValueType vt, auto const& callback) {
+    using enum storm::dd::DdType;
+    using enum ModelProcessingInformation::ValueType;
+    switch (dd) {
+        case CUDD:
+            STORM_LOG_THROW(vt == FinitePrecision, storm::exceptions::UnexpectedException, "Unexpected value type for DD library Cudd.");
+            return callback.template operator()<CUDD, double>();
+        case Sylvan:
+            switch (vt) {
+                case FinitePrecision:
+                    return callback.template operator()<Sylvan, double>();
+                case Exact:
+                    return callback.template operator()<Sylvan, storm::RationalNumber>();
+                case Parametric:
+                    return callback.template operator()<Sylvan, storm::RationalFunction>();
+            }
+    }
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected DDType or value type.");
+}
+
 inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property> const& properties) {
     // Make sure there are no undefined constants remaining in any property.
     for (auto const& property : properties) {
@@ -491,7 +569,15 @@ inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(Symbo
 
 template<typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::builder::BuilderOptions const& options) {
-    return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
+    // Adapt the ValueType if it does not support intervals and the input is an interval model
+    if (!storm::IsIntervalType<ValueType> && input.model.is_initialized() && input.model->isPrismProgram() &&
+        input.model->asPrismProgram().hasIntervalUpdates()) {
+        STORM_LOG_THROW((std::is_same_v<ValueType, storm::IntervalBaseType<storm::Interval>>), storm::exceptions::NotSupportedException,
+                        "Can not build interval model for the provided value type.");
+        return storm::api::buildSparseModel<storm::Interval>(input.model.get(), options);
+    } else {
+        return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
+    }
 }
 
 template<typename ValueType>
@@ -515,24 +601,27 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
     return result;
 }
 
-template<storm::dd::DdType DdType, typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
-                                                     ModelProcessingInformation const& mpi) {
+inline std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input, storm::settings::modules::IOSettings const& ioSettings,
+                                                            ModelProcessingInformation const& mpi) {
     storm::utility::Stopwatch modelBuildingWatch(true);
 
     std::shared_ptr<storm::models::ModelBase> result;
     if (input.model) {
         auto builderType = storm::utility::getBuilderType(mpi.engine);
         if (builderType == storm::builder::BuilderType::Dd) {
-            result = buildModelDd<DdType, ValueType>(input);
+            result = applyDdLibValueType(mpi.ddType, mpi.buildValueType, [&input]<storm::dd::DdType DD, typename VT>() { return buildModelDd<DD, VT>(input); });
         } else if (builderType == storm::builder::BuilderType::Explicit) {
-            auto options = createBuildOptionsSparseFromSettings(input);
-            result = buildModelSparse<ValueType>(input, options);
+            result = applyValueType(mpi.buildValueType, [&input]<typename VT>() {
+                auto options = createBuildOptionsSparseFromSettings(input);
+                return buildModelSparse<VT>(input, options);
+            });
         }
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
-        result = buildModelExplicit<ValueType>(ioSettings, storm::settings::getModule<storm::settings::modules::BuildSettings>());
+        result = applyValueType(mpi.buildValueType, [&ioSettings]<typename VT>() {
+            return buildModelExplicit<VT>(ioSettings, storm::settings::getModule<storm::settings::modules::BuildSettings>());
+        });
     }
 
     modelBuildingWatch.stop();
@@ -560,10 +649,15 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovA
     }
 
     if (transformationSettings.isChainEliminationSet()) {
-        // TODO: we should also transform the properties at this point.
-        result = storm::api::eliminateNonMarkovianChains(result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), {},
-                                                         transformationSettings.getLabelBehavior())
-                     .first;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            // Currently not enabling this for interval models, as this would require a number of additional template instantiations.
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Chain elimination not supported for interval models.");
+        } else {
+            // TODO: we should also transform the properties at this point.
+            result = storm::api::eliminateNonMarkovianChains(result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), {},
+                                                             transformationSettings.getLabelBehavior())
+                         .first;
+        }
     }
 
     return result;
@@ -583,8 +677,10 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
 }
 
 template<typename ValueType>
-std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> preprocessSparseModel(
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
+                                                                           SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+    STORM_LOG_THROW(mpi.buildValueType == mpi.verificationValueType, storm::exceptions::NotSupportedException,
+                    "Converting value types for sparse engine is not supported.");
     auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
@@ -606,19 +702,28 @@ std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> prepro
     }
 
     if (mpi.applyBisimulation) {
-        result.first = preprocessSparseModelBisimulation(result.first, input, bisimulationSettings);
-        result.second = true;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Bisimulation not supported for interval models.");
+        } else {
+            result.first = preprocessSparseModelBisimulation(result.first, input, bisimulationSettings);
+            result.second = true;
+        }
     }
 
     if (transformationSettings.isToDiscreteTimeModelSet()) {
-        // TODO: we should also transform the properties at this point.
-        STORM_LOG_WARN_COND(!model->hasRewardModel("_time"),
-                            "Scheduled transformation to discrete time model, but a reward model named '_time' is already present in this model. We might take "
-                            "the wrong reward model later.");
-        result.first =
-            storm::api::transformContinuousToDiscreteTimeSparseModel(std::move(*result.first), storm::api::extractFormulasFromProperties(input.properties))
-                .first;
-        result.second = true;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to discrete time model not supported for interval models.");
+        } else {
+            // TODO: we should also transform the properties at this point.
+            STORM_LOG_WARN_COND(
+                !model->hasRewardModel("_time"),
+                "Scheduled transformation to discrete time model, but a reward model named '_time' is already present in this model. We might take "
+                "the wrong reward model later.");
+            result.first =
+                storm::api::transformContinuousToDiscreteTimeSparseModel(std::move(*result.first), storm::api::extractFormulasFromProperties(input.properties))
+                    .first;
+            result.second = true;
+        }
     }
 
     if (transformationSettings.isToNondeterministicModelSet()) {
@@ -630,7 +735,7 @@ std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> prepro
 }
 
 template<typename ValueType>
-void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input) {
+void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     if (ioSettings.isExportBuildSet()) {
@@ -670,7 +775,7 @@ void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const&) {
+void exportModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const&) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     if (ioSettings.isExportBuildSet()) {
@@ -699,15 +804,6 @@ void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueT
 
     if (ioSettings.isExportDotSet()) {
         storm::api::exportSymbolicModelAsDot(model, ioSettings.getExportDotFilename());
-    }
-}
-
-template<storm::dd::DdType DdType, typename ValueType>
-void exportModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-    if (model->isSparseModel()) {
-        exportSparseModel<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input);
-    } else {
-        exportDdModel<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
     }
 }
 
@@ -746,9 +842,9 @@ std::shared_ptr<storm::models::Model<ExportValueType>> preprocessDdModelBisimula
         model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat);
 }
 
-template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
-std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
-                                                                             SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+template<typename ExportValueType, storm::dd::DdType DdType, typename ValueType>
+std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModelImpl(
+    std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
     std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> intermediateResult = std::make_pair(model, false);
 
@@ -785,26 +881,19 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std
     return *result;
 }
 
-template<storm::dd::DdType DdType, typename BuildValueType, typename ExportValueType = BuildValueType>
-std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input,
-                                                                           ModelProcessingInformation const& mpi) {
-    storm::utility::Stopwatch preprocessingWatch(true);
-
-    std::pair<std::shared_ptr<storm::models::ModelBase>, bool> result = std::make_pair(model, false);
-    if (model->isSparseModel()) {
-        result = preprocessSparseModel<BuildValueType>(result.first->as<storm::models::sparse::Model<BuildValueType>>(), input, mpi);
-    } else {
-        STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
-        result =
-            preprocessDdModel<DdType, BuildValueType, ExportValueType>(result.first->as<storm::models::symbolic::Model<DdType, BuildValueType>>(), input, mpi);
-    }
-
-    preprocessingWatch.stop();
-
-    if (result.second) {
-        STORM_PRINT("\nTime for model preprocessing: " << preprocessingWatch << ".\n\n");
-    }
-    return result;
+template<storm::dd::DdType DdType, typename ValueType>
+std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
+                                                                           SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+    return applyValueType(mpi.verificationValueType, [&model, &input, &mpi]<typename VT>() -> std::pair<std::shared_ptr<storm::models::ModelBase>, bool> {
+        // To safe a few template instantiations, we only consider those combinations that actually occur in the CLI
+        if constexpr (std::is_same_v<ValueType, VT> ||
+                      (DdType == storm::dd::DdType::Sylvan && std::is_same_v<ValueType, storm::RationalNumber> && std::is_same_v<VT, double>)) {
+            return preprocessDdModelImpl<VT>(model, input, mpi);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Unexpected combination of DD library, build value type, and verification value type.");
+        }
+    });
 }
 
 inline void printComputingCounterexample(storm::jani::Property const& property) {
@@ -822,18 +911,17 @@ inline void printCounterexample(std::shared_ptr<storm::counterexamples::Countere
     }
 }
 
-template<typename ValueType>
-void generateCounterexamples(std::shared_ptr<storm::models::ModelBase> const&, SymbolicInput const&) {
+template<typename ModelType>
+    requires(!std::derived_from<ModelType, storm::models::sparse::Model<double>>)
+inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 
-template<>
-inline void generateCounterexamples<double>(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
-    typedef double ValueType;
+template<typename ModelType>
+    requires(std::derived_from<ModelType, storm::models::sparse::Model<double>>)
+inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input) {
+    using ValueType = typename ModelType::ValueType;
 
-    STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::NotSupportedException,
-                    "Counterexample generation is currently only supported for sparse models.");
-    auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
     for (auto& rewModel : sparseModel->getRewardModels()) {
         rewModel.second.reduceToStateBasedRewards(sparseModel->getTransitionMatrix(), true);
     }
@@ -887,6 +975,7 @@ inline void generateCounterexamples<double>(std::shared_ptr<storm::models::Model
 }
 
 template<typename ValueType>
+    requires(!storm::IsIntervalType<ValueType>)
 void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::modelchecker::FilterType ft) {
     if (result->isQuantitative()) {
         if (ft == storm::modelchecker::FilterType::VALUES) {
@@ -954,6 +1043,7 @@ inline void printModelCheckingProperty(storm::jani::Property const& property) {
 }
 
 template<typename ValueType>
+    requires(!storm::IsIntervalType<ValueType>)
 void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::logic::Formula const& filterStatesFormula,
                  storm::modelchecker::FilterType const& filterType, storm::utility::Stopwatch* watch = nullptr) {
     if (result) {
@@ -999,6 +1089,11 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyProperty(std::shared_ptr
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
     try {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_ASSERT(!transformationSettings.isChainEliminationSet() && !transformationSettings.isToNondeterministicModelSet(),
+                             "Unsupported transformation has been invoked.");
+            return verificationCallback(formula, statesFilter);
+        }
         if (transformationSettings.isChainEliminationSet() && !storm::transformer::NonMarkovianChainTransformer<ValueType>::preservesFormula(*formula)) {
             STORM_LOG_WARN("Property is not preserved by elimination of non-markovian states.");
         } else if (transformationSettings.isToDiscreteTimeModelSet()) {
@@ -1038,7 +1133,7 @@ void verifyProperties(SymbolicInput const& input, VerificationCallbackType const
         if (result) {
             postprocessingCallback(result);
         }
-        printResult<ValueType>(result, property, &watch);
+        printResult<storm::IntervalBaseType<ValueType>>(result, property, &watch);
     }
 }
 
@@ -1202,8 +1297,8 @@ void verifyWithExplorationEngine(SymbolicInput const& input, ModelProcessingInfo
 }
 
 template<typename ValueType>
-void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& sparseModel, SymbolicInput const& input,
+                 ModelProcessingInformation const& mpi) {
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto verificationCallback = [&sparseModel, &ioSettings, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                   std::shared_ptr<storm::logic::Formula const> const& states) {
@@ -1228,40 +1323,49 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
     uint64_t exportCount = 0;  // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
     auto postprocessingCallback = [&sparseModel, &ioSettings, &input, &exportCount](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
         if (ioSettings.isExportSchedulerSet()) {
-            if (result->isExplicitQuantitativeCheckResult()) {
-                if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
-                    auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
-                    STORM_PRINT_AND_LOG("Exporting scheduler ... ");
-                    if (input.model) {
-                        STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
-                                            "No information of state valuations available. The scheduler output will use internal state ids. You might be "
-                                            "interested in building the model with state valuations using --buildstateval.");
-                        STORM_LOG_WARN_COND(
-                            sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(),
-                            "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in "
-                            "building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
-                        STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(),
-                                            "Only partial choice information is available. You might want to build the model with choice origins using "
-                                            "--buildchoicelab or --buildchoiceorig.");
-                    }
-                    STORM_LOG_WARN_COND(exportCount == 0,
-                                        "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
-                    storm::api::exportScheduler(sparseModel, scheduler,
-                                                (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
-                } else {
-                    STORM_LOG_ERROR("Scheduler requested but could not be generated.");
-                }
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
+                if (result->isExplicitQuantitativeCheckResult()) {
+                    if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
+                        auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+                        STORM_PRINT_AND_LOG("Exporting scheduler ... ");
+                        if (input.model) {
+                            STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
+                                                "No information of state valuations available. The scheduler output will use internal state ids. You might be "
+                                                "interested in building the model with state valuations using --buildstateval.");
+                            STORM_LOG_WARN_COND(
+                                sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(),
+                                "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in "
+                                "building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
+                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(),
+                                                "Only partial choice information is available. You might want to build the model with choice origins using "
+                                                "--buildchoicelab or --buildchoiceorig.");
+                        }
+                        STORM_LOG_WARN_COND(exportCount == 0,
+                                            "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                        storm::api::exportScheduler(
+                            sparseModel, scheduler,
+                            (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
+                    } else {
+                        STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
+                }
             }
         }
         if (ioSettings.isExportCheckResultSet()) {
-            STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
-                                "No information of state valuations available. The result output will use internal state ids. You might be interested in "
-                                "building the model with state valuations using --buildstateval.");
-            STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
-            storm::api::exportCheckResultToJson(sparseModel, result,
-                                                (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportCheckResultFilename());
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
+            } else {
+                STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
+                                    "No information of state valuations available. The result output will use internal state ids. You might be interested in "
+                                    "building the model with state valuations using --buildstateval.");
+                STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                storm::api::exportCheckResultToJson(
+                    sparseModel, result, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportCheckResultFilename());
+            }
         }
         ++exportCount;
     };
@@ -1269,27 +1373,35 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         verifyProperties<ValueType>(input, verificationCallback, postprocessingCallback);
     }
     if (ioSettings.isComputeSteadyStateDistributionSet()) {
-        computeStateValues<ValueType>(
-            "steady-state probabilities",
-            [&mpi, &sparseModel]() { return storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
-            verificationCallback, postprocessingCallback);
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing steady state distribution is not supported for interval models.");
+        } else {
+            computeStateValues<ValueType>(
+                "steady-state probabilities",
+                [&mpi, &sparseModel]() { return storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
+                verificationCallback, postprocessingCallback);
+        }
     }
     if (ioSettings.isComputeExpectedVisitingTimesSet()) {
-        computeStateValues<ValueType>(
-            "expected visiting times",
-            [&mpi, &sparseModel]() { return storm::api::computeExpectedVisitingTimesWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
-            verificationCallback, postprocessingCallback);
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing expected visiting times is not supported for interval models.");
+        } else {
+            computeStateValues<ValueType>(
+                "expected visiting times",
+                [&mpi, &sparseModel]() { return storm::api::computeExpectedVisitingTimesWithSparseEngine<ValueType>(mpi.env, sparseModel); }, input,
+                verificationCallback, postprocessingCallback);
+        }
     }
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+void verifyWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
+                            ModelProcessingInformation const& mpi) {
     verifyProperties<ValueType>(
-        input, [&model, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+        input, [&symbolicModel, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
             bool filterForInitialStates = states->isInitialFormula();
             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
 
-            auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithHybridEngine<DdType, ValueType>(mpi.env, symbolicModel, task);
 
             std::unique_ptr<storm::modelchecker::CheckResult> filter;
@@ -1307,13 +1419,13 @@ void verifyWithHybridEngine(std::shared_ptr<storm::models::ModelBase> const& mod
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+void verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
+                        ModelProcessingInformation const& mpi) {
     verifyProperties<ValueType>(
-        input, [&model, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+        input, [&symbolicModel, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
             bool filterForInitialStates = states->isInitialFormula();
             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
 
-            auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
             std::unique_ptr<storm::modelchecker::CheckResult> result =
                 storm::api::verifyWithDdEngine<DdType, ValueType>(mpi.env, symbolicModel, storm::api::createTask<ValueType>(formula, true));
 
@@ -1332,26 +1444,26 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::ModelBase> const& model, 
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input,
+void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
                                            ModelProcessingInformation const& mpi) {
     verifyProperties<ValueType>(
-        input, [&model, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+        input, [&symbolicModel, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
             STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-            auto symbolicModel = model->as<storm::models::symbolic::Model<DdType, ValueType>>();
             return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
                                                                                               storm::api::createTask<ValueType>(formula, true));
         });
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(
-    std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueType, double>::value, void>::type verifyModel(
+    std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
+    ModelProcessingInformation const& mpi) {
     if (mpi.engine == storm::utility::Engine::Hybrid) {
-        verifyWithHybridEngine<DdType, ValueType>(model, input, mpi);
+        verifyWithHybridEngine<DdType, ValueType>(symbolicModel, input, mpi);
     } else if (mpi.engine == storm::utility::Engine::Dd) {
-        verifyWithDdEngine<DdType, ValueType>(model, input, mpi);
+        verifyWithDdEngine<DdType, ValueType>(symbolicModel, input, mpi);
     } else {
-        verifyWithAbstractionRefinementEngine<DdType, ValueType>(model, input, mpi);
+        verifyWithAbstractionRefinementEngine<DdType, ValueType>(symbolicModel, input, mpi);
     }
 }
 
@@ -1361,95 +1473,59 @@ typename std::enable_if<DdType == storm::dd::DdType::CUDD && !std::is_same<Value
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support the selected data-type.");
 }
 
-template<storm::dd::DdType DdType, typename ValueType>
-void verifyModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    if (model->isSparseModel()) {
-        verifyWithSparseEngine<ValueType>(model, input, mpi);
-    } else {
-        STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
-        verifySymbolicModel<DdType, ValueType>(model, input, mpi);
-    }
-}
-
-template<storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-std::shared_ptr<storm::models::ModelBase> buildPreprocessModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+inline std::shared_ptr<storm::models::ModelBase> buildPreprocessModel(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+
     std::shared_ptr<storm::models::ModelBase> model;
     if (!buildSettings.isNoBuildModelSet()) {
-        model = buildModel<DdType, BuildValueType>(input, ioSettings, mpi);
+        model = buildModel(input, ioSettings, mpi);
     }
+    if (!model) {
+        STORM_LOG_THROW(input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
+        return nullptr;
+    }
+    model->printModelInformationToStream(std::cout);
 
-    if (model) {
+    storm::utility::Stopwatch preprocessingWatch(true);
+    auto preprocessingResult = castAndApply(model, [&input, &mpi](auto const& m) { return preprocessModel(m, input, mpi); });
+    preprocessingWatch.stop();
+    if (preprocessingResult.second) {
+        STORM_PRINT("\nTime for model preprocessing: " << preprocessingWatch << ".\n\n");
+        model = preprocessingResult.first;
         model->printModelInformationToStream(std::cout);
     }
 
-    STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
+    return model;
+}
 
+inline std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModel(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+    auto model = buildPreprocessModel(input, mpi);
     if (model) {
-        auto preprocessingResult = preprocessModel<DdType, BuildValueType, VerificationValueType>(model, input, mpi);
-        if (preprocessingResult.second) {
-            model = preprocessingResult.first;
-            model->printModelInformationToStream(std::cout);
-        }
+        castAndApply(model, [&input](auto const& m) { exportModel(m, input); });
     }
     return model;
 }
 
-template<storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    auto model = buildPreprocessModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, mpi);
-    if (model) {
-        exportModel<DdType, BuildValueType>(model, input);
-    }
-    return model;
-}
-
-template<storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-void processInputWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+inline void processInput(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     auto abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
     auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
 
     // For several engines, no model building step is performed, but the verification is started right away.
     if (mpi.engine == storm::utility::Engine::AbstractionRefinement &&
         abstractionSettings.getAbstractionRefinementMethod() == storm::settings::modules::AbstractionSettings::Method::Games) {
-        verifyWithAbstractionRefinementEngine<DdType, VerificationValueType>(input, mpi);
+        applyDdLibValueType(mpi.ddType, mpi.verificationValueType,
+                            [&input, &mpi]<storm::dd::DdType DD, typename VT>() { verifyWithAbstractionRefinementEngine<DD, VT>(input, mpi); });
     } else if (mpi.engine == storm::utility::Engine::Exploration) {
-        verifyWithExplorationEngine<VerificationValueType>(input, mpi);
+        applyValueType(mpi.verificationValueType, [&input, &mpi]<typename VT>() { verifyWithExplorationEngine<VT>(input, mpi); });
     } else {
-        std::shared_ptr<storm::models::ModelBase> model =
-            buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, mpi);
+        std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModel(input, mpi);
         if (model) {
             if (counterexampleSettings.isCounterexampleSet()) {
-                generateCounterexamples<VerificationValueType>(model, input);
+                castAndApply(model, [&input](auto const& m) { generateCounterexamples(m, input); });
             } else {
-                verifyModel<DdType, VerificationValueType>(model, input, mpi);
+                castAndApply(model, [&input, &mpi](auto const& m) { verifyModel(m, input, mpi); });
             }
-        }
-    }
-}
-
-template<typename ValueType>
-void processInputWithValueType(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    if (mpi.ddType == storm::dd::DdType::CUDD) {
-        STORM_LOG_ASSERT(mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision &&
-                             mpi.buildValueType == ModelProcessingInformation::ValueType::FinitePrecision && (std::is_same<ValueType, double>::value),
-                         "Unexpected value type for Dd library cudd.");
-        processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, mpi);
-    } else {
-        STORM_LOG_ASSERT(mpi.ddType == storm::dd::DdType::Sylvan, "Unknown DD library.");
-        if (mpi.buildValueType == mpi.verificationValueType) {
-            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, mpi);
-        } else {
-            // Right now, we only require (buildType == Exact and verificationType == FinitePrecision).
-            // We exclude all other combinations to safe a few template instantiations.
-            STORM_LOG_THROW((std::is_same<ValueType, double>::value) && mpi.buildValueType == ModelProcessingInformation::ValueType::Exact,
-                            storm::exceptions::InvalidArgumentException, "Unexpected combination of buildValueType and verificationValueType");
-#ifdef STORM_HAVE_CARL
-            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input, mpi);
-#else
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unexpected buildValueType.");
-#endif
         }
     }
 }
