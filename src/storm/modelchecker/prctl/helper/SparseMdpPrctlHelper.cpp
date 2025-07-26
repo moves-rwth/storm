@@ -1430,7 +1430,6 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
 
     return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
-
 }
 
 template<typename ValueType, typename SolutionType>
