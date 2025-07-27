@@ -24,14 +24,6 @@
 
 #include "storm/utility/vector.h"
 
-namespace carl {
-template<>
-unsigned long rationalize<unsigned long>(double i) {
-    assert(false);  // todo: this prevents a linker error that I haven't located so far.
-    return 0;
-}
-}  // namespace carl
-
 namespace storm {
 namespace generator {
 
@@ -349,16 +341,14 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
         addSynchronousChoices(allChoices, *this->state, stateToIdCallback);
     }
 
-    std::size_t totalNumberOfChoices = allChoices.size();
-
     // If there is not a single choice, we return immediately, because the state has no behavior (other than
     // the state reward).
-    if (totalNumberOfChoices == 0) {
+    if (allChoices.empty()) {
         return result;
     }
 
     // If the model is a deterministic model, we need to fuse the choices into one.
-    if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
+    if (this->isDeterministicModel() && allChoices.size() > 1) {
         Choice<ValueType> globalChoice;
 
         if (this->options.isAddOverlappingGuardLabelSet()) {
@@ -367,7 +357,8 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
 
         // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
         // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+        ValueType const totalNumberOfChoices = storm::utility::convertNumber<ValueType, uint64_t>(allChoices.size());
+        ValueType totalExitRate = this->isDiscreteTimeModel() ? totalNumberOfChoices : storm::utility::zero<ValueType>();
 
         // Iterate over all choices and combine the probabilities/rates into one choice.
         for (auto const& choice : allChoices) {
@@ -602,12 +593,12 @@ PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(ui
     return result;
 }
 
-template<typename ValueType>
-ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, auto const& evaluator) {
+template<typename ValueType, typename BaseValueType>
+ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<BaseValueType> const& evaluator) {
     if constexpr (storm::IsIntervalType<ValueType>) {
         if (update.isLikelihoodInterval()) {
-            auto lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
-            auto upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
+            BaseValueType lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
+            BaseValueType upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
             return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
         } else {
             return evaluator.asRational(update.getLikelihoodExpression());
