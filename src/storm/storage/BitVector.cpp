@@ -771,6 +771,10 @@ std::vector<uint_fast64_t> BitVector::getNumberOfSetBitsBeforeIndices() const {
     return bitsSetBeforeIndices;
 }
 
+bool BitVector::hasUniqueSetBit() const {
+    return getNumberOfSetBits() == 1;
+}
+
 size_t BitVector::size() const {
     return static_cast<size_t>(bitCount);
 }
