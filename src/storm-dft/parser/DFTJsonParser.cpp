@@ -124,6 +124,11 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
                 STORM_LOG_THROW(data.count("probability") > 0, storm::exceptions::WrongFormatException,
                                 "PDEP '" << name << "' requires parameter 'probability'.");
                 ValueType probability = valueParser.parseValue(parseValue(data.at("probability")));
+                if (storm::utility::isZero<ValueType>(probability)) {
+                    // Skip element. Otherwise, trying to add layout information later on will fail
+                    STORM_LOG_WARN("Dependency " << name << " with probability 0 is superfluous and will not be added.");
+                    continue;
+                }
                 builder.addPdep(name, childNames, probability);
             } else if (boost::starts_with(type, "be")) {
                 parseBasicElement(name, type, data, builder, valueParser);
