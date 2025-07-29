@@ -29,7 +29,6 @@ class GurobiEnvironment {
      */
     void initialize();
     void setOutput(bool set = false);
-    void setTimeLimit(uint64_t seconds);
 #ifdef STORM_HAVE_GUROBI
     GRBenv* operator*();
 #endif

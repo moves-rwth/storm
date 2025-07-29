@@ -91,14 +91,6 @@ void GurobiEnvironment::setOutput(bool set) {
 #endif
 }
 
-void GurobiEnvironment::setTimeLimit(uint64_t seconds) {
-#ifdef STORM_HAVE_GUROBI
-    int error = GRBsetintparam(env, "TimeLimit", seconds);
-    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
-                    "Unable to set Gurobi time limit (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-#endif
-}
-
 #ifdef STORM_HAVE_GUROBI
 
 template<typename ValueType, bool RawMode>
@@ -738,7 +730,9 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t seconds) {
-    environment->setTimeLimit(seconds);
+    int error = GRBsetdblparam(GRBgetenv(model), GRB_DBL_PAR_TIMELIMIT, seconds);
+    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                    "Unable to set Gurobi time limit (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
 }
 
 #else
@@ -909,7 +903,7 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
                                                           "requires this support. Please choose a version of storm with Gurobi support.";
 }
 
-t
+
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
