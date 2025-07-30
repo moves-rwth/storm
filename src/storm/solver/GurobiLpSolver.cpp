@@ -903,7 +903,6 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
                                                           "requires this support. Please choose a version of storm with Gurobi support.";
 }
 
-
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
