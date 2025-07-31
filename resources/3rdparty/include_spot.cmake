@@ -58,8 +58,6 @@ if(NOT STORM_DISABLE_SPOT)
         # download and install shipped Spot as shared libraries.
         # set Spot version
         set(SPOT_SHIPPED_VERSION 2.14.1)
-        # Note that configuring static libraries requires various dependencies which was rather cumbersome.
-        # As of '25/3, SJ did not get this to work.
         ExternalProject_Add(Spot
                 URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
                 DOWNLOAD_NO_PROGRESS TRUE
@@ -67,7 +65,7 @@ if(NOT STORM_DISABLE_SPOT)
                 DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
                 SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
                 PREFIX ${STORM_3RDPARTY_BINARY_DIR}/spot
-                CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python #--enable-static --disable-shared
+                CONFIGURE_COMMAND ${STORM_3RDPARTY_BINARY_DIR}/spot_src/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/spot --disable-python --disable-devel --disable-debug --enable-optimzations --enable-shared --disable-static
                 BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
                 COMMAND ${SPOT_RPATH_FIX_COMMAND1}
