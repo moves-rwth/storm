@@ -197,6 +197,47 @@ TEST(FormulaParserTest, NestedPathFormulaTest) {
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isNextFormula());
 }
 
+TEST(FormulaParserTest, DiscountedFormulaTest) {
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "Rmax=? [Cdiscount=0.9]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedTotalRewardFormula());
+    ASSERT_FALSE(formula->asRewardOperatorFormula().getSubformula().isTotalRewardFormula());
+    EXPECT_EQ(storm::RationalNumber(9, 10),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<storm::RationalNumber>());
+    EXPECT_FLOAT_EQ(0.9, formula->asRewardOperatorFormula().getSubformula().asDiscountedTotalRewardFormula().getDiscountFactor<double>());
+
+    input = "Rmin=? [C<=5discount=(0.95)]";
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
+    EXPECT_EQ(storm::RationalNumber(19, 20),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
+    EXPECT_FLOAT_EQ(0.95, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
+    EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());
+    EXPECT_EQ(5, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getBound().evaluateAsInt());
+
+    input = "Rmax=? [Crew<8discount=(0.5)]";
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isRewardOperatorFormula());
+    ASSERT_TRUE(formula->asRewardOperatorFormula().getSubformula().isDiscountedCumulativeRewardFormula());
+    EXPECT_EQ(storm::RationalNumber(1, 2),
+              formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsRational());
+    EXPECT_FLOAT_EQ(0.5, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getDiscountFactor().evaluateAsDouble());
+    EXPECT_FALSE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isTimeBound());
+    EXPECT_TRUE(formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_EQ(8, formula->asRewardOperatorFormula().getSubformula().asDiscountedCumulativeRewardFormula().getBound().evaluateAsInt());
+}
+
 TEST(FormulaParserTest, CommentTest) {
     storm::parser::FormulaParser formulaParser;
 

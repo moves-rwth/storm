@@ -965,5 +965,4 @@ TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
         }
     });
 }
-
 }  // namespace
