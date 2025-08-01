@@ -103,6 +103,16 @@ storm::dft::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
     // Create DFT
     storm::dft::storage::DFT<ValueType> dft(elements, mElements[mTopLevelName]);
 
+    // Set default BE order from topological order
+    std::vector<size_t> beOrder;
+    for (auto elem : mElements) {
+        if (elem.second->isBasicElement()) {
+            beOrder.push_back(elem.second->id());
+        }
+    }
+    std::sort(beOrder.begin(), beOrder.end());
+    dft.setBEOrder(beOrder);
+
     // Set layout info
     for (auto& elem : mElements) {
         if (mLayoutInfo.count(elem.first) > 0) {

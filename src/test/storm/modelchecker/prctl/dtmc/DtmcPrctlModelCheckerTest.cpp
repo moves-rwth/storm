@@ -261,6 +261,23 @@ class SparseNativeOptimisticValueIterationEnvironment {
     }
 };
 
+class SparseNativeGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
+    static const DtmcEngine engine = DtmcEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        return env;
+    }
+};
+
 class SparseNativeIntervalIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -572,13 +589,17 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseGmmxxGmresDiagEnvironment, SparseGmmxxBicgstabIluEnvironment,
-                         SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment, SparseEigenRationalLUEnvironment, SparseRationalEliminationEnvironment,
-                         SparseNativeJacobiEnvironment, SparseNativeWalkerChaeEnvironment, SparseNativeSorEnvironment, SparseNativePowerEnvironment,
-                         SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment, SparseNativeIntervalIterationEnvironment,
-                         SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment, HybridSylvanGmmxxGmresEnvironment,
-                         HybridCuddNativeJacobiEnvironment, HybridCuddNativeSoundValueIterationEnvironment, HybridSylvanNativeRationalSearchEnvironment,
-                         DdSylvanNativePowerEnvironment, JaniDdSylvanNativePowerEnvironment, DdCuddNativeJacobiEnvironment, DdSylvanRationalSearchEnvironment>
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseGmmxxGmresDiagEnvironment, SparseGmmxxBicgstabIluEnvironment,
+    HybridSylvanGmmxxGmresEnvironment,
+#endif
+    SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment, SparseEigenRationalLUEnvironment, SparseRationalEliminationEnvironment,
+    SparseNativeJacobiEnvironment, SparseNativeWalkerChaeEnvironment, SparseNativeSorEnvironment, SparseNativePowerEnvironment,
+    SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment, SparseNativeGuessingValueIterationEnvironment,
+    SparseNativeIntervalIterationEnvironment, SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment, HybridCuddNativeJacobiEnvironment,
+    HybridCuddNativeSoundValueIterationEnvironment, HybridSylvanNativeRationalSearchEnvironment, DdSylvanNativePowerEnvironment,
+    JaniDdSylvanNativePowerEnvironment, DdCuddNativeJacobiEnvironment, DdSylvanRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(DtmcPrctlModelCheckerTest, TestingTypes, );

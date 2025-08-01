@@ -82,6 +82,21 @@ class NativeDoubleIntervalIterationEnvironment {
     }
 };
 
+class NativeDoubleGuessingViEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
+        env.solver().native().setRelativeTerminationCriterion(false);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
+        return env;
+    }
+};
+
 class NativeDoubleJacobiEnvironment {
    public:
     typedef double ValueType;
@@ -327,12 +342,14 @@ class LinearEquationSolverTest : public ::testing::Test {
 };
 
 typedef ::testing::Types<NativeDoublePowerEnvironment, NativeDoublePowerRegMultEnvironment, NativeDoubleSoundValueIterationEnvironment,
-                         NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleIntervalIterationEnvironment, NativeDoubleJacobiEnvironment,
-                         NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
-                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment, GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment,
-                         GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment, EigenDGmresDiagonalEnvironment,
-                         EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment, EigenRationalLUEnvironment,
-                         TopologicalEigenRationalLUEnvironment>
+                         NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleGuessingViEnvironment, NativeDoubleIntervalIterationEnvironment,
+                         NativeDoubleJacobiEnvironment, NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
+                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment,
+#ifdef STORM_HAVE_GMM
+                         GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment, GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment,
+#endif
+                         EigenDGmresDiagonalEnvironment, EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment,
+                         EigenRationalLUEnvironment, TopologicalEigenRationalLUEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LinearEquationSolverTest, TestingTypes, );

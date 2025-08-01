@@ -3,6 +3,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
@@ -264,8 +265,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-    STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidPropertyException,
+    STORM_LOG_THROW(this->getModel().getInitialStates().hasUniqueSetBit(), storm::exceptions::InvalidPropertyException,
                     "Cannot compute conditional probabilities on MDPs with more than one initial state.");
+    STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException,
+                    "Conditional probabilities can only be computed for the initial states of the model.");
     STORM_LOG_THROW(conditionalFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException,
                     "Illegal conditional probability formula.");
     STORM_LOG_THROW(conditionalFormula.getConditionFormula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException,
@@ -275,10 +278,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
     ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
     ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-
-    return storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeConditionalProbabilities(
-        env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-        this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector());
+    if constexpr (std::is_same_v<storm::Interval, ValueType>) {
+        throw exceptions::NotImplementedException() << "Conditional Probabilities are not supported with interval models";
+    } else {
+        return storm::modelchecker::computeConditionalProbabilities(env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask),
+                                                                    this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(),
+                                                                    leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector());
+    }
 }
 
 template<typename SparseMdpModelType>

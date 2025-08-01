@@ -121,58 +121,39 @@ class Multiplier {
      */
     void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
                                    uint64_t n) const;
+  /*!
+       * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b. Vector x is scaled by factor in each iteration.
+       *
+       * @param x The input vector with which to multiply the matrix. Its length must be equal
+       * to the number of columns of A.
+       * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+       * to the number of rows of A.
+       * @param result The target vector into which to write the multiplication result. Its length must be equal
+       * to the number of rows of A.
+       * @param n The number of times to perform the multiplication.
+       * @param factor The scalar to multiply with in each iteration.
+       */
+  void repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
 
-    /*!
-     * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b. Vector x is scaled by factor in each iteration.
-     *
-     * @param x The input vector with which to multiply the matrix. Its length must be equal
-     * to the number of columns of A.
-     * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
-     * to the number of rows of A.
-     * @param result The target vector into which to write the multiplication result. Its length must be equal
-     * to the number of rows of A.
-     * @param n The number of times to perform the multiplication.
-     * @param factor The scalar to multiply with in each iteration.
-     */
-    void repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
-
-    /*!
-     * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
-     * so that the resulting vector has the size of number of row groups of A. Vector x is scaled by factor in each iteration.
-     *
-     * @param dir The direction for the reduction step.
-     * @param x The input vector with which to multiply the matrix. Its length must be equal
-     * to the number of columns of A.
-     * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
-     * to the number of rows of A.
-     * @param result The target vector into which to write the multiplication result. Its length must be equal
-     * to the number of rows of A.
-     * @param n The number of times to perform the multiplication.
-     * @param factor The scalar to multiply with in each iteration.
-     */
-    void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
-                                             std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
-
-    /*!
-     * Multiplies the row with the given index with x and adds the result to the provided value
-     * @param rowIndex The index of the considered row
-     * @param x The input vector with which the row is multiplied
-     * @param value The multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
-     */
-    virtual void multiplyRow(uint64_t const& rowIndex, std::vector<ValueType> const& x, ValueType& value) const = 0;
-
-    /*!
-     * Multiplies the row with the given index with x1 and x2 and adds the given offset o1 and o2, respectively
-     * @param rowIndex The index of the considered row
-     * @param x1 The first input vector with which the row is multiplied.
-     * @param val1 The first multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
-     * @param x2 The second input vector with which the row is multiplied.
-     * @param val2 The second multiplication result is added to this value. It shall not reffer to a value in x or in the Matrix.
-     */
-    virtual void multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2,
-                              ValueType& val2) const;
-
+  /*!
+   * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
+   * so that the resulting vector has the size of number of row groups of A. Vector x is scaled by factor in each iteration.
+   *
+   * @param dir The direction for the reduction step.
+   * @param x The input vector with which to multiply the matrix. Its length must be equal
+   * to the number of columns of A.
+   * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+   * to the number of rows of A.
+   * @param result The target vector into which to write the multiplication result. Its length must be equal
+   * to the number of rows of A.
+   * @param n The number of times to perform the multiplication.
+   * @param factor The scalar to multiply with in each iteration.
+   */
+  void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
+                                           std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
    protected:
+    std::vector<ValueType>& provideCachedVector(uint64_t size) const;
+
     mutable std::unique_ptr<std::vector<ValueType>> cachedVector;
     storm::storage::SparseMatrix<ValueType> const& matrix;
 };
