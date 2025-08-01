@@ -121,36 +121,37 @@ class Multiplier {
      */
     void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b,
                                    uint64_t n) const;
-  /*!
-       * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b. Vector x is scaled by factor in each iteration.
-       *
-       * @param x The input vector with which to multiply the matrix. Its length must be equal
-       * to the number of columns of A.
-       * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
-       * to the number of rows of A.
-       * @param result The target vector into which to write the multiplication result. Its length must be equal
-       * to the number of rows of A.
-       * @param n The number of times to perform the multiplication.
-       * @param factor The scalar to multiply with in each iteration.
-       */
-  void repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+    /*!
+     * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b. Vector x is scaled by factor in each iteration.
+     *
+     * @param x The input vector with which to multiply the matrix. Its length must be equal
+     * to the number of columns of A.
+     * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+     * to the number of rows of A.
+     * @param result The target vector into which to write the multiplication result. Its length must be equal
+     * to the number of rows of A.
+     * @param n The number of times to perform the multiplication.
+     * @param factor The scalar to multiply with in each iteration.
+     */
+    void repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
 
-  /*!
-   * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
-   * so that the resulting vector has the size of number of row groups of A. Vector x is scaled by factor in each iteration.
-   *
-   * @param dir The direction for the reduction step.
-   * @param x The input vector with which to multiply the matrix. Its length must be equal
-   * to the number of columns of A.
-   * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
-   * to the number of rows of A.
-   * @param result The target vector into which to write the multiplication result. Its length must be equal
-   * to the number of rows of A.
-   * @param n The number of times to perform the multiplication.
-   * @param factor The scalar to multiply with in each iteration.
-   */
-  void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
-                                           std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+    /*!
+     * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
+     * so that the resulting vector has the size of number of row groups of A. Vector x is scaled by factor in each iteration.
+     *
+     * @param dir The direction for the reduction step.
+     * @param x The input vector with which to multiply the matrix. Its length must be equal
+     * to the number of columns of A.
+     * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+     * to the number of rows of A.
+     * @param result The target vector into which to write the multiplication result. Its length must be equal
+     * to the number of rows of A.
+     * @param n The number of times to perform the multiplication.
+     * @param factor The scalar to multiply with in each iteration.
+     */
+    void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
+                                             std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+
    protected:
     std::vector<ValueType>& provideCachedVector(uint64_t size) const;
 
