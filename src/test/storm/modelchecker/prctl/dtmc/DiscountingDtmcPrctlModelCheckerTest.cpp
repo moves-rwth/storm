@@ -142,6 +142,7 @@ class SparseEigenRationalLUEnvironment {
     typedef storm::models::sparse::Dtmc<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
+        env.solver().setForceExact(true);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
         env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
         return env;
@@ -157,6 +158,7 @@ class SparseRationalEliminationEnvironment {
     typedef storm::models::sparse::Dtmc<ValueType> ModelType;
     static storm::Environment createEnvironment() {
         storm::Environment env;
+        env.solver().setForceExact(true);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Elimination);
         return env;
     }

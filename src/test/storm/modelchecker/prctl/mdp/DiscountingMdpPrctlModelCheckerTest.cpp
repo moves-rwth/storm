@@ -42,7 +42,7 @@ class SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment {
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::GaussSeidel);
-        env.solver().multiplier().setType(storm::solver::MultiplierType::Gmmxx);
+        env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
         return env;
     }
 };
@@ -59,7 +59,7 @@ class SparseDoubleValueIterationGmmxxRegularMultEnvironment {
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
         env.solver().minMax().setMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
-        env.solver().multiplier().setType(storm::solver::MultiplierType::Gmmxx);
+        env.solver().multiplier().setType(storm::solver::MultiplierType::ViOperator);
         return env;
     }
 };
