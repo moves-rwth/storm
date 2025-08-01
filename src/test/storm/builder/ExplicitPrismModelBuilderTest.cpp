@@ -164,6 +164,16 @@ TEST_F(ExplicitPrismModelBuilderTest, POMdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
 }
 
+TEST_F(ExplicitPrismModelBuilderTest, Imdp) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism");
+    program = storm::utility::prism::preprocess(program, "delta=0.2");
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> model = storm::builder::ExplicitModelBuilder<storm::Interval>(program).build();
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/imdp/coin2.prism");
+    program = storm::utility::prism::preprocess(program, "K=2,bias1=0.1");
+    model = storm::builder::ExplicitModelBuilder<storm::Interval>(program).build();
+}
+
 TEST_F(ExplicitPrismModelBuilderTest, SMG) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/smg/action_labels.prism");
     program = storm::utility::prism::preprocess(program, "");

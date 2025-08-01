@@ -1592,6 +1592,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
     }
     STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException,
                     "Program contains unbounded variables which is not supported by the DD engine.");
+    STORM_LOG_THROW(!program.hasIntervalUpdates(), storm::exceptions::InvalidArgumentException,
+                    "Program contains interval updates which are not supported by the DD engnie.");
 
     STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
 

@@ -389,7 +389,7 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return
      */
-    virtual bool supportsUncertainty() const;
+    virtual bool supportsUncertainty() const override;
 
     /*!
      * Checks whether the model actually is uncertain, i.e., whether there is a non-singleton transition relation.
