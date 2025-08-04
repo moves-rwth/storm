@@ -86,7 +86,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          */
         void setType(BisimulationType t) {
             if (t == BisimulationType::Weak) {
+                STORM_LOG_WARN_COND(!bounded, "Weak bisimulation does not preserve bounded properties.");
+                STORM_LOG_WARN_COND(!discounted, "Weak bisimulation does not preserve discounted properties.");
                 bounded = false;
+                discounted = false;
             }
             type = t;
         }
@@ -97,6 +100,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
         bool getBounded() const {
             return this->bounded;
+        }
+
+        bool getDiscounted() const {
+            return this->discounted;
         }
 
         bool getKeepRewards() const {
@@ -143,6 +150,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
         /// A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
         /// when computing strong bisimulation equivalence.
         bool bounded;
+
+        /// A flag that indicates whether discounted properties are to be preserved. This may only be set to true
+        /// when computing strong bisimulation equivalence.
+        bool discounted;
 
         /*!
          * Sets the options under the assumption that the given formula is the only one that is to be checked.
