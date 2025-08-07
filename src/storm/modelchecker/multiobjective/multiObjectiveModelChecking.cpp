@@ -93,12 +93,13 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                 }
 
                 result = query->check(env);
-                if (preprocessorResult.memoryIncorporationReverseData && result->isExplicitParetoCurveCheckResult() &&
-                    result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>().hasScheduler()) {
-                    // we have information to post-process schedulers
-                    auto schedulers = result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>().getSchedulers();
-                    transformObjectiveSchedulersToOriginal(std::move(preprocessorResult.memoryIncorporationReverseData.value()),
-                                                           std::make_shared<SparseModelType>(model), schedulers);
+                if (preprocessorResult.memoryIncorporationReverseData && result->isExplicitParetoCurveCheckResult()) {
+                    auto& paretoRes = result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>();
+                    if (paretoRes.hasScheduler()) {
+                        // we have information to post-process schedulers
+                        transformObjectiveSchedulersToOriginal(std::move(preprocessorResult.memoryIncorporationReverseData.value()),
+                                                               std::make_shared<SparseModelType>(model), paretoRes.getSchedulers());  // todo: no model copy
+                    }
                 }
 
                 if (env.modelchecker().multi().isExportPlotSet()) {

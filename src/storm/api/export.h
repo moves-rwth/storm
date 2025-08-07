@@ -72,6 +72,39 @@ void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> co
     storm::io::closeFile(stream);
 }
 
+template<typename ValueType, typename PointType>
+void exportParetoScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::vector<PointType> const& points,
+                           std::vector<storm::storage::Scheduler<ValueType>> const& schedulers, std::string const& baseFilenameStr) {
+    // We export each scheduler in a separate file, named baseFilename_pointi.ext, where ext is the extension of the baseFilename.
+    // Additionally, we create a CSV file that associates each scheduler file with the corresponding point.
+    // Note that we cannot directly put the point coordinates into the filename, as some characters (e.g., ',' or '/' (occurring in rational numbers)) are not
+    // handled well in filenames.
+    std::filesystem::path baseFilename(baseFilenameStr);
+    std::ofstream infoStream;
+    auto infoFilePath = baseFilename.stem();
+    infoFilePath += "_info.csv";
+    storm::io::openFile(infoFilePath, infoStream);
+    infoStream << "file;point\n";
+    STORM_LOG_ASSERT(points.size() == schedulers.size(), "Number of points and schedulers must match.");
+    for (uint64_t i = 0; i < points.size(); ++i) {
+        auto schedulerFileName = baseFilename.stem();
+        schedulerFileName += "_point" + std::to_string(i);
+        schedulerFileName += baseFilename.extension();
+        infoStream << schedulerFileName.filename() << ";[";
+        bool first = true;
+        for (auto const& pointEntry : points[i]) {
+            if (!first) {
+                infoStream << ",";
+            }
+            first = false;
+            infoStream << pointEntry;
+        }
+        infoStream << "]\n";
+        storm::api::exportScheduler(model, schedulers[i], schedulerFileName);
+    }
+    storm::io::closeFile(infoStream);
+}
+
 template<typename ValueType>
 inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
                                     std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {

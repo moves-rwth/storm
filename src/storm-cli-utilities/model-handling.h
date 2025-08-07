@@ -17,6 +17,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
 
+#include <filesystem>
 #include <type_traits>
 
 #include "storm/storage/SymbolicModelDescription.h"
@@ -1253,22 +1254,20 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
                 } else {
                     STORM_LOG_ERROR("Scheduler requested but could not be generated.");
                 }
-            } else {
-                if (result->isExplicitParetoCurveCheckResult()) {
-                    if (result->template asExplicitParetoCurveCheckResult<ValueType>().hasScheduler()) {
-                        auto schedulers = result->template asExplicitParetoCurveCheckResult<ValueType>().getSchedulers();
-                        for (auto const& scheduler : schedulers) {
-                            storm::api::exportScheduler(sparseModel, *scheduler.second.get(),
-                                                        (exportCount == 0 ? std::string("") : std::to_string(exportCount)) +
-                                                            ioSettings.getExportSchedulerFilename() + "-" +
-                                                            storm::utility::vector::toStringNoVerbose(scheduler.first));
-                        }
+            } else if (result->isExplicitParetoCurveCheckResult()) {
+                if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                    if (auto const& paretoRes = result->template asExplicitParetoCurveCheckResult<ValueType>(); paretoRes.hasScheduler()) {
+                        storm::api::exportParetoScheduler(
+                            sparseModel, paretoRes.getPoints(), paretoRes.getSchedulers(),
+                            (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
+                        STORM_LOG_ERROR("Scheduler requested but could not be generated.");
                     }
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this value type.");
                 }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
             }
         }
         if (ioSettings.isExportCheckResultSet()) {

@@ -47,14 +47,23 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
 
     // obtain the data for the checkresult
     std::vector<std::vector<typename SparseModelType::ValueType>> paretoOptimalPoints;
+    std::vector<storm::storage::Scheduler<typename SparseModelType::ValueType>> paretoOptimalSchedulers;
     std::vector<Point> vertices = this->underApproximation->getVertices();
     paretoOptimalPoints.reserve(vertices.size());
     for (auto const& vertex : vertices) {
         paretoOptimalPoints.push_back(
             storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
+        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportSchedulerSet()) {
+            // TODO: Handle this in a more safe way. Associating the found schedulers with the resulting points is quite implicit right now.
+            auto schedIt = this->schedulers.find(paretoOptimalPoints.back());
+            STORM_LOG_THROW(schedIt != this->schedulers.end(), storm::exceptions::UnexpectedException,
+                            "Scheduler for point " << storm::utility::vector::toString(paretoOptimalPoints.back()) << " not found.");
+            paretoOptimalSchedulers.push_back(std::move(*schedIt->second));
+        }
     }
+    schedulers.clear();
     return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
-        this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints), std::move(schedulers),
+        this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints), std::move(paretoOptimalSchedulers),
         transformObjectivePolytopeToOriginal(this->objectives, this->underApproximation)
             ->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
         transformObjectivePolytopeToOriginal(this->objectives, this->overApproximation)

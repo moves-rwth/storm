@@ -26,7 +26,7 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
 template<typename ValueType, typename SparseModelType>
 void transformObjectiveSchedulersToOriginal(storm::storage::SparseModelMemoryProductReverseData const& reverseData,
                                             std::shared_ptr<SparseModelType> const& originalModel,
-                                            std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers);
+                                            std::vector<storm::storage::Scheduler<ValueType>>& schedulers);
 
 }  // namespace multiobjective
 }  // namespace modelchecker

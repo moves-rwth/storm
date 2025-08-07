@@ -1159,24 +1159,6 @@ std::string toString(std::vector<ValueType> const& vector) {
     return stream.str();
 }
 
-/*!
- * Less verbose, no space vector to string representation.
- * @param vector Vector to output.
- * @return String containing the representation of the vector.
- */
-template<typename ValueType>
-std::string toStringNoVerbose(std::vector<ValueType> const& vector) {
-    std::stringstream stream;
-    stream << "(";
-    if (!vector.empty()) {
-        for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
-            stream << vector[i] << ",";
-        }
-        stream << vector.back();
-    }
-    stream << ")";
-    return stream.str();
-}
 }  // namespace vector
 }  // namespace utility
 }  // namespace storm
