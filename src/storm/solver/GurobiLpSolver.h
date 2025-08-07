@@ -131,6 +131,9 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
     ValueType getObjectiveValue(uint64_t solutionIndex) const;
 
+    // Method for specifying a time limit
+    void setTimeLimit(uint64_t seconds);
+
    private:
 #ifdef STORM_HAVE_GUROBI
     // The Gurobi model.
