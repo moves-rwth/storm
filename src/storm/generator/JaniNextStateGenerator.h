@@ -21,6 +21,7 @@ class Distribution;
 template<typename ValueType, typename StateType = uint32_t>
 class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
    public:
+    static_assert(!storm::IsIntervalType<ValueType>, "JaniNextStateGenerator does not support interval types.");
     typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
     typedef storm::storage::FlatSet<uint_fast64_t> EdgeIndexSet;
     enum class EdgeFilter { All, WithRate, WithoutRate };

@@ -57,7 +57,10 @@ bool Distribution<ValueType, StateType>::equals(Distribution<ValueType, StateTyp
 
 template<typename ValueType, typename StateType>
 void Distribution<ValueType, StateType>::addProbability(StateType const& state, ValueType const& probability) {
-    this->distribution[state] += probability;
+    auto [iterator, newEntry] = this->distribution.try_emplace(state, probability);
+    if (!newEntry) {
+        iterator->second += probability;
+    }
 }
 
 template<typename ValueType, typename StateType>

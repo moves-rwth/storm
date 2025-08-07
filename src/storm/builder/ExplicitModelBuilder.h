@@ -107,7 +107,8 @@ class ExplicitModelBuilder {
      */
     ExplicitModelBuilder(storm::jani::Model const& model,
                          storm::generator::NextStateGeneratorOptions const& generatorOptions = storm::generator::NextStateGeneratorOptions(),
-                         Options const& builderOptions = Options());
+                         Options const& builderOptions = Options())
+        requires(!storm::IsIntervalType<ValueType>);
 
     /*!
      * Convert the program given at construction time to an abstract model. The type of the model is the one

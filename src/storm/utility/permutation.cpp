@@ -135,5 +135,7 @@ template std::vector<index_type> createPermutation(OrderKind order, storm::stora
                                                    storm::storage::BitVector const& initialStates);
 template std::vector<index_type> createPermutation(OrderKind order, storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
                                                    storm::storage::BitVector const& initialStates);
+template std::vector<index_type> createPermutation(OrderKind order, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                   storm::storage::BitVector const& initialStates);
 
 }  // namespace storm::utility::permutation
