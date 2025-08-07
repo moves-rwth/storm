@@ -604,6 +604,7 @@ ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm
             return evaluator.asRational(update.getLikelihoodExpression());
         }
     } else {
+        // We don't expect to see an interval likelihood now. This case should have been catched earlier.
         STORM_LOG_ASSERT(!update.isLikelihoodInterval(), "Unexpected interval likelihood for non-interval model in update " << update << ".");
         return evaluator.asRational(update.getLikelihoodExpression());
     }
@@ -667,6 +668,13 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                     // Update the choice by adding the probability/target state to it.
                     choice.addProbability(stateIndex, probability);
                     if (this->options.isExplorationChecksSet()) {
+                        if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                            STORM_LOG_THROW(probability > storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to negative value " << probability << ".");
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || probability <= storm::utility::one<ValueType>(),
+                                            storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to value " << probability << " >1.");
+                        }
                         probabilitySum += probability;
                     }
                 }
@@ -708,7 +716,8 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException,
+                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                                storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
             }
         }
@@ -866,13 +875,23 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
 
     if (position >= iteratorList.size()) {
         StateType id = stateToIdCallback(state);
-        distribution.add(id, probability);
+        distribution.add(id, std::move(probability));
     } else {
         storm::prism::Command const& command = *iteratorList[position];
         for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
             storm::prism::Update const& update = command.getUpdate(j);
-            generateSynchronizedDistribution(applyUpdate(state, update), probability * evaluateLikelihoodExpression<ValueType>(update, *this->evaluator),
-                                             position + 1, iteratorList, distribution, stateToIdCallback);
+            ValueType updateProbability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
+            if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(updateProbability >= storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to negative value " << updateProbability << ".");
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || updateProbability <= storm::utility::one<ValueType>(),
+                                    storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to value " << updateProbability << " >1.");
+                }
+            }
+            updateProbability *= probability;
+            generateSynchronizedDistribution(applyUpdate(state, update), updateProbability, position + 1, iteratorList, distribution, stateToIdCallback);
         }
     }
 }
