@@ -1,5 +1,6 @@
 #include "storm/solver/GameSolver.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/StandardGameSolver.h"
 

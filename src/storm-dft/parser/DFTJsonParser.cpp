@@ -5,8 +5,10 @@
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/utility/RelevantEvents.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/utility/macros.h"
 
@@ -16,10 +18,10 @@ namespace parser {
 template<typename ValueType>
 storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
     Json jsonInput;
-    jsonInput << file;
-    storm::utility::closeFile(file);
+    file >> jsonInput;
+    storm::io::closeFile(file);
     return parseJson(jsonInput);
 }
 
@@ -71,7 +73,10 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
             std::string name = parseName(data.at("name"));
             // TODO: use contains() if modernjson is updated
             if (data.count("relevant") > 0) {
-                relevantEvents.insert(name);
+                bool isRelevant = data.at("relevant");
+                if (isRelevant) {
+                    relevantEvents.insert(name);
+                }
             }
             // Create list of children
             std::vector<std::string> childNames;
@@ -119,6 +124,11 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
                 STORM_LOG_THROW(data.count("probability") > 0, storm::exceptions::WrongFormatException,
                                 "PDEP '" << name << "' requires parameter 'probability'.");
                 ValueType probability = valueParser.parseValue(parseValue(data.at("probability")));
+                if (storm::utility::isZero<ValueType>(probability)) {
+                    // Skip element. Otherwise, trying to add layout information later on will fail
+                    STORM_LOG_WARN("Dependency " << name << " with probability 0 is superfluous and will not be added.");
+                    continue;
+                }
                 builder.addPdep(name, childNames, probability);
             } else if (boost::starts_with(type, "be")) {
                 parseBasicElement(name, type, data, builder, valueParser);
@@ -152,8 +162,6 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
 
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
     // Set relevant events
     dft.setRelevantEvents(relevantEvents, false);
     STORM_LOG_DEBUG("Relevant events: " << dft.getRelevantEventsString());

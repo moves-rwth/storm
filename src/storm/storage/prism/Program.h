@@ -258,9 +258,10 @@ class Program : public LocatedInformation {
     /*!
      * Retrieves all expression variables used by this program.
      *
+     * @param includeConstants Whether to include constants in the set of expression variables.
      * @return The set of expression variables used by this program.
      */
-    std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+    std::set<storm::expressions::Variable> getAllExpressionVariables(bool includeConstants = true) const;
 
     /*!
      * Retrieves a list of expressions that characterize the legal ranges of all variables.
@@ -380,23 +381,15 @@ class Program : public LocatedInformation {
     std::map<std::string, uint_fast64_t> const& getActionNameToIndexMapping() const;
 
     /*!
+     * Sets a new initial states expression.
+     * May only be called if the program already has an initial states expression.
+     */
+    void updateInitialStatesExpression(expressions::Expression const& newExpression);
+
+    /*!
      * Retrieves whether the program specifies an initial construct.
      */
     bool hasInitialConstruct() const;
-
-    /*!
-     * Retrieves the initial construct of the program.
-     *
-     * @return The initial construct of the program.
-     */
-    InitialConstruct const& getInitialConstruct() const;
-
-    /*!
-     * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
-     *
-     * @return The initial construct of the program.
-     */
-    boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
 
     /*!
      * Retrieves an expression characterizing the initial states.
@@ -696,6 +689,24 @@ class Program : public LocatedInformation {
      */
     Program substituteConstantsFormulas(bool substituteConstants = true, bool substituteFormulas = true) const;
 
+    /*!
+     * Replace the initialization in variables by an init-expression. This should not change the semantics of the program and can be a preprocessing step.
+     *
+     * @return
+     */
+    Program replaceVariableInitializationByInitExpression() const;
+
+    /**
+     * Substitutes the given constant by a fresh global variable that is bound between lowerBound and upperBound.
+     * The provided lowerBound and upperBound are not considered if the constant is Boolean.
+     * If the constant is defined by an expression, that expression is used as initial value for the created variable.
+     * @note If the given constant appears at positions where a variable would be invalid (e.g. variable bounds
+         or the definition of another constant), the resulting program is malformed.
+     * @return
+     */
+    Program replaceConstantByVariable(Constant const& c, expressions::Expression const& lowerBound, expressions::Expression const& upperBound,
+                                      bool observable = true) const;
+
     /**
      * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further.
      * @return A simplified, equivalent program.
@@ -761,6 +772,20 @@ class Program : public LocatedInformation {
     storm::storage::BitVector const& getPossiblySynchronizingCommands() const;
 
    private:
+    /*!
+     * Retrieves the initial construct of the program.
+     *
+     * @return The initial construct of the program.
+     */
+    InitialConstruct const& getInitialConstruct() const;
+
+    /*!
+     * Retrieves an optional containing the initial construct of the program if there is any and nothing otherwise.
+     *
+     * @return The initial construct of the program.
+     */
+    boost::optional<InitialConstruct> const& getOptionalInitialConstruct() const;
+
     /*!
      * This function builds a command that corresponds to the synchronization of the given list of commands.
      *

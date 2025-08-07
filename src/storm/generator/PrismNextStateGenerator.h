@@ -43,7 +43,8 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
 
     virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                        std::vector<StateType> const& initialStateIndices = {},
-                                                       std::vector<StateType> const& deadlockStateIndices = {}) override;
+                                                       std::vector<StateType> const& deadlockStateIndices = {},
+                                                       std::vector<StateType> const& unexploredStateIndices = {}) override;
 
     virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
 
@@ -105,6 +106,15 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      */
     void addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback,
                                CommandFilter const& commandFilter = CommandFilter::All);
+
+    /*!
+     * Generates self-loops for all actions of the given state. Necessary for POMDPs.
+     *
+     * @param state The state for which to retrieve the unlabeled choices.
+     * @return The choices representing self-loops for all actions of the state.
+     */
+    std::vector<Choice<ValueType>> getSelfLoopsForAllActions(CompressedState const& state, StateToIdCallback stateToIdCallback,
+                                                             CommandFilter const& commandFilter = CommandFilter::All);
 
     /*!
      * Extend the Json struct with additional information about the state.

@@ -7,8 +7,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
@@ -112,24 +110,28 @@ void SparseCbAchievabilityQuery<SparseModelType>::initializeConstraintSystem() {
     // assert that the "incoming" value of each state equals the "outgoing" value
     storm::storage::SparseMatrix<ValueType> backwardsTransitions = this->preprocessedModel->getTransitionMatrix().transpose();
     auto bottomStateVariableIt = bottomStateVariables.begin();
+    std::vector<storm::expressions::Expression> valueSummands;  // initialization here to avoid re-allocations
     for (uint_fast64_t state = 0; state < numStates; ++state) {
         // get the "incomming" value
-        storm::expressions::Expression value = this->preprocessedModel->getInitialStates().get(state) ? one : zero;
+        valueSummands.clear();
+        if (this->preprocessedModel->getInitialStates().get(state)) {
+            valueSummands.push_back(one);
+        }
         for (auto const& backwardsEntry : backwardsTransitions.getRow(state)) {
-            value =
-                value + (this->expressionManager->rational(backwardsEntry.getValue()) * expectedChoiceVariables[backwardsEntry.getColumn()].getExpression());
+            valueSummands.push_back(this->expressionManager->rational(backwardsEntry.getValue()) *
+                                    expectedChoiceVariables[backwardsEntry.getColumn()].getExpression());
         }
 
         // subtract the "outgoing" value
         for (uint_fast64_t choice = this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state];
              choice < this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
-            value = value - expectedChoiceVariables[choice];
+            valueSummands.push_back(-expectedChoiceVariables[choice]);
         }
         if (this->reward0EStates.get(state)) {
-            value = value - (*bottomStateVariableIt);
+            valueSummands.push_back(-(*bottomStateVariableIt));
             ++bottomStateVariableIt;
         }
-        solver->add(value == zero);
+        solver->add(storm::expressions::sum(valueSummands) == zero);
     }
     assert(bottomStateVariableIt == bottomStateVariables.end());
 }

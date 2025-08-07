@@ -3,6 +3,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/dd/DdType.h"
+#include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Property.h"
 
 #include "storm/builder/TerminalStatesGetter.h"

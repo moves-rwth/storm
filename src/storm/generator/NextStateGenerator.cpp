@@ -2,10 +2,12 @@
 #include <storm/exceptions/NotImplementedException.h>
 #include <storm/exceptions/WrongFormatException.h>
 
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/logic/Formulas.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 
@@ -40,26 +42,17 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       evaluator(nullptr),
       state(nullptr),
       actionMask(mask) {
-    if (variableInformation.hasOutOfBoundsBit()) {
-        outOfBoundsState = createOutOfBoundsState(variableInformation);
-    }
-    if (options.isAddOverlappingGuardLabelSet()) {
-        overlappingGuardStates = std::vector<uint64_t>();
-    }
+    initializeSpecialStates();
 }
 
 template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager,
                                                              NextStateGeneratorOptions const& options,
                                                              std::shared_ptr<ActionMask<ValueType, StateType>> const& mask)
-    : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {
-    if (variableInformation.hasOutOfBoundsBit()) {
-        outOfBoundsState = createOutOfBoundsState(variableInformation);
-    }
-    if (options.isAddOverlappingGuardLabelSet()) {
-        overlappingGuardStates = std::vector<uint64_t>();
-    }
-}
+    : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {}
+
+template<typename ValueType, typename StateType>
+NextStateGenerator<ValueType, StateType>::~NextStateGenerator() = default;
 
 template<typename ValueType, typename StateType>
 NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
@@ -69,6 +62,16 @@ NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOp
 template<typename ValueType, typename StateType>
 uint64_t NextStateGenerator<ValueType, StateType>::getStateSize() const {
     return variableInformation.getTotalBitOffset(true);
+}
+
+template<typename ValueType, typename StateType>
+void NextStateGenerator<ValueType, StateType>::initializeSpecialStates() {
+    if (variableInformation.hasOutOfBoundsBit()) {
+        outOfBoundsState = createOutOfBoundsState(variableInformation);
+    }
+    if (options.isAddOverlappingGuardLabelSet()) {
+        overlappingGuardStates = std::vector<uint64_t>();
+    }
 }
 
 template<typename ValueType, typename StateType>
@@ -165,13 +168,14 @@ storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>
         }
         valuationsBuilder.addState(observationEntry.second, std::move(booleanValues), std::move(integerValues), {}, std::move(observationLabelValues));
     }
-    return valuationsBuilder.build(observabilityMap.size());
+    return valuationsBuilder.build();
 }
 
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(
     storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices,
-    std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
+    std::vector<StateType> const& deadlockStateIndices, std::vector<StateType> const& unexploredStateIndices,
+    std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
     labelsAndExpressions.insert(labelsAndExpressions.end(), this->options.getExpressionLabels().begin(), this->options.getExpressionLabels().end());
 
     // Make the labels unique.
@@ -206,37 +210,36 @@ storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::l
         }
     }
 
-    if (!result.containsLabel("init")) {
-        // Also label the initial state with the special label "init".
-        result.addLabel("init");
-        for (auto index : initialStateIndices) {
-            result.addLabelToState("init", index);
+    auto addSpecialLabel = [&result](std::string const& label, auto const& indices) {
+        if (!result.containsLabel(label)) {
+            result.addLabel(label);
+            for (auto index : indices) {
+                result.addLabelToState(label, index);
+            }
         }
+    };
+    addSpecialLabel("init", initialStateIndices);
+    addSpecialLabel("deadlock", deadlockStateIndices);
+    if (!unexploredStateIndices.empty()) {
+        addSpecialLabel("unexplored", unexploredStateIndices);
     }
-    if (!result.containsLabel("deadlock")) {
-        result.addLabel("deadlock");
-        for (auto index : deadlockStateIndices) {
-            result.addLabelToState("deadlock", index);
-        }
-    }
-
     if (this->options.isAddOverlappingGuardLabelSet()) {
         STORM_LOG_THROW(!result.containsLabel("overlap_guards"), storm::exceptions::WrongFormatException,
                         "Label 'overlap_guards' is reserved when adding overlapping guard labels");
-        result.addLabel("overlap_guards");
-        for (auto index : overlappingGuardStates.get()) {
-            result.addLabelToState("overlap_guards", index);
-        }
+        addSpecialLabel("overlap_guards", overlappingGuardStates.get());
     }
-
     if (this->options.isAddOutOfBoundsStateSet() && stateStorage.stateToId.contains(outOfBoundsState)) {
         STORM_LOG_THROW(!result.containsLabel("out_of_bounds"), storm::exceptions::WrongFormatException,
                         "Label 'out_of_bounds' is reserved when adding out of bounds states.");
-        result.addLabel("out_of_bounds");
-        result.addLabelToState("out_of_bounds", stateStorage.stateToId.getValue(outOfBoundsState));
+        addSpecialLabel("out_of_bounds", std::vector{stateStorage.stateToId.getValue(outOfBoundsState)});
     }
 
     return result;
+}
+
+template<typename ValueType, typename StateType>
+bool NextStateGenerator<ValueType, StateType>::isSpecialLabel(std::string const& label) const {
+    return label == "init" || label == "deadlock" || label == "unexplored" || label == "overlap_guards" || label == "out_of_bounds";
 }
 
 template<typename ValueType, typename StateType>
@@ -312,7 +315,7 @@ void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::jso
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> NextStateGenerator<ValueType, StateType>::generateChoiceOrigins(
-    std::vector<boost::any>& dataForChoiceOrigins) const {
+    std::vector<boost::any>& /*dataForChoiceOrigins*/) const {
     STORM_LOG_ERROR_COND(!options.isBuildChoiceOriginsSet(), "Generating choice origins is not supported for the considered model format.");
     return nullptr;
 }
@@ -332,7 +335,7 @@ std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType,
 }
 
 template<typename ValueType, typename StateType>
-void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& remapping) {
+void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& /*remapping*/) {
     if (overlappingGuardStates != boost::none) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                         "Remapping of Ids during model building is not supported for overlapping guard statements.");

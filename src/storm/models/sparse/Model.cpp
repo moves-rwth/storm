@@ -1,6 +1,7 @@
 #include "storm/models/sparse/Model.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -10,7 +11,9 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/NotImplementedException.h"
@@ -54,7 +57,11 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->getTransitionMatrix().isProbabilistic(), "The matrix is not probabilistic.");
+    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(),
+                     "The matrix is not probabilistic.");
+    if (this->hasUncertainty()) {
+        STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
+    }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
     for (auto const& rewardModel : this->getRewardModels()) {
@@ -325,16 +332,16 @@ bool Model<ValueType, RewardModelType>::hasChoiceLabeling() const {
 
 template<typename ValueType, typename RewardModelType>
 storm::models::sparse::ChoiceLabeling const& Model<ValueType, RewardModelType>::getChoiceLabeling() const {
-    return choiceLabeling.get();
+    return choiceLabeling.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::models::sparse::ChoiceLabeling> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
+std::optional<storm::models::sparse::ChoiceLabeling> const& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() const {
     return choiceLabeling;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::models::sparse::ChoiceLabeling>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
+std::optional<storm::models::sparse::ChoiceLabeling>& Model<ValueType, RewardModelType>::getOptionalChoiceLabeling() {
     return choiceLabeling;
 }
 
@@ -345,16 +352,16 @@ bool Model<ValueType, RewardModelType>::hasStateValuations() const {
 
 template<typename ValueType, typename RewardModelType>
 storm::storage::sparse::StateValuations const& Model<ValueType, RewardModelType>::getStateValuations() const {
-    return stateValuations.get();
+    return stateValuations.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
+std::optional<storm::storage::sparse::StateValuations> const& Model<ValueType, RewardModelType>::getOptionalStateValuations() const {
     return stateValuations;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
+std::optional<storm::storage::sparse::StateValuations>& Model<ValueType, RewardModelType>::getOptionalStateValuations() {
     return stateValuations;
 }
 
@@ -365,16 +372,16 @@ bool Model<ValueType, RewardModelType>::hasChoiceOrigins() const {
 
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::storage::sparse::ChoiceOrigins> const& Model<ValueType, RewardModelType>::getChoiceOrigins() const {
-    return choiceOrigins.get();
+    return choiceOrigins.value();
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() const {
+std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() const {
     return choiceOrigins;
 }
 
 template<typename ValueType, typename RewardModelType>
-boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() {
+std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& Model<ValueType, RewardModelType>::getOptionalChoiceOrigins() {
     return choiceOrigins;
 }
 
@@ -399,7 +406,7 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
         boost::hash_combine(seed, stateValuations->hash());
     }
     if (choiceOrigins) {
-        boost::hash_combine(seed, choiceOrigins.get()->hash());
+        boost::hash_combine(seed, choiceOrigins.value()->hash());
     }
     return seed;
 }
@@ -465,14 +472,14 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                         std::string stateInfo = getStateValuations().getStateInfo(state);
                         std::vector<std::string> results;
                         boost::split(results, stateInfo, [](char c) { return c == ','; });
-                        storm::utility::outputFixedWidth(outStream, results, maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, results, maxWidthLabel);
                     }
                     outStream << ": ";
 
                     // Now print the state labeling to the stream if requested.
                     if (includeLabeling) {
                         outStream << "{";
-                        storm::utility::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
+                        storm::io::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
                         outStream << "}";
                     }
 
@@ -592,16 +599,16 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
         stateChoicesJson["c"] = std::move(choicesJson);
         output.push_back(std::move(stateChoicesJson));
     }
-    outStream << output.dump(4);
+    outStream << storm::dumpJson(output);
 }
 
 template<>
-void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream& outStream) const {
+void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
 }
 
 template<typename ValueType, typename RewardModelType>
-std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
+std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t /*state*/) const {
     return "";
 }
 
@@ -644,11 +651,31 @@ bool Model<ValueType, RewardModelType>::supportsParameters() const {
 }
 
 template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::supportsUncertainty() const {
+    return std::is_same<ValueType, storm::Interval>::value;
+}
+
+template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::hasParameters() const {
     if (!this->supportsParameters()) {
         return false;
     }
     // Check for parameters
+    for (auto const& entry : this->getTransitionMatrix()) {
+        if (!storm::utility::isConstant(entry.getValue())) {
+            return true;
+        }
+    }
+    // Only constant values present
+    return false;
+}
+
+template<typename ValueType, typename RewardModelType>
+bool Model<ValueType, RewardModelType>::hasUncertainty() const {
+    if (!this->supportsUncertainty()) {
+        return false;
+    }
+    // Check for intervals
     for (auto const& entry : this->getTransitionMatrix()) {
         if (!storm::utility::isConstant(entry.getValue())) {
             return true;
@@ -673,7 +700,6 @@ std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardM
     return this->rewardModels;
 }
 
-#ifdef STORM_HAVE_CARL
 std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
     return storm::storage::getVariables(model.getTransitionMatrix());
 }
@@ -707,16 +733,13 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
-#endif
 
 template class Model<double>;
+template class Model<storm::Interval>;
 
-#ifdef STORM_HAVE_CARL
 template class Model<storm::RationalNumber>;
-
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Model<storm::RationalFunction>;
-#endif
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

@@ -2,10 +2,12 @@
 
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
@@ -155,6 +157,39 @@ bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicMod
                     return false;
             }
             break;
+        case Engine::Exploration:
+            if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+                return false;
+            }
+            switch (modelType) {
+                case ModelType::DTMC:
+                    return storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);
+                case ModelType::MDP:
+                    return storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<ValueType>>::canHandleStatic(checkTask);
+                case ModelType::CTMC:
+                case ModelType::MA:
+                case ModelType::POMDP:
+                case ModelType::SMG:
+                    return false;
+            }
+            break;
+        case Engine::AbstractionRefinement:
+            if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+                return false;
+            }
+            switch (modelType) {
+                case ModelType::DTMC:
+                case ModelType::MDP:
+                    // Since the corresponding model checker is in a separate library, we can only make a very crude over-approximation of what can be handled
+                    // at this point.
+                    return true;
+                case ModelType::CTMC:
+                case ModelType::MA:
+                case ModelType::POMDP:
+                case ModelType::SMG:
+                    return false;
+            }
+            break;
         default:
             STORM_LOG_ERROR("The selected engine " << engine << " is not considered.");
     }
@@ -214,6 +249,9 @@ bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, st
                     return false;
             }
             break;
+        case Engine::Exploration:
+        case Engine::AbstractionRefinement:
+            return false;
         default:
             STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
     }
@@ -225,18 +263,22 @@ bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, st
 template<typename ValueType>
 bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Property> const& properties,
                storm::storage::SymbolicModelDescription const& modelDescription) {
-    // Check handability of properties based on model type
-    for (auto const& p : properties) {
-        for (auto const& f : {p.getRawFormula(), p.getFilter().getStatesFormula()}) {
-            auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*f, true);
-            if (!canHandle(engine, modelDescription.getModelType(), task)) {
-                STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "' on models of type " << modelDescription.getModelType() << ".");
-                return false;
-            }
+    auto canHandleFormula = [&engine, &modelDescription](auto const& formula, bool onlyInitialStatesRelevant) {
+        auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(formula, onlyInitialStatesRelevant);
+        bool result = canHandle(engine, modelDescription.getModelType(), task);
+        STORM_LOG_INFO_COND(result, "Engine " << engine << " can not handle formula '" << task.getFormula() << "' on models of type "
+                                              << modelDescription.getModelType() << ".");
+        return result;
+    };
+    auto canHandleProperty = [&canHandleFormula](auto const& property) {
+        if (property.getFilter().isDefault()) {
+            return canHandleFormula(*property.getRawFormula(), true);
+        } else {
+            return canHandleFormula(*property.getRawFormula(), false) && canHandleFormula(*property.getFilter().getStatesFormula(), false);
         }
-    }
-    // Check whether the model builder can handle the model description
-    return storm::builder::canHandle<ValueType>(getBuilderType(engine), modelDescription, properties);
+    };
+    return std::all_of(properties.begin(), properties.end(), canHandleProperty) &&
+           storm::builder::canHandle<ValueType>(getBuilderType(engine), modelDescription, properties);
 }
 
 // explicit template instantiations.

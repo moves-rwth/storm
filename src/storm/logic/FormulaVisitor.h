@@ -1,9 +1,10 @@
 #ifndef STORM_LOGIC_FORMULAVISITOR_H_
 #define STORM_LOGIC_FORMULAVISITOR_H_
 
-#include <boost/any.hpp>
-
 #include "storm/logic/FormulasForwardDeclarations.h"
+namespace boost {
+class any;
+}
 
 namespace storm {
 namespace logic {

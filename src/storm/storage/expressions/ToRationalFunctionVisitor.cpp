@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

@@ -1,7 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
 #define STORM_STORAGE_EXPRESSIONS_OPERATORTYPE_H_
 
-#include <ostream>
+#include <iosfwd>
 
 namespace storm {
 namespace expressions {
@@ -20,6 +20,9 @@ enum class OperatorType {
     Max,
     Power,
     Modulo,
+    Logarithm,
+    Cos,
+    Sin,
     Equal,
     NotEqual,
     Less,

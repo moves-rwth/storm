@@ -1,17 +1,90 @@
-
 Changelog
 ==============
 
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.7.x
+Version 1.10.x
+--------------
+
+## Version 1.10.0 (2025/05)
+- Improved `LpMinMaxLinearEquationSolver`, set relevant values in topological solvers.
+- Speed up of MEC decomposition by adjusting loops.
+- Minor improvements for steady-state properties.
+- Improved access to state valuations.
+- Improved parsing: detect and handle integer overflows in expression parsing, and handle irrational probability expressions.
+- Limit Sylvan threads to 1 on Apple Silicon.
+- Bug fixes in computation of cumulative rewards, transient variables in JANI, SMGs with non-synchronizing but labeled actions, in `SparseCbAchievabilityQuery` and `PcaaWeightVectorChecker`.
+- Updated shipped dependencies: Eigen, ExprTk, Spot.
+- `storm-dft`: Set BDD variable ordering for SFT from file.
+- `storm-dft`: Warning on potential modeling issues.
+- `storm-dft`: Bug fixes in DFT representant computation and failable elements.
+- `storm-pars`: Bug fixes in monotonicity computation.
+- `storm-pomdp`: Added cut-off memory node information.
+- `storm-pomdp`: Extended handling of terminal states.
+- `storm-pomdp`: Improved output.
+- Developer: Require at least CMake version 3.22.
+- Developer: Revised includes.
+- Developer: GLPK is optional.
+- Developer: `BitVector` conforms to `std::ranges::range` concept.
+- Developer: Improved CI tests and added builds on macOS.
+
+
+Version 1.9.x
 -------------
 
-## Version 1.7.1
+## Version 1.9.0 (2024/08)
+- Improved expected visiting times (EVTs) and steady state distribution computations.
+- Support for interval-based models.
+- Robust VI.
+- Significantly improved compilation times.
+- Support for logarithm expressions in PRISM and JANI.
+- Support for sin and cos operators, and PI and Euler constants in JANI parser.
+- Extraction of schedulers for minimal expected total rewards.
+- More efficient MEC and SCC decompositions.
+- Revised LP encoding for multi-objective verification under simple strategies.
+- Added CLI option `--permute` to re-order the states after building.
+- Added CLI option `--build:state limit <number>` to limit the number of explored states.
+- Print all linked libraries when using `--version`.
+- Removed support for HyPro and Cuda.
+- Moved gamebased-ar to own library.
+- Various bug fixes.
+- `storm-conv`: Removed option `--stdout`.
+- `storm-dft`: Fixes and improvements for DFT symmetries and DFT simulation.
+- `storm-pars`: Completely reworked the command-line interface (and partially the C++ API).
+- `storm-pars`: "Time travelling" optimization.
+- `storm-pgcl`: Removed the library.
+- Developer: Require at least CMake version 3.15.
+- Developer: Moved `storm-config.h.in` into `src` directory.
+- Developer: Use various Dockerfiles in CI.
+- Developer: Revised includes and use pre-compiled headers.
+- Developer: Fixed various compiler warnings.
+
+
+Version 1.8.x
+-------------
+
+## Version 1.8.1 (2023/06)
+- Workaround for issue with Boost >= 1.81
+
+## Version 1.8.0 (2023/05)
+- Revised implementation of value iteration algorithms and its variants, fixing a bug in the optimistic value iteration heuristic.
+- Experimental support for compiling on Apple Silicon
+- Added SoPlex as a possible LP solver
+- Upgraded shipped version of sylvan
+- Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/moves-rwth/carl-storm) in at least version 14.23.
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
+- `storm-pomdp`: streamlined implementation for quantitative analysis
+- `storm-pomdp`: added clipping for POMDP under-approximation
+- `storm-pomdp`: added API for interactive exploration of belief MDPs
+- Developer: Introduced forward declarations (in their own headers), in particular for `storm::RationalNumber`, `storm::RationalFunction`, and `storm::json`
+- Developer: LpSolver interface now supports RawMode (to avoid overhead of `storm::expression`) and indicator constraints
+
+
+Version 1.7.x
+-------------
 
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.

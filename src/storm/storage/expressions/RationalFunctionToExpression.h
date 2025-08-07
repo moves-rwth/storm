@@ -1,10 +1,6 @@
-//
-// Created by Jip Spel on 24.09.18.
-//
+#pragma once
 
-#ifndef STORM_RATIONALFUNCTIONTOEXPRESSION_H
-#define STORM_RATIONALFUNCTIONTOEXPRESSION_H
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -36,5 +32,3 @@ class RationalFunctionToExpression {
 };
 }  // namespace expressions
 }  // namespace storm
-
-#endif  // STORM_RATIONALFUNCTIONTOEXPRESSION_H

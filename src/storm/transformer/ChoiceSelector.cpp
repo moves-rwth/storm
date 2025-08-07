@@ -1,5 +1,6 @@
 #include "storm/transformer/ChoiceSelector.h"
-#include <storm/exceptions/NotImplementedException.h>
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/models/sparse/Mdp.h"
 
 #include "storm/models/sparse/MarkovAutomaton.h"

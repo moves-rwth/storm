@@ -7,6 +7,8 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/utility/constants.h"
 
+#include "storm-parsers/parser/SpiritErrorHandler.h"
+
 namespace boost {
 namespace spirit {
 namespace traits {
@@ -50,7 +52,7 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
       unaryOperator_(),
       floorCeilOperator_(),
       minMaxOperator_(),
-      prefixPowerModuloOperator_(),
+      prefixPowerModuloLogarithmOperator_(),
       invalidIdentifiers_(invalidIdentifiers_) {
     expressionCreator = std::make_unique<ExpressionCreator>(manager);
 
@@ -110,35 +112,44 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     minMaxExpression.name("min/max expression");
 
     if (allowBacktracking) {
-        prefixPowerModuloExpression =
-            ((prefixPowerModuloOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >>
-             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3,
-                                                    qi::_pass)] |
-            (qi::lit("func") >> qi::lit("(") >> prefixPowerModuloOperator_ >> qi::lit(",") >> expression >> qi::lit(",") >> expression >>
-             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1, qi::_3,
-                                                    qi::_pass)];
+        prefixPowerModuloLogarithmExpression =
+            ((prefixPowerModuloLogarithmOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >>
+             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1,
+                                                    qi::_3, qi::_pass)] |
+            (qi::lit("func") >> qi::lit("(") >> prefixPowerModuloLogarithmOperator_ >> qi::lit(",") >> expression >> qi::lit(",") >> expression >>
+             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1,
+                                                    qi::_3, qi::_pass)];
     } else {
-        prefixPowerModuloExpression = ((prefixPowerModuloOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression >
-                                       qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator),
-                                                                              qi::_2, qi::_1, qi::_3, qi::_pass)] |
-                                      ((qi::lit("func") >> qi::lit("(")) > prefixPowerModuloOperator_ > qi::lit(",") > expression > qi::lit(",") > expression >
-                                       qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator),
-                                                                              qi::_2, qi::_1, qi::_3, qi::_pass)];
+        prefixPowerModuloLogarithmExpression =
+            ((prefixPowerModuloLogarithmOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression >
+             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1,
+                                                    qi::_3, qi::_pass)] |
+            ((qi::lit("func") >> qi::lit("(")) > prefixPowerModuloLogarithmOperator_ > qi::lit(",") > expression > qi::lit(",") > expression >
+             qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression, phoenix::ref(*expressionCreator), qi::_2, qi::_1,
+                                                    qi::_3, qi::_pass)];
     }
-    prefixPowerModuloExpression.name("(prefix) power/modulo expression");
+    prefixPowerModuloLogarithmExpression.name("(prefix) power/modulo/logarithm expression");
 
     identifierExpression =
         identifier[qi::_val = phoenix::bind(&ExpressionCreator::getIdentifierExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
     identifierExpression.name("identifier expression");
 
+    // Integer literals. We Handle 64-bit overflows with a nice error message, while silently rejecting non-integer inputs
+    // i.e., these rules imply "if we have an integer literal, then there must not be an overflow."
+    integerOverflowHelperRule = qi::eps[qi::_pass = !qi::_r1];
+    integerOverflowHelperRule.name("no 64-bit integer overflow");
+    integerLiteralExpression = integerLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator),
+                                                                        qi::_1, qi::_pass, qi::_a)] > integerOverflowHelperRule(qi::_a);
+    integerLiteralExpression.name("integer literal");
+
     literalExpression =
         qi::lit("true")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), true, qi::_pass)] |
         qi::lit("false")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), false, qi::_pass)] |
-        rationalLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)] |
-        qi::long_long[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
+        floatLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)] |
+        integerLiteralExpression[qi::_val = qi::_1];
     literalExpression.name("literal expression");
 
-    atomicExpression = predicateExpression | floorCeilExpression | roundExpression | prefixPowerModuloExpression | minMaxExpression |
+    atomicExpression = predicateExpression | floorCeilExpression | roundExpression | prefixPowerModuloLogarithmExpression | minMaxExpression |
                        (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
     atomicExpression.name("atomic expression");
 
@@ -151,12 +162,12 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
         infixPowerModuloExpression =
             unaryExpression[qi::_val = qi::_1] >>
             -(infixPowerModuloOperator_ >>
-              unaryExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
-                                                      qi::_2, qi::_pass)][qi::_val = qi::_a];
+              unaryExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression, phoenix::ref(*expressionCreator), qi::_val,
+                                                      qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         infixPowerModuloExpression =
             unaryExpression[qi::_val = qi::_1] >
-            -(infixPowerModuloOperator_ >> unaryExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression,
+            -(infixPowerModuloOperator_ >> unaryExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloLogarithmExpression,
                                                                                      phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
     }
     infixPowerModuloExpression.name("(infix) power/modulo expression");
@@ -267,6 +278,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     debug(unaryExpression);
     debug(atomicExpression);
     debug(literalExpression);
+    debug(integerLiteralExpression);
+    debug(integerOverflowHelperRule);
     debug(identifierExpression);
     */
 
@@ -283,6 +296,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
         qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+        qi::on_error<qi::fail>(integerLiteralExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+        qi::on_error<qi::fail>(integerOverflowHelperRule, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));

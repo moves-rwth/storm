@@ -39,6 +39,7 @@ class CheckTask {
         this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
         this->produceSchedulers = false;
         this->qualitative = false;
+        this->robustUncertainty = true;
 
         updateOperatorInformation();
     }
@@ -50,7 +51,8 @@ class CheckTask {
     template<typename NewFormulaType>
     CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
         CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
-                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
+                                                    this->robustUncertainty);
         result.updateOperatorInformation();
         return result;
     }
@@ -128,7 +130,8 @@ class CheckTask {
     template<typename NewValueType>
     CheckTask<FormulaType, NewValueType> convertValueType() const {
         return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
-                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                                                    this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
+                                                    this->robustUncertainty);
     }
 
     /*!
@@ -223,7 +226,7 @@ class CheckTask {
     ValueType getBoundThreshold() const {
         STORM_LOG_THROW(!bound.get().threshold.containsVariables(), storm::exceptions::InvalidOperationException,
                         "Cannot evaluate threshold '" << bound.get().threshold << "' as it contains undefined constants.");
-        return storm::utility::convertNumber<ValueType>(bound.get().threshold.evaluateAsRational());
+        return bound.get().template evaluateThresholdAs<ValueType>();
     }
 
     /*!
@@ -241,7 +244,7 @@ class CheckTask {
     }
 
     /*!
-     * Retrieves the bound (if set).
+     * Retrieves the bound
      */
     boost::optional<storm::logic::Bound> const& getOptionalBound() const {
         return bound;
@@ -302,6 +305,14 @@ class CheckTask {
         return this->substituteFormula<storm::logic::Formula>(this->getFormula());
     }
 
+    bool getRobustUncertainty() const {
+        return robustUncertainty;
+    }
+
+    void setRobustUncertainty(bool robust = true) {
+        robustUncertainty = robust;
+    }
+
    private:
     /*!
      * Creates a task object with the given options.
@@ -320,7 +331,8 @@ class CheckTask {
      */
     CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection,
               boost::optional<storm::logic::PlayerCoalition> playerCoalition, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant,
-              boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint)
+              boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint,
+              bool robust)
         : formula(formula),
           optimizationDirection(optimizationDirection),
           playerCoalition(playerCoalition),
@@ -329,7 +341,8 @@ class CheckTask {
           bound(bound),
           qualitative(qualitative),
           produceSchedulers(produceSchedulers),
-          hint(hint) {
+          hint(hint),
+          robustUncertainty(robust) {
         // Intentionally left empty.
     }
 
@@ -360,6 +373,9 @@ class CheckTask {
 
     // A hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
     std::shared_ptr<ModelCheckerHint> hint;
+
+    /// Whether uncertainty should be resolved robust (standard) or angelically.
+    bool robustUncertainty;
 };
 
 }  // namespace modelchecker

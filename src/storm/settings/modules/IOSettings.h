@@ -6,6 +6,7 @@
 #include "storm-config.h"
 #include "storm/builder/ExplorationOrder.h"
 #include "storm/io/ModelExportFormat.h"
+#include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
@@ -56,7 +57,7 @@ class IOSettings : public ModuleSettings {
     /*!
      * Retrieves the specified export format for the exportbuild option
      */
-    storm::exporter::ModelExportFormat getExportBuildFormat() const;
+    storm::io::ModelExportFormat getExportBuildFormat() const;
 
     /*!
      * Retrieves whether the export-to-dot option for jani was set.
@@ -332,6 +333,11 @@ class IOSettings : public ModuleSettings {
      * Retrieves whether the steady-state distribution is to be computed.
      */
     bool isComputeSteadyStateDistributionSet() const;
+
+    /*!
+     * @return the algorithm used for computing steady state distributions
+     */
+    storm::SteadyStateDistributionAlgorithm getSteadyStateDistributionAlgorithm() const;
 
     /*!
      * Retrieves whether the expected visiting times are to be computed.

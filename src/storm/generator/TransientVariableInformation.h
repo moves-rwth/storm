@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/generator/ArrayVariableReplacementInformation.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/macros.h"
 
@@ -77,7 +77,7 @@ struct TransientVariableValuation {
                 STORM_LOG_THROW(!varValue.first->lowerBound.is_initialized() || varValue.first->lowerBound.get() <= varValue.second,
                                 storm::exceptions::OutOfRangeException,
                                 "The assigned value for transient variable " << varValue.first->variable.getName() << " is smaller than its lower bound.");
-                STORM_LOG_THROW(varValue.first->upperBound.is_initialized() || varValue.second <= varValue.first->upperBound.get(),
+                STORM_LOG_THROW(!varValue.first->upperBound.is_initialized() || varValue.second <= varValue.first->upperBound.get(),
                                 storm::exceptions::OutOfRangeException,
                                 "The assigned value for transient variable " << varValue.first->variable.getName() << " is higher than its upper bound.");
             }

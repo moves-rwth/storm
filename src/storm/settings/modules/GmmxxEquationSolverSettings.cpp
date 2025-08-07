@@ -25,7 +25,7 @@ const std::string GmmxxEquationSolverSettings::maximalIterationsOptionShortName 
 const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
 
 GmmxxEquationSolverSettings::GmmxxEquationSolverSettings() : ModuleSettings(moduleName) {
-    std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
+    std::vector<std::string> methods = {"bicgstab", "qmr", "gmres"};
     this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true,
                                                    "The method to be used for solving linear equation systems with the gmm++ engine.")
                         .setIsAdvanced()
@@ -130,7 +130,7 @@ double GmmxxEquationSolverSettings::getPrecision() const {
 
 bool GmmxxEquationSolverSettings::check() const {
     // This list does not include the precision, because this option is shared with other modules.
-    bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet();
+    bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() || isMaximalIterationCountSet();
 
     STORM_LOG_WARN_COND(
         storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet,

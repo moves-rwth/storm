@@ -17,6 +17,8 @@
 #include "storm/utility/math.h"
 #include "storm/utility/prism.h"
 
+#include "storm/adapters/AddExpressionAdapter.h"
+
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
@@ -34,7 +36,7 @@ namespace builder {
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
+    void create(storm::prism::Program const& /*program*/, storm::adapters::AddExpressionAdapter<Type, ValueType>& /*rowExpressionAdapter*/) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 
@@ -93,9 +95,9 @@ class ParameterCreator<Type, storm::RationalFunction> {
 template<storm::dd::DdType Type, typename ValueType>
 class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
    public:
-    GenerationInformation(storm::prism::Program const& program)
+    GenerationInformation(storm::prism::Program const& program, std::shared_ptr<storm::dd::DdManager<Type>> const& manager)
         : program(program),
-          manager(std::make_shared<storm::dd::DdManager<Type>>()),
+          manager(manager),
           rowMetaVariables(),
           variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
           rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)),
@@ -909,11 +911,11 @@ storm::dd::Add<Type, ValueType> DdPrismModelBuilder<Type, ValueType>::encodeChoi
                                 << ".");
 
     std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
-    for (uint_fast64_t i = nondeterminismVariableOffset; i < nondeterminismVariableOffset + numberOfBinaryVariables; ++i) {
+    for (uint_fast64_t i = 0; i < numberOfBinaryVariables; ++i) {
         if (value & (1ull << (numberOfBinaryVariables - i - 1))) {
-            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 1);
+            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[nondeterminismVariableOffset + i], 1);
         } else {
-            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[i], 0);
+            metaVariableNameToValueMap.emplace(generationInfo.nondeterminismMetaVariables[nondeterminismVariableOffset + i], 0);
         }
     }
 
@@ -1418,31 +1420,11 @@ storm::models::symbolic::StandardRewardModel<Type, ValueType> DdPrismModelBuilde
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program,
-                                                                                                             Options const& options) {
-    if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
-        std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
-        std::stringstream stream;
-        bool printComma = false;
-        for (auto const& constant : undefinedConstants) {
-            if (printComma) {
-                stream << ", ";
-            } else {
-                printComma = true;
-            }
-            stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-        }
-        stream << ".";
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-    }
-    STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException,
-                    "Program contains unbounded variables which is not supported by the DD engine.");
-
-    STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
-
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::buildInternal(
+    storm::prism::Program const& program, Options const& options, std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
     // Start by initializing the structure used for storing all information needed during the model generation.
     // In particular, this creates the meta variables used to encode the model.
-    GenerationInformation generationInfo(program);
+    GenerationInformation generationInfo(program, manager);
 
     SystemResult system = createSystemDecisionDiagram(generationInfo);
     storm::dd::Add<Type, ValueType> transitionMatrix = system.allTransitionsDd;
@@ -1587,6 +1569,35 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
         result->addParameters(generationInfo.parameters);
     }
 
+    return result;
+}
+
+template<storm::dd::DdType Type, typename ValueType>
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program,
+                                                                                                             Options const& options) {
+    if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
+        std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
+        std::stringstream stream;
+        bool printComma = false;
+        for (auto const& constant : undefinedConstants) {
+            if (printComma) {
+                stream << ", ";
+            } else {
+                printComma = true;
+            }
+            stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+        }
+        stream << ".";
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+    }
+    STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException,
+                    "Program contains unbounded variables which is not supported by the DD engine.");
+
+    STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
+
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
+    manager->execute([&program, &options, &manager, &result, this]() { result = this->buildInternal(program, options, manager); });
     return result;
 }
 

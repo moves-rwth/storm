@@ -32,12 +32,14 @@ const std::string applyNoMaxProgAssumptionOptionName = "nomaxprog";
 const std::string buildChoiceLabelOptionName = "buildchoicelab";
 const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
 const std::string buildStateValuationsOptionName = "buildstateval";
+const std::string buildObservationValuationsOptionName = "buildobsval";
 const std::string buildAllLabelsOptionName = "build-all-labels";
 const std::string buildOutOfBoundsStateOptionName = "build-out-of-bounds-state";
 const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-guards-label";
 const std::string noSimplifyOptionName = "no-simplify";
 const std::string bitsForUnboundedVariablesOptionName = "int-bits";
 const std::string performLocationElimination = "location-elimination";
+const std::string explorationStateLimitOptionName = "state-limit";
 
 BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false,
@@ -63,6 +65,10 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
             .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, buildObservationValuationsOptionName, false,
+                                                   "If set, also build the observation valuations (only relevant for POMDPs)")
+                        .setIsAdvanced()
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, buildAllLabelsOptionName, false, "If set, build all labels").setIsAdvanced().build());
     this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
@@ -110,6 +116,12 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
                                          .makeOptional()
                                          .build())
                         .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, explorationStateLimitOptionName, false,
+                                                   "Potentially stopped exploration once the specified number of states is exceeded.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "states to explore before stopping.").build())
+                        .build());
 }
 
 bool BuildSettings::isExplorationOrderSet() const {
@@ -150,6 +162,10 @@ bool BuildSettings::isBuildChoiceOriginsSet() const {
 
 bool BuildSettings::isBuildStateValuationsSet() const {
     return this->getOption(buildStateValuationsOptionName).getHasOptionBeenSet();
+}
+
+bool BuildSettings::isBuildObservationValuationsSet() const {
+    return this->getOption(buildObservationValuationsOptionName).getHasOptionBeenSet();
 }
 
 bool BuildSettings::isBuildOutOfBoundsStateSet() const {
@@ -197,6 +213,15 @@ uint64_t BuildSettings::getLocationEliminationLocationHeuristic() const {
 uint64_t BuildSettings::getLocationEliminationEdgesHeuristic() const {
     return this->getOption(performLocationElimination).getArgumentByName("edges-heuristic").getValueAsUnsignedInteger();
 }
+
+bool BuildSettings::isExplorationStateLimitSet() const {
+    return this->getOption(explorationStateLimitOptionName).getHasOptionBeenSet();
+}
+
+uint64_t BuildSettings::getExplorationStateLimit() const {
+    return this->getOption(explorationStateLimitOptionName).getArgumentByName("number").getValueAsUnsignedInteger();
+}
+
 }  // namespace modules
 
 }  // namespace settings

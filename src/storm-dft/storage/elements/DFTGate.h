@@ -49,7 +49,7 @@ class DFTGate : public DFTChildren<ValueType> {
     virtual bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
                                       storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
-            childrenDontCare(state, queues);
+            childrenDontCare(queues);
             return true;
         }
         return false;
@@ -66,7 +66,7 @@ class DFTGate : public DFTChildren<ValueType> {
             queues.checkRestrictionLater(restr);
         }
         state.setFailed(this->mId);
-        this->childrenDontCare(state, queues);
+        this->childrenDontCare(queues);
     }
 
     void failsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
@@ -76,15 +76,14 @@ class DFTGate : public DFTChildren<ValueType> {
             }
         }
         state.setFailsafe(this->mId);
-        this->childrenDontCare(state, queues);
+        this->childrenDontCare(queues);
     }
 
     /*!
      * Propagate Don't Care to children.
-     * @param state Current DFT state.
      * @param queues Propagation queues.
      */
-    void childrenDontCare(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+    void childrenDontCare(storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
         queues.propagateDontCare(this->children());
     }
 };

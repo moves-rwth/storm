@@ -1,0 +1,9 @@
+toplevel "T";
+"T" or "P" "A";
+"P" por "B" "O";
+"O" or "C" "D";
+"M" mutex "A" "C";
+"A" lambda=1.0 dorm=1.0;
+"B" lambda=1.0 dorm=1.0;
+"C" lambda=1.0 dorm=1.0;
+"D" lambda=1.0 dorm=1.0;

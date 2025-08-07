@@ -166,6 +166,11 @@ storm::expressions::Expression Z3ExpressionAdapter::translateExpression(z3::expr
                         return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(std::string(Z3_get_numeral_string(expr.ctx(), expr))));
                     }
                 }
+            case Z3_OP_AGNUM:
+                STORM_LOG_WARN("Interpreting algebraic numbers as rational numbers. This is not an exact computation.");
+                // Get the value of an algebraic number, converted to a rational, with precision 1/10^16.
+                return manager.rational(storm::utility::convertNumber<storm::RationalNumber>(
+                    std::string(Z3_get_numeral_string(expr.ctx(), Z3_get_algebraic_number_lower(expr.ctx(), expr, 16)))));
             case Z3_OP_UNINTERPRETED:
                 // Currently, we only support uninterpreted constant functions.
                 STORM_LOG_THROW(expr.is_const(), storm::exceptions::ExpressionEvaluationException,
@@ -273,22 +278,22 @@ boost::any Z3ExpressionAdapter::visit(storm::expressions::BinaryRelationExpressi
 
     z3::expr result(context);
     switch (expression.getRelationType()) {
-        case storm::expressions::BinaryRelationExpression::RelationType::Equal:
+        case storm::expressions::RelationType::Equal:
             result = leftResult == rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
+        case storm::expressions::RelationType::NotEqual:
             result = leftResult != rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Less:
+        case storm::expressions::RelationType::Less:
             result = leftResult < rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
+        case storm::expressions::RelationType::LessOrEqual:
             result = leftResult <= rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Greater:
+        case storm::expressions::RelationType::Greater:
             result = leftResult > rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case storm::expressions::RelationType::GreaterOrEqual:
             result = leftResult >= rightResult;
             break;
         default:

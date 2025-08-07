@@ -4,196 +4,471 @@ name: Build Test
 
 on:
   schedule:
-      # run daily
-      - cron: '0 6 * * *'
+    # run daily
+    - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
   pull_request:
 
 env:
-  CARL_BRANCH: "master14"
-  CARL_GIT_URL: "https://github.com/smtrat/carl.git"
-  STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
-  STORM_BRANCH: "${{ github.ref }}"
-  # github runners currently have two cores
-  NR_JOBS: "2"
-
-  # cmake arguments
-  CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
-  CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
-
-  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
-  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
 
 jobs:
+  # Perform in-depth tests with different configurations
   indepthTests:
-    name: Indepth Tests (${{ matrix.cmakeArgs.name }})
-    runs-on: ubuntu-latest
-    env:
-      DISTRO: "ubuntu-22.04"
-    strategy:
-      matrix:
-        cmakeArgs:
-          - {name: "GMP exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          # This is the standard config
-          # - {name: "GMP exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
-          - {name: "CLN exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "CLN exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-          - {name: "GMP exact; CLN rational functions; No Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=OFF -DSTORM_COMPILE_WITH_ALL_SANITIZERS=ON"}
-    steps:
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
-      - name: Git clone
-        # git clone cannot clone individual commits based on a sha and some other refs
-        # this workaround fixes this and fetches only one commit
-        run: |
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${{ matrix.cmakeArgs.args }}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
-
-  noDeploy:
-    name: Build and Test
+    name: Indepth Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-10", "debian-11", "ubuntu-18.04", "ubuntu-20.04"]
-        debugOrRelease: ["release"]
+        config:
+          - {name: "GMP exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF",
+             AllSanitizers: "ON",
+             cmakeArgs: ""
+          }
+          - {name: "CLN exact; GMP rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "OFF",
+             AllSanitizers: "ON",
+             cmakeArgs: ""
+          }
+          - {name: "CLN exact; CLN rational functions; All dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: ""
+          }
+          - {name: "GMP exact; CLN rational functions; No dependencies",
+             baseImg: "storm-dependencies:latest-debug",
+             buildType: "Debug",
+             disable_glpk: "ON",
+             disable_gmm: "ON",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
+             disable_xerces: "ON",
+             disable_z3: "ON",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "ON",
+             AllSanitizers: "ON",
+             cmakeArgs: ""
+          }
+          - {name: "Minimal dependencies (without CLN)",
+             baseImg: "storm-basesystem:minimal_dependencies",
+             buildType: "Debug",
+             disable_glpk: "ON",
+             disable_gmm: "ON",
+             disable_gurobi: "ON",
+             disable_mathsat: "ON",
+             disable_soplex: "ON",
+             disable_spot: "ON",
+             disable_xerces: "ON",
+             disable_z3: "ON",
+             Developer: "ON",
+             ClnExact: "OFF",
+             ClnRatfunc: "OFF",
+             AllSanitizers: "ON",
+             cmakeArgs: ""
+          }
     steps:
-      - name: Setup cmake arguments
-        # this is strangely the best way to implement environment variables based on the value of another
-        # GITHUB_ENV is a magic variable pointing to a file; if a line with format {NAME}={VALUE}
-        # then the env variable with name NAME will be created/updated with VALUE
-        run: |
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CMAKE_ARGS=${CMAKE_DEBUG}" || echo "CMAKE_ARGS=${CMAKE_RELEASE}") >> $GITHUB_ENV
-
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${{ matrix.distro }}
       - name: Git clone
-        # git clone cannot clone individual commits based on a sha and some other refs
-        # this workaround fixes this and fetches only one commit
+        uses: actions/checkout@v4
+      - name: Build storm from Dockerfile
         run: |
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
+            --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg carl_tag="master" \
+            --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
+            --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
+            --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
+            --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
+            --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
+            --build-arg disable_xerces="${{ matrix.config.disable_xerces }}" \
+            --build-arg disable_z3="${{ matrix.config.disable_z3 }}" \
+            --build-arg developer="${{ matrix.config.Developer }}" \
+            --build-arg cln_exact="${{ matrix.config.ClnExact }}" \
+            --build-arg cln_ratfunc="${{ matrix.config.ClnRatfunc }}" \
+            --build-arg all_sanitizers="${{ matrix.config.AllSanitizers }}" \
+            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
+
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "--help" # TODO using --help as running the starter-project requires Z3.
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+
+  compilerTests:
+    # Build and run with different compilers (GCC, Clang)
+    # Run on latest Archlinux version to get most recent compiler versions
+    name: Compiler Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - {name: "GCC",
+             buildType: "Debug",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
+             packages: ""
+          }
+          - {name: "Clang",
+             buildType: "Debug",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
+             packages: "clang"
+          }
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Replace Dockerfile
+        run: cp .github/workflows/Dockerfile.archlinux Dockerfile
+      - name: Build storm from Dockerfile
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg build_type="${{ matrix.config.buildType }}" \
+            --build-arg carl_tag="master" \
+            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
+            --build-arg developer="${{ matrix.config.Developer }}" \
+            --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
+            --build-arg packages="${{ matrix.config.packages }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: true
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+
+  linuxTests:
+    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: ["debian-12", "ubuntu-24.04"]
+        buildType: ["Release"]
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Build storm from Dockerfile
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
+            --build-arg build_type="${{ matrix.buildType }}" \
+            --build-arg carl_tag="master" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Run storm
+        run: docker exec ci bash -c "/opt/storm/build/bin/storm --version"
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType }}
+          docker: true
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
+
+  macTests:
+    name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
+    strategy:
+      matrix:
+        config:
+          - {name: "XCode 14.3, Intel",
+             distro: "macos-13",
+             xcode: "14.3",
+             buildType: "Debug"
+            }
+          - {name: "XCode 15.4, ARM",
+             distro: "macos-14",
+             xcode: "15.4",
+             buildType: "Debug"
+            }
+          - {name: "XCode 16.3, ARM",
+             distro: "macos-15",
+             xcode: "16.3",
+             buildType: "Debug"
+            }
+    runs-on: ${{ matrix.config.distro }}
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.config.xcode }}
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        # cmake and gmp are already installed
+        run: |
+          brew update
+          brew install automake boost cln ginac glpk hwloc xerces-c z3
+      - name: Configure storm
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master"
       - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+        working-directory: ./build
+        run: make binaries -j ${NR_JOBS}
 
-        # A bit hacky... but its usefullnes has been proven in production
-      - name: Check release makeflags
-        if: matrix.debugOrRelease == 'release'
+      - name: Run storm (build tree)
+        working-directory: ./build
+        run: ./bin/storm
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.config.buildType }}
+          docker: false
+      - name: Build tests
+        working-directory: ./build
+        run: make -j ${NR_JOBS}
+      - name: Run tests
+        working-directory: ./build
+        run: ctest test --output-on-failure
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: "${GITHUB_WORKSPACE}/build"
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        working-directory: ./build
+        run: sudo make install
+      - name: Temporarily move build dir
         run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.debugOrRelease == 'debug'
+          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
+      - name: Run installed storm
         run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+          /usr/local/bin/storm --version
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: false
+          stormDir: ""
+          command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
 
   deploy:
-    name: Build, Test and Deploy
+    name: Test and Deploy (${{ matrix.buildType.name }})
     runs-on: ubuntu-latest
-    env:
-      DISTRO: "ubuntu-22.04"
     strategy:
       matrix:
-        debugOrRelease: ["debug", "release"]
+        buildType:
+          - {name: "Debug",
+             dockerTag: "ci-debug",
+             baseImg: "storm-dependencies:latest-debug",
+             Developer: "ON"
+          }
+          - {name: "Release",
+             dockerTag: "ci",
+             baseImg: "storm-dependencies:latest",
+             Developer: "OFF"
+          }
     steps:
-      - name: Setup cmake arguments
-        # this is strangely the best way to implement environment variables based on the value of another
-        # GITHUB_ENV is a magic variable pointing to a file; if a line with format {NAME}={VALUE}
-        # then the env variable with name NAME will be created/updated with VALUE
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Git describe
+        id: ghd
+        uses: proudust/gh-describe@v2
+      - name: Set static Storm version
+        run: echo "set(STORM_VERSION_COMMITS_AHEAD ${{ steps.ghd.outputs.distance }})" >> version.cmake
+      - name: Build storm from Dockerfile
         run: |
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CMAKE_ARGS=${CMAKE_DEBUG}" || echo "CMAKE_ARGS=${CMAKE_RELEASE}") >> $GITHUB_ENV
-          ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CARL_CMAKE_ARGS=${CARL_CMAKE_DEBUG}" || echo "CARL_CMAKE_ARGS=${CARL_CMAKE_RELEASE}") >> $GITHUB_ENV
-
+          docker build -t movesrwth/storm:${{ matrix.buildType.dockerTag }} . \
+            --build-arg BASE_IMAGE=movesrwth/${{ matrix.buildType.baseImg }} \
+            --build-arg build_type="${{ matrix.buildType.name }}" \
+            --build-arg carl_tag="master" \
+            --build-arg developer="${{ matrix.buildType.Developer }}" \
+            --build-arg cmake_args="${{ matrix.buildType.cmakeArgs }}" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
+      - name: Check compile flags
+        uses: ./.github/actions/check-compile-flags-action
+        with:
+          buildType: ${{ matrix.buildType.name }}
+          docker: true
+      - name: Build tests
+        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run tests
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+      - name: Build starter-project
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: "/opt/storm/build"
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Install storm
+        run: docker exec ci bash -c "cd /opt/storm/build; make install"
+      - name: Temporarily move build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+      - name: Run installed storm
+        run: |
+          docker exec ci bash -c "/usr/local/bin/storm --version"
+      - name: Build starter-project on installed Storm
+        uses: ./.github/actions/starter-project-action
+        with:
+          docker: true
+          stormDir: ""
+          command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      - name: Restore build dir
+        run: |
+          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
       - name: Login into docker
         # Only login if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
-      - name: Init Docker
-        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
-
-        #####
-        # Build & DEPLOY CARL
-        #####
-        # We should not do partial updates :/
-        # but we need to install some dependencies
-        # Surely we can find a better way to do this at some point
-      - name: Update base system
-        run: |
-          sudo docker exec storm apt-get update
-          sudo docker exec storm apt-get upgrade -qqy
-      - name: install dependencies
-        run: sudo docker exec storm apt-get install -qq -y uuid-dev pkg-config
-      - name: Git clone carl
-        run: sudo docker exec storm git clone --depth 1 --branch $CARL_BRANCH $CARL_GIT_URL /opt/carl
-      - name: Run cmake for carl
-        run: sudo docker exec storm bash -c "mkdir /opt/carl/build; cd /opt/carl/build; cmake .. ${CARL_CMAKE_ARGS}"
-      - name: Build carl
-        run: sudo docker exec storm bash -c "cd /opt/carl/build; make lib_carl -j ${NR_JOBS}"
-      - name: Deploy carl
-        # Only deploy if using master on original repo (and not for pull requests or forks)
-        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: |
-          sudo docker commit storm movesrwth/carl:ci-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/carl:ci-${{ matrix.debugOrRelease }}
-
-
-        #####
-        # Build & TEST & DEPLOY STORM
-        #####
-      - name: Git shallow clone
-        # Only clone shallow if not using master on original repo (and not for pull requests or forks)
-        if: ${{ !(github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master') }}
-        run: |
-          # git clone cannot clone individual commits based on a sha and some other refs
-          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
-      - name: Git deep clone
-        # needed for versioning for now on deployment
-        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
-        run: |
-          sudo docker exec storm git clone --branch master $STORM_GIT_URL /opt/storm
-      - name: Run cmake
-        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
-      - name: Build storm
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
-
-        # A bit hacky... but its usefulness has been proven in production
-      - name: Check release makeflags
-        if: matrix.debugOrRelease == 'release'
-        run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -O3' || (echo \"Error: Missing flag \'-O3\' for release build.\" && false)"
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -DNDEBUG' || (echo \"Error: Missing flag \'-DNDEBUG\' for release build.\" && false)"
-      - name: Check debug makeflags
-        if: matrix.debugOrRelease == 'debug'
-        run: |
-          sudo docker exec storm bash -c "/opt/storm/build/bin/storm --version | grep 'with flags .* -g' || (echo \"Error: Missing flag \'-g\' for debug build.\" && false)"
-      - name: Run unit tests
-        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
-
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
+          password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
       - name: Deploy storm
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
-          sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
+          docker commit ci movesrwth/storm:${{ matrix.buildType.dockerTag }}
+          docker push movesrwth/storm:${{ matrix.buildType.dockerTag }}
 
   notify:
     name: Email notification
     runs-on: ubuntu-latest
-    needs: [indepthTests, noDeploy, deploy]
+    needs: [indepthTests, compilerTests, linuxTests, macTests, deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:
-      - uses: technote-space/workflow-conclusion-action@v2
-      - uses: dawidd6/action-send-mail@v2
+      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

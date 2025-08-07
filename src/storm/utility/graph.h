@@ -51,12 +51,19 @@ class Add;
 
 }  // namespace dd
 
-namespace abstraction {
+namespace storage {
 class ExplicitGameStrategyPair;
 }
 
 namespace utility {
 namespace graph {
+
+/*!
+ * Computes the states reachable in one step from the states indicated by the bitvector.
+ * Assumes that no zero entries exist in the transition matrix.
+ */
+template<typename T>
+storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates);
 
 /*!
  * Performs a forward depth-first search through the underlying graph structure to identify the states that
@@ -283,10 +290,12 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
  * @param states The set of states for which to compute the scheduler that stays in this very set.
  * @param transitionMatrix The transition matrix.
  * @param scheduler The resulting scheduler. The scheduler is only set at the given states.
+ * @param rowFilter If given, the returned scheduler will only pick choices such that rowFilter is true for the corresponding matrixrow.
  */
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler);
+                                     storm::storage::Scheduler<SchedulerValueType>& scheduler,
+                                     boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that chooses an action that has at least one successor in the
@@ -314,10 +323,11 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
  * @note No choice is defined for ProbGreater0E-States if all the probGreater0-choices violate the row filter.
  *       This also holds for states that only reach psi via such states.
  */
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                   storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+                                   storm::storage::Scheduler<SchedulerValueType>& scheduler,
+                                   boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a reward infinity.
@@ -327,9 +337,9 @@ void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transi
  * @param backwardTransitions The reversed transition relation.
  * @param scheduler The resulting scheduler for the rewInf States. The scheduler is not set at other states.
  */
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<T>& scheduler);
+                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<SchedulerValueType>& scheduler);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a probability 0.
@@ -338,9 +348,9 @@ void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm
  * @param transitionMatrix The transition matrix of the system.
  * @param scheduler The resulting scheduler for the prob0EStates States. The scheduler is not set at probGreater0A states.
  */
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<T>& scheduler);
+                            storm::storage::Scheduler<SchedulerValueType>& scheduler);
 
 /*!
  * Computes a scheduler for the given prob1EStates such that in the induced system the given psiStates are reached with probability 1.
@@ -353,10 +363,10 @@ void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm
  * @param scheduler The resulting scheduler for the prob1EStates. The scheduler is not set at the remaining states.
  * @param rowFilter If given, only scheduler choices within this filter are taken. This filter is ignored for the psiStates.
  */
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
                             storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler,
+                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerValueType>& scheduler,
                             boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
 
 /*!
@@ -778,8 +788,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr);
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr);
 
 /*!
  * Computes the set of states that have probability 1 given the strategies of the two players.
@@ -801,8 +810,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction,
-                                      storm::abstraction::ExplicitGameStrategyPair* strategyPair = nullptr,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair = nullptr,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates = boost::none);
 
 /*!

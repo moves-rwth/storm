@@ -5,6 +5,8 @@
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+
 #include "storm/generator/CompressedState.h"
 
 #include "storm/storage/MaximalEndComponentDecomposition.h"
@@ -45,10 +47,15 @@ SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelCheck
 }
 
 template<typename ModelType, typename StateType>
-bool SparseExplorationModelChecker<ModelType, StateType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+bool SparseExplorationModelChecker<ModelType, StateType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
     storm::logic::Formula const& formula = checkTask.getFormula();
     storm::logic::FragmentSpecification fragment = storm::logic::reachability();
     return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
+}
+
+template<typename ModelType, typename StateType>
+bool SparseExplorationModelChecker<ModelType, StateType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+    return canHandleStatic(checkTask);
 }
 
 template<typename ModelType, typename StateType>

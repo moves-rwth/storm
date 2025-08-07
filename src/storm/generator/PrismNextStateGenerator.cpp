@@ -3,6 +3,8 @@
 #include <boost/any.hpp>
 #include <boost/container/flat_map.hpp>
 
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -15,9 +17,12 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace generator {
@@ -40,8 +45,9 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     // Only after checking validity of the program, we initialize the variable information.
     this->checkValid();
     this->variableInformation = VariableInformation(program, options.getReservedBitsForUnboundedVariables(), options.isAddOutOfBoundsStateSet());
+    this->initializeSpecialStates();
 
-    // Create a proper evalator.
+    // Create a proper evaluator.
     this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
 
     if (this->options.isBuildAllRewardModelsSet()) {
@@ -84,8 +90,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
                         std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
                 } else {
                     // If the label is not present in the program and is not a special one, we raise an error.
-                    STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock",
-                                    storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel()), storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                 }
             }
@@ -177,7 +182,7 @@ std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitial
     std::vector<StateType> initialStateIndices;
 
     // If all states are initial, we can simplify the enumeration substantially.
-    if (program.hasInitialConstruct() && program.getInitialConstruct().getInitialStatesExpression().isTrue()) {
+    if (program.hasInitialConstruct() && program.getInitialStatesExpression().isTrue()) {
         // Create vectors holding all possible values
         std::vector<std::vector<uint64_t>> allValues;
         for (auto const& intVar : this->variableInformation.integerVariables) {
@@ -292,11 +297,26 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
         result.addStateReward(stateRewardValue);
     }
 
-    // If a terminal expression was set and we must not expand this state, return now.
+    // If a terminal expression was set, we must not expand this state
     if (!this->terminalStates.empty()) {
         for (auto const& expressionBool : this->terminalStates) {
             if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
-                return result;
+                if (!isPartiallyObservable()) {
+                    // If the model is not partially observable, return.
+                    return result;
+                } else {
+                    // for partially observable models, we need to add self-loops for all enabled actions.
+                    result.setExpanded();
+                    std::vector<Choice<ValueType>> allChoices = getSelfLoopsForAllActions(*this->state, stateToIdCallback);
+                    if (allChoices.size() != 0) {
+                        for (auto& choice : allChoices) {
+                            result.addChoice(std::move(choice));
+                        }
+
+                        this->postprocess(result);
+                    }
+                    return result;
+                }
             }
         }
     }
@@ -654,16 +674,163 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             }
 
             if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                storm::storage::PlayerIndex const& playerOfModule = moduleIndexToPlayerIndexMap.at(i);
-                STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
-                                "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
-                choice.setPlayerIndex(playerOfModule);
+                if (command.getActionIndex() == 0) {
+                    // Unlabeled command
+                    auto const playerOfModule = moduleIndexToPlayerIndexMap.at(i);
+                    STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
+                    choice.setPlayerIndex(playerOfModule);
+                } else {
+                    // Labelled command (that happens to not synchronize with another command
+                    auto const playerOfAction = actionIndexToPlayerIndexMap.at(command.getActionIndex());
+                    STORM_LOG_THROW(playerOfAction != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException,
+                                    "Command with action label '" << program.getActionName(command.getActionIndex()) << "' is not owned by any player.");
+                    choice.setPlayerIndex(playerOfAction);
+                }
             }
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
                 STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+            }
+        }
+    }
+
+    return result;
+}
+
+template<typename ValueType, typename StateType>
+std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getSelfLoopsForAllActions(CompressedState const& state,
+                                                                                                        StateToIdCallback stateToIdCallback,
+                                                                                                        CommandFilter const& commandFilter) {
+    std::vector<Choice<ValueType>> result;
+
+    // Asynchronous actions
+    // Iterate over all modules.
+    for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
+        storm::prism::Module const& module = program.getModule(i);
+
+        // Iterate over all commands.
+        for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
+            storm::prism::Command const& command = module.getCommand(j);
+
+            // Only consider commands that are not possibly synchronizing.
+            if (isCommandPotentiallySynchronizing(command))
+                continue;
+
+            if (this->actionMask != nullptr) {
+                if (!this->actionMask->query(*this, command.getActionIndex())) {
+                    continue;
+                }
+            }
+
+            // Skip the command, if it is not enabled.
+            if (!this->evaluator->asBool(command.getGuardExpression())) {
+                continue;
+            }
+
+            result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
+            Choice<ValueType>& choice = result.back();
+
+            // Remember the choice origin only if we were asked to.
+            if (this->options.isBuildChoiceOriginsSet()) {
+                CommandSet commandIndex{command.getGlobalIndex()};
+                choice.addOriginData(boost::any(std::move(commandIndex)));
+            }
+            choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+
+            // Create the state-action reward for the newly created choice.
+            for (auto const& rewardModel : rewardModels) {
+                ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                if (rewardModel.get().hasStateActionRewards()) {
+                    for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
+                        if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
+                            this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                            stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
+                        }
+                    }
+                }
+                choice.addReward(stateActionRewardValue);
+            }
+
+            if (this->options.isBuildChoiceLabelsSet() && command.isLabeled()) {
+                choice.addLabel(program.getActionName(command.getActionIndex()));
+            }
+        }
+    }
+
+    // Synchronizing actions
+    for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
+        if (this->actionMask != nullptr) {
+            if (!this->actionMask->query(*this, actionIndex)) {
+                continue;
+            }
+        }
+        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists =
+            getActiveCommandsByActionIndex(actionIndex, commandFilter);
+
+        // Only process this action label, if there is at least one feasible solution.
+        if (optionalActiveCommandLists) {
+            std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> const& activeCommandList = optionalActiveCommandLists.get();
+            std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> iteratorList(activeCommandList.size());
+
+            // Initialize the list of iterators.
+            for (size_t i = 0; i < activeCommandList.size(); ++i) {
+                iteratorList[i] = activeCommandList[i].cbegin();
+            }
+
+            // As long as there is one feasible combination of commands, keep on expanding it.
+            bool done = false;
+            while (!done) {
+                // At this point, we applied all commands of the current command combination and newTargetStates
+                // contains all target states and their respective probabilities. That means we are now ready to
+                // add the choice to the list of transitions.
+                result.push_back(Choice<ValueType>(actionIndex));
+
+                // Now create the actual distribution.
+                Choice<ValueType>& choice = result.back();
+
+                // Remember the choice label and origins only if we were asked to.
+                if (this->options.isBuildChoiceLabelsSet()) {
+                    choice.addLabel(program.getActionName(actionIndex));
+                }
+                if (this->options.isBuildChoiceOriginsSet()) {
+                    CommandSet commandIndices;
+                    for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                        commandIndices.insert(iteratorList[i]->get().getGlobalIndex());
+                    }
+                    choice.addOriginData(boost::any(std::move(commandIndices)));
+                }
+                choice.addProbability(stateToIdCallback(*this->state), storm::utility::one<ValueType>());
+
+                // Create the state-action reward for the newly created choice.
+                for (auto const& rewardModel : rewardModels) {
+                    ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
+                    if (rewardModel.get().hasStateActionRewards()) {
+                        for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
+                            if (stateActionReward.getActionIndex() == choice.getActionIndex() &&
+                                this->evaluator->asBool(stateActionReward.getStatePredicateExpression())) {
+                                stateActionRewardValue += ValueType(this->evaluator->asRational(stateActionReward.getRewardValueExpression()));
+                            }
+                        }
+                    }
+                    choice.addReward(stateActionRewardValue);
+                }
+
+                // Now, check whether there is one more command combination to consider.
+                bool movedIterator = false;
+                for (int_fast64_t j = iteratorList.size() - 1; !movedIterator && j >= 0; --j) {
+                    ++iteratorList[j];
+                    if (iteratorList[j] != activeCommandList[j].end()) {
+                        movedIterator = true;
+                    } else {
+                        // Reset the iterator to the beginning of the list.
+                        iteratorList[j] = activeCommandList[j].begin();
+                    }
+                }
+
+                done = !movedIterator;
             }
         }
     }
@@ -809,7 +976,8 @@ std::map<std::string, storm::storage::PlayerIndex> PrismNextStateGenerator<Value
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                                                           std::vector<StateType> const& initialStateIndices,
-                                                                                          std::vector<StateType> const& deadlockStateIndices) {
+                                                                                          std::vector<StateType> const& deadlockStateIndices,
+                                                                                          std::vector<StateType> const& unexploredStateIndices) {
     // Gather a vector of labels and their expressions.
     std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
     if (this->options.isBuildAllLabelsSet()) {
@@ -821,13 +989,13 @@ storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateTyp
             if (program.hasLabel(labelName)) {
                 labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
             } else {
-                STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException,
+                STORM_LOG_THROW(this->isSpecialLabel(labelName), storm::exceptions::InvalidArgumentException,
                                 "Cannot build labeling for unknown label '" << labelName << "'.");
             }
         }
     }
 
-    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, labels);
+    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, unexploredStateIndices, labels);
 }
 
 template<typename ValueType, typename StateType>

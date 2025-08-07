@@ -1,5 +1,7 @@
 #include "storm/storage/expressions/ToExprtkStringVisitor.h"
 
+#include "storm/utility/constants.h"
+
 namespace storm {
 namespace expressions {
 std::string ToExprtkStringVisitor::toString(Expression const& expression) {
@@ -107,6 +109,27 @@ boost::any ToExprtkStringVisitor::visit(BinaryNumericalFunctionExpression const&
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
+        case BinaryNumericalFunctionExpression::OperatorType::Logarithm:
+            if (expression.getSecondOperand()->isLiteral()) {
+                auto base = expression.getSecondOperand()->evaluateAsRational();
+                if (base == storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2ull)) {
+                    stream << "log2(";
+                    expression.getFirstOperand()->accept(*this, data);
+                    stream << ")";
+                    break;
+                } else if (base == storm::utility::convertNumber<storm::RationalNumber, uint64_t>(10ull)) {
+                    stream << "log10(";
+                    expression.getFirstOperand()->accept(*this, data);
+                    stream << ")";
+                    break;
+                }
+            }
+            stream << "logn(";
+            expression.getFirstOperand()->accept(*this, data);
+            stream << ",";
+            expression.getSecondOperand()->accept(*this, data);
+            stream << ")";
+            break;
         case BinaryNumericalFunctionExpression::OperatorType::Max:
             stream << "max(";
             expression.getFirstOperand()->accept(*this, data);
@@ -127,42 +150,42 @@ boost::any ToExprtkStringVisitor::visit(BinaryNumericalFunctionExpression const&
 
 boost::any ToExprtkStringVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
     switch (expression.getRelationType()) {
-        case BinaryRelationExpression::RelationType::Equal:
+        case RelationType::Equal:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "==";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::NotEqual:
+        case RelationType::NotEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "!=";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Less:
+        case RelationType::Less:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "<";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::LessOrEqual:
+        case RelationType::LessOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "<=";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Greater:
+        case RelationType::Greater:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << ">";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case RelationType::GreaterOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << ">=";
@@ -202,6 +225,16 @@ boost::any ToExprtkStringVisitor::visit(UnaryNumericalFunctionExpression const& 
             break;
         case UnaryNumericalFunctionExpression::OperatorType::Ceil:
             stream << "ceil(";
+            expression.getOperand()->accept(*this, data);
+            stream << ")";
+            break;
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+            stream << "cos(";
+            expression.getOperand()->accept(*this, data);
+            stream << ")";
+            break;
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
+            stream << "sin(";
             expression.getOperand()->accept(*this, data);
             stream << ")";
             break;

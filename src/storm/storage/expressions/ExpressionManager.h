@@ -2,7 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
 
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <unordered_map>
 #include <unordered_set>
@@ -10,7 +10,7 @@
 
 #include <boost/optional.hpp>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/OsDetection.h"
@@ -36,8 +36,8 @@ class VariableIterator {
     VariableIterator(VariableIterator&& other) = default;
 
     // Define the basic input iterator operations.
-    bool operator==(VariableIterator const& other);
-    bool operator!=(VariableIterator const& other);
+    bool operator==(VariableIterator const& other) const;
+    bool operator!=(VariableIterator const& other) const;
     value_type& operator*();
     VariableIterator& operator++(int);
     VariableIterator& operator++();
@@ -161,6 +161,12 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
      * Retrieves the array type with the given element type
      */
     Type const& getArrayType(Type elementType) const;
+
+    /*!
+     * Retrieves the transcendental numbers type (i.e. pi and e)
+     * @return The transcendental numbers type
+     */
+    Type const& getTranscendentalNumberType() const;
 
     /*!
      * Declares a variable that is a copy of the provided variable (i.e. has the same type).
@@ -486,6 +492,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     mutable std::unordered_set<Type> bitvectorTypes;
     mutable boost::optional<Type> rationalType;
     mutable std::unordered_set<Type> arrayTypes;
+    mutable boost::optional<Type> transcendentalNumberType;
 
     // A mask that can be used to query whether a variable is an auxiliary variable.
     static const uint64_t auxiliaryMask = (1ull << 50);

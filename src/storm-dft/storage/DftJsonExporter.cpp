@@ -1,11 +1,12 @@
 #include "DftJsonExporter.h"
 
+#include <algorithm>
+#include <string>
+
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
-
-#include <algorithm>
-#include <storm/exceptions/InvalidArgumentException.h>
-#include <string>
 
 namespace storm::dft {
 namespace storage {
@@ -13,14 +14,14 @@ namespace storage {
 template<typename ValueType>
 void DftJsonExporter<ValueType>::toFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& filepath) {
     std::ofstream stream;
-    storm::utility::openFile(filepath, stream);
+    storm::io::openFile(filepath, stream);
     toStream(dft, stream);
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 }
 
 template<typename ValueType>
 void DftJsonExporter<ValueType>::toStream(storm::dft::storage::DFT<ValueType> const& dft, std::ostream& os) {
-    os << translate(dft).dump(4) << '\n';
+    os << storm::dumpJson(translate(dft)) << '\n';
 }
 
 template<typename ValueType>

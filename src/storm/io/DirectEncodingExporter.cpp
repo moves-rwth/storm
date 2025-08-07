@@ -1,20 +1,19 @@
 #include "storm/io/DirectEncodingExporter.h"
-#include <storm/exceptions/NotSupportedException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
 namespace storm {
-namespace exporter {
+namespace io {
 
 template<typename ValueType>
 void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
@@ -279,5 +278,7 @@ template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os,
 template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os,
                                                                  std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel,
                                                                  std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
-}  // namespace exporter
+template void explicitExportSparseModel<storm::Interval>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModel,
+                                                         std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
+}  // namespace io
 }  // namespace storm

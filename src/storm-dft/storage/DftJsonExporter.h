@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-dft/storage/DFT.h"
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
 
 namespace storm::dft {
 namespace storage {

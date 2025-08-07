@@ -8,8 +8,6 @@
 
 #include "storm/storage/PlayerIndex.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/storage/sparse/StateValuations.h"
@@ -24,6 +22,11 @@
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
+namespace expressions {
+template<typename V>
+class ExpressionEvaluator;
+class SimpleValuation;
+}  // namespace expressions
 namespace generator {
 typedef storm::builder::BuilderOptions NextStateGeneratorOptions;
 
@@ -81,7 +84,7 @@ class NextStateGenerator {
     NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options,
                        std::shared_ptr<ActionMask<ValueType, StateType>> const& = nullptr);
 
-    virtual ~NextStateGenerator() = default;
+    virtual ~NextStateGenerator();
 
     uint64_t getStateSize() const;
     virtual ModelType getModelType() const = 0;
@@ -89,6 +92,9 @@ class NextStateGenerator {
     virtual bool isDiscreteTimeModel() const = 0;
     virtual bool isPartiallyObservable() const = 0;
     virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
+
+    /// Initializes the out-of-bounds state and states with overlapping guards.
+    void initializeSpecialStates();
 
     /// Initializes a builder for state valuations by adding the appropriate variables.
     virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
@@ -117,7 +123,8 @@ class NextStateGenerator {
 
     virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                        std::vector<StateType> const& initialStateIndices = {},
-                                                       std::vector<StateType> const& deadlockStateIndices = {}) = 0;
+                                                       std::vector<StateType> const& deadlockStateIndices = {},
+                                                       std::vector<StateType> const& unexploredStateIndices = {}) = 0;
 
     NextStateGeneratorOptions const& getOptions() const;
 
@@ -134,10 +141,16 @@ class NextStateGenerator {
 
    protected:
     /*!
+     * Checks if the input label has a special purpose (e.g. "init", "deadlock", "unexplored", "overlap_guards", "out_of_bounds").
+     */
+    bool isSpecialLabel(std::string const& label) const;
+
+    /*!
      * Creates the state labeling for the given states using the provided labels and expressions.
      */
     storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices,
+                                               std::vector<StateType> const& unexploredStateIndices,
                                                std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
 
     /*!

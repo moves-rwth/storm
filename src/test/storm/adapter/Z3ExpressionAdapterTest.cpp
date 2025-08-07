@@ -7,6 +7,7 @@
 #ifdef STORM_HAVE_Z3
 #include "storm/adapters/Z3ExpressionAdapter.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "z3++.h"
 
 TEST(Z3ExpressionAdapter, StormToZ3Basic) {

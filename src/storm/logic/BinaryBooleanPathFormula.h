@@ -16,7 +16,7 @@ class BinaryBooleanPathFormula : public BinaryPathFormula {
     BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula,
                              std::shared_ptr<Formula const> const& rightSubformula, FormulaContext context = FormulaContext::Probability);
 
-    virtual ~BinaryBooleanPathFormula(){
+    virtual ~BinaryBooleanPathFormula() {
         // Intentionally left empty.
     };
 

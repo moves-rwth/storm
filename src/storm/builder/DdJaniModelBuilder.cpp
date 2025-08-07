@@ -6,6 +6,10 @@
 
 #include "storm/logic/Formulas.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
+#include "storm/storage/expressions/Variable.h"
+
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -175,7 +179,7 @@ void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& l
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
+    void create(storm::jani::Model const& /*model*/, storm::adapters::AddExpressionAdapter<Type, ValueType>& /*rowExpressionAdapter*/) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 
@@ -233,8 +237,8 @@ class ParameterCreator<Type, storm::RationalFunction> {
 
 template<storm::dd::DdType Type, typename ValueType>
 struct CompositionVariables {
-    CompositionVariables()
-        : manager(std::make_shared<storm::dd::DdManager<Type>>()),
+    CompositionVariables(std::shared_ptr<storm::dd::DdManager<Type>> const& manager)
+        : manager(manager),
           variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
           rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type, ValueType>>(manager, variableToRowMetaVariableMap)),
           variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()) {
@@ -302,7 +306,7 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         // Intentionally left empty.
     }
 
-    CompositionVariables<Type, ValueType> create() {
+    CompositionVariables<Type, ValueType> create(std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
         // First, check whether every automaton appears exactly once in the system composition. Simultaneously,
         // we determine the set of non-silent actions used by the composition.
         automata.clear();
@@ -328,7 +332,7 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         }
 
         // Based on this assumption, we create the variables.
-        return createVariables();
+        return createVariables(manager);
     }
 
     boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const&) override {
@@ -348,8 +352,8 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
     }
 
    private:
-    CompositionVariables<Type, ValueType> createVariables() {
-        CompositionVariables<Type, ValueType> result;
+    CompositionVariables<Type, ValueType> createVariables(std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
+        CompositionVariables<Type, ValueType> result(manager);
 
         for (auto const& nonSilentActionIndex : actionInformation.getNonSilentActionIndices()) {
             std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair =
@@ -2332,8 +2336,81 @@ std::map<std::string, storm::expressions::Expression> buildLabelExpressions(stor
 }
 
 template<storm::dd::DdType Type, typename ValueType>
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(storm::jani::Model const& model,
+                                                                               typename DdJaniModelBuilder<Type, ValueType>::Options const& options,
+                                                                               std::shared_ptr<storm::dd::DdManager<Type>> const& manager) {
+    // Determine the actions that will appear in the parallel composition.
+    storm::jani::CompositionInformationVisitor visitor(model, model.getSystemComposition());
+    storm::jani::CompositionInformation actionInformation = visitor.getInformation();
+
+    // Create all necessary variables.
+    CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);
+    CompositionVariables<Type, ValueType> variables = variableCreator.create(manager);
+
+    // Determine which transient assignments need to be considered in the building process.
+    std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options);
+
+    // Create a builder to compose and build the model.
+    bool applyMaximumProgress = options.applyMaximumProgressAssumption && model.getModelType() == storm::jani::ModelType::MA;
+    CombinedEdgesSystemComposer<Type, ValueType> composer(model, actionInformation, variables, rewardVariables, applyMaximumProgress);
+    ComposerResult<Type, ValueType> system = composer.compose();
+
+    // Postprocess the variables in place.
+    postprocessVariables(model.getModelType(), system, variables);
+
+    // Build the label to expressions mapping.
+    auto labelsToExpressionMap = buildLabelExpressions(model, variables, options);
+
+    // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
+    storm::dd::Bdd<Type> terminalStates = postprocessSystem(model, system, variables, options, labelsToExpressionMap);
+
+    // Start creating the model components.
+    ModelComponents<Type, ValueType> modelComponents;
+
+    // Set the label expressions
+    modelComponents.labelToExpressionMap = std::move(labelsToExpressionMap);
+
+    // Build initial states.
+    modelComponents.initialStates = computeInitialStates(model, variables);
+
+    // Perform reachability analysis to obtain reachable states.
+    storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
+    if (model.getModelType() == storm::jani::ModelType::MDP || model.getModelType() == storm::jani::ModelType::LTS ||
+        model.getModelType() == storm::jani::ModelType::MA) {
+        transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
+    }
+    modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables,
+                                                                                 variables.columnMetaVariables)
+                                          .first;
+
+    // Check that the reachable fragment does not overlap with the illegal fragment.
+    storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;
+    STORM_LOG_THROW(reachableIllegalFragment.isZero(), storm::exceptions::WrongFormatException,
+                    "There are reachable states in the model that have synchronizing edges enabled that write the same global variable.");
+
+    // Cut transitions to reachable states.
+    storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
+    modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
+
+    // Fix deadlocks if existing.
+    modelComponents.deadlockStates =
+        fixDeadlocks(model.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+
+    // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
+    modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
+
+    // Build the reward models.
+    modelComponents.rewardModels =
+        buildRewardModels(reachableStatesAdd, modelComponents.transitionMatrix, model.getModelType(), variables, system, rewardVariables);
+
+    // Finally, create the model.
+    return createModel(model.getModelType(), variables, modelComponents);
+}
+
+template<storm::dd::DdType Type, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model,
                                                                                                             Options const& options) {
+    // Prepare the model and do some sanity checks
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
         std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
         std::vector<std::string> strings;
@@ -2368,7 +2445,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
         preparedModel.substituteFunctions();
         features.remove(storm::jani::ModelFeature::Functions);
     }
-    STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidStateException,
                     "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
     // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
@@ -2380,72 +2457,16 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     STORM_LOG_THROW(!preparedModel.hasTransientEdgeDestinationAssignments(), storm::exceptions::WrongFormatException,
                     "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
-    // Determine the actions that will appear in the parallel composition.
-    storm::jani::CompositionInformationVisitor visitor(preparedModel, preparedModel.getSystemComposition());
-    storm::jani::CompositionInformation actionInformation = visitor.getInformation();
+    // Create the manager
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
 
-    // Create all necessary variables.
-    CompositionVariableCreator<Type, ValueType> variableCreator(preparedModel, actionInformation);
-    CompositionVariables<Type, ValueType> variables = variableCreator.create();
+    // Prepare a result
+    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
 
-    // Determine which transient assignments need to be considered in the building process.
-    std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(preparedModel, options);
+    // invoke the builder
+    manager->execute([&preparedModel, &options, &manager, &result]() { result = buildInternal<Type, ValueType>(preparedModel, options, manager); });
 
-    // Create a builder to compose and build the model.
-    bool applyMaximumProgress = options.applyMaximumProgressAssumption && model.getModelType() == storm::jani::ModelType::MA;
-    CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables, applyMaximumProgress);
-    ComposerResult<Type, ValueType> system = composer.compose();
-
-    // Postprocess the variables in place.
-    postprocessVariables(preparedModel.getModelType(), system, variables);
-
-    // Build the label to expressions mapping.
-    auto labelsToExpressionMap = buildLabelExpressions(preparedModel, variables, options);
-
-    // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
-    storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options, labelsToExpressionMap);
-
-    // Start creating the model components.
-    ModelComponents<Type, ValueType> modelComponents;
-
-    // Set the label expressions
-    modelComponents.labelToExpressionMap = std::move(labelsToExpressionMap);
-
-    // Build initial states.
-    modelComponents.initialStates = computeInitialStates(preparedModel, variables);
-
-    // Perform reachability analysis to obtain reachable states.
-    storm::dd::Bdd<Type> transitionMatrixBdd = system.transitions.notZero();
-    if (preparedModel.getModelType() == storm::jani::ModelType::MDP || preparedModel.getModelType() == storm::jani::ModelType::LTS ||
-        preparedModel.getModelType() == storm::jani::ModelType::MA) {
-        transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
-    }
-    modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables,
-                                                                                 variables.columnMetaVariables)
-                                          .first;
-
-    // Check that the reachable fragment does not overlap with the illegal fragment.
-    storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;
-    STORM_LOG_THROW(reachableIllegalFragment.isZero(), storm::exceptions::WrongFormatException,
-                    "There are reachable states in the model that have synchronizing edges enabled that write the same global variable.");
-
-    // Cut transitions to reachable states.
-    storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
-    modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
-
-    // Fix deadlocks if existing.
-    modelComponents.deadlockStates =
-        fixDeadlocks(preparedModel.getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
-
-    // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
-    modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
-
-    // Build the reward models.
-    modelComponents.rewardModels =
-        buildRewardModels(reachableStatesAdd, modelComponents.transitionMatrix, preparedModel.getModelType(), variables, system, rewardVariables);
-
-    // Finally, create the model.
-    return createModel(preparedModel.getModelType(), variables, modelComponents);
+    return result;
 }
 
 template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;

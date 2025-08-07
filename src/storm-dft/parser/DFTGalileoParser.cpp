@@ -23,14 +23,14 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
     const std::regex commentRegex("(/\\*([^*]|(\\*+[^*/]))*\\*+/)|(//.*)");
 
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
 
     std::string line;
     size_t lineNo = 0;
     std::string toplevelId = "";
     bool comment = false;  // Indicates whether the current line is part of a multiline comment
     try {
-        while (storm::utility::getline(file, line)) {
+        while (storm::io::getline(file, line)) {
             ++lineNo;
             // First consider comments
             if (comment) {
@@ -147,13 +147,10 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in line " << lineNo << ": " << exception.what());
     }
     builder.setTopLevel(toplevelId);
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
 
     // Build DFT
-    storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
-    return dft;
+    return builder.build();
 }
 
 template<typename ValueType>

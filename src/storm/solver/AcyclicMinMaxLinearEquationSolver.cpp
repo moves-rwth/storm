@@ -1,6 +1,6 @@
 #include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 
-#include "storm/solver/helper/AcyclicSolverHelper.cpp"
+#include "storm/solver/helper/AcyclicSolverHelper.h"
 
 #include "storm/utility/vector.h"
 
@@ -110,7 +110,7 @@ bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Enviro
 
 template<typename ValueType>
 MinMaxLinearEquationSolverRequirements AcyclicMinMaxLinearEquationSolver<ValueType>::getRequirements(
-    Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
+    Environment const&, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
     // Return the requirements of the underlying solver
     MinMaxLinearEquationSolverRequirements requirements;
     requirements.requireAcyclic();
@@ -130,9 +130,6 @@ void AcyclicMinMaxLinearEquationSolver<ValueType>::clearCache() const {
 
 // Explicitly instantiate the min max linear equation solver.
 template class AcyclicMinMaxLinearEquationSolver<double>;
-
-#ifdef STORM_HAVE_CARL
 template class AcyclicMinMaxLinearEquationSolver<storm::RationalNumber>;
-#endif
 }  // namespace solver
 }  // namespace storm

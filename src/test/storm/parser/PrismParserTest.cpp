@@ -1,7 +1,10 @@
-#include <storm/exceptions/InvalidArgumentException.h>
+
 #include "storm-config.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "test/storm_gtest.h"
+
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 TEST(PrismParser, StandardModelTest) {
     storm::prism::Program result;
@@ -46,6 +49,26 @@ TEST(PrismParser, SimpleTest) {
     EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::MDP, result.getModelType());
     EXPECT_FALSE(result.hasUnboundedVariables());
+}
+
+TEST(PrismParser, expressionTest) {
+    std::string testInput = R"(dtmc
+
+        module test
+	        c : [0..1] init 0;
+	        [] c = ceil(log(1,2)) -> (c'=1);
+        endmodule)";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
+    EXPECT_FALSE(result.hasUnboundedVariables());
+    EXPECT_EQ(1ul, result.getNumberOfModules());
+    ASSERT_TRUE(result.hasModule("test"));
+    EXPECT_EQ(1ul, result.getModule("test").getNumberOfCommands());
+    auto const& guard = result.getModule("test").getCommands().front().getGuardExpression().getBaseExpression();
+    ASSERT_TRUE(guard.isBinaryRelationExpression());
+    EXPECT_EQ(0ll, guard.asBinaryRelationExpression().getSecondOperand()->evaluateAsInt());
 }
 
 TEST(PrismParser, ComplexTest) {

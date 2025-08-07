@@ -3,7 +3,6 @@
 #include <map>
 #include <set>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -43,6 +42,9 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
     STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException,
                     "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
+    STORM_LOG_WARN_COND(rewardAnalysis.rewardFinitenessType == preprocessing::RewardFinitenessType::AllFinite,
+                        "There might be infinite reward for some scheduler. Multi-objective model checking restricts to schedulers that yield finite reward "
+                        "for all objectives. Be aware that solutions yielding infinite reward are discarded.");
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
     STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,
@@ -262,7 +264,7 @@ void computeSchedulerProb1(storm::storage::SparseMatrix<ValueType> const& transi
 
         for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
             auto predecessor = predecessorEntry.getColumn();
-            if (consideredStates.get(predecessor) & !processedStates.get(predecessor)) {
+            if (consideredStates.get(predecessor) && !processedStates.get(predecessor)) {
                 // Find a choice leading to an already processed state (such a choice has to exist since this is a predecessor of the currentState)
                 auto const& groupStart = transitionMatrix.getRowGroupIndices()[predecessor];
                 auto const& groupEnd = transitionMatrix.getRowGroupIndices()[predecessor + 1];
@@ -526,7 +528,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedIndividualPhase(
                         deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
 
                     // Compute the estimate for this objective
-                    if (!storm::utility::isZero(weightVector[objIndex])) {
+                    if (!storm::utility::isZero(weightVector[objIndex]) && !storm::utility::isZero(sumOfWeightsOfUncheckedObjectives)) {
                         objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
                         ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
                         if (storm::solver::minimize(obj.formula->getOptimalityType())) {
@@ -881,8 +883,8 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
                     unprocessedStates.set(state, false);
                     originalSolution[state] = ecqSolution[ecqState];
                 }
-                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices,
-                                      &ecQuotient->origTotalReward0Choices);
+                auto validChoices = transitionMatrix.getRowFilter(ecStatesToProcess, ecStatesToProcess | ecStatesToReach);
+                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices, &validChoices);
                 // Clear bitvectors for next ecqState.
                 ecStatesToProcess.clear();
                 ecStatesToReach.clear();

@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/IntegerLiteralExpression.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
 
 #include "storm/exceptions/InvalidStateException.h"
@@ -53,8 +55,24 @@ storm::expressions::OperatorType BinaryNumericalFunctionExpression::getOperator(
         case OperatorType::Modulo:
             result = storm::expressions::OperatorType::Modulo;
             break;
+        case OperatorType::Logarithm:
+            result = storm::expressions::OperatorType::Logarithm;
+            break;
     }
     return result;
+}
+
+template<typename V>
+V logHelper(V const& x, V const& b) {
+    // There is no std::log method for arbitrary bases.
+    // This catches common cases which should yield more accurate results
+    if (b == static_cast<V>(2)) {
+        return std::log2(x);
+    } else if (b == static_cast<V>(10)) {
+        return std::log10(x);
+    } else {
+        return std::log2(x) / std::log2(b);
+    }
 }
 
 int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
@@ -87,6 +105,9 @@ int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* v
             break;
         case OperatorType::Modulo:
             result = firstOperandEvaluation % secondOperandEvaluation;
+            break;
+        case OperatorType::Logarithm:
+            result = logHelper(firstOperandEvaluation, secondOperandEvaluation);
             break;
     }
     return result;
@@ -123,6 +144,9 @@ double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valu
         case OperatorType::Modulo:
             result = std::fmod(firstOperandEvaluation, secondOperandEvaluation);
             break;
+        case OperatorType::Logarithm:
+            result = logHelper(firstOperandEvaluation, secondOperandEvaluation);
+            break;
     }
     return result;
 }
@@ -135,7 +159,7 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
         if (this->hasIntegerType()) {
             int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
             int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
-            boost::optional<int_fast64_t> newValue;
+            std::optional<int_fast64_t> newValue;
             switch (this->getOperatorType()) {
                 case OperatorType::Plus:
                     newValue = firstOperandEvaluation + secondOperandEvaluation;
@@ -162,6 +186,9 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                 case OperatorType::Modulo:
                     newValue = firstOperandEvaluation % secondOperandEvaluation;
                     break;
+                case OperatorType::Logarithm:
+                    // Do not simplify as it is not clear how a non-integer result should be treated.
+                    break;
                 case OperatorType::Divide:
                     if (firstOperandEvaluation % secondOperandEvaluation == 0) {
                         // Only simplify if there is no remainder, because otherwise it is not clear whether we want integer division or floating point
@@ -172,12 +199,12 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     break;
             }
             if (newValue) {
-                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.get()));
+                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.value()));
             }
         } else if (this->hasRationalType()) {
             storm::RationalNumber firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
             storm::RationalNumber secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
-            boost::optional<storm::RationalNumber> newValue;
+            std::optional<storm::RationalNumber> newValue;
             switch (this->getOperatorType()) {
                 case OperatorType::Plus:
                     newValue = firstOperandEvaluation + secondOperandEvaluation;
@@ -215,9 +242,12 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     }
                     break;
                 }
+                case OperatorType::Logarithm:
+                    // Do not simplify as it is not clear how a non-rational result should be treated.
+                    break;
             }
             if (newValue) {
-                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.get()));
+                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.value()));
             }
         }
     }
@@ -264,6 +294,9 @@ void BinaryNumericalFunctionExpression::printToStream(std::ostream& stream) cons
             break;
         case OperatorType::Modulo:
             stream << *this->getFirstOperand() << " % " << *this->getSecondOperand();
+            break;
+        case OperatorType::Logarithm:
+            stream << "log(" << *this->getFirstOperand() << ", " << *this->getSecondOperand() << ")";
             break;
     }
     stream << ")";

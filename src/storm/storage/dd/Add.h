@@ -15,7 +15,6 @@
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {

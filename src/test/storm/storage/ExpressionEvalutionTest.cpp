@@ -1,9 +1,9 @@
-#include "adapters/RationalNumberAdapter.h"
-#include "storage/expressions/OperatorType.h"
 #include "storm-parsers/parser/ExpressionCreator.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "test/storm_gtest.h"
 
@@ -75,7 +75,7 @@ TEST(ExpressionEvaluation, NegativeModulo) {
     storm::expressions::Expression mod = manager->integer(4);
 
     bool pass = true;
-    storm::expressions::Expression expr = creator.createPowerModuloExpression(n, storm::expressions::OperatorType::Modulo, mod, pass);
+    storm::expressions::Expression expr = creator.createPowerModuloLogarithmExpression(n, storm::expressions::OperatorType::Modulo, mod, pass);
 
     auto positiveModulo = [](int a, int b) { return a >= 0 ? a % b : (a % b) + b; };
 

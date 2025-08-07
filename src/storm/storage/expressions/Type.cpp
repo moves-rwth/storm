@@ -66,6 +66,14 @@ bool ArrayType::isArrayType() const {
     return true;
 }
 
+bool BaseType::isTranscendentalNumberType() const {
+    return false;
+}
+
+bool TranscendentalNumberType::isTranscendentalNumberType() const {
+    return true;
+}
+
 uint64_t BooleanType::getMask() const {
     return BooleanType::mask;
 }
@@ -130,6 +138,14 @@ std::string ArrayType::getStringRepresentation() const {
     return "array[" + elementType.getStringRepresentation() + "]";
 }
 
+uint64_t TranscendentalNumberType::getMask() const {
+    return TranscendentalNumberType::mask;
+}
+
+std::string TranscendentalNumberType::getStringRepresentation() const {
+    return "transcendental";
+}
+
 bool operator<(BaseType const& first, BaseType const& second) {
     if (first.getMask() < second.getMask()) {
         return true;
@@ -172,11 +188,15 @@ bool Type::isBitVectorType() const {
 }
 
 bool Type::isNumericalType() const {
-    return this->isIntegerType() || this->isRationalType();
+    return this->isIntegerType() || this->isRationalType() || this->isTranscendentalNumberType();
 }
 
 bool Type::isArrayType() const {
     return this->innerType->isArrayType();
+}
+
+bool Type::isTranscendentalNumberType() const {
+    return this->innerType->isTranscendentalNumberType();
 }
 
 std::string Type::getStringRepresentation() const {
@@ -221,6 +241,11 @@ Type Type::modulo(Type const& other) const {
     return std::max(*this, other);
 }
 
+Type Type::logarithm(Type const& other) const {
+    STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
+    return this->getManager().getRationalType();
+}
+
 Type Type::power(Type const& other, bool allowIntegerType) const {
     STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
     STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
@@ -229,6 +254,11 @@ Type Type::power(Type const& other, bool allowIntegerType) const {
     } else {
         return this->getManager().getRationalType();
     }
+}
+
+Type Type::trigonometric() const {
+    STORM_LOG_THROW(this->isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operand.");
+    return this->getManager().getRationalType();
 }
 
 Type Type::logicalConnective(Type const& other) const {

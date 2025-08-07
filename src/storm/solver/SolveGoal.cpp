@@ -19,41 +19,42 @@ class SparseMatrix;
 
 namespace solver {
 
-template<typename ValueType>
-SolveGoal<ValueType>::SolveGoal() {
+template<typename ValueType, typename SolutionType>
+SolveGoal<ValueType, SolutionType>::SolveGoal() {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-SolveGoal<ValueType>::SolveGoal(bool minimize) : optimizationDirection(minimize ? OptimizationDirection::Minimize : OptimizationDirection::Maximize) {
+template<typename ValueType, typename SolutionType>
+SolveGoal<ValueType, SolutionType>::SolveGoal(bool minimize)
+    : optimizationDirection(minimize ? OptimizationDirection::Minimize : OptimizationDirection::Maximize) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection) : optimizationDirection(optimizationDirection) {
+template<typename ValueType, typename SolutionType>
+SolveGoal<ValueType, SolutionType>::SolveGoal(OptimizationDirection optimizationDirection) : optimizationDirection(optimizationDirection) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold,
-                                storm::storage::BitVector const& relevantValues)
+template<typename ValueType, typename SolutionType>
+SolveGoal<ValueType, SolutionType>::SolveGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType boundComparisonType,
+                                              SolutionType const& boundThreshold, storm::storage::BitVector const& relevantValues)
     : optimizationDirection(optimizationDirection), comparisonType(boundComparisonType), threshold(boundThreshold), relevantValueVector(relevantValues) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::storage::BitVector const& relevantValues)
+template<typename ValueType, typename SolutionType>
+SolveGoal<ValueType, SolutionType>::SolveGoal(OptimizationDirection optimizationDirection, storm::storage::BitVector const& relevantValues)
     : optimizationDirection(optimizationDirection), relevantValueVector(relevantValues) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::hasDirection() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::hasDirection() const {
     return static_cast<bool>(optimizationDirection);
 }
 
-template<typename ValueType>
-void SolveGoal<ValueType>::oneMinus() {
+template<typename ValueType, typename SolutionType>
+void SolveGoal<ValueType, SolutionType>::oneMinus() {
     if (optimizationDirection) {
         if (optimizationDirection == storm::solver::OptimizationDirection::Minimize) {
             optimizationDirection = storm::solver::OptimizationDirection::Maximize;
@@ -62,7 +63,7 @@ void SolveGoal<ValueType>::oneMinus() {
         }
     }
     if (threshold) {
-        this->threshold = storm::utility::one<ValueType>() - this->threshold.get();
+        this->threshold = storm::utility::one<SolutionType>() - this->threshold.get();
     }
     if (comparisonType) {
         switch (comparisonType.get()) {
@@ -82,68 +83,72 @@ void SolveGoal<ValueType>::oneMinus() {
     }
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::minimize() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::minimize() const {
     return optimizationDirection == OptimizationDirection::Minimize;
 }
 
-template<typename ValueType>
-OptimizationDirection SolveGoal<ValueType>::direction() const {
+template<typename ValueType, typename SolutionType>
+OptimizationDirection SolveGoal<ValueType, SolutionType>::direction() const {
     return optimizationDirection.get();
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::isBounded() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::isBounded() const {
     return comparisonType && threshold && relevantValueVector;
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::boundIsALowerBound() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::boundIsALowerBound() const {
     return (comparisonType.get() == storm::logic::ComparisonType::Greater || comparisonType.get() == storm::logic::ComparisonType::GreaterEqual);
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::boundIsStrict() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::boundIsStrict() const {
     return (comparisonType.get() == storm::logic::ComparisonType::Greater || comparisonType.get() == storm::logic::ComparisonType::Less);
 }
 
-template<typename ValueType>
-ValueType const& SolveGoal<ValueType>::thresholdValue() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::isRobust() const {
+    return robustAgainstUncertainty;
+}
+
+template<typename ValueType, typename SolutionType>
+SolutionType const& SolveGoal<ValueType, SolutionType>::thresholdValue() const {
     return threshold.get();
 }
 
-template<typename ValueType>
-bool SolveGoal<ValueType>::hasRelevantValues() const {
+template<typename ValueType, typename SolutionType>
+bool SolveGoal<ValueType, SolutionType>::hasRelevantValues() const {
     return static_cast<bool>(relevantValueVector);
 }
 
-template<typename ValueType>
-storm::storage::BitVector const& SolveGoal<ValueType>::relevantValues() const {
+template<typename ValueType, typename SolutionType>
+storm::storage::BitVector const& SolveGoal<ValueType, SolutionType>::relevantValues() const {
     return relevantValueVector.get();
 }
 
-template<typename ValueType>
-storm::storage::BitVector& SolveGoal<ValueType>::relevantValues() {
+template<typename ValueType, typename SolutionType>
+storm::storage::BitVector& SolveGoal<ValueType, SolutionType>::relevantValues() {
     return relevantValueVector.get();
 }
 
-template<typename ValueType>
-void SolveGoal<ValueType>::restrictRelevantValues(storm::storage::BitVector const& filter) {
+template<typename ValueType, typename SolutionType>
+void SolveGoal<ValueType, SolutionType>::restrictRelevantValues(storm::storage::BitVector const& filter) {
     if (relevantValueVector) {
         relevantValueVector = relevantValueVector.get() % filter;
     }
 }
 
-template<typename ValueType>
-void SolveGoal<ValueType>::setRelevantValues(storm::storage::BitVector&& values) {
+template<typename ValueType, typename SolutionType>
+void SolveGoal<ValueType, SolutionType>::setRelevantValues(storm::storage::BitVector&& values) {
     relevantValueVector = std::move(values);
 }
 
 template class SolveGoal<double>;
-
-#ifdef STORM_HAVE_CARL
 template class SolveGoal<storm::RationalNumber>;
 template class SolveGoal<storm::RationalFunction>;
-#endif
+template class SolveGoal<storm::Interval, double>;
+
 }  // namespace solver
 }  // namespace storm

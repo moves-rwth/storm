@@ -1,7 +1,8 @@
 #include "FormulaParserGrammar.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 #include <memory>
+
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
 namespace parser {
@@ -16,6 +17,10 @@ FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::E
     initialize();
 }
 
+qi::symbols<char, storm::expressions::Expression> const& FormulaParserGrammar::getIdentifiers() const {
+    return identifiers_;
+}
+
 void FormulaParserGrammar::initialize() {
     // Register all variables so we can parse them in the expressions.
     for (auto variableTypePair : *constManager) {
@@ -28,7 +33,6 @@ void FormulaParserGrammar::initialize() {
     nonStandardKeywords_.name("non-standard Storm-specific keyword");
     relationalOperator_.name("relational operator");
     optimalityOperator_.name("optimality operator");
-    rewardMeasureType_.name("reward measure");
     operatorKeyword_.name("Operator keyword");
     filterType_.name("filter type");
 
@@ -64,13 +68,9 @@ void FormulaParserGrammar::initialize() {
     operatorSubFormula.name("operator subformula");
     rewardModelName = qi::eps(qi::_r1 == storm::logic::FormulaContext::Reward) >> (qi::lit("{\"") > label > qi::lit("\"}"));
     rewardModelName.name("reward model name");
-    rewardMeasureType = qi::eps(qi::_r1 == storm::logic::FormulaContext::Reward || qi::_r1 == storm::logic::FormulaContext::Time) >> qi::lit("[") >>
-                        rewardMeasureType_ >> qi::lit("]");
-    rewardMeasureType.name("reward measure type");
     operatorFormula =
-        (operatorKeyword_[qi::_a = qi::_1] > -rewardMeasureType(qi::_a) > -rewardModelName(qi::_a) > operatorInformation > qi::lit("[") >
-         operatorSubFormula(qi::_a) >
-         qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorFormula, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_4, qi::_5)];
+        (operatorKeyword_[qi::_a = qi::_1] > -rewardModelName(qi::_a) > operatorInformation > qi::lit("[") > operatorSubFormula(qi::_a) >
+         qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorFormula, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_4)];
     operatorFormula.name("operator formula");
 
     // Atomic propositions
@@ -125,6 +125,9 @@ void FormulaParserGrammar::initialize() {
         (-qi::lit("rew") >>
          rewardModelName(storm::logic::FormulaContext::Reward))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this),
                                                                                          storm::logic::TimeBoundType::Reward, qi::_1)] |
+        (qi::lit("rew") >>
+         -rewardModelName(storm::logic::FormulaContext::Reward))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this),
+                                                                                          storm::logic::TimeBoundType::Reward, qi::_1)] |
         (qi::lit("steps"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Steps,
                                                     boost::none)] |
         (-qi::lit("time"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Time,
@@ -132,8 +135,8 @@ void FormulaParserGrammar::initialize() {
     timeBoundReference.name("time bound reference");
     timeBound = ((timeBoundReference >> qi::lit("[")) > expressionParser > qi::lit(",") > expressionParser >
                  qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromInterval, phoenix::ref(*this), qi::_2, qi::_3, qi::_1)] |
-                (timeBoundReference >> (qi::lit("<=")[qi::_a = true, qi::_b = false] | qi::lit("<")[qi::_a = true, qi::_b = true] |
-                                        qi::lit(">=")[qi::_a = false, qi::_b = false] | qi::lit(">")[qi::_a = false, qi::_b = true]) >>
+                (timeBoundReference >> (qi::lit("<=")[(qi::_a = true, qi::_b = false)] | qi::lit("<")[(qi::_a = true, qi::_b = true)] |
+                                        qi::lit(">=")[(qi::_a = false, qi::_b = false)] | qi::lit(">")[(qi::_a = false, qi::_b = true)]) >>
                  expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundFromSingleBound, phoenix::ref(*this), qi::_2, qi::_a, qi::_b,
                                                             qi::_1)] |
                 (timeBoundReference >> qi::lit("=") >>
@@ -240,7 +243,6 @@ void FormulaParserGrammar::initialize() {
 
     // Enable the following lines to print debug output for most the rules.
     //            debug(rewardModelName)
-    //            debug(rewardMeasureType)
     //            debug(operatorFormula)
     //            debug(labelFormula)
     //            debug(expressionFormula)
@@ -279,7 +281,6 @@ void FormulaParserGrammar::initialize() {
 
     // Enable error reporting.
     qi::on_error<qi::fail>(rewardModelName, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-    qi::on_error<qi::fail>(rewardMeasureType, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(operatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(labelFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(expressionFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -356,8 +357,7 @@ bool FormulaParserGrammar::areConstantDefinitionsAllowed() const {
 std::shared_ptr<storm::logic::TimeBoundReference> FormulaParserGrammar::createTimeBoundReference(storm::logic::TimeBoundType const& type,
                                                                                                  boost::optional<std::string> const& rewardModelName) const {
     if (type == storm::logic::TimeBoundType::Reward) {
-        STORM_LOG_THROW(rewardModelName, storm::exceptions::WrongFormatException, "Reward bound does not specify a reward model name.");
-        return std::make_shared<storm::logic::TimeBoundReference>(rewardModelName.get());
+        return std::make_shared<storm::logic::TimeBoundReference>(rewardModelName);
     } else {
         return std::make_shared<storm::logic::TimeBoundReference>(type);
     }
@@ -508,22 +508,22 @@ storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformatio
     }
 }
 
-std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createOperatorFormula(
-    storm::logic::FormulaContext const& context, boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType,
-    boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation,
-    std::shared_ptr<storm::logic::Formula const> const& subformula) {
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createOperatorFormula(storm::logic::FormulaContext const& context,
+                                                                                         boost::optional<std::string> const& rewardModelName,
+                                                                                         storm::logic::OperatorInformation const& operatorInformation,
+                                                                                         std::shared_ptr<storm::logic::Formula const> const& subformula) {
     switch (context) {
         case storm::logic::FormulaContext::Probability:
-            STORM_LOG_ASSERT(!rewardMeasureType && !rewardModelName, "Probability operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "Probability operator with reward information parsed");
             return createProbabilityOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Reward:
-            return createRewardOperatorFormula(rewardMeasureType, rewardModelName, operatorInformation, subformula);
+            return createRewardOperatorFormula(rewardModelName, operatorInformation, subformula);
         case storm::logic::FormulaContext::LongRunAverage:
-            STORM_LOG_ASSERT(!rewardMeasureType && !rewardModelName, "LRA operator with reward information parsed");
+            STORM_LOG_ASSERT(!rewardModelName, "LRA operator with reward information parsed");
             return createLongRunAverageOperatorFormula(operatorInformation, subformula);
         case storm::logic::FormulaContext::Time:
             STORM_LOG_ASSERT(!rewardModelName, "Time operator with reward model name parsed");
-            return createTimeOperatorFormula(rewardMeasureType, operatorInformation, subformula);
+            return createTimeOperatorFormula(operatorInformation, subformula);
         default:
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unexpected formula context.");
     }
@@ -535,23 +535,14 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createLongRun
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createRewardOperatorFormula(
-    boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType, boost::optional<std::string> const& rewardModelName,
-    storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
-    storm::logic::RewardMeasureType measureType = storm::logic::RewardMeasureType::Expectation;
-    if (rewardMeasureType) {
-        measureType = rewardMeasureType.get();
-    }
-    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::RewardOperatorFormula(subformula, rewardModelName, operatorInformation, measureType));
+    boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation,
+    std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::RewardOperatorFormula(subformula, rewardModelName, operatorInformation));
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTimeOperatorFormula(
-    boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType, storm::logic::OperatorInformation const& operatorInformation,
-    std::shared_ptr<storm::logic::Formula const> const& subformula) const {
-    storm::logic::RewardMeasureType measureType = storm::logic::RewardMeasureType::Expectation;
-    if (rewardMeasureType) {
-        measureType = rewardMeasureType.get();
-    }
-    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::TimeOperatorFormula(subformula, operatorInformation, measureType));
+    storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::TimeOperatorFormula(subformula, operatorInformation));
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createProbabilityOperatorFormula(
@@ -711,7 +702,7 @@ storm::jani::Property FormulaParserGrammar::createPropertyWithDefaultFilterTypeA
 }
 
 storm::logic::PlayerCoalition FormulaParserGrammar::createPlayerCoalition(
-    std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
+    std::vector<std::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
     return storm::logic::PlayerCoalition(playerIds);
 }
 

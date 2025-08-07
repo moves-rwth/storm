@@ -2,9 +2,7 @@
 
 #include <iostream>
 
-#include "storm/adapters/HyproAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/geometry/HyproPolytope.h"
 #include "storm/storage/geometry/NativePolytope.h"
 #include "storm/utility/macros.h"
 
@@ -38,11 +36,7 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createEmptyPolytope() 
 template<typename ValueType>
 std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces,
                                                                  boost::optional<std::vector<Point>> const& points) {
-#ifdef STORM_HAVE_HYPRO
-    return HyproPolytope<ValueType>::create(halfspaces, points);
-#else
     return NativePolytope<ValueType>::create(halfspaces, points);
-#endif
 }
 
 template<typename ValueType>
@@ -246,11 +240,6 @@ std::string Polytope<ValueType>::toString(bool numbersAsDouble) const {
         stream << "   " << h.toString(numbersAsDouble) << '\n';
     }
     return stream.str();
-}
-
-template<typename ValueType>
-bool Polytope<ValueType>::isHyproPolytope() const {
-    return false;
 }
 
 template<typename ValueType>

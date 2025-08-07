@@ -2,11 +2,11 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "test/storm_gtest.h"
 
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
 #include "storm/utility/solver.h"
 
-#include "storm/storage/jani/Model.h"
-
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 TEST(PrismProgramTest, FlattenModules) {
     storm::prism::Program program;
     ASSERT_NO_THROW(program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm"));
@@ -166,4 +166,23 @@ TEST(PrismProgramTest, ConvertToJani) {
 
     ASSERT_NO_THROW(prismProgram = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm"));
     ASSERT_NO_THROW(janiModel = prismProgram.toJani());
+}
+
+TEST(PrismProgramTest, ReplaceInitialStates) {
+    storm::prism::Program origPrismProgram;
+    storm::prism::Program transformedPrismProgram;
+    ASSERT_NO_THROW(origPrismProgram = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm"));
+    ASSERT_NO_THROW(transformedPrismProgram = origPrismProgram.replaceVariableInitializationByInitExpression());
+    EXPECT_TRUE(origPrismProgram.getInitialStatesExpression().isSyntacticallyEqual(transformedPrismProgram.getInitialStatesExpression()));
+    EXPECT_TRUE(transformedPrismProgram.hasInitialConstruct());
+}
+
+TEST(PrismProgramTest, ReplaceConstantByVariable) {
+    storm::prism::Program origPrismProgram;
+    storm::prism::Program transformedPrismProgram;
+    ASSERT_NO_THROW(origPrismProgram = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-4-3.pm"));
+    ASSERT_NO_THROW(transformedPrismProgram = origPrismProgram.replaceConstantByVariable(
+                        origPrismProgram.getConstant("CrowdSize"), origPrismProgram.getManager().integer(0), origPrismProgram.getManager().integer(20), true));
+    EXPECT_NO_THROW(transformedPrismProgram.getGlobalIntegerVariable("CrowdSize"));
+    EXPECT_FALSE(transformedPrismProgram.hasConstant("CrowdSize"));
 }

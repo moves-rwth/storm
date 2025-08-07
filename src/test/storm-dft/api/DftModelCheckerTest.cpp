@@ -22,7 +22,7 @@ class NoOptimizationsConfig {
     }
 };
 
-class DontCareConfig {
+class DontCareOnlyConfig {
    public:
     typedef double ValueType;
 
@@ -31,7 +31,7 @@ class DontCareConfig {
     }
 };
 
-class ModularisationConfig {
+class ModularisationOnlyConfig {
    public:
     typedef double ValueType;
 
@@ -40,12 +40,30 @@ class ModularisationConfig {
     }
 };
 
-class SymmetryReductionConfig {
+class SymmetryReductionOnlyConfig {
    public:
     typedef double ValueType;
 
     static DftAnalysisConfig createConfig() {
         return DftAnalysisConfig{true, false, false};
+    }
+};
+
+class ModularisationConfig {
+   public:
+    typedef double ValueType;
+
+    static DftAnalysisConfig createConfig() {
+        return DftAnalysisConfig{false, true, true};
+    }
+};
+
+class SymmetryReductionConfig {
+   public:
+    typedef double ValueType;
+
+    static DftAnalysisConfig createConfig() {
+        return DftAnalysisConfig{true, false, true};
     }
 };
 
@@ -84,7 +102,7 @@ class DftModelCheckerTest : public ::testing::Test {
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(properties, relevantNames);
 
         // Perform model checking
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results =
@@ -102,6 +120,11 @@ class DftModelCheckerTest : public ::testing::Test {
         return analyze(file, property);
     }
 
+    double analyzeReachability(std::string const& file) {
+        std::string property = "Pmin=? [F \"failed\"]";
+        return analyze(file, property);
+    }
+
     double precision() {
         return 1e-12;
     }
@@ -114,7 +137,9 @@ class DftModelCheckerTest : public ::testing::Test {
     DftAnalysisConfig config;
 };
 
-typedef ::testing::Types<NoOptimizationsConfig, DontCareConfig, ModularisationConfig, SymmetryReductionConfig, AllOptimizationsConfig> TestingTypes;
+typedef ::testing::Types<NoOptimizationsConfig, DontCareOnlyConfig, ModularisationOnlyConfig, SymmetryReductionOnlyConfig, ModularisationConfig,
+                         SymmetryReductionConfig, AllOptimizationsConfig>
+    TestingTypes;
 
 TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes, );
 
@@ -154,11 +179,14 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
     EXPECT_NEAR(result, 2, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep3.dft");
     EXPECT_NEAR(result, 5 / 2.0, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep7.dft");
+    EXPECT_NEAR(result, 5 / 12.0, this->precision());
 
     if (this->getConfig().useMod) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
+        STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft"), storm::exceptions::NotSupportedException);
     } else {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
         EXPECT_NEAR(result, 2 / 3.0, this->precision());
@@ -166,6 +194,8 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
         EXPECT_NEAR(result, 1, this->precision());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
         EXPECT_NEAR(result, 3, this->precision());
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft");
+        EXPECT_NEAR(result, 9 / 56.0, this->precision());
     }
 }
 
@@ -208,6 +238,11 @@ TYPED_TEST(DftModelCheckerTest, SpareMTTF) {
     EXPECT_NEAR(result, 249 / 52.0, this->precision());  // DFTCalc has result of 4.33779 due to different semantics of nested spares
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_dc.dft");
     EXPECT_NEAR(result, 78311 / 182700.0, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/modules3.dft");
+    EXPECT_NEAR(result, 7 / 6.0, this->precision());
+    // Spare gate is part of spare module. As a result it is not activated.
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_contains_spare.dft");
+    EXPECT_NEAR(result, 1, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
@@ -221,15 +256,51 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     EXPECT_NEAR(result, 6, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
     EXPECT_EQ(result, storm::utility::infinity<double>());
-
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
-    EXPECT_NEAR(result, 1 / 2.0, this->precision());
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
-    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
     EXPECT_NEAR(result, 30000, this->precision());
+
+    if (this->getConfig().useMod) {
+        STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft"), storm::exceptions::NotSupportedException);
+    } else {
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
+        EXPECT_EQ(result, storm::utility::infinity<double>());
+    }
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft", 1.0);
+    EXPECT_NEAR(result, 0.08, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
+    EXPECT_NEAR(result, 0.08, this->precision());
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq8.dft");
+    EXPECT_NEAR(result, 11 / 8.0, this->precision());
+}
+
+TYPED_TEST(DftModelCheckerTest, Mutex) {
+    double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
+    EXPECT_NEAR(result, 1 / 2.0, this->precision());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft", 1.0);
+    EXPECT_NEAR(result, 0.8646647168, this->precisionReliability());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
+    EXPECT_NEAR(result, 1, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft", 1.0);
+    EXPECT_NEAR(result, 0, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
+    EXPECT_NEAR(result, 0, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft", 1.0);
+    EXPECT_NEAR(result, 0, this->precision());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
+    EXPECT_NEAR(result, 0, this->precision());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
+    EXPECT_EQ(result, storm::utility::infinity<double>());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft", 1.0);
+    EXPECT_NEAR(result, 0.5842978146, this->precisionReliability());
+    result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
+    EXPECT_NEAR(result, 5 / 8.0, this->precision());
 }
 
 TYPED_TEST(DftModelCheckerTest, Symmetry) {
@@ -237,6 +308,11 @@ TYPED_TEST(DftModelCheckerTest, Symmetry) {
     EXPECT_NEAR(result, 2804183 / 2042040.0, this->precision());
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft", 1.0);
     EXPECT_NEAR(result, 0.3421934224, this->precisionReliability());
+
+    result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep_symmetry.dft");
+    EXPECT_NEAR(result, 6553 / 5376.0, this->precision());
+    result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/pdep_symmetry.dft", 1.0);
+    EXPECT_NEAR(result, 0.4223514414, this->precisionReliability());
 }
 
 TYPED_TEST(DftModelCheckerTest, HecsReliability) {

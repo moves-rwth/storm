@@ -2,6 +2,7 @@
 
 #include "storm/storage/jani/Model.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
@@ -10,6 +11,7 @@
 
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 #include <cmath>
@@ -38,7 +40,7 @@ TransientVariableData<VariableType>::TransientVariableData(storm::expressions::V
 
 template<typename VariableType>
 TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable, VariableType const& defaultValue, bool global)
-    : variable(variable), defaultValue(defaultValue) {
+    : variable(variable), defaultValue(defaultValue), global(global) {
     // Intentionally left empty.
 }
 

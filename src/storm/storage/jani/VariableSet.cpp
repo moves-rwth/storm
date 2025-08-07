@@ -351,9 +351,10 @@ std::map<std::string, std::reference_wrapper<Variable const>> VariableSet::getNa
     return result;
 }
 
-void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution,
+                             bool const substituteTranscendentalNumbers) {
     for (auto& variable : variables) {
-        variable->substitute(substitution);
+        variable->substitute(substitution, substituteTranscendentalNumbers);
     }
 }
 

@@ -133,7 +133,7 @@ void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::os
                     outStream << " [ label = \"{";
                 }
                 arrowHasLabel = true;
-                storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(rowIndex), maxWidthLabel);
+                storm::io::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(rowIndex), maxWidthLabel);
                 outStream << "}";
             }
             if (arrowHasLabel) {
@@ -193,6 +193,7 @@ template class NondeterministicModel<double>;
 template class NondeterministicModel<storm::RationalNumber>;
 template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class NondeterministicModel<storm::RationalFunction>;
+template class NondeterministicModel<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models

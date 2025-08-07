@@ -5,9 +5,6 @@
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
 
@@ -39,7 +36,7 @@ template<typename ValueType>
 bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Environment const& env, ValueType& epsilon,
                                                                     std::vector<ValueType> const& resultVector,
                                                                     storm::storage::BitVector const& relevantPositions) {
-    // Check if the check is necessary for the provided settings
+    // Check if the check is necessary for the provided environment
     if (!env.solver().isForceSoundness() || !env.solver().timeBounded().getRelativeTerminationCriterion()) {
         // No need to update epsilon
         return false;
@@ -269,7 +266,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 }
 
 template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                              storm::storage::SparseMatrix<ValueType> const&,
                                                                              storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&,
                                                                              storm::storage::BitVector const&, std::vector<ValueType> const&, bool, double,
@@ -311,7 +308,8 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
                                                                         std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel,
                                                                         double timeBound) {
     // Only compute the result if the model has a state-based reward model.
-    STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                    "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
 
     uint_fast64_t numberOfStates = rateMatrix.getRowCount();
 
@@ -365,7 +363,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environm
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeInstantaneousRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                         storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                         RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
@@ -438,7 +436,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment
 }
 
 template<typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal,
+std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const&, storm::solver::SolveGoal<ValueType>&&,
                                                                      storm::storage::SparseMatrix<ValueType> const&, std::vector<ValueType> const&,
                                                                      RewardModelType const&, double) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
@@ -673,12 +671,32 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
 
     // If the cumulative reward is to be computed, we need to adjust the weights.
     if (useMixedPoissonProbabilities) {
-        ValueType sum = storm::utility::zero<ValueType>();
-
-        for (auto& element : foxGlynnResult.weights) {
-            sum += element;
-            element = (foxGlynnResult.totalWeight - sum) / uniformizationRate;
+        // The following computes a vector v such that
+        // v[i] = foxGlynnResult.totalWeight - sum_{j=0}^{i} foxGlynnResult.weights[j]
+        //      = sum_{j=i+1}^{n-1} foxGlynnResult.weights[j]  for i=0,...,n-1
+        // and then sets foxGlynnResult.weights = v / uniformizationRate.
+        // We do this in place and with numerical stability in mind. Note that the weights commonly range to values from 1e-200 to 1e+200
+        uint64_t l{0ull}, r{foxGlynnResult.weights.size() - 1};
+        ValueType sumLeft{storm::utility::zero<ValueType>()}, sumRight{storm::utility::zero<ValueType>()};
+        while (l <= r) {
+            if (foxGlynnResult.weights[l] < foxGlynnResult.weights[r]) {
+                sumLeft += foxGlynnResult.weights[l];
+                foxGlynnResult.weights[l] = (foxGlynnResult.totalWeight - sumLeft) / uniformizationRate;
+                ++l;
+            } else {
+                auto const tmp = foxGlynnResult.weights[r];
+                foxGlynnResult.weights[r] = sumRight / uniformizationRate;
+                sumRight += tmp;
+                if (r == 0) {
+                    // Avoid underflow for unsigned int
+                    break;
+                }
+                --r;
+            }
         }
+        auto const relDiff = storm::utility::abs<ValueType>(foxGlynnResult.totalWeight - (sumLeft + sumRight)) / foxGlynnResult.totalWeight;
+        STORM_LOG_WARN_COND(relDiff < storm::utility::convertNumber<ValueType>(1e-8),
+                            "Numerical instability when adjusting the FoxGlynn weights. Relative Difference: " << relDiff << ".");
     }
 
     STORM_LOG_DEBUG("Starting iterations with " << uniformizedMatrix.getRowCount() << " x " << uniformizedMatrix.getColumnCount() << " matrix.");
@@ -719,7 +737,9 @@ std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Enviro
         // To make sure that the values obtained before the left truncation point have the same 'impact' on the total result as the values obtained
         // between the left and right truncation point, we scale them here with the total sum of the weights.
         // Note that we divide with this value afterwards. This is to improve numerical stability.
-        storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, foxGlynnResult.totalWeight);
+        if (foxGlynnResult.left > 0) {
+            storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, foxGlynnResult.totalWeight);
+        }
     }
 
     // For the indices that fall in between the truncation points, we need to perform the matrix-vector

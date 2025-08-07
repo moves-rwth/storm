@@ -212,6 +212,10 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
         return boost::any_cast<BaseExprPtr>(funDef->call(expression.getArguments()).getBaseExpression().accept(*this, data));
     }
 
+    virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) override {
+        return expression.getSharedPointer();
+    }
+
    private:
     std::unordered_map<std::string, FunctionDefinition> const* globalFunctions;
     std::unordered_map<std::string, FunctionDefinition> const* localFunctions;

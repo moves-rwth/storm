@@ -1,5 +1,5 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
@@ -135,6 +135,7 @@ template class MemoryStructureBuilder<double>;
 template class MemoryStructureBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class MemoryStructureBuilder<storm::RationalNumber>;
 template class MemoryStructureBuilder<storm::RationalFunction>;
+template class MemoryStructureBuilder<storm::Interval>;
 
 }  // namespace storage
 }  // namespace storm

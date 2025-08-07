@@ -77,6 +77,13 @@ class SchedulerGenerationMdpPrctlModelCheckerTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
     SchedulerGenerationMdpPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
@@ -147,6 +154,113 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reachability) {
     EXPECT_EQ(2ull, scheduler2.getChoice(1).getDeterministicChoice());
     EXPECT_EQ(0ull, scheduler2.getChoice(2).getDeterministicChoice());
     EXPECT_EQ(0ull, scheduler2.getChoice(3).getDeterministicChoice());
+}
+
+TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, total_reward) {
+    typedef typename TestFixture::ValueType ValueType;
+
+    std::string formulasString = "Rmin=? [ C ];";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards.nm", formulasString);
+    auto mdp = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(3ul, mdp->getNumberOfStates());
+    EXPECT_EQ(4ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(4ul, mdp->getNumberOfChoices());
+    ASSERT_EQ(mdp->getType(), storm::models::ModelType::Mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
+
+    {
+        auto result = checker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+        EXPECT_NEAR(this->parseNumber("0"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
+                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+        ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
+        storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+        EXPECT_TRUE(scheduler.isDeterministicScheduler());
+        EXPECT_TRUE(scheduler.isMemorylessScheduler());
+        EXPECT_TRUE(!scheduler.isPartialScheduler());
+
+        auto inducedModel = mdp->applyScheduler(scheduler);
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
+        auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
+        EXPECT_NEAR(this->parseNumber("0"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],
+                    storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
+    }
+}
+
+TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward) {
+    // Test case taken from https://github.com/moves-rwth/storm/issues/297
+    typedef typename TestFixture::ValueType ValueType;
+
+    std::string formulasString = "Rmax=? [ F \"goal\" ];";
+
+    auto [mdp, formulas] = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards2.nm", formulasString);
+    auto tasks = this->getTasks(formulas);
+    EXPECT_EQ(4ul, mdp->getNumberOfStates());
+    EXPECT_EQ(7ul, mdp->getNumberOfChoices());
+    EXPECT_EQ(12ul, mdp->getNumberOfTransitions());
+    ASSERT_EQ(mdp->getType(), storm::models::ModelType::Mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
+
+    {
+        auto result = checker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+        ASSERT_TRUE(storm::utility::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
+        storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+        EXPECT_TRUE(scheduler.isDeterministicScheduler());
+        EXPECT_TRUE(scheduler.isMemorylessScheduler());
+        EXPECT_TRUE(!scheduler.isPartialScheduler());
+
+        auto inducedModel = mdp->applyScheduler(scheduler);
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
+        auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
+        EXPECT_TRUE(storm::utility::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+    }
+}
+
+TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward2) {
+    // Test case taken from https://github.com/moves-rwth/storm/issues/683
+    typedef typename TestFixture::ValueType ValueType;
+
+    std::string formulasString = "Rmax=? [ F \"goal\" ];";
+
+    auto [mdp, formulas] = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards3.nm", formulasString);
+    auto tasks = this->getTasks(formulas);
+    EXPECT_EQ(4ul, mdp->getNumberOfStates());
+    EXPECT_EQ(5ul, mdp->getNumberOfChoices());
+    EXPECT_EQ(6ul, mdp->getNumberOfTransitions());
+    ASSERT_EQ(mdp->getType(), storm::models::ModelType::Mdp);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
+
+    {
+        auto result = checker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+        ASSERT_TRUE(storm::utility::isInfinity(result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+        ASSERT_TRUE(result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler());
+        storm::storage::Scheduler<ValueType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+        EXPECT_TRUE(scheduler.isDeterministicScheduler());
+        EXPECT_TRUE(scheduler.isMemorylessScheduler());
+        EXPECT_TRUE(!scheduler.isPartialScheduler());
+
+        auto inducedModel = mdp->applyScheduler(scheduler);
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
+        auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
+        ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
+        EXPECT_TRUE(storm::utility::isInfinity(inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]));
+    }
 }
 
 TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, lra) {

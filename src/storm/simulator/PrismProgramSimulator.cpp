@@ -1,5 +1,7 @@
 #include "storm/simulator/PrismProgramSimulator.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 
 using namespace storm::generator;
 
@@ -13,11 +15,10 @@ DiscreteTimePrismProgramSimulator<ValueType>::DiscreteTimePrismProgramSimulator(
       currentState(),
       stateGenerator(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options)),
       zeroRewards(stateGenerator->getNumberOfRewardModels(), storm::utility::zero<ValueType>()),
-      lastActionRewards(zeroRewards) {
+      lastActionRewards(zeroRewards),
+      stateToId(stateGenerator->getStateSize()),
+      idToState() {
     // Current state needs to be overwritten to actual initial state.
-    // But first, let us create a state generator.
-
-    clearStateCaches();
     resetToInitial();
 }
 

@@ -1,13 +1,12 @@
 #pragma once
 
-#include <ostream>
+#include <iostream>
 #include <set>
 #include <string>
 #include <unordered_map>
 
 #include "storm/storage/BitVector.h"
 #include "storm/utility/OsDetection.h"
-#include "storm/utility/macros.h"
 
 namespace storm {
 namespace models {

@@ -1,5 +1,7 @@
 #include "storm/utility/cli.h"
 
+#include <boost/algorithm/string.hpp>
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"

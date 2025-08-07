@@ -1,4 +1,5 @@
 #include "storm/logic/ToExpressionVisitor.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"
 
@@ -38,7 +39,7 @@ boost::any ToExpressionVisitor::visit(BinaryBooleanStateFormula const& f, boost:
     return boost::any();
 }
 
-boost::any ToExpressionVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+boost::any ToExpressionVisitor::visit(BinaryBooleanPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 
@@ -126,7 +127,7 @@ boost::any ToExpressionVisitor::visit(UnaryBooleanStateFormula const& f, boost::
     return boost::any();
 }
 
-boost::any ToExpressionVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+boost::any ToExpressionVisitor::visit(UnaryBooleanPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 

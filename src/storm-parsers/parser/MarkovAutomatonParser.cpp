@@ -37,14 +37,15 @@ MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::str
     components.exitRates = std::move(transitionResult.exitRates);
 
     // If given, parse the state rewards file.
-    boost::optional<std::vector<RewardValueType>> stateRewards;
+    std::optional<std::vector<RewardValueType>> stateRewards;
+
     if (!stateRewardFilename.empty()) {
-        stateRewards.reset(
+        stateRewards.emplace(
             storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(components.transitionMatrix.getColumnCount(), stateRewardFilename));
     }
 
     // Only parse transition rewards if a file is given.
-    boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+    std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
     if (!transitionRewardFilename.empty()) {
         transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(
             transitionRewardFilename, components.transitionMatrix));
@@ -52,11 +53,11 @@ MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::str
 
     if (stateRewards || transitionRewards) {
         components.rewardModels.insert(std::make_pair(
-            "", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
+            "", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), std::nullopt, std::move(transitionRewards))));
     }
 
     // Only parse choice labeling if a file is given.
-    boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+    std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     if (!choiceLabelingFilename.empty()) {
         components.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(
             components.transitionMatrix.getRowCount(), choiceLabelingFilename, components.transitionMatrix.getRowGroupIndices());

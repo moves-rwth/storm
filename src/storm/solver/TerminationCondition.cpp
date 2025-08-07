@@ -163,13 +163,18 @@ template class NoTerminationCondition<double>;
 template class TerminateIfFilteredSumExceedsThreshold<double>;
 template class TerminateIfFilteredExtremumExceedsThreshold<double>;
 template class TerminateIfFilteredExtremumBelowThreshold<double>;
-#ifdef STORM_HAVE_CARL
+
 template class TerminationCondition<storm::RationalNumber>;
 template class NoTerminationCondition<storm::RationalNumber>;
 template class TerminateIfFilteredSumExceedsThreshold<storm::RationalNumber>;
 template class TerminateIfFilteredExtremumExceedsThreshold<storm::RationalNumber>;
 template class TerminateIfFilteredExtremumBelowThreshold<storm::RationalNumber>;
-#endif
+
+template class TerminationCondition<storm::Interval>;
+template class NoTerminationCondition<storm::Interval>;
+template class TerminateIfFilteredSumExceedsThreshold<storm::Interval>;
+template class TerminateIfFilteredExtremumExceedsThreshold<storm::Interval>;
+template class TerminateIfFilteredExtremumBelowThreshold<storm::Interval>;
 
 }  // namespace solver
 }  // namespace storm

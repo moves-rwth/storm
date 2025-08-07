@@ -2,7 +2,7 @@
 
 #include "storm-dft/storage/DFT.h"
 #include "storm-parsers/parser/ValueParser.h"
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
 
 namespace storm::dft {
 namespace parser {

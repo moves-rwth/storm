@@ -16,7 +16,7 @@
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/DftModule.h"
-#include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/DftSymmetries.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
 namespace storm::dft {
@@ -45,10 +45,6 @@ struct DFTElementSort {
     }
 };
 
-// Forward declaration
-template<typename T>
-class DFTColouring;
-
 /**
  * Represents a Dynamic Fault Tree
  */
@@ -70,18 +66,17 @@ class DFT {
     size_t mStateVectorSize;
     size_t mMaxSpareChildCount;
     std::map<size_t, storm::dft::storage::DftModule> mModules;
+    std::vector<size_t> mBEs;
     std::vector<size_t> mDependencies;
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
-    std::vector<std::vector<size_t>> mSymmetries;
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
     mutable std::vector<size_t> mRelevantEvents;
-    std::vector<bool> mDynamicBehavior;
     std::map<size_t, bool> mDependencyInConflict;
 
    public:
     DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
 
-    DFTStateGenerationInfo buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const;
+    DFTStateGenerationInfo buildStateGenerationInfo(storm::dft::storage::DftSymmetries const& symmetries) const;
 
     size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
@@ -91,8 +86,6 @@ class DFT {
     DFT<ValueType> optimize() const;
 
     void copyElements(std::vector<size_t> elements, storm::dft::builder::DFTBuilder<ValueType> builder) const;
-
-    void setDynamicBehaviorInfo();
 
     size_t stateBitVectorSize() const {
         // Ensure multiple of 64
@@ -162,10 +155,6 @@ class DFT {
         return mDependencies;
     }
 
-    std::vector<bool> const& getDynamicBehavior() const {
-        return mDynamicBehavior;
-    }
-
     std::vector<size_t> nonColdBEs() const {
         std::vector<size_t> result;
         for (DFTElementPointer elem : mElements) {
@@ -185,7 +174,7 @@ class DFT {
                             break;
                         }
                         default:
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->beType() << "' is not supported.");
                     }
                 }
             }
@@ -242,12 +231,30 @@ class DFT {
         return std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(mElements[index]);
     }
 
-    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> getBasicElements() const {
-        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> elements;
-        for (DFTElementPointer elem : mElements) {
-            if (elem->isBasicElement()) {
-                elements.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(elem));
-            }
+    /*!
+     * Set order of BEs.
+     * The same order of BEs is returned from getBasicElements().
+     *
+     * @param bes List of BE ids.
+     */
+    void setBEOrder(std::vector<size_t> const& bes) {
+        STORM_LOG_ASSERT(bes.size() == nrBasicElements(), "BEs must be the same size.");
+        STORM_LOG_ASSERT(std::all_of(bes.begin(), bes.end(), [this](size_t id) { return this->getElement(id)->isBasicElement(); }),
+                         "All elements must be BEs.");
+        this->mBEs = bes;
+    }
+
+    /*!
+     * Return list of basic elements. The list is ordered according to the initially given order of BEs.
+     *
+     * @return List of BEs.
+     */
+    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>> getBasicElements() const {
+        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>> elements;
+        for (size_t id : mBEs) {
+            auto element = getElement(id);
+            STORM_LOG_ASSERT(element->isBasicElement(), "Element is not a BE.");
+            elements.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element));
         }
         return elements;
     }
@@ -326,15 +333,6 @@ class DFT {
 
     std::string getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const;
 
-    DFTColouring<ValueType> colourDFT() const;
-
-    std::map<size_t, size_t> findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const;
-
-    DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
-
-    void findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring,
-                              std::map<size_t, std::vector<std::vector<size_t>>>& result) const;
-
     std::vector<size_t> immediateFailureCauses(size_t index) const;
 
     std::vector<size_t> findModularisationRewrite() const;
@@ -389,8 +387,6 @@ class DFT {
     std::string getRelevantEventsString() const;
 
    private:
-    std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
-
     bool elementIndicesCorrect() const {
         for (size_t i = 0; i < mElements.size(); ++i) {
             if (mElements[i]->id() != i)

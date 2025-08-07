@@ -1,19 +1,17 @@
 #include "storm-conv/api/storm-conv.h"
-#include <storage/jani/localeliminator/AutomaticAction.h>
 
+#include "storm/api/properties.h"
+#include "storm/io/file.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/visitor/JSONExporter.h"
 #include "storm/storage/prism/Program.h"
-
-#include "storm/api/properties.h"
-#include "storm/io/file.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace api {
@@ -24,7 +22,7 @@ void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Prope
     }
 
     if (options.substituteConstants) {
-        janiModel.substituteConstantsInPlace();
+        janiModel.substituteConstantsInPlace(false);
     }
 
     if (options.localVars) {
@@ -111,6 +109,11 @@ void transformPrism(storm::prism::Program& prismProgram, std::vector<storm::jani
 }
 
 std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program,
+                                                                                     storm::converter::PrismToJaniConverterOptions options) {
+    return convertPrismToJani(program, {}, options);
+}
+
+std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program,
                                                                                      std::vector<storm::jani::Property> const& properties,
                                                                                      storm::converter::PrismToJaniConverterOptions options) {
     // Perform conversion
@@ -139,17 +142,17 @@ void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani:
 
 void exportPrismToFile(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
     std::ofstream stream;
-    storm::utility::openFile(filename, stream);
+    storm::io::openFile(filename, stream);
     stream << program << '\n';
-    storm::utility::closeFile(stream);
+    storm::io::closeFile(stream);
 
     if (!properties.empty()) {
-        storm::utility::openFile(filename + ".props", stream);
+        storm::io::openFile(filename + ".props", stream);
         for (auto const& prop : properties) {
             stream << prop.asPrismSyntax() << '\n';
             STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
         }
-        storm::utility::closeFile(stream);
+        storm::io::closeFile(stream);
     }
 }
 void printPrismToStream(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::ostream& ostream) {

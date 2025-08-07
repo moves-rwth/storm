@@ -1,0 +1,19 @@
+smg
+
+global state : [0..2];
+
+player p1 [a1] endplayer
+player p2 [a2] endplayer
+player p3 [a3] endplayer
+
+module m1
+	[a1] state=0 -> 1/2 : (state'=1) + 1/2 : (state'=2);
+endmodule
+
+module m2
+	[a2] state=1 -> 1/2 : (state'=0) + 1/2 : (state'=2);
+endmodule
+
+module m3
+	[a3] state=2 -> 1/2 : (state'=0) + 1/2 : (state'=1);
+endmodule

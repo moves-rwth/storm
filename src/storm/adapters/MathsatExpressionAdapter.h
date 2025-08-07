@@ -5,21 +5,21 @@
 
 #include <stack>
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 #include "mathsat.h"
 #endif
 
-#include "storage/expressions/ExpressionManager.h"
-#include "storage/expressions/ExpressionVisitor.h"
-#include "storage/expressions/Expressions.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 namespace std {
 // Define hashing operator for MathSAT's declarations.
 template<>
@@ -37,7 +37,7 @@ bool operator==(msat_decl decl1, msat_decl decl2);
 namespace storm {
 namespace adapters {
 
-#ifdef STORM_HAVE_MSAT
+#ifdef STORM_HAVE_MATHSAT
 
 class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
    public:
@@ -197,25 +197,25 @@ class MathsatExpressionAdapter : public storm::expressions::ExpressionVisitor {
         msat_term rightResult = boost::any_cast<msat_term>(expression.getSecondOperand()->accept(*this, data));
 
         switch (expression.getRelationType()) {
-            case storm::expressions::BinaryRelationExpression::RelationType::Equal:
+            case storm::expressions::RelationType::Equal:
                 if (expression.getFirstOperand()->getType().isBooleanType() && expression.getSecondOperand()->getType().isBooleanType()) {
                     return msat_make_iff(env, leftResult, rightResult);
                 } else {
                     return msat_make_equal(env, leftResult, rightResult);
                 }
-            case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
+            case storm::expressions::RelationType::NotEqual:
                 if (expression.getFirstOperand()->getType().isBooleanType() && expression.getSecondOperand()->getType().isBooleanType()) {
                     return msat_make_not(env, msat_make_iff(env, leftResult, rightResult));
                 } else {
                     return msat_make_not(env, msat_make_equal(env, leftResult, rightResult));
                 }
-            case storm::expressions::BinaryRelationExpression::RelationType::Less:
+            case storm::expressions::RelationType::Less:
                 return msat_make_and(env, msat_make_not(env, msat_make_equal(env, leftResult, rightResult)), msat_make_leq(env, leftResult, rightResult));
-            case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
+            case storm::expressions::RelationType::LessOrEqual:
                 return msat_make_leq(env, leftResult, rightResult);
-            case storm::expressions::BinaryRelationExpression::RelationType::Greater:
+            case storm::expressions::RelationType::Greater:
                 return msat_make_not(env, msat_make_leq(env, leftResult, rightResult));
-            case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
+            case storm::expressions::RelationType::GreaterOrEqual:
                 return msat_make_or(env, msat_make_equal(env, leftResult, rightResult), msat_make_not(env, msat_make_leq(env, leftResult, rightResult)));
             default:
                 STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,

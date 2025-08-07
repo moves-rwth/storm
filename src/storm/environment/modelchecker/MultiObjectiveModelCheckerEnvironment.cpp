@@ -33,6 +33,12 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
     } else if (multiobjectiveSettings.isFlowEncodingSet()) {
         encodingType = EncodingType::Flow;
     }
+    STORM_LOG_ASSERT(multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet() || multiobjectiveSettings.isBsccDetectionViaFlowConstraintsSet(),
+                     "unexpected settings");
+    bsccOrderEncoding = multiobjectiveSettings.isBsccDetectionViaOrderConstraintsSet();
+    STORM_LOG_ASSERT(multiobjectiveSettings.isIndicatorConstraintsSet() || multiobjectiveSettings.isBigMConstraintsSet(), "unexpected settings");
+    indicatorConstraints = multiobjectiveSettings.isIndicatorConstraintsSet();
+    redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
 
     if (multiobjectiveSettings.isMaxStepsSet()) {
         maxSteps = multiobjectiveSettings.getMaxSteps();
@@ -119,6 +125,28 @@ typename MultiObjectiveModelCheckerEnvironment::EncodingType const& MultiObjecti
 
 void MultiObjectiveModelCheckerEnvironment::setEncodingType(EncodingType const& value) {
     encodingType = value;
+}
+
+bool MultiObjectiveModelCheckerEnvironment::getUseIndicatorConstraints() const {
+    return indicatorConstraints;
+}
+void MultiObjectiveModelCheckerEnvironment::setUseIndicatorConstraints(bool value) {
+    indicatorConstraints = value;
+}
+
+bool MultiObjectiveModelCheckerEnvironment::getUseBsccOrderEncoding() const {
+    return bsccOrderEncoding;
+}
+void MultiObjectiveModelCheckerEnvironment::setUseBsccOrderEncoding(bool value) {
+    bsccOrderEncoding = value;
+}
+
+bool MultiObjectiveModelCheckerEnvironment::getUseRedundantBsccConstraints() const {
+    return redundantBsccConstraints;
+}
+
+void MultiObjectiveModelCheckerEnvironment::setUseRedundantBsccConstraints(bool value) {
+    redundantBsccConstraints = value;
 }
 
 bool MultiObjectiveModelCheckerEnvironment::isMaxStepsSet() const {

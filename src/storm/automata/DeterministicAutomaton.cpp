@@ -6,9 +6,9 @@
 
 #include "storm/automata/AcceptanceCondition.h"
 #include "storm/automata/HOAConsumerDA.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/FileIoException.h"
+#include "storm/io/file.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace automata {
@@ -65,8 +65,7 @@ void DeterministicAutomaton::printHOA(std::ostream& out) const {
 
     out << "Acceptance: " << acceptance->getNumberOfAcceptanceSets() << " " << *acceptance->getAcceptanceExpression() << "\n";
 
-    out << "--BODY--"
-        << "\n";
+    out << "--BODY--" << "\n";
 
     for (std::size_t s = 0; s < getNumberOfStates(); s++) {
         out << "State: " << s;
@@ -96,9 +95,10 @@ DeterministicAutomaton::ptr DeterministicAutomaton::parse(std::istream& in) {
 }
 
 DeterministicAutomaton::ptr DeterministicAutomaton::parseFromFile(const std::string& filename) {
-    std::ifstream in(filename);
-    STORM_LOG_THROW(in.good(), storm::exceptions::FileIoException, "Can not open '" << filename << "' for reading.");
+    std::ifstream in;
+    storm::io::openFile(filename, in);
     auto da = parse(in);
+    storm::io::closeFile(in);
 
     STORM_LOG_INFO("Deterministic automaton from HOA file '" << filename << "' has " << da->getNumberOfStates() << " states, " << da->getAPSet().size()
                                                              << " atomic propositions and " << *da->getAcceptance()->getAcceptanceExpression()

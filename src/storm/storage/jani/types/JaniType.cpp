@@ -1,5 +1,5 @@
 #include "storm/storage/jani/types/JaniType.h"
-
+#include <ostream>
 #include "storm/storage/jani/types/AllJaniTypes.h"
 
 namespace storm {
@@ -68,7 +68,8 @@ ContinuousType& JaniType::asContinuousType() {
     return dynamic_cast<ContinuousType&>(*this);
 }
 
-void JaniType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& /*substitution*/) {
+void JaniType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& /*substitution*/,
+                          bool const /*substituteTranscendentalNumbers*/) {
     // intentionally left empty
 }
 

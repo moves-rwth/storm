@@ -1,4 +1,5 @@
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
+#include <boost/any.hpp>
 
 #include "storm/logic/Formulas.h"
 
@@ -89,7 +90,11 @@ boost::any ExpressionSubstitutionVisitor::visit(CumulativeRewardFormula const& f
         bounds.emplace_back(TimeBound(f.isBoundStrict(i), substitutionFunction(f.getBound(i))));
         timeBoundReferences.push_back(f.getTimeBoundReference(i));
     }
-    return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(bounds, timeBoundReferences));
+    boost::optional<RewardAccumulation> optionalRewardAccumulation;
+    if (f.hasRewardAccumulation()) {
+        optionalRewardAccumulation = f.getRewardAccumulation();
+    }
+    return std::static_pointer_cast<Formula>(std::make_shared<CumulativeRewardFormula>(bounds, timeBoundReferences, optionalRewardAccumulation));
 }
 
 boost::any ExpressionSubstitutionVisitor::visit(InstantaneousRewardFormula const& f, boost::any const& data) const {

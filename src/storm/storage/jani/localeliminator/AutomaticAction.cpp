@@ -1,9 +1,11 @@
-#include "AutomaticAction.h"
+#include "storm/storage/jani/localeliminator/AutomaticAction.h"
+
 #include <boost/graph/strong_components.hpp>
-#include "EliminateAutomaticallyAction.h"
-#include "RebuildWithoutUnreachableAction.h"
-#include "UnfoldAction.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/localeliminator/EliminateAutomaticallyAction.h"
+#include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
+#include "storm/storage/jani/localeliminator/UnfoldAction.h"
 
 namespace storm {
 namespace jani {

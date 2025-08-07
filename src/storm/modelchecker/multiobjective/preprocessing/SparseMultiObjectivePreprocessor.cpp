@@ -10,8 +10,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
@@ -475,7 +473,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
             }
         }
         std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
-        data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(objectiveRewards)));
+        data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::nullopt, std::move(objectiveRewards)));
         if (subformula == nullptr) {
             subformula = std::make_shared<storm::logic::TotalRewardFormula>();
         }

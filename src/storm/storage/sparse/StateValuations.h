@@ -1,10 +1,11 @@
 #pragma once
 
-#include <boost/variant.hpp>
+#include <boost/optional.hpp>
 #include <cstdint>
 #include <string>
 
-#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/JsonForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/StateAnnotation.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/expressions/Variable.h"
@@ -43,8 +44,8 @@ class StateValuations : public storm::models::sparse::StateAnnotation {
                            typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableEnd,
                            typename std::map<std::string, uint64_t>::const_iterator labelBegin,
                            typename std::map<std::string, uint64_t>::const_iterator labelEnd, StateValuation const* valuation);
-        bool operator==(StateValueIterator const& other);
-        bool operator!=(StateValueIterator const& other);
+        bool operator==(StateValueIterator const& other) const;
+        bool operator!=(StateValueIterator const& other) const;
         StateValueIterator& operator++();
         StateValueIterator& operator--();
 
@@ -99,6 +100,21 @@ class StateValuations : public storm::models::sparse::StateAnnotation {
                                                   storm::expressions::Variable const& rationalVariable) const;
     /// Returns true, if this valuation does not contain any value.
     bool isEmpty(storm::storage::sparse::state_type const& stateIndex) const;
+
+    /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    storm::storage::BitVector getBooleanValues(storm::expressions::Variable const& booleanVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    std::vector<int64_t> getIntegerValues(storm::expressions::Variable const& integerVariable) const;
+
+    /*!
+     * Returns a vector of size getNumberOfStates() such that the i'th entry is the value of the given variable of state i.
+     */
+    std::vector<storm::RationalNumber> getRationalValues(storm::expressions::Variable const& rationalVariable) const;
 
     /*!
      * Returns a string representation of the valuation.
@@ -164,13 +180,22 @@ class StateValuationsBuilder {
      * The number of given variable values for each type needs to match the number of added variables.
      * After calling this method, no more variables should be added.
      */
-    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {},
-                  std::vector<storm::RationalNumber>&& rationalValues = {}, std::vector<int64_t>&& observationLabelValues = {});
+    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {});
+
+    /*!
+     * Adds a new state including rational values.
+     * The variable values have to be given in the same order as the variables have been added.
+     * The number of given variable values for each type needs to match the number of added variables.
+     * After calling this method, no more variables should be added.
+     * @note there are two versions of this to allow forward declaration of RationalNumber
+     */
+    void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues,
+                  std::vector<storm::RationalNumber>&& rationalValues, std::vector<int64_t>&& observationLabelValues = {});
 
     /*!
      * Creates the finalized state valuations object.
      */
-    StateValuations build(std::size_t totalStateCount);
+    StateValuations build();
 
     uint64_t getBooleanVarCount() const;
     uint64_t getIntegerVarCount() const;

@@ -1,31 +1,27 @@
 #include "SparseDerivativeInstantiationModelChecker.h"
-#include "analysis/GraphConditions.h"
-#include "environment/Environment.h"
-#include "environment/solver/GmmxxSolverEnvironment.h"
-#include "environment/solver/MinMaxSolverEnvironment.h"
-#include "environment/solver/NativeSolverEnvironment.h"
-#include "environment/solver/SolverEnvironment.h"
-#include "environment/solver/TopologicalSolverEnvironment.h"
-#include "logic/Formula.h"
-#include "modelchecker/results/CheckResult.h"
-#include "modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "settings/SettingsManager.h"
-#include "settings/modules/CoreSettings.h"
-#include "settings/modules/GeneralSettings.h"
-#include "solver/GmmxxLinearEquationSolver.h"
-#include "solver/SolverSelectionOptions.h"
-#include "solver/helper/SoundValueIterationHelper.h"
-#include "solver/multiplier/GmmxxMultiplier.h"
-#include "storage/BitVector.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
+#include "storm/analysis/GraphConditions.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/logic/Formula.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/solver/GmmxxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/logging.h"
 #include "storm/utility/vector.h"
-#include "utility/constants.h"
-#include "utility/graph.h"
-#include "utility/logging.h"
 
 namespace storm {
 namespace derivative {
@@ -66,10 +62,10 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     // Write results into the placeholders
     for (auto& functionResult : this->functionsUnderived) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
     for (auto& functionResult : this->functionsDerived.at(parameter)) {
-        functionResult.second = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(functionResult.first, valuation));
+        functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);
     }
 
     auto deltaConstrainedMatrixInstantiated = deltaConstrainedMatricesInstantiated->at(parameter);
@@ -84,7 +80,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     std::vector<ConstantType> instantiatedDerivedOutputVec(derivedOutputVecs->at(parameter).size());
     for (uint_fast64_t i = 0; i < derivedOutputVecs->at(parameter).size(); i++) {
-        instantiatedDerivedOutputVec[i] = utility::convertNumber<ConstantType>(derivedOutputVecs->at(parameter)[i].evaluate(valuation));
+        instantiatedDerivedOutputVec[i] = storm::utility::parametric::evaluate<ConstantType>(derivedOutputVecs->at(parameter)[i], valuation);
     }
 
     instantiationWatch.stop();
@@ -137,7 +133,6 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
 
     storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
 
-    auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     bool convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
 
     std::map<VariableType<FunctionType>, storage::SparseMatrix<FunctionType>> equationSystems;

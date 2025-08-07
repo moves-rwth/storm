@@ -30,7 +30,7 @@ xorshift_rand(void)
 double
 uniform_deviate(uint64_t seed)
 {
-    return seed * (1.0 / (0xffffffffffffffffL + 1.0));
+    return seed * (1.0 / ((double)(UINT64_MAX) + 1.0));
 }
 
 int
@@ -188,7 +188,6 @@ test_bdd()
 int
 test_cube()
 {
-    LACE_ME;
     const BDDSET vars = sylvan_set_fromarray(((BDDVAR[]){1,2,3,4,6,8}), 6);
 
     uint8_t cube[6], check[6];
@@ -260,7 +259,6 @@ static int
 test_operators()
 {
     // We need to test: xor, and, or, nand, nor, imp, biimp, invimp, diff, less
-    LACE_ME;
 
     //int i;
     BDD a = sylvan_ithvar(1);
@@ -326,8 +324,6 @@ test_operators()
 int
 test_relprod()
 {
-    LACE_ME;
-
     BDDVAR vars[] = {0,2,4};
     BDDVAR all_vars[] = {0,1,2,3,4,5};
 
@@ -375,8 +371,6 @@ test_relprod()
 int
 test_compose()
 {
-    LACE_ME;
-
     BDD a = sylvan_ithvar(1);
     BDD b = sylvan_ithvar(2);
 
@@ -453,7 +447,6 @@ test_ldd()
     test_assert(lddmc_iscopy(lddmc_getright(m)) == 0);
     test_assert(lddmc_makenode(0, lddmc_true, lddmc_false) == lddmc_getright(m));
 
-    LACE_ME;
     // test union_cube
     for (int i=0; i<100; i++) {
         int depth = rng(1, 6);
@@ -516,18 +509,25 @@ test_ldd()
     return 0;
 }
 
-int runtests()
+TASK_0(int, runtests)
 {
     // we are not testing garbage collection
     sylvan_gc_disable();
 
+    printf("Testing cache.\n");
     if (test_cache()) return 1;
+    printf("Testing bdd.\n");
     if (test_bdd()) return 1;
+    printf("Testing cube.\n");
     for (int j=0;j<10;j++) if (test_cube()) return 1;
+    printf("Testing relprod.\n");
     for (int j=0;j<10;j++) if (test_relprod()) return 1;
+    printf("Testing compose.\n");
     for (int j=0;j<10;j++) if (test_compose()) return 1;
+    printf("Testing operators.\n");
     for (int j=0;j<10;j++) if (test_operators()) return 1;
 
+    printf("Testing ldd.\n");
     if (test_ldd()) return 1;
 
     return 0;
@@ -536,8 +536,7 @@ int runtests()
 int main()
 {
     // Standard Lace initialization with 1 worker
-    lace_init(1, 0);
-    lace_startup(0, NULL, NULL);
+    lace_start(1, 0);
 
     // Simple Sylvan initialization, also initialize BDD, MTBDD and LDD support
     sylvan_set_sizes(1LL<<20, 1LL<<20, 1LL<<16, 1LL<<16);
@@ -546,10 +545,12 @@ int main()
     sylvan_init_mtbdd();
     sylvan_init_ldd();
 
-    int res = runtests();
+    printf("Sylvan initialization complete.\n");
+
+    int res = RUN(runtests);
 
     sylvan_quit();
-    lace_exit();
+    lace_stop();
 
     return res;
 }

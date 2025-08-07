@@ -1,5 +1,5 @@
 #include "storm/storage/prism/ClockVariable.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 
@@ -17,8 +17,7 @@ void ClockVariable::createMissingInitialValue() {
 }
 
 std::ostream& operator<<(std::ostream& stream, ClockVariable const& variable) {
-    stream << variable.getName() << ": clock"
-           << ";";
+    stream << variable.getName() << ": clock" << ";";
     return stream;
 }
 

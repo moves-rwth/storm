@@ -14,17 +14,29 @@
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/graph.h"
 
-TEST(AssumptionMakerTest, Brp_without_bisimulation) {
+class AssumptionMakerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -62,19 +74,20 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
-
-TEST(AssumptionMakerTest, Simple1) {
+TEST_F(AssumptionMakerTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -114,18 +127,20 @@ TEST(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }
 
-TEST(AssumptionMakerTest, Casestudy1) {
+TEST_F(AssumptionMakerTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -158,5 +173,5 @@ TEST(AssumptionMakerTest, Casestudy1) {
     EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
     EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
     EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(storm::expressions::RelationType::Greater, itr->first->getRelationType());
 }

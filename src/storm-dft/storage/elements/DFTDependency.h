@@ -18,8 +18,8 @@ namespace elements {
  */
 template<typename ValueType>
 class DFTDependency : public DFTElement<ValueType> {
-    using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
-    using DFTBEPointer = std::shared_ptr<DFTBE<ValueType>>;
+    using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+    using DFTElementVector = std::vector<DFTElementPointer>;
 
    public:
     /*!
@@ -73,7 +73,7 @@ class DFTDependency : public DFTElement<ValueType> {
      * Get trigger event, i.e., the first child.
      * @return Trigger event.
      */
-    DFTGatePointer const& triggerEvent() const {
+    DFTElementPointer const& triggerEvent() const {
         STORM_LOG_ASSERT(mTriggerEvent, "Trigger does not exist.");
         return mTriggerEvent;
     }
@@ -82,7 +82,7 @@ class DFTDependency : public DFTElement<ValueType> {
      * Set the trigger event, i.e., the first child.
      * @param triggerEvent Trigger event.
      */
-    void setTriggerElement(DFTGatePointer const& triggerEvent) {
+    void setTriggerElement(DFTElementPointer const& triggerEvent) {
         mTriggerEvent = triggerEvent;
     }
 
@@ -90,7 +90,7 @@ class DFTDependency : public DFTElement<ValueType> {
      * Get dependent events.
      * @return Dependent events.
      */
-    std::vector<DFTBEPointer> const& dependentEvents() const {
+    DFTElementVector const& dependentEvents() const {
         STORM_LOG_ASSERT(mDependentEvents.size() > 0, "Dependent event does not exists.");
         return mDependentEvents;
     }
@@ -99,7 +99,7 @@ class DFTDependency : public DFTElement<ValueType> {
      * Add dependent event.
      * @param dependentEvent Dependent event.
      */
-    void addDependentEvent(DFTBEPointer const& dependentEvent) {
+    void addDependentEvent(DFTElementPointer const& dependentEvent) {
         mDependentEvents.push_back(dependentEvent);
     }
 
@@ -109,7 +109,8 @@ class DFTDependency : public DFTElement<ValueType> {
      * @return True iff element was found in dependent events.
      */
     bool containsDependentEvent(size_t id) {
-        auto it = std::find_if(this->mDependentEvents.begin(), this->mDependentEvents.end(), [&id](DFTBEPointer be) -> bool { return be->id() == id; });
+        auto it =
+            std::find_if(this->mDependentEvents.begin(), this->mDependentEvents.end(), [&id](DFTElementPointer elem) -> bool { return elem->id() == id; });
         return it != this->mDependentEvents.end();
     }
 
@@ -125,7 +126,7 @@ class DFTDependency : public DFTElement<ValueType> {
         return this->probability() == otherDEP.probability();
     }
 
-    void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+    void extendSpareModule(std::set<size_t>&) const override {
         // Do nothing
     }
 
@@ -177,8 +178,8 @@ class DFTDependency : public DFTElement<ValueType> {
 
    private:
     ValueType mProbability;
-    DFTGatePointer mTriggerEvent;
-    std::vector<DFTBEPointer> mDependentEvents;
+    DFTElementPointer mTriggerEvent;
+    DFTElementVector mDependentEvents;
 };
 
 }  // namespace elements

@@ -11,6 +11,8 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/macros.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace transformer {
 
@@ -42,9 +44,9 @@ std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> SymbolicDtmcToSparseDtmc
     storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicDtmc.getTransitionMatrix().toMatrix(this->odd, this->odd);
     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
     for (auto const& rewardModelNameAndModel : symbolicDtmc.getRewardModels()) {
-        boost::optional<std::vector<ValueType>> stateRewards;
-        boost::optional<std::vector<ValueType>> stateActionRewards;
-        boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
+        std::optional<std::vector<ValueType>> stateRewards;
+        std::optional<std::vector<ValueType>> stateActionRewards;
+        std::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
         if (rewardModelNameAndModel.second.hasStateRewards()) {
             stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(this->odd);
         }
@@ -110,9 +112,9 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> SymbolicMdpToSparseMdpTra
     // Translate reward models
     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
     for (auto const& rewardModelNameAndModel : symbolicMdp.getRewardModels()) {
-        boost::optional<std::vector<ValueType>> stateRewards;
-        boost::optional<std::vector<ValueType>> stateActionRewards;
-        boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
+        std::optional<std::vector<ValueType>> stateRewards;
+        std::optional<std::vector<ValueType>> stateActionRewards;
+        std::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
         if (rewardModelNameAndModel.second.hasStateRewards()) {
             stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
         }
@@ -154,9 +156,9 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> SymbolicCtmcToSparseCtmc
     storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicCtmc.getTransitionMatrix().toMatrix(odd, odd);
     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
     for (auto const& rewardModelNameAndModel : symbolicCtmc.getRewardModels()) {
-        boost::optional<std::vector<ValueType>> stateRewards;
-        boost::optional<std::vector<ValueType>> stateActionRewards;
-        boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
+        std::optional<std::vector<ValueType>> stateRewards;
+        std::optional<std::vector<ValueType>> stateActionRewards;
+        std::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
         if (rewardModelNameAndModel.second.hasStateRewards()) {
             stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
         }
@@ -217,9 +219,9 @@ std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> SymbolicMaToS
     // Translate reward models
     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
     for (auto const& rewardModelNameAndModel : symbolicMa.getRewardModels()) {
-        boost::optional<std::vector<ValueType>> stateRewards;
-        boost::optional<std::vector<ValueType>> stateActionRewards;
-        boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
+        std::optional<std::vector<ValueType>> stateRewards;
+        std::optional<std::vector<ValueType>> stateActionRewards;
+        std::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
         if (rewardModelNameAndModel.second.hasStateRewards()) {
             stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
         }

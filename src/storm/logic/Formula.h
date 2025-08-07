@@ -1,19 +1,21 @@
 #ifndef STORM_LOGIC_FORMULA_H_
 #define STORM_LOGIC_FORMULA_H_
 
-#include <iostream>
+#include <iosfwd>
 #include <memory>
 #include <set>
 #include <vector>
 
 #include <boost/any.hpp>
-
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
-
 #include "storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {
+namespace expressions {
+class Variable;
+class Expression;
+class ExpressionManager;
+}  // namespace expressions
+
 namespace logic {
 
 // Forward-declare visitor for accept() method.
@@ -28,7 +30,7 @@ class FormulaInformation;
 class Formula : public std::enable_shared_from_this<Formula> {
    public:
     // Make the destructor virtual to allow deletion of objects of subclasses via a pointer to this class.
-    virtual ~Formula(){
+    virtual ~Formula() {
         // Intentionally left empty.
     };
 
@@ -103,7 +105,8 @@ class Formula : public std::enable_shared_from_this<Formula> {
     bool isInFragment(FragmentSpecification const& fragment) const;
     FormulaInformation info(bool recurseIntoOperators = true) const;
 
-    virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
+    boost::any accept(FormulaVisitor const& visitor) const;
+    virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const = 0;
 
     static std::shared_ptr<Formula const> getTrueFormula();
 
@@ -216,12 +219,15 @@ class Formula : public std::enable_shared_from_this<Formula> {
     std::shared_ptr<Formula const> asSharedPointer();
     std::shared_ptr<Formula const> asSharedPointer() const;
 
+    std::shared_ptr<Formula> clone() const;
+
     std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
     std::shared_ptr<Formula> substitute(
         std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& expressionSubstitution) const;
     std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
     std::shared_ptr<Formula> substitute(std::map<std::string, std::string> const& labelSubstitution) const;
     std::shared_ptr<Formula> substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const;
+    std::shared_ptr<Formula> substituteTranscendentalNumbers() const;
 
     /*!
      * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but

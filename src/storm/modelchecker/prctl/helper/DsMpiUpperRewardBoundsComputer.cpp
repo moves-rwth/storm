@@ -2,6 +2,8 @@
 
 #include "storm-config.h"
 
+#include "storm/adapters/RationalNumberAdapter.h"
+
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 #include "storm/storage/SparseMatrix.h"

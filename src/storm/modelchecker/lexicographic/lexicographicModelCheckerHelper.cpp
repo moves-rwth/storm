@@ -9,6 +9,7 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/storage/SchedulerChoice.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/SubsystemBuilder.h"
 
@@ -25,8 +26,7 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
     std::vector<uint> acceptanceConditions;
 
     // Get the big product automton for all subformulae
-    std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton =
-        spothelper::ltl2daSpotProduct<SparseModelType, ValueType>(this->formula, formulaChecker, model, extracted, acceptanceConditions);
+    std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton = spothelper::ltl2daSpotProduct(this->formula, extracted, acceptanceConditions);
 
     // Compute Satisfaction sets for the Atomic propositions (which represent the state-subformulae)
     std::map<std::string, storm::storage::BitVector> apSatSets = computeApSets(extracted, formulaChecker);

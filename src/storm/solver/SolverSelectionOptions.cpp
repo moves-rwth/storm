@@ -20,10 +20,12 @@ std::string toString(MinMaxMethod m) {
             return "soundvalueiteration";
         case MinMaxMethod::OptimisticValueIteration:
             return "optimisticvalueiteration";
-        case MinMaxMethod::TopologicalCuda:
-            return "topologicalcuda";
+        case MinMaxMethod::GuessingValueIteration:
+            return "guessingvalueiteration";
         case MinMaxMethod::ViToPi:
             return "vi-to-pi";
+        case MinMaxMethod::ViToLp:
+            return "vi-to-lp";
         case MinMaxMethod::Acyclic:
             return "vi-to-pi";
     }
@@ -34,8 +36,8 @@ std::string toString(MultiplierType t) {
     switch (t) {
         case MultiplierType::Native:
             return "Native";
-        case MultiplierType::Gmmxx:
-            return "Gmmxx";
+        case MultiplierType::ViOperator:
+            return "ViOperator";
     }
     return "invalid";
 }
@@ -82,6 +84,8 @@ std::string toString(LpSolverType t) {
             return "Glpk";
         case LpSolverType::Z3:
             return "Z3";
+        case LpSolverType::Soplex:
+            return "Soplex";
     }
     return "invalid";
 }
@@ -130,6 +134,8 @@ std::string toString(NativeLinearEquationSolverMethod t) {
             return "SoundValueIteration";
         case NativeLinearEquationSolverMethod::OptimisticValueIteration:
             return "optimisticvalueiteration";
+        case NativeLinearEquationSolverMethod::GuessingValueIteration:
+            return "guessingvalueiteration";
         case NativeLinearEquationSolverMethod::IntervalIteration:
             return "IntervalIteration";
         case NativeLinearEquationSolverMethod::RationalSearch:

@@ -121,17 +121,25 @@ class FailableElements {
         bool isConflictingDependency() const;
 
         /*!
-         * Obtain the BE which fails from the current iterator.
-         * Optionally returns the dependency which triggered the BE failure.
+         * Return the current iterator as a BE which fails next.
+         * This assumes that isFailureDueToDependency() returns false.
          *
-         * @tparam ValueType Value type.
          * @param dft DFT.
-         * @return Pair of the BE which fails and the dependency which triggered the failure (or nullptr if the BE fails on its own).
+         * @return BE of current iterator.
          */
         template<typename ValueType>
-        std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
-                  std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
-        getFailBE(storm::dft::storage::DFT<ValueType> const& dft) const;
+        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> asBE(storm::dft::storage::DFT<ValueType> const& dft) const;
+
+        /*!
+         * Return the current iterator as a dependency which triggers next.
+         * This assumes that isFailureDueToDependency() returns true.
+         *
+         * @param dft DFT.
+         * @return Dependency of current iterator.
+         */
+
+        template<typename ValueType>
+        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> asDependency(storm::dft::storage::DFT<ValueType> const& dft) const;
 
        private:
         // Whether dependencies are currently considered.
@@ -230,9 +238,10 @@ class FailableElements {
     /*!
      * Get a string representation of the currently failable elements.
      *
+     * @param forceBE If true, failable dependencies are ignored and only BEs are considered.
      * @return std::string Enumeration of currently failable elements.
      */
-    std::string getCurrentlyFailableString() const;
+    std::string getCurrentlyFailableString(bool forceBE = false) const;
 
    private:
     // We use a BitVector for BEs but a list for dependencies, because usually only a few dependencies are failable at the same time.

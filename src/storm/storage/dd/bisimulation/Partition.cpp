@@ -22,6 +22,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm {
 namespace dd {
 namespace bisimulation {
@@ -56,7 +58,7 @@ Partition<DdType, ValueType>::Partition(storm::dd::Bdd<DdType> const& partitionB
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-bool Partition<DdType, ValueType>::operator==(Partition<DdType, ValueType> const& other) {
+bool Partition<DdType, ValueType>::operator==(Partition<DdType, ValueType> const& other) const {
     return this->partition == other.partition && this->blockVariables == other.blockVariables && this->numberOfBlocks == other.numberOfBlocks &&
            this->nextFreeBlockIndex == other.nextFreeBlockIndex;
 }

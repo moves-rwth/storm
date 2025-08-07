@@ -1,5 +1,7 @@
 #include "storm/models/ModelBase.h"
 
+#include <initializer_list>
+
 namespace storm {
 namespace models {
 ModelType ModelBase::getType() const {

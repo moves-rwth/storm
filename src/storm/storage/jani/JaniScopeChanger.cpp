@@ -106,7 +106,8 @@ bool JaniScopeChanger::canMakeVariableGlobal(storm::expressions::Variable const&
 }
 
 std::pair<bool, uint64_t> JaniScopeChanger::canMakeVariableLocal(storm::expressions::Variable const& variable, Model const& model,
-                                                                 std::vector<Property> const& properties, boost::optional<uint64_t> automatonIndex) const {
+                                                                 storm::OptionalRef<std::vector<Property> const> properties,
+                                                                 std::optional<uint64_t> automatonIndex) const {
     STORM_LOG_TRACE("Can the variable " << variable.getName() << " be made local?");
 
     uint64_t index = model.getNumberOfAutomata();
@@ -116,7 +117,7 @@ std::pair<bool, uint64_t> JaniScopeChanger::canMakeVariableLocal(storm::expressi
     }
 
     auto accessingAutomata = detail::getAutomataAccessingVariable(variable, model);
-    if (accessingAutomata.size() > 1 || (automatonIndex.is_initialized() && accessingAutomata.count(automatonIndex.get()) == 0)) {
+    if (accessingAutomata.size() > 1 || (automatonIndex.has_value() && accessingAutomata.count(automatonIndex.value()) == 0)) {
         STORM_LOG_TRACE(".. no!, multiple automata access the variable, e.g. automata " << model.getAutomaton(*accessingAutomata.begin()).getName() << " and "
                                                                                         << model.getAutomaton(*accessingAutomata.rbegin()).getName());
         return {false, index};
@@ -137,22 +138,24 @@ std::pair<bool, uint64_t> JaniScopeChanger::canMakeVariableLocal(storm::expressi
             return {false, index};
         }
     }
-    for (auto const& p : properties) {
-        if (p.getUsedVariablesAndConstants().count(variable) > 0) {
-            STORM_LOG_TRACE(".. no!, used variables definition: ");
-            return {false, index};
-        }
-        if (p.getUsedLabels().count(variable.getName()) > 0) {
-            STORM_LOG_TRACE(".. no!, used labels definition: ");
-            return {false, index};
+    if (properties) {
+        for (auto const& p : *properties) {
+            if (p.getUsedVariablesAndConstants().count(variable) > 0) {
+                STORM_LOG_TRACE(".. no!, used variables definition: ");
+                return {false, index};
+            }
+            if (p.getUsedLabels().count(variable.getName()) > 0) {
+                STORM_LOG_TRACE(".. no!, used labels definition: ");
+                return {false, index};
+            }
         }
     }
 
     if (accessingAutomata.empty()) {
-        index = automatonIndex.is_initialized() ? automatonIndex.get() : 0;
+        index = automatonIndex.has_value() ? automatonIndex.value() : 0;
     } else {
         index = *accessingAutomata.begin();
-        assert(!automatonIndex.is_initialized() || index == automatonIndex.get());
+        assert(!automatonIndex.has_value() || index == automatonIndex.value());
     }
     STORM_LOG_TRACE(".. Yes, made local in automaton with index " << index);
     return {true, index};
@@ -173,7 +176,7 @@ void JaniScopeChanger::makeVariablesGlobal(Model& model) const {
     }
 }
 
-void JaniScopeChanger::makeVariablesLocal(Model& model, std::vector<Property> const& properties) const {
+void JaniScopeChanger::makeVariablesLocal(Model& model, storm::OptionalRef<std::vector<Property> const> properties) const {
     // Make sure to not erase from a set while iterating over it...
     std::map<storm::expressions::Variable, uint64_t> varsToMakeLocal;
     for (auto const& v : model.getGlobalVariables()) {

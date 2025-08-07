@@ -7,9 +7,12 @@
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {

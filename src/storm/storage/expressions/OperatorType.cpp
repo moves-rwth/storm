@@ -1,4 +1,5 @@
 #include "storm/storage/expressions/OperatorType.h"
+#include <ostream>
 
 namespace storm {
 namespace expressions {
@@ -43,6 +44,9 @@ std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType)
         case OperatorType::Modulo:
             stream << "%";
             break;
+        case OperatorType::Logarithm:
+            stream << "log";
+            break;
         case OperatorType::Equal:
             stream << "=";
             break;
@@ -69,6 +73,12 @@ std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType)
             break;
         case OperatorType::Ceil:
             stream << "ceil";
+            break;
+        case OperatorType::Sin:
+            stream << "sin";
+            break;
+        case OperatorType::Cos:
+            stream << "cos";
             break;
         case OperatorType::Ite:
             stream << "ite";

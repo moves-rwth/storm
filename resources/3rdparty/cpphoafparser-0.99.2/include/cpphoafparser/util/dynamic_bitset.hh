@@ -106,7 +106,7 @@ public:
    */
   void andNot(const dynamic_bitset& other) {
     for (std::size_t index = 0; index < size() && index < other.size(); index++) {
-      at(index) = at(index) & !other.at(index);
+      at(index) = at(index) && !other.at(index);
     }
   }
 

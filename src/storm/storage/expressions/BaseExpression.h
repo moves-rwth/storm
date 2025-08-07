@@ -2,15 +2,18 @@
 #define STORM_STORAGE_EXPRESSIONS_BASEEXPRESSION_H_
 
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <memory>
 #include <set>
 
-#include <boost/any.hpp>
-#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/expressions/Type.h"
 #include "storm/utility/OsDetection.h"
+
+namespace boost {
+class any;
+}
 
 namespace storm {
 namespace expressions {

@@ -2,6 +2,7 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -405,7 +406,7 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
     uint64_t numResStates = resultTransitionMatrix.getRowGroupCount();
 
     for (auto const& rewardModel : model.getRewardModels()) {
-        boost::optional<std::vector<RewardValueType>> stateRewards;
+        std::optional<std::vector<RewardValueType>> stateRewards;
         if (rewardModel.second.hasStateRewards()) {
             stateRewards = std::vector<RewardValueType>(numResStates, storm::utility::zero<RewardValueType>());
             uint64_t modelState = 0;
@@ -413,14 +414,14 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
                 if (!storm::utility::isZero(modelStateReward)) {
                     for (uint64_t memoryState = 0; memoryState < memoryStateCount; ++memoryState) {
                         if (isStateReachable(modelState, memoryState)) {
-                            stateRewards.get()[getResultState(modelState, memoryState)] = modelStateReward;
+                            stateRewards.value()[getResultState(modelState, memoryState)] = modelStateReward;
                         }
                     }
                 }
                 ++modelState;
             }
         }
-        boost::optional<std::vector<RewardValueType>> stateActionRewards;
+        std::optional<std::vector<RewardValueType>> stateActionRewards;
         if (rewardModel.second.hasStateActionRewards()) {
             stateActionRewards = std::vector<RewardValueType>(resultTransitionMatrix.getRowCount(), storm::utility::zero<RewardValueType>());
             uint64_t modelState = 0;
@@ -435,10 +436,10 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
                         if (isStateReachable(modelState, memoryState)) {
                             if (scheduler && scheduler->getChoice(modelState, memoryState).isDefined()) {
                                 ValueType factor = scheduler->getChoice(modelState, memoryState).getChoiceAsDistribution().getProbability(rowOffset);
-                                stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)]] +=
+                                stateActionRewards.value()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)]] +=
                                     factor * modelStateActionReward;
                             } else {
-                                stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)] + rowOffset] =
+                                stateActionRewards.value()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)] + rowOffset] =
                                     modelStateActionReward;
                             }
                         }
@@ -447,15 +448,21 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
                 ++modelRow;
             }
         }
-        boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+        std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
         if (rewardModel.second.hasTransitionRewards()) {
-            storm::storage::SparseMatrixBuilder<RewardValueType> builder(resultTransitionMatrix.getRowCount(), resultTransitionMatrix.getColumnCount());
+            bool const useRowGrouping = !resultTransitionMatrix.hasTrivialRowGrouping();
+            storm::storage::SparseMatrixBuilder<RewardValueType> builder(resultTransitionMatrix.getRowCount(), resultTransitionMatrix.getColumnCount(), 0ull,
+                                                                         true, useRowGrouping,
+                                                                         useRowGrouping ? resultTransitionMatrix.getRowGroupCount() : 0ull);
             uint64_t stateIndex = 0;
             for (auto const& resState : toResultStateMapping) {
                 if (resState < numResStates) {
                     uint64_t modelState = stateIndex / memoryStateCount;
                     uint64_t memoryState = stateIndex % memoryStateCount;
                     uint64_t rowGroupSize = resultTransitionMatrix.getRowGroupSize(resState);
+                    if (useRowGrouping) {
+                        builder.newRowGroup(resultTransitionMatrix.getRowGroupIndices()[resState]);
+                    }
                     if (scheduler && scheduler->getChoice(modelState, memoryState).isDefined()) {
                         std::map<uint64_t, RewardValueType> rewards;
                         for (uint64_t rowOffset = 0; rowOffset < rowGroupSize; ++rowOffset) {
@@ -557,6 +564,7 @@ template class SparseModelMemoryProduct<double>;
 template class SparseModelMemoryProduct<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class SparseModelMemoryProduct<storm::RationalNumber>;
 template class SparseModelMemoryProduct<storm::RationalFunction>;
+template class SparseModelMemoryProduct<storm::Interval>;
 
 }  // namespace storage
 }  // namespace storm

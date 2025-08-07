@@ -1,27 +1,20 @@
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
-#include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
-#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-
-#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
-#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
-#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
-
-#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/utility/FilteredRewardModel.h"
-#include "storm/utility/macros.h"
-
-#include "storm/solver/SolveGoal.h"
-
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/SolveGoal.h"
+#include "storm/utility/FilteredRewardModel.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -205,7 +198,7 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
 
 template<typename SparseMarkovAutomatonModelType>
 std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -228,7 +221,7 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
 
 template<typename SparseMarkovAutomatonModelType>
 std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeTotalRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::TotalRewardFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException,
@@ -270,8 +263,7 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
 
 template<typename SparseMarkovAutomatonModelType>
 std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeLongRunAverageRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-    CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException,
@@ -292,7 +284,7 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
 
 template<typename SparseMarkovAutomatonModelType>
 std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");

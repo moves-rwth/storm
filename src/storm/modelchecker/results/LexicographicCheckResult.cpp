@@ -3,6 +3,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

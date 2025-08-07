@@ -68,12 +68,13 @@ class ExpressionCreator {
                                                         storm::expressions::Expression const& e2, bool& pass) const;
     storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType,
                                                         storm::expressions::Expression const& e2, bool& pass) const;
-    storm::expressions::Expression createPowerModuloExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType,
-                                                               storm::expressions::Expression const& e2, bool& pass) const;
+    storm::expressions::Expression createPowerModuloLogarithmExpression(storm::expressions::Expression const& e1,
+                                                                        storm::expressions::OperatorType const& operatorType,
+                                                                        storm::expressions::Expression const& e2, bool& pass) const;
     storm::expressions::Expression createUnaryExpression(std::vector<storm::expressions::OperatorType> const& operatorType,
                                                          storm::expressions::Expression const& e1, bool& pass) const;
     storm::expressions::Expression createRationalLiteralExpression(storm::RationalNumber const& value, bool& pass) const;
-    storm::expressions::Expression createIntegerLiteralExpression(int64_t value, bool& pass) const;
+    storm::expressions::Expression createIntegerLiteralExpression(storm::RationalNumber const& value, bool& pass, bool& overflow) const;
     storm::expressions::Expression createBooleanLiteralExpression(bool value, bool& pass) const;
     storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1,
                                                                   storm::expressions::OperatorType const& operatorType,

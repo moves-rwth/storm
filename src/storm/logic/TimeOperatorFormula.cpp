@@ -1,15 +1,16 @@
 #include "storm/logic/TimeOperatorFormula.h"
+
+#include <boost/any.hpp>
+#include <ostream>
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/EventuallyFormula.h"
 #include "storm/logic/FormulaVisitor.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace logic {
-TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation,
-                                         RewardMeasureType rewardMeasureType)
-    : OperatorFormula(subformula, operatorInformation), rewardMeasureType(rewardMeasureType) {
+TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation)
+    : OperatorFormula(subformula, operatorInformation) {
     assert(subformula->isTimePathFormula());
     // Intentionally left empty.
 }
@@ -22,14 +23,9 @@ boost::any TimeOperatorFormula::accept(FormulaVisitor const& visitor, boost::any
     return visitor.visit(*this, data);
 }
 
-RewardMeasureType TimeOperatorFormula::getMeasureType() const {
-    return rewardMeasureType;
-}
-
 std::ostream& TimeOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
     // No parentheses necessary
     out << "T";
-    out << "[" << rewardMeasureType << "]";
     OperatorFormula::writeToStream(out);
     return out;
 }

@@ -1,11 +1,13 @@
-#include <list>
-#include <numeric>
-#include <queue>
+#include <algorithm>
+#include <span>
+#include <sstream>
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/utility/graph.h"
 
 namespace storm {
 namespace storage {
@@ -32,7 +34,7 @@ template<typename ValueType>
 MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                               storm::storage::BitVector const& states) {
-    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, &states);
+    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states);
 }
 
 template<typename ValueType>
@@ -40,13 +42,13 @@ MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(st
                                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                               storm::storage::BitVector const& states,
                                                                               storm::storage::BitVector const& choices) {
-    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, &states, &choices);
+    performMaximalEndComponentDecomposition(transitionMatrix, backwardTransitions, states, choices);
 }
 
 template<typename ValueType>
 MaximalEndComponentDecomposition<ValueType>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<ValueType> const& model,
                                                                               storm::storage::BitVector const& states) {
-    performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), &states);
+    performMaximalEndComponentDecomposition(model.getTransitionMatrix(), model.getBackwardTransitions(), states);
 }
 
 template<typename ValueType>
@@ -72,162 +74,167 @@ MaximalEndComponentDecomposition<ValueType>& MaximalEndComponentDecomposition<Va
 }
 
 template<typename ValueType>
-void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                          storm::storage::SparseMatrix<ValueType> backwardTransitions,
-                                                                                          storm::storage::BitVector const* states,
-                                                                                          storm::storage::BitVector const* choices) {
-    // Get some data for convenient access.
-    uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
-
-    // Initialize the maximal end component list to be the full state space.
-    std::list<StateBlock> endComponentStateSets;
-    if (states) {
-        endComponentStateSets.emplace_back(states->begin(), states->end(), true);
-    } else {
-        std::vector<storm::storage::sparse::state_type> allStates;
-        allStates.resize(transitionMatrix.getRowGroupCount());
-        std::iota(allStates.begin(), allStates.end(), 0);
-        endComponentStateSets.emplace_back(allStates.begin(), allStates.end(), true);
+std::string MaximalEndComponentDecomposition<ValueType>::statistics(uint64_t totalNumberOfStates) const {
+    if (this->empty()) {
+        return "Empty MEC decomposition.";
     }
-    storm::storage::BitVector statesToCheck(numberOfStates);
-    storm::storage::BitVector includedChoices;
-    if (choices) {
-        includedChoices = *choices;
-        if (states) {
-            // Exclude choices that originate from or lead to states that are not considered.
-            includedChoices &= transitionMatrix.getRowFilter(*states, *states);
-        }
-    } else if (states) {
-        // Exclude choices that originate from or lead to states that are not considered.
-        includedChoices = transitionMatrix.getRowFilter(*states, *states);
-    } else {
-        includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
-    }
-    storm::storage::BitVector currMecAsBitVector(transitionMatrix.getRowGroupCount());
-
-    for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
-        StateBlock const& mec = *mecIterator;
-        currMecAsBitVector.clear();
-        currMecAsBitVector.set(mec.begin(), mec.end(), true);
-        // Keep track of whether the MEC changed during this iteration.
-        bool mecChanged = false;
-
-        // Get an SCC decomposition of the current MEC candidate.
-
-        StronglyConnectedComponentDecomposition<ValueType> sccs(
-            transitionMatrix, StronglyConnectedComponentDecompositionOptions().subsystem(&currMecAsBitVector).choices(&includedChoices).dropNaiveSccs());
-
-        // We need to do another iteration in case we have either more than once SCC or the SCC is smaller than
-        // the MEC canditate itself.
-        mecChanged |= sccs.size() != 1 || (sccs.size() > 0 && sccs[0].size() < mec.size());
-
-        // Check for each of the SCCs whether there is at least one action for each state that does not leave the SCC.
-        for (auto& scc : sccs) {
-            statesToCheck.set(scc.begin(), scc.end());
-
-            while (!statesToCheck.empty()) {
-                storm::storage::BitVector statesToRemove(numberOfStates);
-
-                for (auto state : statesToCheck) {
-                    bool keepStateInMEC = false;
-
-                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                        // If the choice is not part of our subsystem, skip it.
-                        if (choices && !choices->get(choice)) {
-                            continue;
-                        }
-
-                        // If the choice is not included any more, skip it.
-                        if (!includedChoices.get(choice)) {
-                            continue;
-                        }
-
-                        bool choiceContainedInMEC = true;
-                        for (auto const& entry : transitionMatrix.getRow(choice)) {
-                            if (storm::utility::isZero(entry.getValue())) {
-                                continue;
-                            }
-
-                            if (!scc.containsState(entry.getColumn())) {
-                                includedChoices.set(choice, false);
-                                choiceContainedInMEC = false;
-                                break;
-                            }
-                        }
-
-                        // If there is at least one choice whose successor states are fully contained in the MEC, we can leave the state in the MEC.
-                        if (choiceContainedInMEC) {
-                            keepStateInMEC = true;
-                        }
-                    }
-
-                    if (!keepStateInMEC) {
-                        statesToRemove.set(state, true);
-                    }
-                }
-
-                // Now erase the states that have no option to stay inside the MEC with all successors.
-                mecChanged |= !statesToRemove.empty();
-                for (uint_fast64_t state : statesToRemove) {
-                    scc.erase(state);
-                }
-
-                // Now check which states should be reconsidered, because successors of them were removed.
-                statesToCheck.clear();
-                for (auto state : statesToRemove) {
-                    for (auto const& entry : backwardTransitions.getRow(state)) {
-                        if (scc.containsState(entry.getColumn())) {
-                            statesToCheck.set(entry.getColumn());
-                        }
-                    }
-                }
-            }
-        }
-
-        // If the MEC changed, we delete it from the list of MECs and append the possible new MEC candidates to
-        // the list instead.
-        if (mecChanged) {
-            for (StronglyConnectedComponent& scc : sccs) {
-                if (!scc.empty()) {
-                    endComponentStateSets.push_back(std::move(scc));
-                }
-            }
-
-            std::list<StateBlock>::const_iterator eraseIterator(mecIterator);
-            ++mecIterator;
-            endComponentStateSets.erase(eraseIterator);
+    uint64_t statesInMec = 0;
+    uint64_t choicesInMec = 0;
+    uint64_t trivialMecs = 0;
+    uint64_t smallestSize = std::numeric_limits<uint64_t>::max();
+    uint64_t largestSize = 0;
+    for (auto const& mec : this->blocks) {
+        statesInMec += mec.size();
+        if (mec.size() == 1u) {
+            ++trivialMecs;
         } else {
-            // Otherwise, we proceed with the next MEC candidate.
-            ++mecIterator;
+            smallestSize = std::min<uint64_t>(smallestSize, mec.size());
+            largestSize = std::max<uint64_t>(largestSize, mec.size());
         }
+    }
+    uint64_t const statesInNonTrivialMec = statesInMec - trivialMecs;
+    auto getPercentage = [&totalNumberOfStates](uint64_t states) -> double {
+        return (totalNumberOfStates == 0) ? 0.0 : (100.0 * states / totalNumberOfStates);
+    };
+    std::stringstream ss;
+    ss << "MEC decomposition statistics: ";
+    ss << "There are " << this->size() << " MECs out of which " << trivialMecs << " are trivial, i.e., consist of a single state.";
+    ss << " " << statesInMec << " out of " << totalNumberOfStates << " states (" << getPercentage(statesInMec) << "%) are on some MEC. "
+       << statesInNonTrivialMec << " states (" << getPercentage(statesInNonTrivialMec) << "%) are on a non-trivial mec. ";
+    if (largestSize > 0) {
+        ss << "The smallest non-trivial MEC has " << smallestSize << " states and the largest non-trivial MEC has " << largestSize << " states.";
+    }
+    return ss.str();
+}
 
-    }  // End of loop over all MEC candidates.
+/*!
+ * Compute a mapping from SCC index to the set of states in that SCC.
+ * @param sccDecRes The result of the SCC decomposition.
+ * @param sccStates flattened vector that contains all states of the different SCCs
+ * @param sccIndications vector that contains the index of the first state of each SCC in the sccStates vector plus one last entry pointing to the end of the
+ * sccStates vector That means that SCC i has its states in the range [sccIndications[i], sccIndications[i+1])
+ */
+void getFlatSccDecomposition(SccDecompositionResult const& sccDecRes, std::vector<uint64_t>& sccStates, std::vector<uint64_t>& sccIndications) {
+    // initialize result vectors with correct size
+    sccIndications.assign(sccDecRes.sccCount + 1, 0ull);
+    sccStates.resize(sccDecRes.nonTrivialStates.getNumberOfSetBits());
 
-    // Now that we computed the underlying state sets of the MECs, we need to properly identify the choices
-    // contained in the MEC and store them as actual MECs.
-    this->blocks.reserve(endComponentStateSets.size());
-    for (auto const& mecStateSet : endComponentStateSets) {
-        MaximalEndComponent newMec;
+    // count the number of states in each SCC. For efficiency, we re-use storage from sccIndications but make sure that sccIndications[0]==0 remains true
+    std::span<uint64_t> sccCounts(sccIndications.begin() + 1, sccIndications.end());
+    for (auto state : sccDecRes.nonTrivialStates) {
+        ++sccCounts[sccDecRes.stateToSccMapping[state]];
+    }
 
-        for (auto state : mecStateSet) {
-            MaximalEndComponent::set_type containedChoices;
-            for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                // Skip the choice if it is not part of our subsystem.
-                if (choices && !choices->get(choice)) {
+    // Now establish that sccCounts[i] points to the first entry in sccStates for SCC i
+    // This means that sccCounts[i] is the sum of all scc sizes for all SCCs j < i
+    uint64_t sum = 0;
+    for (auto& count : sccCounts) {
+        auto const oldSum = sum;
+        sum += count;
+        count = oldSum;
+    }
+
+    // Now fill the sccStates vector
+    for (auto state : sccDecRes.nonTrivialStates) {
+        auto const sccIndex = sccDecRes.stateToSccMapping[state];
+        sccStates[sccCounts[sccIndex]] = state;
+        ++sccCounts[sccIndex];
+    }
+
+    // At this point, sccCounts[i] points to the first entry in sccStates for SCC i+1
+    // Since sccCounts[i] = sccIndications[i+1], we are done already
+}
+
+template<typename ValueType>
+void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                                          storm::OptionalRef<storm::storage::BitVector const> states,
+                                                                                          storm::OptionalRef<storm::storage::BitVector const> choices) {
+    // Get some data for convenient access.
+    auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+
+    storm::storage::BitVector remainingEcCandidates, ecChoices;
+    SccDecompositionResult sccDecRes;
+    SccDecompositionMemoryCache sccDecCache;
+    StronglyConnectedComponentDecompositionOptions sccDecOptions;
+    sccDecOptions.dropNaiveSccs();
+    if (states) {
+        sccDecOptions.subsystem(*states);
+    }
+    if (choices) {
+        ecChoices = *choices;
+        sccDecOptions.choices(ecChoices);
+    } else {
+        ecChoices.resize(transitionMatrix.getRowCount(), true);
+    }
+
+    // Reserve storage for the mapping of SCC indices to
+    std::vector<uint64_t> ecSccStates, ecSccIndications;
+    auto getSccStates = [&ecSccStates, &ecSccIndications](uint64_t const sccIndex) {
+        return std::span(ecSccStates).subspan(ecSccIndications[sccIndex], ecSccIndications[sccIndex + 1] - ecSccIndications[sccIndex]);
+    };
+    while (true) {
+        performSccDecomposition(transitionMatrix, sccDecOptions, sccDecRes, sccDecCache);
+        getFlatSccDecomposition(sccDecRes, ecSccStates, ecSccIndications);
+
+        remainingEcCandidates = sccDecRes.nonTrivialStates;
+        storm::storage::BitVector ecSccIndices(sccDecRes.sccCount, true);
+        storm::storage::BitVector nonTrivSccIndices(sccDecRes.sccCount, false);
+        // find the choices that do not stay in their SCC
+        for (auto state : remainingEcCandidates) {
+            auto const sccIndex = sccDecRes.stateToSccMapping[state];
+            nonTrivSccIndices.set(sccIndex, true);
+            bool stateCanStayInScc = false;
+            for (auto const choice : transitionMatrix.getRowGroupIndices(state)) {
+                if (!ecChoices.get(choice)) {
                     continue;
                 }
-
-                if (includedChoices.get(choice)) {
-                    containedChoices.insert(choice);
+                auto row = transitionMatrix.getRow(choice);
+                if (std::any_of(row.begin(), row.end(), [&sccIndex, &sccDecRes](auto const& entry) {
+                        return sccIndex != sccDecRes.stateToSccMapping[entry.getColumn()] && !storm::utility::isZero(entry.getValue());
+                    })) {
+                    ecChoices.set(choice, false);       // The choice leaves the SCC
+                    ecSccIndices.set(sccIndex, false);  // This SCC is not 'stable' yet
+                } else {
+                    stateCanStayInScc = true;  // The choice stays in the SCC
                 }
             }
-
-            STORM_LOG_ASSERT(!containedChoices.empty(), "The contained choices of any state in an MEC must be non-empty.");
-            newMec.addState(state, std::move(containedChoices));
+            if (!stateCanStayInScc) {
+                remainingEcCandidates.set(state, false);  // This state is not in an EC
+            }
         }
 
-        this->blocks.emplace_back(std::move(newMec));
+        // process the MECs that we've found, i.e. SCCs where every state can stay inside the SCC
+        ecSccIndices &= nonTrivSccIndices;
+        for (auto sccIndex : ecSccIndices) {
+            MaximalEndComponent newMec;
+            for (auto const state : getSccStates(sccIndex)) {
+                // This is no longer a candidate
+                remainingEcCandidates.set(state, false);
+                // Add choices to the MEC
+                MaximalEndComponent::set_type containedChoices;
+                for (auto ecChoiceIt = ecChoices.begin(nondeterministicChoiceIndices[state]); *ecChoiceIt < nondeterministicChoiceIndices[state + 1];
+                     ++ecChoiceIt) {
+                    containedChoices.insert(*ecChoiceIt);
+                }
+                STORM_LOG_ASSERT(!containedChoices.empty(), "The contained choices of any state in an MEC must be non-empty.");
+                newMec.addState(state, std::move(containedChoices));
+            }
+            this->blocks.emplace_back(std::move(newMec));
+        }
+
+        if (nonTrivSccIndices == ecSccIndices) {
+            // All non trivial SCCs are MECs, nothing left to do!
+            break;
+        }
+
+        // prepare next iteration.
+        // It suffices to keep the candidates that have the possibility to always stay in the candidate set
+        remainingEcCandidates = storm::utility::graph::performProbGreater0A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions,
+                                                                            remainingEcCandidates, ~remainingEcCandidates, false, 0, ecChoices);
+        remainingEcCandidates.complement();
+        sccDecOptions.subsystem(remainingEcCandidates);
+        sccDecOptions.choices(ecChoices);
     }
 
     STORM_LOG_DEBUG("MEC decomposition found " << this->size() << " MEC(s).");
@@ -237,14 +244,17 @@ void MaximalEndComponentDecomposition<ValueType>::performMaximalEndComponentDeco
 template class MaximalEndComponentDecomposition<double>;
 template MaximalEndComponentDecomposition<double>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<double> const& model);
 
-#ifdef STORM_HAVE_CARL
 template class MaximalEndComponentDecomposition<storm::RationalNumber>;
 template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model);
 
+template class MaximalEndComponentDecomposition<storm::Interval>;
+template MaximalEndComponentDecomposition<storm::Interval>::MaximalEndComponentDecomposition(
+    storm::models::sparse::NondeterministicModel<storm::Interval> const& model);
+
 template class MaximalEndComponentDecomposition<storm::RationalFunction>;
 template MaximalEndComponentDecomposition<storm::RationalFunction>::MaximalEndComponentDecomposition(
     storm::models::sparse::NondeterministicModel<storm::RationalFunction> const& model);
-#endif
+
 }  // namespace storage
 }  // namespace storm

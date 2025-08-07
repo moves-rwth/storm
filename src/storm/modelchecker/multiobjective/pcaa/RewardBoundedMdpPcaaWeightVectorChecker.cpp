@@ -1,6 +1,5 @@
 #include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
@@ -120,7 +119,7 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
         for (uint64_t i = 0; i < this->objectives.size(); ++i) {
             headers.push_back("obj" + std::to_string(i));
         }
-        storm::utility::exportDataToCSVFile<ValueType, ValueType, std::string>(
+        storm::io::exportDataToCSVFile<ValueType, ValueType, std::string>(
             storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf" + std::to_string(numChecks) + ".csv", cdfData,
             weightVector, headers);
     }

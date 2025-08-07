@@ -1,3 +1,4 @@
+#include <boost/any.hpp>
 #include <sstream>
 #include "storm/logic/Formulas.h"
 
@@ -12,6 +13,10 @@
 
 namespace storm {
 namespace logic {
+boost::any Formula::accept(FormulaVisitor const& visitor) const {
+    return accept(visitor, boost::any());
+}
+
 bool Formula::isPathFormula() const {
     return false;
 }
@@ -493,8 +498,13 @@ std::set<std::string> Formula::getReferencedRewardModels() const {
     return referencedRewardModels;
 }
 
+std::shared_ptr<Formula> Formula::clone() const {
+    CloneVisitor cv;
+    return cv.clone(*this);
+}
+
 std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution);
+    storm::expressions::JaniExpressionSubstitutionVisitor<std::map<storm::expressions::Variable, storm::expressions::Expression>> v(substitution, false);
     return substitute([&v](storm::expressions::Expression const& exp) { return v.substitute(exp); });
 }
 
@@ -517,6 +527,12 @@ std::shared_ptr<Formula> Formula::substitute(std::map<std::string, std::string> 
 std::shared_ptr<Formula> Formula::substituteRewardModelNames(std::map<std::string, std::string> const& rewardModelNameSubstitution) const {
     RewardModelNameSubstitutionVisitor visitor(rewardModelNameSubstitution);
     return visitor.substitute(*this);
+}
+
+std::shared_ptr<Formula> Formula::substituteTranscendentalNumbers() const {
+    using SubMap = std::map<storm::expressions::Variable, storm::expressions::Expression>;
+    storm::expressions::JaniExpressionSubstitutionVisitor<SubMap> transcendentalsVisitor(SubMap(), true);
+    return substitute([&transcendentalsVisitor](storm::expressions::Expression const& exp) { return transcendentalsVisitor.substitute(exp); });
 }
 
 storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager,
@@ -549,7 +565,7 @@ void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
     return;
 }
 
-void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>&) const {
     return;
 }
 

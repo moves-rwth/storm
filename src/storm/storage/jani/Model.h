@@ -16,7 +16,6 @@
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
 
 namespace storm {
 namespace expressions {
@@ -422,7 +421,7 @@ class Model {
     /*!
      * Substitutes all constants in all expressions of the model.
      */
-    Model& substituteConstantsInPlace();
+    Model& substituteConstantsInPlace(bool const substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all constants in all expressions of the model. The original model is not modified, but
@@ -440,7 +439,7 @@ class Model {
      * Substitutes all expression variables in all expressions of the model. The original model is not modified, but
      * instead a new model is created.
      */
-    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+    void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution, bool const substituteTranscendentalNumbers);
 
     /*!
      * Substitutes all function calls with the corresponding function definition
@@ -452,10 +451,11 @@ class Model {
     /*!
      * 1. Tries to replace variables by constants (if possible).
      * 2. Substitutes all constants in all expressions of the model.
-     * 3. Afterwards, all function calls are substituted with the defining expression.
+     * 3. Substitutes transcendental numbers by their actual value
+     * 4. Afterwards, all function calls are substituted with the defining expression.
      * The original model is not modified, but  instead a new model is created.
      */
-    Model substituteConstantsFunctions() const;
+    Model substituteConstantsFunctionsTranscendentals() const;
 
     /*!
      * Returns true if at least one array variable occurs in the model.

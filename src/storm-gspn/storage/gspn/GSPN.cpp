@@ -1,4 +1,4 @@
-#include "GSPN.h"
+#include "storm-gspn/storage/gspn/GSPN.h"
 
 #include <unordered_map>
 
@@ -155,16 +155,14 @@ void GSPN::writeDotToStream(std::ostream& outStream) const {
     outStream << "digraph " << this->getName() << " {\n";
 
     // print places with initial marking (not printed is the capacity)
-    outStream << "\t"
-              << "node [shape=ellipse]\n";
+    outStream << "\t" << "node [shape=ellipse]\n";
     for (auto& place : this->getPlaces()) {
         outStream << "\t" << place.getName() << " [label=\"" << place.getName() << "(" << place.getNumberOfInitialTokens();
         outStream << ")\"];\n";
     }
 
     // print transitions with weight/rate
-    outStream << "\t"
-              << "node [shape=box]\n";
+    outStream << "\t" << "node [shape=box]\n";
 
     for (auto& trans : this->getImmediateTransitions()) {
         outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=<" << trans.getName()
@@ -262,17 +260,17 @@ bool GSPN::testPlaces() const {
 
     for (auto const& place : this->getPlaces()) {
         if (std::find(namesOfPlaces.begin(), namesOfPlaces.end(), place.getName()) != namesOfPlaces.end()) {
-            STORM_PRINT_AND_LOG("duplicates states with the name \"" + place.getName() + "\"\n")
+            STORM_PRINT_AND_LOG("duplicates states with the name \"" + place.getName() + "\"\n");
             result = false;
         }
 
         if (std::find(idsOfPlaces.begin(), idsOfPlaces.end(), place.getID()) != idsOfPlaces.end()) {
-            STORM_PRINT_AND_LOG("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n")
+            STORM_PRINT_AND_LOG("duplicates states with the id \"" + boost::lexical_cast<std::string>(place.getID()) + "\"\n");
             result = false;
         }
 
         if (place.getNumberOfInitialTokens() > place.getNumberOfInitialTokens()) {
-            STORM_PRINT_AND_LOG("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n")
+            STORM_PRINT_AND_LOG("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n");
             result = false;
         }
     }

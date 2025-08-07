@@ -20,12 +20,6 @@ void setUp();
 void cleanUp();
 
 /*!
- * Set number of digits for printing output.
- * @param digits Number of digits to print.
- */
-void setOutputDigits(int digits);
-
-/*!
  * Set number of digits for printing output from given precision requirement.
  * For a precision of 1e-n we output at least n digits.
  * @param precision General precision.

@@ -10,25 +10,6 @@ struct ModularizerTestData {
     std::string testname;
     std::string filepath;
     double probabilityAtTimeboundOne;
-
-    friend std::ostream &operator<<(std::ostream &os, ModularizerTestData const &data) {
-        auto printVector = [&os](std::vector<double> const &arr) {
-            os << ", {";
-            for (auto const &i : arr) {
-                os << i;
-                // will leave trailing ", " but its simpler
-                // and would still be a valid initializer
-                os << ", ";
-            }
-            os << '}';
-        };
-
-        os << "{\"" << data.testname << '"';
-        os << ", \"" << data.filepath << '"';
-        os << ", " << data.probabilityAtTimeboundOne;
-        os << '}';
-        return os;
-    }
 };
 
 class BddModularizerTest : public testing::TestWithParam<ModularizerTestData> {

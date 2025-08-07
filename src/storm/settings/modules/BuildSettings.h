@@ -92,6 +92,12 @@ class BuildSettings : public ModuleSettings {
     bool isBuildStateValuationsSet() const;
 
     /*!
+     * Retrieves whether the observation valuations should be build. Only relevant for POMDPs
+     * @return
+     */
+    bool isBuildObservationValuationsSet() const;
+
+    /*!
      * Retrieves whether out of bounds state should be added
      * @return
      */
@@ -132,6 +138,16 @@ class BuildSettings : public ModuleSettings {
      * Retrieves the edge parameter of the location elimination heuristic.
      */
     uint64_t getLocationEliminationEdgesHeuristic() const;
+
+    /*!
+     * Retrieves whether an exploration state limit has been set in which case state space exploration might be stopped once the specified number is exceeded.
+     */
+    bool isExplorationStateLimitSet() const;
+
+    /*!
+     * Retrieves the state limit (if set). State space exploration might be stopped once the specified number is exceeded.
+     */
+    uint64_t getExplorationStateLimit() const;
 
     // The name of the module.
     static const std::string moduleName;

@@ -1,7 +1,9 @@
 #Create a package for Offline installation
 
+**Written in 2020, checked in 2024. Not updated with latest changes.**
+
 On this page we detail steps to obtain an installation package that can be used to install Storm on a system without an internet connection.
-This is usefull, e.g., for long term archiving where we can not be sure how long dependencies will be available.
+This is useful, e.g., for long term archiving where we can not be sure how long dependencies will be available.
 
 We assume that there is a fixed reference system based on Ubuntu which is not going to change (e.g. a Virtual Machine that will be made available)
 
@@ -51,7 +53,7 @@ cd storm
 mkdir -p build
 cd build
 cmake ..
-make storm-main -j$THREADS
+make storm-cli -j$THREADS
 cd ../../
 
 echo "Installation successfull."

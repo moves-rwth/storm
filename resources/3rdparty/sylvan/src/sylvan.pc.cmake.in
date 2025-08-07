@@ -1,0 +1,10 @@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: Sylvan
+Description: @PROJECT_DESCRIPTION@
+URL: @PROJECT_URL@
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsylvan -lgmp -lpthread -lm
+

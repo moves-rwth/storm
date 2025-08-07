@@ -1,30 +1,23 @@
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Odd.h"
-
-#include "storm/utility/FilteredRewardModel.h"
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Odd.h"
+#include "storm/utility/FilteredRewardModel.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -100,7 +93,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeBoun
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeCumulativeRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
@@ -110,7 +103,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeCumu
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeInstantaneousRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
     storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
     return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeInstantaneousRewards(
@@ -121,7 +114,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeInst
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -132,7 +125,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeReac
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeReachabilityTimes(
-    Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -155,8 +148,7 @@ std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLong
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLongRunAverageRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
-    CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
 
     storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());

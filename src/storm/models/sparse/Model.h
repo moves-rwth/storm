@@ -1,7 +1,6 @@
-#ifndef STORM_MODELS_SPARSE_MODEL_H_
-#define STORM_MODELS_SPARSE_MODEL_H_
+#pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -261,14 +260,14 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return The labels for the choices, if they're saved.
      */
-    boost::optional<storm::models::sparse::ChoiceLabeling> const& getOptionalChoiceLabeling() const;
+    std::optional<storm::models::sparse::ChoiceLabeling> const& getOptionalChoiceLabeling() const;
 
     /*!
      * Retrieves an optional value that contains the choice labeling if there is one.
      *
      * @return The labels for the choices, if they're saved.
      */
-    boost::optional<storm::models::sparse::ChoiceLabeling>& getOptionalChoiceLabeling();
+    std::optional<storm::models::sparse::ChoiceLabeling>& getOptionalChoiceLabeling();
 
     /*!
      * Retrieves whether this model was build with state valuations.
@@ -290,14 +289,14 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return The state valuations, if they're saved.
      */
-    boost::optional<storm::storage::sparse::StateValuations> const& getOptionalStateValuations() const;
+    std::optional<storm::storage::sparse::StateValuations> const& getOptionalStateValuations() const;
 
     /*!
      * Retrieves an optional value that contains the state valuations if there are some.
      *
      * @return The state valuations, if they're saved.
      */
-    boost::optional<storm::storage::sparse::StateValuations>& getOptionalStateValuations();
+    std::optional<storm::storage::sparse::StateValuations>& getOptionalStateValuations();
 
     /*!
      * Retrieves whether this model was build with choice origins.
@@ -319,14 +318,14 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return The choice origins, if they're saved.
      */
-    boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& getOptionalChoiceOrigins() const;
+    std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> const& getOptionalChoiceOrigins() const;
 
     /*!
      * Retrieves an optional value that contains the choice origins if there are some.
      *
      * @return The choice origins, if they're saved.
      */
-    boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& getOptionalChoiceOrigins();
+    std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>>& getOptionalChoiceOrigins();
 
     /*!
      * Prints information about the model to the specified stream.
@@ -383,6 +382,23 @@ class Model : public storm::models::Model<CValueType> {
     virtual bool hasParameters() const override;
 
     virtual bool isExact() const override;
+
+    /*!
+     * Does it support uncertainty (e.g., via interval-valued entries).
+     * Notice that while parametric Markov models may be seen as uncertain, within storm,these models are not called uncertain.
+     *
+     * @return
+     */
+    virtual bool supportsUncertainty() const;
+
+    /*!
+     * Checks whether the model actually is uncertain, i.e., whether there is a non-singleton transition relation.
+     * Performance warning: the worst-case complexity is linear in the number of transitions.
+     * Notice that while parametric Markov models may be seen as uncertain, within storm,these models are not called uncertain.
+     *
+     * @return True iff the model can be instantiated in more than one way.
+     */
+    virtual bool hasUncertainty() const;
 
     virtual std::size_t hash() const;
 
@@ -445,16 +461,15 @@ class Model : public storm::models::Model<CValueType> {
     std::unordered_map<std::string, RewardModelType> rewardModels;
 
     // If set, a vector representing the labels of choices.
-    boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+    std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
 
     // if set, retrieves for each state the variable valuation that this state represents
-    boost::optional<storm::storage::sparse::StateValuations> stateValuations;
+    std::optional<storm::storage::sparse::StateValuations> stateValuations;
 
     // if set, gives information about where each choice originates w.r.t. the input model description
-    boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+    std::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 };
 
-#ifdef STORM_HAVE_CARL
 /*!
  * Get all probability parameters occurring on transitions.
  * @param model Model.
@@ -482,9 +497,6 @@ std::set<storm::RationalFunctionVariable> getRateParameters(Model<storm::Rationa
  * @return Set of parameters.
  */
 std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::RationalFunction> const& model);
-#endif
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_MODEL_H_ */

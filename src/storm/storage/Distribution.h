@@ -2,7 +2,7 @@
 #define STORM_STORAGE_DISTRIBUTION_H_
 
 #include <boost/container/flat_map.hpp>
-#include <ostream>
+#include <iosfwd>
 #include <vector>
 
 #include "storm/storage/sparse/StateType.h"

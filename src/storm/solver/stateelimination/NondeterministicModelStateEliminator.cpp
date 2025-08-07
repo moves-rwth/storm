@@ -1,5 +1,6 @@
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

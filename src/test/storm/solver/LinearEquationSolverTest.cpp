@@ -23,6 +23,20 @@ class NativeDoublePowerEnvironment {
     }
 };
 
+class NativeDoublePowerRegMultEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-10"));
+        env.solver().native().setPowerMethodMultiplicationStyle(storm::solver::MultiplicationStyle::Regular);
+        return env;
+    }
+};
+
 class NativeDoubleSoundValueIterationEnvironment {
    public:
     typedef double ValueType;
@@ -62,6 +76,21 @@ class NativeDoubleIntervalIterationEnvironment {
         env.solver().setForceSoundness(true);
         env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
         env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::IntervalIteration);
+        env.solver().native().setRelativeTerminationCriterion(false);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
+        return env;
+    }
+};
+
+class NativeDoubleGuessingViEnvironment {
+   public:
+    typedef double ValueType;
+    static const bool isExact = false;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
         env.solver().native().setRelativeTerminationCriterion(false);
         env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
         return env;
@@ -312,10 +341,13 @@ class LinearEquationSolverTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<NativeDoublePowerEnvironment, NativeDoubleSoundValueIterationEnvironment, NativeDoubleOptimisticValueIterationEnvironment,
-                         NativeDoubleIntervalIterationEnvironment, NativeDoubleJacobiEnvironment, NativeDoubleGaussSeidelEnvironment,
-                         NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment, NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment,
+typedef ::testing::Types<NativeDoublePowerEnvironment, NativeDoublePowerRegMultEnvironment, NativeDoubleSoundValueIterationEnvironment,
+                         NativeDoubleOptimisticValueIterationEnvironment, NativeDoubleGuessingViEnvironment, NativeDoubleIntervalIterationEnvironment,
+                         NativeDoubleJacobiEnvironment, NativeDoubleGaussSeidelEnvironment, NativeDoubleSorEnvironment, NativeDoubleWalkerChaeEnvironment,
+                         NativeRationalRationalSearchEnvironment, EliminationRationalEnvironment,
+#ifdef STORM_HAVE_GMM
                          GmmGmresIluEnvironment, GmmGmresDiagonalEnvironment, GmmGmresNoneEnvironment, GmmBicgstabIluEnvironment, GmmQmrDiagonalEnvironment,
+#endif
                          EigenDGmresDiagonalEnvironment, EigenGmresIluEnvironment, EigenBicgstabNoneEnvironment, EigenDoubleLUEnvironment,
                          EigenRationalLUEnvironment, TopologicalEigenRationalLUEnvironment>
     TestingTypes;

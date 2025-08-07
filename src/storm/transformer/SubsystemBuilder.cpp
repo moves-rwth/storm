@@ -3,6 +3,8 @@
 #include <boost/optional.hpp>
 #include <storm/exceptions/UnexpectedException.h>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -43,10 +45,10 @@ void transformModelSpecificComponents(storm::models::sparse::Model<ValueType, Re
 
 template<typename RewardModelType>
 RewardModelType transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem,
-                                     storm::storage::BitVector const& subsystemActions) {
-    boost::optional<std::vector<typename RewardModelType::ValueType>> stateRewardVector;
-    boost::optional<std::vector<typename RewardModelType::ValueType>> stateActionRewardVector;
-    boost::optional<storm::storage::SparseMatrix<typename RewardModelType::ValueType>> transitionRewardMatrix;
+                                     storm::storage::BitVector const& subsystemActions, bool makeRowGroupingTrivial) {
+    std::optional<std::vector<typename RewardModelType::ValueType>> stateRewardVector;
+    std::optional<std::vector<typename RewardModelType::ValueType>> stateActionRewardVector;
+    std::optional<storm::storage::SparseMatrix<typename RewardModelType::ValueType>> transitionRewardMatrix;
     if (originalRewardModel.hasStateRewards()) {
         stateRewardVector = storm::utility::vector::filterVector(originalRewardModel.getStateRewardVector(), subsystem);
     }
@@ -55,6 +57,10 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     }
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
+        if (makeRowGroupingTrivial) {
+            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square");
+            transitionRewardMatrix.value().makeRowGroupingTrivial();
+        }
     }
     return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
 }
@@ -141,7 +147,8 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
     for (auto const& rewardModel : originalModel.getRewardModels()) {
-        components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions)));
+        components.rewardModels.insert(
+            std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions, options.makeRowGroupingTrivial)));
     }
     if (originalModel.hasChoiceLabeling()) {
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
@@ -168,14 +175,14 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                 nonDeadlockChoices.set(choice, false);
             }
-            for (auto const& label : components.choiceLabeling.get().getLabels()) {
+            for (auto const& label : components.choiceLabeling.value().getLabels()) {
                 components.choiceLabeling->setChoices(label, components.choiceLabeling->getChoices(label) & nonDeadlockChoices);
             }
         }
         if (components.choiceOrigins) {
             for (auto state : subDeadlockStates) {
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
-                components.choiceOrigins.get()->clearOriginOfChoice(choice);
+                components.choiceOrigins.value()->clearOriginOfChoice(choice);
             }
         }
         // get a unique label for the deadlock states
@@ -231,5 +238,10 @@ template SubsystemBuilderReturnType<storm::RationalFunction> buildSubsystem(stor
                                                                             storm::storage::BitVector const& subsystemActions,
                                                                             bool keepUnreachableStates = true,
                                                                             SubsystemBuilderOptions options = SubsystemBuilderOptions());
+template SubsystemBuilderReturnType<storm::Interval> buildSubsystem(storm::models::sparse::Model<storm::Interval> const& originalModel,
+                                                                    storm::storage::BitVector const& subsystemStates,
+                                                                    storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
+                                                                    SubsystemBuilderOptions options = SubsystemBuilderOptions());
+
 }  // namespace transformer
 }  // namespace storm

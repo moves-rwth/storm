@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
 
@@ -18,6 +20,7 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -52,9 +55,13 @@ uint64_t ExplicitStateLookup<StateType>::size() const {
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
-ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options()
-    : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
-    // Intentionally left empty.
+ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() {
+    auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+    explorationOrder = buildSettings.getExplorationOrder();
+    fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
+    if (buildSettings.isExplorationStateLimitSet()) {
+        explorationStateLimit = buildSettings.getExplorationStateLimit();
+    }
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
@@ -190,47 +197,58 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
         if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
             generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuationsBuilder());
         }
-        storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
 
-        // If there is no behavior, we might have to introduce a self-loop.
+        storm::generator::StateBehavior<ValueType, StateType> behavior;
+        // If the exploration state limit is set and the limit is reached, we stop the exploration.
+        bool const stateLimitExceeded = options.explorationStateLimit.has_value() && stateStorage.getNumberOfStates() >= options.explorationStateLimit.value();
+        if (!stateLimitExceeded) {
+            behavior = generator->expand(stateToIdCallback);
+        }
+
         if (behavior.empty()) {
-            if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
-                // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
-                if (behavior.wasExpanded()) {
-                    this->stateStorage.deadlockStateIndices.push_back(currentIndex);
-                }
-
-                if (!generator->isDeterministicModel()) {
-                    transitionMatrixBuilder.newRowGroup(currentRow);
-                }
-
-                transitionMatrixBuilder.addNextValue(currentRow, currentIndex, storm::utility::one<ValueType>());
-
-                for (auto& rewardModelBuilder : rewardModelBuilders) {
-                    if (rewardModelBuilder.hasStateRewards()) {
-                        rewardModelBuilder.addStateReward(storm::utility::zero<ValueType>());
-                    }
-
-                    if (rewardModelBuilder.hasStateActionRewards()) {
-                        rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
-                    }
-                }
-
-                // This state shall be Markovian (to not introduce Zeno behavior)
-                if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
-                    stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
-                }
-                // Other state-based information does not need to be treated, in particular:
-                // * StateValuations have already been set above
-                // * The associated player shall be the "default" player, i.e. INVALID_PLAYER_INDEX
-
-                ++currentRow;
-                ++currentRowGroup;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+            // There are three possible cases for missing behavior:
+            if (behavior.wasExpanded()) {
+                // (a) The state is a deadlock state, i.e. there is no behavior even though the state was expanded
+                STORM_LOG_THROW(options.fixDeadlocks, storm::exceptions::WrongFormatException,
                                 "Error while creating sparse matrix from probabilistic program: found deadlock state ("
                                     << generator->stateToString(currentState) << "). For fixing these, please provide the appropriate option.");
+                this->stateStorage.deadlockStateIndices.push_back(currentIndex);
+            } else {
+                if (stateLimitExceeded) {
+                    // (b) The state was not expanded because the state limit is reached
+                    this->stateStorage.unexploredStateIndices.push_back(currentIndex);
+                }
+                // (c) the state was not expanded because it is terminal, i.e., exploration from that state is not required for the given property/ies
             }
+
+            // In all cases, we need to add a self-loop to the transition matrix.
+
+            if (!generator->isDeterministicModel()) {
+                transitionMatrixBuilder.newRowGroup(currentRow);
+            }
+
+            transitionMatrixBuilder.addNextValue(currentRow, currentIndex, storm::utility::one<ValueType>());
+
+            for (auto& rewardModelBuilder : rewardModelBuilders) {
+                if (rewardModelBuilder.hasStateRewards()) {
+                    rewardModelBuilder.addStateReward(storm::utility::zero<ValueType>());
+                }
+
+                if (rewardModelBuilder.hasStateActionRewards()) {
+                    rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
+                }
+            }
+
+            // This state shall be Markovian (to not introduce Zeno behavior)
+            if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
+                stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
+            }
+            // Other state-based information does not need to be treated, in particular:
+            // * StateValuations have already been set above
+            // * The associated player shall be the "default" player, i.e. INVALID_PLAYER_INDEX
+
+            ++currentRow;
+            ++currentRowGroup;
         } else {
             // Add the state rewards to the corresponding reward models.
             auto stateRewardIt = behavior.getStateRewards().begin();
@@ -392,7 +410,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
     }
     // If requested, build the state valuations and choice origins
     if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
-        modelComponents.stateValuations = stateAndChoiceInformationBuilder.stateValuationsBuilder().build(numStates);
+        modelComponents.stateValuations = stateAndChoiceInformationBuilder.stateValuationsBuilder().build();
     }
     if (stateAndChoiceInformationBuilder.isBuildChoiceOrigins()) {
         auto originData = stateAndChoiceInformationBuilder.buildDataOfChoiceOrigins(numChoices);
@@ -416,7 +434,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
 
 template<typename ValueType, typename RewardModelType, typename StateType>
 storm::models::sparse::StateLabeling ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-    return generator->label(stateStorage, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices);
+    return generator->label(stateStorage, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices, stateStorage.unexploredStateIndices);
 }
 
 // Explicitly instantiate the class.

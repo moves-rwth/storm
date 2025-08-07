@@ -2,17 +2,13 @@
 #define STORM_STORAGE_EXPRESSIONS_BINARYRELATIONEXPRESSION_H_
 
 #include "storm/storage/expressions/BinaryExpression.h"
+#include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace expressions {
 class BinaryRelationExpression : public BinaryExpression {
    public:
-    /*!
-     * An enum type specifying the different relations applicable.
-     */
-    enum class RelationType { Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual };
-
     /*!
      * Creates a binary relation expression with the given return type, operands and relation type.
      *

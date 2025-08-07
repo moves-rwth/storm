@@ -22,12 +22,15 @@
 #include "storm/storage/dd/sylvan/utility.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BisimulationSettings.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include <parallel_hashmap/phmap.h>
 
@@ -974,18 +977,18 @@ std::shared_ptr<storm::models::sparse::Model<ExportValueType>> QuotientExtractor
     for (auto const& rewardModelName : preservationInformation.getRewardModelNames()) {
         auto const& rewardModel = model.getRewardModel(rewardModelName);
 
-        boost::optional<std::vector<ExportValueType>> quotientStateRewards;
+        std::optional<std::vector<ExportValueType>> quotientStateRewards;
         if (rewardModel.hasStateRewards()) {
             quotientStateRewards = sparseExtractor.extractStateVector(rewardModel.getStateRewardVector());
         }
 
-        boost::optional<std::vector<ExportValueType>> quotientStateActionRewards;
+        std::optional<std::vector<ExportValueType>> quotientStateActionRewards;
         if (rewardModel.hasStateActionRewards()) {
             quotientStateActionRewards = sparseExtractor.extractStateActionVector(rewardModel.getStateActionRewardVector());
         }
 
         quotientRewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ExportValueType>(
-                                                          std::move(quotientStateRewards), std::move(quotientStateActionRewards), boost::none));
+                                                          std::move(quotientStateRewards), std::move(quotientStateActionRewards), std::nullopt));
     }
     end = std::chrono::high_resolution_clock::now();
     STORM_LOG_INFO("Reward models extracted in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");

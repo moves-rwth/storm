@@ -1,24 +1,25 @@
-name: apply-code-format
+name: Apply code format
 
-on: [ workflow_dispatch ]
+on:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       # apply the formatting twice as a workaround for a clang-format bug
-      - uses: DoozyX/clang-format-lint-action@v0.14
+      - uses: DoozyX/clang-format-lint-action@v0.20
         with:
           source: './src'
-          clangFormatVersion: 14
+          clangFormatVersion: 20
           style: file
           inplace: True
-      - uses: DoozyX/clang-format-lint-action@v0.14
+      - uses: DoozyX/clang-format-lint-action@v0.20
         with:
           source: './src'
-          clangFormatVersion: 14
+          clangFormatVersion: 20
           style: file
           inplace: True
       - name: Commit Formatting
@@ -35,10 +36,12 @@ jobs:
           fi
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v7
         with:
           branch: ci/apply-code-format
           delete-branch: true
           title: 'Code formatting'
           body: |
-            Auto-generated pull request triggered by the `apply-code-format` workflow. Make sure to **merge** (and not rebase) this PR so that the added commit hash in `.git-blame-ignore-revs`  remains valid. 
+            Auto-generated pull request triggered by the `apply-code-format` workflow.
+            - Manually close and reopen this PR to trigger the CI.
+            - Make sure to **merge** (and not rebase) this PR so that the added commit hash in `.git-blame-ignore-revs` remains valid.

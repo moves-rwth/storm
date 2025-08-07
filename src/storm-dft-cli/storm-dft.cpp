@@ -1,5 +1,6 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-dft/parser/BEOrderParser.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
@@ -49,6 +50,9 @@ void processOptions() {
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(*dft, false);
     STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second);
+    // Warn about potential modeling issues
+    auto modelingIssues = storm::dft::api::hasPotentialModelingIssues(*dft);
+    STORM_LOG_WARN_COND(!modelingIssues.first, modelingIssues.second);
 
     // Transformation to GSPN
     if (dftGspnSettings.isTransformToGspn()) {
@@ -90,14 +94,6 @@ void processOptions() {
     // TODO: always needed?
     auto bounds = storm::dft::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
     STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
-
-    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
-    bool hasConflicts = storm::dft::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
-    if (hasConflicts) {
-        STORM_LOG_DEBUG("FDEP conflicts found.");
-    } else {
-        STORM_LOG_DEBUG("No FDEP conflicts found.");
-    }
 
 #ifdef STORM_HAVE_Z3
     if (useSMT) {
@@ -146,6 +142,12 @@ void processOptions() {
         std::string importanceMeasureName{""};
         if (isImportanceMeasureSet) {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
+        // Set variable ordering
+        if (dftIOSettings.isVariableOrderingFileSet()) {
+            auto beOrder = storm::dft::parser::BEOrderParser<ValueType>::parseBEOrder(dftIOSettings.getVariableOrderingFilename(), *dft);
+            dft->setBEOrder(beOrder);
         }
 
         auto const additionalRelevantEventNames{faultTreeSettings.getRelevantEvents()};
@@ -214,10 +216,20 @@ void processOptions() {
         // All events are relevant
         additionalRelevantEventNames = {"all"};
     }
-    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
+    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(props, additionalRelevantEventNames);
 
-    // Analyze DFT
+    // Analyze DFT by translation to CTMC/MA
     dft = storm::dft::api::prepareForMarkovAnalysis<ValueType>(*dft);
+    STORM_LOG_DEBUG("DFT after preparation for Markov analysis:\n" << dft->getElementsString());
+
+    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
+    bool hasConflicts = storm::dft::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
+    if (hasConflicts) {
+        STORM_LOG_DEBUG("FDEP conflicts found.");
+    } else {
+        STORM_LOG_DEBUG("No FDEP conflicts found.");
+    }
+
     // TODO allow building of state space even without properties
     if (props.empty()) {
         STORM_LOG_WARN("No property given. No analysis will be performed.");
@@ -233,6 +245,18 @@ void processOptions() {
     }
 }
 
+void process() {
+    storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+    if (generalSettings.isParametricSet()) {
+        processOptions<storm::RationalFunction>();
+    } else if (generalSettings.isExactSet()) {
+        STORM_LOG_WARN("Exact solving over rational numbers is not implemented. Performing exact solving using rational functions instead.");
+        processOptions<storm::RationalFunction>();
+    } else {
+        processOptions<double>();
+    }
+}
+
 /*!
  * Entry point for Storm-DFT.
  *
@@ -242,36 +266,7 @@ void processOptions() {
  */
 int main(const int argc, const char** argv) {
     try {
-        storm::utility::setUp();
-        storm::cli::printHeader("Storm-dft", argc, argv);
-        storm::dft::settings::initializeDftSettings("Storm-dft", "storm-dft");
-
-        storm::utility::Stopwatch totalTimer(true);
-        if (!storm::cli::parseOptions(argc, argv)) {
-            return -1;
-        }
-
-        // Start by setting some urgent options (log levels, resources, etc.)
-        storm::cli::setUrgentOptions();
-
-        storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        if (generalSettings.isParametricSet()) {
-            processOptions<storm::RationalFunction>();
-        } else if (generalSettings.isExactSet()) {
-            STORM_LOG_WARN("Exact solving over rational numbers is not implemented. Performing exact solving using rational functions instead.");
-            processOptions<storm::RationalFunction>();
-        } else {
-            processOptions<double>();
-        }
-
-        totalTimer.stop();
-        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
-            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
-        }
-
-        // All operations have now been performed, so we clean up everything and terminate.
-        storm::utility::cleanUp();
-        return 0;
+        return storm::cli::process("Storm-dft", "storm-dft", storm::dft::settings::initializeDftSettings, process, argc, argv);
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm-DFT to terminate. The message of the exception is: " << exception.what());
         return 1;

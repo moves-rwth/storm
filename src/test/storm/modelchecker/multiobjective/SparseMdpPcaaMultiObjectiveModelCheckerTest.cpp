@@ -1,7 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
@@ -105,6 +105,26 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
     EXPECT_NEAR(0.7448979591841851, result->asExplicitQuantitativeCheckResult<double>()[initState],
                 storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+}
+
+TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, tiny_rewards_negative) {
+    storm::Environment env;
+    env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
+
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_rewards_negative.nm";
+    std::string formulasAsString = "multi(R{\"a\"}max>=0 [C], R{\"b\"}min<=0 [C])";
+
+    // programm, model,  formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, "");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Mdp<double>>();
+    uint_fast64_t const initState = *mdp->getInitialStates().begin();
+
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[0]->asMultiObjectiveFormula());
+    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
@@ -490,4 +510,4 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, resource_gathering) {
     }
 }
 
-#endif /* STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
+#endif /* STORM_HAVE_Z3_OPTIMIZE */

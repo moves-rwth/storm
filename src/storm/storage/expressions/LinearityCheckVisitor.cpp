@@ -80,16 +80,14 @@ boost::any LinearityCheckVisitor::visit(BinaryNumericalFunctionExpression const&
                         : LinearityStatus::LinearWithoutVariables);
         case BinaryNumericalFunctionExpression::OperatorType::Min:
             return LinearityStatus::NonLinear;
-            break;
         case BinaryNumericalFunctionExpression::OperatorType::Max:
             return LinearityStatus::NonLinear;
-            break;
         case BinaryNumericalFunctionExpression::OperatorType::Power:
             return LinearityStatus::NonLinear;
-            break;
         case BinaryNumericalFunctionExpression::OperatorType::Modulo:
             return LinearityStatus::NonLinear;
-            break;
+        case BinaryNumericalFunctionExpression::OperatorType::Logarithm:
+            return LinearityStatus::NonLinear;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal binary numerical expression operator.");
 }
@@ -134,6 +132,8 @@ boost::any LinearityCheckVisitor::visit(UnaryNumericalFunctionExpression const& 
             return expression.getOperand()->accept(*this, data);
         case UnaryNumericalFunctionExpression::OperatorType::Floor:
         case UnaryNumericalFunctionExpression::OperatorType::Ceil:
+        case UnaryNumericalFunctionExpression::OperatorType::Cos:
+        case UnaryNumericalFunctionExpression::OperatorType::Sin:
             return LinearityStatus::NonLinear;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal unary numerical expression operator.");

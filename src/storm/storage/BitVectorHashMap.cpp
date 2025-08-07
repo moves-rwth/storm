@@ -15,12 +15,12 @@ BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::BitVectorHashMapIte
 }
 
 template<class ValueType, class Hash>
-bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator==(BitVectorHashMapIterator const& other) {
+bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator==(BitVectorHashMapIterator const& other) const {
     return &map == &other.map && *indexIt == *other.indexIt;
 }
 
 template<class ValueType, class Hash>
-bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator!=(BitVectorHashMapIterator const& other) {
+bool BitVectorHashMap<ValueType, Hash>::BitVectorHashMapIterator::operator!=(BitVectorHashMapIterator const& other) const {
     return !(*this == other);
 }
 
@@ -86,7 +86,7 @@ void BitVectorHashMap<ValueType, Hash>::increaseSize() {
     std::swap(oldValues, values);
 
     // Now iterate through the elements and reinsert them in the new storage.
-    uint64_t oldSize = numberOfElements;
+    [[maybe_unused]] uint64_t oldSize = numberOfElements;
     numberOfElements = 0;
     for (auto bucketIndex : oldOccupied) {
         findOrAddAndGetBucket(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);

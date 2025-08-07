@@ -32,7 +32,6 @@ bool Constant::isDefined() const {
 }
 
 storm::expressions::Expression const& Constant::getExpression() const {
-    STORM_LOG_THROW(this->isDefined(), storm::exceptions::IllegalFunctionCallException, "Unable to retrieve defining expression for undefined constant.");
     return this->expression;
 }
 
@@ -47,8 +46,7 @@ Constant Constant::substitute(std::map<storm::expressions::Variable, storm::expr
 std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
     stream << "const ";
     if (constant.getType().isRationalType()) {
-        stream << "double"
-               << " ";
+        stream << "double" << " ";
     } else {
         stream << constant.getType() << " ";
     }
@@ -58,6 +56,10 @@ std::ostream& operator<<(std::ostream& stream, Constant const& constant) {
     }
     stream << ";";
     return stream;
+}
+
+bool operator==(Constant const& lhs, Constant const& rhs) {
+    return (lhs.getExpressionVariable() == rhs.getExpressionVariable()) && (lhs.getExpression().isSyntacticallyEqual(rhs.getExpression()));
 }
 }  // namespace prism
 }  // namespace storm

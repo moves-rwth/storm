@@ -1,5 +1,9 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 
+#include "storm/adapters/JsonAdapter.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/solver/SmtSolver.h"
@@ -17,6 +21,8 @@
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 
+#include "storm/storage/expressions/ExpressionEvaluator.h"
+
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
 #include "storm/generator/Distribution.h"
@@ -29,13 +35,14 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace generator {
 
 template<typename ValueType, typename StateType>
 JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options)
-    : JaniNextStateGenerator(model.substituteConstantsFunctions(), options, false) {
+    : JaniNextStateGenerator(model.substituteConstantsFunctionsTranscendentals(), options, false) {
     // Intentionally left empty.
 }
 
@@ -47,12 +54,10 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
       hasStateActionRewards(false),
       evaluateRewardExpressionsAtEdges(false),
       evaluateRewardExpressionsAtDestinations(false) {
-    STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::NotSupportedException,
-                    "JANI next-state generator cannot generate choice labels.");
-
     auto features = this->model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     // Eliminate arrays if necessary.
     if (features.hasArrays()) {
         arrayEliminatorData = this->model.eliminateArrays(true);
@@ -61,6 +66,8 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     }
     STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
                     "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
+    // Simplify the system compositions so that we can exclude the case where automata appear in the composition multiple times.
+    this->model.simplifyComposition();
 
     // Get the reward expressions to be build. Also find out whether there is a non-trivial one.
     bool hasNonTrivialRewardExpressions = false;
@@ -72,6 +79,19 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
         for (auto const& rewardModelName : this->options.getRewardModelNames()) {
             rewardExpressions.emplace_back(rewardModelName, this->model.getRewardModelExpression(rewardModelName));
             hasNonTrivialRewardExpressions = hasNonTrivialRewardExpressions || this->model.isNonTrivialRewardModelExpression(rewardModelName);
+        }
+    }
+    // If a transient variable has a non-zero default value, we also consider that non-trivial.
+    // In those cases, lifting edge destination assignments to the edges would mean that reward is collected twice:
+    // once at the edge (assigned value), once at the edge destinations (default value).
+    if (!hasNonTrivialRewardExpressions) {
+        for (auto const& rewExpr : rewardExpressions) {
+            STORM_LOG_ASSERT(rewExpr.second.isVariable(), "Expected trivial reward expression to be a variable. Got " << rewExpr.second << " instead.");
+            auto const& var = this->model.getGlobalVariables().getVariable(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+            if (var.isTransient() && var.hasInitExpression() && !storm::utility::isZero(var.getInitExpression().evaluateAsRational())) {
+                hasNonTrivialRewardExpressions = true;
+                break;
+            }
         }
     }
 
@@ -94,6 +114,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     this->variableInformation.registerArrayVariableReplacements(arrayEliminatorData);
     this->transientVariableInformation = TransientVariableInformation<ValueType>(this->model, this->parallelAutomata);
     this->transientVariableInformation.registerArrayVariableReplacements(arrayEliminatorData);
+    this->initializeSpecialStates();
 
     // Create a proper evaluator.
     this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(this->model.getManager());
@@ -109,7 +130,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
                 this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
             } else {
                 // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
-                if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
+                if (!this->isSpecialLabel(expressionOrLabelAndBool.first.getLabel())) {
                     STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()),
                                     storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
@@ -134,6 +155,7 @@ storm::jani::ModelFeatures JaniNextStateGenerator<ValueType, StateType>::getSupp
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
     features.add(storm::jani::ModelFeature::Arrays);
+    features.add(storm::jani::ModelFeature::TrigonometricFunctions);
     // We do not add Functions as these should ideally be substituted before creating this generator.
     // This is because functions may also occur in properties and the user of this class should take care of that.
     return features;
@@ -146,6 +168,7 @@ bool JaniNextStateGenerator<ValueType, StateType>::canHandle(storm::jani::Model 
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     if (!features.empty()) {
         STORM_LOG_INFO("The model can not be build as it contains these unsupported features: " << features.toString());
         return false;
@@ -294,7 +317,7 @@ std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialS
         std::vector<std::vector<uint64_t>> allValues;
         for (auto const& aRef : this->parallelAutomata) {
             auto const& aInitLocs = aRef.get().getInitialLocationIndices();
-            allValues.template emplace_back(aInitLocs.begin(), aInitLocs.end());
+            allValues.emplace_back(aInitLocs.begin(), aInitLocs.end());
         }
         uint64_t locEndIndex = allValues.size();
         for (auto const& intVar : this->variableInformation.integerVariables) {
@@ -844,7 +867,8 @@ void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribut
     uint64_t numDestinations = 1;
     for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
         if (this->getOptions().isBuildChoiceOriginsSet()) {
-            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(edgeCombination[i].first, iteratorList[i]->first));
+            auto automatonIndex = model.getAutomatonIndex(parallelAutomata[edgeCombination[i].first].get().getName());
+            edgeIndices.insert(model.encodeAutomatonAndEdgeIndices(automatonIndex, iteratorList[i]->first));
         }
         storm::jani::Edge const& edge = *iteratorList[i]->second;
         lowestDestinationAssignmentLevel = std::min(lowestDestinationAssignmentLevel, edge.getLowestAssignmentLevel());
@@ -1008,6 +1032,12 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
         }
 
+        if (this->options.isBuildChoiceLabelsSet()) {
+            if (outputActionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                choice.addLabel(model.getAction(outputActionIndex).getName());
+            }
+        }
+
         // Now, check whether there is one more command combination to consider.
         bool movedIterator = false;
         for (uint64_t j = 0; !movedIterator && j < iteratorList.size(); ++j) {
@@ -1056,18 +1086,26 @@ std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::get
                         continue;
                     }
 
-                    result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second,
-                                                                outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(),
-                                                                automatonIndex, state, stateToIdCallback));
+                    uint64_t actionIndex = outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex();
+                    result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second, actionIndex, automatonIndex, state, stateToIdCallback));
 
                     if (this->getOptions().isBuildChoiceOriginsSet()) {
-                        EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(automatonIndex, indexAndEdge.first)};
+                        auto modelAutomatonIndex = model.getAutomatonIndex(parallelAutomata[automatonIndex].get().getName());
+                        EdgeIndexSet edgeIndex{model.encodeAutomatonAndEdgeIndices(modelAutomatonIndex, indexAndEdge.first)};
                         result.back().addOriginData(boost::any(std::move(edgeIndex)));
+                    }
+
+                    if (this->getOptions().isBuildChoiceLabelsSet()) {
+                        if (actionIndex != storm::jani::Model::SILENT_ACTION_INDEX) {
+                            result.back().addLabel(model.getAction(actionIndex).getName());
+                        }
                     }
                 }
             }
         } else {
             // If the element has more than one set of edges, we need to perform a synchronization.
+            // We require that some output action for the synchronisation must have been set before.
+            // This might be the silent action, if the Jani model does not specify an output action.
             STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
 
             uint64_t outputActionIndex = outputAndEdges.first.get();
@@ -1201,7 +1239,8 @@ storm::builder::RewardModelInformation JaniNextStateGenerator<ValueType, StateTy
 template<typename ValueType, typename StateType>
 storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage,
                                                                                          std::vector<StateType> const& initialStateIndices,
-                                                                                         std::vector<StateType> const& deadlockStateIndices) {
+                                                                                         std::vector<StateType> const& deadlockStateIndices,
+                                                                                         std::vector<StateType> const& unexploredStateIndices) {
     // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
     // create a list of boolean transient variables and the expressions that define them.
     std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
@@ -1212,7 +1251,8 @@ storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType
             }
         }
     }
-    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
+    return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, unexploredStateIndices,
+                                                           transientVariableExpressions);
 }
 
 template<typename ValueType, typename StateType>
@@ -1377,7 +1417,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
+storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& /*state*/) const {
     STORM_LOG_WARN("There are no observation labels in JANI currenty");
     return storm::storage::BitVector(0);
 }

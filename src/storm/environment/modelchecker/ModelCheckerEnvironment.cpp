@@ -3,6 +3,7 @@
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/utility/macros.h"
 
@@ -16,10 +17,30 @@ ModelCheckerEnvironment::ModelCheckerEnvironment() {
     if (mcSettings.isLtl2daToolSet()) {
         ltl2daTool = mcSettings.getLtl2daTool();
     }
+    auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+    steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
+
+    conditionalAlgorithmSetting = mcSettings.getConditionalAlgorithmSetting();
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
     // Intentionally left empty
+}
+
+SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
+    return steadyStateDistributionAlgorithm;
+}
+
+void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
+    steadyStateDistributionAlgorithm = value;
+}
+
+ConditionalAlgorithmSetting ModelCheckerEnvironment::getConditionalAlgorithmSetting() const {
+    return conditionalAlgorithmSetting;
+}
+
+void ModelCheckerEnvironment::setConditionalAlgorithmSetting(ConditionalAlgorithmSetting value) {
+    conditionalAlgorithmSetting = value;
 }
 
 MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {

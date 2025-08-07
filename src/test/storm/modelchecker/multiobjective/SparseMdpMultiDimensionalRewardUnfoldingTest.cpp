@@ -15,7 +15,16 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/constants.h"
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_small) {
+class SparseMdpMultiDimensionalRewardUnfoldingTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_small) {
     storm::Environment env;
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/one_dim_walk.nm";
     std::string constantsDef = "N=2";
@@ -67,7 +76,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_small
     EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(1.0), result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_large) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_large) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/one_dim_walk.nm";
@@ -100,7 +109,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_one_dim_walk_large
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_tiny_ec) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_tiny_ec) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_reward_bounded.nm";
@@ -163,7 +172,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_tiny_ec) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_zeroconf_dl) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_zeroconf_dl) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/zeroconf_dl_not_unfolded.nm";
@@ -195,7 +204,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_zeroconf_dl) {
                 storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_csma) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_csma) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm";
@@ -222,7 +231,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_csma) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_lower_reward_bounded.nm";
@@ -285,9 +294,9 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3_OPTIMIZE
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/one_dim_walk.nm";
@@ -365,7 +374,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
     if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
@@ -405,7 +414,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_reward_bounded.nm";
@@ -480,7 +489,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, tiny_ec) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, zeroconf_dl) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, zeroconf_dl) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/zeroconf_dl_not_unfolded.nm";
@@ -510,7 +519,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, zeroconf_dl) {
                 storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/csma2_2.nm";
@@ -545,7 +554,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, csma) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
+TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/tiny_lower_reward_bounded.nm";
@@ -606,4 +615,4 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-#endif /* STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
+#endif /* STORM_HAVE_Z3_OPTIMIZE */

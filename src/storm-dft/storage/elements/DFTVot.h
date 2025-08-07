@@ -74,7 +74,7 @@ class DFTVot : public DFTGate<ValueType> {
                     ++nrFailsafeChildren;
                     if (nrFailsafeChildren > this->nrChildren() - mThreshold) {
                         this->failsafe(state, queues);
-                        this->childrenDontCare(state, queues);
+                        this->childrenDontCare(queues);
                         return;
                     }
                 }

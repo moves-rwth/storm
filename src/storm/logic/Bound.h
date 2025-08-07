@@ -1,6 +1,7 @@
 #ifndef STORM_LOGIC_BOUND_H_
 #define STORM_LOGIC_BOUND_H_
 
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/storage/expressions/Expression.h"
@@ -18,19 +19,19 @@ struct Bound {
     storm::expressions::Expression threshold;
 
     template<typename ValueType>
-    bool isSatisfied(ValueType const& compareValue) const {
-        ValueType thresholdAsValueType = storm::utility::convertNumber<ValueType>(threshold.evaluateAsRational());
-        switch (comparisonType) {
-            case ComparisonType::Greater:
-                return compareValue > thresholdAsValueType;
-            case ComparisonType::GreaterEqual:
-                return compareValue >= thresholdAsValueType;
-            case ComparisonType::Less:
-                return compareValue < thresholdAsValueType;
-            case ComparisonType::LessEqual:
-                return compareValue <= thresholdAsValueType;
-        }
-        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
+    bool isSatisfied(ValueType const& compareValue) const;
+
+    storm::RationalNumber evaluateThresholdAsRational() const;
+
+    template<typename ValueType>
+    ValueType evaluateThresholdAs() const;
+
+    bool isLowerBound() const {
+        return comparisonType == ComparisonType::Greater || comparisonType == ComparisonType::GreaterEqual;
+    }
+
+    Bound getInvertedBound() const {
+        return Bound(invert(comparisonType), threshold);
     }
 
     friend std::ostream& operator<<(std::ostream& out, Bound const& bound);

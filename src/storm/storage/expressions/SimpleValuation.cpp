@@ -3,6 +3,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/functional/hash.hpp>
 
+#include "storm/adapters/JsonAdapter.h"
+
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
 
@@ -149,8 +151,8 @@ std::string SimpleValuation::toString(bool pretty) const {
     }
 }
 
-typename SimpleValuation::Json SimpleValuation::toJson() const {
-    Json result;
+storm::json<storm::RationalNumber> SimpleValuation::toJson() const {
+    storm::json<storm::RationalNumber> result;
     for (auto const& variable : getManager()) {
         if (variable.second.isBooleanType()) {
             result[variable.first.getName()] = this->getBooleanValue(variable.first);

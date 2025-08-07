@@ -1,4 +1,4 @@
-#include "Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm-config.h"
 
@@ -7,11 +7,14 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 
-#include "NativeMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+
+#include "storm/solver/multiplier/NativeMultiplier.h"
+
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/solver/multiplier/GmmxxMultiplier.h"
+#include "storm/solver/multiplier/ViOperatorMultiplier.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -72,34 +75,36 @@ void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, Op
 }
 
 template<typename ValueType>
-void Multiplier<ValueType>::multiplyRow2(uint64_t const& rowIndex, std::vector<ValueType> const& x1, ValueType& val1, std::vector<ValueType> const& x2,
-                                         ValueType& val2) const {
-    multiplyRow(rowIndex, x1, val1);
-    multiplyRow(rowIndex, x2, val2);
+
+std::vector<ValueType>& Multiplier<ValueType>::provideCachedVector(uint64_t size) const {
+    if (this->cachedVector) {
+        this->cachedVector->resize(size);
+    } else {
+        this->cachedVector = std::make_unique<std::vector<ValueType>>(size);
+    }
+    return *this->cachedVector;
 }
 
 template<typename ValueType>
 std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) {
     auto type = env.solver().multiplier().getType();
 
-    // Adjust the multiplier type if an eqsolver was specified but not a multiplier
-    if (!env.solver().isLinearEquationSolverTypeSetFromDefaultValue() && env.solver().multiplier().isTypeSetFromDefault()) {
-        bool changed = false;
-        if (env.solver().getLinearEquationSolverType() == EquationSolverType::Gmmxx && type != MultiplierType::Gmmxx) {
-            type = MultiplierType::Gmmxx;
-            changed = true;
-        } else if (env.solver().getLinearEquationSolverType() == EquationSolverType::Native && type != MultiplierType::Native) {
-            type = MultiplierType::Native;
-            changed = true;
-        }
-        STORM_LOG_INFO_COND(!changed, "Selecting '" + toString(type) +
-                                          "' as the multiplier type to match the selected equation solver. If you want to override this, please explicitly "
-                                          "specify a different multiplier type.");
+    // Adjust the type if the ValueType is not supported
+    if (type == MultiplierType::ViOperator && (std::is_same_v<ValueType, storm::RationalFunction> || std::is_same_v<ValueType, storm::Interval>)) {
+        STORM_LOG_INFO("Switching multiplier type from 'vioperator' to 'native' because the given ValueType is not supported by the VI Operator multiplier.");
+        type = MultiplierType::Native;
     }
 
     switch (type) {
-        case MultiplierType::Gmmxx:
-            return std::make_unique<GmmxxMultiplier<ValueType>>(matrix);
+        case MultiplierType::ViOperator:
+            if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || std::is_same_v<ValueType, storm::Interval>) {
+                throw storm::exceptions::NotImplementedException() << "VI Operator multiplier not supported with given value type.";
+            }
+            if (matrix.hasTrivialRowGrouping()) {
+                return std::make_unique<ViOperatorMultiplier<ValueType, true>>(matrix);
+            } else {
+                return std::make_unique<ViOperatorMultiplier<ValueType, false>>(matrix);
+            }
         case MultiplierType::Native:
             return std::make_unique<NativeMultiplier<ValueType>>(matrix);
     }
@@ -108,13 +113,12 @@ std::unique_ptr<Multiplier<ValueType>> MultiplierFactory<ValueType>::create(Envi
 
 template class Multiplier<double>;
 template class MultiplierFactory<double>;
-
-#ifdef STORM_HAVE_CARL
 template class Multiplier<storm::RationalNumber>;
 template class MultiplierFactory<storm::RationalNumber>;
 template class Multiplier<storm::RationalFunction>;
 template class MultiplierFactory<storm::RationalFunction>;
-#endif
+template class Multiplier<storm::Interval>;
+template class MultiplierFactory<storm::Interval>;
 
 }  // namespace solver
 }  // namespace storm

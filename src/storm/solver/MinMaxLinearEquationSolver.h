@@ -1,5 +1,4 @@
-#ifndef STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_
-#define STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -11,7 +10,6 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -24,15 +22,17 @@ class Environment;
 namespace storage {
 template<typename T>
 class SparseMatrix;
-}
+template<typename ValueType>
+class Scheduler;
+}  // namespace storage
 
 namespace solver {
 
 /*!
  * A class representing the interface that all min-max linear equation solvers shall implement.
  */
-template<class ValueType>
-class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
+template<typename ValueType, typename SolutionType = ValueType>
+class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
    protected:
     MinMaxLinearEquationSolver(OptimizationDirectionSetting direction = OptimizationDirectionSetting::Unset);
 
@@ -52,14 +52,14 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
      * solver, but may be ignored.
      * @param b The vector to add after matrix-vector multiplication.
      */
-    bool solveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+    bool solveEquations(Environment const& env, OptimizationDirection d, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const;
 
     /*!
      * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
      * instead of providing the optimization direction as an argument, the internally set optimization direction
      * is used. Note: this method can only be called after setting the optimization direction.
      */
-    void solveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+    void solveEquations(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const& b) const;
 
     /*!
      * Sets an optimization direction to use for calls to methods that do not explicitly provide one.
@@ -70,6 +70,16 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
      * Unsets the optimization direction to use for calls to methods that do not explicitly provide one.
      */
     void unsetOptimizationDirection();
+
+    /*!
+     * Set whether uncertainty should be interpreted adverserially (robust) or not
+     */
+    void setUncertaintyIsRobust(bool robust);
+
+    /*!
+     * Is the uncertainty to be interpreted robustly (adverserially) or not?
+     */
+    bool isUncertaintyRobust() const;
 
     /*!
      * Sets the states for which the choices are fixed.
@@ -128,6 +138,11 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
     std::vector<uint_fast64_t> const& getSchedulerChoices() const;
 
     /*!
+     * Retrieves the generated robust index into the scheduler. Note: it is only legal to call this function if a scheduler was generated.
+     */
+    std::vector<uint_fast64_t> const& getRobustSchedulerIndex() const;
+
+    /*!
      * Sets whether some of the generated data during solver calls should be cached.
      * This possibly decreases the runtime of subsequent calls but also increases memory consumption.
      */
@@ -138,7 +153,7 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
      */
     bool isCachingEnabled() const;
 
-    /*
+    /*!
      * Clears the currently cached data that has been stored during previous calls of the solver.
      */
     virtual void clearCache() const;
@@ -178,7 +193,8 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
     bool isRequirementsCheckedSet() const;
 
    protected:
-    virtual bool internalSolveEquations(Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+    virtual bool internalSolveEquations(Environment const& env, OptimizationDirection d, std::vector<SolutionType>& x,
+                                        std::vector<ValueType> const& b) const = 0;
 
     /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
     OptimizationDirectionSetting direction;
@@ -189,9 +205,21 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
     /// The scheduler choices that induce the optimal values (if they could be successfully generated).
     mutable boost::optional<std::vector<uint_fast64_t>> schedulerChoices;
 
-    // A scheduler that can be used by solvers that require a valid initial scheduler.
+    /// For interval models, this index points into the schedulerChoices and is a state -> index map.
+    /// In an MDP, the scheduler choices are just one number for each row group
+    /// - the row that was chosen. In an iMC (this is currently the only
+    /// interval model that supports extracting schedulers here), a scheduler is
+    /// an order of entries within a single row. In the current representation,
+    /// the schedulerChoices from robustSchedulerIndex[i] to
+    /// robustSchedulerIndex[i+1] (exclusive) are this permutation. So, the
+    /// robustSchedulerIndex[i] currently just counts how many matrix entries
+    /// come before row i.
+    mutable boost::optional<std::vector<uint_fast64_t>> robustSchedulerIndex;
+
+    /// A scheduler that can be used by solvers that require a valid initial scheduler.
     boost::optional<std::vector<uint_fast64_t>> initialScheduler;
 
+    ///
     boost::optional<storm::storage::BitVector> choiceFixedForRowGroup;
 
    private:
@@ -206,17 +234,21 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
 
     /// A flag storing whether the requirements of the solver were checked.
     bool requirementsChecked;
+
+    /// For uncertain models, if this flag is set to true, the uncertainty is resolved adverserially and angelically otherwise.
+    bool robustUncertainty;
 };
 
-template<typename ValueType>
+template<typename ValueType, typename SolutionType = ValueType>
 class MinMaxLinearEquationSolverFactory {
    public:
     MinMaxLinearEquationSolverFactory();
     virtual ~MinMaxLinearEquationSolverFactory() = default;
 
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType> const& matrix) const;
-    std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const;
-    virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const = 0;
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env,
+                                                                                storm::storage::SparseMatrix<ValueType> const& matrix) const;
+    std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env, storm::storage::SparseMatrix<ValueType>&& matrix) const;
+    virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env) const = 0;
 
     /*!
      * Retrieves the requirements of the solver that would be created when calling create() right now. The
@@ -232,18 +264,16 @@ class MinMaxLinearEquationSolverFactory {
     bool requirementsChecked;
 };
 
-template<typename ValueType>
-class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
+template<typename ValueType, typename SolutionType = ValueType>
+class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType, SolutionType> {
    public:
     GeneralMinMaxLinearEquationSolverFactory();
 
     // Make the other create methods visible.
-    using MinMaxLinearEquationSolverFactory<ValueType>::create;
+    using MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create;
 
-    virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(Environment const& env) const override;
+    virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env) const override;
 };
 
 }  // namespace solver
 }  // namespace storm
-
-#endif /* STORM_SOLVER_MINMAXLINEAREQUATIONSOLVER_H_ */

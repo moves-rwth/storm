@@ -176,8 +176,6 @@ class Polytope {
      */
     virtual std::string toString(bool numbersAsDouble = false) const;
 
-    virtual bool isHyproPolytope() const;
-
     virtual bool isNativePolytope() const;
 
    protected:

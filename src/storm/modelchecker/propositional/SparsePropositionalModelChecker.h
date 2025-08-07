@@ -11,15 +11,16 @@ class SparsePropositionalModelChecker : public AbstractModelChecker<SparseModelT
    public:
     typedef typename SparseModelType::ValueType ValueType;
     typedef typename SparseModelType::RewardModelType RewardModelType;
+    using SolutionType = typename std::conditional<std::is_same_v<ValueType, storm::Interval>, double, ValueType>::type;
 
     explicit SparsePropositionalModelChecker(SparseModelType const& model);
 
     // The implemented methods of the AbstractModelChecker interface.
-    virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
+    virtual bool canHandle(CheckTask<storm::logic::Formula, SolutionType> const& checkTask) const override;
     virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(Environment const& env,
-                                                                    CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) override;
+                                                                    CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(Environment const& env,
-                                                                 CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) override;
+                                                                 CheckTask<storm::logic::AtomicLabelFormula, SolutionType> const& checkTask) override;
 
    protected:
     /*!

@@ -2,9 +2,11 @@
 
 #include <boost/variant.hpp>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/BooleanLiteralExpression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
+#include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -130,7 +132,7 @@ bool BinaryRelationExpression::isBinaryRelationExpression() const {
     return true;
 }
 
-BinaryRelationExpression::RelationType BinaryRelationExpression::getRelationType() const {
+RelationType BinaryRelationExpression::getRelationType() const {
     return this->relationType;
 }
 

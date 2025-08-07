@@ -1,5 +1,6 @@
 #include "storm/api/properties.h"
 
+#include <boost/algorithm/string.hpp>
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -17,6 +18,14 @@ std::vector<storm::jani::Property> substituteConstantsInProperties(std::vector<s
     std::vector<storm::jani::Property> preprocessedProperties;
     for (auto const& property : properties) {
         preprocessedProperties.emplace_back(property.substitute(substitution));
+    }
+    return preprocessedProperties;
+}
+
+std::vector<storm::jani::Property> substituteTranscendentalNumbersInProperties(std::vector<storm::jani::Property> const& properties) {
+    std::vector<storm::jani::Property> preprocessedProperties;
+    for (auto const& property : properties) {
+        preprocessedProperties.emplace_back(property.substituteTranscendentalNumbers());
     }
     return preprocessedProperties;
 }

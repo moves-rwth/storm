@@ -73,6 +73,19 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
 }
 
 /*!
+ * Check whether the DFT has potential modeling issues.
+ *
+ * @param dft DFT.
+ * @return Pair where the first entry is true iff the DFT has potential modeling issues. The second entry contains the warning messages for the issues.
+ */
+template<typename ValueType>
+std::pair<bool, std::string> hasPotentialModelingIssues(storm::dft::storage::DFT<ValueType> const& dft) {
+    std::stringstream stream;
+    bool modelingIssues = storm::dft::utility::DftValidator<ValueType>::hasPotentialModelingIssues(dft, stream);
+    return std::pair<bool, std::string>(modelingIssues, stream.str());
+}
+
+/*!
  * Apply transformations for DFT.
  *
  * @param dft DFT.
@@ -117,9 +130,6 @@ std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<Va
 
 template<typename ValueType>
 bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
-    // Initialize which DFT elements have dynamic behavior
-    dft.setDynamicBehaviorInfo();
-
     std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts =
         storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(dft, useSMT, solverTimeout);
 
@@ -144,19 +154,12 @@ bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool u
 /*!
  * Get relevant event ids from given relevant event names and labels in properties.
  *
- * @param dft DFT.
  * @param properties List of properties. All events occurring in a property are relevant.
  * @param additionalRelevantEventNames List of names of additional relevant events.
  * @return Relevant events.
  */
-template<typename ValueType>
-storm::dft::utility::RelevantEvents computeRelevantEvents(storm::dft::storage::DFT<ValueType> const& dft,
-                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                          std::vector<std::string> const& additionalRelevantEventNames) {
-    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
-    events.insertNamesFromProperties(properties.begin(), properties.end());
-    return events;
-}
+storm::dft::utility::RelevantEvents computeRelevantEvents(std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                                                          std::vector<std::string> const& additionalRelevantEventNames);
 
 /*!
  * Compute the exact or approximate analysis result of the given DFT according to the given properties.

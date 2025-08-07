@@ -15,11 +15,11 @@ VariableIterator::VariableIterator(ExpressionManager const& manager, std::unorde
     moveUntilNextSelectedElement(false);
 }
 
-bool VariableIterator::operator==(VariableIterator const& other) {
+bool VariableIterator::operator==(VariableIterator const& other) const {
     return this->nameIndexIterator == other.nameIndexIterator;
 }
 
-bool VariableIterator::operator!=(VariableIterator const& other) {
+bool VariableIterator::operator!=(VariableIterator const& other) const {
     return !(*this == other);
 }
 
@@ -137,6 +137,13 @@ Type const& ExpressionManager::getArrayType(Type elementType) const {
     return *arrayTypes.insert(type).first;
 }
 
+Type const& ExpressionManager::getTranscendentalNumberType() const {
+    if (!transcendentalNumberType) {
+        transcendentalNumberType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new TranscendentalNumberType()));
+    }
+    return transcendentalNumberType.get();
+}
+
 bool ExpressionManager::isValidVariableName(std::string const& name) {
     return name.size() < 2 || name.at(0) != '_' || name.at(1) != '_';
 }
@@ -190,41 +197,25 @@ Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm:
                                                                                            << indexToTypeMapping.at(nameIndexPair->second) << "'.");
         return Variable(this->getSharedPointer(), nameIndexPair->second);
     } else {
-        uint_fast64_t offset = 0;
-        if (auxiliary) {
-            if (variableType.isBooleanType()) {
-                offset = numberOfBooleanVariables++;
-            } else if (variableType.isIntegerType()) {
-                offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
-            } else if (variableType.isBitVectorType()) {
-                offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-            } else if (variableType.isRationalType()) {
-                offset = numberOfRationalVariables++;
-            } else if (variableType.isArrayType()) {
-                offset = numberOfArrayVariables++;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                                "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
-            }
+        uint64_t offset = 0;
+
+        if (variableType.isBooleanType()) {
+            offset = numberOfBooleanVariables++;
+        } else if (variableType.isIntegerType()) {
+            offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
+        } else if (variableType.isBitVectorType()) {
+            offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
+        } else if (variableType.isRationalType()) {
+            offset = numberOfRationalVariables++;
+        } else if (variableType.isArrayType()) {
+            offset = numberOfArrayVariables++;
         } else {
-            if (variableType.isBooleanType()) {
-                offset = numberOfBooleanVariables++;
-            } else if (variableType.isIntegerType()) {
-                offset = numberOfIntegerVariables++ + numberOfBitVectorVariables;
-            } else if (variableType.isBitVectorType()) {
-                offset = numberOfBitVectorVariables++ + numberOfIntegerVariables;
-            } else if (variableType.isRationalType()) {
-                offset = numberOfRationalVariables++;
-            } else if (variableType.isArrayType()) {
-                offset = numberOfArrayVariables++;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                                "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
-            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
+                            "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
         }
 
         // Compute the index of the new variable.
-        uint_fast64_t newIndex = offset | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
+        uint64_t newIndex = offset | variableType.getMask() | (auxiliary ? auxiliaryMask : 0);
 
         // Properly insert the variable into the data structure.
         nameToIndexMapping[name] = newIndex;
@@ -322,7 +313,7 @@ Type const& ExpressionManager::getVariableType(uint_fast64_t index) const {
     return indexTypePair->second;
 }
 
-uint_fast64_t ExpressionManager::getOffset(uint_fast64_t index) const {
+uint64_t ExpressionManager::getOffset(uint64_t index) const {
     return index & offsetMask;
 }
 

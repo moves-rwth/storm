@@ -54,11 +54,11 @@ storm::storage::BitVector Smg<ValueType, RewardModelType>::computeStatesOfCoalit
     // Create a set and a bit vector encoding the coalition for faster access
     std::set<storm::storage::PlayerIndex> coalitionAsIndexSet;
     for (auto const& player : coalition.getPlayers()) {
-        if (player.type() == typeid(std::string)) {
-            coalitionAsIndexSet.insert(getPlayerIndex(boost::get<std::string>(player)));
+        if (std::holds_alternative<std::string>(player)) {
+            coalitionAsIndexSet.insert(getPlayerIndex(std::get<std::string>(player)));
         } else {
-            STORM_LOG_ASSERT(player.type() == typeid(storm::storage::PlayerIndex), "Player identifier has unexpected type.");
-            coalitionAsIndexSet.insert(boost::get<storm::storage::PlayerIndex>(player));
+            STORM_LOG_ASSERT(std::holds_alternative<storm::storage::PlayerIndex>(player), "Player identifier has unexpected type.");
+            coalitionAsIndexSet.insert(std::get<storm::storage::PlayerIndex>(player));
         }
     }
     storm::storage::BitVector coalitionAsBitVector(*coalitionAsIndexSet.rbegin() + 1, false);
@@ -83,6 +83,8 @@ template class Smg<storm::RationalNumber>;
 
 template class Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Smg<storm::RationalFunction>;
+template class Smg<storm::Interval>;
+
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

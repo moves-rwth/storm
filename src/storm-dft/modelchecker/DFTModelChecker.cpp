@@ -1,4 +1,4 @@
-#include "DFTModelChecker.h"
+#include "storm-dft/modelchecker/DFTModelChecker.h"
 
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/InvalidModelException.h"
@@ -14,7 +14,7 @@
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/storage/DFTIsomorphism.h"
+#include "storm-dft/utility/SymmetryFinder.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -200,12 +200,10 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
             ft.setRelevantEvents(relevantEvents, allowDCForRelevant);
             // Find symmetries
-            std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-            storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+            storm::dft::storage::DftSymmetries symmetries;
             if (symred) {
-                auto colouring = ft.colourDFT();
-                symmetries = ft.findSymmetries(colouring);
-                STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
+                symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(ft);
+                STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: \n" << symmetries);
             }
 
@@ -260,12 +258,10 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
         dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
 
         // Find symmetries
-        std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-        storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+        storm::dft::storage::DftSymmetries symmetries;
         if (symred) {
-            auto colouring = dft.colourDFT();
-            symmetries = dft.findSymmetries(colouring);
-            STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
+            symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(dft);
+            STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
             STORM_LOG_TRACE("Symmetries: \n" << symmetries);
         }
         // Build a single CTMC
@@ -296,12 +292,10 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
 
     // Find symmetries
-    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DftSymmetries symmetries;
     if (symred) {
-        auto colouring = dft.colourDFT();
-        symmetries = dft.findSymmetries(colouring);
-        STORM_LOG_DEBUG("Found " << symmetries.groups.size() << " symmetries.");
+        symmetries = storm::dft::utility::SymmetryFinder<ValueType>::findSymmetries(dft);
+        STORM_LOG_DEBUG("Found " << symmetries.nrSymmetries() << " symmetries.");
         STORM_LOG_TRACE("Symmetries: \n" << symmetries);
     }
 
@@ -377,13 +371,11 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
                              "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
             totalTimer.stop();
             if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
-                std::cout << "Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second
-                          << ")\n";
+                std::cout << "Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")\n";
                 printTimings();
                 std::cout << '\n';
             } else {
-                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", "
-                                                          << approxResult.second << ")");
+                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << approxResult.first << ", " << approxResult.second << ")");
             }
 
             totalTimer.start();

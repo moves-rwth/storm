@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
 #include "storm/utility/graph.h"
@@ -46,8 +47,8 @@ namespace helper {
 
 template<>
 std::map<storm::storage::sparse::state_type, storm::RationalFunction> SparseDtmcPrctlHelper<storm::RationalFunction>::computeRewardBoundedValues(
-    Environment const& env, storm::models::sparse::Dtmc<storm::RationalFunction> const& model,
-    std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula) {
+    Environment const& /*env*/, storm::models::sparse::Dtmc<storm::RationalFunction> const& /*model*/,
+    std::shared_ptr<storm::logic::OperatorFormula const> /*rewardBoundedFormula*/) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The specified property is not supported by this value type.");
     return std::map<storm::storage::sparse::state_type, storm::RationalFunction>();
 }
@@ -125,7 +126,7 @@ std::map<storm::storage::sparse::state_type, ValueType> SparseDtmcPrctlHelper<Va
             headers.push_back(rewardUnfolding.getDimension(i).formula->toString());
         }
         headers.push_back("Result");
-        storm::utility::exportDataToCSVFile<ValueType, std::string, std::string>(
+        storm::io::exportDataToCSVFile<ValueType, std::string, std::string>(
             storm::settings::getModule<storm::settings::modules::IOSettings>().getExportCdfDirectory() + "cdf.csv", cdfData, headers);
     }
 
@@ -353,7 +354,8 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     RewardModelType const& rewardModel, uint_fast64_t stepCount) {
     // Only compute the result if the model has a state-based reward this->getModel().
-    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+    STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException,
+                    "Computing instantaneous rewards for a reward model that does not define any state-rewards. The result is trivially 0.");
 
     // Initialize result to state rewards of the model.
     std::vector<ValueType> result = rewardModel.getStateRewardVector();
@@ -428,9 +430,9 @@ std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<Val
 }
 
 template<>
-std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
-                                                              std::vector<storm::RationalFunction> const& rewards,
-                                                              std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& /*transitionMatrix*/,
+                                                              std::vector<storm::RationalFunction> const& /*rewards*/,
+                                                              std::vector<storm::RationalFunction> const& /*oneStepTargetProbabilities*/) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
 }
 

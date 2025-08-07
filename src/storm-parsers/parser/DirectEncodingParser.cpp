@@ -8,12 +8,13 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#include "storm-parsers/parser/ValueParser.h"
+
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/settings/SettingsManager.h"
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -21,7 +22,6 @@
 #include "storm/io/file.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
@@ -36,7 +36,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
     // Load file
     STORM_LOG_INFO("Reading from file " << filename);
     std::ifstream file;
-    storm::utility::openFile(filename, file);
+    storm::io::openFile(filename, file);
     std::string line;
 
     // Initialize
@@ -51,7 +51,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
     std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> modelComponents;
 
     // Parse header
-    while (storm::utility::getline(file, line)) {
+    while (storm::io::getline(file, line)) {
         if (line.empty() || boost::starts_with(line, "//")) {
             continue;
         }
@@ -68,7 +68,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         } else if (line == "@parameters") {
             // Parse parameters
             STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             if (line != "") {
                 std::vector<std::string> parameters;
                 boost::split(parameters, line, boost::is_any_of(" "));
@@ -81,7 +81,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
 
         } else if (line == "@placeholders") {
             // Parse placeholders
-            while (storm::utility::getline(file, line)) {
+            while (storm::io::getline(file, line)) {
                 size_t posColon = line.find(':');
                 STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
                 std::string placeName = line.substr(0, posColon - 1);
@@ -99,16 +99,16 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         } else if (line == "@reward_models") {
             // Parse reward models
             STORM_LOG_THROW(rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             boost::split(rewardModelNames, line, boost::is_any_of("\t "));
         } else if (line == "@nr_states") {
             // Parse no. of states
             STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             nrStates = parseNumber<size_t>(line);
         } else if (line == "@nr_choices") {
             STORM_LOG_THROW(nrChoices == 0, storm::exceptions::WrongFormatException, "Number of actions declared twice");
-            storm::utility::getline(file, line);
+            storm::io::getline(file, line);
             nrChoices = parseNumber<size_t>(line);
         } else if (line == "@model") {
             // Parse rest of the model
@@ -125,7 +125,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         }
     }
     // Done parsing
-    storm::utility::closeFile(file);
+    storm::io::closeFile(file);
 
     // Build model
     return storm::utility::builder::buildModelFromComponents(type, std::move(*modelComponents));
@@ -167,7 +167,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     uint64_t lineNumber = 0;
     bool firstState = true;
     bool firstActionForState = true;
-    while (storm::utility::getline(file, line)) {
+    while (storm::io::getline(file, line)) {
         lineNumber++;
         if (boost::starts_with(line, "//")) {
             continue;
@@ -229,6 +229,24 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                 modelComponents->exitRates.get()[state] = exitRate;
             }
 
+            if (type == storm::models::ModelType::Pomdp) {
+                if (boost::starts_with(line, "{")) {
+                    size_t posEndObservation = line.find("}");
+                    std::string observation = line.substr(1, posEndObservation - 1);
+                    STORM_LOG_TRACE("State observation " << observation);
+                    modelComponents->observabilityClasses.value()[state] = std::stoi(observation);
+                    line = line.substr(posEndObservation + 1);
+                    if (!line.empty()) {
+                        STORM_LOG_THROW(line.starts_with(" "), storm::exceptions::WrongFormatException,
+                                        "Expected whitespace after observation in line " << lineNumber);
+
+                        line = line.substr(1);
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
+                }
+            }
+
             if (boost::starts_with(line, "[")) {
                 // Parse rewards
                 size_t posEndReward = line.find(']');
@@ -252,18 +270,6 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     ++stateRewardsIt;
                 }
                 line = line.substr(posEndReward + 1);
-            }
-
-            if (type == storm::models::ModelType::Pomdp) {
-                if (boost::starts_with(line, "{")) {
-                    size_t posEndObservation = line.find("}");
-                    std::string observation = line.substr(1, posEndObservation - 1);
-                    STORM_LOG_TRACE("State observation " << observation);
-                    modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
-                    line = line.substr(posEndObservation + 1);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
-                }
             }
 
             // Parse labels
@@ -322,10 +328,10 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             // curString contains action name.
             if (options.buildChoiceLabeling) {
                 if (curString != "__NOLABEL__") {
-                    if (!modelComponents->choiceLabeling.get().containsLabel(curString)) {
-                        modelComponents->choiceLabeling.get().addLabel(curString);
+                    if (!modelComponents->choiceLabeling.value().containsLabel(curString)) {
+                        modelComponents->choiceLabeling.value().addLabel(curString);
                     }
-                    modelComponents->choiceLabeling.get().addLabelToChoice(curString, row);
+                    modelComponents->choiceLabeling.value().addLabelToChoice(curString, row);
                 }
             }
             // Check for rewards
@@ -396,7 +402,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
         } else {
             rewardModelName = rewardModelNames[i];
         }
-        boost::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
+        std::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
         if (i < stateRewards.size() && !stateRewards[i].empty()) {
             stateRewardVector = std::move(stateRewards[i]);
         }
@@ -429,6 +435,7 @@ ValueType DirectEncodingParser<ValueType, RewardModelType>::parseValue(std::stri
 template class DirectEncodingParser<double>;
 template class DirectEncodingParser<storm::RationalNumber>;
 template class DirectEncodingParser<storm::RationalFunction>;
+template class DirectEncodingParser<storm::Interval>;
 
 }  // namespace parser
 }  // namespace storm

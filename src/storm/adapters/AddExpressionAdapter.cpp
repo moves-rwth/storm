@@ -117,6 +117,9 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Bina
         case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Modulo:
             result = leftResult.mod(rightResult);
             break;
+        case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Logarithm:
+            result = leftResult.logxy(rightResult);
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot translate expression containing power operator.");
     }
@@ -131,22 +134,22 @@ boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::Bina
 
     storm::dd::Bdd<Type> result;
     switch (expression.getRelationType()) {
-        case storm::expressions::BinaryRelationExpression::RelationType::Equal:
+        case storm::expressions::RelationType::Equal:
             result = leftResult.equals(rightResult);
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
+        case storm::expressions::RelationType::NotEqual:
             result = leftResult.notEquals(rightResult);
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Less:
+        case storm::expressions::RelationType::Less:
             result = leftResult.less(rightResult);
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
+        case storm::expressions::RelationType::LessOrEqual:
             result = leftResult.lessOrEqual(rightResult);
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Greater:
+        case storm::expressions::RelationType::Greater:
             result = leftResult.greater(rightResult);
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case storm::expressions::RelationType::GreaterOrEqual:
             result = leftResult.greaterOrEqual(rightResult);
             break;
     }

@@ -2,7 +2,7 @@
 #include <algorithm>
 
 #include "storm-config.h"
-#include "utility/OsDetection.h"
+#include "storm/utility/OsDetection.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
@@ -11,7 +11,7 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/abstraction/ExplicitGameStrategyPair.h"
+#include "storm/storage/ExplicitGameStrategyPair.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/models/sparse/DeterministicModel.h"
@@ -31,6 +31,18 @@
 namespace storm {
 namespace utility {
 namespace graph {
+
+template<typename T>
+storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+    storm::storage::BitVector result{initialStates.size()};
+    for (uint64_t currentState : initialStates) {
+        for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
+            STORM_LOG_ASSERT(!storm::utility::isZero(successor.getValue()), "Matrix should not have zero entries.");
+            result.set(successor.getColumn());
+        }
+    }
+    return result;
+}
 
 template<typename T>
 storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates,
@@ -474,23 +486,19 @@ std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::model
     return result;
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                     storm::storage::Scheduler<T>& scheduler) {
+                                     storm::storage::Scheduler<SchedulerValueType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
-        bool setValue = false;
-        STORM_LOG_ASSERT(nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state] > 0,
-                         "Expected at least one action enabled in state " << state);
-        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-            bool allSuccessorsInStates = true;
-            for (auto const& element : transitionMatrix.getRow(choice)) {
-                if (!states.get(element.getColumn())) {
-                    allSuccessorsInStates = false;
-                    break;
-                }
+        [[maybe_unused]] bool setValue{false};
+        for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
+            if (rowFilter && !rowFilter->get(choice)) {
+                continue;
             }
+            auto const row = transitionMatrix.getRow(choice);
+            bool const allSuccessorsInStates = std::all_of(row.begin(), row.end(), [&states](auto const& entry) { return states.get(entry.getColumn()); });
             if (allSuccessorsInStates) {
                 for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                     scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
@@ -503,13 +511,13 @@ void computeSchedulerStayingInStates(storm::storage::BitVector const& states, st
     }
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                                              storm::storage::Scheduler<T>& scheduler) {
+                                              storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
 
     for (auto state : states) {
-        bool setValue = false;
+        [[maybe_unused]] bool setValue = false;
         for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
             bool oneSuccessorInStates = false;
             for (auto const& element : transitionMatrix.getRow(choice)) {
@@ -530,10 +538,10 @@ void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& s
     }
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions,
                                    storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                   storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
+                                   storm::storage::Scheduler<SchedulerValueType>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
     // Perform backwards DFS from psiStates and find a valid choice for each visited state.
 
     std::vector<uint_fast64_t> stack;
@@ -581,41 +589,32 @@ void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transi
     }
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<T>& scheduler) {
+                            storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     computeSchedulerStayingInStates(prob0EStates, transitionMatrix, scheduler);
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<T>& scheduler) {
+                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<SchedulerValueType>& scheduler) {
     // Get the states from which we can never exit the rewInfStates, i.e. the states satisfying  Pmax=1 [ G "rewInfStates"]
+    // or, equivalently, the states satisfying Pmin=0 [ F !"rewInfStates"].
+    auto trapStates = performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, rewInfStates, ~rewInfStates);
     // Also set a corresponding choice for all those states
-    storm::storage::BitVector trapStates(rewInfStates.size(), false);
-    auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
-    for (auto state : rewInfStates) {
-        STORM_LOG_ASSERT(nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state] > 0,
-                         "Expected at least one action enabled in state " << state);
-        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-            auto const& row = transitionMatrix.getRow(choice);
-            if (std::all_of(row.begin(), row.end(), [&rewInfStates](auto const& entry) { return rewInfStates.get(entry.getColumn()); })) {
-                trapStates.set(state, true);
-                for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
-                    scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
-                }
-                break;
-            }
-        }
-    }
+    computeSchedulerProb0E(trapStates, transitionMatrix, scheduler);
+
     // All remaining rewInfStates must reach a trapState with positive probability
-    computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, rewInfStates, trapStates, scheduler);
+    auto remainingStates = rewInfStates & ~trapStates;
+    if (!remainingStates.empty()) {
+        computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, remainingStates, trapStates, scheduler);
+    }
 }
 
-template<typename T>
+template<typename T, typename SchedulerValueType>
 void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
                             storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates,
-                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler,
+                            storm::storage::BitVector const& psiStates, storm::storage::Scheduler<SchedulerValueType>& scheduler,
                             boost::optional<storm::storage::BitVector> const& rowFilter) {
     // set an arbitrary (valid) choice for the psi states.
     for (auto psiState : psiStates) {
@@ -1100,14 +1099,12 @@ storm::dd::Bdd<Type> computeSchedulerProbGreater0E(storm::models::symbolic::Nond
     storm::dd::Bdd<Type> frontier = psiStates;
     storm::dd::Bdd<Type> scheduler = manager.getBddZero();
 
-    uint_fast64_t iterations = 0;
     while (!frontier.isZero()) {
         storm::dd::Bdd<Type> statesAndChoicesWithProbabilityGreater0E =
             frontier.inverseRelationalProductWithExtendedRelation(transitionMatrix, model.getRowVariables(), model.getColumnVariables());
         frontier = phiStates && statesAndChoicesWithProbabilityGreater0E.existsAbstract(model.getNondeterminismVariables()) && !statesWithProbabilityGreater0E;
         scheduler = scheduler || (frontier && statesAndChoicesWithProbabilityGreater0E).existsAbstractRepresentative(model.getNondeterminismVariables());
         statesWithProbabilityGreater0E |= frontier;
-        ++iterations;
     }
 
     return scheduler;
@@ -1122,7 +1119,6 @@ storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::Nondeterminis
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbabilityGreater0E = psiStates;
 
-    uint_fast64_t iterations = 0;
     storm::dd::Bdd<Type> abstractedTransitionMatrix = transitionMatrix.existsAbstract(model.getNondeterminismVariables());
     while (lastIterationStates != statesWithProbabilityGreater0E) {
         lastIterationStates = statesWithProbabilityGreater0E;
@@ -1130,7 +1126,6 @@ storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::Nondeterminis
             statesWithProbabilityGreater0E.inverseRelationalProduct(abstractedTransitionMatrix, model.getRowVariables(), model.getColumnVariables());
         statesWithProbabilityGreater0E &= phiStates;
         statesWithProbabilityGreater0E |= lastIterationStates;
-        ++iterations;
     }
 
     return statesWithProbabilityGreater0E;
@@ -1151,7 +1146,6 @@ storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::Nondeterminis
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbabilityGreater0A = psiStates;
 
-    uint_fast64_t iterations = 0;
     while (lastIterationStates != statesWithProbabilityGreater0A) {
         lastIterationStates = statesWithProbabilityGreater0A;
         statesWithProbabilityGreater0A =
@@ -1160,7 +1154,6 @@ storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::Nondeterminis
         statesWithProbabilityGreater0A = statesWithProbabilityGreater0A.universalAbstract(model.getNondeterminismVariables());
         statesWithProbabilityGreater0A &= phiStates;
         statesWithProbabilityGreater0A |= psiStates;
-        ++iterations;
     }
 
     return statesWithProbabilityGreater0A;
@@ -1180,7 +1173,6 @@ storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicMode
     storm::dd::Bdd<Type> lastIterationStates = manager.getBddZero();
     storm::dd::Bdd<Type> statesWithProbability1A = psiStates || statesWithProbabilityGreater0A;
 
-    uint_fast64_t iterations = 0;
     while (lastIterationStates != statesWithProbability1A) {
         lastIterationStates = statesWithProbability1A;
         statesWithProbability1A = statesWithProbability1A.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -1189,7 +1181,6 @@ storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicMode
         statesWithProbability1A = statesWithProbability1A.universalAbstract(model.getNondeterminismVariables());
         statesWithProbability1A &= statesWithProbabilityGreater0A;
         statesWithProbability1A |= psiStates;
-        ++iterations;
     }
 
     return statesWithProbability1A;
@@ -1203,7 +1194,6 @@ storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicMode
     storm::dd::DdManager<Type> const& manager = model.getManager();
     storm::dd::Bdd<Type> statesWithProbability1E = statesWithProbabilityGreater0E;
 
-    uint_fast64_t iterations = 0;
     bool outerLoopDone = false;
     while (!outerLoopDone) {
         storm::dd::Bdd<Type> innerStates = manager.getBddZero();
@@ -1232,7 +1222,6 @@ storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicMode
         } else {
             statesWithProbability1E = innerStates;
         }
-        ++iterations;
     }
 
     return statesWithProbability1E;
@@ -1248,7 +1237,6 @@ storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::Nondetermin
 
     storm::dd::Bdd<Type> innerStates = manager.getBddZero();
 
-    uint64_t iterations = 0;
     bool innerLoopDone = false;
     while (!innerLoopDone) {
         storm::dd::Bdd<Type> temporary = statesWithProbability1E.swapVariables(model.getRowColumnMetaVariablePairs());
@@ -1270,7 +1258,6 @@ storm::dd::Bdd<Type> computeSchedulerProb1E(storm::models::symbolic::Nondetermin
         } else {
             innerStates = temporary;
         }
-        ++iterations;
     }
 
     return scheduler;
@@ -1313,7 +1300,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair) {
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair) {
     ExplicitGameProb01Result result(psiStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount()));
 
     // Initialize the stack used for the DFS with the states
@@ -1396,7 +1383,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
         for (auto player1State : result.player1States) {
             if (player1Direction == storm::OptimizationDirection::Minimize) {
                 // At least one player 2 successor is a state with probability 0, find it.
-                bool foundProb0Successor = false;
+                [[maybe_unused]] bool foundProb0Successor = false;
                 uint64_t player2State;
                 for (player2State = player1Groups[player1State]; player2State < player1Groups[player1State + 1]; ++player2State) {
                     if (result.player2States.get(player2State)) {
@@ -1418,7 +1405,7 @@ ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<ValueType> co
         for (auto player2State : result.player2States) {
             if (player2Direction == storm::OptimizationDirection::Minimize) {
                 // At least one distribution only has successors with probability 0, find it.
-                bool foundProb0SuccessorDistribution = false;
+                [[maybe_unused]] bool foundProb0SuccessorDistribution = false;
 
                 uint64_t row;
                 for (row = transitionMatrix.getRowGroupIndices()[player2State]; row < transitionMatrix.getRowGroupIndices()[player2State + 1]; ++row) {
@@ -1457,7 +1444,6 @@ SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticT
     storm::dd::Bdd<Type> player2States = model.getManager().getBddZero();
 
     bool done = false;
-    uint_fast64_t iterations = 0;
     while (!done) {
         storm::dd::Bdd<Type> tmp =
             (transitionMatrix && player1States.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables()) && phiStates;
@@ -1483,7 +1469,6 @@ SymbolicGameProb01Result<Type> performProb0(storm::models::symbolic::StochasticT
         }
 
         player1States = tmp;
-        ++iterations;
     }
 
     // Since we have determined the complements of the desired sets, we need to complement it now.
@@ -1523,7 +1508,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                                       storm::storage::SparseMatrix<ValueType> const& player1BackwardTransitions,
                                       std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                       storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                      storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                      storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                       boost::optional<storm::storage::BitVector> const& player1Candidates) {
     // During the execution, the two state sets in the result hold the potential player 1/2 states.
     ExplicitGameProb01Result result;
@@ -1539,7 +1524,6 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
     // Initialize the stack used for the DFS with the states
     std::vector<uint_fast64_t> stack;
     bool maybeStatesDone = false;
-    uint_fast64_t maybeStateIterations = 0;
     while (!maybeStatesDone || produceStrategiesInIteration) {
         storm::storage::BitVector player1Solution = psiStates;
         storm::storage::BitVector player2Solution(result.player2States.size());
@@ -1637,7 +1621,6 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
             result.player1States = player1Solution;
             result.player2States = player2Solution;
         }
-        ++maybeStateIterations;
     }
 
     return result;
@@ -1666,10 +1649,8 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
     boost::optional<storm::dd::Bdd<Type>> consideredPlayer2States;
 
     bool maybeStatesDone = false;
-    uint_fast64_t maybeStateIterations = 0;
     while (!maybeStatesDone || produceStrategiesInIteration) {
         bool solutionStatesDone = false;
-        uint_fast64_t solutionStateIterations = 0;
 
         // If we are to produce strategies in this iteration, we prepare some storage.
         if (produceStrategiesInIteration) {
@@ -1746,7 +1727,6 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
             } else {
                 player1Solution = valid;
             }
-            ++solutionStateIterations;
         }
 
         // If the states with probability 1 and the potential probability 1 states coincide, we have found
@@ -1764,7 +1744,6 @@ SymbolicGameProb01Result<Type> performProb1(storm::models::symbolic::StochasticT
             // state set.
             maybePlayer1States = player1Solution;
         }
-        ++maybeStateIterations;
     }
 
     // From now on, the solution is stored in maybeStates (as it coincides with the previous solution).
@@ -2029,14 +2008,13 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<doub
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
@@ -2158,20 +2136,148 @@ template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<stor
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction,
-                                               storm::abstraction::ExplicitGameStrategyPair* strategyPair);
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
 
 template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<storm::RationalNumber> const& player1BackwardTransitions,
                                                std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
                                                storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
-                                               storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
 // End of instantiations for storm::RationalNumber.
+// Instantiations for storm::interval
+
+template storm::storage::BitVector getReachableOneStep(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                       storm::storage::BitVector const& initialStates);
+
+template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                      storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
+                                                      storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps,
+                                                      boost::optional<storm::storage::BitVector> const& choiceFilter);
+
+template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix);
+
+template bool hasCycle(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix, boost::optional<storm::storage::BitVector> const& subsystem);
+
+template bool checkIfECWithChoiceExists(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                        storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::BitVector const& subsystem,
+                                        storm::storage::BitVector const& choices);
+
+template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                 storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
+
+template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                       storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                       bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+
+template storm::storage::BitVector performProb1(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                storm::storage::BitVector const& statesWithProbabilityGreater0);
+
+template storm::storage::BitVector performProb1(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::models::sparse::DeterministicModel<storm::Interval> const& model,
+                                                                                       storm::storage::BitVector const& phiStates,
+                                                                                       storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                                                       storm::storage::BitVector const& phiStates,
+                                                                                       storm::storage::BitVector const& psiStates);
+
+template void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                            storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                            storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                            storm::storage::Scheduler<double>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter);
+
+template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                     storm::storage::Scheduler<double>& scheduler);
+
+template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::Scheduler<double>& scheduler);
+
+template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                     storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::BitVector const& phiStates,
+                                     storm::storage::BitVector const& psiStates, storm::storage::Scheduler<double>& scheduler,
+                                     boost::optional<storm::storage::BitVector> const& rowFilter = boost::none);
+
+template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                        storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                        bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+
+template storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+                                                 storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                 boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
+
+template storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<storm::Interval> const& model,
+                                                 storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(
+    storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+    storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(
+    storm::models::sparse::NondeterministicModel<storm::Interval> const& model, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates);
+
+template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                        std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+                                                        storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                        storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                        bool useStepBound = false, uint_fast64_t maximalSteps = 0,
+                                                        boost::optional<storm::storage::BitVector> const& choiceConstraint = boost::none);
+
+template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<storm::Interval> const& model,
+                                                 storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+                                                 storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template storm::storage::BitVector performProb1A(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+                                                 storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
+                                                 storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(
+    storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
+    storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates);
+
+template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(
+    storm::models::sparse::NondeterministicModel<storm::Interval> const& model, storm::storage::BitVector const& phiStates,
+    storm::storage::BitVector const& psiStates);
+
+template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                               std::vector<uint64_t> const& player1RowGrouping,
+                                               storm::storage::SparseMatrix<storm::Interval> const& player1BackwardTransitions,
+                                               std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
+                                               storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair);
+
+template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
+                                               std::vector<uint64_t> const& player1RowGrouping,
+                                               storm::storage::SparseMatrix<storm::Interval> const& player1BackwardTransitions,
+                                               std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates,
+                                               storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction,
+                                               storm::OptimizationDirection const& player2Direction, storm::storage::ExplicitGameStrategyPair* strategyPair,
+                                               boost::optional<storm::storage::BitVector> const& player1Candidates);
+
+template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::Interval> const& matrix, std::vector<uint64_t> const& firstStates);
+// End storm::interval
 
 template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
                                                       storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,

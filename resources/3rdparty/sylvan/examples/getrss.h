@@ -18,6 +18,11 @@ size_t getPeakRSS();
  */
 size_t getCurrentRSS();
 
+/**
+ * Returns the maximum memory that can be allocated in bytes.
+ */
+size_t getMaxMemory();
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

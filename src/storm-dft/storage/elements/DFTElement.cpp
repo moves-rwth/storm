@@ -1,4 +1,4 @@
-#include "DFTElement.h"
+#include "storm-dft/storage/elements/DFTElement.h"
 #include <set>
 #include "storm-dft/storage/elements/DFTElements.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -40,7 +40,7 @@ bool DFTElement<ValueType>::checkDontCareAnymore(storm::dft::storage::DFTState<V
         }
     }
 
-    if (!mRestrictions.empty() && state.hasOperationalPostSeqElements(mId)) {
+    if (!mRestrictions.empty() && state.isEventRelevantInRestriction(mId)) {
         return false;
     }
 

@@ -1,0 +1,10 @@
+toplevel "A";
+"A" or "B" "C";
+"B" 2of3 "D" "E" "F";
+"C" 1of3 "G" "H" "I";
+"D" lambda=1 dorm=0.0;
+"E" lambda=2 dorm=0.0;
+"F" lambda=3 dorm=0.0;
+"G" lambda=1 dorm=0.0;
+"H" lambda=2 dorm=0.0;
+"I" lambda=3 dorm=0.0;

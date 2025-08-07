@@ -21,6 +21,10 @@ class Environment;
 namespace modelchecker {
 namespace multiobjective {
 
+/*!
+ * Implements the exploration of the Pareto front.
+ * @see http://doi.org/10.18154/RWTH-2023-09669 Chapter 8.5
+ */
 template<class SparseModelType, typename GeometryValueType>
 class DeterministicSchedsParetoExplorer {
    public:

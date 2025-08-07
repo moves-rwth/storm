@@ -1,5 +1,6 @@
 #include "storm-config.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/permutation.h"
 #include "storm/utility/vector.h"
 #include "test/storm_gtest.h"
 
@@ -30,7 +31,7 @@ TEST(VectorTest, min_if) {
     ASSERT_EQ(8.0, storm::utility::vector::min_if(a, f2));
 }
 
-TEST(VectorTest, permute) {
+TEST(VectorTest, inverse_permute) {
     std::vector<double> a = {1.0, 2.0, 3.0, 4.0};
     std::vector<uint64_t> inversePermutation = {0, 3, 1, 2};
     std::vector<double> aperm = storm::utility::vector::applyInversePermutation(inversePermutation, a);
@@ -38,4 +39,13 @@ TEST(VectorTest, permute) {
     EXPECT_EQ(aperm[1], a[3]);
     EXPECT_EQ(aperm[2], a[1]);
     EXPECT_EQ(aperm[3], a[2]);
+}
+
+TEST(VectorTest, grouped_inverse_permute) {
+    std::vector<double> a = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<uint64_t> groupIndices = {0, 3, 5, 5};  // last group empty
+    std::vector<uint64_t> inversePermutation = {1, 2, 0};
+    std::vector<double> aperm = storm::utility::vector::applyInversePermutationToGroupedVector(inversePermutation, a, groupIndices);
+    std::vector<double> expected = {4.0, 5.0, 1.0, 2.0, 3.0};
+    EXPECT_EQ(aperm, expected);
 }

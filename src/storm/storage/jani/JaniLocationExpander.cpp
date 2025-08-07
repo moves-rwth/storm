@@ -4,6 +4,8 @@
 
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
+
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -39,6 +41,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
     bool isGlobalVariable = !automaton.hasVariable(variableName);
     VariableSet &containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
 
+    const bool substituteTranscendentalNumbers = false;
     auto &var = containingSet.getVariable(variableName);
     bool isBoundedInteger = var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType();
     bool isBool = var.getType().isBasicType() && var.getType().asBasicType().isBooleanType();
@@ -114,7 +117,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
                 substitutionMap[eliminatedExpressionVariable] = newIndices.variableDomain[i];
 
                 OrderedAssignments newAssignments = loc.getAssignments().clone();
-                newAssignments.substitute(substitutionMap);
+                newAssignments.substitute(substitutionMap, substituteTranscendentalNumbers);
 
                 Location newLoc(newLocationName, newAssignments);
 
@@ -138,7 +141,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
             substitutionMap[eliminatedExpressionVariable] = newIndices.variableDomain[currentValueIndex];
 
             uint64_t newSourceIndex = newValueAndLocation.second;
-            storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(), substitutionMap).simplify();
+            storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(), substitutionMap, substituteTranscendentalNumbers).simplify();
             if (!newGuard.containsVariables() && !newGuard.evaluateAsBool()) {
                 continue;
             }
@@ -151,7 +154,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
             std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
             for (auto const &destination : edge.getDestinations()) {
                 OrderedAssignments oa(destination.getOrderedAssignments().clone());
-                oa.substitute(substitutionMap);
+                oa.substitute(substitutionMap, substituteTranscendentalNumbers);
 
                 int64_t newValueIndex = currentValueIndex;
                 for (auto const &assignment : oa) {
@@ -186,16 +189,18 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
 
                 TemplateEdgeDestination ted(oa);
                 templateEdge->addDestination(ted);
-                destinationLocationsAndProbabilities.emplace_back(newIndices.locationVariableValueMap[destination.getLocationIndex()][newValueIndex],
-                                                                  substituteJaniExpression(destination.getProbability(), substitutionMap));
+                destinationLocationsAndProbabilities.emplace_back(
+                    newIndices.locationVariableValueMap[destination.getLocationIndex()][newValueIndex],
+                    substituteJaniExpression(destination.getProbability(), substitutionMap, substituteTranscendentalNumbers));
             }
 
             if (!isEdgeInvalid) {
                 templateEdge->finalize(newModel);
-                newAutomaton.addEdge(storm::jani::Edge(
-                    newSourceIndex, edge.getActionIndex(),
-                    edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none,
-                    templateEdge, destinationLocationsAndProbabilities));
+                newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(),
+                                                       edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(
+                                                                            edge.getRate(), substitutionMap, substituteTranscendentalNumbers))
+                                                                      : boost::none,
+                                                       templateEdge, destinationLocationsAndProbabilities));
                 newAutomaton.registerTemplateEdge(templateEdge);
             }
         }

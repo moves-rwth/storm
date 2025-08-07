@@ -37,25 +37,22 @@ uint_fast64_t FailableElements::const_iterator::operator*() const {
 }
 
 bool FailableElements::const_iterator::operator!=(const_iterator const& other) const {
-    if (dependency != other.dependency || conflicting != other.conflicting) {
+    if (dependency != other.dependency) {
         return true;
     }
     if (dependency) {
-        return itDep != other.itDep;
+        if (conflicting != other.conflicting) {
+            return true;
+        } else {
+            return itDep != other.itDep;
+        }
     } else {
         return itBE != other.itBE;
     }
 }
 
 bool FailableElements::const_iterator::operator==(const_iterator const& other) const {
-    if (dependency != other.dependency || conflicting != other.conflicting) {
-        return false;
-    }
-    if (dependency) {
-        return itDep == other.itDep;
-    } else {
-        return itBE == other.itBE;
-    }
+    return !(*this != other);
 }
 
 bool FailableElements::const_iterator::isFailureDueToDependency() const {
@@ -67,19 +64,19 @@ bool FailableElements::const_iterator::isConflictingDependency() const {
 }
 
 template<typename ValueType>
-std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
-          std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
-FailableElements::const_iterator::getFailBE(storm::dft::storage::DFT<ValueType> const& dft) const {
+std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> FailableElements::const_iterator::asBE(
+    storm::dft::storage::DFT<ValueType> const& dft) const {
     size_t nextFailId = **this;
-    if (isFailureDueToDependency()) {
-        // Consider failure due to dependency
-        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = dft.getDependency(nextFailId);
-        STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "More than one dependent event");
-        return std::make_pair(dft.getBasicElement(dependency->dependentEvents()[0]->id()), dependency);
-    } else {
-        // Consider "normal" failure
-        return std::make_pair(dft.getBasicElement(nextFailId), nullptr);
-    }
+    STORM_LOG_ASSERT(!isFailureDueToDependency(), "The current iterator is not a BE failure but a dependency failure.");
+    return dft.getBasicElement(nextFailId);
+}
+
+template<typename ValueType>
+std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> FailableElements::const_iterator::asDependency(
+    storm::dft::storage::DFT<ValueType> const& dft) const {
+    size_t nextFailId = **this;
+    STORM_LOG_ASSERT(isFailureDueToDependency(), "The current iterator is not a dependency failure but a BE failure.");
+    return dft.getDependency(nextFailId);
 }
 
 void FailableElements::addBE(size_t id) {
@@ -145,13 +142,13 @@ bool FailableElements::hasBEs() const {
     return !currentlyFailableBE.empty();
 }
 
-std::string FailableElements::getCurrentlyFailableString() const {
+std::string FailableElements::getCurrentlyFailableString(bool forceBE) const {
     std::stringstream stream;
     stream << "{";
-    if (hasDependencies()) {
+    if (hasDependencies() && !forceBE) {
         stream << "Dependencies: ";
     }
-    for (auto it = begin(); it != end(); ++it) {
+    for (auto it = begin(forceBE); it != end(forceBE); ++it) {
         stream << *it << ", ";
     }
     stream << "}";
@@ -159,13 +156,15 @@ std::string FailableElements::getCurrentlyFailableString() const {
 }
 
 // Explicit instantiations.
-template std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const>,
-                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<double> const>>
-FailableElements::const_iterator::getFailBE(storm::dft::storage::DFT<double> const& dft) const;
+template std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const> FailableElements::const_iterator::asBE(
+    storm::dft::storage::DFT<double> const& dft) const;
+template std::shared_ptr<storm::dft::storage::elements::DFTDependency<double> const> FailableElements::const_iterator::asDependency(
+    storm::dft::storage::DFT<double> const& dft) const;
 
-template std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<storm::RationalFunction> const>,
-                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<storm::RationalFunction> const>>
-FailableElements::const_iterator::getFailBE(storm::dft::storage::DFT<storm::RationalFunction> const& dft) const;
+template std::shared_ptr<storm::dft::storage::elements::DFTBE<storm::RationalFunction> const> FailableElements::const_iterator::asBE(
+    storm::dft::storage::DFT<storm::RationalFunction> const& dft) const;
+template std::shared_ptr<storm::dft::storage::elements::DFTDependency<storm::RationalFunction> const> FailableElements::const_iterator::asDependency(
+    storm::dft::storage::DFT<storm::RationalFunction> const& dft) const;
 
 }  // namespace storage
 }  // namespace storm::dft

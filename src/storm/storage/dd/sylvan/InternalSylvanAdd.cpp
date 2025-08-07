@@ -1,5 +1,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/dd/sylvan/SylvanAddIterator.h"
@@ -424,7 +426,7 @@ InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, V
 
 #ifdef STORM_HAVE_CARL
 template<>
-InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t precision) const {
+InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalFunction>::sharpenKwekMehlhorn(size_t /*precision*/) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 #endif
@@ -1353,7 +1355,6 @@ MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& curre
         // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
         MTBDD currentVar = mtbdd_makenode(ddVariableIndices[currentLevel], mtbdd_false, mtbdd_true);
         mtbdd_refs_push(thenSuccessor);
-        LACE_ME;
         MTBDD result = mtbdd_ite(currentVar, thenSuccessor, elseSuccessor);
 
         // Dispose of the intermediate results

@@ -102,6 +102,13 @@ class ConditionalDtmcPrctlModelCheckerTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
     ConditionalDtmcPrctlModelCheckerTest() : _environment(TestType::createEnvironment()) {}
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
     storm::Environment const& env() const {
         return _environment;
     }
@@ -116,8 +123,11 @@ class ConditionalDtmcPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<GmmxxDoubleGmresEnvironment, EigenDoubleDGmresEnvironment, EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment,
-                         NativeWalkerChaeEnvironment>
+typedef ::testing::Types<
+#ifdef STORM_HAVE_GMM
+    GmmxxDoubleGmresEnvironment, EigenDoubleDGmresEnvironment,
+#endif
+    EigenRationalLUEnvironment, NativeSorEnvironment, NativePowerEnvironment, NativeWalkerChaeEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes, );

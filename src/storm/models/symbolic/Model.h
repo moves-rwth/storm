@@ -1,7 +1,6 @@
 #ifndef STORM_MODELS_SYMBOLIC_MODEL_H_
 #define STORM_MODELS_SYMBOLIC_MODEL_H_
 
-#include <boost/optional.hpp>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -16,7 +15,7 @@
 #include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace dd {

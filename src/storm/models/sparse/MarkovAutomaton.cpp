@@ -265,6 +265,7 @@ template class MarkovAutomaton<storm::RationalNumber>;
 template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 
 template class MarkovAutomaton<storm::RationalFunction>;
+template class MarkovAutomaton<storm::Interval>;
 #endif
 }  // namespace sparse
 }  // namespace models
