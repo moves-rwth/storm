@@ -15,7 +15,7 @@ namespace multiobjective {
 
 template<typename SparseModelType>
 std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment const& env, SparseModelType const& model,
-                                                                storm::logic::MultiObjectiveFormula const& formula);
+                                                                storm::logic::MultiObjectiveFormula const& formula, bool produceScheduler = false);
 
 }
 }  // namespace modelchecker

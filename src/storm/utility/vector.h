@@ -1159,20 +1159,6 @@ std::string toString(std::vector<ValueType> const& vector) {
     return stream.str();
 }
 
-template<typename PT1, typename PT2>
-std::string toString(std::vector<std::pair<PT1, PT2>> const& vector) {
-    std::stringstream stream;
-    stream << "vector (" << vector.size() << ") [ ";
-    if (!vector.empty()) {
-        for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
-            stream << "{" << vector[i].first << "," << vector[i].second << "}, ";
-        }
-        stream << "{" << vector.back().first << "," << vector.back().second << "}";
-    }
-    stream << " ]";
-    return stream.str();
-}
-
 }  // namespace vector
 }  // namespace utility
 }  // namespace storm

@@ -29,13 +29,13 @@ class SparsePcaaParetoQuery : public SparsePcaaQuery<SparseModelType, GeometryVa
     /*
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
+    virtual std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler) override;
 
    private:
     /*
      * Performs refinement steps until the approximation is sufficiently precise
      */
-    void exploreSetOfAchievablePoints(Environment const& env);
+    void exploreSetOfAchievablePoints(Environment const& env, bool produceScheduler);
 };
 
 }  // namespace multiobjective

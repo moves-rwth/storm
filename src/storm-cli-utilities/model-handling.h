@@ -17,6 +17,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
 
+#include <filesystem>
 #include <type_traits>
 
 #include "storm/storage/SymbolicModelDescription.h"
@@ -30,6 +31,8 @@
 
 #include "storm/exceptions/OptionParserException.h"
 
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -1250,6 +1253,18 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
                                                 (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
                 } else {
                     STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                }
+            } else if (result->isExplicitParetoCurveCheckResult()) {
+                if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                    if (auto const& paretoRes = result->template asExplicitParetoCurveCheckResult<ValueType>(); paretoRes.hasScheduler()) {
+                        storm::api::exportParetoScheduler(
+                            sparseModel, paretoRes.getPoints(), paretoRes.getSchedulers(),
+                            (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
+                    } else {
+                        STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                    }
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this value type.");
                 }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");

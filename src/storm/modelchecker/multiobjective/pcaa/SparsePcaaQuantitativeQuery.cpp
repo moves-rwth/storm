@@ -65,7 +65,9 @@ void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::initialize
 }
 
 template<class SparseModelType, typename GeometryValueType>
-std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
+std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check(Environment const& env, bool produceScheduler) {
+    STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException, "Scheduler computation is not implement for achievability queries.");
+
     // First find one solution that achieves the given thresholds ...
     if (this->checkAchievability(env)) {
         // ... then improve it
@@ -102,7 +104,7 @@ bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkAchie
         while (!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
             WeightVector separatingVector = this->findSeparatingVector(thresholds);
             this->updateWeightedPrecisionInAchievabilityPhase(separatingVector);
-            this->performRefinementStep(env, std::move(separatingVector));
+            this->performRefinementStep(env, std::move(separatingVector), false);  // scheduler computation currently not supported
             // Pick the threshold for the optimizing objective low enough so valid solutions are not excluded
             thresholds[indexOfOptimizingObjective] =
                 std::min(thresholds[indexOfOptimizingObjective], this->refinementSteps.back().lowerBoundPoint[indexOfOptimizingObjective]);
@@ -160,7 +162,7 @@ GeometryValueType SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType
             this->weightVectorChecker->setWeightedPrecision(
                 storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision()));
             WeightVector separatingVector = directionOfOptimizingObjective;
-            this->performRefinementStep(env, std::move(separatingVector));
+            this->performRefinementStep(env, std::move(separatingVector), false);  // scheduler computation currently not supported
         }
         std::pair<Point, bool> optimizationRes = this->underApproximation->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
         STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
@@ -182,7 +184,7 @@ GeometryValueType SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType
         }
         WeightVector separatingVector = this->findSeparatingVector(thresholds);
         this->updateWeightedPrecisionInImprovingPhase(env, separatingVector);
-        this->performRefinementStep(env, std::move(separatingVector));
+        this->performRefinementStep(env, std::move(separatingVector), false);  // scheduler computation currently not supported
     }
     STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
     return result;

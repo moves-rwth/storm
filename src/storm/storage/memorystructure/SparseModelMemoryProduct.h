@@ -9,6 +9,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace storage {
@@ -51,6 +52,12 @@ class SparseModelMemoryProduct {
 
     storm::models::sparse::Model<ValueType, RewardModelType> const& getOriginalModel() const;
     storm::storage::MemoryStructure const& getMemory() const;
+
+    /*!
+     * Extracts the reverse data that can be used to apply results for the product model back to the original input model.
+     * @note This method should only be called after the product has been built.
+     */
+    SparseModelMemoryProductReverseData getReverseData() const;
 
    private:
     // Initializes auxiliary data for building the product
