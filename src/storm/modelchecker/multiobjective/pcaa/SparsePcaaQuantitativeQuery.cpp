@@ -65,7 +65,9 @@ void SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::initialize
 }
 
 template<class SparseModelType, typename GeometryValueType>
-std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
+std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::check(Environment const& env, bool produceScheduler) {
+    STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException, "Scheduler computation is not implement for achievability queries.");
+    
     // First find one solution that achieves the given thresholds ...
     if (this->checkAchievability(env)) {
         // ... then improve it

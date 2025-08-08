@@ -171,7 +171,8 @@ template<typename ModelType>
 std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiObjectiveFormula(
     Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
     auto sparseModel = storm::transformer::SymbolicMdpToSparseMdpTransformer<DdType, ValueType>::translate(this->getModel());
-    std::unique_ptr<CheckResult> explicitResult = multiobjective::performMultiObjectiveModelChecking(env, *sparseModel, checkTask.getFormula());
+    std::unique_ptr<CheckResult> explicitResult =
+        multiobjective::performMultiObjectiveModelChecking(env, *sparseModel, checkTask.getFormula(), checkTask.isProduceSchedulersSet());
 
     // Convert the explicit result
     if (explicitResult->isExplicitQualitativeCheckResult()) {

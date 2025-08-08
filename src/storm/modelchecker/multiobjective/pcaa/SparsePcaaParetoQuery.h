@@ -2,6 +2,7 @@
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAPARETOQUERY_H_
 
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {
@@ -29,7 +30,7 @@ class SparsePcaaParetoQuery : public SparsePcaaQuery<SparseModelType, GeometryVa
     /*
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
+    virtual std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler) override;
 
     /*
      * Compute the scheduler for current underaproximated point and store it
@@ -40,11 +41,11 @@ class SparsePcaaParetoQuery : public SparsePcaaQuery<SparseModelType, GeometryVa
     /*
      * Performs refinement steps until the approximation is sufficiently precise
      */
-    void exploreSetOfAchievablePoints(Environment const& env);
+    void exploreSetOfAchievablePoints(Environment const& env, bool produceScheduler);
     /*
-     * Schedulers corresponding to the pareto optimal points
+     * Schedulers corresponding to the pareto optimal points found so far
      */
-    std::map<std::vector<typename SparseModelType::ValueType>, std::shared_ptr<storm::storage::Scheduler<typename SparseModelType::ValueType>>> schedulers;
+    std::map<std::vector<typename SparseModelType::ValueType>, storm::storage::Scheduler<typename SparseModelType::ValueType>> schedulers;
 };
 
 }  // namespace multiobjective

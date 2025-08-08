@@ -28,7 +28,7 @@ namespace multiobjective {
 
 template<typename SparseModelType>
 std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment const& env, SparseModelType const& model,
-                                                                storm::logic::MultiObjectiveFormula const& formula) {
+                                                                storm::logic::MultiObjectiveFormula const& formula, bool produceScheduler) {
     storm::utility::Stopwatch swTotal(true);
     storm::utility::Stopwatch swPreprocessing(true);
     STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1,
@@ -41,7 +41,7 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     }
 
     // Preprocess the model
-    auto preprocessorResult = preprocessing::SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(env, model, formula);
+    auto preprocessorResult = preprocessing::SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(env, model, formula, produceScheduler);
     swPreprocessing.stop();
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
         STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds.\n"
@@ -58,6 +58,8 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     switch (method) {
         case MultiObjectiveMethod::Pcaa: {
             if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
+                STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException,
+                                "Scheduler computation is not implement for queries with restricted scheduler classes.");
                 if (preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability ||
                     preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative) {
                     auto achChecker = DeterministicSchedsAchievabilityChecker<SparseModelType, storm::RationalNumber>(preprocessorResult);
@@ -92,10 +94,13 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                         break;
                 }
 
-                result = query->check(env);
-                if (preprocessorResult.memoryIncorporationReverseData && result->isExplicitParetoCurveCheckResult()) {
+                result = query->check(env, produceScheduler);
+                if (produceScheduler) {
+                    STORM_LOG_THROW(result->isExplicitParetoCurveCheckResult(), storm::exceptions::UnexpectedException,
+                                    "Scheduler computation is not implement for the produced result type.");
                     auto& paretoRes = result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>();
-                    if (paretoRes.hasScheduler()) {
+                    STORM_LOG_ASSERT(paretoRes.hasScheduler(), "Scheduler requested but none was produced.");
+                    if (preprocessorResult.memoryIncorporationReverseData) {
                         // we have information to post-process schedulers
                         transformObjectiveSchedulersToOriginal(preprocessorResult.memoryIncorporationReverseData.value(), paretoRes.getSchedulers());
                     }
@@ -110,6 +115,8 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
         case MultiObjectiveMethod::ConstraintBased: {
             STORM_LOG_THROW(!env.modelchecker().multi().isSchedulerRestrictionSet(), storm::exceptions::InvalidEnvironmentException,
                             "The selected multi-objective model checking method does not support scheduler restrictions.");
+            STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException,
+                            "Scheduler computation is not implement for constraint-based multi objective solving.");
             std::unique_ptr<SparseCbQuery<SparseModelType>> query;
             switch (preprocessorResult.queryType) {
                 case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
@@ -144,14 +151,19 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     return result;
 }
 
-template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<double>>(
-    Environment const& env, storm::models::sparse::Mdp<double> const& model, storm::logic::MultiObjectiveFormula const& formula);
+template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<double>>(Environment const& env,
+                                                                                                             storm::models::sparse::Mdp<double> const& model,
+                                                                                                             storm::logic::MultiObjectiveFormula const& formula,
+                                                                                                             bool produceScheduler);
 template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<double>>(
-    Environment const& env, storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula);
+    Environment const& env, storm::models::sparse::MarkovAutomaton<double> const& model, storm::logic::MultiObjectiveFormula const& formula,
+    bool produceScheduler);
 template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::Mdp<storm::RationalNumber>>(
-    Environment const& env, storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula);
+    Environment const& env, storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula,
+    bool produceScheduler);
 template std::unique_ptr<CheckResult> performMultiObjectiveModelChecking<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>(
-    Environment const& env, storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula);
+    Environment const& env, storm::models::sparse::MarkovAutomaton<storm::RationalNumber> const& model, storm::logic::MultiObjectiveFormula const& formula,
+    bool produceScheduler);
 
 }  // namespace multiobjective
 }  // namespace modelchecker

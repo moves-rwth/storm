@@ -32,8 +32,11 @@ class SparseMultiObjectivePreprocessor {
      * Preprocesses the given model w.r.t. the given formulas
      * @param originalModel The considered model
      * @param originalFormula the considered formula. The subformulas should only contain one OperatorFormula at top level.
+     * @param produceScheduler if true, extra data is generated to ensure that schedulers from the preprocessed model can be translated back to the original one
+     *
      */
-    static ReturnType preprocess(Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula);
+    static ReturnType preprocess(Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula,
+                                 bool produceScheduler);
 
    private:
     struct PreprocessorData {

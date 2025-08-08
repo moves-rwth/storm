@@ -6,10 +6,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
@@ -27,7 +23,7 @@ SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::SparsePcaaParetoQuery
 }
 
 template<class SparseModelType, typename GeometryValueType>
-std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
+std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::check(Environment const& env, bool produceScheduler) {
     STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute,
                     storm::exceptions::IllegalArgumentException, "Unhandled multiobjective precision type.");
 
@@ -43,7 +39,7 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
     this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
 
     // refine the approximation
-    exploreSetOfAchievablePoints(env);
+    exploreSetOfAchievablePoints(env, produceScheduler);
 
     // obtain the data for the checkresult
     std::vector<std::vector<typename SparseModelType::ValueType>> paretoOptimalPoints;
@@ -53,12 +49,12 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
     for (auto const& vertex : vertices) {
         paretoOptimalPoints.push_back(
             storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
-        if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportSchedulerSet()) {
+        if (produceScheduler) {
             // TODO: Handle this in a more safe way. Associating the found schedulers with the resulting points is quite implicit right now.
             auto schedIt = this->schedulers.find(paretoOptimalPoints.back());
             STORM_LOG_THROW(schedIt != this->schedulers.end(), storm::exceptions::UnexpectedException,
                             "Scheduler for point " << storm::utility::vector::toString(paretoOptimalPoints.back()) << " not found.");
-            paretoOptimalSchedulers.push_back(std::move(*schedIt->second));
+            paretoOptimalSchedulers.push_back(std::move(schedIt->second));
         }
     }
     schedulers.clear();
@@ -72,17 +68,12 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
 
 template<class SparseModelType, typename GeometryValueType>
 void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
-    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportSchedulerSet()) {
-        std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
-        if (!this->schedulers.count(point)) {
-            this->schedulers[point] =
-                std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeScheduler());
-        }
-    }
+    std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
+    schedulers.emplace(std::move(point), this->weightVectorChecker->computeScheduler());
 }
 
 template<class SparseModelType, typename GeometryValueType>
-void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints(Environment const& env) {
+void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchievablePoints(Environment const& env, bool produceScheduler) {
     STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute,
                     storm::exceptions::IllegalArgumentException, "Unhandled multiobjective precision type.");
 
@@ -91,7 +82,9 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
         WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
         direction[objIndex] = storm::utility::one<GeometryValueType>();
         this->performRefinementStep(env, std::move(direction));
-        this->updateSchedulers();
+        if (produceScheduler) {
+            this->updateSchedulers();
+        }
         if (storm::utility::resources::isTerminate()) {
             break;
         }
@@ -119,7 +112,9 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
         STORM_LOG_INFO("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
         WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
         this->performRefinementStep(env, std::move(direction));
-        this->updateSchedulers();
+        if (produceScheduler) {
+            this->updateSchedulers();
+        }
     }
     STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
 }

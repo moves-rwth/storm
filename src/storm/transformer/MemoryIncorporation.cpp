@@ -58,9 +58,11 @@ storm::storage::MemoryStructure getUntilFormulaMemory(SparseModelType const& mod
 }
 
 template<class SparseModelType>
-std::pair<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryProductReverseData> MemoryIncorporation<SparseModelType>::incorporateGoalMemory(
-    SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-    storm::storage::MemoryStructure memory = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(model);
+storm::storage::MemoryStructure incorporateGoalMemoryHelper(SparseModelType const& model,
+                                                            std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    storm::storage::MemoryStructure memory =
+        storm::storage::MemoryStructureBuilder<typename SparseModelType::ValueType, typename SparseModelType::RewardModelType>::buildTrivialMemoryStructure(
+            model);
 
     for (auto const& subFormula : formulas) {
         STORM_LOG_THROW(subFormula->isOperatorFormula(), storm::exceptions::NotSupportedException, "The given Formula " << *subFormula << " is not supported.");
@@ -88,7 +90,23 @@ std::pair<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryPro
         }
     }
 
-    storm::storage::SparseModelMemoryProduct<ValueType> product = memory.product(model);
+    return memory;
+}
+
+template<class SparseModelType>
+std::shared_ptr<SparseModelType> MemoryIncorporation<SparseModelType>::incorporateGoalMemory(
+    SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    auto memory = incorporateGoalMemoryHelper(model, formulas);
+    auto product = memory.product(model);
+    return product.build()->template as<SparseModelType>();
+}
+
+template<class SparseModelType>
+std::pair<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryProductReverseData>
+MemoryIncorporation<SparseModelType>::incorporateGoalMemoryWithReverseData(SparseModelType const& model,
+                                                                           std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+    auto memory = incorporateGoalMemoryHelper(model, formulas);
+    auto product = memory.product(model);
     return std::make_pair(product.build()->template as<SparseModelType>(), product.getReverseData());
 }
 

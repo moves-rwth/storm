@@ -9,7 +9,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -46,7 +46,9 @@ void SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::initializ
 }
 
 template<class SparseModelType, typename GeometryValueType>
-std::unique_ptr<CheckResult> SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::check(Environment const& env) {
+std::unique_ptr<CheckResult> SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::check(Environment const& env, bool produceScheduler) {
+    STORM_LOG_THROW(!produceScheduler, storm::exceptions::NotImplementedException, "Scheduler computation is not implement for achievability queries.");
+
     bool result = this->checkAchievability(env);
 
     return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), result));

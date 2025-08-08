@@ -29,7 +29,7 @@ class SparsePcaaQuery {
     /*
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) = 0;
+    virtual std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler) = 0;
 
     /*
      * Exports the current approximations and the currently processed points into respective .csv files located at the given directory.
