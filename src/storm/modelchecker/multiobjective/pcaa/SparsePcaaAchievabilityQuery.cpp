@@ -60,7 +60,7 @@ bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkAchi
     while (!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
         WeightVector separatingVector = this->findSeparatingVector(thresholds);
         this->updateWeightedPrecision(separatingVector);
-        this->performRefinementStep(env, std::move(separatingVector));
+        this->performRefinementStep(env, std::move(separatingVector), false);  // scheduler computation currently not supported
         if (!checkIfThresholdsAreSatisfied(this->overApproximation)) {
             return false;
         }

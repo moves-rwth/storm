@@ -47,6 +47,7 @@ class SparsePcaaQuery {
         WeightVector weightVector;
         Point lowerBoundPoint;
         Point upperBoundPoint;
+        std::optional<storm::storage::Scheduler<typename SparseModelType::ValueType>> scheduler;
     };
 
     /*
@@ -66,7 +67,7 @@ class SparsePcaaQuery {
     /*
      * Refines the current result w.r.t. the given direction vector.
      */
-    void performRefinementStep(Environment const& env, WeightVector&& direction);
+    void performRefinementStep(Environment const& env, WeightVector&& direction, bool produceScheduler);
 
     /*
      * Updates the overapproximation after a refinement step has been performed

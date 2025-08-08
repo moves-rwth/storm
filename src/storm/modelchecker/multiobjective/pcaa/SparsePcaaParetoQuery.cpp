@@ -50,26 +50,23 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
         paretoOptimalPoints.push_back(
             storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
         if (produceScheduler) {
-            // TODO: Handle this in a more safe way. Associating the found schedulers with the resulting points is quite implicit right now.
-            auto schedIt = this->schedulers.find(paretoOptimalPoints.back());
-            STORM_LOG_THROW(schedIt != this->schedulers.end(), storm::exceptions::UnexpectedException,
+            // Find the refinement step in which we found the vertex
+            // TODO: Handle this in a safer way. Associating the found schedulers with the found points is quite implicit and error prone right now.
+            auto stepIt = std::find_if(this->refinementSteps.begin(), this->refinementSteps.end(),
+                                       [&vertex](auto const& step) { return step.lowerBoundPoint == vertex; });
+            STORM_LOG_THROW(stepIt != this->refinementSteps.end(), storm::exceptions::UnexpectedException,
                             "Scheduler for point " << storm::utility::vector::toString(paretoOptimalPoints.back()) << " not found.");
-            paretoOptimalSchedulers.push_back(std::move(schedIt->second));
+            STORM_LOG_ASSERT(stepIt->scheduler.has_value(),
+                             "Scheduler for point " << storm::utility::vector::toString(paretoOptimalPoints.back()) << " not generated.");
+            paretoOptimalSchedulers.push_back(std::move(stepIt->scheduler.value()));
         }
     }
-    schedulers.clear();
     return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
         this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints), std::move(paretoOptimalSchedulers),
         transformObjectivePolytopeToOriginal(this->objectives, this->underApproximation)
             ->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
         transformObjectivePolytopeToOriginal(this->objectives, this->overApproximation)
             ->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
-}
-
-template<class SparseModelType, typename GeometryValueType>
-void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
-    std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
-    schedulers.emplace(std::move(point), this->weightVectorChecker->computeScheduler());
 }
 
 template<class SparseModelType, typename GeometryValueType>
@@ -81,10 +78,7 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
     for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size() && !this->maxStepsPerformed(env); ++objIndex) {
         WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
         direction[objIndex] = storm::utility::one<GeometryValueType>();
-        this->performRefinementStep(env, std::move(direction));
-        if (produceScheduler) {
-            this->updateSchedulers();
-        }
+        this->performRefinementStep(env, std::move(direction), produceScheduler);
         if (storm::utility::resources::isTerminate()) {
             break;
         }
@@ -111,10 +105,7 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
         }
         STORM_LOG_INFO("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
         WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
-        this->performRefinementStep(env, std::move(direction));
-        if (produceScheduler) {
-            this->updateSchedulers();
-        }
+        this->performRefinementStep(env, std::move(direction), produceScheduler);
     }
     STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
 }
