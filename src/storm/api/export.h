@@ -81,16 +81,14 @@ void exportParetoScheduler(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     // handled well in filenames.
     std::filesystem::path baseFilename(baseFilenameStr);
     std::ofstream infoStream;
-    auto infoFilePath = baseFilename.stem();
-    infoFilePath += "_info.csv";
+    auto infoFilePath = baseFilename;
+    infoFilePath.replace_filename(infoFilePath.stem().string() + "_info.csv");
     storm::io::openFile(infoFilePath, infoStream);
     infoStream << "file;point\n";
     STORM_LOG_ASSERT(points.size() == schedulers.size(), "Number of points and schedulers must match.");
     for (uint64_t i = 0; i < points.size(); ++i) {
-        auto schedulerFileName = baseFilename.stem();
-        schedulerFileName += "_point" + std::to_string(i);
-        schedulerFileName += baseFilename.extension();
-        infoStream << schedulerFileName.filename() << ";[";
+        std::string schedulerFileName = baseFilename.stem().string() + "_point" + std::to_string(i) + baseFilename.extension().string();
+        infoStream << schedulerFileName << ";[";
         bool first = true;
         for (auto const& pointEntry : points[i]) {
             if (!first) {
@@ -100,7 +98,9 @@ void exportParetoScheduler(std::shared_ptr<storm::models::sparse::Model<ValueTyp
             infoStream << pointEntry;
         }
         infoStream << "]\n";
-        storm::api::exportScheduler(model, schedulers[i], schedulerFileName);
+        std::filesystem::path schedulerPath = baseFilename;
+        schedulerPath.replace_filename(schedulerFileName);
+        storm::api::exportScheduler(model, schedulers[i], schedulerPath);
     }
     storm::io::closeFile(infoStream);
 }
