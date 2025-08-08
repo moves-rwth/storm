@@ -26,7 +26,7 @@ struct SparseMultiObjectivePreprocessorResult {
     SparseModelType const& originalModel;
 
     // Mapping of incorporated memory to model+memory
-    boost::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
+    std::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
     // The preprocessed model and objectives
     std::shared_ptr<SparseModelType> preprocessedModel;

@@ -23,9 +23,8 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
  * Uses the information from reverse data to edit the objective schedulers in 'schedulers' to ones
  * apt for the target model.
  */
-template<typename ValueType, typename SparseModelType>
+template<typename ValueType>
 void transformObjectiveSchedulersToOriginal(storm::storage::SparseModelMemoryProductReverseData const& reverseData,
-                                            std::shared_ptr<SparseModelType> const& originalModel,
                                             std::vector<storm::storage::Scheduler<ValueType>>& schedulers);
 
 }  // namespace multiobjective

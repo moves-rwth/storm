@@ -52,7 +52,7 @@ class SparseMultiObjectivePreprocessor {
         boost::optional<std::string> deadlockLabel;
 
         // Mapping of incorporated memory to model+memory
-        boost::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
+        std::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
         PreprocessorData(std::shared_ptr<SparseModelType> model);
     };

@@ -12,7 +12,6 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
-#include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
