@@ -68,12 +68,6 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
      */
     virtual storm::storage::Scheduler<ValueType> computeScheduler() const override;
 
-    /*!
-     * Use the "oldToNewStateIndexMapping" from the merge result to build a scheduler fit for the original scheduler
-     * from the calculated scheduler from "computerScheduler"
-     */
-    virtual storm::storage::Scheduler<ValueType> computeOriginalScheduler() const override;
-
    protected:
     void initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
     virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
@@ -181,7 +175,8 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
     boost::optional<EcQuotient> ecQuotient;
 
     // Merge results
-    std::vector<uint_fast64_t> goalStateMergerIndexMapping;
+    std::vector<uint_fast64_t> goalStateMergerInputToReducedStateIndexMapping;
+    std::vector<uint_fast64_t> goalStateMergerReducedToInputChoiceMapping;
 
     struct LraMecDecomposition {
         storm::storage::MaximalEndComponentDecomposition<ValueType> mecs;

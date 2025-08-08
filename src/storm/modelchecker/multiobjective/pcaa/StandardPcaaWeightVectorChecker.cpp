@@ -66,7 +66,8 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     auto mergerResult =
         merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
-    goalStateMergerIndexMapping = mergerResult.oldToNewStateIndexMapping;
+    goalStateMergerInputToReducedStateIndexMapping = std::move(mergerResult.oldToNewStateIndexMapping);
+    goalStateMergerReducedToInputChoiceMapping = mergerResult.keptChoices.getNumberOfSetBitsBeforeIndices();
     // Initialize data specific for the considered model type
     initializeModelTypeSpecificData(*mergerResult.model);
 
@@ -227,24 +228,18 @@ StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
         STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isLongRunAverageRewardFormula(),
                         storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
     }
-
-    storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
-    uint_fast64_t state = 0;
-    for (auto const& choice : optimalChoices) {
-        result.setChoice(choice, state);
-        ++state;
-    }
-    return result;
-}
-
-template<class SparseModelType>
-storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
-StandardPcaaWeightVectorChecker<SparseModelType>::computeOriginalScheduler() const {
-    auto scheduler = this->computeScheduler();
-    storm::storage::Scheduler<ValueType> result(goalStateMergerIndexMapping.size());
-    auto numOfModelStates = result.getNumberOfModelStates();
-    for (int state = 0; state < numOfModelStates; state++) {
-        result.setChoice(scheduler.getChoice(goalStateMergerIndexMapping[state]), state);
+    auto const numStatesOfInputModel = goalStateMergerInputToReducedStateIndexMapping.size();
+    storm::storage::Scheduler<ValueType> result(numStatesOfInputModel);
+    for (uint64_t inputModelState = 0; inputModelState < numStatesOfInputModel; ++inputModelState) {
+        auto const reducedModelState = goalStateMergerInputToReducedStateIndexMapping[inputModelState];
+        if (reducedModelState >= optimalChoices.size()) {
+            // This state is a "reward0AState", i.e., it has no reward for any scheduler. We can set an arbitrary choice here.
+            result.setChoice(0, inputModelState);
+        } else {
+            auto const reducedModelChoice = optimalChoices[reducedModelState];
+            auto const inputModelChoice = goalStateMergerReducedToInputChoiceMapping[reducedModelChoice];
+            result.setChoice(inputModelChoice, inputModelState);
+        }
     }
     return result;
 }

@@ -76,7 +76,7 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers
         std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
         if (!this->schedulers.count(point)) {
             this->schedulers[point] =
-                std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
+                std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeScheduler());
         }
     }
 }
