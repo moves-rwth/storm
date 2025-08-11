@@ -731,8 +731,35 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t seconds) {
     int error = GRBsetdblparam(GRBgetenv(model), GRB_DBL_PAR_TIMELIMIT, seconds);
+    timeLimit.emplace(seconds);
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi time limit (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
+}
+
+template<typename ValueType, bool RawMode>
+uint64_t GurobiLpSolver<ValueType, RawMode>::getTimeLimit() {
+    STORM_LOG_THROW(timeLimit.has_value(), storm::exceptions::InvalidAccessException,
+                    "Unable to get Gurobi time limit because none was specified.");
+    return timeLimit.value();
+}
+
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::hasTimeLimit() {
+    return timeLimit.has_value();
+}
+
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::hasTimedOut() {
+    if (!this->currentModelHasBeenOptimized) {
+        return false;
+    }
+    int status = 0;
+
+    int error = GRBgetintattr(model, GRB_INT_ATTR_STATUS, &status);
+    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                    "Unable to retrieve optimization status of Gurobi model (" << GRBgeterrormsg(**environment) << ", error code " << error << ").");
+
+    return status == GRB_TIME_LIMIT;
 }
 
 #else
@@ -905,6 +932,24 @@ ValueType GurobiLpSolver<ValueType, RawMode>::getMILPGap(bool) const {
 
 template<typename ValueType, bool RawMode>
 void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t) {
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
+                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+}
+
+template<typename ValueType, bool RawMode>
+uint64_t GurobiLpSolver<ValueType, RawMode>::getTimeLimit() {
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
+                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+}
+
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::hasTimeLimit() {
+    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
+                                                          "requires this support. Please choose a version of storm with Gurobi support.";
+}
+
+template<typename ValueType, bool RawMode>
+bool GurobiLpSolver<ValueType, RawMode>::hasTimedOut() {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of storm with Gurobi support.";
 }
