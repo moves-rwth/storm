@@ -390,6 +390,16 @@ bool Model<Type, ValueType>::isSymbolicModel() const {
 }
 
 template<storm::dd::DdType Type, typename ValueType>
+std::optional<storm::dd::DdType> Model<Type, ValueType>::getDdType() const {
+    return Type;
+}
+
+template<storm::dd::DdType Type, typename ValueType>
+bool Model<Type, ValueType>::isExact() const {
+    return storm::NumberTraits<ValueType>::IsExact;
+}
+
+template<storm::dd::DdType Type, typename ValueType>
 bool Model<Type, ValueType>::supportsParameters() const {
     return std::is_same<ValueType, storm::RationalFunction>::value;
 }

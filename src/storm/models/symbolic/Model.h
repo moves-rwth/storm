@@ -314,6 +314,10 @@ class Model : public storm::models::Model<CValueType> {
 
     virtual bool isSymbolicModel() const override;
 
+    virtual std::optional<storm::dd::DdType> getDdType() const override;
+
+    virtual bool isExact() const override;
+
     virtual bool supportsParameters() const override;
 
     /*!

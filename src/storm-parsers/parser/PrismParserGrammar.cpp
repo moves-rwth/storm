@@ -318,9 +318,16 @@ PrismParserGrammar::PrismParserGrammar(std::string const& filename, Iterator fir
         (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
     assignmentDefinitionList.name("assignment list");
 
+    likelihoodDefinition =
+        (numericalExpression >
+         qi::lit(":"))[qi::_val = phoenix::construct<typename storm::prism::Update::ExpressionPair>(qi::_1, storm::expressions::Expression())] |
+        (qi::lit("[") > numericalExpression > qi::lit(",") > numericalExpression > qi::lit("]") >
+         qi::lit(":"))[qi::_val = phoenix::construct<typename storm::prism::Update::ExpressionPair>(qi::_1, qi::_2)];
+
     updateDefinition =
-        (assignmentDefinitionList[qi::_val = phoenix::bind(&PrismParserGrammar::createUpdate, phoenix::ref(*this), manager->rational(1), qi::_1, qi::_r1)] |
-         ((numericalExpression > qi::lit(":") >
+        (assignmentDefinitionList[qi::_val = phoenix::bind(&PrismParserGrammar::createUpdate, phoenix::ref(*this),
+                                                           typename storm::prism::Update::ExpressionPair(), qi::_1, qi::_r1)] |
+         ((likelihoodDefinition >
            assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParserGrammar::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)]));
     updateDefinition.name("update");
 
@@ -808,11 +815,14 @@ storm::prism::Assignment PrismParserGrammar::createAssignment(std::string const&
     return storm::prism::Assignment(manager->getVariable(variableName), assignedExpression, this->getFilename());
 }
 
-storm::prism::Update PrismParserGrammar::createUpdate(storm::expressions::Expression likelihoodExpression,
+storm::prism::Update PrismParserGrammar::createUpdate(typename storm::prism::Update::ExpressionPair likelihoodExpressions,
                                                       std::vector<storm::prism::Assignment> const& assignments,
                                                       GlobalProgramInformation& globalProgramInformation) const {
     ++globalProgramInformation.currentUpdateIndex;
-    return storm::prism::Update(globalProgramInformation.currentUpdateIndex - 1, likelihoodExpression, assignments, this->getFilename());
+    if (!likelihoodExpressions.first.isInitialized()) {
+        likelihoodExpressions.first = manager->rational(1);
+    }
+    return storm::prism::Update(globalProgramInformation.currentUpdateIndex - 1, likelihoodExpressions, assignments, this->getFilename());
 }
 
 storm::prism::Command PrismParserGrammar::createCommand(bool markovian, boost::optional<std::string> const& actionName,
@@ -1156,8 +1166,16 @@ storm::prism::Module PrismParserGrammar::createRenamedModule(std::string const& 
                                                  moduleRenaming.getLineNumber());
                     }
                 }
-                updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments,
-                                     this->getFilename(), moduleRenaming.getLineNumber());
+                if (update.isLikelihoodInterval()) {
+                    typename storm::prism::Update::ExpressionPair likelihoodInterval{
+                        update.getLikelihoodExpressionInterval().first.substitute(expressionRenaming),
+                        update.getLikelihoodExpressionInterval().second.substitute(expressionRenaming)};
+                    updates.emplace_back(globalProgramInformation.currentUpdateIndex, likelihoodInterval, assignments, this->getFilename(),
+                                         moduleRenaming.getLineNumber());
+                } else {
+                    updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming),
+                                         assignments, this->getFilename(), moduleRenaming.getLineNumber());
+                }
                 ++globalProgramInformation.currentUpdateIndex;
             }
 

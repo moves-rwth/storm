@@ -399,6 +399,11 @@ class Program : public LocatedInformation {
     storm::expressions::Expression getInitialStatesExpression() const;
 
     /*!
+     * Retrieves whether the program considers at least one update with an interval probability/rate
+     */
+    bool hasIntervalUpdates() const;
+
+    /*!
      * Retrieves whether the program specifies a system composition in terms of process algebra operations over
      * the modules.
      *
