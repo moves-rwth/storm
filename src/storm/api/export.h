@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "storm/adapters/JsonForward.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/DDEncodingExporter.h"
