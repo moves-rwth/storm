@@ -104,7 +104,7 @@ jobs:
           - {tag: "${{ github.event.inputs.tag }}"}
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: ${{ runner.temp }}/digests/${{ matrix.image.tag }}
           pattern: ${{ matrix.image.tag }}-digests-*
