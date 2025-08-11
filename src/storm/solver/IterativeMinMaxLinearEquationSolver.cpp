@@ -12,6 +12,7 @@
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
 #include "storm/solver/helper/RationalSearchHelper.h"
@@ -65,7 +66,8 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::getMe
             STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
         }
     } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration &&
-               method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration) {
+               method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration &&
+               method != MinMaxMethod::GuessingValueIteration) {
         if (env.solver().minMax().isMethodSetFromDefault()) {
             method = MinMaxMethod::OptimisticValueIteration;
             STORM_LOG_INFO(
@@ -78,7 +80,7 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::getMe
     }
     STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
                         method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration ||
-                        method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::ViToPi,
+                        method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi,
                     storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method '" << toString(method) << "'.");
     return method;
 }
@@ -93,6 +95,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSolve
             break;
         case MinMaxMethod::OptimisticValueIteration:
             result = solveEquationsOptimisticValueIteration(env, dir, x, b);
+            break;
+        case MinMaxMethod::GuessingValueIteration:
+            result = solveEquationsGuessingValueIteration(env, dir, x, b);
             break;
         case MinMaxMethod::PolicyIteration:
             result = solveEquationsPolicyIteration(env, dir, x, b);
@@ -479,6 +484,12 @@ MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<Value
         }
         requirements.requireLowerBounds();
 
+    } else if (method == MinMaxMethod::GuessingValueIteration) {
+        // Guessing value iteration requires a unique solution and lower+upper bounds
+        if (!this->hasUniqueSolution()) {
+            requirements.requireUniqueSolution();
+        }
+        requirements.requireBounds();
     } else if (method == MinMaxMethod::IntervalIteration) {
         // Interval iteration requires a unique solution and lower+upper bounds
         if (!this->hasUniqueSolution()) {
@@ -592,6 +603,55 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         }
 
         return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
+    }
+}
+
+template<typename ValueType, typename SolutionType>
+bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquationsGuessingValueIteration(Environment const& env, OptimizationDirection dir,
+                                                                                                        std::vector<SolutionType>& x,
+                                                                                                        std::vector<ValueType> const& b) const {
+    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We did not implement guessing value iteration for interval-based models.");
+        return false;
+    } else {
+        setUpViOperator();
+
+        auto& lowerX = x;
+        auto upperX = std::make_unique<std::vector<SolutionType>>(x.size());
+
+        storm::solver::helper::GuessingValueIterationHelper<ValueType, false> helper(viOperatorNontriv, *this->A);
+
+        uint64_t numIterations{0};
+
+        auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
+            this->showProgressIterative(numIterations);
+            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
+                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
+        };
+
+        this->createLowerBoundsVector(lowerX);
+        this->createUpperBoundsVector(*upperX);
+
+        this->startMeasureProgress();
+        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
+                                                 storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
+        auto two = storm::utility::convertNumber<ValueType>(2.0);
+        storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
+            lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+
+        this->reportStatus(statusIters, numIterations);
+
+        // If requested, we store the scheduler for retrieval.
+        if (this->isTrackSchedulerSet()) {
+            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+        }
+
+        if (!this->isCachingEnabled()) {
+            clearCache();
+        }
+
+        return statusIters == SolverStatus::Converged || statusIters == SolverStatus::TerminatedEarly;
     }
 }
 

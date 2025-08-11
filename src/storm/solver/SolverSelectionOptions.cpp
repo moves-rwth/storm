@@ -20,6 +20,8 @@ std::string toString(MinMaxMethod m) {
             return "soundvalueiteration";
         case MinMaxMethod::OptimisticValueIteration:
             return "optimisticvalueiteration";
+        case MinMaxMethod::GuessingValueIteration:
+            return "guessingvalueiteration";
         case MinMaxMethod::ViToPi:
             return "vi-to-pi";
         case MinMaxMethod::ViToLp:
@@ -132,6 +134,8 @@ std::string toString(NativeLinearEquationSolverMethod t) {
             return "SoundValueIteration";
         case NativeLinearEquationSolverMethod::OptimisticValueIteration:
             return "optimisticvalueiteration";
+        case NativeLinearEquationSolverMethod::GuessingValueIteration:
+            return "guessingvalueiteration";
         case NativeLinearEquationSolverMethod::IntervalIteration:
             return "IntervalIteration";
         case NativeLinearEquationSolverMethod::RationalSearch:
