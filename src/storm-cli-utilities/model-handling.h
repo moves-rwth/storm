@@ -1325,61 +1325,60 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     };
     uint64_t exportCount = 0;  // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
     auto postprocessingCallback = [&sparseModel, &ioSettings, &input, &exportCount](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
-        if (ioSettings.isExportSchedulerSet()) {
-            if constexpr (storm::IsIntervalType<ValueType>) {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
-            } else {
-                if (result->isExplicitQuantitativeCheckResult()) {
-                    if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
-                        auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
-                        STORM_PRINT_AND_LOG("Exporting scheduler ... ");
-                        if (input.model) {
-                            STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
-                                                "No information of state valuations available. The scheduler output will use internal state ids. You might be "
-                                                "interested in building the model with state valuations using --buildstateval.");
-                            STORM_LOG_WARN_COND(
-                                sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(),
-                                "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in "
-                                "building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
-                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(),
-                                                "Only partial choice information is available. You might want to build the model with choice origins using "
-                                                "--buildchoicelab or --buildchoiceorig.");
-                        }
-                        STORM_LOG_WARN_COND(exportCount == 0,
-                                            "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
-                        storm::api::exportScheduler(
-                            sparseModel, scheduler,
-                            (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
-                    } else {
-                        STORM_LOG_ERROR("Scheduler requested but could not be generated.");
-                    }
-                } else if (result->isExplicitParetoCurveCheckResult()) {
-                    if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
-                        if (auto const& paretoRes = result->template asExplicitParetoCurveCheckResult<ValueType>(); paretoRes.hasScheduler()) {
-                            storm::api::exportParetoScheduler(
-                                sparseModel, paretoRes.getPoints(), paretoRes.getSchedulers(),
-                                (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
-                        } else {
-                            STORM_LOG_ERROR("Scheduler requested but could not be generated.");
-                        }
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this value type.");
-                    }
+        // Scheduler export
+        STORM_LOG_ERROR_COND(!ioSettings.isExportSchedulerSet() || result->hasScheduler(), "Scheduler requested but could not be generated.");
+        if (ioSettings.isExportSchedulerSet() && result->hasScheduler()) {
+            std::filesystem::path schedulerExportPath = ioSettings.getExportSchedulerFilename();
+            if (exportCount > 0) {
+                STORM_LOG_WARN("Prepending " << exportCount << " to scheduler file name for this property because there are multiple properties.");
+                schedulerExportPath.replace_filename(std::to_string(exportCount) + schedulerExportPath.filename().string());
+            }
+            STORM_PRINT_AND_LOG("Exporting scheduler ... ");
+            if (input.model) {
+                STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
+                                    "No information of state valuations available. The scheduler output will use internal state ids. You might be "
+                                    "interested in building the model with state valuations using --buildstateval.");
+                STORM_LOG_WARN_COND(
+                    sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(),
+                    "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in "
+                    "building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
+                STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(),
+                                    "Only partial choice information is available. You might want to build the model with choice origins using "
+                                    "--buildchoicelab or --buildchoiceorig.");
+            }
+            if (result->isExplicitQuantitativeCheckResult()) {
+                if constexpr (storm::IsIntervalType<ValueType>) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
+                    storm::api::exportScheduler(sparseModel, result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler(),
+                                                schedulerExportPath.string());
                 }
+            } else if (result->isExplicitParetoCurveCheckResult()) {
+                if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || storm::IsIntervalType<ValueType>) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for models of this value type is not supported.");
+                } else {
+                    auto const& paretoRes = result->template asExplicitParetoCurveCheckResult<ValueType>();
+                    storm::api::exportParetoScheduler(sparseModel, paretoRes.getPoints(), paretoRes.getSchedulers(), schedulerExportPath.string());
+                }
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this value type.");
             }
         }
+
+        // Result export
         if (ioSettings.isExportCheckResultSet()) {
             if constexpr (storm::IsIntervalType<ValueType>) {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Result export for interval models is not supported.");
             } else {
+                std::filesystem::path resultExportPath = ioSettings.getExportCheckResultFilename();
+                if (exportCount > 0) {
+                    STORM_LOG_WARN("Prepending " << exportCount << " to result file name for this property because there are multiple properties.");
+                    resultExportPath.replace_filename(std::to_string(exportCount) + resultExportPath.filename().string());
+                }
                 STORM_LOG_WARN_COND(sparseModel->hasStateValuations(),
                                     "No information of state valuations available. The result output will use internal state ids. You might be interested in "
                                     "building the model with state valuations using --buildstateval.");
-                STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
-                storm::api::exportCheckResultToJson(
-                    sparseModel, result, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportCheckResultFilename());
+                storm::api::exportCheckResultToJson(sparseModel, result, resultExportPath);
             }
         }
         ++exportCount;
