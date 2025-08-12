@@ -566,7 +566,7 @@ storm::storage::MemoryStructure const& SparseModelMemoryProduct<ValueType, Rewar
 }
 
 template<typename ValueType, typename RewardModelType>
-SparseModelMemoryProductReverseData SparseModelMemoryProduct<ValueType, RewardModelType>::getReverseData() const {
+SparseModelMemoryProductReverseData SparseModelMemoryProduct<ValueType, RewardModelType>::computeReverseData() const {
     STORM_LOG_ASSERT(isInitialized, "The product model has not been built yet. Cannot extract reverse data.");
     return SparseModelMemoryProductReverseData(getOriginalModel().getNumberOfStates(), getMemory(), toResultStateMapping);
 }

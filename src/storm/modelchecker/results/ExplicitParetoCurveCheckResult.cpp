@@ -88,7 +88,6 @@ std::vector<typename ExplicitParetoCurveCheckResult<ValueType>::scheduler_type>&
 template class ExplicitParetoCurveCheckResult<double>;
 #ifdef STORM_HAVE_CARL
 template class ExplicitParetoCurveCheckResult<storm::RationalNumber>;
-template class ExplicitParetoCurveCheckResult<storm::RationalFunction>;
 #endif
 }  // namespace modelchecker
 }  // namespace storm

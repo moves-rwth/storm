@@ -13,6 +13,8 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/macros.h"
 
+#include "storm/exceptions/UnexpectedException.h"
+
 namespace storm {
 
 namespace jani {
@@ -87,7 +89,7 @@ void exportParetoScheduler(std::shared_ptr<storm::models::sparse::Model<ValueTyp
     infoFilePath.replace_filename(infoFilePath.stem().string() + "_info.csv");
     storm::io::openFile(infoFilePath, infoStream);
     infoStream << "file;point\n";
-    STORM_LOG_ASSERT(points.size() == schedulers.size(), "Number of points and schedulers must match.");
+    STORM_LOG_THROW(points.size() == schedulers.size(), storm::exceptions::UnexpectedException, "Number of points and schedulers must match.");
     for (uint64_t i = 0; i < points.size(); ++i) {
         std::string schedulerFileName = baseFilename.stem().string() + "_point" + std::to_string(i) + baseFilename.extension().string();
         infoStream << schedulerFileName << ";[";

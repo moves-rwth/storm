@@ -108,7 +108,7 @@ MemoryIncorporation<SparseModelType>::incorporateGoalMemoryWithReverseData(Spars
     auto memory = incorporateGoalMemoryHelper(model, formulas);
     auto product = memory.product(model);
     auto result = product.build();
-    return std::make_pair(result->template as<SparseModelType>(), product.getReverseData());
+    return std::make_pair(result->template as<SparseModelType>(), product.computeReverseData());
 }
 
 template<class SparseModelType>

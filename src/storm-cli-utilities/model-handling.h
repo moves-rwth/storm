@@ -1326,7 +1326,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     uint64_t exportCount = 0;  // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
     auto postprocessingCallback = [&sparseModel, &ioSettings, &input, &exportCount](std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
         // Scheduler export
-        STORM_LOG_ERROR_COND(!ioSettings.isExportSchedulerSet() || result->hasScheduler(), "Scheduler requested but could not be generated.");
+        STORM_LOG_WARN_COND(!ioSettings.isExportSchedulerSet() || result->hasScheduler(), "Scheduler requested but could not be generated.");
         if (ioSettings.isExportSchedulerSet() && result->hasScheduler()) {
             std::filesystem::path schedulerExportPath = ioSettings.getExportSchedulerFilename();
             if (exportCount > 0) {

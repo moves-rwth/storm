@@ -61,7 +61,7 @@ class SparseModelMemoryProduct {
      * Extracts the reverse data that can be used to apply results for the product model back to the original input model.
      * @note This method should only be called after the product has been built.
      */
-    SparseModelMemoryProductReverseData getReverseData() const;
+    SparseModelMemoryProductReverseData computeReverseData() const;
 
    private:
     // Initializes auxiliary data for building the product
