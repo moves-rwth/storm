@@ -92,7 +92,7 @@ void SparseModelMemoryProduct<ValueType, RewardModelType>::setBuildFullProduct()
 }
 
 template<typename ValueType, typename RewardModelType>
-std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build() {
+std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::build(bool preserveModelType) {
     initialize();
 
     // Build the model components
@@ -107,7 +107,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
     storm::models::sparse::StateLabeling labeling = buildStateLabeling(transitionMatrix);
     std::unordered_map<std::string, RewardModelType> rewardModels = buildRewardModels(transitionMatrix);
 
-    return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels));
+    return buildResult(std::move(transitionMatrix), std::move(labeling), std::move(rewardModels), preserveModelType);
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -517,11 +517,16 @@ std::unordered_map<std::string, RewardModelType> SparseModelMemoryProduct<ValueT
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> SparseModelMemoryProduct<ValueType, RewardModelType>::buildResult(
     storm::storage::SparseMatrix<ValueType>&& matrix, storm::models::sparse::StateLabeling&& labeling,
-    std::unordered_map<std::string, RewardModelType>&& rewardModels) {
+    std::unordered_map<std::string, RewardModelType>&& rewardModels, bool preserveModelType) {
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(std::move(matrix), std::move(labeling), std::move(rewardModels));
 
+    auto targetModelType = model.getType();
     if (model.isOfType(storm::models::ModelType::Ctmc)) {
         components.rateTransitions = true;
+    } else if (model.isOfType(storm::models::ModelType::Mdp)) {
+        if (!preserveModelType && matrix.hasTrivialRowGrouping()) {
+            targetModelType = storm::models::ModelType::Dtmc;
+        }
     } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
         // We also need to translate the exit rates and the Markovian states
         uint64_t numResStates = components.transitionMatrix.getRowGroupCount();
@@ -547,7 +552,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Sparse
         components.exitRates = std::move(resultExitRates);
     }
 
-    return storm::utility::builder::buildModelFromComponents(model.getType(), std::move(components));
+    return storm::utility::builder::buildModelFromComponents(targetModelType, std::move(components));
 }
 
 template<typename ValueType, typename RewardModelType>

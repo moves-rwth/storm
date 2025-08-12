@@ -69,7 +69,10 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
 
     // Remove states that are irrelevant for all properties (e.g. because they are only reachable via goal states
     boost::optional<std::string> deadlockLabel;
-    removeIrrelevantStates(model, deadlockLabel, originalFormula);
+    if (!produceScheduler) {
+        // When producing schedulers, removing irrelevant states requires additional bookkeeping.
+        removeIrrelevantStates(model, deadlockLabel, originalFormula);
+    }
 
     PreprocessorData data(model);
     data.deadlockLabel = deadlockLabel;
