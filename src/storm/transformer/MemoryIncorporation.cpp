@@ -107,7 +107,8 @@ MemoryIncorporation<SparseModelType>::incorporateGoalMemoryWithReverseData(Spars
                                                                            std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
     auto memory = incorporateGoalMemoryHelper(model, formulas);
     auto product = memory.product(model);
-    return std::make_pair(product.build()->template as<SparseModelType>(), product.getReverseData());
+    auto result = product.build();
+    return std::make_pair(result->template as<SparseModelType>(), product.getReverseData());
 }
 
 template<class SparseModelType>
