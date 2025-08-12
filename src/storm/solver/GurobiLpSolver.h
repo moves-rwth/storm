@@ -139,7 +139,6 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     // Method for checking whether the optimization has timed out
     bool hasTimedOut();
 
-
    private:
 #ifdef STORM_HAVE_GUROBI
     // The Gurobi model.

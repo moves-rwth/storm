@@ -738,8 +738,7 @@ void GurobiLpSolver<ValueType, RawMode>::setTimeLimit(uint64_t seconds) {
 
 template<typename ValueType, bool RawMode>
 uint64_t GurobiLpSolver<ValueType, RawMode>::getTimeLimit() {
-    STORM_LOG_THROW(timeLimit.has_value(), storm::exceptions::InvalidAccessException,
-                    "Unable to get Gurobi time limit because none was specified.");
+    STORM_LOG_THROW(timeLimit.has_value(), storm::exceptions::InvalidAccessException, "Unable to get Gurobi time limit because none was specified.");
     return timeLimit.value();
 }
 
