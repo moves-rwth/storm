@@ -387,8 +387,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     }
 }
 
-template<storm::dd::DdType DdType, typename ValueType>
-void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::ModelProcessingInformation const& mpi) {
+void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInformation const& mpi) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
     auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
@@ -400,13 +399,19 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
     STORM_LOG_THROW(parSettings.hasOperationModeBeenSet(), storm::exceptions::InvalidSettingsException, "An operation mode must be selected with --mode");
     std::shared_ptr<storm::models::ModelBase> model;
     if (!buildSettings.isNoBuildModelSet()) {
-        model = storm::cli::buildModel<DdType, ValueType>(input, ioSettings, mpi);
+        model = storm::cli::buildModel(input, ioSettings, mpi);
     }
 
     STORM_LOG_THROW(model, storm::exceptions::InvalidSettingsException, "No input model.");
     if (model) {
         model->printModelInformationToStream(std::cout);
     }
+
+    using ValueType = storm::RationalFunction;
+    auto const DdType = storm::dd::DdType::Sylvan;
+    STORM_LOG_THROW(model->supportsParameters(), storm::exceptions::UnexpectedException, "Expected a parametric model.");
+    STORM_LOG_THROW(model->isSparseModel() || model->getDdType().value() == DdType, storm::exceptions::UnexpectedException,
+                    "Expected type of model representation.");
 
     // If minimization is active and the model is parametric, parameters might be minimized away because they are inconsequential.
     // This is the set of all such inconsequential parameters.
@@ -445,7 +450,7 @@ void processInputWithValueTypeAndDdlib(cli::SymbolicInput& input, storm::cli::Mo
     if (!model) {
         return;
     } else {
-        storm::cli::exportModel<DdType, ValueType>(model, input);
+        storm::cli::castAndApply(model, [&input](auto const& m) { storm::cli::exportModel(m, input); });
     }
 
     // TODO move this.
@@ -533,7 +538,10 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
-    processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput, mpi);
+    mpi.ddType = storm::dd::DdType::Sylvan;
+    mpi.buildValueType = storm::cli::ModelProcessingInformation::ValueType::Parametric;
+    mpi.verificationValueType = storm::cli::ModelProcessingInformation::ValueType::Parametric;
+    processInput(std::move(symbolicInput), mpi);
 }
 }  // namespace pars
 }  // namespace storm
