@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BITVECTOR_H_
-#define STORM_STORAGE_BITVECTOR_H_
+#pragma once
 
 #include <cmath>
 #include <cstdint>
@@ -9,8 +8,7 @@
 #include <ranges>
 #include <vector>
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
 
 /*!
  * A bit vector that is internally represented as a vector of 64-bit values.
@@ -795,8 +793,7 @@ struct Murmur3BitVectorHash {
     StateType operator()(storm::storage::BitVector const& bv) const;
 };
 
-}  // namespace storage
-}  // namespace storm
+}  // namespace storm::storage
 
 namespace std {
 template<>
@@ -804,5 +801,3 @@ struct hash<storm::storage::BitVector> {
     std::size_t operator()(storm::storage::BitVector const& bv) const;
 };
 }  // namespace std
-
-#endif  // STORM_STORAGE_BITVECTOR_H_
