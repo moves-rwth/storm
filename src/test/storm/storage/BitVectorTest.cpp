@@ -6,7 +6,7 @@
 TEST(BitVectorTest, InitToZero) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_FALSE(vector.get(i));
     }
 
@@ -17,7 +17,7 @@ TEST(BitVectorTest, InitToZero) {
 TEST(BitVectorTest, InitToOne) {
     storm::storage::BitVector vector(32, true);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_TRUE(vector.get(i));
     }
     ASSERT_FALSE(vector.empty());
@@ -25,12 +25,12 @@ TEST(BitVectorTest, InitToOne) {
 }
 
 TEST(BitVectorTest, InitFromIterator) {
-    std::vector<uint_fast64_t> valueVector = {0, 4, 10};
+    std::vector<uint64_t> valueVector = {0, 4, 10};
     storm::storage::BitVector vector(32, valueVector.begin(), valueVector.end());
 
     ASSERT_EQ(32ul, vector.size());
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
             ASSERT_TRUE(vector.get(i));
         } else {
@@ -40,12 +40,12 @@ TEST(BitVectorTest, InitFromIterator) {
 }
 
 TEST(BitVectorTest, InitFromIntVector) {
-    std::vector<uint_fast64_t> valueVector = {0, 4, 10};
+    std::vector<uint64_t> valueVector = {0, 4, 10};
     storm::storage::BitVector vector(32, valueVector);
 
     ASSERT_EQ(32ul, vector.size());
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
             ASSERT_TRUE(vector.get(i));
         } else {
@@ -57,11 +57,11 @@ TEST(BitVectorTest, InitFromIntVector) {
 TEST(BitVectorTest, GetSet) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector.set(i, i % 2 == 0);
     }
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_EQ(i % 2 == 0, vector.get(i));
     }
 }
@@ -152,7 +152,7 @@ TEST(BitVectorDeathTest, GetSetAssertion) {
 TEST(BitVectorTest, Resize) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector.set(i);
     }
 
@@ -161,11 +161,11 @@ TEST(BitVectorTest, Resize) {
     ASSERT_EQ(70ul, vector.size());
     ASSERT_EQ(32ul, vector.getNumberOfSetBits());
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_TRUE(vector.get(i));
     }
     bool result;
-    for (uint_fast64_t i = 32; i < 70; ++i) {
+    for (uint64_t i = 32; i < 70; ++i) {
         result = true;
         ASSERT_NO_THROW(result = vector.get(i));
         ASSERT_FALSE(result);
@@ -173,18 +173,19 @@ TEST(BitVectorTest, Resize) {
 
     vector.resize(72, true);
 
+    std::cout << vector << std::endl;
     ASSERT_EQ(72ul, vector.size());
     ASSERT_EQ(34ul, vector.getNumberOfSetBits());
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_TRUE(vector.get(i));
     }
-    for (uint_fast64_t i = 32; i < 70; ++i) {
+    for (uint64_t i = 32; i < 70; ++i) {
         result = true;
         ASSERT_NO_THROW(result = vector.get(i));
         ASSERT_FALSE(result);
     }
-    for (uint_fast64_t i = 70; i < 72; ++i) {
+    for (uint64_t i = 70; i < 72; ++i) {
         ASSERT_TRUE(vector.get(i));
     }
 
@@ -192,7 +193,7 @@ TEST(BitVectorTest, Resize) {
     ASSERT_EQ(16ul, vector.size());
     ASSERT_EQ(16ul, vector.getNumberOfSetBits());
 
-    for (uint_fast64_t i = 0; i < 16; ++i) {
+    for (uint64_t i = 0; i < 16; ++i) {
         ASSERT_TRUE(vector.get(i));
     }
 
@@ -213,7 +214,7 @@ TEST(BitVectorTest, OperatorAnd) {
     vector2.set(31);
 
     storm::storage::BitVector andResult = vector1 & vector2;
-    for (uint_fast64_t i = 0; i < 31; ++i) {
+    for (uint64_t i = 0; i < 31; ++i) {
         ASSERT_FALSE(andResult.get(i));
     }
     ASSERT_TRUE(andResult.get(31));
@@ -232,7 +233,7 @@ TEST(BitVectorTest, OperatorAndEqual) {
 
     vector1 &= vector2;
 
-    for (uint_fast64_t i = 0; i < 31; ++i) {
+    for (uint64_t i = 0; i < 31; ++i) {
         ASSERT_FALSE(vector1.get(i));
     }
     ASSERT_TRUE(vector1.get(31));
@@ -242,7 +243,7 @@ TEST(BitVectorTest, OperatorOr) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
         vector2.set(i, i % 2 == 1);
     }
@@ -251,7 +252,7 @@ TEST(BitVectorTest, OperatorOr) {
 
     storm::storage::BitVector orResult = vector1 | vector2;
 
-    for (uint_fast64_t i = 0; i < 31; ++i) {
+    for (uint64_t i = 0; i < 31; ++i) {
         ASSERT_TRUE(orResult.get(i));
     }
     ASSERT_FALSE(orResult.get(31));
@@ -261,7 +262,7 @@ TEST(BitVectorTest, OperatorOrEqual) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
         vector2.set(i, i % 2 == 1);
     }
@@ -270,7 +271,7 @@ TEST(BitVectorTest, OperatorOrEqual) {
 
     vector1 |= vector2;
 
-    for (uint_fast64_t i = 0; i < 31; ++i) {
+    for (uint64_t i = 0; i < 31; ++i) {
         ASSERT_TRUE(vector1.get(i));
     }
     ASSERT_FALSE(vector1.get(31));
@@ -280,7 +281,7 @@ TEST(BitVectorTest, OperatorXor) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i);
         vector2.set(i, i % 2 == 1);
     }
@@ -289,7 +290,7 @@ TEST(BitVectorTest, OperatorXor) {
     storm::storage::BitVector vector4 = ~vector2;
     storm::storage::BitVector vector5 = vector1 ^ vector1;
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_EQ(vector3.get(i), vector4.get(i));
         ASSERT_FALSE(vector5.get(i));
     }
@@ -299,7 +300,7 @@ TEST(BitVectorTest, OperatorModulo) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 15; ++i) {
+    for (uint64_t i = 0; i < 15; ++i) {
         vector2.set(i, i % 2 == 0);
     }
 
@@ -312,7 +313,7 @@ TEST(BitVectorTest, OperatorModulo) {
     ASSERT_EQ(8ul, moduloResult.size());
     ASSERT_EQ(2ul, moduloResult.getNumberOfSetBits());
 
-    for (uint_fast64_t i = 0; i < 8; ++i) {
+    for (uint64_t i = 0; i < 8; ++i) {
         if (i == 1 || i == 3) {
             ASSERT_TRUE(moduloResult.get(i));
         } else {
@@ -325,14 +326,14 @@ TEST(BitVectorTest, OperatorNot) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
         vector2.set(i, i % 2 == 1);
     }
 
     storm::storage::BitVector notResult = ~vector2;
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_EQ(vector1.get(i), notResult.get(i));
     }
 }
@@ -341,14 +342,14 @@ TEST(BitVectorTest, Complement) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
         vector2.set(i, i % 2 == 1);
     }
 
     vector2.complement();
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_EQ(vector1.get(i), vector2.get(i));
     }
 }
@@ -374,7 +375,7 @@ TEST(BitVectorTest, Increment) {
     EXPECT_EQ(vector1, vector2);
 
     vector1.clear();
-    for (uint_fast64_t i = 0; i < 66; ++i) {
+    for (uint64_t i = 0; i < 66; ++i) {
         vector1.set(i, true);
     }
     vector1.increment();
@@ -417,7 +418,7 @@ TEST(BitVectorTest, Implies) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32, true);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
     }
     vector2.set(31, false);
@@ -425,7 +426,7 @@ TEST(BitVectorTest, Implies) {
 
     storm::storage::BitVector impliesResult = vector1.implies(vector2);
 
-    for (uint_fast64_t i = 0; i < 30; ++i) {
+    for (uint64_t i = 0; i < 30; ++i) {
         ASSERT_TRUE(impliesResult.get(i));
     }
     ASSERT_FALSE(impliesResult.get(30));
@@ -436,7 +437,7 @@ TEST(BitVectorTest, Subset) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32, true);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
     }
 
@@ -451,7 +452,7 @@ TEST(BitVectorTest, Disjoint) {
     storm::storage::BitVector vector1(32);
     storm::storage::BitVector vector2(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector1.set(i, i % 2 == 0);
         vector2.set(i, i % 2 == 1);
     }
@@ -496,7 +497,7 @@ TEST(BitVectorTest, Full) {
 TEST(BitVectorTest, NumberOfSetBits) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector.set(i, i % 2 == 0);
     }
 
@@ -506,7 +507,7 @@ TEST(BitVectorTest, NumberOfSetBits) {
 TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
     storm::storage::BitVector vector(32);
 
-    for (uint_fast64_t i = 0; i < 32; ++i) {
+    for (uint64_t i = 0; i < 32; ++i) {
         vector.set(i, i % 2 == 0);
     }
 
@@ -652,4 +653,19 @@ TEST(BitVectorTest, Assignment) {
     v1 = v2;
     v1.set(9999);
     ASSERT_TRUE(v1.get(9999));
+}
+
+TEST(BitVectorTest, ZeroSized) {
+    storm::storage::BitVector v(0);
+    EXPECT_EQ(0, v.size());
+    EXPECT_TRUE(v.empty());
+    EXPECT_TRUE(v.full());
+    EXPECT_EQ(0, v.getNumberOfSetBits());
+    EXPECT_EQ(0, v.getAsInt(0, 0));
+    EXPECT_EQ(0, v.getNextSetIndex(0));
+    EXPECT_EQ(v, v);
+    EXPECT_EQ(v, ~v);
+    for (auto const& entry : v) {
+        FAIL() << "Should not iterate over an empty bit vector.";
+    }
 }
