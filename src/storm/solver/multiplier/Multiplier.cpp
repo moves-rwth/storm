@@ -66,6 +66,7 @@ void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, Op
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
+        progress.updateProgress(i);
         multiplyAndReduce(env, dir, x, b, x);
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
@@ -81,6 +82,7 @@ void Multiplier<ValueType>::repeatedMultiplyAndReduceWithFactor(Environment cons
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
+        progress.updateProgress(i);
         std::transform(x.begin(), x.end(), x.begin(), [factor](ValueType& c) { return c * factor; });
         multiplyAndReduce(env, dir, x, b, x);
         if (storm::utility::resources::isTerminate()) {
@@ -97,6 +99,7 @@ void Multiplier<ValueType>::repeatedMultiplyWithFactor(Environment const& env, s
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
+        progress.updateProgress(i);
         std::transform(x.begin(), x.end(), x.begin(), [factor](ValueType& c) { return c * factor; });
         multiply(env, x, b, x);
         if (storm::utility::resources::isTerminate()) {
