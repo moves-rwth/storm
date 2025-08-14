@@ -62,7 +62,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Nondet
         if (!dropUnreachableStates) {
             memoryProduct.setBuildFullProduct();
         }
-        return memoryProduct.build();
+        return memoryProduct.build(preserveModelType);
     }
 }
 

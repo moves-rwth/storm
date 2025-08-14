@@ -29,7 +29,7 @@ class SparsePcaaQuantitativeQuery : public SparsePcaaQuery<SparseModelType, Geom
     /*
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
+    virtual std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler) override;
 
    private:
     void initializeThresholdData();

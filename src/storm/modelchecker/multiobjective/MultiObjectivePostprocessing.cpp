@@ -66,6 +66,18 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
     return polytope->affineTransformation(transformationMatrix, transformationVector);
 }
 
+/*
+ * This function is only responsible to reverse changes to the model made in the preprocessor
+ * (not the ones done by specific checkers)
+ */
+template<typename ValueType>
+void transformObjectiveSchedulersToOriginal(storm::storage::SparseModelMemoryProductReverseData const& reverseData,
+                                            std::vector<storm::storage::Scheduler<ValueType>>& schedulers) {
+    for (auto& currScheduler : schedulers) {
+        currScheduler = reverseData.createMemorySchedulerFromProductScheduler(currScheduler);
+    }
+}
+
 template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(std::vector<Objective<double>> objectives,
                                                                                std::vector<storm::RationalNumber> const& point);
 template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> transformObjectivePolytopeToOriginal(
@@ -74,6 +86,13 @@ template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(s
                                                                                std::vector<storm::RationalNumber> const& point);
 template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> transformObjectivePolytopeToOriginal(
     std::vector<Objective<storm::RationalNumber>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> const& polytope);
+
+template void transformObjectiveSchedulersToOriginal(storm::storage::SparseModelMemoryProductReverseData const& reverseData,
+                                                     std::vector<storm::storage::Scheduler<double>>& schedulers);
+
+template void transformObjectiveSchedulersToOriginal(storm::storage::SparseModelMemoryProductReverseData const& reverseData,
+                                                     std::vector<storm::storage::Scheduler<storm::RationalNumber>>& schedulers);
+
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm
