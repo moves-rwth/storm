@@ -424,34 +424,8 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, bool qualitative, ValueType discountFactor,
     ModelCheckerHint const& hint) {
     // If the solver is set to force exact results, throw an error if the method is not explicitly set to a value iteration type.
-    if (env.solver().isForceExact()) {
-        if (env.solver().getLinearEquationSolverType() != storm::solver::EquationSolverType::Native ||
-            !(env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::Power ||
-              env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration ||
-              env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::OptimisticValueIteration ||
-              env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::IntervalIteration)) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact solving of discounted total reward objectives is currently not supported.");
-        } else {
-            STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
-        }
-    }
-    // If a method is set that is not value-iteration-based, throw an error.
-    if (env.solver().getLinearEquationSolverType() != storm::solver::EquationSolverType::Native ||
-        !(env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::Power ||
-          env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration ||
-          env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::OptimisticValueIteration ||
-          env.solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::IntervalIteration)) {
-        if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Solving discounted total reward objectives is currently only supported by the native solver using value-iteration-based methods.");
-        } else {
-            STORM_LOG_WARN("The default method does not support solving discounted total reward Falling back to value iteration.");
-        }
-    }
-
-    STORM_LOG_WARN_COND(env.solver().native().getMethod() != storm::solver::NativeLinearEquationSolverMethod::IntervalIteration,
-                        "Interval iteration is not supported for discounted total reward objectives. Falling back to value iteration. Note that value "
-                        "iteration guarantees soundness for discounted objectives.");
+    STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::NotSupportedException,
+                    "Exact solving of discounted total reward objectives is currently not supported.");
 
     // Reduce to reachability rewards
     std::vector<ValueType> b;
