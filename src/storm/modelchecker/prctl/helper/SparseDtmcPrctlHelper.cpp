@@ -1,6 +1,4 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-
-#include "../../../environment/solver/NativeSolverEnvironment.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
@@ -21,7 +19,6 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
