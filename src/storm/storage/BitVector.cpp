@@ -10,9 +10,8 @@
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
 
-#ifdef STORM_DEV
-#define ASSERT_BITVECTOR
-#endif
+// Uncomment the following line to enable additional assertions for debugging bitvector operations.
+// #define ASSERT_BITVECTOR
 
 namespace storm {
 namespace storage {
