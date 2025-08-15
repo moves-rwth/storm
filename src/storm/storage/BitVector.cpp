@@ -766,8 +766,10 @@ uint64_t BitVector::getNextSetIndex(uint64_t startingIndex) const {
 }
 
 uint64_t BitVector::getNextUnsetIndex(uint64_t startingIndex) const {
+#ifdef ASSERT_BITVECTOR
     STORM_LOG_ASSERT(getNextIndexWithValue<false>(buckets, startingIndex, bitCount) == (~(*this)).getNextSetIndex(startingIndex),
                      "The result is inconsistent with the next set index of the complement of this bitvector");
+#endif
     return getNextIndexWithValue<false>(buckets, startingIndex, bitCount);
 }
 
@@ -776,8 +778,10 @@ uint64_t BitVector::getStartOfZeroSequenceBefore(uint64_t endIndex) const {
 }
 
 uint64_t BitVector::getStartOfOneSequenceBefore(uint64_t endIndex) const {
+#ifdef ASSERT_BITVECTOR
     STORM_LOG_ASSERT((getNextIndexWithValue<false, true>(buckets, 0, endIndex) == (~(*this)).getStartOfZeroSequenceBefore(endIndex)),
                      "The result is inconsistent with the next set index of the complement of this bitvector");
+#endif
     return getNextIndexWithValue<false, true>(buckets, 0, endIndex);
 }
 
