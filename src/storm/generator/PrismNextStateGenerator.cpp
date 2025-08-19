@@ -41,6 +41,8 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
     STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException,
                     "The explicit next-state generator currently does not support custom system compositions.");
+    STORM_LOG_THROW(storm::IsIntervalType<ValueType> || !this->program.hasIntervalUpdates(), storm::exceptions::WrongFormatException,
+                    "The provided PRISM program contains interval updates, which are not supported by the chosen value type.");
 
     // Only after checking validity of the program, we initialize the variable information.
     this->checkValid();
@@ -48,7 +50,7 @@ PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::pr
     this->initializeSpecialStates();
 
     // Create a proper evaluator.
-    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());
+    this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<BaseValueType>>(program.getManager());
 
     if (this->options.isBuildAllRewardModelsSet()) {
         for (auto const& rewardModel : this->program.getRewardModels()) {
@@ -339,16 +341,14 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
         addSynchronousChoices(allChoices, *this->state, stateToIdCallback);
     }
 
-    std::size_t totalNumberOfChoices = allChoices.size();
-
     // If there is not a single choice, we return immediately, because the state has no behavior (other than
     // the state reward).
-    if (totalNumberOfChoices == 0) {
+    if (allChoices.empty()) {
         return result;
     }
 
     // If the model is a deterministic model, we need to fuse the choices into one.
-    if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
+    if (this->isDeterministicModel() && allChoices.size() > 1) {
         Choice<ValueType> globalChoice;
 
         if (this->options.isAddOverlappingGuardLabelSet()) {
@@ -357,7 +357,8 @@ StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType
 
         // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
         // this is equal to the number of choices, which is why we initialize it like this here.
-        ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+        ValueType const totalNumberOfChoices = storm::utility::convertNumber<ValueType, uint64_t>(allChoices.size());
+        ValueType totalExitRate = this->isDiscreteTimeModel() ? totalNumberOfChoices : storm::utility::zero<ValueType>();
 
         // Iterate over all choices and combine the probabilities/rates into one choice.
         for (auto const& choice : allChoices) {
@@ -592,6 +593,23 @@ PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(ui
     return result;
 }
 
+template<typename ValueType, typename BaseValueType>
+ValueType evaluateLikelihoodExpression(storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<BaseValueType> const& evaluator) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        if (update.isLikelihoodInterval()) {
+            BaseValueType lower = evaluator.asRational(update.getLikelihoodExpressionInterval().first);
+            BaseValueType upper = evaluator.asRational(update.getLikelihoodExpressionInterval().second);
+            return ValueType(lower, carl::BoundType::WEAK, upper, carl::BoundType::WEAK);
+        } else {
+            return evaluator.asRational(update.getLikelihoodExpression());
+        }
+    } else {
+        // We don't expect to see an interval likelihood now. This case should have been catched earlier.
+        STORM_LOG_ASSERT(!update.isLikelihoodInterval(), "Unexpected interval likelihood for non-interval model in update " << update << ".");
+        return evaluator.asRational(update.getLikelihoodExpression());
+    }
+}
+
 template<typename ValueType, typename StateType>
 std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state,
                                                                                                      StateToIdCallback stateToIdCallback,
@@ -641,7 +659,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
             for (uint_fast64_t k = 0; k < command.getNumberOfUpdates(); ++k) {
                 storm::prism::Update const& update = command.getUpdate(k);
 
-                ValueType probability = this->evaluator->asRational(update.getLikelihoodExpression());
+                ValueType probability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
                 if (probability != storm::utility::zero<ValueType>()) {
                     // Obtain target state index and add it to the list of known states. If it has not yet been
                     // seen, we also add it to the set of states that have yet to be explored.
@@ -650,6 +668,13 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
                     // Update the choice by adding the probability/target state to it.
                     choice.addProbability(stateIndex, probability);
                     if (this->options.isExplorationChecksSet()) {
+                        if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                            STORM_LOG_THROW(probability > storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to negative value " << probability << ".");
+                            STORM_LOG_THROW(!program.isDiscreteTimeModel() || probability <= storm::utility::one<ValueType>(),
+                                            storm::exceptions::WrongFormatException,
+                                            "Probability expression in update '" << update << " evaluates to value " << probability << " >1.");
+                        }
                         probabilitySum += probability;
                     }
                 }
@@ -691,7 +716,8 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException,
+                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                                storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
             }
         }
@@ -849,13 +875,23 @@ void PrismNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribu
 
     if (position >= iteratorList.size()) {
         StateType id = stateToIdCallback(state);
-        distribution.add(id, probability);
+        distribution.add(id, std::move(probability));
     } else {
         storm::prism::Command const& command = *iteratorList[position];
         for (uint_fast64_t j = 0; j < command.getNumberOfUpdates(); ++j) {
             storm::prism::Update const& update = command.getUpdate(j);
-            generateSynchronizedDistribution(applyUpdate(state, update), probability * this->evaluator->asRational(update.getLikelihoodExpression()),
-                                             position + 1, iteratorList, distribution, stateToIdCallback);
+            ValueType updateProbability = evaluateLikelihoodExpression<ValueType>(update, *this->evaluator);
+            if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+                if (this->options.isExplorationChecksSet()) {
+                    STORM_LOG_THROW(updateProbability >= storm::utility::zero<ValueType>(), storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to negative value " << updateProbability << ".");
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || updateProbability <= storm::utility::one<ValueType>(),
+                                    storm::exceptions::WrongFormatException,
+                                    "Probability expression in update '" << update << " evaluates to value " << updateProbability << " >1.");
+                }
+            }
+            updateProbability *= probability;
+            generateSynchronizedDistribution(applyUpdate(state, update), updateProbability, position + 1, iteratorList, distribution, stateToIdCallback);
         }
     }
 }
@@ -1014,7 +1050,7 @@ storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluat
 }
 
 template<typename ValueType, typename StateType>
-void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result) const {
+void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<BaseValueType>& result) const {
     for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
         result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());
     }
@@ -1074,10 +1110,8 @@ bool PrismNextStateGenerator<ValueType, StateType>::isCommandPotentiallySynchron
 }
 
 template class PrismNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class PrismNextStateGenerator<storm::RationalNumber>;
 template class PrismNextStateGenerator<storm::RationalFunction>;
-#endif
+template class PrismNextStateGenerator<storm::Interval>;
 }  // namespace generator
 }  // namespace storm

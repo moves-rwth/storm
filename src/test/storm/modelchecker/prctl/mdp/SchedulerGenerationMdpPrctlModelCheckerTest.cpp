@@ -352,15 +352,15 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         EXPECT_TRUE(!scheduler.isPartialScheduler());
         auto inducedModel = mdp->applyScheduler(scheduler);
 
-        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
-        auto const& inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
-        EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
 
-        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
         EXPECT_NEAR(this->parseNumber("81/100"),
-                    inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],
+                    inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
                     storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
     }
     {
@@ -377,15 +377,15 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         EXPECT_TRUE(!scheduler.isPartialScheduler());
         auto inducedModel = mdp->applyScheduler(scheduler);
 
-        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
-        auto const& inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
-        EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
 
-        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[1]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
 
-        EXPECT_NEAR(this->parseNumber("1/2"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],
+        EXPECT_NEAR(this->parseNumber("1/2"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
                     storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
     }
     {
@@ -402,11 +402,11 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltl) {
         EXPECT_TRUE(!scheduler.isPartialScheduler());
         auto inducedModel = mdp->applyScheduler(scheduler);
 
-        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
-        auto const& inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
-        EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
 
-        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[2]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
 
@@ -453,14 +453,14 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, ltlNondetChoice) {
         EXPECT_TRUE(!scheduler.isPartialScheduler());
         auto inducedModel = mdp->applyScheduler(scheduler);
 
-        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
-        auto const& inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
-        EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
+        ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Dtmc);
+        auto const& inducedDtmc = inducedModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+        EXPECT_EQ(inducedDtmc->getNumberOfChoices(), inducedDtmc->getNumberOfStates());
 
-        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> inducedChecker(*inducedDtmc);
         auto inducedResult = inducedChecker.check(this->env(), tasks[0]);
         ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
-        EXPECT_NEAR(this->parseNumber("1"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],
+        EXPECT_NEAR(this->parseNumber("1"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedDtmc->getInitialStates().begin()],
                     storm::utility::convertNumber<ValueType>(this->env().solver().minMax().getPrecision()));
     }
 #else

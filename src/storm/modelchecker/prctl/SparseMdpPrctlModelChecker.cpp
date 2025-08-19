@@ -488,7 +488,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented multi-objective with intervals");
     } else {
-        return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
+        return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula(), checkTask.isProduceSchedulersSet());
     }
 }
 

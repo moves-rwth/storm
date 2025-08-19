@@ -162,6 +162,11 @@ uint_fast64_t Scheduler<ValueType>::getNumberOfMemoryStates() const {
 }
 
 template<typename ValueType>
+uint_fast64_t Scheduler<ValueType>::getNumberOfModelStates() const {
+    return schedulerChoices.empty() ? 0 : schedulerChoices.front().size();
+}
+
+template<typename ValueType>
 boost::optional<storm::storage::MemoryStructure> const& Scheduler<ValueType>::getMemoryStructure() const {
     return memoryStructure;
 }

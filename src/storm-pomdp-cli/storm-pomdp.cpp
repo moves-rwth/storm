@@ -43,7 +43,7 @@ namespace pomdp {
 namespace cli {
 
 /// Perform preprocessings based on the graph structure (if requested or necessary). Return true, if some preprocessing has been done
-template<typename ValueType, storm::dd::DdType DdType>
+template<typename ValueType>
 bool performPreprocessing(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::pomdp::analysis::FormulaInformation& formulaInfo,
                           storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -246,7 +246,7 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
     STORM_LOG_THROW(computedSomething, storm::exceptions::InvalidSettingsException, "Nothing to be done, did you forget to set a method?");
 }
 
-template<typename ValueType, storm::dd::DdType DdType, typename BeliefType>
+template<typename ValueType, typename BeliefType = ValueType>
 bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo,
                      storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -295,7 +295,7 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
     return analysisPerformed;
 }
 
-template<typename ValueType, storm::dd::DdType DdType>
+template<typename ValueType>
 bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -375,27 +375,9 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
     return transformationPerformed;
 }
 
-template<typename ValueType, storm::dd::DdType DdType>
-void processOptionsWithValueTypeAndDdLib(storm::cli::SymbolicInput const& symbolicInput, storm::cli::ModelProcessingInformation const& mpi) {
+template<typename ValueType>
+void processPomdp(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
-
-    auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(symbolicInput, mpi);
-    if (!model) {
-        STORM_PRINT_AND_LOG("No input model given.\n");
-        return;
-    }
-    STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException,
-                    "Expected a POMDP in sparse representation.");
-
-    std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
-
-    std::shared_ptr<storm::logic::Formula const> formula;
-    if (!symbolicInput.properties.empty()) {
-        formula = symbolicInput.properties.front().getRawFormula();
-        STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
-        STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1,
-                            "There is currently no support for multiple properties. All other properties will be ignored.");
-    }
 
     if (!pomdpSettings.isNoCanonicSet()) {
         storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
@@ -407,51 +389,44 @@ void processOptionsWithValueTypeAndDdLib(storm::cli::SymbolicInput const& symbol
         storm::analysis::UniqueObservationStates<ValueType> uniqueAnalysis(*pomdp);
         std::cout << uniqueAnalysis.analyse() << '\n';
     }
+}
 
-    if (formula) {
-        auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
-        STORM_LOG_THROW(!formulaInfo.isUnsupported(), storm::exceptions::InvalidPropertyException,
-                        "The formula '" << *formula << "' is not supported by storm-pomdp.");
+template<typename ValueType>
+void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
+    STORM_LOG_THROW(!formulaInfo.isUnsupported(), storm::exceptions::InvalidPropertyException,
+                    "The formula '" << *formula << "' is not supported by storm-pomdp.");
 
-        storm::utility::Stopwatch sw(true);
-        // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
-        if (performPreprocessing<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << ".\n");
-            pomdp->printModelInformationToStream(std::cout);
-        }
+    storm::utility::Stopwatch sw(true);
+    // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
+    if (performPreprocessing(pomdp, formulaInfo, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << ".\n");
+        pomdp->printModelInformationToStream(std::cout);
+    }
 
-        sw.restart();
-        if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << ".\n");
-        }
+    sw.restart();
+    if (performTransformation(pomdp, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << ".\n");
+    }
 
-        sw.restart();
-        if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
-            sw.stop();
-            STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
-        }
-    } else {
-        STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
+    sw.restart();
+    if (performAnalysis(pomdp, formulaInfo, *formula)) {
+        sw.stop();
+        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
     }
 }
 
-template<storm::dd::DdType DdType>
-void processOptionsWithDdLib(storm::cli::SymbolicInput const& symbolicInput, storm::cli::ModelProcessingInformation const& mpi) {
-    STORM_LOG_ERROR_COND(mpi.buildValueType == mpi.verificationValueType,
-                         "Build value type differs from verification value type. Will ignore Verification value type.");
-    switch (mpi.buildValueType) {
-        case storm::cli::ModelProcessingInformation::ValueType::FinitePrecision:
-            processOptionsWithValueTypeAndDdLib<double, DdType>(symbolicInput, mpi);
-            break;
-        case storm::cli::ModelProcessingInformation::ValueType::Exact:
-            STORM_LOG_THROW(DdType == storm::dd::DdType::Sylvan, storm::exceptions::UnexpectedException,
-                            "Exact arithmetic is only supported with Dd library Sylvan.");
-            processOptionsWithValueTypeAndDdLib<storm::RationalNumber, storm::dd::DdType::Sylvan>(symbolicInput, mpi);
-            break;
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");
+template<typename ValueType>
+void processPomdpFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    STORM_LOG_ASSERT(pomdp, "No POMDP given or input POMDP is of unexpected type.");
+    processPomdp(pomdp);
+
+    if (formula) {
+        processFormula(std::move(pomdp), formula);
+    } else {
+        STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
     }
 }
 
@@ -459,17 +434,33 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
-    switch (mpi.ddType) {
-        case storm::dd::DdType::CUDD:
-            processOptionsWithDdLib<storm::dd::DdType::CUDD>(symbolicInput, mpi);
-            break;
-        case storm::dd::DdType::Sylvan:
-            processOptionsWithDdLib<storm::dd::DdType::Sylvan>(symbolicInput, mpi);
-            break;
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Dd Type.");
+    STORM_LOG_THROW(mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::FinitePrecision ||
+                        mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::Exact,
+                    storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");
+
+    auto model = storm::cli::buildPreprocessExportModel(symbolicInput, mpi);
+    if (!model) {
+        STORM_PRINT_AND_LOG("No input model given.\n");
+        return;
+    }
+    STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException,
+                    "Expected a POMDP in sparse representation.");
+
+    std::shared_ptr<storm::logic::Formula const> formula;
+    if (!symbolicInput.properties.empty()) {
+        formula = symbolicInput.properties.front().getRawFormula();
+        STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
+        STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1,
+                            "There is currently no support for multiple properties. All other properties will be ignored.");
+    }
+
+    if (model->isExact()) {
+        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>(), formula);
+    } else {
+        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<double>>(), formula);
     }
 }
+
 }  // namespace cli
 }  // namespace pomdp
 }  // namespace storm

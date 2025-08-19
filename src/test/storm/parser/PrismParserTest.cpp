@@ -202,6 +202,26 @@ TEST(PrismParser, NAryPredicates) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
 }
 
+TEST(PrismParser, Intervals) {
+    std::string testInput =
+        R"(dtmc
+
+    module example
+    s : [0..4] init 0;
+    i : bool init true;
+    [] s=0 -> [0.5,0.9]: (s'=1) & (i'=false) + [0.4,0.6] : (s'=2) & (i'=false);
+    [] s=1 -> 1: (s'=3) & (i'=true);
+    [] s>0 -> [i?0.3:1/s,1]: (s'=4) & (i'=true) + 0.5 : (s'=3);
+    [r] s=2 -> 1: (s'=3) & (i'=true);
+    endmodule
+    module example2 = example [ s = t, i = j ] endmodule
+
+    )";
+    storm::prism::Program result;
+
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+}
+
 TEST(PrismParser, IllegalInputTest) {
     std::string testInput =
         R"(ctmc
