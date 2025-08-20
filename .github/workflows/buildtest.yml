@@ -37,7 +37,7 @@ jobs:
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: ""
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest",
@@ -54,7 +54,7 @@ jobs:
              ClnExact: "ON",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: ""
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest",
@@ -71,7 +71,7 @@ jobs:
              ClnExact: "ON",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: ""
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest",
@@ -88,7 +88,7 @@ jobs:
              ClnExact: "OFF",
              ClnRatfunc: "ON",
              AllSanitizers: "ON",
-             cmakeArgs: ""
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "Minimal dependencies (without CLN)",
              baseImg: "storm-basesystem:minimal_dependencies",
@@ -105,7 +105,7 @@ jobs:
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
              AllSanitizers: "ON",
-             cmakeArgs: ""
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
     steps:
       - name: Git clone
@@ -174,7 +174,7 @@ jobs:
              buildType: "Debug",
              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
              packages: "",
              distro: "archlinux"
           }
@@ -182,7 +182,7 @@ jobs:
              buildType: "Debug",
              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
              packages: "clang",
              distro: "archlinux"
           }
@@ -190,7 +190,7 @@ jobs:
               buildType: "Debug",
               disable_gmm: "ON", # TOOD: enable again if GMM was fixed
               Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
               packages: "",
               distro: "alpine"
             }
@@ -259,8 +259,9 @@ jobs:
             --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro }} \
             --build-arg build_type="${{ matrix.buildType }}" \
             --build-arg carl_tag="master" \
-            --build-arg no_threads=${NR_JOBS}
-            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers, cmake_args
+            --build-arg no_threads=${NR_JOBS} \
+            --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON"
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
@@ -330,7 +331,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master"
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON
       - name: Build storm
         working-directory: ./build
         run: make -j ${NR_JOBS}
@@ -376,12 +377,14 @@ jobs:
           - {name: "Debug",
              dockerTag: "ci-debug",
              baseImg: "storm-dependencies:latest",
-             Developer: "ON"
+             Developer: "ON",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "Release",
              dockerTag: "ci",
              baseImg: "storm-dependencies:latest",
-             Developer: "OFF"
+             Developer: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
     steps:
       - name: Git clone
