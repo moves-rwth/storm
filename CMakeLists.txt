@@ -466,7 +466,8 @@ if(STORM_VERSION_DEV GREATER 0)
 endif()
 
 message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
-
+export_option(STORM_VERSION) # We want this information also in the more accessible stormOptions.cmake
+export_option(STORM_VERSION_DEV) # We want this information also in the more accessible stormOptions.cmake
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
