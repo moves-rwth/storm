@@ -553,35 +553,16 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 #############################################################
 
 if(STORM_BUILD_TESTS)
-## This is still old cmake, but as it is not installed, it is not as relevant.
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
-ExternalProject_Add(
-        googletest
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/googletest"
-        # Force the same output paths for debug and release builds so that
-        # we know in which place the binaries end up when using the Xcode generator
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
-        # Disable install step
-        INSTALL_COMMAND ""
-        BINARY_DIR ${GOOGLETEST_LIB_DIR}
-        INSTALL_DIR ${GOOGLETEST_LIB_DIR}
-        # Wrap download, configure and build steps in a script to log output
-        LOG_CONFIGURE ON
-        LOG_BUILD ON
-        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/lib/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/lib/libgtest_main${STATIC_EXT}
-)
+    set(GTEST_VERSION "1.17.0")
+    FETCHCONTENT_DECLARE(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
+    )
+    FETCHCONTENT_MAKEAVAILABLE(googletest)
 
-# Specify include dir
-ExternalProject_Get_Property(googletest source_dir)
-set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
-set(GMOCK_INCLUDE_DIR ${source_dir}/googlemock/include)
-# Specify MainTest's link libraries
-ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})
-
-add_dependencies(test-resources googletest)
-list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
+    set(GTEST_LIBRARIES GTest::gtest_main GTest::gmock)
+    add_dependencies(test-resources ${GTEST_LIBRARIES})
+    list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
 endif()
 
 #############################################################
