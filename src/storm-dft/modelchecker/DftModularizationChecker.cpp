@@ -136,7 +136,7 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftMo
     }
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()))};
 
-    return std::move(modelchecker.check(subDft, props, false, false, {}));
+    return modelchecker.check(subDft, props, false, false, {});
 }
 
 // Explicitly instantiate the class.
