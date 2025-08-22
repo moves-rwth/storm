@@ -38,6 +38,11 @@ We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. 
 To support newer versions of Gurobi, adapt `$STORM_DIR/resources/cmake/find_modules/FindGUROBI.cmake` with the new version numbers.
 
 
+## l3pp
+
+The l3pp version can be bumped by updating the corresponding `GIT_TAG`.
+
+
 ## nlohmann/json for Modern C++
 
 The currently shipped version is forked from the [official GitHub](https://github.com/nlohmann/json) commit `6eab7a2b187b10b2494e39c1961750bfd1bda500`.
