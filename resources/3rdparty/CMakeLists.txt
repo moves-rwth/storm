@@ -18,7 +18,7 @@ message (STATUS "Storm - Including l3pp logging.")
 ExternalProject_Add(
         l3pp_ext
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
-        GIT_TAG e4f8d7fe6c328849aff34d2dfd6fd592c14070d5
+        GIT_TAG 513c7589232396e4b8975113b7709a8f39b46c85
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/l3pp
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
