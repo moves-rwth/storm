@@ -85,7 +85,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
         sccDecOptions.subsystem(*states);
     }
 
-    uint64_t step = 0;
     while (true) {
         performSccDecomposition(updatingMatrix, sccDecOptions, sccDecRes, sccDecCache);
 
@@ -105,7 +104,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
             if (vector && vector->at(state).lower() == 0) {
                 // Check if we can stay in the SCC
                 for (auto const& entry : transitionMatrix.getRow(state)) {
-                    auto const& target = entry.getColumn();
                     const bool targetInSCC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
                     auto const& interval = entry.getValue();
                     if (!utility::isZero(interval.lower()) && !targetInSCC) {
@@ -152,7 +150,6 @@ void RobustMaximalEndComponentDecomposition<ValueType>::performRobustMaximalEndC
                 // Tally up lower probability to stay inside of the EC. Once this is >= 1, our EC is done.
                 double stayInsideECProb = 0;
                 for (auto& entry : updatingMatrix.getRow(state)) {
-                    auto const& target = entry.getColumn();
                     const bool targetInEC = sccIndex == sccDecRes.stateToSccMapping[entry.getColumn()];
                     if (!targetInEC) {
                         entry.setValue(0);

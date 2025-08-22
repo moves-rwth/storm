@@ -40,8 +40,8 @@ class SparseModelMemoryProductReverseData {
         auto const numberOfMemoryStates = memory.getNumberOfStates();
         auto const numberOfProductStates = productScheduler.getNumberOfModelStates();
         storm::storage::Scheduler<ValueType> result(numberOfModelStates, memory);
-        for (int state = 0; state < numberOfModelStates; state++) {
-            for (int memState = 0; memState < numberOfMemoryStates; memState++) {
+        for (uint64_t state = 0; state < numberOfModelStates; state++) {
+            for (uint64_t memState = 0; memState < numberOfMemoryStates; memState++) {
                 auto const& productState = toProductStateMapping[state * numberOfMemoryStates + memState];
                 if (productState < numberOfProductStates) {
                     result.setChoice(productScheduler.getChoice(productState), state, memState);
