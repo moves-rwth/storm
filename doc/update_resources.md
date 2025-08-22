@@ -22,13 +22,7 @@ In case a new patch needs to be created follow these steps:
 
 ## googletest / gtest
 
-To update gtest, simply download the new sources from [here](https://github.com/google/googletest/releases) and put them to `$STORM_DIR/resources/3rdparty/googletest`.
-
-The currently shipped version can be shown using
-
-```console
-grep GOOGLETEST_VERSION $STORM_DIR/resources/3rdparty/googletest/CMakeLists.txt
-```
+To update gtest, bump the `GTEST_VERSION` number.
 
 We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. Note that our code might not be compatible with future versions of gtest.
 
