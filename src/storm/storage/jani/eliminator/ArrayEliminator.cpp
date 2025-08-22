@@ -42,8 +42,8 @@ class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::E
         currentVar = &arrayVariable;
         this->declaringAutomaton = declaringAutomaton;
         STORM_LOG_ASSERT(currentVar->getType().isArrayType(), "expected array variable");
-        STORM_LOG_ASSERT((declaringAutomaton == nullptr && model.hasGlobalVariable(currentVar->getName()) ||
-                          declaringAutomaton != nullptr && declaringAutomaton->hasVariable(currentVar->getName())),
+        STORM_LOG_ASSERT(((declaringAutomaton == nullptr && model.hasGlobalVariable(currentVar->getName())) ||
+                          (declaringAutomaton != nullptr && declaringAutomaton->hasVariable(currentVar->getName()))),
                          "Cannot find variable declaration.");
         collectedRepl = &allCollectedReplacements;
 

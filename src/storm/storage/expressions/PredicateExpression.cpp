@@ -145,10 +145,13 @@ void PredicateExpression::printToStream(std::ostream& stream) const {
     switch (this->getPredicateType()) {
         case PredicateExpression::PredicateType::AtMostOneOf:
             stream << "atMostOneOf(";
+            break;
         case PredicateExpression::PredicateType::AtLeastOneOf:
             stream << "atLeastOneOf(";
+            break;
         case PredicateExpression::PredicateType::ExactlyOneOf:
             stream << "exactlyOneOf(";
+            break;
     }
     if (!operands.empty()) {
         stream << *operands[0];

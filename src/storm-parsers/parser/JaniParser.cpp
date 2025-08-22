@@ -760,7 +760,7 @@ std::shared_ptr<storm::jani::Constant> JaniParser<ValueType>::parseConstant(Json
         definingExpression = parseExpression(constantStructure.at("value"), scope.refine("Value of constant " + name));
         assert(definingExpression.isInitialized());
         // Check that the defined and actual expression value match OR the defined value is a rational and the actual value is a numerical type.
-        STORM_LOG_THROW((type.second == definingExpression.getType() || type.second.isRationalType() && definingExpression.getType().isNumericalType()),
+        STORM_LOG_THROW((type.second == definingExpression.getType() || (type.second.isRationalType() && definingExpression.getType().isNumericalType())),
                         storm::exceptions::InvalidJaniException,
                         "Type of value for constant '" + name + "' (scope: " + scope.description + ") does not match the given type '" +
                             type.first->getStringRepresentation() + ".");
