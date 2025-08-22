@@ -247,7 +247,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        distro: ["debian-12", "ubuntu-24.04"]
+        distro: ["debian-12", "ubuntu-24.04", "debian-13"]
         buildType: ["Release"]
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
