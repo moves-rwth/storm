@@ -583,6 +583,14 @@ boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae");
 }
 
+boost::any FormulaToJaniJson::visit(storm::logic::DiscountedCumulativeRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support discounted cumulative reward formulae");
+}
+
+boost::any FormulaToJaniJson::visit(storm::logic::DiscountedTotalRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support discounted total reward formulae");
+}
+
 std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
     using OpType = storm::expressions::OperatorType;
     switch (optype) {
