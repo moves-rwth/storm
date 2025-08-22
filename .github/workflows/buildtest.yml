@@ -109,7 +109,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -192,7 +192,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Replace Dockerfile
         run: cp .github/workflows/Dockerfile.archlinux Dockerfile
       - name: Build storm from Dockerfile
@@ -252,7 +252,7 @@ jobs:
         buildType: ["Release"]
     steps:
       - name: Git clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -324,7 +324,7 @@ jobs:
         with:
           xcode-version: ${{ matrix.config.xcode }}
       - name: Git clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install dependencies
         # cmake and gmp are already installed
         run: |
@@ -396,7 +396,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Git describe
         id: ghd
         uses: proudust/gh-describe@v2
