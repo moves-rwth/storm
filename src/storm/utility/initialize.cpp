@@ -66,7 +66,7 @@ void setLogLevel(l3pp::LogLevel level) {
 }
 
 void initializeFileLogging(std::string const& logfileName) {
-    l3pp::SinkPtr sink = l3pp::FileSink::create(logfileName);
+    l3pp::SinkPtr sink = l3pp::StreamSink::create(logfileName);
     l3pp::Logger::getRootLogger()->addSink(sink);
 }
 

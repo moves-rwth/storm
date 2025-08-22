@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_INITIALIZE_H
-#define STORM_UTILITY_INITIALIZE_H
+#pragma once
 
 #include "storm/utility/logging.h"
 
@@ -43,5 +42,3 @@ void initializeFileLogging(std::string const& logfileName);
 
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_INITIALIZE_H */
