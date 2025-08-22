@@ -109,13 +109,11 @@ class SmtlibSmtSolver : public SmtSolver {
      */
     void checkForErrorMessage(const std::string message);
 
-#ifndef WINDOWS
     // descriptors for the pipe from and to the solver
     int toSolver;
     int fromSolver;
     // A flag storing the Process ID of the solver. If this is zero, then the solver is not running
     pid_t processIdOfSolver;
-#endif
 
     // a filestream where the commands that we send to the solver will be stored (can be used for debugging purposes)
     std::ofstream commandFile;

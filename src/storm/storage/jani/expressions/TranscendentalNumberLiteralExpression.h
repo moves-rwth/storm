@@ -3,7 +3,6 @@
 
 #include "storm/storage/expressions/BaseExpression.h"
 #include "storm/storage/expressions/RationalLiteralExpression.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace expressions {

@@ -4,7 +4,6 @@
 #include <map>
 
 #include "storm/storage/prism/Variable.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {

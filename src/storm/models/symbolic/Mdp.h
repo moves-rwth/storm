@@ -2,7 +2,6 @@
 #define STORM_MODELS_SYMBOLIC_MDP_H_
 
 #include "storm/models/symbolic/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -19,10 +18,8 @@ class Mdp : public NondeterministicModel<Type, ValueType> {
     Mdp(Mdp<Type, ValueType> const& other) = default;
     Mdp& operator=(Mdp<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     Mdp(Mdp<Type, ValueType>&& other) = default;
     Mdp& operator=(Mdp<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.

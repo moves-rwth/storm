@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include "storm/storage/BitVector.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {

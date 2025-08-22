@@ -197,7 +197,6 @@ SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::set<storm::express
 #endif
 }
 
-#ifndef WINDOWS
 SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
 #ifdef STORM_HAVE_Z3
     lastCheckAssumptions = true;
@@ -223,7 +222,7 @@ SmtSolver::CheckResult Z3SmtSolver::checkWithAssumptions(std::initializer_list<s
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 }
-#endif
+
 storm::expressions::SimpleValuation Z3SmtSolver::getModelAsValuation() {
 #ifdef STORM_HAVE_Z3
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,

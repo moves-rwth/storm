@@ -2,7 +2,6 @@
 #define STORM_MODELS_SYMBOLIC_DTMC_H_
 
 #include "storm/models/symbolic/DeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -19,10 +18,8 @@ class Dtmc : public DeterministicModel<Type, ValueType> {
     Dtmc(Dtmc<Type, ValueType> const& other) = default;
     Dtmc& operator=(Dtmc<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     Dtmc(Dtmc<Type, ValueType>&& other) = default;
     Dtmc& operator=(Dtmc<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.

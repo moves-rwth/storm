@@ -13,7 +13,6 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace storage {

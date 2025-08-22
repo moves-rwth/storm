@@ -9,7 +9,6 @@
 #include "storm/storage/prism/StateActionReward.h"
 #include "storm/storage/prism/StateReward.h"
 #include "storm/storage/prism/TransitionReward.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {

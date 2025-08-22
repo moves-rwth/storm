@@ -3,7 +3,6 @@
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {

@@ -7,7 +7,6 @@
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/OptionalRef.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
