@@ -1,5 +1,6 @@
 #include "storm-cli-utilities/print.h"
 
+#include "resources.h"  // This header knows what to include for memory consumption
 #include "storm-version-info/storm-version.h"
 #include "storm/utility/cli.h"
 #include "storm/utility/macros.h"

@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <string>
 
-#include "storm/utility/OsDetection.h"
-
 namespace storm {
 namespace prism {
 class LocatedInformation {

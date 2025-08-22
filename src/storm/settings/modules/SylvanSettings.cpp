@@ -1,6 +1,7 @@
 #include "storm/settings/modules/SylvanSettings.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/OsDetection.h"
 
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"

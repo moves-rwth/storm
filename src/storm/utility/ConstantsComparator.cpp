@@ -97,7 +97,6 @@ template class ConstantsComparator<double>;
 template class ConstantsComparator<int>;
 template class ConstantsComparator<storm::storage::sparse::state_type>;
 
-#ifdef STORM_HAVE_CARL
 #if defined(STORM_HAVE_CLN)
 template class ConstantsComparator<ClnRationalNumber>;
 #endif
@@ -109,6 +108,5 @@ template class ConstantsComparator<GmpRationalNumber>;
 template class ConstantsComparator<RationalFunction>;
 template class ConstantsComparator<Polynomial>;
 template class ConstantsComparator<Interval>;
-#endif
 }  // namespace utility
 }  // namespace storm

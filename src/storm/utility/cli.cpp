@@ -6,13 +6,15 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
+#include <unistd.h>
+
 namespace storm {
 namespace utility {
 namespace cli {
 
 std::string getCurrentWorkingDirectory() {
     char temp[512];
-    return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
+    return (getcwd(temp, 512 - 1) ? std::string(temp) : std::string(""));
 }
 
 std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::expressions::ExpressionManager const& manager,

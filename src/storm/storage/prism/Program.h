@@ -19,7 +19,6 @@
 #include "storm/storage/prism/Player.h"
 #include "storm/storage/prism/RewardModel.h"
 #include "storm/storage/prism/SystemCompositionConstruct.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/solver.h"
 
 namespace storm {

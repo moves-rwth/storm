@@ -1,8 +1,7 @@
-#include "storm/utility/AutomaticSettings.h"
+#include "AutomaticSettings.h"
 
 #include <sstream>
 
-#include "storm/logic/Formula.h"
 #include "storm/logic/FormulaInformation.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"

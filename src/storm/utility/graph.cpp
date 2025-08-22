@@ -2,7 +2,6 @@
 #include <algorithm>
 
 #include "storm-config.h"
-#include "storm/utility/OsDetection.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 

@@ -5,8 +5,6 @@
 #include <set>
 #include <storm/storage/StronglyConnectedComponent.h>
 
-#include "storm/utility/OsDetection.h"
-
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/storage/Scheduler.h"

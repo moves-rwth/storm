@@ -7,7 +7,6 @@
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/Hash.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
 
 // Uncomment the following line to enable additional assertions for debugging bitvector operations.
