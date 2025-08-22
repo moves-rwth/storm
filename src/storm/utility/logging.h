@@ -1,7 +1,6 @@
-#ifndef STORM_UTILITY_LOGGING_H_
-#define STORM_UTILITY_LOGGING_H_
+#pragma once
 
-// Include config to know whether CARL is available or not.
+// Include config to know whether carl is available or not.
 #include "storm-config.h"
 #ifdef STORM_HAVE_CARL
 // Load streaming operator from CARL
@@ -29,5 +28,3 @@ using carl::operator<<;
 #define STORM_LOG_INFO(message) L3PP_LOG_INFO(l3pp::Logger::getRootLogger(), message)
 #define STORM_LOG_WARN(message) L3PP_LOG_WARN(l3pp::Logger::getRootLogger(), message)
 #define STORM_LOG_ERROR(message) L3PP_LOG_ERROR(l3pp::Logger::getRootLogger(), message)
-
-#endif /* STORM_UTILITY_LOGGING_H_ */
