@@ -1,0 +1,61 @@
+name: Release
+# Prepares a release and packages of Storm
+
+on:
+  # needed to trigger the workflow manually
+  workflow_dispatch:
+
+env:
+  # GitHub runners currently have 4 cores
+  NR_JOBS: "4"
+
+jobs:
+  debian:
+    name: Debian package (${{ matrix.distro.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - {name: "debian:12",
+             tag: "debian-12",
+             build_type: "Release"
+            }
+          - {name: "ubuntu:24.04",
+             tag: "ubuntu-24.04",
+             build_type: "Release"
+            }
+          - {name: "ubuntu:latest",
+             tag: "latest",
+             build_type: "Release"
+            }
+      fail-fast: false
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v4
+      - name: Build storm from Dockerfile
+        run: |
+          docker build -t movesrwth/storm:ci . \
+            --build-arg BASE_IMAGE=movesrwth/storm-basesystem:${{ matrix.distro.tag }} \
+            --build-arg build_type="${{ matrix.distro.build_type }}" \
+            --build-arg carl_tag="master" \
+            --build-arg cmake_args="-DSTORM_BUILD_TESTS=OFF" \
+            --build-arg no_threads=${NR_JOBS}
+            # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
+      - name: Run Docker
+        run: docker run -d -it --name ci movesrwth/storm:ci
+      - name: Create package
+        run: docker exec ci bash -c "cd /opt/storm/build; make package"
+      - name: Copy package
+        run: |
+          docker exec ci bash -c "mkdir /opt/package; cp /opt/storm/build/*.deb /opt/package/"
+          docker cp ci:/opt/package .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storm-deb-${{ matrix.distro.tag }}
+          path: ./package/*.deb
+      - name: Test package
+        run: |
+          docker run -d -it --name ci-test ${{ matrix.distro.name }}
+          docker cp package/*.deb ci-test:/opt/
+          docker exec ci-test bash -c "apt-get update; apt-get install -y /opt/*.deb"
+          docker exec ci-test bash -c "storm"

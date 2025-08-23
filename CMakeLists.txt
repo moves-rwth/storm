@@ -5,9 +5,12 @@ endif()
 
 # Set project name
 project (storm
+		VERSION 1.10.0.1
+		# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 		LANGUAGES CXX C
-		VERSION 1.10.0.1)
-# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+		DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
+		HOMEPAGE_URL "https://www.stormchecker.org"
+)
 
 # Add the resources/cmake folder to Module Search Path
 set(STORM_CMAKE_FIND_MODULES "${PROJECT_SOURCE_DIR}/resources/cmake/find_modules")
