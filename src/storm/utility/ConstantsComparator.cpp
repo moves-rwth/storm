@@ -70,7 +70,7 @@ bool ConstantsComparator<ValueType, ConstantsComparatorEnablePrecision<ValueType
     } else {
         ValueType absDiff = storm::utility::abs<ValueType>(value1 - value2);
         if (relative) {
-            return absDiff <= precision * (storm::utility::abs(value1) + storm::utility::abs(value2));
+            return absDiff <= precision * storm::utility::max(storm::utility::abs(value1), storm::utility::abs(value2));
         } else {
             return absDiff <= precision;
         }
@@ -89,7 +89,7 @@ bool ConstantsComparator<ValueType, ConstantsComparatorEnablePrecision<ValueType
 
 template<typename ValueType>
 bool ConstantsComparator<ValueType, ConstantsComparatorEnablePrecision<ValueType>>::isLess(ValueType const& value1, ValueType const& value2) const {
-    return value1 < value2 - precision;
+    return value1 - precision < value2;
 }
 
 // Explicit instantiations.
