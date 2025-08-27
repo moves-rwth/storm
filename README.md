@@ -31,7 +31,7 @@ Feel free to contact us in case you need any pointers or help.
 
 Authors
 -----------------------------
-Storm has been developed at RWTH Aachen University.
+Storm has initially been developed at RWTH Aachen University. It is currently under development at (lexicographically) Eindhoven University of Technology, Radboud University, and RWTH Aachen University. 
 
 ###### Principal developers
 * Christian Hensel
@@ -40,9 +40,12 @@ Storm has been developed at RWTH Aachen University.
 * Tim Quatmann
 * Matthias Volk
 
-###### Developers (lexicographical order)
-* Jana Berger
+###### Active Developers (lexicographical order)
 * Alexander Bork
+* Linus Heck
+
+###### Former Developers (lexicographical order)
+* Jana Berger
 * David Korzeniewski
 * Jip Spel
 
@@ -51,9 +54,9 @@ Storm has been developed at RWTH Aachen University.
 * Dimitri Bohlender
 * Harold Bruintjes
 * Michael Deutschen
-* Linus Heck
 * Thomas Heinemann
 * Thomas Henn
+* Mahdi JafariRaviz
 * Tom Janson
 * Jan Karuc
 * Joachim Klein
