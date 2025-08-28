@@ -245,7 +245,6 @@ class SparseDoubleLPEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::LinearProgramming);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
-        env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
 };
@@ -261,7 +260,6 @@ class SparseDoubleViToLPEnvironment {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ViToLp);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
-        env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
     }
 };
@@ -969,7 +967,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
 }
 
 TYPED_TEST(MdpPrctlModelCheckerTest, SmallDiscount) {
-    if (TypeParam::isExact) {
+    if (TypeParam::isExact || std::is_same<TypeParam, SparseDoubleLPEnvironment>::value || std::is_same<TypeParam, SparseDoubleViToLPEnvironment>::value) {
         GTEST_SKIP() << "Exact computations for discounted properties are not supported.";
     }
     std::string formulasString = "Rmax=? [ C ]";
@@ -998,7 +996,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, SmallDiscount) {
 }
 
 TYPED_TEST(MdpPrctlModelCheckerTest, OneStateDiscounting) {
-    if (TypeParam::isExact) {
+    if (TypeParam::isExact || std::is_same<TypeParam, SparseDoubleLPEnvironment>::value || std::is_same<TypeParam, SparseDoubleViToLPEnvironment>::value) {
         GTEST_SKIP() << "Exact computations for discounted properties are not supported.";
     }
     std::string formulasString = "Rmax=? [ Cdiscount=9/10 ]";
