@@ -53,6 +53,7 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 * Daniel Basgöze
 * Dimitri Bohlender
 * Harold Bruintjes
+* Calvin Chau
 * Michael Deutschen
 * Thomas Heinemann
 * Thomas Henn
