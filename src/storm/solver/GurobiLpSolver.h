@@ -131,8 +131,9 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     bool getBinaryValue(Variable const& name, uint64_t const& solutionIndex) const;
     ValueType getObjectiveValue(uint64_t solutionIndex) const;
 
-    // Method for specifying and retrieving a time limit
+    // Method for specifying a time limit
     void setTimeLimit(uint64_t seconds);
+    // Retrieve the time limit in seconds. Requires that a time limit has been set before.
     uint64_t getTimeLimit();
     // Method for checking whether the model has a time limit
     bool hasTimeLimit();
