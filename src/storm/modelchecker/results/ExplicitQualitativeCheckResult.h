@@ -11,7 +11,6 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 
@@ -33,10 +32,8 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
 
     ExplicitQualitativeCheckResult(ExplicitQualitativeCheckResult const& other) = default;
     ExplicitQualitativeCheckResult& operator=(ExplicitQualitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     ExplicitQualitativeCheckResult(ExplicitQualitativeCheckResult&& other) = default;
     ExplicitQualitativeCheckResult& operator=(ExplicitQualitativeCheckResult&& other) = default;
-#endif
 
     virtual std::unique_ptr<CheckResult> clone() const override;
 

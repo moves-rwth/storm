@@ -11,7 +11,6 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 
@@ -38,10 +37,8 @@ class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
 
     ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult const& other) = default;
     ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult&& other) = default;
     ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
-#endif
     explicit ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other);
 
     virtual ~ExplicitQuantitativeCheckResult() = default;

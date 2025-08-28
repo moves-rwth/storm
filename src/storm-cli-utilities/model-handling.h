@@ -7,8 +7,8 @@
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/ExpressionParser.h"
 
+#include "AutomaticSettings.h"
 #include "storm/io/file.h"
-#include "storm/utility/AutomaticSettings.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"

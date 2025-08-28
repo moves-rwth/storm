@@ -12,7 +12,6 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionForward.h"
@@ -55,10 +54,8 @@ class Model : public storm::models::Model<CValueType> {
     Model(Model<Type, ValueType> const& other) = default;
     Model& operator=(Model<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     Model(Model<Type, ValueType>&& other) = default;
     Model& operator=(Model<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.

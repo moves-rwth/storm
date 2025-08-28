@@ -5,7 +5,6 @@
 
 #include "storm/storage/prism/Assignment.h"
 #include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {

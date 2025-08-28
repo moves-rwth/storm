@@ -7,7 +7,6 @@
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/sparse/StateType.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace storage {
@@ -28,11 +27,9 @@ class StateBlock {
     // Default constructors.
     StateBlock() = default;
     StateBlock(StateBlock const& other) = default;
-#ifndef WINDOWS
     StateBlock(StateBlock&& other) = default;
     StateBlock& operator=(StateBlock const& other) = default;
     StateBlock& operator=(StateBlock&& other) = default;
-#endif
     /*!
      * Creates a state block and inserts all elements in the given range.
      *

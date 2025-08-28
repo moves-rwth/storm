@@ -953,7 +953,7 @@ typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismMode
         return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables);
     } else {
         // Calculate number of required variables to encode the nondeterminism.
-        uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
+        uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(maxChoices)));
 
         storm::dd::Bdd<Type> equalsNumberOfChoicesDd;
         std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, generationInfo.manager->template getAddZero<ValueType>());

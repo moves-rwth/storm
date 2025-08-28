@@ -4,7 +4,6 @@
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdType.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace modelchecker {
@@ -22,11 +21,8 @@ class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult<ValueType
 
     SymbolicQuantitativeCheckResult(SymbolicQuantitativeCheckResult const& other) = default;
     SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     SymbolicQuantitativeCheckResult(SymbolicQuantitativeCheckResult&& other) = default;
     SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult&& other) = default;
-#endif
-
     SymbolicQuantitativeCheckResult(SymbolicQualitativeCheckResult<Type> const& other);
 
     virtual std::unique_ptr<CheckResult> clone() const override;

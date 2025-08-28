@@ -1827,7 +1827,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
             return combineEdgesBySummation(allGuards, edges);
         } else {
             // Calculate number of required variables to encode the nondeterminism.
-            uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
+            uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(std::log2(maxChoices)));
 
             storm::dd::Add<Type, ValueType> allEdges = this->variables.manager->template getAddZero<ValueType>();
             std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;

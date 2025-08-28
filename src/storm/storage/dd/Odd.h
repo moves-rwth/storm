@@ -30,10 +30,8 @@ class Odd {
     Odd() = default;
     Odd(Odd const& other) = default;
     Odd& operator=(Odd const& other) = default;
-#ifndef WINDOWS
     Odd(Odd&& other) = default;
     Odd& operator=(Odd&& other) = default;
-#endif
 
     /*!
      * Retrieves the then-successor of this ODD node.

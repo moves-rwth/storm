@@ -2,7 +2,6 @@
 #define STORM_MODELS_SPARSE_STOCHASTICTWOPLAYERGAME_H_
 
 #include "storm/models/sparse/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {

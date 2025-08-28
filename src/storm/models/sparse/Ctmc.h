@@ -2,7 +2,6 @@
 #define STORM_MODELS_SPARSE_CTMC_H_
 
 #include "storm/models/sparse/DeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {

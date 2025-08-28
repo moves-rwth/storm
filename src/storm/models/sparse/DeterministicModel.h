@@ -2,7 +2,6 @@
 #define STORM_MODELS_SPARSE_DETERMINISTICMODEL_H_
 
 #include "storm/models/sparse/Model.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {

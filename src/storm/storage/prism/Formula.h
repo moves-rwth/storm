@@ -7,7 +7,6 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/prism/LocatedInformation.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace prism {

@@ -3,7 +3,6 @@
 
 #include "storm/storage/expressions/BinaryExpression.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace expressions {
