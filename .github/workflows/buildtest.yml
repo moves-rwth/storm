@@ -23,7 +23,7 @@ jobs:
       matrix:
         config:
           - {name: "GMP exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -40,7 +40,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "CLN exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -57,7 +57,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "CLN exact; CLN rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -74,7 +74,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "GMP exact; CLN rational functions; No dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "ON",
              disable_gmm: "ON",
@@ -386,7 +386,7 @@ jobs:
         buildType:
           - {name: "Debug",
              dockerTag: "ci-debug",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              Developer: "ON"
           }
           - {name: "Release",

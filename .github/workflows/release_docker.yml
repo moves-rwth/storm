@@ -25,7 +25,7 @@ jobs:
       matrix:
         image:
           - {tag: "${{ github.event.inputs.tag }}-debug",
-             baseImg: "movesrwth/storm-dependencies:latest-debug",
+             baseImg: "movesrwth/storm-dependencies:latest",
              file: "Dockerfile",
              buildType: "Debug",
              developer: "ON"
