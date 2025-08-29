@@ -26,13 +26,13 @@ jobs:
         image:
           - {tag: "${{ github.event.inputs.tag }}-debug",
              baseImg: "movesrwth/storm-dependencies:latest",
-             file: "Dockerfile",
+             file: ".github/workflows/Dockerfile.release",
              buildType: "Debug",
              developer: "ON"
             }
           - {tag: "${{ github.event.inputs.tag }}",
              baseImg: "movesrwth/storm-dependencies:latest",
-             file: "Dockerfile",
+             file: ".github/workflows/Dockerfile.release",
              buildType: "Release",
              developer: "OFF"
             }
