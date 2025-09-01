@@ -19,6 +19,8 @@ In case a new patch needs to be created follow these steps:
 7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
 8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
 
+## GMM
+To update GMM, simply change the corresponding version in `$STORM_DIR/resources/3rdparty/CmakeLists.txt`.
 
 ## googletest / gtest
 

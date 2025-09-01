@@ -45,10 +45,11 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    message (STATUS "Storm - Including gmm 5.4.4.")
+    set(GMM_VERSION "5.4.4")
+    message (STATUS "Storm - Including gmm ${GMM_VERSION}.")
     ExternalProject_Add(
             gmm_src
-            URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-5.4.4.tar.gz
+            URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
