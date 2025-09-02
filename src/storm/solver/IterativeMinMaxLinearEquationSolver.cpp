@@ -220,6 +220,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveInducedE
         }
         STORM_LOG_ASSERT(subB.size() == x.size(), "Sizes of subB and x do not coincide.");
         STORM_LOG_ASSERT(this->linearEquationSolverFactory != nullptr, "Wrong constructor was called.");
+        STORM_LOG_THROW(this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::FixedPointSystem,
+                        storm::exceptions::NotImplementedException, "Solving induced system of Interval Model not supported for the selected equation solver");
 
         storm::storage::SparseMatrixBuilder<SolutionType> newMatrixBuilder(this->A->getRowCount(), this->A->getColumnCount(), this->A->getEntryCount());
 
