@@ -178,14 +178,14 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
-             disable_gmm: "OFF",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
              packages: ""
           }
           - {name: "Clang",
              buildType: "Debug",
-             disable_gmm: "OFF",
+             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
              packages: "clang"
