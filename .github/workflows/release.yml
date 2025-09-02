@@ -1,0 +1,57 @@
+name: Release new version
+# Triggered by new a release on Github
+# - deploys Docker containers
+# - updates stable branch
+# - updates Storm version in stormpy
+
+# Needs personal access token CI_token with permissions 'pull-requests' and 'workflows'
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy_docker:
+    # Create Docker images for tag
+    uses: ./.github/workflows/release_docker.yml
+    with:
+      # Use the tag from the release
+      tag: ${{ github.event.release.tag_name }}
+    secrets: inherit
+
+  update_stable:
+    # Update stable branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+      - name: Rebase
+        run: |
+          git config user.name 'Stormchecker bot'
+          git config user.email 'dev@stormchecker.org'
+          git fetch origin stable
+          git checkout stable
+          git rebase ${{ github.event.release.tag_name }}
+          git push origin stable
+
+  deploy_docker_stable:
+    # Create Docker images for stable branch
+    needs: update_stable
+    uses: ./.github/workflows/release_docker.yml
+    with:
+      tag: stable
+    secrets: inherit
+
+  update_stormpy:
+    # Trigger generation of PR in stormpy which updates the Storm version
+    needs: [deploy_docker, deploy_docker_stable]
+    uses: moves-rwth/stormpy/.github/workflows/update_storm.yml@master
+    with:
+      storm_version: ${{ github.event.release.tag_name }}
+    secrets:
+      personal_access_token: ${{ secrets.CI_token }}
