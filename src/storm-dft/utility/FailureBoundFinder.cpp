@@ -22,7 +22,8 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::model
     }
 
     // Only need to check as long as bound candidate + nr of non-Markovians to check is smaller than number of dependent events
-    while (nrNonMarkovian <= nrDepEvents && boundCandidate >= 0) {
+    // Check boundCandidate == 0 is later performed in the switch case
+    while (nrNonMarkovian <= nrDepEvents) {
         if (nrNonMarkovian == 0 and boundCandidate == 0) {
             nrNonMarkovian = 1;
         }
@@ -78,7 +79,7 @@ uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::model
             }
         }
     }
-    while (boundCandidate >= 0) {
+    while (boundCandidate > 0) {
         currentTimepoint = bound + 1;
         while (currentTimepoint - boundCandidate > 0) {
             --currentTimepoint;
@@ -165,7 +166,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<doubl
             return dft.nrBasicElements() + 1;
         }
         uint64_t bound = dft.nrBasicElements();
-        while (bound >= 0) {
+        while (bound > 0) {
             smtchecker.setSolverTimeout(timeout * 1000);
             storm::solver::SmtSolver::CheckResult tmp_res = smtchecker.checkTleFailsWithEq(bound);
             smtchecker.unsetSolverTimeout();
