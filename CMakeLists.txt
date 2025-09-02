@@ -217,6 +217,12 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 		message(FATAL_ERROR "Clang version must be at least 10.0")
 	endif()
 
+	# Certain clang 14 versions are know to be buggy (14.0.6), debian 12 bookworm ships clang 14 as clang and thus
+	# users should be warned to upgrade their compiler.
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
+		message(FATAL_ERROR "Clang version ${CMAKE_CXX_COMPILER_VERSION} is not supported due to bugs in the compiler, please use a more recent version.")
+	endif()
+
 	set(STORM_COMPILER_CLANG ON)
 	set(CLANG ON)
 	set(STORM_COMPILER_ID "clang")
