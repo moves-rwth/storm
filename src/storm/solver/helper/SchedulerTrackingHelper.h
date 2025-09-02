@@ -27,7 +27,7 @@ class RobustSchedulerTrackingBackend {
         best = value;
     }
 
-    void applyUpdate(ValueType& currValue, uint64_t rowGroup) {
+    void applyUpdate(ValueType& currValue, uint64_t /* rowGroup */) {
         if (applyUpdates) {
             currValue = best;
         }

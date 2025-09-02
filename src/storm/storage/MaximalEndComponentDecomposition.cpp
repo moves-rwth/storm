@@ -79,7 +79,6 @@ std::string MaximalEndComponentDecomposition<ValueType>::statistics(uint64_t tot
         return "Empty MEC decomposition.";
     }
     uint64_t statesInMec = 0;
-    uint64_t choicesInMec = 0;
     uint64_t trivialMecs = 0;
     uint64_t smallestSize = std::numeric_limits<uint64_t>::max();
     uint64_t largestSize = 0;
