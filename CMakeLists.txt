@@ -213,8 +213,8 @@ message(VERBOSE "Storm - Assuming extension for static libraries: ${STATIC_EXT}"
 #############################################################
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
-		message(FATAL_ERROR "Clang version must be at least 10.0")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0)
+		message(FATAL_ERROR "Clang version must be at least 15.0, currently you are using version ${CMAKE_CXX_COMPILER_VERSION}.")
 	endif()
 
 	set(STORM_COMPILER_CLANG ON)
