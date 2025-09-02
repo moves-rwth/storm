@@ -69,7 +69,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.30")
+option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.32.1")
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
 set(GLPK_ROOT "" CACHE STRING "A hint to the root directory of GLPK.")
