@@ -222,8 +222,14 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(STORM_COMPILER_ID "clang")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
-		message(FATAL_ERROR "AppleClang version must be at least 15.0.0 (Xcode version 15), currently you are using version ${CMAKE_CXX_COMPILER_VERSION}.")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14.0.3)
+		message(FATAL_ERROR "AppleClang version must be at least 14.0.3 (Xcode version 14.3).")
+	elseif (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+		message(WARNING "Disabling stack checks for AppleClang version < 15.0")
+		# Stack checks are known to produce errors with the following Clang versions:
+		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
 	set(STORM_COMPILER_APPLECLANG ON)
