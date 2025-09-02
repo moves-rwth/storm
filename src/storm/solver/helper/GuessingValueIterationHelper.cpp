@@ -152,7 +152,7 @@ std::pair<gviinternal::VerifyResult, SolverStatus> GuessingValueIterationHelper<
     guessLower = lowerX;
     guessUpper = upperX;
     guessLower[rowGroupToGuess] = guessUpper[rowGroupToGuess] = guessValue;
-    ValueType sumLengthBefore = 0, maxLengthBefore = 0;
+    ValueType sumLengthBefore = 0;
     GVIBackend<ValueType, Dir> guessingBackend(rowGroupToGuess);
     GVIBackend<ValueType, Dir> iiBackend;
 
@@ -252,7 +252,7 @@ template<OptimizationDirection Dir>
 SolverStatus GuessingValueIterationHelper<ValueType, TrivialRowGrouping>::doIterations(
     std::vector<ValueType>& lowerX, std::vector<ValueType>& upperX, const std::vector<ValueType>& b, uint64_t& numIterations,
     std::optional<uint64_t> maxIterations, const ValueType& precision, std::function<SolverStatus(GVIData<ValueType> const&)> const& iterationCallback) {
-    ValueType sumLengthBefore = 0, maxLengthBefore = 0;
+    ValueType sumLengthBefore = 0;
     uint64_t localIterations = 0;
     GVIBackend<ValueType, Dir> iiBackend;
     auto status = SolverStatus::InProgress;
