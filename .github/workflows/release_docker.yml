@@ -4,12 +4,21 @@ name: Release Docker
 # https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 
 on:
+  # needed to reuse the workflow from another one
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Docker tag (e.g. 1.1.0 or stable)'
+        required: true
+        type: string
+        default: 'x.y.z'
   # needed to trigger the workflow manually
   workflow_dispatch:
     inputs:
       tag:
         description: 'Docker tag (e.g. 1.1.0 or stable)'
         required: true
+        type: string
         default: 'x.y.z'
 
 env:
@@ -24,13 +33,13 @@ jobs:
     strategy:
       matrix:
         image:
-          - {tag: "${{ github.event.inputs.tag }}-debug",
+          - {tag: "${{ inputs.tag }}-debug",
              baseImg: "movesrwth/storm-dependencies:latest",
              file: ".github/workflows/Dockerfile.release",
              buildType: "Debug",
              developer: "ON"
             }
-          - {tag: "${{ github.event.inputs.tag }}",
+          - {tag: "${{ inputs.tag }}",
              baseImg: "movesrwth/storm-dependencies:latest",
              file: ".github/workflows/Dockerfile.release",
              buildType: "Release",
@@ -42,6 +51,8 @@ jobs:
     steps:
       - name: Git clone
         uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
       - name: Prepare
         # Sanitize platform name
         run: |
@@ -100,8 +111,8 @@ jobs:
       matrix:
         image:
           # Must be the same as above
-          - {tag: "${{ github.event.inputs.tag }}-debug"}
-          - {tag: "${{ github.event.inputs.tag }}"}
+          - {tag: "${{ inputs.tag }}-debug"}
+          - {tag: "${{ inputs.tag }}"}
     steps:
       - name: Download digests
         uses: actions/download-artifact@v5
