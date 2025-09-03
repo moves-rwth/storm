@@ -193,5 +193,13 @@ boost::any ToPrefixStringVisitor::visit(UntilFormula const& f, boost::any const&
 boost::any ToPrefixStringVisitor::visit(HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
 }
+
+boost::any ToPrefixStringVisitor::visit(DiscountedCumulativeRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+}
+
+boost::any ToPrefixStringVisitor::visit(DiscountedTotalRewardFormula const&, boost::any const&) const {
+    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+}
 }  // namespace logic
 }  // namespace storm

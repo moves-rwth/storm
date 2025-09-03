@@ -165,12 +165,16 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Env
     storm::logic::Formula const& rewardFormula = checkTask.getFormula();
     if (rewardFormula.isCumulativeRewardFormula()) {
         return this->computeCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asCumulativeRewardFormula()));
+    } else if (rewardFormula.isDiscountedCumulativeRewardFormula()) {
+        return this->computeDiscountedCumulativeRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedCumulativeRewardFormula()));
     } else if (rewardFormula.isInstantaneousRewardFormula()) {
         return this->computeInstantaneousRewards(env, checkTask.substituteFormula(rewardFormula.asInstantaneousRewardFormula()));
     } else if (rewardFormula.isReachabilityRewardFormula()) {
         return this->computeReachabilityRewards(env, checkTask.substituteFormula(rewardFormula.asReachabilityRewardFormula()));
     } else if (rewardFormula.isTotalRewardFormula()) {
         return this->computeTotalRewards(env, checkTask.substituteFormula(rewardFormula.asTotalRewardFormula()));
+    } else if (rewardFormula.isDiscountedTotalRewardFormula()) {
+        return this->computeDiscountedTotalRewards(env, checkTask.substituteFormula(rewardFormula.asDiscountedTotalRewardFormula()));
     } else if (rewardFormula.isLongRunAverageRewardFormula()) {
         return this->computeLongRunAverageRewards(env, checkTask.substituteFormula(rewardFormula.asLongRunAverageRewardFormula()));
     } else if (rewardFormula.isConditionalRewardFormula()) {
@@ -224,6 +228,20 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAver
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageProbabilities(
     Environment const&, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+}
+
+template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeDiscountedCumulativeRewards(
+    Environment const&, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, SolutionType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+}
+
+template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeDiscountedTotalRewards(
+    Environment const&, CheckTask<storm::logic::DiscountedTotalRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }

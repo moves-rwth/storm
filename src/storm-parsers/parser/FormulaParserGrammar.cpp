@@ -59,7 +59,8 @@ void FormulaParserGrammar::initialize() {
     operatorSubFormula =
         (((qi::eps(qi::_r1 == storm::logic::FormulaContext::Probability) > formula(FormulaKind::Path, qi::_r1)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::Reward) >
-           (longRunAverageRewardFormula | eventuallyFormula(qi::_r1) | cumulativeRewardFormula | instantaneousRewardFormula | totalRewardFormula)) |
+           (longRunAverageRewardFormula | eventuallyFormula(qi::_r1) | discountedCumulativeRewardFormula | discountedTotalRewardFormula |
+            cumulativeRewardFormula | instantaneousRewardFormula | totalRewardFormula)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::Time) > eventuallyFormula(qi::_r1)) |
           (qi::eps(qi::_r1 == storm::logic::FormulaContext::LongRunAverage) > formula(FormulaKind::State, storm::logic::FormulaContext::LongRunAverage))) >>
          -(qi::lit("||") >
@@ -174,6 +175,14 @@ void FormulaParserGrammar::initialize() {
     pathFormula.name("path formula");
 
     // Quantitative path formulae (reward)
+    discountedTotalRewardFormula =
+        (qi::lit("Cdiscount=") >>
+         expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedTotalRewardFormula, phoenix::ref(*this), qi::_1)];
+    discountedTotalRewardFormula.name("discounted total reward formula");
+    discountedCumulativeRewardFormula =
+        (qi::lit("C") >> timeBounds >> qi::lit("discount=") >>
+         expressionParser)[qi::_val = phoenix::bind(&FormulaParserGrammar::createDiscountedCumulativeRewardFormula, phoenix::ref(*this), qi::_2, qi::_1)];
+    discountedCumulativeRewardFormula.name("discounted cumulative reward formula");
     longRunAverageRewardFormula = (qi::lit("LRA") | qi::lit("S") |
                                    qi::lit("MP"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageRewardFormula, phoenix::ref(*this))];
     longRunAverageRewardFormula.name("long run average reward formula");
@@ -278,6 +287,8 @@ void FormulaParserGrammar::initialize() {
     //            debug(filterProperty)
     //            debug(constantDefinition )
     //            debug(start)
+    //            debug(discountedCumulativeRewardFormula)
+    //            debug(discountedTotalRewardFormula)
 
     // Enable error reporting.
     qi::on_error<qi::fail>(rewardModelName, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -305,6 +316,8 @@ void FormulaParserGrammar::initialize() {
     qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(totalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(discountedCumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(discountedTotalRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(playerCoalition, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(gameFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(multiOperatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -402,8 +415,28 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createCumulat
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::CumulativeRewardFormula(bounds, timeBoundReferences));
 }
 
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createDiscountedCumulativeRewardFormula(
+    storm::expressions::Expression const& discountFactor,
+    std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
+                           std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const {
+    std::vector<storm::logic::TimeBound> bounds;
+    std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
+    for (auto const& timeBound : timeBounds) {
+        STORM_LOG_THROW(!std::get<0>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas with lower time bound are not allowed.");
+        STORM_LOG_THROW(std::get<1>(timeBound), storm::exceptions::WrongFormatException, "Cumulative reward formulas require an upper bound.");
+        bounds.push_back(std::get<1>(timeBound).get());
+        timeBoundReferences.emplace_back(*std::get<2>(timeBound));
+    }
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::DiscountedCumulativeRewardFormula(discountFactor, bounds, timeBoundReferences));
+}
+
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createTotalRewardFormula() const {
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::TotalRewardFormula());
+}
+
+std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createDiscountedTotalRewardFormula(
+    storm::expressions::Expression const& discountFactor) const {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::DiscountedTotalRewardFormula(discountFactor));
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
