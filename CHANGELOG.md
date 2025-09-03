@@ -4,6 +4,29 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+
+Version 1.11.x
+--------------
+
+## Version 1.11.0 (2025/09)
+
+- Completely restructured CMake build process:
+    * Storm can now be properly installed.
+    * Carl-storm is now automatically fetched from a predefined repository and tag. Use CMake option `-DFETCHCONTENT_SOURCE_DIR_CARL=<path_to_carl>` to set a local path.
+- Improved support for interval models, especially parsing support for Prism models with intervals and CLI support for interval models.
+- Support for discounted properties in DTMCs and MDPs.
+- Added guessing value iteration.
+- Support exporting schedulers for multi-objective properties.
+- Revised implementation of conditional probabilities for MDPs.
+- Added building of choice labels for Jani.
+- Support time limits for the Gurobi LP Solver.
+- Various fixes in DRN parser, BitVector, (negative) expected rewards, parsing of PDEP and for compiler warnings.
+- Updated dependencies: carl-storm, gmm, googletest, l3pp, spot.
+- Removed support for Intel TBB.
+- Developer: Replaced `GmmxxMultiplier` by `ViOperatorMultiplier`.
+- Developer: Added CI workflow for new releases.
+
+
 Version 1.10.x
 --------------
 
@@ -137,9 +160,9 @@ Version 1.6.x
 - Simulator supports exact arithmetic.
 - Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs).
 - Fixed issues with JANI inputs concerning .
-    - transient variable expressions in properties,
-    - constants in properties, and
-    - integer variables with either only an upper or only a lower bound.
+    * transient variable expressions in properties,
+    * constants in properties, and
+    * integer variables with either only an upper or only a lower bound.
 - `storm-pomdp`: States can be labelled with values for observable predicates.
 - `storm-pomdp`: (Only API) Track state estimates.
 - `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP.
@@ -211,7 +234,7 @@ Version 1.4.x
 - If an option is unknown, Storm now suggests similar option names.
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
 - Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`.
-- Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>`.
+- Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use `--exportscheduler <filename>`.
 - PRISM language: Support for the new `round` operator.
 - PRISM language: Improved error messages of the parser.
 - JANI: Allow bounded types for constants.
@@ -269,7 +292,7 @@ Version 1.3.x
 ### Comparison with Version 1.2.0 (details see below)
 - Heavily extended JANI-support
 - New binary `storm-conv` that handles conversion between model files
-- New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
+- New binary `storm-pomdp` that handles the translation of POMDPs to pMCs.
 - `storm-gspn` improved
 - Sound value iteration
 
