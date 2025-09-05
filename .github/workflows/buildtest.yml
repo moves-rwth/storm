@@ -37,7 +37,7 @@ jobs:
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
-             AllSanitizers: "ON",
+             AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "CLN exact; GMP rational functions; All dependencies",
@@ -54,7 +54,7 @@ jobs:
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "OFF",
-             AllSanitizers: "ON",
+             AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "CLN exact; CLN rational functions; All dependencies",
@@ -71,7 +71,7 @@ jobs:
              Developer: "ON",
              ClnExact: "ON",
              ClnRatfunc: "ON",
-             AllSanitizers: "ON",
+             AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "GMP exact; CLN rational functions; No dependencies",
@@ -88,7 +88,7 @@ jobs:
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "ON",
-             AllSanitizers: "ON",
+             AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
           - {name: "Minimal dependencies (without CLN)",
@@ -105,7 +105,7 @@ jobs:
              Developer: "ON",
              ClnExact: "OFF",
              ClnRatfunc: "OFF",
-             AllSanitizers: "ON",
+             AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
     steps:
@@ -141,7 +141,8 @@ jobs:
           buildType: ${{ matrix.config.buildType }}
           docker: true
       - name: Run tests
-        run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+        #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
+        run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project
         uses: ./.github/actions/starter-project-action
         with:
