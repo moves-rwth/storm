@@ -16,6 +16,7 @@
 
 namespace {
 
+#ifdef STORM_HAVE_GMM
 class GmmxxDoubleGmresEnvironment {
    public:
     typedef double ValueType;
@@ -43,6 +44,7 @@ class EigenDoubleDGmresEnvironment {
         return env;
     }
 };
+#endif
 
 class EigenRationalLUEnvironment {
    public:
