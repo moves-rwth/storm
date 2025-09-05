@@ -16,6 +16,7 @@ namespace {
 
 enum class CtmcEngine { JaniSparse };
 
+#ifdef STORM_HAVE_GMM
 class SparseGmmxxGmresIluEnvironment {
    public:
     static const CtmcEngine engine = CtmcEngine::JaniSparse;
@@ -32,6 +33,7 @@ class SparseGmmxxGmresIluEnvironment {
         return env;
     }
 };
+#endif
 
 class SparseSoundEnvironment {
    public:

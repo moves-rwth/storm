@@ -21,6 +21,7 @@
 
 namespace {
 
+#ifdef STORM_HAVE_GMM
 class GBGmmxxDoubleGmresEnvironment {
    public:
     typedef double ValueType;
@@ -52,6 +53,7 @@ class GBEigenDoubleDGmresEnvironment {
         return env;
     }
 };
+#endif
 
 class GBEigenRationalLUEnvironment {
    public:
@@ -98,6 +100,7 @@ class GBNativeWalkerChaeEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class DistrGmmxxDoubleGmresEnvironment {
    public:
     typedef double ValueType;
@@ -113,6 +116,7 @@ class DistrGmmxxDoubleGmresEnvironment {
         return env;
     }
 };
+#endif
 
 class DistrEigenRationalLUEnvironment {
    public:
