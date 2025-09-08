@@ -47,6 +47,7 @@ At this point, all relevant pull requests should have been merged into Storm and
    * updates the `stable` branch
    * creates new Docker containers for both the tag and `stable` branch
    * triggers a PR in stormpy to update the Storm version
+   * triggers a PR in Storm to set the development version of Storm again
 
 
 ## After the release
