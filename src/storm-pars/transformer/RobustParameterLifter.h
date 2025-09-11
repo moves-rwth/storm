@@ -15,8 +15,6 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
-
 namespace storm {
 namespace transformer {
 

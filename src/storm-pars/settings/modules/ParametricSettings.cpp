@@ -40,7 +40,7 @@ ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.")
-                        .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument("time-travel", "Enable time-travelling")
+                        .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument(bigStepEnabledName, "Enable big-step")
                                          .setDefaultValueBoolean(true)
                                          .makeOptional()
                                          .build())
@@ -81,7 +81,7 @@ bool ParametricSettings::isBigStepEnabled() const {
 }
 
 bool ParametricSettings::isTimeTravellingEnabled() const {
-    return this->getOption(bigStepEnabledName).getArgumentByName("time-travel").getValueAsBoolean();
+    return this->getOption(bigStepEnabledName).getArgumentByName(bigStepEnabledName).getValueAsBoolean();
 }
 
 uint64_t ParametricSettings::getBigStepHorizon() const {
