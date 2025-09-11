@@ -407,13 +407,19 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
 // TODO: update documentation
 /*!
  * Finds the extremal value in the given region
+ * @param settings The refinement settings
+ * @param region The region to be analyzed
+ * @param dir The optimization direction
+ * @param precision The precision to be used
+ * @param absolutePrecision If true, the precision is interpreted as an absolute precision, otherwise as a relative precision
+ * @param boundInvariant Bound invariant that should hold
+ * @return A pair consisting of the extremal value and a parameter valuation achieving this value
  */
 template<typename ValueType>
 std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
     RefinementSettings<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir,
     std::optional<ValueType> const& precision, bool absolutePrecision, std::optional<storm::logic::Bound> const& boundInvariant) {
     Environment env;
-    // TODO: allow passing these settings? Maybe also pass monotone parameters?
     auto refinementChecker = initializeRegionRefinementChecker(env, settings);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
@@ -422,6 +428,9 @@ std::pair<storm::RationalNumber, typename storm::storage::ParameterRegion<ValueT
 
 /*!
  * Verifies whether a region satisfies a property.
+ * @param settings The refinement settings
+ * @param region The region to be analyzed
+ * @return true if the region satisfies the property, false otherwise
  */
 template<typename ValueType>
 bool verifyRegion(RefinementSettings<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region) {
