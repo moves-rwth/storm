@@ -12,6 +12,7 @@
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/SolverGuarantee.h"
 #include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
@@ -695,6 +696,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
             // always less-or-equal (greater-or-equal) than the actual solution.
             guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
+        } else {
+            guarantee = SolverGuarantee::None;
         }
     } else if (!this->hasUniqueSolution()) {
         if (maximize(dir)) {
