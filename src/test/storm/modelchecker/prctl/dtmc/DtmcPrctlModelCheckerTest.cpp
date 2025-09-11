@@ -261,6 +261,23 @@ class SparseNativeOptimisticValueIterationEnvironment {
     }
 };
 
+class SparseNativeGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
+    static const DtmcEngine engine = DtmcEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+        env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration);
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        return env;
+    }
+};
+
 class SparseNativeIntervalIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -579,8 +596,8 @@ typedef ::testing::Types<
 #endif
     SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment, SparseEigenRationalLUEnvironment, SparseRationalEliminationEnvironment,
     SparseNativeJacobiEnvironment, SparseNativeWalkerChaeEnvironment, SparseNativeSorEnvironment, SparseNativePowerEnvironment,
-    SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment, SparseNativeIntervalIterationEnvironment,
-    SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment, HybridCuddNativeJacobiEnvironment,
+    SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment, SparseNativeGuessingValueIterationEnvironment,
+    SparseNativeIntervalIterationEnvironment, SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment, HybridCuddNativeJacobiEnvironment,
     HybridCuddNativeSoundValueIterationEnvironment, HybridSylvanNativeRationalSearchEnvironment, DdSylvanNativePowerEnvironment,
     JaniDdSylvanNativePowerEnvironment, DdCuddNativeJacobiEnvironment, DdSylvanRationalSearchEnvironment>
     TestingTypes;
@@ -874,6 +891,44 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, HOAProbabilitiesDie) {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
     });
+}
+
+TYPED_TEST(DtmcPrctlModelCheckerTest, SmallDiscount) {
+    if (TypeParam::isExact) {
+        GTEST_SKIP() << "Exact computations for discounted properties are not supported.";
+    }
+    std::string formulasString = "R=? [ C ]";
+    formulasString += "; R=? [ Cdiscount=9/10 ]";
+    formulasString += "; R=? [ Cdiscount=15/16 ]";
+    formulasString += "; R=? [ C<5discount=9/10 ]";
+    formulasString += "; R=? [ C<5discount=15/16 ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/small_discount.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(4ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+    auto checker = this->createModelChecker(model);
+
+    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("45/14"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("15/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[3]);
+        EXPECT_NEAR(this->parseNumber("12591/6250"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[4]);
+        EXPECT_NEAR(this->parseNumber("555/256"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    } else {
+        EXPECT_FALSE(checker->canHandle(tasks[0]));
+        EXPECT_FALSE(checker->canHandle(tasks[1]));
+        EXPECT_FALSE(checker->canHandle(tasks[2]));
+        EXPECT_FALSE(checker->canHandle(tasks[3]));
+        EXPECT_FALSE(checker->canHandle(tasks[4]));
+    }
 }
 
 }  // namespace

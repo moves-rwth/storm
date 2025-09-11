@@ -49,7 +49,9 @@ bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask
                                  .setTimeOperatorsAllowed(true)
                                  .setReachbilityTimeFormulasAllowed(true)
                                  .setRewardAccumulationAllowed(true)
-                                 .setHOAPathFormulasAllowed(true))) {
+                                 .setHOAPathFormulasAllowed(true)
+                                 .setDiscountedTotalRewardFormulasAllowed(true)
+                                 .setDiscountedCumulativeRewardFormulasAllowed(true))) {
         return true;
     } else if (checkTask.isOnlyInitialStatesRelevantSet() && formula.isInFragment(storm::logic::quantiles())) {
         if (requiresSingleInitialState) {
@@ -199,6 +201,24 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     }
 }
 
+template<>
+std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>::computeDiscountedCumulativeRewards(
+    Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, storm::RationalFunction> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for parametric models.");
+}
+
+template<typename SparseDtmcModelType>
+std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeDiscountedCumulativeRewards(
+    Environment const& env, CheckTask<storm::logic::DiscountedCumulativeRewardFormula, ValueType> const& checkTask) {
+    storm::logic::DiscountedCumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
+    STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
+    auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDiscountedCumulativeRewards(
+        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), rewardModel.get(),
+        rewardPathFormula.getNonStrictBound<uint64_t>(), rewardPathFormula.getDiscountFactor<ValueType>());
+    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+}
+
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeInstantaneousRewards(
     Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
@@ -244,6 +264,25 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
         this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), checkTask.getHint());
     return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+}
+
+template<>
+std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>::computeDiscountedTotalRewards(
+    Environment const& env, CheckTask<storm::logic::DiscountedTotalRewardFormula, ValueType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Discounted properties are not implemented for parametric models.");
+}
+
+template<typename SparseDtmcModelType>
+std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeDiscountedTotalRewards(
+    Environment const& env, CheckTask<storm::logic::DiscountedTotalRewardFormula, ValueType> const& checkTask) {
+    auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+    storm::logic::DiscountedTotalRewardFormula const& rewardPathFormula = checkTask.getFormula();
+    auto discountFactor = rewardPathFormula.getDiscountFactor<ValueType>();
+    auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDiscountedTotalRewards(
+        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+        this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), discountFactor, checkTask.getHint());
+    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret)));
+    return result;
 }
 
 template<typename SparseDtmcModelType>

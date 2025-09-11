@@ -35,7 +35,7 @@ std::string getDefaultLpSolverAsString() {
 #if defined STORM_HAVE_GLPK
     return "glpk";
 #elif defined STORM_HAVE_SOPLEX
-    return "soplex"
+    return "soplex";
 #else
     return "z3";
 #endif

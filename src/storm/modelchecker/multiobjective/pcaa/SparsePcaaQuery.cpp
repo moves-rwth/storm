@@ -88,7 +88,7 @@ typename SparsePcaaQuery<SparseModelType, GeometryValueType>::WeightVector Spars
 }
 
 template<class SparseModelType, typename GeometryValueType>
-void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(Environment const& env, WeightVector&& direction) {
+void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(Environment const& env, WeightVector&& direction, bool produceScheduler) {
     // Normalize the direction vector so that the entries sum up to one
     storm::utility::vector::scaleVectorInPlace(
         direction, storm::utility::one<GeometryValueType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<GeometryValueType>()));
@@ -105,6 +105,9 @@ void SparsePcaaQuery<SparseModelType, GeometryValueType>::performRefinementStep(
             step.lowerBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
             step.upperBoundPoint[objIndex] *= -storm::utility::one<GeometryValueType>();
         }
+    }
+    if (produceScheduler) {
+        step.scheduler = weightVectorChecker->computeScheduler();
     }
     refinementSteps.push_back(std::move(step));
 

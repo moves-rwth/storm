@@ -14,7 +14,6 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/constants.h"
 
 // Forward declaration for adapter classes.
@@ -60,10 +59,8 @@ class MatrixEntry {
     MatrixEntry() = default;
     MatrixEntry(MatrixEntry const& other) = default;
     MatrixEntry& operator=(MatrixEntry const& other) = default;
-#ifndef WINDOWS
     MatrixEntry(MatrixEntry&& other) = default;
     MatrixEntry& operator=(MatrixEntry&& other) = default;
-#endif
 
     /*!
      * Retrieves the column of the matrix entry.

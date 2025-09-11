@@ -18,7 +18,7 @@ message (STATUS "Storm - Including l3pp logging.")
 ExternalProject_Add(
         l3pp_ext
         GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
-        GIT_TAG e4f8d7fe6c328849aff34d2dfd6fd592c14070d5
+        GIT_TAG 513c7589232396e4b8975113b7709a8f39b46c85
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/l3pp
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -45,14 +45,27 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    message (STATUS "Storm - Including gmm 5.2.")
+    set(GMM_VERSION "5.4.4")
+    message (STATUS "Storm - Including gmm ${GMM_VERSION}.")
+    ExternalProject_Add(
+            gmm_src
+            URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
+            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            LOG_INSTALL ON
+            LOG_DOWNLOAD ON
+    )
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
+    add_dependencies(gmm gmm_src)
     target_include_directories(gmm INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include>
+            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/gmm/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm>
     )
     install(TARGETS gmm EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include/
+    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/gmm/include/
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm
             FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
     list(APPEND STORM_DEP_TARGETS gmm)
@@ -553,35 +566,16 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 #############################################################
 
 if(STORM_BUILD_TESTS)
-## This is still old cmake, but as it is not installed, it is not as relevant.
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
-ExternalProject_Add(
-        googletest
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/googletest"
-        # Force the same output paths for debug and release builds so that
-        # we know in which place the binaries end up when using the Xcode generator
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
-        # Disable install step
-        INSTALL_COMMAND ""
-        BINARY_DIR ${GOOGLETEST_LIB_DIR}
-        INSTALL_DIR ${GOOGLETEST_LIB_DIR}
-        # Wrap download, configure and build steps in a script to log output
-        LOG_CONFIGURE ON
-        LOG_BUILD ON
-        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/lib/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/lib/libgtest_main${STATIC_EXT}
-)
+    set(GTEST_VERSION "1.17.0")
+    FETCHCONTENT_DECLARE(
+            googletest
+            URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
+    )
+    FETCHCONTENT_MAKEAVAILABLE(googletest)
 
-# Specify include dir
-ExternalProject_Get_Property(googletest source_dir)
-set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
-set(GMOCK_INCLUDE_DIR ${source_dir}/googlemock/include)
-# Specify MainTest's link libraries
-ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})
-
-add_dependencies(test-resources googletest)
-list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
+    set(GTEST_LIBRARIES GTest::gtest_main GTest::gmock)
+    add_dependencies(test-resources ${GTEST_LIBRARIES})
+    list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
 endif()
 
 #############################################################

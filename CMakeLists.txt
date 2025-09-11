@@ -6,7 +6,7 @@ endif()
 # Set project name
 project (storm
 		LANGUAGES CXX C
-		VERSION 1.10.0.1)
+		VERSION 1.11.0.1)
 # Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 
 # Add the resources/cmake folder to Module Search Path
@@ -69,7 +69,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.30")
+option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.32.1")
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
 set(GLPK_ROOT "" CACHE STRING "A hint to the root directory of GLPK.")
@@ -97,6 +97,8 @@ mark_as_advanced(Z3_ROOT)
 
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
+option(STORM_DEBUG_SPOT "Build Spot in debug mode." OFF)
+MARK_AS_ADVANCED(STORM_DEBUG_SPOT)
 option(STORM_DEBUG_SYLVAN "Build Sylvan in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_SYLVAN)
 
@@ -140,8 +142,9 @@ if (STORM_DEVELOPER)
     endif()
     # TODO Do this more targeted
     add_definitions(-DSTORM_DEV)
-	set(STORM_DEBUG_CUDD ON)
-	set(STORM_DEBUG_SYLVAN ON)
+    set(STORM_DEBUG_CUDD ON)
+    set(STORM_DEBUG_SPOT ON)
+    set(STORM_DEBUG_SYLVAN ON)
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -210,8 +213,8 @@ message(VERBOSE "Storm - Assuming extension for static libraries: ${STATIC_EXT}"
 #############################################################
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
-	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
-		message(FATAL_ERROR "Clang version must be at least 10.0")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0)
+		message(FATAL_ERROR "Clang version must be at least 15.0, currently you are using version ${CMAKE_CXX_COMPILER_VERSION}.")
 	endif()
 
 	set(STORM_COMPILER_CLANG ON)
@@ -463,7 +466,8 @@ if(STORM_VERSION_DEV GREATER 0)
 endif()
 
 message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
-
+export_option(STORM_VERSION) # We want this information also in the more accessible stormOptions.cmake
+export_option(STORM_VERSION_DEV) # We want this information also in the more accessible stormOptions.cmake
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (

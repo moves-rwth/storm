@@ -244,7 +244,7 @@ bool NextStateGenerator<ValueType, StateType>::isSpecialLabel(std::string const&
 
 template<typename ValueType, typename StateType>
 void NextStateGenerator<ValueType, StateType>::unpackTransientVariableValuesIntoEvaluator(CompressedState const&,
-                                                                                          storm::expressions::ExpressionEvaluator<ValueType>&) const {
+                                                                                          storm::expressions::ExpressionEvaluator<BaseValueType>&) const {
     // Intentionally left empty.
     // This method should be overwritten in case there are transient variables (e.g. JANI).
 }
@@ -298,7 +298,7 @@ std::string NextStateGenerator<ValueType, StateType>::stateToString(CompressedSt
 
 template<typename ValueType, typename StateType>
 storm::json<ValueType> NextStateGenerator<ValueType, StateType>::currentStateToJson(bool onlyObservable) const {
-    storm::json<ValueType> result = unpackStateIntoJson<ValueType>(*state, variableInformation, onlyObservable);
+    storm::json<BaseValueType> result = unpackStateIntoJson<BaseValueType>(*state, variableInformation, onlyObservable);
     extendStateInformation(result);
     return result;
 }
@@ -309,7 +309,7 @@ storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::cu
 }
 
 template<typename ValueType, typename StateType>
-void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&) const {
+void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<BaseValueType>&) const {
     // Intentionally left empty.
 }
 
@@ -343,19 +343,20 @@ void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<State
     // Nothing to be done.
 }
 
-template class NextStateGenerator<double>;
-
 template class ActionMask<double>;
 template class StateValuationFunctionMask<double>;
+template class NextStateGenerator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ActionMask<storm::RationalNumber>;
 template class StateValuationFunctionMask<storm::RationalNumber>;
+template class NextStateGenerator<storm::RationalNumber>;
+
 template class ActionMask<storm::RationalFunction>;
 template class StateValuationFunctionMask<storm::RationalFunction>;
-
-template class NextStateGenerator<storm::RationalNumber>;
 template class NextStateGenerator<storm::RationalFunction>;
-#endif
+
+template class ActionMask<storm::Interval>;
+template class StateValuationFunctionMask<storm::Interval>;
+template class NextStateGenerator<storm::Interval>;
 }  // namespace generator
 }  // namespace storm

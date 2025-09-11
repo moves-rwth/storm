@@ -6,7 +6,6 @@
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Odd.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace modelchecker {
@@ -20,10 +19,8 @@ class HybridQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> 
 
     HybridQuantitativeCheckResult(HybridQuantitativeCheckResult const& other) = default;
     HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult const& other) = default;
-#ifndef WINDOWS
     HybridQuantitativeCheckResult(HybridQuantitativeCheckResult&& other) = default;
     HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult&& other) = default;
-#endif
 
     virtual std::unique_ptr<CheckResult> clone() const override;
 

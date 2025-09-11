@@ -164,6 +164,23 @@ class SparseDoubleOptimisticValueIterationEnvironment {
     }
 };
 
+class SparseDoubleGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
+    static const MdpEngine engine = MdpEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setRelativeTerminationCriterion(false);
+        return env;
+    }
+};
+
 class SparseDoubleTopologicalValueIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
@@ -193,6 +210,24 @@ class SparseDoubleTopologicalSoundValueIterationEnvironment {
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
         env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::SoundValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setRelativeTerminationCriterion(false);
+        return env;
+    }
+};
+
+class SparseDoubleTopologicalGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
+    static const MdpEngine engine = MdpEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+        env.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
@@ -325,6 +360,22 @@ class HybridCuddDoubleOptimisticValueIterationEnvironment {
         storm::Environment env;
         env.solver().setForceSoundness(true);
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::OptimisticValueIteration);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        env.solver().minMax().setRelativeTerminationCriterion(false);
+        return env;
+    }
+};
+class HybridCuddDoubleGuessingValueIterationEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
+    static const MdpEngine engine = MdpEngine::Hybrid;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().setForceSoundness(true);
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::GuessingValueIteration);
         env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
         env.solver().minMax().setRelativeTerminationCriterion(false);
         return env;
@@ -551,13 +602,14 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
 typedef ::testing::Types<SparseDoubleValueIterationViOpGaussSeidelMultEnvironment, SparseDoubleValueIterationViOpRegularMultEnvironment,
                          SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
                          JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
-                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
-                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleGuessingValueIterationEnvironment,
+                         SparseDoubleTopologicalValueIterationEnvironment, SparseDoubleTopologicalSoundValueIterationEnvironment,
+                         SparseDoubleTopologicalGuessingValueIterationEnvironment, SparseDoubleLPEnvironment, SparseDoubleViToLPEnvironment,
                          SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
                          HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
-                         HybridCuddDoubleOptimisticValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment,
-                         DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
-                         DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
+                         HybridCuddDoubleOptimisticValueIterationEnvironment, HybridCuddDoubleGuessingValueIterationEnvironment,
+                         HybridSylvanRationalPolicyIterationEnvironment, DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment,
+                         DdSylvanDoubleValueIterationEnvironment, DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(MdpPrctlModelCheckerTest, TestingTypes, );
@@ -914,4 +966,61 @@ TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
     });
 }
 
+TYPED_TEST(MdpPrctlModelCheckerTest, SmallDiscount) {
+    if (TypeParam::isExact || std::is_same<TypeParam, SparseDoubleLPEnvironment>::value || std::is_same<TypeParam, SparseDoubleViToLPEnvironment>::value) {
+        GTEST_SKIP() << "Exact computations for discounted properties are not supported.";
+    }
+    std::string formulasString = "Rmax=? [ C ]";
+    formulasString += "; Rmax=? [ Cdiscount=9/10 ]";
+    formulasString += "; Rmax=? [ Cdiscount=15/16 ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/small_discount.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(4ul, model->getNumberOfStates());
+    EXPECT_EQ(6ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+    auto checker = this->createModelChecker(model);
+
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("18/5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("15/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    } else {
+        EXPECT_FALSE(checker->canHandle(tasks[0]));
+        EXPECT_FALSE(checker->canHandle(tasks[1]));
+        EXPECT_FALSE(checker->canHandle(tasks[2]));
+    }
+}
+
+TYPED_TEST(MdpPrctlModelCheckerTest, OneStateDiscounting) {
+    if (TypeParam::isExact || std::is_same<TypeParam, SparseDoubleLPEnvironment>::value || std::is_same<TypeParam, SparseDoubleViToLPEnvironment>::value) {
+        GTEST_SKIP() << "Exact computations for discounted properties are not supported.";
+    }
+    std::string formulasString = "Rmax=? [ Cdiscount=9/10 ]";
+    formulasString += "; Rmax=? [ C<=5discount=9/10 ]";
+    formulasString += "; Rmax=? [ C<=10discount=9/10 ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/one_state.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(1ul, model->getNumberOfStates());
+    EXPECT_EQ(2ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+    auto checker = this->createModelChecker(model);
+
+    if ((TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse)) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("40951/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("6513215599/10000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    } else {
+        EXPECT_FALSE(checker->canHandle(tasks[0]));
+        EXPECT_FALSE(checker->canHandle(tasks[1]));
+        EXPECT_FALSE(checker->canHandle(tasks[2]));
+    }
+}
 }  // namespace

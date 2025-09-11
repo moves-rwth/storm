@@ -13,7 +13,6 @@
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace storage {
@@ -389,7 +388,7 @@ class Model : public storm::models::Model<CValueType> {
      *
      * @return
      */
-    virtual bool supportsUncertainty() const;
+    virtual bool supportsUncertainty() const override;
 
     /*!
      * Checks whether the model actually is uncertain, i.e., whether there is a non-singleton transition relation.

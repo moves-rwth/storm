@@ -2,7 +2,6 @@
 #define STORM_MODELS_SYMBOLIC_STOCHASTICTWOPLAYERGAME_H_
 
 #include "storm/models/symbolic/NondeterministicModel.h"
-#include "storm/utility/OsDetection.h"
 
 namespace storm {
 namespace models {
@@ -19,10 +18,8 @@ class StochasticTwoPlayerGame : public NondeterministicModel<Type, ValueType> {
     StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type, ValueType> const& other) = default;
     StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type, ValueType> const& other) = default;
 
-#ifndef WINDOWS
     StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type, ValueType>&& other) = default;
     StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type, ValueType>&& other) = default;
-#endif
 
     /*!
      * Constructs a model from the given data.

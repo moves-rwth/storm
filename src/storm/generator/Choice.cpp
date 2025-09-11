@@ -202,9 +202,8 @@ std::ostream& operator<<(std::ostream& out, Choice<ValueType, StateType> const& 
 
 template struct Choice<double>;
 
-#ifdef STORM_HAVE_CARL
 template struct Choice<storm::RationalNumber>;
 template struct Choice<storm::RationalFunction>;
-#endif
+template struct Choice<storm::Interval>;
 }  // namespace generator
 }  // namespace storm

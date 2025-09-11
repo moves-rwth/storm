@@ -933,6 +933,11 @@ storm::Interval convertNumber(double const& number) {
     return storm::Interval(number);
 }
 
+template<>
+storm::Interval convertNumber(uint64_t const& number) {
+    return storm::Interval(convertNumber<double>(number));
+}
+
 #if defined(STORM_HAVE_GMP)
 template<>
 storm::Interval convertNumber(storm::GmpRationalNumber const& n) {

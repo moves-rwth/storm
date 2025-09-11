@@ -29,7 +29,7 @@ class SparsePcaaAchievabilityQuery : public SparsePcaaQuery<SparseModelType, Geo
     /*
      * Invokes the computation and retrieves the result
      */
-    virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
+    virtual std::unique_ptr<CheckResult> check(Environment const& env, bool produceScheduler) override;
 
    private:
     void initializeThresholdData();

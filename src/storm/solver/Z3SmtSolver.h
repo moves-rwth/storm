@@ -54,9 +54,7 @@ class Z3SmtSolver : public SmtSolver {
 
     virtual CheckResult checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) override;
 
-#ifndef WINDOWS
     virtual CheckResult checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) override;
-#endif
 
     virtual storm::expressions::SimpleValuation getModelAsValuation() override;
 

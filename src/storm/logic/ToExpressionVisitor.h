@@ -37,6 +37,8 @@ class ToExpressionVisitor : public FormulaVisitor {
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedCumulativeRewardFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(DiscountedTotalRewardFormula const& f, boost::any const& data) const override;
 };
 
 }  // namespace logic

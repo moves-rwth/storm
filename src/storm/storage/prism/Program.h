@@ -19,7 +19,6 @@
 #include "storm/storage/prism/Player.h"
 #include "storm/storage/prism/RewardModel.h"
 #include "storm/storage/prism/SystemCompositionConstruct.h"
-#include "storm/utility/OsDetection.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
@@ -397,6 +396,11 @@ class Program : public LocatedInformation {
      * @return an expression characterizing the initial states.
      */
     storm::expressions::Expression getInitialStatesExpression() const;
+
+    /*!
+     * Retrieves whether the program considers at least one update with an interval probability/rate
+     */
+    bool hasIntervalUpdates() const;
 
     /*!
      * Retrieves whether the program specifies a system composition in terms of process algebra operations over
