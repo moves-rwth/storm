@@ -1,6 +1,5 @@
 #pragma once
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
