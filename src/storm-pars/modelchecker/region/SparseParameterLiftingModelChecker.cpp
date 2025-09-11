@@ -106,13 +106,13 @@ RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::
     if (hypothesis == RegionResultHypothesis::Unknown &&
         (result == RegionResult::Unknown || result == RegionResult::ExistsIllDefined || result == RegionResult::CenterIllDefined)) {
         auto const center = region.region.getCenterPoint();
-        if (getInstantiationChecker(false).isProbabilistic(center)) {
+        if (getInstantiationChecker(false).isWellDefined(center)) {
             result = getInstantiationChecker(false).check(env, center)->asExplicitQualitativeCheckResult()[getUniqueInitialState()]
                          ? RegionResult::CenterSat
                          : RegionResult::CenterViolated;
         } else {
             auto const lowerCorner = region.region.getLowerBoundaries();
-            if (getInstantiationChecker(false).isProbabilistic(lowerCorner)) {
+            if (getInstantiationChecker(false).isWellDefined(lowerCorner)) {
                 result = getInstantiationChecker(false).check(env, lowerCorner)->asExplicitQualitativeCheckResult()[getUniqueInitialState()]
                              ? RegionResult::ExistsSat
                              : RegionResult::ExistsViolated;

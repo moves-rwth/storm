@@ -24,7 +24,7 @@ std::unique_ptr<CheckResult> SparseCtmcInstantiationModelChecker<SparseModelType
 }
 
 template<typename SparseModelType, typename ConstantType>
-bool SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::isProbabilistic(
+bool SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellDefined(
     storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     return instantiatedModel.getTransitionMatrix().isProbabilistic();
