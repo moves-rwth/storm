@@ -13,6 +13,7 @@
 
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
+#include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
@@ -36,6 +37,7 @@
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -81,6 +83,19 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
+    }
+    if (!regionSettings.isNotGraphPreservingSet()) {
+        for (auto const& region : result) {
+            for (auto const& variable : region.getVariables()) {
+                if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
+                    region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
+                    STORM_LOG_WARN(
+                        "Region" << region
+                                 << " appears to not preserve the graph structure of the parametric model. If this is the case, --not-graph-preserving.");
+                    break;
+                }
+            }
+        }
     }
     return result;
 }
@@ -202,6 +217,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     PreprocessResult result(model, false);
     // TODO: why only simplify in these modes
@@ -218,8 +234,8 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     }
 
     if (mpi.applyBisimulation) {
-        result.model =
-            storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+        result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                     bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
         result.changed = true;
     }
 
@@ -230,12 +246,17 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         result.changed = true;
     }
 
-    if (parametricSettings.isTimeTravellingEnabled()) {
+    if (parametricSettings.isBigStepEnabled()) {
         transformer::TimeTravelling tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
-        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-            tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
+        auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);
+        result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
+
+        if (mpi.applyBisimulation) {
+            result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
+                                                                         bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
+        }
         result.changed = true;
     }
 
@@ -328,12 +349,37 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto const& property = input.properties.front();
 
     auto const& rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+
     auto engine = rvs.getRegionCheckEngine();
-    bool generateSplitEstimates = rvs.isSplittingThresholdSet();
-    std::optional<uint64_t> maxSplitsPerStep = generateSplitEstimates ? std::make_optional(rvs.getSplittingThreshold()) : std::nullopt;
+    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+
+    auto splittingStrategy = modelchecker::RegionSplittingStrategy();
+
+    splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
+    splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
+    if (rvs.isSplittingThresholdSet()) {
+        splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
+    }
+
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+
     storm::utility::Stopwatch watch(true);
-    if (storm::api::verifyRegion<ValueType>(model, *(property.getRawFormula()), region, engine, monotonicitySettings, generateSplitEstimates,
-                                            maxSplitsPerStep)) {
+
+    auto const& settings = storm::api::RefinementSettings<ValueType>{
+        model,
+        *(property.getRawFormula()),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true,  // allow model simplification
+        graphPreserving,
+        false  // preconditions not yet validated
+    };
+
+    if (storm::api::verifyRegion<ValueType>(settings, region)) {
         STORM_PRINT_AND_LOG("Formula is satisfied by all parameter instantiations.\n");
     } else {
         STORM_PRINT_AND_LOG("Formula is not satisfied by all parameter instantiations.\n");
@@ -354,9 +400,10 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto rvs = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto partitionSettings = storm::settings::getModule<storm::settings::modules::PartitionSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(partitionSettings.getCoverageThreshold());
-    boost::optional<uint64_t> optionalDepthLimit;
+    std::optional<uint64_t> optionalDepthLimit;
     if (partitionSettings.isDepthLimitSet()) {
         optionalDepthLimit = partitionSettings.getDepthLimit();
     }
@@ -366,19 +413,45 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
 
     auto engine = rvs.getRegionCheckEngine();
     STORM_PRINT_AND_LOG(" using " << engine);
+
+    auto splittingStrategy = modelchecker::RegionSplittingStrategy();
+
+    splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
+    splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
+    if (rvs.isSplittingThresholdSet()) {
+        splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
+    }
+
+    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+
+    auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
+    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
+
+    STORM_PRINT_AND_LOG(" and splitting heuristic " << splittingStrategy.heuristic);
     if (monotonicitySettings.useMonotonicity) {
         STORM_PRINT_AND_LOG(" with local monotonicity and");
     }
 
     STORM_PRINT_AND_LOG(" with iterative refinement until "
-                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "% is covered."
+                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "\% is covered."
                         << (partitionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(partitionSettings.getDepthLimit()) + "." : "") << '\n');
 
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
+
+    auto settings = storm::api::RefinementSettings<ValueType>{
+        model,
+        storm::api::createTask<ValueType>(property.getRawFormula(), true),
+        engine,
+        splittingStrategy,
+        monotonicitySettings,
+        discreteVariables,
+        true,  // allow model simplification
+        graphPreserving,
+        false  // preconditions not yet validated
+    };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
-        model, storm::api::createTask<ValueType>((property.getRawFormula()), true), regions.front(), engine, refinementThreshold, optionalDepthLimit,
-        storm::modelchecker::RegionResultHypothesis::Unknown, false, monotonicitySettings, monThresh);
+        settings, regions.front(), refinementThreshold, optionalDepthLimit, storm::modelchecker::RegionResultHypothesis::Unknown, monThresh);
     watch.stop();
     printInitialStatesResult<ValueType>(result, &watch);
 
@@ -393,6 +466,7 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
     auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
     auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
     auto sampleSettings = storm::settings::getModule<storm::settings::modules::SamplingSettings>();
+    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse || mpi.engine == storm::utility::Engine::Hybrid || mpi.engine == storm::utility::Engine::Dd,
                     storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
@@ -462,6 +536,7 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
         STORM_LOG_INFO("Solution function mode started.");
         STORM_LOG_THROW(regions.empty(), storm::exceptions::InvalidSettingsException,
                         "Solution function computations cannot be restricted to specific regions");
+        STORM_LOG_ERROR_COND(!regionSettings.isNotGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {
             computeSolutionFunctionsWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input);
