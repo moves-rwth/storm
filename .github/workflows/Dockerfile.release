@@ -53,6 +53,7 @@ RUN mkdir -p /opt/storm/build \
     && cd /opt/storm/build \
     && cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_PORTABLE=ON \
+          -DSTORM_BUILD_TESTS=OFF \
           -DSTORM_CARL_GIT_TAG=$carl_tag \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
@@ -66,7 +67,7 @@ RUN mkdir -p /opt/storm/build \
           -DSTORM_USE_CLN_EA=$cln_exact \
           -DSTORM_USE_CLN_RF=$cln_ratfunc \
           $cmake_args .. \
-    && make binaries -j $no_threads \
+    && make -j $no_threads \
     && make install -j $no_threads \
     && cd /opt \
     && rm -rf storm
