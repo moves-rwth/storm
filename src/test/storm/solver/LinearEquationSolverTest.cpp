@@ -173,6 +173,7 @@ class EliminationRationalEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class GmmGmresIluEnvironment {
    public:
     typedef double ValueType;
@@ -242,6 +243,7 @@ class GmmQmrDiagonalEnvironment {
         return env;
     }
 };
+#endif
 
 class EigenDGmresDiagonalEnvironment {
    public:
