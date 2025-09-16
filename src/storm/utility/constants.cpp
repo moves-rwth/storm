@@ -12,6 +12,7 @@
 #include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -641,6 +642,7 @@ GmpRationalNumber log(GmpRationalNumber const& number) {
 
 template<>
 GmpRationalNumber log10(GmpRationalNumber const& number) {
+    STORM_LOG_WARN("Using log10 for GMP rational numbers is not exact, it converts to doubles internally.");
     return carl::log10(number);
 }
 
