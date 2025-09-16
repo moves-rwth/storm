@@ -600,12 +600,11 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
         }
         // check for convergence
         SolutionType const boundDiff = *upperBound - *lowerBound;
-        STORM_LOG_TRACE("Iteration #" << iterationCount
-                                      << ":\n\t Lower bound:      " << storm::utility::convertNumber<double>(*lowerBound)
+        STORM_LOG_TRACE("Iteration #" << iterationCount << ":\n\t Lower bound:      " << storm::utility::convertNumber<double>(*lowerBound)
                                       << ",\n\t Upper bound:      " << storm::utility::convertNumber<double>(*upperBound)
                                       << ",\n\t Difference:       " << storm::utility::convertNumber<double>(boundDiff)
-                                      << ",\n\t Middle val:       " << storm::utility::convertNumber<double>(middleValue)
-                                      << ",\n\t Difference bound: " << storm::utility::convertNumber<double>((relative ? (precision * *lowerBound) : precision)) << ".");
+                                      << ",\n\t Middle val:       " << storm::utility::convertNumber<double>(middleValue) << ",\n\t Difference bound: "
+                                      << storm::utility::convertNumber<double>((relative ? (precision * *lowerBound) : precision)) << ".");
         if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
             STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations. Difference is "
                                                                << std::setprecision(std::numeric_limits<double>::digits10)
