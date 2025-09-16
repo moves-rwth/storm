@@ -642,7 +642,7 @@ GmpRationalNumber log(GmpRationalNumber const& number) {
 
 template<>
 GmpRationalNumber log10(GmpRationalNumber const& number) {
-    STORM_LOG_WARN("Using log10 for GMP rational numbers is not exact, it converts to doubles internally.");
+    STORM_LOG_WARN("Using log10 for GMP rational numbers is not exact, it converts to doubles internally! Avoid if possible.");
     return carl::log10(number);
 }
 
