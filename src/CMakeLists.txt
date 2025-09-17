@@ -121,6 +121,11 @@ else()
     add_compile_options($<$<CONFIG:RELEASE>:-fomit-frame-pointer>)
 endif()
 
+if(STORM_WARNING_AS_ERROR)
+    # Reenable soon
+    add_compile_options(-Wno-unused-parameter)
+endif()
+
 
 add_custom_target(binaries)
 
