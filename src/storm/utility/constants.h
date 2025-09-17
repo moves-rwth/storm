@@ -1,8 +1,6 @@
 #ifndef STORM_UTILITY_CONSTANTS_H_
 #define STORM_UTILITY_CONSTANTS_H_
 
-#include <cln/types.h>
-#include <sys/types.h>
 #ifdef max
 #undef max
 #endif

@@ -1,10 +1,8 @@
 #include "storm/utility/constants.h"
 
 #include <cmath>
-#include <cstdint>
 #include <type_traits>
 
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
