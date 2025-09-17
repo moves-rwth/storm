@@ -1,8 +1,10 @@
 #include "storm/utility/constants.h"
 
 #include <cmath>
+#include <cstdint>
 #include <type_traits>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -262,6 +264,18 @@ ValueType cos(ValueType const& number) {
 template<typename ValueType>
 ValueType sin(ValueType const& number) {
     return std::sin(number);
+}
+
+template<typename ValueType>
+uint64_t numDigits(ValueType const& number) {
+    auto numDigits = 0;
+    ValueType remaining = storm::utility::one<ValueType>() / number;
+    ValueType ten = storm::utility::convertNumber<ValueType>(10);
+    while (remaining >= storm::utility::one<ValueType>()) {
+        ++numDigits;
+        remaining = storm::utility::floor<ValueType>(remaining / ten);
+    }
+    return numDigits;
 }
 
 template<typename ValueType>
@@ -1067,6 +1081,7 @@ template storm::ClnRationalNumber max(storm::ClnRationalNumber const& first, sto
 template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, storm::ClnRationalNumber const& second);
 template storm::ClnRationalNumber round(storm::ClnRationalNumber const& number);
 template std::string to_string(storm::ClnRationalNumber const& value);
+template uint64_t numDigits(const storm::ClnRationalNumber& number);
 #endif
 
 #if defined(STORM_HAVE_GMP)
@@ -1091,6 +1106,7 @@ template storm::GmpRationalNumber max(storm::GmpRationalNumber const& first, sto
 template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, storm::GmpRationalNumber const& second);
 template storm::GmpRationalNumber round(storm::GmpRationalNumber const& number);
 template std::string to_string(storm::GmpRationalNumber const& value);
+template uint64_t numDigits(const storm::GmpRationalNumber& number);
 #endif
 
 #if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)

@@ -1,6 +1,8 @@
 #ifndef STORM_UTILITY_CONSTANTS_H_
 #define STORM_UTILITY_CONSTANTS_H_
 
+#include <cln/types.h>
+#include <sys/types.h>
 #ifdef max
 #undef max
 #endif
@@ -172,6 +174,9 @@ ValueType cos(ValueType const& number);
 
 template<typename ValueType>
 ValueType sin(ValueType const& number);
+
+template<typename ValueType>
+uint64_t numDigits(ValueType const& number);
 
 template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);

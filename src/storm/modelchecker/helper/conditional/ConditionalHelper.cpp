@@ -623,12 +623,7 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
             auto const exactMiddle = middle;
 
             // Find number of digits - 1. Method using log10 does not work since that uses doubles internally.
-            auto numDigits = -1;
-            SolutionType remaining = storm::utility::one<SolutionType>() / (*upperBound - *lowerBound);
-            while (remaining >= storm::utility::one<SolutionType>()) {
-                ++numDigits;
-                remaining = storm::utility::floor<SolutionType>(remaining / storm::utility::convertNumber<SolutionType>(10));
-            }
+            auto numDigits = storm::utility::numDigits<SolutionType>(*upperBound - *lowerBound) - 1;
 
             do {
                 ++numDigits;
