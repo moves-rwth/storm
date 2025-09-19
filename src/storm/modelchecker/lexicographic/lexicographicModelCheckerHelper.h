@@ -40,7 +40,7 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      * @param formulaChecker
      * @return product-model
      */
-    std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint>> getCompleteProductModel(
+    std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint64_t>> getCompleteProductModel(
         SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
 
     /*!
@@ -52,7 +52,7 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      * @return MECs, corresp. Lex-arrays
      */
     std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> getLexArrays(
-        std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions);
+        std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint64_t>& acceptanceConditions);
 
     /*!
      * Solves the reachability query for a lexicographic objective
@@ -108,19 +108,19 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      * @return set of "good" states for the given condition
      */
     storm::storage::BitVector getGoodStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
-                                            std::vector<std::vector<bool>> const& bccLexArray, std::vector<uint_fast64_t> const& oldToNewStateMapping,
-                                            uint const& condition, uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping,
-                                            std::map<uint, uint_fast64_t> const& bccToStStateMapping);
+                                            std::vector<std::vector<bool>> const& bccLexArray, std::vector<uint64_t> const& oldToNewStateMapping,
+                                            uint64_t const& condition, uint64_t const numStates, std::vector<uint64_t> const& compressedToReducedMapping,
+                                            std::map<uint64_t, uint64_t> const& bccToStStateMapping);
 
     /*!
      * Solves the reachability-query for a given set of goal-states and initial-states
      */
-    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint_fast64_t>& newInitalStates,
+    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint64_t>& newInitalStates,
                                                                            storm::storage::BitVector const& psiStates,
                                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                            SparseModelType const& originalMdp,
-                                                                           std::vector<uint_fast64_t> const& compressedToReducedMapping,
-                                                                           std::vector<uint_fast64_t> const& oldToNewStateMapping);
+                                                                           std::vector<uint64_t> const& compressedToReducedMapping,
+                                                                           std::vector<uint64_t> const& oldToNewStateMapping);
 
     /*!
      * Reduces the model to actions that are optimal for the given strategy.
@@ -130,12 +130,12 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      */
     SubsystemReturnType getReducedSubsystem(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                             MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
-                                            std::vector<uint_fast64_t> const& newInitalStates, storm::storage::BitVector const& goodStates);
+                                            std::vector<uint64_t> const& newInitalStates, storm::storage::BitVector const& goodStates);
 
     /*!
      * add a new sink-state for each MEC
      */
-    std::pair<storm::storage::SparseMatrix<ValueType>, std::map<uint, uint_fast64_t>> addSinkStates(
+    std::pair<storm::storage::SparseMatrix<ValueType>, std::map<uint64_t, uint64_t>> addSinkStates(
         storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
         std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel);
 
