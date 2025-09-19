@@ -52,13 +52,13 @@ uint64_t SylvanSettings::getNumberOfThreads() const {
     // Prevents issues with multi-threaded execution on Apple Silicon
     return 1ul;
 #else
-    return std::max(1ul, storm::utility::getNumberOfThreads());
+    return std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
 #endif
 }
 
 bool SylvanSettings::check() const {
     if (isNumberOfThreadsSet()) {
-        auto const autoDetectThreads = std::max(1ul, storm::utility::getNumberOfThreads());
+        auto const autoDetectThreads = std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
         auto const numberFromSettings = getNumberOfThreads();
 #ifdef APPLE_SILICON
         STORM_LOG_WARN_COND(numberFromSettings <= 1,

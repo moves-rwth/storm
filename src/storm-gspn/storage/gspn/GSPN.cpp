@@ -423,7 +423,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
     stream << "<project name=\"" << projectName << "\" version=\"121\">\n";
     stream << space << "<gspn name=\"" << getName() << "\" >\n";
 
-    u_int32_t x = 1;
+    uint64_t x = 1;
     stream << space2 << "<nodes>\n";
     for (auto& place : places) {
         stream << space3 << "<place marking=\"" << place.getNumberOfInitialTokens() << "\" ";
