@@ -32,7 +32,7 @@ SylvanSettings::SylvanSettings() : ModuleSettings(moduleName) {
                         .build());
 }
 
-uint_fast64_t SylvanSettings::getMaximalMemory() const {
+uint64_t SylvanSettings::getMaximalMemory() const {
     return this->getOption(maximalMemoryOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
 }
 
@@ -40,7 +40,7 @@ bool SylvanSettings::isNumberOfThreadsSet() const {
     return this->getOption(threadCountOptionName).getArgumentByName("value").getHasBeenSet();
 }
 
-uint_fast64_t SylvanSettings::getNumberOfThreads() const {
+uint64_t SylvanSettings::getNumberOfThreads() const {
     if (isNumberOfThreadsSet()) {
         auto numberFromSettings = this->getOption(threadCountOptionName).getArgumentByName("value").getValueAsUnsignedInteger();
         if (numberFromSettings != 0u) {
@@ -50,15 +50,15 @@ uint_fast64_t SylvanSettings::getNumberOfThreads() const {
     // Automatic detection
 #ifdef APPLE_SILICON
     // Prevents issues with multi-threaded execution on Apple Silicon
-    return 1u;
+    return 1ul;
 #else
-    return std::max(1u, storm::utility::getNumberOfThreads());
+    return std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
 #endif
 }
 
 bool SylvanSettings::check() const {
     if (isNumberOfThreadsSet()) {
-        auto const autoDetectThreads = std::max(1u, storm::utility::getNumberOfThreads());
+        auto const autoDetectThreads = std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
         auto const numberFromSettings = getNumberOfThreads();
 #ifdef APPLE_SILICON
         STORM_LOG_WARN_COND(numberFromSettings <= 1,

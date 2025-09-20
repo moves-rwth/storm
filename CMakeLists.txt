@@ -475,7 +475,7 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-if(PROJECT_IS_TOP_LEVEL)
+if(PROJECT_IS_TOP_LEVEL AND STORM_BUILD_TESTS)
 	include(CTest)
 	# Compiles all tests
 	add_custom_target(tests)

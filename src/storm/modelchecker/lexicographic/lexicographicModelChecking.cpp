@@ -29,7 +29,7 @@ helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment cons
     auto res = lMC.getCompleteProductModel(model, formulaChecker);
 
     std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> completeProductModel = res.first;
-    std::vector<uint> accCond = res.second;
+    std::vector<uint64_t> accCond = res.second;
 
     // get the lexicogrpahic array for all MEC of the product-model
     std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result =

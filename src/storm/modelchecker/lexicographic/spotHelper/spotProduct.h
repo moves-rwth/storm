@@ -17,5 +17,5 @@ namespace storm::modelchecker::helper::lexicographic::spothelper {
  */
 std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula,
                                                                            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
-                                                                           std::vector<uint>& acceptanceConditions);
+                                                                           std::vector<uint64_t>& acceptanceConditions);
 }  // namespace storm::modelchecker::helper::lexicographic::spothelper

@@ -8,22 +8,22 @@
 namespace storm::utility {
 
 namespace detail {
-static uint num_threads = 0u;
+static uint64_t num_threads = 0u;
 
-uint tryReadFromSlurm() {
+uint64_t tryReadFromSlurm() {
     auto val = std::getenv("SLURM_CPUS_PER_TASK");
     if (val != nullptr) {
         char* end;
         auto i = std::strtoul(val, &end, 10);
         if (val != end) {
             STORM_LOG_WARN("Detected thread limitation via Slurm (max. " << i << " threads.)");
-            return static_cast<uint>(i);
+            return static_cast<uint64_t>(i);
         }
     }
     return 0;
 }
 
-uint tryReadFromCgroups() {
+uint64_t tryReadFromCgroups() {
     std::string const filename = "/sys/fs/cgroup/cpu.max";
     if (storm::io::fileExistsAndIsReadable(filename)) {
         std::ifstream inputFileStream;
@@ -39,7 +39,7 @@ uint tryReadFromCgroups() {
             pos1 = pos2;
             double period = std::strtod(pos1, &pos2);
             if (pos1 != pos2 && period > 0.0) {
-                auto res = static_cast<uint>(std::ceil(quota / period));
+                auto res = static_cast<uint64_t>(std::ceil(quota / period));
                 STORM_LOG_WARN("Detected thread limitation via cgroup (max. " << res << " threads, quota=" << quota << ", period=" << period << ").");
                 return res;
             }
@@ -50,7 +50,7 @@ uint tryReadFromCgroups() {
 
 }  // namespace detail
 
-uint getNumberOfThreads() {
+uint64_t getNumberOfThreads() {
     if (detail::num_threads == 0) {
         // try to obtain a sensible number of threads we can use
         auto numHardwareThreads = std::max(1u, std::thread::hardware_concurrency());
