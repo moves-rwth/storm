@@ -93,11 +93,13 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_USE_CLN_RF=$cln_ratfunc \
           $cmake_args ..
 
-# Build external dependencies of Storm
+# Build storm
 RUN make storm -j $no_threads
 
+# Some optional things:
 # Build additional binaries of Storm
-# (This can be skipped or adapted depending on custom needs)
 RUN make binaries -j $no_threads
+# Build tests for Storm
+RUN make tests -j $no_threads
 
 WORKDIR /opt/storm

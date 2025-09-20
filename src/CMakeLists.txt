@@ -140,6 +140,7 @@ add_subdirectory(storm-pomdp)
 add_subdirectory(storm-cli-utilities)
 
 if(STORM_BUILD_EXECUTABLES)
+    message(STATUS "Storm - configuring executables..." )
     # Typically an idea to switch this off, if you want to build a library on top of Storm.
     add_subdirectory(storm-cli)
     add_subdirectory(storm-conv-cli)
@@ -147,10 +148,15 @@ if(STORM_BUILD_EXECUTABLES)
     add_subdirectory(storm-gspn-cli)
     add_subdirectory(storm-pars-cli)
     add_subdirectory(storm-pomdp-cli)
+else()
+    message(STATUS "Storm - not configuring executables." )
 endif()
 
 if (STORM_BUILD_TESTS)
+    message(STATUS "Storm - configuring tests..." )
     add_subdirectory(test)
+else()
+    message(STATUS "Storm - not configuring tests." )
 endif()
 
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
