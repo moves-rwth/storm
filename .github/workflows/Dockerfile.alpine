@@ -94,12 +94,5 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           $cmake_args ..
 
 # Build storm
-RUN make storm -j $no_threads
-
-# Some optional things:
-# Build additional binaries of Storm
-RUN make binaries -j $no_threads
-# Build tests for Storm
-RUN make tests -j $no_threads
-
+RUN make -j $no_threads
 WORKDIR /opt/storm

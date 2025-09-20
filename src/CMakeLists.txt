@@ -152,7 +152,7 @@ else()
     message(STATUS "Storm - not configuring executables." )
 endif()
 
-if (STORM_BUILD_TESTS)
+if (PROJECT_IS_TOP_LEVEL AND STORM_BUILD_TESTS)
     message(STATUS "Storm - configuring tests..." )
     add_subdirectory(test)
 else()

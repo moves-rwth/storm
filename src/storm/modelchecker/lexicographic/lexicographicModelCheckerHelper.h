@@ -115,8 +115,7 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
     /*!
      * Solves the reachability-query for a given set of goal-states and initial-states
      */
-    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint64_t>& newInitalStates,
-                                                                           storm::storage::BitVector const& psiStates,
+    MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint64_t>& newInitalStates, storm::storage::BitVector const& psiStates,
                                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                            SparseModelType const& originalMdp,
                                                                            std::vector<uint64_t> const& compressedToReducedMapping,
