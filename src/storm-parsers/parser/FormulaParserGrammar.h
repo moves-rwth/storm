@@ -169,6 +169,8 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> instantaneousRewardFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> cumulativeRewardFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> totalRewardFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> discountedCumulativeRewardFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> discountedTotalRewardFormula;
 
     // Game Formulae
     qi::rule<Iterator, storm::logic::PlayerCoalition(), qi::locals<std::vector<std::variant<std::string, storm::storage::PlayerIndex>>>, Skipper>
@@ -218,7 +220,12 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     std::shared_ptr<storm::logic::Formula const> createCumulativeRewardFormula(
         std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
                                std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const;
+    std::shared_ptr<storm::logic::Formula const> createDiscountedCumulativeRewardFormula(
+        storm::expressions::Expression const& discountFactor,
+        std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
+                               std::shared_ptr<storm::logic::TimeBoundReference>>> const& timeBounds) const;
     std::shared_ptr<storm::logic::Formula const> createTotalRewardFormula() const;
+    std::shared_ptr<storm::logic::Formula const> createDiscountedTotalRewardFormula(storm::expressions::Expression const& discountFactor) const;
     std::shared_ptr<storm::logic::Formula const> createLongRunAverageRewardFormula() const;
     std::shared_ptr<storm::logic::Formula const> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
     std::shared_ptr<storm::logic::Formula const> createBooleanLiteralFormula(bool literal) const;

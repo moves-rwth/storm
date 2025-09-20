@@ -652,15 +652,16 @@ TEST(BitVectorTest, Assignment) {
 
 TEST(BitVectorTest, ZeroSized) {
     storm::storage::BitVector v(0);
-    EXPECT_EQ(0, v.size());
+    EXPECT_EQ(0ul, v.size());
     EXPECT_TRUE(v.empty());
     EXPECT_TRUE(v.full());
-    EXPECT_EQ(0, v.getNumberOfSetBits());
-    EXPECT_EQ(0, v.getAsInt(0, 0));
-    EXPECT_EQ(0, v.getNextSetIndex(0));
+    EXPECT_EQ(0ul, v.getNumberOfSetBits());
+    EXPECT_EQ(0ul, v.getAsInt(0, 0));
+    EXPECT_EQ(0ul, v.getNextSetIndex(0));
     EXPECT_EQ(v, v);
     EXPECT_EQ(v, ~v);
     for (auto const& entry : v) {
         FAIL() << "Should not iterate over an empty bit vector.";
+        ASSERT_FALSE(entry);
     }
 }

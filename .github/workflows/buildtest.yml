@@ -23,7 +23,7 @@ jobs:
       matrix:
         config:
           - {name: "GMP exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -40,7 +40,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "CLN exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -57,7 +57,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "CLN exact; CLN rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
@@ -74,7 +74,7 @@ jobs:
              cmakeArgs: ""
           }
           - {name: "GMP exact; CLN rational functions; No dependencies",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              buildType: "Debug",
              disable_glpk: "ON",
              disable_gmm: "ON",
@@ -139,9 +139,6 @@ jobs:
         with:
           buildType: ${{ matrix.config.buildType }}
           docker: true
-
-      - name: Build tests
-        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
       - name: Build starter-project
@@ -152,9 +149,9 @@ jobs:
           command: "--help" # TODO using --help as running the starter-project requires Z3.
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Temporarily move build dir
+      - name: Remove build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "rm -rf /opt/storm/build"
       - name: Run installed storm
         run: |
           docker exec ci bash -c "/usr/local/bin/storm --version"
@@ -164,9 +161,6 @@ jobs:
           docker: true
           stormDir: ""
           command: "--help" # TODO using --help as running the starter-project requires Z3.
-      - name: Restore build dir
-        run: |
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
@@ -225,8 +219,6 @@ jobs:
         with:
           buildType: ${{ matrix.config.buildType }}
           docker: true
-      - name: Build tests
-        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project
@@ -237,9 +229,9 @@ jobs:
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Temporarily move build dir
+      - name: Remove build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "rm -rf /opt/storm/build"
       - name: Run installed storm
         run: |
           docker exec ci bash -c "/usr/local/bin/storm --version"
@@ -249,9 +241,6 @@ jobs:
           docker: true
           stormDir: ""
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Restore build dir
-        run: |
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   linuxTests:
     name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
@@ -280,8 +269,6 @@ jobs:
         with:
           buildType: ${{ matrix.buildType }}
           docker: true
-      - name: Build tests
-        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project
@@ -292,9 +279,9 @@ jobs:
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
-      - name: Temporarily move build dir
+      - name: Remove build dir
         run: |
-          docker exec ci bash -c "mv /opt/storm/build /opt/storm/build-backup"
+          docker exec ci bash -c "rm -rf /opt/storm/build"
       - name: Run installed storm
         run: |
           docker exec ci bash -c "/usr/local/bin/storm --version"
@@ -304,9 +291,6 @@ jobs:
           docker: true
           stormDir: ""
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Restore build dir
-        run: |
-          docker exec ci bash -c "mv /opt/storm/build-backup /opt/storm/build"
 
   macTests:
     name: macOS Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
@@ -347,8 +331,7 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master"
       - name: Build storm
         working-directory: ./build
-        run: make binaries -j ${NR_JOBS}
-
+        run: make -j ${NR_JOBS}
       - name: Run storm (build tree)
         working-directory: ./build
         run: ./bin/storm
@@ -357,9 +340,6 @@ jobs:
         with:
           buildType: ${{ matrix.config.buildType }}
           docker: false
-      - name: Build tests
-        working-directory: ./build
-        run: make -j ${NR_JOBS}
       - name: Run tests
         working-directory: ./build
         run: ctest test --output-on-failure
@@ -372,9 +352,9 @@ jobs:
       - name: Install storm
         working-directory: ./build
         run: sudo make install
-      - name: Temporarily move build dir
+      - name: Remove build dir
         run: |
-          mv ${GITHUB_WORKSPACE}/build ${GITHUB_WORKSPACE}/build-backup
+          rm -rf ${GITHUB_WORKSPACE}/build
       - name: Run installed storm
         run: |
           /usr/local/bin/storm --version
@@ -384,9 +364,6 @@ jobs:
           docker: false
           stormDir: ""
           command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      - name: Restore build dir
-        run: |
-          mv ${GITHUB_WORKSPACE}/build-backup ${GITHUB_WORKSPACE}/build
 
   deploy:
     name: Test and Deploy (${{ matrix.buildType.name }})
@@ -396,7 +373,7 @@ jobs:
         buildType:
           - {name: "Debug",
              dockerTag: "ci-debug",
-             baseImg: "storm-dependencies:latest-debug",
+             baseImg: "storm-dependencies:latest",
              Developer: "ON"
           }
           - {name: "Release",
@@ -429,8 +406,6 @@ jobs:
         with:
           buildType: ${{ matrix.buildType.name }}
           docker: true
-      - name: Build tests
-        run: docker exec ci bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
       - name: Run tests
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project

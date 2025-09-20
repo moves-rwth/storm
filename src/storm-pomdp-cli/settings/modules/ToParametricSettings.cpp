@@ -14,7 +14,6 @@ namespace modules {
 
 const std::string ToParametricSettings::moduleName = "toparametric";
 const std::string mecReductionOption = "mecreduction";
-const std::string selfloopReductionOption = "selfloopreduction";
 const std::string fscmode = "fscmode";
 std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
 const std::string transformBinaryOption = "transformbinary";

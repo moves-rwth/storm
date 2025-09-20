@@ -45,14 +45,27 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 #############################################################
 
 if(NOT STORM_DISABLE_GMM)
-    message (STATUS "Storm - Including gmm 5.2.")
+    set(GMM_VERSION "5.4.4")
+    message (STATUS "Storm - Including gmm ${GMM_VERSION}.")
+    ExternalProject_Add(
+            gmm_src
+            URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
+            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            LOG_INSTALL ON
+            LOG_DOWNLOAD ON
+    )
     add_library(gmm INTERFACE) # Not imported, we are in control of the sources.
+    add_dependencies(gmm gmm_src)
     target_include_directories(gmm INTERFACE
-            $<BUILD_INTERFACE:${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include>
+            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/gmm/include>
             $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm>
     )
     install(TARGETS gmm EXPORT storm_Targets)
-    install(DIRECTORY ${STORM_3RDPARTY_SOURCE_DIR}/gmm-5.2/include/
+    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/gmm/include/
             DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/gmm
             FILES_MATCHING PATTERN "*.h" PATTERN ".git" EXCLUDE)
     list(APPEND STORM_DEP_TARGETS gmm)
