@@ -1,4 +1,4 @@
-# Dockerfile for Storm on Archlinux
+# Dockerfile for Storm on Alpine
 ###################################
 # The Docker image can be built by executing:
 # docker build -t yourusername/storm .
@@ -39,7 +39,7 @@ ARG all_sanitizers="OFF"
 # Specify additional CMake arguments for Storm
 ARG cmake_args=""
 
-# Additional Archlinux packages
+# Additional Alpine packages
 ARG packages=""
 
 RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
