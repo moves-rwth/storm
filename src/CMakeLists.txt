@@ -140,7 +140,7 @@ add_subdirectory(storm-pomdp)
 add_subdirectory(storm-cli-utilities)
 
 if(STORM_BUILD_EXECUTABLES)
-    message(STATUS "Storm - configuring executables..." )
+    message(STATUS "Storm - Enabled building executables." )
     # Typically an idea to switch this off, if you want to build a library on top of Storm.
     add_subdirectory(storm-cli)
     add_subdirectory(storm-conv-cli)
@@ -153,7 +153,7 @@ else()
 endif()
 
 if (PROJECT_IS_TOP_LEVEL AND STORM_BUILD_TESTS)
-    message(STATUS "Storm - configuring tests..." )
+    message(STATUS "Storm - Enabled building tests." )
     add_subdirectory(test)
 else()
     message(STATUS "Storm - Disabled building tests." )
