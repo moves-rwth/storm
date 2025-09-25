@@ -64,10 +64,10 @@ class MappedFile {
     //! The file descriptor obtained by open().
     int file;
 
-#if defined LINUX
+#if defined LINUX && defined(__GLIBC__)
     //! Stat information about the file.
     struct stat64 st;
-#elif defined MACOSX
+#else
     //! Stat information about the file.
     struct stat st;
 #endif
