@@ -14,7 +14,6 @@ namespace modules {
 
 const std::string ParametricSettings::moduleName = "parametric";
 const std::string modeOptionName = "mode";
-const std::string directionOptionName = "direction";
 const std::string exportResultOptionName = "resultfile";
 const std::string transformContinuousOptionName = "transformcontinuous";
 const std::string transformContinuousShortOptionName = "tc";

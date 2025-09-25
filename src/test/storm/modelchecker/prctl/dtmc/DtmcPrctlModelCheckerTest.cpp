@@ -33,6 +33,7 @@ namespace {
 
 enum class DtmcEngine { PrismSparse, JaniSparse, Hybrid, PrismDd, JaniDd };
 
+#ifdef STORM_HAVE_GMM
 class SparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -100,6 +101,7 @@ class SparseGmmxxBicgstabIluEnvironment {
         return env;
     }
 };
+#endif
 
 class SparseEigenDGmresEnvironment {
    public:
@@ -327,6 +329,7 @@ class SparseTopologicalEigenLUEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class HybridSylvanGmmxxGmresEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
@@ -342,6 +345,7 @@ class HybridSylvanGmmxxGmresEnvironment {
         return env;
     }
 };
+#endif
 
 class HybridCuddNativeJacobiEnvironment {
    public:

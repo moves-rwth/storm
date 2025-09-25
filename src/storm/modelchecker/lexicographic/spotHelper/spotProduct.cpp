@@ -15,13 +15,15 @@ namespace storm::modelchecker::helper::lexicographic::spothelper {
 typedef std::pair<unsigned, unsigned> product_state;
 
 struct product_state_hash {
-    size_t operator()(product_state s) const noexcept {
 #ifdef STORM_HAVE_SPOT
+    size_t operator()(product_state s) const noexcept {
         return spot::wang32_hash(s.first ^ spot::wang32_hash(s.second));
-#else
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
-#endif
     }
+#else
+    size_t operator()(product_state s) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    }
+#endif
 };
 
 enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };

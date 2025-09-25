@@ -169,7 +169,8 @@ void SmtlibSmtSolver::init() {
         std::vector<std::string> solverCommandVec;
         boost::split(solverCommandVec, cmdString, boost::is_any_of("\t "));
         char** solverArgs = new char*[solverCommandVec.size() + 1];
-        solverArgs[0] = const_cast<char*>(solverCommandVec[0].substr(0, cmdString.rfind('/') + 1).c_str());
+        std::string solverPath = solverCommandVec[0].substr(0, cmdString.rfind('/') + 1);
+        solverArgs[0] = const_cast<char*>(solverPath.c_str());
         for (uint_fast64_t argumentIndex = 1; argumentIndex < solverCommandVec.size(); ++argumentIndex) {
             solverArgs[argumentIndex] = const_cast<char*>(solverCommandVec[argumentIndex].c_str());
         }
