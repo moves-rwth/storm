@@ -489,12 +489,19 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
 #ifndef NDEBUG
     // As a sanity check, make sure our local upper bounds were in fact correct.
     if (solver->hasUpperBound(storm::solver::AbstractEquationSolver<SolutionType>::BoundType::Local)) {
-        auto resultIt = x.begin();
-        for (auto const& entry : solver->getUpperBounds()) {
-            STORM_LOG_ASSERT(
-                *resultIt <= entry + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
-                "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
-            ++resultIt;
+        uint64_t relevantState = solver->hasRelevantValues() ? solver->getRelevantValues().getNextSetIndex(0ull) : 0ull;
+        std::function<void()> getNextRelevantStateIndex;
+        if (solver->hasRelevantValues()) {
+            storm::storage::BitVector const& relevantValues = solver->getRelevantValues();
+            getNextRelevantStateIndex = [&relevantState, &relevantValues]() { relevantState = relevantValues.getNextSetIndex(++relevantState); };
+        } else {
+            getNextRelevantStateIndex = [&relevantState]() { ++relevantState; };
+        }
+        for (; relevantState < solver->getUpperBounds().size(); getNextRelevantStateIndex()) {
+            STORM_LOG_ASSERT(x.at(relevantState) <=
+                                 solver->getUpperBounds().at(relevantState) + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
+                             "Expecting result value for state " << relevantState << " to be <= " << solver->getUpperBounds().at(relevantState) << ", but got "
+                                                                 << x.at(relevantState) << ".");
         }
     }
 #endif
