@@ -243,12 +243,17 @@ jobs:
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
 
   linuxTests:
-    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
-    runs-on: ubuntu-latest
+    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }}) on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         distro: ["debian-12", "ubuntu-24.04"]
         buildType: ["Release"]
+        runner: [ubuntu-latest]
+        include:
+          - distro: "latest"
+            runner: ubuntu-24.04-arm
+            buildType: "Release"
     steps:
       - name: Git clone
         uses: actions/checkout@v5
