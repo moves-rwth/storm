@@ -249,11 +249,7 @@ jobs:
       matrix:
         distro: ["debian-12", "ubuntu-24.04"]
         buildType: ["Release"]
-        runner: [ubuntu-latest]
-        include:
-          - distro: "latest"
-            runner: ubuntu-24.04-arm
-            buildType: "Release"
+        runner: [ubuntu-latest, ubuntu-24-04-arm]
     steps:
       - name: Git clone
         uses: actions/checkout@v5
