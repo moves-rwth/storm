@@ -79,7 +79,7 @@ bool ParametricSettings::isBigStepEnabled() const {
     return this->getOption(bigStepEnabledName).getHasOptionBeenSet();
 }
 
-bool ParametricSettings::isTimeTravellingEnabled() const {
+bool ParametricSettings::isBigStepEnabled() const {
     return this->getOption(bigStepEnabledName).getArgumentByName(bigStepEnabledName).getValueAsBoolean();
 }
 

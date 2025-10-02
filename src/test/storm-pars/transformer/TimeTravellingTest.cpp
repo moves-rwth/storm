@@ -5,7 +5,7 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
@@ -44,8 +44,8 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    storm::transformer::TimeTravelling timeTravelling;
-    auto timeTravelledDtmc = timeTravelling.bigStep(*dtmc, checkTask).first;
+    storm::transformer::BigStep BigStep;
+    auto timeTravelledDtmc = BigStep.bigStep(*dtmc, checkTask).first;
 
     storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(*dtmc);
     modelChecker.specifyFormula(checkTask);
@@ -99,7 +99,7 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
 
-class TimeTravelling : public ::testing::Test {
+class BigStep : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
@@ -108,19 +108,19 @@ class TimeTravelling : public ::testing::Test {
     }
 };
 
-TEST_F(TimeTravelling, Crowds) {
+TEST_F(BigStep, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(TimeTravelling, Nand) {
+TEST_F(BigStep, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(TimeTravelling, Herman) {
+TEST_F(BigStep, Herman) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/herman5_pla.pm";
     std::string formulaAsString = "R=? [F \"stable\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

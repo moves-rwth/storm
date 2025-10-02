@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -126,9 +126,9 @@ class ModelInstantiator {
     typename std::enable_if<!std::is_same<PMT, ConstantSparseModelType>::value>::type instantiate_helper(
         storm::utility::parametric::Valuation<ParametricType> const& valuation) {
         for (auto& functionResult : this->functions) {
-            if (!transformer::TimeTravelling::lastSavedAnnotations.empty() && functionResult.first.gatherVariables().size() == 1 &&
-                transformer::TimeTravelling::lastSavedAnnotations.count(functionResult.first)) {
-                auto const& annotation = transformer::TimeTravelling::lastSavedAnnotations.at(functionResult.first);
+            if (!transformer::BigStep::lastSavedAnnotations.empty() && functionResult.first.gatherVariables().size() == 1 &&
+                transformer::BigStep::lastSavedAnnotations.count(functionResult.first)) {
+                auto const& annotation = transformer::BigStep::lastSavedAnnotations.at(functionResult.first);
                 functionResult.second = annotation.evaluate(storm::utility::convertNumber<ConstantType>(valuation.at(annotation.getParameter())));
             } else {
                 functionResult.second = storm::utility::parametric::evaluate<ConstantType>(functionResult.first, valuation);

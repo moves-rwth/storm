@@ -211,13 +211,13 @@ inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) 
  *
  * @tparam T
  */
-class TimeTravelling {
+class BigStep {
    public:
     /**
      * This class re-orders parameteric transitions of a pMC so bounds computed by Parameter Lifting will eventually be better.
      * The parametric reachability probability for the given check task will be the same in the time-travelled and in the original model.
      */
-    TimeTravelling() : polynomialCache(std::make_shared<PolynomialCache>()) {
+    BigStep() : polynomialCache(std::make_shared<PolynomialCache>()) {
         // Intentionally left empty
     }
 
@@ -265,7 +265,7 @@ class TimeTravelling {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    std::vector<std::pair<uint64_t, Annotation>> findTimeTravelling(
+    std::vector<std::pair<uint64_t, Annotation>> findBigStep(
         const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
         std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,

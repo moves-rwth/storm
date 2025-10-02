@@ -8,7 +8,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberForward.h"

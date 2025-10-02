@@ -17,7 +17,7 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/DerivativeSettings.h"
@@ -247,7 +247,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     }
 
     if (parametricSettings.isBigStepEnabled()) {
-        transformer::TimeTravelling tt;
+        transformer::BigStep tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
         modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
         auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);

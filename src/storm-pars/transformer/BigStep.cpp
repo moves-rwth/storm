@@ -1,4 +1,4 @@
-#include "TimeTravelling.h"
+#include "BigStep.h"
 #include <carl/core/FactorizedPolynomial.h>
 #include <carl/core/MultivariatePolynomial.h>
 #include <carl/core/RationalFunction.h>
@@ -42,7 +42,7 @@
 namespace storm {
 namespace transformer {
 
-RationalFunction TimeTravelling::uniPolyToRationalFunction(UniPoly uniPoly) {
+RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
     auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniPoly);
     auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
     return RationalFunction(multiNominator);
@@ -346,7 +346,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
     return std::make_pair(subgraph, bottomStates);
 }
 
-std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> TimeTravelling::bigStep(
+std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> BigStep::bigStep(
     models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
@@ -523,7 +523,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, Annotation>> transitions = findTimeTravelling(
+            std::vector<std::pair<uint64_t, Annotation>> transitions = findBigStep(
                 bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis, treeStatesNeedUpdate, state, originalNumStates);
 
             // Put paths into matrix
@@ -632,7 +632,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     return std::make_pair(newDTMC, storedAnnotations);
 }
 
-std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::map<uint64_t, std::set<uint64_t>>>> TimeTravelling::bigStepBFS(
+std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::map<uint64_t, std::set<uint64_t>>>> BigStep::bigStepBFS(
     uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
@@ -759,13 +759,13 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     return std::make_pair(annotations, std::make_pair(visitedStatesInBFSOrder, subtree));
 }
 
-std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
+std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(
     const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
     storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
     std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates) {
     STORM_LOG_INFO("Find time travelling called with root " << root << " and parameter " << parameter);
-    bool doneTimeTravelling = false;
+    bool doneBigStep = false;
 
     // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
     std::map<std::vector<uint64_t>, std::map<uint64_t, RationalFunctionCoefficient>> parametricTransitions;
@@ -835,7 +835,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
 
             STORM_LOG_INFO("Time travellable transitions with " << newAnnotation);
 
-            doneTimeTravelling = true;
+            doneBigStep = true;
 
             // Create the new state that our parametric transitions will start in
             uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
@@ -880,7 +880,7 @@ std::vector<std::pair<uint64_t, Annotation>> TimeTravelling::findTimeTravelling(
     return insertTransitions;
 }
 
-std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
                                                                         storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                                                         storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
                                                                         storage::BitVector& reachableStates,
@@ -929,7 +929,7 @@ std::map<UniPoly, Annotation> TimeTravelling::replaceWithNewTransitions(uint64_t
     return storedAnnotations;
 }
 
-void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
+void BigStep::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
                                              storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState) {
     if (backwardsFlexibleMatrix.getRowCount() > reachableStates.size()) {
         reachableStates.resize(backwardsFlexibleMatrix.getRowCount(), true);
@@ -953,7 +953,7 @@ void TimeTravelling::updateUnreachableStates(storage::BitVector& reachableStates
     }
 }
 
-std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravelling::joinDuplicateTransitions(
+std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> BigStep::joinDuplicateTransitions(
     std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> const& entries) {
     std::vector<uint64_t> keyOrder;
     std::map<uint64_t, storm::storage::MatrixEntry<uint64_t, RationalFunction>> existingEntries;
@@ -972,7 +972,7 @@ std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> TimeTravell
     return newEntries;
 }
 
-models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
+models::sparse::StateLabeling BigStep::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
                                                                   uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula) {
     models::sparse::StateLabeling newLabels(newSize);
     for (auto const& label : oldLabeling.getLabels()) {
@@ -994,7 +994,7 @@ models::sparse::StateLabeling TimeTravelling::extendStateLabeling(models::sparse
     return newLabels;
 }
 
-void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
+void BigStep::updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
                                       std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
                                       const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
                                       const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
@@ -1037,6 +1037,6 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
     }
 }
 
-class TimeTravelling;
+class BigStep;
 }  // namespace transformer
 }  // namespace storm

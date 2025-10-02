@@ -53,7 +53,7 @@ class ParametricSettings : public ModuleSettings {
     /*!
      * Retrieves whether time travelling should be enabled.
      */
-    bool isTimeTravellingEnabled() const;
+    bool isBigStepEnabled() const;
 
     /*!
      * Retrieves big step depth.

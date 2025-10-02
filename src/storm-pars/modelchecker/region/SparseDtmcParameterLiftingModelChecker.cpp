@@ -14,7 +14,7 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
@@ -590,7 +590,7 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
                             auto const derivative = function.derivative(p);
                             if (derivative.isConstant()) {
                                 constantDerivatives.emplace_back(true, utility::convertNumber<double>(derivative.constantPart()));
-                            } else if (!storm::transformer::TimeTravelling::lastSavedAnnotations.count(entry.getValue())) {
+                            } else if (!storm::transformer::BigStep::lastSavedAnnotations.count(entry.getValue())) {
                                 functionDerivatives.emplace(function, derivative);
                                 constantDerivatives.emplace_back(false, 0);
                             } else {
@@ -621,8 +621,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
 
                     std::vector<ConstantType> derivatives;
                     for (auto const& entry : this->parametricModel->getTransitionMatrix().getRow(state)) {
-                        if (storm::transformer::TimeTravelling::lastSavedAnnotations.count(entry.getValue())) {
-                            auto& annotation = storm::transformer::TimeTravelling::lastSavedAnnotations.at(entry.getValue());
+                        if (storm::transformer::BigStep::lastSavedAnnotations.count(entry.getValue())) {
+                            auto& annotation = storm::transformer::BigStep::lastSavedAnnotations.at(entry.getValue());
                             ConstantType derivative =
                                 annotation.derivative()->template evaluate<ConstantType>(utility::convertNumber<ConstantType>(region.getCenter(p)));
                             derivatives.push_back(derivative);

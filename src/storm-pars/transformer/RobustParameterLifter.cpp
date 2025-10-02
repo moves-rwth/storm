@@ -18,7 +18,7 @@
 #include "storm/adapters/RationalNumberForward.h"
 
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/Environment.h"
@@ -38,7 +38,7 @@
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
 
-std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::TimeTravelling::lastSavedAnnotations;
+std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::BigStep::lastSavedAnnotations;
 
 namespace storm {
 namespace transformer {
@@ -427,8 +427,8 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
         return;
     }
 
-    if (TimeTravelling::lastSavedAnnotations.count(transition)) {
-        auto& annotation = TimeTravelling::lastSavedAnnotations.at(transition);
+    if (BigStep::lastSavedAnnotations.count(transition)) {
+        auto& annotation = BigStep::lastSavedAnnotations.at(transition);
 
         auto const& terms = annotation.getTerms();
 
