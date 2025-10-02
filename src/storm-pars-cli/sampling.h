@@ -5,9 +5,9 @@
 
 #include "storm-pars-cli/print.h"
 
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/storm-pars.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
