@@ -7,7 +7,6 @@
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
 namespace modelchecker {
