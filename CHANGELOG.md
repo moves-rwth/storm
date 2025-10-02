@@ -8,8 +8,13 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.11.x
 --------------
 
-## Version 1.11.0 (2025/09)
+## Version 1.11.1 (2025/10)
+- Made handling of relevant states in debug mode more robust.
+- Improved support for ARM.
+- Bug fixes in conditional bisection method.
+- Support for musl libc.
 
+## Version 1.11.0 (2025/09)
 - Completely restructured CMake build process:
     * Storm can now be properly installed.
     * Carl-storm is now automatically fetched from a predefined repository and tag. Use CMake option `-DFETCHCONTENT_SOURCE_DIR_CARL=<path_to_carl>` to set a local path.
