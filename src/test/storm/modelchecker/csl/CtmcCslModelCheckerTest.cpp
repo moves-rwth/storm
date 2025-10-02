@@ -30,6 +30,7 @@ namespace {
 
 enum class CtmcEngine { PrismSparse, JaniSparse, PrismHybrid, JaniHybrid };
 
+#ifdef STORM_HAVE_GMM
 class SparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
@@ -63,6 +64,7 @@ class JaniSparseGmmxxGmresIluEnvironment {
         return env;
     }
 };
+#endif
 
 class SparseEigenDGmresEnvironment {
    public:
@@ -114,6 +116,7 @@ class SparseNativeSorEnvironment {
     }
 };
 
+#ifdef STORM_HAVE_GMM
 class HybridCuddGmmxxGmresEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::CUDD;
@@ -161,6 +164,7 @@ class HybridSylvanGmmxxGmresEnvironment {
         return env;
     }
 };
+#endif
 
 template<typename TestType>
 class CtmcCslModelCheckerTest : public ::testing::Test {

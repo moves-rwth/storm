@@ -22,7 +22,7 @@ class SylvanSettings : public ModuleSettings {
      *
      * @return The maximal amount of memory to use.
      */
-    uint_fast64_t getMaximalMemory() const;
+    uint64_t getMaximalMemory() const;
 
     /*!
      * Retrieves the amount of threads available to Sylvan. Note that a value of zero means that the number
@@ -30,7 +30,7 @@ class SylvanSettings : public ModuleSettings {
      *
      * @rreturn The number of threads.
      */
-    uint_fast64_t getNumberOfThreads() const;
+    uint64_t getNumberOfThreads() const;
 
     /*!
      * Retrieves whether the number of threads to use was set.

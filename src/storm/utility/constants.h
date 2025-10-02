@@ -174,6 +174,9 @@ template<typename ValueType>
 ValueType sin(ValueType const& number);
 
 template<typename ValueType>
+uint64_t numDigits(ValueType const& number);
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
 
 template<typename RationalType>

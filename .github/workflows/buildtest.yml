@@ -165,7 +165,7 @@ jobs:
   compilerTests:
     # Build and run with different compilers (GCC, Clang)
     # Run on latest Archlinux version to get most recent compiler versions
-    name: Compiler Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
+    name: Compiler Tests (${{ matrix.config.name }} on  ${{ matrix.config.distro }}, ${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -175,20 +175,30 @@ jobs:
              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
-             packages: ""
+             packages: "",
+             distro: "archlinux"
           }
           - {name: "Clang",
              buildType: "Debug",
              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++",
-             packages: "clang"
+             packages: "clang",
+             distro: "archlinux"
           }
+          - { name: "musl",
+              buildType: "Debug",
+              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
+              Developer: "ON",
+              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++",
+              packages: "",
+              distro: "alpine"
+            }
     steps:
       - name: Git clone
         uses: actions/checkout@v5
       - name: Replace Dockerfile
-        run: cp .github/workflows/Dockerfile.archlinux Dockerfile
+        run: cp .github/workflows/Dockerfile.${{ matrix.config.distro }} Dockerfile
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -233,12 +243,13 @@ jobs:
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
 
   linuxTests:
-    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
-    runs-on: ubuntu-latest
+    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }}) on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         distro: ["debian-12", "ubuntu-24.04"]
         buildType: ["Release"]
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Git clone
         uses: actions/checkout@v5

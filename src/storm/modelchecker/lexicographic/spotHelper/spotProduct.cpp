@@ -15,13 +15,15 @@ namespace storm::modelchecker::helper::lexicographic::spothelper {
 typedef std::pair<unsigned, unsigned> product_state;
 
 struct product_state_hash {
-    size_t operator()(product_state s) const noexcept {
 #ifdef STORM_HAVE_SPOT
+    size_t operator()(product_state s) const noexcept {
         return spot::wang32_hash(s.first ^ spot::wang32_hash(s.second));
-#else
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
-#endif
     }
+#else
+    size_t operator()(product_state s) const {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+    }
+#endif
 };
 
 enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };
@@ -29,12 +31,12 @@ typedef std::vector<std::pair<unsigned, unsigned>> product_states;
 
 std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula,
                                                                            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
-                                                                           std::vector<uint>& acceptanceConditions) {
+                                                                           std::vector<uint64_t>& acceptanceConditions) {
 #ifdef STORM_HAVE_SPOT
     bool first = true;
     spot::twa_graph_ptr productAutomaton;
     spot::bdd_dict_ptr dict = spot::make_bdd_dict();
-    uint countAccept = 0;
+    uint64_t countAccept = 0;
     // iterate over all subformulae
     for (const std::shared_ptr<const storm::logic::Formula>& subFormula : formula.getSubformulas()) {
         // get the formula in the right format
