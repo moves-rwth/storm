@@ -83,7 +83,7 @@ UniPoly PolynomialCache::polynomialFromFactorization(std::vector<uint64_t> const
 }
 
 // Annotation implementations
-Annotation::Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) 
+Annotation::Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache)
     : parameter(parameter), polynomialCache(polynomialCache) {
     // Intentionally left empty
 }
@@ -523,8 +523,8 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
 
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
-            std::vector<std::pair<uint64_t, Annotation>> transitions = findBigStep(
-                bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions, alreadyTimeTravelledToThis, treeStatesNeedUpdate, state, originalNumStates);
+            std::vector<std::pair<uint64_t, Annotation>> transitions = findBigStep(bottomAnnotations, parameter, flexibleMatrix, backwardsTransitions,
+                                                                                   alreadyTimeTravelledToThis, treeStatesNeedUpdate, state, originalNumStates);
 
             // Put paths into matrix
             auto newStoredAnnotations =
@@ -759,11 +759,13 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     return std::make_pair(annotations, std::make_pair(visitedStatesInBFSOrder, subtree));
 }
 
-std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(
-    const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
-    storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-    std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
-    std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates) {
+std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map<uint64_t, Annotation> bigStepAnnotations,
+                                                                  const RationalFunctionVariable& parameter,
+                                                                  storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                                  storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                                  std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
+                                                                  std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root,
+                                                                  uint64_t originalNumStates) {
     STORM_LOG_INFO("Find time travelling called with root " << root << " and parameter " << parameter);
     bool doneBigStep = false;
 
@@ -881,10 +883,10 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(
 }
 
 std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                                        storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                                        storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                                        storage::BitVector& reachableStates,
-                                                                        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+                                                                 storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                                 storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                                 storage::BitVector& reachableStates,
+                                                                 std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
     std::map<UniPoly, Annotation> storedAnnotations;
 
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
@@ -930,7 +932,7 @@ std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state,
 }
 
 void BigStep::updateUnreachableStates(storage::BitVector& reachableStates, std::vector<uint64_t> const& statesMaybeUnreachable,
-                                             storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState) {
+                                      storage::FlexibleSparseMatrix<RationalFunction> const& backwardsFlexibleMatrix, uint64_t initialState) {
     if (backwardsFlexibleMatrix.getRowCount() > reachableStates.size()) {
         reachableStates.resize(backwardsFlexibleMatrix.getRowCount(), true);
     }
@@ -973,7 +975,7 @@ std::vector<storm::storage::MatrixEntry<uint64_t, RationalFunction>> BigStep::jo
 }
 
 models::sparse::StateLabeling BigStep::extendStateLabeling(models::sparse::StateLabeling const& oldLabeling, uint64_t oldSize, uint64_t newSize,
-                                                                  uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula) {
+                                                           uint64_t stateWithLabels, const std::set<std::string>& labelsInFormula) {
     models::sparse::StateLabeling newLabels(newSize);
     for (auto const& label : oldLabeling.getLabels()) {
         newLabels.addLabel(label);
@@ -995,12 +997,11 @@ models::sparse::StateLabeling BigStep::extendStateLabeling(models::sparse::State
 }
 
 void BigStep::updateTreeStates(std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-                                      std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
-                                      const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                      const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
-                                      const std::set<RationalFunctionVariable>& allParameters,
-                                      const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
-                                      const models::sparse::StateLabeling stateLabeling) {
+                               std::map<RationalFunctionVariable, std::set<uint64_t>>& workingSets,
+                               const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                               const storage::FlexibleSparseMatrix<RationalFunction>& backwardsTransitions,
+                               const std::set<RationalFunctionVariable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
+                               const models::sparse::StateLabeling stateLabeling) {
     for (auto const& parameter : allParameters) {
         std::set<uint64_t>& workingSet = workingSets[parameter];
         while (!workingSet.empty()) {

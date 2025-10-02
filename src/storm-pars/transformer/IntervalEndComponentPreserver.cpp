@@ -1,8 +1,7 @@
 
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/utility/parametric.h"
-#include "storm/adapters/RationalFunctionForward.h"
-#include "storm/adapters/RationalNumberForward.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"

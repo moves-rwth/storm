@@ -25,7 +25,7 @@ class SparseInstantiationModelChecker {
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) = 0;
-    
+
     /**
      * Checks if the given valuation is valid for the current model.  Currently
      * used before checking whether the center of the model is SAT / UNSAT in

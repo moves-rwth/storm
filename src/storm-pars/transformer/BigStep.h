@@ -12,12 +12,25 @@
 #include <set>
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/storage/FlexibleSparseMatrix.h"
 
 namespace storm {
+
+namespace logic {
+class Formula;
+}  // namespace logic
+
+namespace modelchecker {
+template<typename FormulaType, typename ValueType>
+class CheckTask;
+}  // namespace modelchecker
+
+namespace storage {
+template<typename ValueType>
+class FlexibleSparseMatrix;
+}  // namespace storage
+
 namespace transformer {
 
 using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
@@ -265,11 +278,12 @@ class BigStep {
      * @param originalNumStates Numbers of original states in pMC (for alreadyTimeTravelledToThis map)
      * @return std::optional<std::vector<std::shared_ptr<searchingPath>>>
      */
-    std::vector<std::pair<uint64_t, Annotation>> findBigStep(
-        const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
-        storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix, storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-        std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
-        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root, uint64_t originalNumStates);
+    std::vector<std::pair<uint64_t, Annotation>> findBigStep(const std::map<uint64_t, Annotation> bigStepAnnotations, const RationalFunctionVariable& parameter,
+                                                             storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                             storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                             std::map<RationalFunctionVariable, std::set<std::set<uint64_t>>>& alreadyTimeTravelledToThis,
+                                                             std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root,
+                                                             uint64_t originalNumStates);
 
     /**
      * Actually eliminate transitions in flexibleMatrix and backwardFlexibleMatrix according to the paths we found and want to eliminate.

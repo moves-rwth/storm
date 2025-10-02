@@ -1,6 +1,8 @@
 #include "storm-pars/transformer/ParameterLifter.h"
 
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace transformer {

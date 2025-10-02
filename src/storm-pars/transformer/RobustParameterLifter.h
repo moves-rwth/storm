@@ -6,8 +6,6 @@
 #include <vector>
 
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
-#include "storm-pars/modelchecker/region/monotonicity/Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionForward.h"
@@ -17,6 +15,16 @@
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {
+
+namespace analysis {
+class Order;
+}  // namespace analysis
+
+namespace storage {
+template<typename ParametricType>
+class ParameterRegion;
+}  // namespace storage
+
 namespace transformer {
 
 /*!

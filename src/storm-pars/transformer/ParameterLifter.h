@@ -5,16 +5,24 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm-pars/modelchecker/region/monotonicity/Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
-
 namespace storm {
+
+namespace analysis {
+class Order;
+}  // namespace analysis
+
+namespace storage {
+template<typename ParametricType>
+class ParameterRegion;
+}  // namespace storage
+
 namespace transformer {
 
 /*!
