@@ -298,21 +298,22 @@ jobs:
     strategy:
       matrix:
         config:
-          - {name: "XCode 14.3, Intel",
-             distro: "macos-13",
-             xcode: "14.3",
-             buildType: "Debug"
-            }
+          
           - {name: "XCode 15.4, ARM",
              distro: "macos-14",
              xcode: "15.4",
              buildType: "Debug"
             }
-          - {name: "XCode 16.3, ARM",
+          - {name: "XCode Latest, ARM",
              distro: "macos-15",
-             xcode: "16.3",
+             xcode: "latest-stable",
              buildType: "Debug"
             }
+          - {name: "XCode Latest, Intel",
+             distro: "macos-15-intel",
+             xcode: "latest-stable",
+             buildType: "Debug"
+            }  
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
