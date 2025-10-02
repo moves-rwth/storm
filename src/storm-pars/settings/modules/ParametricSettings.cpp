@@ -76,10 +76,6 @@ pars::utility::ParametricMode ParametricSettings::getOperationMode() const {
 }
 
 bool ParametricSettings::isBigStepEnabled() const {
-    return this->getOption(bigStepEnabledName).getHasOptionBeenSet();
-}
-
-bool ParametricSettings::isBigStepEnabled() const {
     return this->getOption(bigStepEnabledName).getArgumentByName(bigStepEnabledName).getValueAsBoolean();
 }
 
