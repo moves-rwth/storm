@@ -23,7 +23,7 @@ NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicMo
                                                                                     std::string const& choiceLabelingFilename) {
     // Parse the transitions.
     storm::storage::SparseMatrix<ValueType> transitions(
-        std::move(storm::parser::NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(transitionsFilename)));
+        storm::parser::NondeterministicSparseTransitionParser<ValueType>::parseNondeterministicTransitions(transitionsFilename));
 
     uint_fast64_t stateCount = transitions.getColumnCount();
 

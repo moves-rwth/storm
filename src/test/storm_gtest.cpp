@@ -16,7 +16,7 @@ bool testGurobiLicense() {
     }
     try {
         auto lpSolver = storm::utility::solver::getLpSolver<double>("test", storm::solver::LpSolverTypeSelection::Gurobi);
-    } catch (storm::exceptions::GurobiLicenseException) {
+    } catch (storm::exceptions::GurobiLicenseException const&) {
         return false;
     }
     return true;
