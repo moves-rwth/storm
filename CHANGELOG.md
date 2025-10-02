@@ -9,10 +9,11 @@ Version 1.11.x
 --------------
 
 ## Version 1.11.1 (2025/10)
-- Made handling of relevant states in debug mode more robust.
+- Bug fixes in conditional probabilities computation with the (recent) bisection method.
+- Sound value iteration diagnostics in debug mode are more robust.
 - Improved support for ARM.
-- Bug fixes in conditional bisection method.
 - Support for musl libc.
+- Code quality fixes (reduced warnings)
 
 ## Version 1.11.0 (2025/09)
 - Completely restructured CMake build process:
