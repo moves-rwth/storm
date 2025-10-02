@@ -367,8 +367,6 @@ else()
 endif()
 
 set(STORM_HAVE_CARL OFF)
-set(CARL_MINVERSION "14.30")
-set(CARL_C14VERSION "14")
 
 include(FetchContent)
 FETCHCONTENT_DECLARE(
