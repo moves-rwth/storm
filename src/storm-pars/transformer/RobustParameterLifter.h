@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/TimeTravelling.h"
 #include "storm-pars/utility/parametric.h"

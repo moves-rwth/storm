@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"
 

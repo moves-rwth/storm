@@ -1,6 +1,6 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
-#include <storm-pars/analysis/MonotonicityChecker.h>
+#include <storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h>
 
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"

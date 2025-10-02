@@ -1,4 +1,4 @@
-#include "storm-pars/analysis/MonotonicityKind.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityKind.h"
 
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"

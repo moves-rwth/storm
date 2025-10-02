@@ -2,7 +2,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"

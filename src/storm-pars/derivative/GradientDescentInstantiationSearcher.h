@@ -2,7 +2,7 @@
 
 #include <map>
 #include <memory>
-#include "storm-pars/analysis/MonotonicityHelper.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"

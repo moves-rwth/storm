@@ -5,14 +5,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm-pars/analysis/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
 
 namespace storm {
 namespace transformer {

@@ -2,7 +2,7 @@
 #define STORM_LOCALMONOTONICITYRESULT_H
 
 #include <vector>
-#include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/BitVector.h"
 

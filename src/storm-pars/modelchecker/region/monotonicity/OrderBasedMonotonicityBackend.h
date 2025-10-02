@@ -8,8 +8,8 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/utility/OptionalRef.h"
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm-pars/transformer/ParameterLifter.h"
 

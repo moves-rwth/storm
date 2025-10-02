@@ -10,7 +10,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm-pars/analysis/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"

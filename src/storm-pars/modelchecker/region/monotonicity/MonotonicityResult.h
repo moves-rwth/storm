@@ -5,7 +5,7 @@
 #include <set>
 
 #include <memory>
-#include "storm-pars/analysis/MonotonicityKind.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityKind.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/BitVector.h"
 

@@ -1,6 +1,6 @@
 #include <vector>
 
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

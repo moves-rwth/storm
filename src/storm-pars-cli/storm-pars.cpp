@@ -7,7 +7,7 @@
 #include "storm-pars-cli/solutionFunctions.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-#include "storm-pars/analysis/MonotonicityHelper.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/storm-pars.h"
 

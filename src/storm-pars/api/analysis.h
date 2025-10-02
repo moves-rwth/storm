@@ -1,9 +1,9 @@
 #pragma once
 
-#include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/AssumptionMaker.h"
-#include "storm-pars/analysis/LocalMonotonicityResult.h"
-#include "storm-pars/analysis/MonotonicityHelper.h"
-#include "storm-pars/analysis/MonotonicityResult.h"
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
