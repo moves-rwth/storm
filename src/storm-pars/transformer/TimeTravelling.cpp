@@ -48,6 +48,216 @@ RationalFunction TimeTravelling::uniPolyToRationalFunction(UniPoly uniPoly) {
     return RationalFunction(multiNominator);
 }
 
+// PolynomialCache implementations
+uint64_t PolynomialCache::lookUpInCache(UniPoly const& f, RationalFunctionVariable const& p) {
+    auto& container = (*this)[p];
+
+    auto it = container.first.find(f);
+    if (it != container.first.end()) {
+        return it->second;
+    }
+
+    // std::cout << f << std::endl;
+    uint64_t newIndex = container.second.size();
+    container.first[f] = newIndex;
+    container.second.push_back(f);
+
+    return newIndex;
+}
+
+UniPoly PolynomialCache::polynomialFromFactorization(std::vector<uint64_t> const& factorization, RationalFunctionVariable const& p) const {
+    static std::map<std::pair<std::vector<uint64_t>, RationalFunctionVariable>, UniPoly> localCache;
+    auto key = std::make_pair(factorization, p);
+    if (localCache.count(key)) {
+        return localCache.at(key);
+    }
+    UniPoly polynomial = UniPoly(p);
+    polynomial = polynomial.one();
+    for (uint64_t i = 0; i < factorization.size(); i++) {
+        for (uint64_t j = 0; j < factorization[i]; j++) {
+            polynomial *= this->at(p).second[i];
+        }
+    }
+    localCache.emplace(key, polynomial);
+    return polynomial;
+}
+
+// Annotation implementations
+Annotation::Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache) 
+    : parameter(parameter), polynomialCache(polynomialCache) {
+    // Intentionally left empty
+}
+
+void Annotation::operator+=(const Annotation other) {
+    STORM_LOG_ASSERT(other.parameter == this->parameter, "Can only add annotations with equal parameters.");
+    for (auto const& [factors, number] : other) {
+        if (this->count(factors)) {
+            this->at(factors) += number;
+        } else {
+            this->emplace(factors, number);
+        }
+    }
+}
+
+void Annotation::operator*=(RationalFunctionCoefficient n) {
+    for (auto& [factors, number] : *this) {
+        number *= n;
+    }
+}
+
+Annotation Annotation::operator*(RationalFunctionCoefficient n) const {
+    Annotation annotationCopy(*this);
+    annotationCopy *= n;
+    return annotationCopy;
+}
+
+void Annotation::addAnnotationTimesConstant(Annotation const& other, RationalFunctionCoefficient timesConstant) {
+    for (auto const& [info, constant] : other) {
+        if (!this->count(info)) {
+            this->emplace(info, utility::zero<RationalFunctionCoefficient>());
+        }
+        this->at(info) += constant * timesConstant;
+    }
+}
+
+void Annotation::addAnnotationTimesPolynomial(Annotation const& other, UniPoly&& polynomial) {
+    for (auto const& [info, constant] : other) {
+        // Copy array
+        auto newCounter = info;
+
+        // Write new polynomial into array
+        auto const cacheNum = this->polynomialCache->lookUpInCache(polynomial, parameter);
+        while (newCounter.size() <= cacheNum) {
+            newCounter.push_back(0);
+        }
+        newCounter[cacheNum]++;
+
+        if (!this->count(newCounter)) {
+            this->emplace(newCounter, constant);
+        } else {
+            this->at(newCounter) += constant;
+        }
+    }
+}
+
+void Annotation::addAnnotationTimesAnnotation(Annotation const& anno1, Annotation const& anno2) {
+    for (auto const& [info1, constant1] : anno1) {
+        for (auto const& [info2, constant2] : anno2) {
+            std::vector<uint64_t> newCounter(std::max(info1.size(), info2.size()), 0);
+
+            for (uint64_t i = 0; i < newCounter.size(); i++) {
+                if (i < info1.size()) {
+                    newCounter[i] += info1[i];
+                }
+                if (i < info2.size()) {
+                    newCounter[i] += info2[i];
+                }
+            }
+
+            if (!this->count(newCounter)) {
+                this->emplace(newCounter, constant1 * constant2);
+            } else {
+                this->at(newCounter) += constant1 * constant2;
+            }
+        }
+    }
+}
+
+UniPoly Annotation::getProbability() const {
+    UniPoly prob = UniPoly(parameter);  // Creates a zero polynomial
+    for (auto const& [info, constant] : *this) {
+        prob += polynomialCache->polynomialFromFactorization(info, parameter) * constant;
+    }
+    return prob;
+}
+
+std::vector<UniPoly> Annotation::getTerms() const {
+    std::vector<UniPoly> terms;
+    for (auto const& [info, constant] : *this) {
+        terms.push_back(polynomialCache->polynomialFromFactorization(info, parameter) * constant);
+    }
+    return terms;
+}
+
+Interval Annotation::evaluateOnIntervalMidpointTheorem(Interval input, bool higherOrderBounds) const {
+    if (!derivativeOfThis) {
+        return evaluate<Interval>(input);
+    } else {
+        Interval boundDerivative = derivativeOfThis->evaluateOnIntervalMidpointTheorem(input, higherOrderBounds);
+        double maxSlope = utility::max(utility::abs(boundDerivative.lower()), utility::abs(boundDerivative.upper()));
+        double fMid = evaluate<double>(input.center());
+        double fMin = fMid - (input.diameter() / 2) * maxSlope;
+        double fMax = fMid + (input.diameter() / 2) * maxSlope;
+        if (higherOrderBounds) {
+            Interval boundsHere = evaluate<Interval>(input);
+            return Interval(utility::max(fMin, boundsHere.lower()), utility::min(fMax, boundsHere.upper()));
+        } else {
+            return Interval(fMin, fMax);
+        }
+    }
+}
+
+RationalFunctionVariable Annotation::getParameter() const {
+    return parameter;
+}
+
+void Annotation::computeDerivative(uint64_t nth) {
+    if (nth == 0 || derivativeOfThis) {
+        return;
+    }
+    derivativeOfThis = std::make_shared<Annotation>(this->parameter, this->polynomialCache);
+    for (auto const& [info, constant] : *this) {
+        // Product rule
+        for (uint64_t i = 0; i < info.size(); i++) {
+            if (info[i] == 0) {
+                continue;
+            }
+
+            RationalFunctionCoefficient newConstant = constant * utility::convertNumber<RationalFunctionCoefficient>(info[i]);
+
+            std::vector<uint64_t> insert(info);
+            insert[i]--;
+            // Delete trailing zeroes from insert
+            while (!insert.empty() && insert.back() == 0) {
+                insert.pop_back();
+            }
+
+            auto polynomial = polynomialCache->at(parameter).second.at(i);
+            auto derivative = polynomial.derivative();
+            if (derivative.isConstant()) {
+                newConstant *= derivative.constantPart();
+            } else {
+                uint64_t derivativeIndex = this->polynomialCache->lookUpInCache(derivative, parameter);
+                while (insert.size() < derivativeIndex) {
+                    insert.push_back(0);
+                }
+                insert[derivativeIndex]++;
+            }
+            if (derivativeOfThis->count(insert)) {
+                derivativeOfThis->at(insert) += newConstant;
+            } else {
+                derivativeOfThis->emplace(insert, newConstant);
+            }
+        }
+    }
+    derivativeOfThis->computeDerivative(nth - 1);
+}
+
+uint64_t Annotation::maxDegree() const {
+    uint64_t maxDegree = 0;
+    for (auto const& [info, constant] : *this) {
+        if (!info.empty()) {
+            maxDegree = std::max(maxDegree, *std::max_element(info.begin(), info.end()));
+        }
+    }
+    return maxDegree;
+}
+
+std::shared_ptr<Annotation> Annotation::derivative() {
+    computeDerivative(1);
+    return derivativeOfThis;
+}
+
 std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(
     const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix, const uint64_t root,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
