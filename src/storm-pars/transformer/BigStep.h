@@ -135,7 +135,7 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
      * Evaluate the polynomial represented by this annotation on an interval.
      *
      * @param input The input interval.
-     * @return Interval The resulting interval.  
+     * @return Interval The resulting interval.
      */
     Interval evaluate(Interval input) const;
 

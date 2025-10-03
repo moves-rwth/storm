@@ -10,6 +10,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm-pars/modelchecker/region/RegionOptions.h"
 #include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
@@ -26,7 +27,6 @@
 #include "storm-pars/parser/ParameterRegionParser.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/parameterlifting.h"
-#include "storm-pars/modelchecker/region/RegionOptions.h"
 
 #include "storm/environment/Environment.h"
 

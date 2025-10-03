@@ -58,14 +58,15 @@ struct RegionRefinementOptions {
      * @param preconditionsValidated A flag indicating whether preconditions have been validated (default is false).
      * @param monotoneParameters An optional pair of sets of monotone parameters (default is std::nullopt).
      */
-    RegionRefinementOptions(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task,
-                       storm::modelchecker::RegionCheckEngine engine, storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy,
-                       MonotonicityOptions monotonicitySetting = MonotonicityOptions(),
-                       std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {},
-                       bool allowModelSimplification = true, bool graphPreserving = true, bool preconditionsValidated = false,
-                       std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
-                                               std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
-                           monotoneParameters = std::nullopt)
+    RegionRefinementOptions(std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+                            storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task, storm::modelchecker::RegionCheckEngine engine,
+                            storm::modelchecker::RegionSplittingStrategy regionSplittingStrategy,
+                            MonotonicityOptions monotonicitySetting = MonotonicityOptions(),
+                            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& discreteVariables = {},
+                            bool allowModelSimplification = true, bool graphPreserving = true, bool preconditionsValidated = false,
+                            std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
+                                                    std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
+                                monotoneParameters = std::nullopt)
         : model(std::move(model)),
           task(std::move(task)),
           engine(engine),
