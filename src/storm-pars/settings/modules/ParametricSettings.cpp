@@ -18,7 +18,7 @@ const std::string exportResultOptionName = "resultfile";
 const std::string transformContinuousOptionName = "transformcontinuous";
 const std::string transformContinuousShortOptionName = "tc";
 const std::string useMonotonicityName = "use-monotonicity";
-const std::string timeTravellingEnabledName = "time-travel";
+const std::string bigStepEnabledName = "big-step";
 const std::string linearToSimpleEnabledName = "linear-to-simple";
 
 ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
@@ -38,9 +38,7 @@ ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                         .setShortName(transformContinuousShortOptionName)
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, timeTravellingEnabledName, false, "Enabled time travelling (flip transitions to improve PLA bounds).")
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, linearToSimpleEnabledName, false,
                                                    "Converts linear (constant * parameter) transitions to simple (only constant or parameter) transitions.")
                         .build());
@@ -72,8 +70,12 @@ pars::utility::ParametricMode ParametricSettings::getOperationMode() const {
     return *mode;
 }
 
-bool ParametricSettings::isTimeTravellingEnabled() const {
-    return this->getOption(timeTravellingEnabledName).getHasOptionBeenSet();
+bool ParametricSettings::isBigStepEnabled() const {
+    return this->getOption(bigStepEnabledName).getHasOptionBeenSet();
+}
+
+uint64_t ParametricSettings::getBigStepHorizon() const {
+    return this->getOption(bigStepEnabledName).getArgumentByName("horizon").getValueAsUnsignedInteger();
 }
 
 bool ParametricSettings::isLinearToSimpleEnabled() const {
