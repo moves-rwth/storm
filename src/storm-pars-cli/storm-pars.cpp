@@ -250,7 +250,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
     if (parametricSettings.isBigStepEnabled()) {
         transformer::BigStep tt;
         auto formulas = storm::api::extractFormulasFromProperties(input.properties);
-        modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
+        storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
         auto bigStepResult = tt.bigStep(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask);
         result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(bigStepResult.first);
 
@@ -355,11 +355,11 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto engine = rvs.getRegionCheckEngine();
     bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
 
-    STORM_LOG_THROW(graphPreserving || engine == modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(graphPreserving || engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
                     "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
                     "(--assume-graph-preserving true).");
 
-    auto splittingStrategy = modelchecker::RegionSplittingStrategy();
+    auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
     splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
     splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
@@ -372,7 +372,7 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
 
     storm::utility::Stopwatch watch(true);
 
-    auto const& settings = storm::api::RefinementSettings<ValueType>{
+    auto const& settings = storm::api::RefinementOptions<ValueType>{
         model,
         *(property.getRawFormula()),
         engine,
@@ -419,7 +419,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     auto engine = rvs.getRegionCheckEngine();
     STORM_PRINT_AND_LOG(" using " << engine);
 
-    auto splittingStrategy = modelchecker::RegionSplittingStrategy();
+    auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
     splittingStrategy.heuristic = rvs.getRegionSplittingHeuristic();
     splittingStrategy.estimateKind = rvs.getRegionSplittingEstimateMethod();
@@ -444,7 +444,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     storm::cli::printModelCheckingProperty(property);
     storm::utility::Stopwatch watch(true);
 
-    auto settings = storm::api::RefinementSettings<ValueType>{
+    auto settings = storm::api::RefinementOptions<ValueType>{
         model,
         storm::api::createTask<ValueType>(property.getRawFormula(), true),
         engine,

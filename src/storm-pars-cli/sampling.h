@@ -269,7 +269,7 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
     derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-    modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
+    storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
     std::shared_ptr<storm::logic::Formula> formulaWithoutBound;
     if (!referenceCheckTask.isRewardModelSet()) {
         formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
