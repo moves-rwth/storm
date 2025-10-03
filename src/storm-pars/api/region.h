@@ -176,8 +176,9 @@ parseMonotoneParameters(std::string const& fileName, std::shared_ptr<storm::mode
 template<typename ParametricType>
 std::shared_ptr<storm::models::sparse::Model<ParametricType>> preprocessSparseModelForParameterLifting(
     std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model,
-    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool preconditionsValidatedManually = false) {
-    STORM_LOG_WARN_COND(preconditionsValidatedManually || storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()),
+    storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, storm::modelchecker::RegionCheckEngine engine,
+    bool preconditionsValidatedManually = false) {
+    STORM_LOG_WARN_COND(preconditionsValidatedManually || storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula(), engine),
                         "Could not validate whether parameter lifting is applicable. Please validate manually...");
     std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
 
@@ -279,7 +280,7 @@ std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRe
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
         monotoneParameters = std::nullopt) {
-    auto consideredModel = preprocessSparseModelForParameterLifting(model, task, preconditionsValidated);
+    auto consideredModel = preprocessSparseModelForParameterLifting(model, task, engine, preconditionsValidated);
     auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(engine, model->getType());
     auto monotonicityBackend =
         initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, engine, task, monotonicitySetting, monotoneParameters);
@@ -372,7 +373,7 @@ struct RefinementSettings {
 template<typename ValueType, typename ImpreciseType = double, typename PreciseType = storm::RationalNumber>
 std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initializeRegionRefinementChecker(Environment const& env,
                                                                                                            RefinementSettings<ValueType> settings) {
-    auto consideredModel = preprocessSparseModelForParameterLifting(settings.model, settings.task, settings.preconditionsValidated);
+    auto consideredModel = preprocessSparseModelForParameterLifting(settings.model, settings.task, settings.engine, settings.preconditionsValidated);
     auto regionChecker = createRegionModelChecker<ValueType, ImpreciseType, PreciseType>(settings.engine, settings.model->getType());
     auto monotonicityBackend = initializeMonotonicityBackend<ValueType, ImpreciseType, PreciseType>(*regionChecker, settings.engine, settings.task,
                                                                                                     settings.monotonicitySetting, settings.monotoneParameters);

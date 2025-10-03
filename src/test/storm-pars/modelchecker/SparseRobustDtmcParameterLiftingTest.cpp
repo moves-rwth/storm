@@ -32,7 +32,7 @@ class IsGraphPreserving {
     }
 };
 
-class NotGraphPreserving {
+class AssumeGraphPreserving {
    public:
     typedef double ValueType;
     static storm::Environment createEnvironment() {
@@ -72,7 +72,7 @@ class SparseRobustDtmcParameterLiftingTest : public ::testing::Test {
     bool _graphPreserving;
 };
 
-typedef ::testing::Types<IsGraphPreserving, NotGraphPreserving> TestingTypes;
+typedef ::testing::Types<IsGraphPreserving, AssumeGraphPreserving> TestingTypes;
 
 TYPED_TEST_SUITE(SparseRobustDtmcParameterLiftingTest, TestingTypes, );
 

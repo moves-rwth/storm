@@ -51,7 +51,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            storm::storage::BitVector const& selectedRows,
                                                                            storm::storage::BitVector const& selectedColumns, bool generateRowLabels,
                                                                            bool useMonotonicity) {
-    STORM_LOG_WARN_COND(useMonotonicity, "Cannot use graph monotonicity in robust mode.");
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
     for (auto const& oldColumn : selectedColumns) {

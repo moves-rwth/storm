@@ -38,12 +38,7 @@ ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                         .setShortName(transformContinuousShortOptionName)
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.")
-                        .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument(bigStepEnabledName, "Enable big-step")
-                                         .setDefaultValueBoolean(true)
-                                         .makeOptional()
-                                         .build())
-                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, bigStepEnabledName, false, "Enables big step transitions.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, linearToSimpleEnabledName, false,
                                                    "Converts linear (constant * parameter) transitions to simple (only constant or parameter) transitions.")
                         .build());
@@ -76,7 +71,7 @@ pars::utility::ParametricMode ParametricSettings::getOperationMode() const {
 }
 
 bool ParametricSettings::isBigStepEnabled() const {
-    return this->getOption(bigStepEnabledName).getArgumentByName(bigStepEnabledName).getValueAsBoolean();
+    return this->getOption(bigStepEnabledName).getHasOptionBeenSet();
 }
 
 uint64_t ParametricSettings::getBigStepHorizon() const {

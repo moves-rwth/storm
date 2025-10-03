@@ -39,7 +39,7 @@ class RegionSettings : public ModuleSettings {
     /*!
      * Retrieves whether non-graph-preserving mode is enabled
      */
-    bool isNotGraphPreservingSet() const;
+    bool isAssumeGraphPreservingSet() const;
 
     /*!
      * Retrieves the discrete variables string

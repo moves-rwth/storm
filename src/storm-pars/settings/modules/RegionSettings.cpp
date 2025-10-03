@@ -14,7 +14,7 @@ const std::string RegionSettings::moduleName = "region";
 const std::string regionOptionName = "region";
 const std::string regionShortOptionName = "reg";
 const std::string regionBoundOptionName = "regionbound";
-const std::string notGraphPreservingName = "not-graph-preserving";
+const std::string assumeGraphPreservingName = "assume-graph-preserving";
 const std::string discreteVariablesName = "discrete-variables";
 
 RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
@@ -31,9 +31,13 @@ RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                                          .build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, notGraphPreservingName, false,
-                                                   "Enables mode in which the region might not preserve the graph structure of the parametric model.")
-                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, assumeGraphPreservingName, false,
+                                       "Enables mode in which the region might not preserve the graph structure of the parametric model.")
+            .addArgument(storm::settings::ArgumentBuilder::createBooleanArgument("assumegraphpreserving", "Assume that the region is graph preserving.")
+                             .setDefaultValueBoolean(true)
+                             .build())
+            .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, discreteVariablesName, false,
                                                    "Comma-seperated list of variables that are discrete and will be split to the region edges.")
@@ -59,8 +63,8 @@ std::string RegionSettings::getRegionBoundString() const {
     return this->getOption(regionBoundOptionName).getArgumentByName("regionbound").getValueAsString();
 }
 
-bool RegionSettings::isNotGraphPreservingSet() const {
-    return this->getOption(notGraphPreservingName).getHasOptionBeenSet();
+bool RegionSettings::isAssumeGraphPreservingSet() const {
+    return this->getOption(assumeGraphPreservingName).getArgumentByName("assumegraphpreserving").getValueAsBoolean();
 }
 
 std::string RegionSettings::getDiscreteVariablesString() const {

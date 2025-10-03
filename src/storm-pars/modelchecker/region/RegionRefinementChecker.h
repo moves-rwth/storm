@@ -110,6 +110,7 @@ class RegionRefinementChecker {
     std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend;
     RegionSplittingStrategy regionSplittingStrategy;
     std::set<VariableType> discreteVariables;
+    bool graphPreserving;
 };
 
 }  // namespace modelchecker

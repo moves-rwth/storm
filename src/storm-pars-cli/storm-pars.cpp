@@ -84,14 +84,15 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
     }
-    if (!regionSettings.isNotGraphPreservingSet()) {
+    if (regionSettings.isAssumeGraphPreservingSet()) {
         for (auto const& region : result) {
             for (auto const& variable : region.getVariables()) {
                 if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
                     region.getUpperBoundary(variable) >= storm::utility::one<typename storm::utility::parametric::CoefficientType<ValueType>::type>()) {
                     STORM_LOG_WARN(
-                        "Region" << region
-                                 << " appears to not preserve the graph structure of the parametric model. If this is the case, --not-graph-preserving.");
+                        "Region "
+                        << region
+                        << " appears to not preserve the graph structure of the parametric model. If this is the case, set --assume-graph-preserving false.");
                     break;
                 }
             }
@@ -235,7 +236,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
 
     if (mpi.applyBisimulation) {
         result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                     bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
+                                                                     bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
         result.changed = true;
     }
 
@@ -255,7 +256,7 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
 
         if (mpi.applyBisimulation) {
             result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input,
-                                                                         bisimulationSettings, !regionSettings.isNotGraphPreservingSet());
+                                                                         bisimulationSettings, regionSettings.isAssumeGraphPreservingSet());
         }
         result.changed = true;
     }
@@ -352,7 +353,11 @@ void verifyRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<V
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+
+    STORM_LOG_THROW(graphPreserving || engine == modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
+                    "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
+                    "(--assume-graph-preserving true).");
 
     auto splittingStrategy = modelchecker::RegionSplittingStrategy();
 
@@ -422,7 +427,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    bool graphPreserving = !regionSettings.isNotGraphPreservingSet();
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
@@ -536,7 +541,7 @@ void processInput(cli::SymbolicInput&& input, storm::cli::ModelProcessingInforma
         STORM_LOG_INFO("Solution function mode started.");
         STORM_LOG_THROW(regions.empty(), storm::exceptions::InvalidSettingsException,
                         "Solution function computations cannot be restricted to specific regions");
-        STORM_LOG_ERROR_COND(!regionSettings.isNotGraphPreservingSet(), "Solution function computations assume graph preservation.");
+        STORM_LOG_ERROR_COND(!regionSettings.isAssumeGraphPreservingSet(), "Solution function computations assume graph preservation.");
 
         if (model->isSparseModel()) {
             computeSolutionFunctionsWithSparseEngine(model->as<storm::models::sparse::Model<ValueType>>(), input);
