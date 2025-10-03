@@ -50,7 +50,6 @@ RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
     return RationalFunction(multiNominator);
 }
 
-// UniPolyCompare implementation
 bool UniPolyCompare::operator()(const UniPoly& lhs, const UniPoly& rhs) const {
     if (lhs.degree() != rhs.degree()) {
         return lhs.degree() < rhs.degree();
@@ -65,7 +64,6 @@ bool UniPolyCompare::operator()(const UniPoly& lhs, const UniPoly& rhs) const {
     return false;
 }
 
-// PolynomialCache implementations
 uint64_t PolynomialCache::lookUpInCache(UniPoly const& f, RationalFunctionVariable const& p) {
     auto& container = (*this)[p];
 
@@ -99,7 +97,6 @@ UniPoly PolynomialCache::polynomialFromFactorization(std::vector<uint64_t> const
     return polynomial;
 }
 
-// Annotation implementations
 Annotation::Annotation(RationalFunctionVariable parameter, std::shared_ptr<PolynomialCache> polynomialCache)
     : parameter(parameter), polynomialCache(polynomialCache) {
     // Intentionally left empty
