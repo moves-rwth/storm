@@ -67,6 +67,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_DEVELOPER=$developer \
           -DSTORM_USE_CLN_EA=$cln_exact \
           -DSTORM_USE_CLN_RF=$cln_ratfunc \
+          -DSTORM_COMPILE_WITH_ALL_SANITIZERS=$all_sanitizers \
           $cmake_args ..
 
 # Build Storm

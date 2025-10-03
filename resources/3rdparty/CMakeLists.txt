@@ -100,6 +100,10 @@ ExternalProject_Add(
         LOG_DOWNLOAD ON
         LOG_INSTALL ON
 )
+if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
+        # Ignore warning in Eigen
+        add_compile_options(-Wno-class-memaccess)
+endif()
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
 add_dependencies(eigen3storm eigen_src)
 # note that we include without StormEigen
@@ -546,6 +550,10 @@ FETCHCONTENT_DECLARE(
 SET(SYLVAN_GMP ON)
 SET(USE_CARL ON)
 set(SYLVAN_PORTABLE ${STORM_PORTABLE})
+if(STORM_WARNING_AS_ERROR)
+    # Ignore explicit warning in storm_wrapper.cpp
+    add_compile_options(-Wno-cpp)
+endif()
 SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR}/sylvan)
 SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan)
 SET(SYLVAN_INSTALL_INCLUDEDIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/sylvan)
