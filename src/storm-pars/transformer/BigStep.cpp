@@ -42,10 +42,27 @@
 namespace storm {
 namespace transformer {
 
+using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
+
 RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
     auto multivariatePol = carl::MultivariatePolynomial<RationalFunctionCoefficient>(uniPoly);
     auto multiNominator = carl::FactorizedPolynomial(multivariatePol, rawPolynomialCache);
     return RationalFunction(multiNominator);
+}
+
+// UniPolyCompare implementation
+bool UniPolyCompare::operator()(const UniPoly& lhs, const UniPoly& rhs) const {
+    if (lhs.degree() != rhs.degree()) {
+        return lhs.degree() < rhs.degree();
+    }
+
+    for (uint64_t i = 0; i < lhs.coefficients().size(); i++) {
+        if (lhs.coefficients()[i] != rhs.coefficients()[i]) {
+            return lhs.coefficients()[i] < rhs.coefficients()[i];
+        }
+    }
+
+    return false;
 }
 
 // PolynomialCache implementations
@@ -256,6 +273,85 @@ uint64_t Annotation::maxDegree() const {
 std::shared_ptr<Annotation> Annotation::derivative() {
     computeDerivative(1);
     return derivativeOfThis;
+}
+
+// Annotation operator<< implementation
+std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
+    auto iterator = annotation.begin();
+    while (iterator != annotation.end()) {
+        auto const& factors = iterator->first;
+        auto const& constant = iterator->second;
+        os << constant << " * (";
+        bool alreadyPrintedFactor = false;
+        for (uint64_t i = 0; i < factors.size(); i++) {
+            if (factors[i] > 0) {
+                if (alreadyPrintedFactor) {
+                    os << "*";
+                } else {
+                    alreadyPrintedFactor = true;
+                }
+                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
+            }
+        }
+        if (factors.empty()) {
+            os << "1";
+        }
+        os << ")";
+        iterator++;
+        if (iterator != annotation.end()) {
+            os << " + ";
+        }
+    }
+    return os;
+}
+
+// Annotation evaluate method implementations (code duplication because we want to avoid templates in the header)
+double Annotation::evaluate(double input) const {
+    double sumOfTerms = utility::zero<double>();
+    for (auto const& [info, constant] : *this) {
+        double outerMult = utility::one<double>();
+        for (uint64_t i = 0; i < info.size(); i++) {
+            auto polynomial = this->polynomialCache->at(parameter).second[i];
+            // Evaluate the inner polynomial by its coefficients
+            auto coefficients = polynomial.coefficients();
+            double innerSum = utility::zero<double>();
+            for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
+                if (exponent != 0) {
+                    innerSum += carl::pow(input, exponent) * utility::convertNumber<double>(coefficients[exponent]);
+                } else {
+                    innerSum += utility::convertNumber<double>(coefficients[exponent]);
+                }
+            }
+            // Inner polynomial ^ exponent
+            outerMult *= carl::pow(innerSum, info[i]);
+        }
+        sumOfTerms += outerMult * utility::convertNumber<double>(constant);
+    }
+    return sumOfTerms;
+}
+
+Interval Annotation::evaluate(Interval input) const {
+    Interval sumOfTerms = utility::zero<Interval>();
+    for (auto const& [info, constant] : *this) {
+        Interval outerMult = utility::one<Interval>();
+        for (uint64_t i = 0; i < info.size(); i++) {
+            auto polynomial = this->polynomialCache->at(parameter).second[i];
+            // Evaluate the inner polynomial by its coefficients
+            auto coefficients = polynomial.coefficients();
+            Interval innerSum = utility::zero<Interval>();
+            for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
+                if (exponent != 0) {
+                    innerSum += carl::pow(input, exponent) * utility::convertNumber<Interval>(coefficients[exponent]);
+                } else {
+                    innerSum += utility::convertNumber<Interval>(coefficients[exponent]);
+                }
+            }
+            // Inner polynomial ^ exponent
+            outerMult *= carl::pow(innerSum, info[i]);
+        }
+        sumOfTerms += outerMult * utility::convertNumber<Interval>(constant);
+    }
+    return sumOfTerms;
 }
 
 std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(

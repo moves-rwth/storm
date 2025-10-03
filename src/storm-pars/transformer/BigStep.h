@@ -1,17 +1,10 @@
 #pragma once
 
-#include <carl/core/FactorizedPolynomial.h>
-#include <carl/core/MultivariatePolynomial.h>
-#include <carl/core/UnivariatePolynomial.h>
-#include <carl/formula/model/ran/RealAlgebraicNumber.h>
-#include <carl/numbers/constants.h>
-#include <carl/util/Cache.h>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <set>
-#include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StateLabeling.h"
 
@@ -33,23 +26,11 @@ class FlexibleSparseMatrix;
 
 namespace transformer {
 
-using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
+using UniPoly = RawUnivariatePolynomial;
 
 // optimization for the polynomial cache - built in comparison is slow
 struct UniPolyCompare {
-    bool operator()(const UniPoly& lhs, const UniPoly& rhs) const {
-        if (lhs.degree() != rhs.degree()) {
-            return lhs.degree() < rhs.degree();
-        }
-
-        for (uint64_t i = 0; i < lhs.coefficients().size(); i++) {
-            if (lhs.coefficients()[i] != rhs.coefficients()[i]) {
-                return lhs.coefficients()[i] < rhs.coefficients()[i];
-            }
-        }
-
-        return false;
-    }
+    bool operator()(const UniPoly& lhs, const UniPoly& rhs) const;
 };
 
 struct PolynomialCache : std::unordered_map<RationalFunctionVariable, std::pair<std::map<UniPoly, uint64_t, UniPolyCompare>, std::vector<UniPoly>>> {
@@ -143,34 +124,20 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
     std::vector<UniPoly> getTerms() const;
 
     /**
+     * Evaluate the polynomial represented by this annotation.
+     *
+     * @param input The input value.
+     * @return double The result.
+     */
+    double evaluate(double input) const;
+
+    /**
      * Evaluate the polynomial represented by this annotation on an interval.
      *
-     * @return Interval The resulting interval.
+     * @param input The input interval.
+     * @return Interval The resulting interval.  
      */
-    template<typename Number>
-    Number evaluate(Number input) const {
-        Number sumOfTerms = utility::zero<Number>();
-        for (auto const& [info, constant] : *this) {
-            Number outerMult = utility::one<Number>();
-            for (uint64_t i = 0; i < info.size(); i++) {
-                auto polynomial = this->polynomialCache->at(parameter).second[i];
-                // Evaluate the inner polynomial by its coefficients
-                auto coefficients = polynomial.coefficients();
-                Number innerSum = utility::zero<Number>();
-                for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
-                    if (exponent != 0) {
-                        innerSum += carl::pow(input, exponent) * utility::convertNumber<Number>(coefficients[exponent]);
-                    } else {
-                        innerSum += utility::convertNumber<Number>(coefficients[exponent]);
-                    }
-                }
-                // Inner polynomial ^ exponent
-                outerMult *= carl::pow(innerSum, info[i]);
-            }
-            sumOfTerms += outerMult * utility::convertNumber<Number>(constant);
-        }
-        return sumOfTerms;
-    }
+    Interval evaluate(Interval input) const;
 
     Interval evaluateOnIntervalMidpointTheorem(Interval input, bool higherOrderBounds = false) const;
 
@@ -190,34 +157,7 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
     std::shared_ptr<Annotation> derivativeOfThis;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
-    auto iterator = annotation.begin();
-    while (iterator != annotation.end()) {
-        auto const& factors = iterator->first;
-        auto const& constant = iterator->second;
-        os << constant << " * (";
-        bool alreadyPrintedFactor = false;
-        for (uint64_t i = 0; i < factors.size(); i++) {
-            if (factors[i] > 0) {
-                if (alreadyPrintedFactor) {
-                    os << "*";
-                } else {
-                    alreadyPrintedFactor = true;
-                }
-                os << "(" << annotation.polynomialCache->at(annotation.parameter).second[i] << ")" << "^" << factors[i];
-            }
-        }
-        if (factors.empty()) {
-            os << "1";
-        }
-        os << ")";
-        iterator++;
-        if (iterator != annotation.end()) {
-            os << " + ";
-        }
-    }
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, const Annotation& annotation);
 
 /**
  * Shorthand for std::unordered_map<T, uint64_t>. Counts elements (which elements, how many of them).
