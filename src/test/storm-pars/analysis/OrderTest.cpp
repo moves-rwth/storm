@@ -1,6 +1,5 @@
 #include <storm/storage/StronglyConnectedComponentDecomposition.h>
 #include "storm-config.h"
-#include "storm/storage/BitVector.h"
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
 #include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
@@ -8,6 +7,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/graph.h"
 #include "test/storm_gtest.h"
 

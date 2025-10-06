@@ -148,7 +148,6 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
         return sumOfTerms;
     }
 
-
     Interval evaluateOnIntervalMidpointTheorem(Interval input, bool higherOrderBounds = false) const;
 
     RationalFunctionVariable getParameter() const;
