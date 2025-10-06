@@ -302,55 +302,6 @@ std::ostream& operator<<(std::ostream& os, const Annotation& annotation) {
     return os;
 }
 
-// Annotation evaluate method implementations (code duplication because we want to avoid templates in the header)
-double Annotation::evaluate(double input) const {
-    double sumOfTerms = utility::zero<double>();
-    for (auto const& [info, constant] : *this) {
-        double outerMult = utility::one<double>();
-        for (uint64_t i = 0; i < info.size(); i++) {
-            auto polynomial = this->polynomialCache->at(parameter).second[i];
-            // Evaluate the inner polynomial by its coefficients
-            auto coefficients = polynomial.coefficients();
-            double innerSum = utility::zero<double>();
-            for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
-                if (exponent != 0) {
-                    innerSum += carl::pow(input, exponent) * utility::convertNumber<double>(coefficients[exponent]);
-                } else {
-                    innerSum += utility::convertNumber<double>(coefficients[exponent]);
-                }
-            }
-            // Inner polynomial ^ exponent
-            outerMult *= carl::pow(innerSum, info[i]);
-        }
-        sumOfTerms += outerMult * utility::convertNumber<double>(constant);
-    }
-    return sumOfTerms;
-}
-
-Interval Annotation::evaluate(Interval input) const {
-    Interval sumOfTerms = utility::zero<Interval>();
-    for (auto const& [info, constant] : *this) {
-        Interval outerMult = utility::one<Interval>();
-        for (uint64_t i = 0; i < info.size(); i++) {
-            auto polynomial = this->polynomialCache->at(parameter).second[i];
-            // Evaluate the inner polynomial by its coefficients
-            auto coefficients = polynomial.coefficients();
-            Interval innerSum = utility::zero<Interval>();
-            for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
-                if (exponent != 0) {
-                    innerSum += carl::pow(input, exponent) * utility::convertNumber<Interval>(coefficients[exponent]);
-                } else {
-                    innerSum += utility::convertNumber<Interval>(coefficients[exponent]);
-                }
-            }
-            // Inner polynomial ^ exponent
-            outerMult *= carl::pow(innerSum, info[i]);
-        }
-        sumOfTerms += outerMult * utility::convertNumber<Interval>(constant);
-    }
-    return sumOfTerms;
-}
-
 std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgraph(
     const storm::storage::FlexibleSparseMatrix<RationalFunction>& transitionMatrix, const uint64_t root,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,

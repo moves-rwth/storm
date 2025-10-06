@@ -123,21 +123,31 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
      */
     std::vector<UniPoly> getTerms() const;
 
-    /**
-     * Evaluate the polynomial represented by this annotation.
-     *
-     * @param input The input value.
-     * @return double The result.
-     */
-    double evaluate(double input) const;
+    template<typename ConstantType>
+    ConstantType evaluate(ConstantType input) const {
+        ConstantType sumOfTerms = utility::zero<ConstantType>();
+        for (auto const& [info, constant] : *this) {
+            ConstantType outerMult = utility::one<ConstantType>();
+            for (uint64_t i = 0; i < info.size(); i++) {
+                auto polynomial = this->polynomialCache->at(parameter).second[i];
+                // Evaluate the inner polynomial by its coefficients
+                auto coefficients = polynomial.coefficients();
+                ConstantType innerSum = utility::zero<ConstantType>();
+                for (uint64_t exponent = 0; exponent < coefficients.size(); exponent++) {
+                    if (exponent != 0) {
+                        innerSum += carl::pow(input, exponent) * utility::convertNumber<ConstantType>(coefficients[exponent]);
+                    } else {
+                        innerSum += utility::convertNumber<ConstantType>(coefficients[exponent]);
+                    }
+                }
+                // Inner polynomial ^ exponent
+                outerMult *= carl::pow(innerSum, info[i]);
+            }
+            sumOfTerms += outerMult * utility::convertNumber<double>(constant);
+        }
+        return sumOfTerms;
+    }
 
-    /**
-     * Evaluate the polynomial represented by this annotation on an interval.
-     *
-     * @param input The input interval.
-     * @return Interval The resulting interval.
-     */
-    Interval evaluate(Interval input) const;
 
     Interval evaluateOnIntervalMidpointTheorem(Interval input, bool higherOrderBounds = false) const;
 

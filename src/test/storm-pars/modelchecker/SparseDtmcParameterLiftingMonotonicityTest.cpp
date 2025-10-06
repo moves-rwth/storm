@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "test/storm_gtest.h"
 
 #ifdef STORM_HAVE_CARL
