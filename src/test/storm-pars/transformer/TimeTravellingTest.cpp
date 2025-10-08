@@ -1,20 +1,22 @@
 #include <memory>
 #include <string>
+#include "gtest/gtest.h"
 #include "storm-config.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
-#include "storm-pars/transformer/TimeTravelling.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -38,17 +40,17 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Weak)
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    storm::transformer::TimeTravelling timeTravelling;
-    auto timeTravelledDtmc = timeTravelling.timeTravel(*dtmc, checkTask);
+    storm::transformer::BigStep BigStep;
+    auto timeTravelledDtmc = BigStep.bigStep(*dtmc, checkTask).first;
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelChecker(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(*dtmc);
     modelChecker.specifyFormula(checkTask);
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelCheckerTT(timeTravelledDtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelCheckerTT(
+        timeTravelledDtmc);
     modelCheckerTT.specifyFormula(checkTask);
 
     auto parameters = storm::models::sparse::getAllParameters(*dtmc);
@@ -60,8 +62,8 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     for (auto const& param : parameters) {
         std::vector<std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-6); x <= 1;
-                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-6)) / 10) {
+            for (storm::RationalNumber x = storm::utility::convertNumber<storm::RationalNumber>(1e-5); x <= 1;
+                 x += (1 - storm::utility::convertNumber<storm::RationalNumber>(1e-5)) / 10) {
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> newMap(point);
                 newMap[param] = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(x);
                 newInstantiations.push_back(newMap);
@@ -71,27 +73,33 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     }
 
     storm::Environment env;
+    storm::Environment envRobust;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    envRobust.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
     for (auto const& instantiation : testInstantiations) {
-        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<double>()[initialStateModel];
-        ASSERT_TRUE(storm::utility::isAlmostZero(result - resultTT)) << "Results " << result << " and " << resultTT << " are not the same but should be.";
+        auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+        auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+
+        storm::RationalNumber resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
+        storm::RationalNumber resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
+        ASSERT_NEAR(resA, resB, storm::utility::convertNumber<storm::RationalNumber>(1e-6));
     }
 
     auto region = storm::api::createRegion<storm::RationalFunction>("0.4", *dtmc);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> pla;
-    pla.specify(env, dtmc, checkTask);
-    auto resultPLA = pla.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto pla =
+        storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, dtmc, checkTask, storm::modelchecker::RegionCheckEngine::ParameterLifting);
+    auto resultPLA = pla->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
-    storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> plaTT;
     auto sharedDtmc = std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(timeTravelledDtmc);
-    plaTT.specify(env, sharedDtmc, checkTask);
-    auto resultPLATT = plaTT.getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
+    auto plaTT = storm::api::initializeRegionModelChecker<storm::RationalFunction>(env, sharedDtmc, checkTask,
+                                                                                   storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+    auto resultPLATT = plaTT->getBoundAtInitState(env, region[0], storm::OptimizationDirection::Minimize);
 
     ASSERT_TRUE(resultPLA < resultPLATT) << "Time-Travelling did not make bound better";
 }
 
-class TimeTravelling : public ::testing::Test {
+class BigStep : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
@@ -100,19 +108,19 @@ class TimeTravelling : public ::testing::Test {
     }
 };
 
-TEST_F(TimeTravelling, Crowds) {
+TEST_F(BigStep, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P=? [F \"observeIGreater1\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(TimeTravelling, Nand) {
+TEST_F(BigStep, Nand) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/nand-5-2.pm";
     std::string formulaAsString = "P=? [F \"target\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
     testModel(programFile, formulaAsString, constantsAsString);
 }
-TEST_F(TimeTravelling, Herman) {
+TEST_F(BigStep, Herman) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/herman5_pla.pm";
     std::string formulaAsString = "R=? [F \"stable\"]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5

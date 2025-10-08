@@ -5,16 +5,24 @@
 #include <unordered_map>
 #include <vector>
 
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
-
 namespace storm {
+
+namespace analysis {
+class Order;
+}  // namespace analysis
+
+namespace storage {
+template<typename ParametricType>
+class ParameterRegion;
+}  // namespace storage
+
 namespace transformer {
 
 /*!
@@ -75,7 +83,7 @@ class ParameterLifter {
 
     std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
 
-    std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
+    std::map<VariableType, std::set<uint_fast64_t>> const& getOccuringStatesAtVariable() const;
 
     uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
     uint_fast64_t getOriginalStateNumber(uint_fast64_t newState) const;

@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
