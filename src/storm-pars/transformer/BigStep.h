@@ -143,7 +143,7 @@ class Annotation : public std::unordered_map<std::vector<uint64_t>, RationalFunc
                 // Inner polynomial ^ exponent
                 outerMult *= carl::pow(innerSum, info[i]);
             }
-            sumOfTerms += outerMult * utility::convertNumber<double>(constant);
+            sumOfTerms += outerMult * utility::convertNumber<ConstantType>(constant);
         }
         return sumOfTerms;
     }
