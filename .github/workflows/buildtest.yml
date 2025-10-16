@@ -141,6 +141,7 @@ jobs:
           buildType: ${{ matrix.config.buildType }}
           docker: true
       - name: Run tests
+        # Disabled sanitizer checks for now
         #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project
