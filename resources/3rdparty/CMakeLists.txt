@@ -102,7 +102,7 @@ ExternalProject_Add(
 )
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
-        add_compile_options(-Wno-class-memaccess)
+        target_compile_options(eigen3storm PRIVATE -Wno-class-memaccess)
 endif()
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
 add_dependencies(eigen3storm eigen_src)
@@ -550,10 +550,6 @@ FETCHCONTENT_DECLARE(
 SET(SYLVAN_GMP ON)
 SET(USE_CARL ON)
 set(SYLVAN_PORTABLE ${STORM_PORTABLE})
-if(STORM_WARNING_AS_ERROR)
-    # Ignore explicit warning in storm_wrapper.cpp
-    add_compile_options(-Wno-cpp)
-endif()
 SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR}/sylvan)
 SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan)
 SET(SYLVAN_INSTALL_INCLUDEDIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/sylvan)
@@ -561,7 +557,10 @@ SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
 SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
 SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
 FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
-
+if(STORM_WARNING_AS_ERROR)
+    # Ignore explicit warning in storm_wrapper.cpp
+    target_compile_options(sylvan PRIVATE -Wno-cpp)
+endif()
 add_dependencies(storm_resources sylvan)
 list(APPEND STORM_FETCHED_TARGETS sylvan)
 
