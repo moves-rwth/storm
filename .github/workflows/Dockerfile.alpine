@@ -21,7 +21,7 @@ ARG no_threads=4
 # CMake build type
 ARG build_type=Release
 # Carl tag to use
-ARG carl_tag="02b75713159c881e4c0d0a3e41a48f15b90b0aa2"
+ARG carl_tag="14.33"
 # Specify Storm configuration (ON/OFF)
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"

@@ -246,13 +246,14 @@ jobs:
           command: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
 
   linuxTests:
-    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }})
-    runs-on: ubuntu-latest
+    name: Linux Tests (${{ matrix.distro }}, ${{ matrix.buildType }}) on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         distro: ["debian-12", "ubuntu-24.04", "debian-13"]
         buildType: ["Release"]
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Git clone
         uses: actions/checkout@v5
@@ -303,21 +304,22 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {name: "XCode 14.3, Intel",
-             distro: "macos-13",
-             xcode: "14.3",
-             buildType: "Debug"
-            }
+          
           - {name: "XCode 15.4, ARM",
              distro: "macos-14",
              xcode: "15.4",
              buildType: "Debug"
             }
-          - {name: "XCode 16.3, ARM",
+          - {name: "XCode Latest, ARM",
              distro: "macos-15",
-             xcode: "16.3",
+             xcode: "latest-stable",
              buildType: "Debug"
             }
+          - {name: "XCode Latest, Intel",
+             distro: "macos-15-intel",
+             xcode: "latest-stable",
+             buildType: "Debug"
+            }  
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1

@@ -28,7 +28,7 @@ MappedFile::MappedFile(const char* filename) {
     // Do file mapping for reasonable systems.
     // stat64(), open(), mmap()
 
-#if defined MACOSX || !defined __GLIBC__
+#if defined MACOS || !defined __GLIBC__
     if (stat(filename, &(this->st)) != 0) {
 #else
     if (stat64(filename, &(this->st)) != 0) {

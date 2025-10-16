@@ -48,8 +48,8 @@ uint64_t SylvanSettings::getNumberOfThreads() const {
         }
     }
     // Automatic detection
-#ifdef APPLE_SILICON
-    // Prevents issues with multi-threaded execution on Apple Silicon
+#ifdef ARM
+    // Prevents issues with multi-threaded execution on ARM architecture
     return 1ul;
 #else
     return std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
@@ -60,9 +60,9 @@ bool SylvanSettings::check() const {
     if (isNumberOfThreadsSet()) {
         auto const autoDetectThreads = std::max(UINT64_C(1), storm::utility::getNumberOfThreads());
         auto const numberFromSettings = getNumberOfThreads();
-#ifdef APPLE_SILICON
+#ifdef ARM
         STORM_LOG_WARN_COND(numberFromSettings <= 1,
-                            "Sylvan does not properly work for multiple threads on Apple Silicon. We recommend limiting the number of threads to 1.");
+                            "Sylvan does not properly work for multiple threads on ARM architectures. We recommend limiting the number of threads to 1.");
 #endif
         STORM_LOG_WARN_COND(numberFromSettings <= autoDetectThreads, "Setting the number of sylvan threads to "
                                                                          << numberFromSettings << " which exceeds the recommended number for your system ("
