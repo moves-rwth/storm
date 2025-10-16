@@ -2,6 +2,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wunnecessary-virtual-specifier"
 
 #pragma GCC diagnostic push
 
