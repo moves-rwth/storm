@@ -561,6 +561,7 @@ if(STORM_WARNING_AS_ERROR)
     # Ignore explicit warning in storm_wrapper.cpp
     target_compile_options(sylvan PRIVATE -Wno-cpp)
 endif()
+add_dependencies(sylvan lib_carl)
 add_dependencies(storm_resources sylvan)
 list(APPEND STORM_FETCHED_TARGETS sylvan)
 
