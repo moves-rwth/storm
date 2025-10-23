@@ -6,6 +6,7 @@
 #include "storm/api/verification.h"
 
 #include "storm/settings/SettingsManager.h"
+#include "storm/utility/constants.h"
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
@@ -152,6 +153,19 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
     std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
+        // Check if the region includes bounds at 0 or 1
+        bool hasZeroBound = false;
+        for (auto const& var : region->getVariables()) {
+            auto lowerBound = region->getLowerBoundary(var);
+            auto upperBound = region->getUpperBoundary(var);
+            if (storm::utility::isZero(lowerBound) || storm::utility::isOne(upperBound)) {
+                hasZeroBound = true;
+                break;
+            }
+        }
+        if (hasZeroBound) {
+            STORM_LOG_WARN("The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
+        }
     }
 
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
