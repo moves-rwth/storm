@@ -164,7 +164,8 @@ void runFeasibilityWithGD(std::shared_ptr<storm::models::sparse::Model<ValueType
             }
         }
         if (hasZeroBound) {
-            STORM_LOG_WARN("The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
+            STORM_LOG_WARN(
+                "The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
         }
     }
 
