@@ -115,7 +115,7 @@ jobs:
           - {tag: "${{ inputs.tag }}"}
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: ${{ runner.temp }}/digests/${{ matrix.image.tag }}
           pattern: ${{ matrix.image.tag }}-digests-*
