@@ -47,7 +47,8 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
                         .setShortName(prismCompatibilityOptionShortName)
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false,
-                                                   "If the model contains deadlock states, they need to be fixed by setting this option.")
+                                                   "If the model contains deadlock states, they are `fixed` by attaching self-loops. This option allows "
+                                                   "disabling this operation, which may then violate prerequisites of various verification routines.")
                         .setShortName(dontFixDeadlockOptionShortName)
                         .setIsAdvanced()
                         .build());
