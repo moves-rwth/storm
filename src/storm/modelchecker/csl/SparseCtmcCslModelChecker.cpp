@@ -4,6 +4,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
@@ -49,31 +50,36 @@ bool SparseCtmcCslModelChecker<SparseCtmcModelType>::canHandle(CheckTask<storm::
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeBoundedUntilProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
-    storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-    std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
-    std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-    ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-    ;
-    ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-
-    STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
-                    "Currently step-bounded or reward-bounded properties on CTMCs are not supported.");
-    double lowerBound = 0;
-    double upperBound = 0;
-    if (pathFormula.hasLowerBound()) {
-        lowerBound = pathFormula.getLowerBound<double>();
-    }
-    if (pathFormula.hasUpperBound()) {
-        upperBound = pathFormula.getNonStrictUpperBound<double>();
+    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing bounded until probabilities is not supported for this numeric type.");
+        return nullptr;
     } else {
-        upperBound = storm::utility::infinity<double>();
-    }
+        storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+        std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
+        ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
+        ;
+        ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeBoundedUntilProbabilities(
-        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-        this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(),
-        checkTask.isQualitativeSet(), lowerBound, upperBound);
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
+                        "Currently step-bounded or reward-bounded properties on CTMCs are not supported.");
+        ValueType lowerBound = 0;
+        ValueType upperBound = 0;
+        if (pathFormula.hasLowerBound()) {
+            lowerBound = pathFormula.getLowerBound<ValueType>();
+        }
+        if (pathFormula.hasUpperBound()) {
+            upperBound = pathFormula.getNonStrictUpperBound<ValueType>();
+        } else {
+            upperBound = storm::utility::infinity<ValueType>();
+        }
+
+        std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeBoundedUntilProbabilities(
+            env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+            this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
+            this->getModel().getExitRateVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    }
 }
 
 template<typename SparseCtmcModelType>
@@ -153,27 +159,37 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewards(
     Environment const& env, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
-    storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
-    STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException,
-                    "Currently step-bounded properties on CTMCs are not supported.");
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeInstantaneousRewards(
-        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),
-        checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""),
-        rewardPathFormula.getBound<double>());
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing instantaneous rewards is not supported for this numeric type.");
+        return nullptr;
+    } else {
+        storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException,
+                        "Currently step-bounded properties on CTMCs are not supported.");
+        std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeInstantaneousRewards(
+            env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),
+            checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""),
+            rewardPathFormula.getBound<ValueType>());
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    }
 }
 
 template<typename SparseCtmcModelType>
 std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
-    storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
-    STORM_LOG_THROW(rewardPathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
-                    "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
-    auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeCumulativeRewards(
-        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),
-        rewardModel.get(), rewardPathFormula.getNonStrictBound<double>());
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing cumulative rewards is not supported for this numeric type.");
+        return nullptr;
+    } else {
+        storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        STORM_LOG_THROW(rewardPathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
+                        "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
+        auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+        std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeCumulativeRewards(
+            env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(),
+            rewardModel.get(), rewardPathFormula.getNonStrictBound<ValueType>());
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    }
 }
 
 template<typename SparseCtmcModelType>
@@ -242,22 +258,27 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 template<typename SparseCtmcModelType>
 std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeAllTransientProbabilities(
     Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
-    storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-    STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
-                    "Currently step-bounded or reward-bounded properties on CTMCs are not supported.");
-    STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::NotImplementedException, "Computation needs upper limit for time bound.");
-    double upperBound = pathFormula.getNonStrictUpperBound<double>();
+    if constexpr (!storm::NumberTraits<ValueType>::SupportsExponential) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing transient probabilities is not supported for this numeric type.");
+        return {};
+    } else {
+        storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+        STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
+                        "Currently step-bounded or reward-bounded properties on CTMCs are not supported.");
+        STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::NotImplementedException, "Computation needs upper limit for time bound.");
+        ValueType upperBound = pathFormula.getNonStrictUpperBound<ValueType>();
 
-    std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
-    std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-    ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-    ;
-    ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+        std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+        std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
+        ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
+        ;
+        ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-    std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(
-        env, this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
-        this->getModel().getExitRateVector(), upperBound);
-    return result;
+        std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(
+            env, this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), leftResult.getTruthValuesVector(),
+            rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), upperBound);
+        return result;
+    }
 }
 
 template<typename SparseCtmcModelType>
