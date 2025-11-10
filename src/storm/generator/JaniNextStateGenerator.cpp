@@ -57,6 +57,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     auto features = this->model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::TradeoffProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     // Eliminate arrays if necessary.
     if (features.hasArrays()) {
@@ -154,6 +155,7 @@ storm::jani::ModelFeatures JaniNextStateGenerator<ValueType, StateType>::getSupp
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
+    features.add(storm::jani::ModelFeature::TradeoffProperties);
     features.add(storm::jani::ModelFeature::Arrays);
     features.add(storm::jani::ModelFeature::TrigonometricFunctions);
     // We do not add Functions as these should ideally be substituted before creating this generator.
@@ -168,6 +170,7 @@ bool JaniNextStateGenerator<ValueType, StateType>::canHandle(storm::jani::Model 
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::TradeoffProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     if (!features.empty()) {
         STORM_LOG_INFO("The model can not be build as it contains these unsupported features: " << features.toString());

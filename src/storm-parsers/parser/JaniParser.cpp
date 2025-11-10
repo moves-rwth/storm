@@ -654,6 +654,28 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
                 }
             }
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
+        } else if (opString == "Multi") {
+            STORM_LOG_WARN_COND(model.getModelFeatures().hasTradeoffProperties(), "Model feature "
+                                                                                      << storm::jani::toString(storm::jani::ModelFeature::TradeoffProperties)
+                                                                                      << " not enabled but model contains tradeoff property in "
+                                                                                      << scope.description << ". Continuing with that property anyways");
+            assert(bound == boost::none);
+            STORM_LOG_THROW(propertyStructure.count("properties") == 1, storm::exceptions::InvalidJaniException,
+                            "Expecting properties for multi-objective operator in " << scope.description);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> subformulas;
+            uint64_t i = 0;
+            for (auto const& subPropStructure : propertyStructure.at("properties")) {
+                subformulas.push_back(
+                    parseFormula(model, subPropStructure, formulaContext, scope.refine("Subproperty #" + std::to_string(i) + " of multi-objective operator")));
+            }
+            STORM_LOG_THROW(propertyStructure.count("type") == 1, storm::exceptions::InvalidJaniException,
+                            "Expecting type for multi-objective operator in " << scope.description);
+            std::string typeString = getString<ValueType>(propertyStructure.at("type"), "type of multi-objective operator");
+            STORM_LOG_THROW(typeString == "tradeoff" || typeString == "lexicographic", storm::exceptions::InvalidJaniException,
+                            "Unknown type " << typeString << " for multi-objective operator in " << scope.description);
+            storm::logic::MultiObjectiveFormula::Type type =
+                typeString == "tradeoff" ? storm::logic::MultiObjectiveFormula::Type::Tradeoff : storm::logic::MultiObjectiveFormula::Type::Lexicographic;
+            return std::make_shared<storm::logic::MultiObjectiveFormula const>(subformulas, type);
         } else if (expr.isInitialized()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException,
                             "Non-trivial Expression '" << expr << "' contains a boolean transient variable. Can not translate to PRCTL-like formula at "

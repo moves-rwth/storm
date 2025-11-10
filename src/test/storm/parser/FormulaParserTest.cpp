@@ -288,29 +288,41 @@ TEST(FormulaParserTest, WrongFormatTest) {
 
 TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
     storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula;
+
+    auto checkSubformulas = [](storm::logic::MultiObjectiveFormula const &mof) {
+        ASSERT_EQ(3ull, mof.getNumberOfSubformulas());
+
+        ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
+
+        ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
+
+        ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+        ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
+        ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
+    };
 
     std::string input = "multi(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
-    std::shared_ptr<storm::logic::Formula const> formula;
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     ASSERT_TRUE(formula->isMultiObjectiveFormula());
-    storm::logic::MultiObjectiveFormula mof = formula->asMultiObjectiveFormula();
-    ASSERT_EQ(3ull, mof.getNumberOfSubformulas());
+    storm::logic::MultiObjectiveFormula const &mof = formula->asMultiObjectiveFormula();
+    ASSERT_TRUE(mof.isTradeoff());
+    checkSubformulas(mof);
 
-    ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
-
-    ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
-
-    ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
-    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
-    ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
+    input = "multilex(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    ASSERT_TRUE(formula->isMultiObjectiveFormula());
+    storm::logic::MultiObjectiveFormula const &mlof = formula->asMultiObjectiveFormula();
+    ASSERT_TRUE(mlof.isLexicographic());
+    checkSubformulas(mlof);
 }
 
 TEST(FormulaParserTest, LogicalPrecedenceTest) {
