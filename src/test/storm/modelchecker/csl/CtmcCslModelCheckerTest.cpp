@@ -500,7 +500,7 @@ TEST(CtmcCslModelCheckerTest, TransientProbabilities) {
     storm::storage::BitVector psiStates(2);
     storm::Environment env;
     std::vector<double> result =
-        storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, matrix, initialStates, phiStates, psiStates, exitRates, 1);
+        storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, matrix, initialStates, phiStates, psiStates, exitRates, 1.0);
 
     EXPECT_NEAR(0.404043, result[0], 1e-6);
     EXPECT_NEAR(0.595957, result[1], 1e-6);
