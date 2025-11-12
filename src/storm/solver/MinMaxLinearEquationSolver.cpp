@@ -240,7 +240,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
     Environment const& env) const {
     std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
     // TODO some minmax linear equation solvers only support SolutionType == ValueType.
-    auto method = env.solver().minMax().getMethod();
+    auto method = GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getMethod(env);
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
         method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
         method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
@@ -275,7 +275,7 @@ template<>
 std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::create(
     Environment const& env) const {
     std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
-    auto method = env.solver().minMax().getMethod();
+    auto method = getMethod(env);
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
         method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
         method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
@@ -292,6 +292,17 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
     return result;
+}
+
+template <typename ValueType, typename SolutionType>
+MinMaxMethod GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getMethod(storm::Environment env) const {
+    // Default to robust value iteration in case of interval models.
+    auto method = env.solver().minMax().getMethod();
+    if (storm::IsIntervalType<ValueType> && method != MinMaxMethod::ValueIteration) {
+        STORM_LOG_WARN("Selected method is not supported for this solver and interval models, switching to robust value iteration.");
+        method = MinMaxMethod::ValueIteration;
+    }
+    return method;
 }
 
 template class MinMaxLinearEquationSolver<double>;

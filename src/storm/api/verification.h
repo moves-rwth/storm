@@ -93,24 +93,25 @@ template<typename ValueType>
 std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::Environment const& env,
                                                                          std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc,
                                                                          storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify interval DTMCs.");
-    } else {
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-        if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination &&
-            storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
-            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(env, task);
-            }
-        } else {
-            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(env, task);
-            }
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
+    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination &&
+        storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "We do not yet support using the elimination checker with intervals models.");
         }
-        return result;
+        auto newTask = task.template convertValueType<typename storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
+        storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+        if (modelchecker.canHandle(newTask)) {
+            result = modelchecker.check(env, newTask);
+        }
+    } else {
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+        auto newTask = task.template convertValueType<typename storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
+        if (modelchecker.canHandle(newTask)) {
+            result = modelchecker.check(env, newTask);
+        }
     }
+    return result;
 }
 
 template<typename ValueType>

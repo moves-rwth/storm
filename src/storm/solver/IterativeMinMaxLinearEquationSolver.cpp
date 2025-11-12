@@ -78,6 +78,13 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::getMe
             STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
         }
     }
+
+    // Default to robust value iteration in case of interval models.
+    if (storm::IsIntervalType<ValueType> && method != MinMaxMethod::ValueIteration) {
+        STORM_LOG_WARN("Selected method is not supported for this solver and interval models, switching to robust value iteration.");
+        method = MinMaxMethod::ValueIteration;
+    }
+
     STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
                         method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration ||
                         method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi,

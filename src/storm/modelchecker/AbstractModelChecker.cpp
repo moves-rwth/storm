@@ -489,6 +489,7 @@ template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm
 template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
+template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
 
 // DD
 template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;
