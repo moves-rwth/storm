@@ -160,18 +160,27 @@ TEST(RobustDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Pmax=? [ F \"one\"];Pmin=? [ F \"one\"]", 9.0 / 189.0,
                                          72.0 / 189.0);
 }
 
 TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "Pmax=? [ F \"error\" ];Pmin=? [ F \"error\" ]",
                                          2.559615918664207e-10, 0.0008464876763422187);
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     // Maxima reachability rewards using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Rmax=? [ F \"done\"];Rmin=? [ F \"done\"]", 3.25, 4.6);
 }
