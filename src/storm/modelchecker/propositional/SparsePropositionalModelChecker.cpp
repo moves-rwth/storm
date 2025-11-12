@@ -84,6 +84,7 @@ template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAuto
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
+template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
 #endif
 }  // namespace modelchecker
 }  // namespace storm
