@@ -167,20 +167,18 @@ TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
 
 TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
     // Maxima reachability probabilities using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "Pmax=? [ F \"error\" ];Pmin=? [ F \"error\" ]", 2.559615918664207e-10,
-                                         0.0008464876763422187);
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "Pmax=? [ F \"error\" ];Pmin=? [ F \"error\" ]",
+                                         2.559615918664207e-10, 0.0008464876763422187);
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
     // Maxima reachability rewards using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Rmax=? [ F \"done\"];Rmin=? [ F \"done\"]", 3.25,
-                                         4.6);
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Rmax=? [ F \"done\"];Rmin=? [ F \"done\"]", 3.25, 4.6);
 }
 
 TEST(RobustDtmcModelCheckerTest, Tiny03MaxMinRewards) {
     // Maxima reachability rewards using explicit format.
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]", 6.5,
-                                         8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]", 6.5, 8.5);
 }
 
 TEST(RobustDtmcModelCheckerTest, Tiny03RewardsNoOptimizationDirection) {
@@ -190,8 +188,8 @@ TEST(RobustDtmcModelCheckerTest, Tiny03RewardsNoOptimizationDirection) {
 
 TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
     // Maxima reachability rewards using explicit format - infinite reward case.
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]", std::numeric_limits<double>::infinity(),
-                                            std::numeric_limits<double>::infinity());
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]",
+                                            std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 }
 
 TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {

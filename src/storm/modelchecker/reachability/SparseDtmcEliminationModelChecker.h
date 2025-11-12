@@ -65,9 +65,9 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
 
    private:
     static std::vector<SolutionType> computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                       storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                       storm::storage::BitVector const& initialStates, storm::storage::BitVector const& maybeStates,
-                                                       bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues);
+                                                          storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                          storm::storage::BitVector const& initialStates, storm::storage::BitVector const& maybeStates,
+                                                          bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues);
 
     static std::unique_ptr<CheckResult> computeReachabilityRewards(
         storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,

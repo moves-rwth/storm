@@ -99,14 +99,16 @@ std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::
         if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "We do not yet support using the elimination checker with intervals models.");
         }
-        auto newTask = task.template convertValueType<typename storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
+        auto newTask = task.template convertValueType<
+            typename storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
         storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
         if (modelchecker.canHandle(newTask)) {
             result = modelchecker.check(env, newTask);
         }
     } else {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-        auto newTask = task.template convertValueType<typename storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
+        auto newTask =
+            task.template convertValueType<typename storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::SolutionType>();
         if (modelchecker.canHandle(newTask)) {
             result = modelchecker.check(env, newTask);
         }

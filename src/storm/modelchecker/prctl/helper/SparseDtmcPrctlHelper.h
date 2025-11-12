@@ -31,77 +31,77 @@ class SparseDtmcPrctlHelper {
         Environment const& env, storm::models::sparse::Dtmc<ValueType> const& model, std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula);
 
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                           storm::storage::BitVector const& nextStates);
+                                                              storm::storage::BitVector const& nextStates);
 
     static std::vector<SolutionType> computeUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                            storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                                            bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                               storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates,
-                                                               storm::storage::BitVector const& psiStates);
-
-    static std::vector<SolutionType> computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                               storm::storage::BitVector const& psiStates, bool qualitative);
+                                                               storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
+                                                               bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
 
-    static std::vector<SolutionType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                           storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel,
-                                                           uint_fast64_t stepBound);
+    static std::vector<SolutionType> computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                  storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                  storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates,
+                                                                  storm::storage::BitVector const& psiStates);
 
-    static std::vector<SolutionType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                              RewardModelType const& rewardModel, uint_fast64_t stepCount);
-
-    static std::vector<SolutionType> computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                      storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                      storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel,
-                                                      bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeDiscountedCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                     RewardModelType const& rewardModel, uint_fast64_t stepBound, ValueType discountFactor);
-
-    static std::vector<SolutionType> computeDiscountedTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                RewardModelType const& rewardModel, bool qualitative, ValueType discountFactor,
-                                                                ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                             storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                             RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
-                                                             bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                             storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                             storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                             std::vector<ValueType> const& totalStateRewardVector,
-                                                             storm::storage::BitVector const& targetStates, bool qualitative,
-                                                             ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                           storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                           storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                           storm::storage::BitVector const& targetStates, bool qualitative,
-                                                           ModelCheckerHint const& hint = ModelCheckerHint());
-
-    static std::vector<SolutionType> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+    static std::vector<SolutionType> computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                   storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                  storm::storage::BitVector const& targetStates,
-                                                                  storm::storage::BitVector const& conditionStates, bool qualitative);
+                                                                  storm::storage::BitVector const& psiStates, bool qualitative);
+
+    static std::vector<SolutionType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                              RewardModelType const& rewardModel, uint_fast64_t stepBound);
+
+    static std::vector<SolutionType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                 RewardModelType const& rewardModel, uint_fast64_t stepCount);
+
+    static std::vector<SolutionType> computeTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                         storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel,
+                                                         bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
+
+    static std::vector<SolutionType> computeDiscountedCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                        storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                        RewardModelType const& rewardModel, uint_fast64_t stepBound, ValueType discountFactor);
+
+    static std::vector<SolutionType> computeDiscountedTotalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                   storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                   storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                   RewardModelType const& rewardModel, bool qualitative, ValueType discountFactor,
+                                                                   ModelCheckerHint const& hint = ModelCheckerHint());
+
+    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
+                                                                bool qualitative, ModelCheckerHint const& hint = ModelCheckerHint());
+
+    static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                std::vector<ValueType> const& totalStateRewardVector,
+                                                                storm::storage::BitVector const& targetStates, bool qualitative,
+                                                                ModelCheckerHint const& hint = ModelCheckerHint());
+
+    static std::vector<SolutionType> computeReachabilityTimes(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                              storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                              storm::storage::BitVector const& targetStates, bool qualitative,
+                                                              ModelCheckerHint const& hint = ModelCheckerHint());
+
+    static std::vector<SolutionType> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
+                                                                     storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                     storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                                     storm::storage::BitVector const& targetStates,
+                                                                     storm::storage::BitVector const& conditionStates, bool qualitative);
 
     static std::vector<SolutionType> computeConditionalRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                            storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                            RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
-                                                            storm::storage::BitVector const& conditionStates, bool qualitative);
+                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                               storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
+                                                               RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates,
+                                                               storm::storage::BitVector const& conditionStates, bool qualitative);
 
    private:
     static std::vector<SolutionType> computeReachabilityRewards(

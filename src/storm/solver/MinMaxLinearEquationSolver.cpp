@@ -294,7 +294,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     return result;
 }
 
-template <typename ValueType, typename SolutionType>
+template<typename ValueType, typename SolutionType>
 MinMaxMethod GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getMethod(storm::Environment env) const {
     // Default to robust value iteration in case of interval models.
     auto method = env.solver().minMax().getMethod();
