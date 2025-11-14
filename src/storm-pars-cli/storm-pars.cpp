@@ -85,6 +85,9 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
     }
     if (regionSettings.isAssumeGraphPreservingSet()) {
+        // We want to warn the user in case the model is actually not graph preserving.
+        // However, determining graph-preservingness precisely is hard.
+        // As an approximation, we only check if the region intersects 0 or 1.
         for (auto const& region : result) {
             for (auto const& variable : region.getVariables()) {
                 if (region.getLowerBoundary(variable) <= storm::utility::zero<typename storm::utility::parametric::CoefficientType<ValueType>::type>() ||
