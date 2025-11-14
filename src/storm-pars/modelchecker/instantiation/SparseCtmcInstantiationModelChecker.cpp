@@ -3,6 +3,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
 namespace modelchecker {
@@ -27,7 +28,14 @@ template<typename SparseModelType, typename ConstantType>
 bool SparseCtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellDefined(
     storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
-    return instantiatedModel.getTransitionMatrix().isProbabilistic();
+    // Check that all rates are non-negative
+    storm::utility::ConstantsComparator<ConstantType> comparator;
+    for (auto const& entry : instantiatedModel.getTransitionMatrix()) {
+        if (comparator.isLess(entry.getValue(), storm::utility::zero<ConstantType>())) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template class SparseCtmcInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, double>;
