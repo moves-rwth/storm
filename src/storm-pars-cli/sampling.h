@@ -5,9 +5,9 @@
 
 #include "storm-pars-cli/print.h"
 
-#include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/storm-pars.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
@@ -269,7 +269,7 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
 
     derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-    modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
+    storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
     std::shared_ptr<storm::logic::Formula> formulaWithoutBound;
     if (!referenceCheckTask.isRewardModelSet()) {
         formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
