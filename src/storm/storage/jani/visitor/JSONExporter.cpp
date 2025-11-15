@@ -194,11 +194,18 @@ ExportJsonType FormulaToJaniJson::translate(storm::logic::Formula const& formula
     if (translator.containsStateExitRewards()) {
         modelFeatures.add(storm::jani::ModelFeature::StateExitRewards);
     }
+    if (translator.containsMultiObjectiveProperties()) {
+        modelFeatures.add(storm::jani::ModelFeature::MultiObjectiveProperties);
+    }
     return result;
 }
 
 bool FormulaToJaniJson::containsStateExitRewards() const {
     return stateExitRewards;
+}
+
+bool FormulaToJaniJson::containsMultiObjectiveProperties() const {
+    return multiObjectiveProperties;
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::AtomicExpressionFormula const& f, boost::any const&) const {
@@ -420,8 +427,25 @@ boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula co
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an LRA reward formula");
 }
 
-boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const&, boost::any const&) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of a multi-objective formula");
+boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const& f, boost::any const& data) const {
+    multiObjectiveProperties = true;
+    ExportJsonType opDecl;
+    opDecl["op"] = "Multi";
+    STORM_LOG_ASSERT(f.isTradeoff() || f.isLexicographic(), "Unexpected multi-objective formula type.");
+    opDecl["type"] = f.isTradeoff() ? "tradeoff" : "lexicographic";
+    opDecl["properties"] = ExportJsonType::array();
+    for (auto const& subformula : f.getSubformulas()) {
+        auto p = ExportJsonType::object();
+        p["exp"] = anyToJson(subformula->accept(*this, data));
+        if (subformula->hasQuantitativeResult()) {
+            STORM_LOG_THROW(
+                subformula->isOperatorFormula(), storm::exceptions::NotSupportedException,
+                "Unable to export a multi-objective formula since the optimization direction for subformula " << *subformula << " can not be derived.");
+            p["opt"] = storm::solver::minimize(subformula->asOperatorFormula().getOptimalityType()) ? "min" : "max";
+        }
+        opDecl["properties"].push_back(std::move(p));
+    }
+    return opDecl;
 }
 
 boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost::any const&) const {
@@ -1211,8 +1235,10 @@ ExportJsonType convertFilterExpression(storm::jani::FilterExpression const& fe, 
 void JsonExporter::convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model) {
     ExportJsonType properties;
 
-    // Unset model-features that only relate to properties. These are only set if such properties actually exist.
+    // For now, unset model-features that only relate to properties.
+    // If such properties actually exist, these features will be re-added during formula conversion below.
     modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
+    modelFeatures.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     if (formulas.empty()) {
         jsonStruct["properties"] = ExportJsonType(ExportJsonType::value_t::array);
         return;

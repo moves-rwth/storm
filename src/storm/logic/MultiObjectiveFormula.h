@@ -7,16 +7,21 @@ namespace storm {
 namespace logic {
 class MultiObjectiveFormula : public StateFormula {
    public:
-    MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas);
+    enum class Type { Tradeoff, Lexicographic };
+
+    MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas, Type type);
 
     virtual ~MultiObjectiveFormula();
 
     virtual bool isMultiObjectiveFormula() const override;
 
+    bool isTradeoff() const;
+    bool isLexicographic() const;
+    Type getType() const;
     virtual bool hasQualitativeResult() const override;   // Result is true or false
     virtual bool hasQuantitativeResult() const override;  // Result is numerical or a pareto curve
-    virtual bool hasNumericalResult() const;              // Result is numerical
-    virtual bool hasParetoCurveResult() const;            // Result is a pareto curve
+    virtual bool hasNumericalResult() const;              // Result is numerical (1-dimensional)
+    virtual bool hasMultiDimensionalResult() const;       // Result is multi-dimensional (pareto curve or point)
 
     Formula const& getSubformula(uint_fast64_t index) const;
     uint_fast64_t getNumberOfSubformulas() const;
@@ -31,6 +36,7 @@ class MultiObjectiveFormula : public StateFormula {
 
    private:
     std::vector<std::shared_ptr<Formula const>> subformulas;
+    Type type;
 };
 }  // namespace logic
 }  // namespace storm
