@@ -56,7 +56,7 @@ storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJani
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
-    features.add(storm::jani::ModelFeature::TradeoffProperties);
+    features.add(storm::jani::ModelFeature::MultiObjectiveProperties);
     // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
     // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
     return features;
@@ -70,7 +70,7 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
-    features.remove(storm::jani::ModelFeature::TradeoffProperties);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     if (!features.empty()) {
         STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
         return false;
@@ -2430,7 +2430,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
-    features.remove(storm::jani::ModelFeature::TradeoffProperties);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
 
     storm::jani::Model preparedModel = model;
     preparedModel.simplifyComposition();

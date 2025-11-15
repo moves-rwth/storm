@@ -6,7 +6,7 @@
 namespace storm {
 namespace jani {
 
-enum class ModelFeature { Arrays, DerivedOperators, Functions, StateExitRewards, TradeoffProperties, TrigonometricFunctions };
+enum class ModelFeature { Arrays, DerivedOperators, Functions, StateExitRewards, MultiObjectiveProperties, TrigonometricFunctions };
 
 std::string toString(ModelFeature const& modelFeature);
 
@@ -18,7 +18,7 @@ class ModelFeatures {
     bool hasFunctions() const;
     bool hasDerivedOperators() const;
     bool hasStateExitRewards() const;
-    bool hasTradeoffProperties() const;
+    bool hasMultiObjectiveProperties() const;
     bool hasTrigonometricFunctions() const;
 
     // Returns true, if no model feature is enabled.

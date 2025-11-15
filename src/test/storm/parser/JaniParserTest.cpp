@@ -426,7 +426,7 @@ TEST(JaniParser, TrigonometryAndTranscendentalNumbersTest) {
     EXPECT_NO_THROW(model.substitute({}, true));
 }
 
-TEST(JaniParser, MultiobjectiveTradeoffTest) {
+TEST(JaniParser, MultiobjectiveTest) {
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
     EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/multiobj_consensus2_3_2.jani"));
     auto& model = result.first;

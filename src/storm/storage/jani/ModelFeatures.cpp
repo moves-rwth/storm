@@ -15,8 +15,8 @@ std::string toString(ModelFeature const& modelFeature) {
             return "functions";
         case ModelFeature::StateExitRewards:
             return "state-exit-rewards";
-        case ModelFeature::TradeoffProperties:
-            return "tradeoff-properties";
+        case ModelFeature::MultiObjectiveProperties:
+            return "multi-objective-properties";
         case ModelFeature::TrigonometricFunctions:
             return "trigonometric-functions";
     }
@@ -54,8 +54,8 @@ bool ModelFeatures::hasStateExitRewards() const {
     return features.count(ModelFeature::StateExitRewards) > 0;
 }
 
-bool ModelFeatures::hasTradeoffProperties() const {
-    return features.count(ModelFeature::TradeoffProperties) > 0;
+bool ModelFeatures::hasMultiObjectiveProperties() const {
+    return features.count(ModelFeature::MultiObjectiveProperties) > 0;
 }
 
 bool ModelFeatures::hasTrigonometricFunctions() const {
@@ -85,7 +85,7 @@ ModelFeatures getAllKnownModelFeatures() {
         .add(ModelFeature::DerivedOperators)
         .add(ModelFeature::Functions)
         .add(ModelFeature::StateExitRewards)
-        .add(ModelFeature::TradeoffProperties)
+        .add(ModelFeature::MultiObjectiveProperties)
         .add(ModelFeature::TrigonometricFunctions);
 }
 }  // namespace jani

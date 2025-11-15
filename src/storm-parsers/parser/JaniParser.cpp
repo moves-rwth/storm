@@ -655,25 +655,45 @@ std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula
             }
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No complex comparisons for properties are supported.");
         } else if (opString == "Multi") {
-            STORM_LOG_WARN_COND(model.getModelFeatures().hasTradeoffProperties(), "Model feature "
-                                                                                      << storm::jani::toString(storm::jani::ModelFeature::TradeoffProperties)
-                                                                                      << " not enabled but model contains tradeoff property in "
-                                                                                      << scope.description << ". Continuing with that property anyways");
+            STORM_LOG_WARN_COND(model.getModelFeatures().hasMultiObjectiveProperties(),
+                                "Model feature " << storm::jani::toString(storm::jani::ModelFeature::MultiObjectiveProperties)
+                                                 << " not enabled but model contains multi-objective property in " << scope.description
+                                                 << ". Continuing with that property anyways");
             assert(bound == boost::none);
             STORM_LOG_THROW(propertyStructure.count("properties") == 1, storm::exceptions::InvalidJaniException,
                             "Expecting properties for multi-objective operator in " << scope.description);
             std::vector<std::shared_ptr<storm::logic::Formula const>> subformulas;
             uint64_t i = 0;
             for (auto const& subPropStructure : propertyStructure.at("properties")) {
-                subformulas.push_back(
-                    parseFormula(model, subPropStructure, formulaContext, scope.refine("Subproperty #" + std::to_string(i) + " of multi-objective operator")));
+                STORM_LOG_THROW(subPropStructure.count("exp") == 1, storm::exceptions::InvalidJaniException,
+                                "Expecting property expression in subproperty #" << i << " in " << scope.description);
+                subformulas.push_back(parseFormula(model, subPropStructure["exp"], formulaContext,
+                                                   scope.refine("Subproperty #" + std::to_string(i) + " of multi-objective operator")));
+                if (subPropStructure.count("opt") == 1) {
+                    STORM_LOG_THROW(subformulas.back()->hasQuantitativeResult(), storm::exceptions::InvalidJaniException,
+                                    "Subformula #" << i << " has an optimization direction but is not numeric in " << scope.description);
+                    STORM_LOG_THROW(subformulas.back()->isOperatorFormula(), storm::exceptions::NotSupportedException,
+                                    "Subformula #" << i << " is not an operator formula in " << scope.description);
+                    std::string const optString =
+                        getString<ValueType>(subPropStructure.at("opt"), "optimization direction for subproperty #" + std::to_string(i));
+                    STORM_LOG_THROW(optString == "min" || optString == "max", storm::exceptions::InvalidJaniException,
+                                    "Unknown optimization direction " << optString << " for subproperty #" << i << " in " << scope.description);
+                    auto const opt = optString == "min" ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    auto newFormula = subformulas.back()->clone();
+                    newFormula->asOperatorFormula().setOptimalityType(opt);
+                    subformulas.back() = newFormula;
+                } else {
+                    STORM_LOG_THROW(subformulas.back()->hasQualitativeResult(), storm::exceptions::InvalidJaniException,
+                                    "Subformula #" << i << " has non-Boolean result but no optimization direction in " << scope.description);
+                }
+                ++i;
             }
             STORM_LOG_THROW(propertyStructure.count("type") == 1, storm::exceptions::InvalidJaniException,
                             "Expecting type for multi-objective operator in " << scope.description);
-            std::string typeString = getString<ValueType>(propertyStructure.at("type"), "type of multi-objective operator");
+            std::string const typeString = getString<ValueType>(propertyStructure.at("type"), "type of multi-objective operator");
             STORM_LOG_THROW(typeString == "tradeoff" || typeString == "lexicographic", storm::exceptions::InvalidJaniException,
                             "Unknown type " << typeString << " for multi-objective operator in " << scope.description);
-            storm::logic::MultiObjectiveFormula::Type type =
+            auto const type =
                 typeString == "tradeoff" ? storm::logic::MultiObjectiveFormula::Type::Tradeoff : storm::logic::MultiObjectiveFormula::Type::Lexicographic;
             return std::make_shared<storm::logic::MultiObjectiveFormula const>(subformulas, type);
         } else if (expr.isInitialized()) {

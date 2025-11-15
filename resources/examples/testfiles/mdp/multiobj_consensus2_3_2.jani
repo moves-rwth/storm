@@ -1865,7 +1865,7 @@
     "features": [
         "derived-operators",
         "functions",
-        "tradeoff-properties"
+        "multi-objective-properties"
     ],
     "functions": [
         {
@@ -2161,31 +2161,35 @@
                     "op": "Multi",
                     "properties": [
                         {
-                            "left": {
-                                "exp": {
-                                    "left": true,
-                                    "op": "U",
-                                    "right": "one_proc_err"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "left": true,
+                                        "op": "U",
+                                        "right": "one_proc_err"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": {
-                                "left": 1.0,
-                                "op": "/",
-                                "right": 10.0
+                                "op": "≥",
+                                "right": {
+                                    "left": 1.0,
+                                    "op": "/",
+                                    "right": 10.0
+                                }
                             }
                         },
                         {
-                            "left": {
-                                "exp": {
-                                    "exp": "one_coin_ok",
-                                    "op": "G"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "exp": "one_coin_ok",
+                                        "op": "G"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": 0.8916673903
+                                "op": "≥",
+                                "right": 0.8916673903
+                            }
                         }
                     ],
                     "type": "tradeoff"
@@ -2204,27 +2208,32 @@
                     "op": "Multi",
                     "properties": [
                         {
-                            "left": {
-                                "exp": {
-                                    "left": true,
-                                    "op": "U",
-                                    "right": "one_proc_err"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "left": true,
+                                        "op": "U",
+                                        "right": "one_proc_err"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": {
-                                "left": 1.0,
-                                "op": "/",
-                                "right": 10.0
+                                "op": "≥",
+                                "right": {
+                                    "left": 1.0,
+                                    "op": "/",
+                                    "right": 10.0
+                                }
                             }
                         },
                         {
                             "exp": {
-                                "exp": "one_coin_ok",
-                                "op": "G"
+                                "exp": {
+                                    "exp": "one_coin_ok",
+                                    "op": "G"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         }
                     ],
                     "type": "tradeoff"
@@ -2244,18 +2253,24 @@
                     "properties": [
                         {
                             "exp": {
-                                "left": true,
-                                "op": "U",
-                                "right": "one_proc_err"
+                                "exp": {
+                                    "left": true,
+                                    "op": "U",
+                                    "right": "one_proc_err"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         },
                         {
                             "exp": {
-                                "exp": "one_coin_ok",
-                                "op": "G"
+                                "exp": {
+                                    "exp": "one_coin_ok",
+                                    "op": "G"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         }
                     ],
                     "type": "tradeoff"
@@ -2274,31 +2289,35 @@
                     "op": "Multi",
                     "properties": [
                         {
-                            "left": {
-                                "exp": {
-                                    "left": true,
-                                    "op": "U",
-                                    "right": "one_proc_err"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "left": true,
+                                        "op": "U",
+                                        "right": "one_proc_err"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": {
-                                "left": 1.0,
-                                "op": "/",
-                                "right": 10.0
+                                "op": "≥",
+                                "right": {
+                                    "left": 1.0,
+                                    "op": "/",
+                                    "right": 10.0
+                                }
                             }
                         },
                         {
-                            "left": {
-                                "exp": {
-                                    "exp": "one_coin_ok",
-                                    "op": "G"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "exp": "one_coin_ok",
+                                        "op": "G"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": 0.8916673903
+                                "op": "≥",
+                                "right": 0.8916673903
+                            }
                         }
                     ],
                     "type": "lexicographic"
@@ -2317,27 +2336,32 @@
                     "op": "Multi",
                     "properties": [
                         {
-                            "left": {
-                                "exp": {
-                                    "left": true,
-                                    "op": "U",
-                                    "right": "one_proc_err"
+                            "exp": {
+                                "left": {
+                                    "exp": {
+                                        "left": true,
+                                        "op": "U",
+                                        "right": "one_proc_err"
+                                    },
+                                    "op": "Pmin"
                                 },
-                                "op": "Pmin"
-                            },
-                            "op": "≥",
-                            "right": {
-                                "left": 1.0,
-                                "op": "/",
-                                "right": 10.0
+                                "op": "≥",
+                                "right": {
+                                    "left": 1.0,
+                                    "op": "/",
+                                    "right": 10.0
+                                }
                             }
                         },
                         {
                             "exp": {
-                                "exp": "one_coin_ok",
-                                "op": "G"
+                                "exp": {
+                                    "exp": "one_coin_ok",
+                                    "op": "G"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         }
                     ],
                     "type": "lexicographic"
@@ -2357,18 +2381,24 @@
                     "properties": [
                         {
                             "exp": {
-                                "left": true,
-                                "op": "U",
-                                "right": "one_proc_err"
+                                "exp": {
+                                    "left": true,
+                                    "op": "U",
+                                    "right": "one_proc_err"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         },
                         {
                             "exp": {
-                                "exp": "one_coin_ok",
-                                "op": "G"
+                                "exp": {
+                                    "exp": "one_coin_ok",
+                                    "op": "G"
+                                },
+                                "op": "Pmax"
                             },
-                            "op": "Pmax"
+                            "opt": "max"
                         }
                     ],
                     "type": "lexicographic"
