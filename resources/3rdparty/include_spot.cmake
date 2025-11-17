@@ -57,14 +57,14 @@ if(NOT STORM_DISABLE_SPOT)
 
         # download and install shipped Spot as shared libraries.
         # set Spot version
-        set(SPOT_SHIPPED_VERSION 2.14.2)
-	set(STORM_SPOT_FLAGS "--disable-python;--enable-shared;--disable-static")
-	if (NOT STORM_DEBUG_SPOT)
-		set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--disable-devel;--disable-debug;--enable-optimzations")
-	else()
-		message(WARNING "Storm - Building Spot in DEBUG mode.")
-		set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--enable-devel;--enable-debug;--disable-optimzations")
-	endif()
+        set(SPOT_SHIPPED_VERSION 2.14.3)
+        set(STORM_SPOT_FLAGS "--disable-python;--enable-shared;--disable-static")
+        if (NOT STORM_DEBUG_SPOT)
+                set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--disable-devel;--disable-debug;--enable-optimzations")
+        else()
+                message(WARNING "Storm - Building Spot in DEBUG mode.")
+                set(STORM_SPOT_FLAGS "${STORM_SPOT_FLAGS};--enable-devel;--enable-debug;--disable-optimzations")
+        endif()
         ExternalProject_Add(Spot
                 URL https://www.lre.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz https://www.lrde.epita.fr/dload/spot/spot-${SPOT_SHIPPED_VERSION}.tar.gz
                 DOWNLOAD_NO_PROGRESS TRUE
