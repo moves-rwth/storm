@@ -161,8 +161,8 @@ list(APPEND STORM_DEP_TARGETS exprTk)
 
 # Use the shipped version of Parallel Hashmap
 message (STATUS "Storm - Including Parallel Hashmap.")
-set(phmap_SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap)
-set(phmap_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel_hashmap)
+set(phmap_SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap)
+set(phmap_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel-hashmap)
 add_library(phmap INTERFACE) # Not imported, we are in control of the sources.
 target_include_directories(phmap INTERFACE
         $<BUILD_INTERFACE:${phmap_SOURCE_DIR}>
