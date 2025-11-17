@@ -191,6 +191,13 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
     return result;
 }
 
+template<typename SparseModelType, typename ConstantType>
+bool SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>::isWellDefined(
+    storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) {
+    auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
+    return instantiatedModel.getTransitionMatrix().isProbabilistic();
+}
+
 template class SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
 template class SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
 

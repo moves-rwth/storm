@@ -564,10 +564,14 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 #############################################################
 
 if(STORM_BUILD_TESTS)
-    set(GTEST_VERSION "1.17.0")
+    # Use commit with workaround for char conversion warning, being recognized by Clang 21+.
+    # See https://github.com/google/googletest/issues/4762
+    set(GTEST_VERSION "fa8438ae6b70c57010177de47a9f13d7041a6328")
+    #set(GTEST_VERSION "1.17.0")
     FETCHCONTENT_DECLARE(
             googletest
-            URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
+            URL https://github.com/google/googletest/archive/${GTEST_VERSION}.zip
+            #URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
     )
     FETCHCONTENT_MAKEAVAILABLE(googletest)
 
