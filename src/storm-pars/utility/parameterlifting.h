@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -30,16 +31,24 @@ namespace parameterlifting {
  * @return true iff it was successfully validated that parameter lifting is sound on the provided model.
  */
 template<typename ValueType>
-static bool validateParameterLiftingSound(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula) {
+static bool validateParameterLiftingSound(storm::models::sparse::Model<ValueType> const& model, storm::logic::Formula const& formula,
+                                          storm::modelchecker::RegionCheckEngine engine) {
     // Check whether all numbers occurring in the model are multilinear
 
     // Transition matrix
     if (model.isOfType(storm::models::ModelType::Dtmc) || model.isOfType(storm::models::ModelType::Mdp) || model.isOfType(storm::models::ModelType::Ctmc)) {
-        for (auto const& entry : model.getTransitionMatrix()) {
-            if (!storm::utility::parametric::isMultiLinearPolynomial(entry.getValue())) {
-                STORM_LOG_WARN("The input model contains a non-linear polynomial as transition: '"
-                               << entry.getValue() << "'. Can not validate that parameter lifting is sound on this model.");
+        if (engine == modelchecker::RegionCheckEngine::RobustParameterLifting) {
+            if (!model.isOfType(storm::models::ModelType::Dtmc)) {
+                STORM_LOG_ERROR("Robust parameter lifting is only supported for DTMCs.");
                 return false;
+            }
+        } else {
+            for (auto const& entry : model.getTransitionMatrix()) {
+                if (!storm::utility::parametric::isMultiLinearPolynomial(entry.getValue())) {
+                    STORM_LOG_WARN("The input model contains a non-linear polynomial as transition: '"
+                                   << entry.getValue() << "'. Can not validate that parameter lifting is sound on this model.");
+                    return false;
+                }
             }
         }
     } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
