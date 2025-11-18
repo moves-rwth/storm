@@ -1,15 +1,8 @@
 #include "BigStep.h"
-#include <carl/core/FactorizedPolynomial.h>
-#include <carl/core/MultivariatePolynomial.h>
-#include <carl/core/RationalFunction.h>
-#include <carl/core/Variable.h>
-#include <carl/core/VariablePool.h>
-#include <carl/core/polynomialfunctions/Factorization.h>
-#include <carl/core/rootfinder/RootFinder.h>
+
 #include <sys/types.h>
 #include <algorithm>
 #include <cstdint>
-
 #include <functional>
 #include <map>
 #include <memory>
@@ -20,6 +13,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"

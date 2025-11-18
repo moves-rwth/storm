@@ -1,11 +1,5 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
-#include <carl/core/FactorizedPolynomial.h>
-#include <carl/core/MultivariatePolynomial.h>
-#include <carl/core/VariablePool.h>
-#include <carl/core/rootfinder/IncrementalRootFinder.h>
-#include <carl/core/rootfinder/RootFinder.h>
-#include <carl/formula/model/ran/RealAlgebraicNumber.h>
-#include <carl/thom/ThomRootFinder.h>
+
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -14,8 +8,8 @@
 #include <set>
 #include <type_traits>
 #include <vector>
-#include "storm/adapters/RationalFunctionForward.h"
-#include "storm/adapters/RationalNumberForward.h"
+
+#include <carl/core/rootfinder/RootFinder.h>
 
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"

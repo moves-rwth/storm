@@ -1,8 +1,9 @@
-#include <carl/formula/Constraint.h>
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include <memory>
 #include <string>
-#include "gtest/gtest.h"
-#include "storm-config.h"
+
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
@@ -11,6 +12,7 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/transformer/RobustParameterLifter.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -32,14 +34,11 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/prism.h"
-#include "storm/utility/vector.h"
-#include "test/storm_gtest.h"
-
-#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/vector.h"
 
 void testModelInterval(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);
