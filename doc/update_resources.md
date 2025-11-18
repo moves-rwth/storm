@@ -61,7 +61,7 @@ To update, you can follow these steps:
 ## parallel hashmap
 
 Download the new sources from [GitHub](https://github.com/greg7mdp/parallel-hashmap) and put them to `$STORM_DIR/resources/3rdparty/parallel_hashmap/`.
-Remove directories that are not needed, e.g, `rm -r doc examples html css benchmark tests index.html`.
+Remove directories that are not needed, e.g, `rm -r .github doc examples html css benchmark tests index.html`.
 
 
 ## Spot
