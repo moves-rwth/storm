@@ -32,7 +32,10 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <parallel_hashmap/phmap.h>
+#pragma GCC diagnostic pop
 
 namespace storm {
 namespace dd {
