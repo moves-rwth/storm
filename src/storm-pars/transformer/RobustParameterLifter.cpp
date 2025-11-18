@@ -551,8 +551,6 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
     storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
     std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
     for (auto& [abstrValuation, placeholder] : collectedValuations) {
-        storm::RationalFunction const& transition = abstrValuation.getTransition();
-
         // Results of our computations go here, we use different methods
         ConstantType lowerBound = utility::infinity<ConstantType>();
         ConstantType upperBound = -utility::infinity<ConstantType>();

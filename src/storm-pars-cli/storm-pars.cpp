@@ -441,7 +441,7 @@ void parameterSpacePartitioningWithSparseEngine(std::shared_ptr<storm::models::s
     }
 
     STORM_PRINT_AND_LOG(" with iterative refinement until "
-                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "\% is covered."
+                        << (1.0 - partitionSettings.getCoverageThreshold()) * 100.0 << "% is covered."
                         << (partitionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(partitionSettings.getDepthLimit()) + "." : "") << '\n');
 
     storm::cli::printModelCheckingProperty(property);

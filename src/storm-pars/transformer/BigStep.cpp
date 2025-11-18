@@ -729,7 +729,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
             }
 
             // Update the annotation of the target state
-            annotations.emplace(goToState, std::move(Annotation(parameter, polynomialCache)));
+            annotations.emplace(goToState, Annotation(parameter, polynomialCache));
 
             // Value-iteration style
             for (auto const& backwardsEntry : backwardsFlexibleMatrix.getRow(goToState)) {
@@ -811,7 +811,6 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
                                                                   std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate, uint64_t root,
                                                                   uint64_t originalNumStates) {
     STORM_LOG_INFO("Find time travelling called with root " << root << " and parameter " << parameter);
-    bool doneBigStep = false;
 
     // Time Travelling: For transitions that divide into constants, join them into one transition leading into new state
     std::map<std::vector<uint64_t>, std::map<uint64_t, RationalFunctionCoefficient>> parametricTransitions;
@@ -880,8 +879,6 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
             newAnnotation[factors] = constantPart;
 
             STORM_LOG_INFO("Time travellable transitions with " << newAnnotation);
-
-            doneBigStep = true;
 
             // Create the new state that our parametric transitions will start in
             uint64_t newRow = flexibleMatrix.insertNewRowsAtEnd(1);
