@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <queue>
 #include <set>
 #include <stack>
 #include <string>
