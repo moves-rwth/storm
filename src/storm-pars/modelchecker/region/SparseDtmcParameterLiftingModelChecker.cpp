@@ -79,7 +79,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
     Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
     std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
     bool allowModelSimplifications, bool graphPreserving) {
-    STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
+    STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
+                    "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
     this->graphPreserving = graphPreserving;

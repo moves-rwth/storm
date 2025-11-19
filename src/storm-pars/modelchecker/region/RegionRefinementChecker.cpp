@@ -8,13 +8,12 @@
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/utility/ProgressMeasurement.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
@@ -167,10 +166,9 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
             progress.addAllViolatedArea(currentRegion.region.area());
         } else if (currentRegion.result == RegionResult::AllIllDefined) {
             // ill defined region => not graph-preserving
-            STORM_LOG_ERROR_COND(!this->graphPreserving,
-                                 "The region is not graph-preserving, but the selected region verification engine requires this assumption. Please use "
-                                 "--assume-graph-preserving "
-                                 "false.");
+            STORM_LOG_THROW(!this->graphPreserving, storm::exceptions::NotImplementedException,
+                            "The region is not graph-preserving, but the selected region verification engine requires this assumption. Please use "
+                            "--assume-graph-preserving false.");
             progress.addAllIllDefinedArea(currentRegion.region.area());
         } else {
             // Split the region as long as the desired refinement depth is not reached.
