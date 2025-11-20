@@ -473,13 +473,13 @@ void processOptions() {
  * @return Return code, 0 if successfull, not 0 otherwise.
  */
 int main(const int argc, const char** argv) {
-    // try {
-    return storm::cli::process("Storm-POMDP", "storm-pomdp", storm::settings::initializePomdpSettings, storm::pomdp::cli::processOptions, argc, argv);
-    // } catch (storm::exceptions::BaseException const &exception) {
-    //    STORM_LOG_ERROR("An exception caused Storm-pomdp to terminate. The message of the exception is: " << exception.what());
-    //    return 1;
-    //} catch (std::exception const &exception) {
-    //    STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pomdp to terminate. The message of this exception is: " << exception.what());
-    //    return 2;
-    //}
+    try {
+        return storm::cli::process("Storm-POMDP", "storm-pomdp", storm::settings::initializePomdpSettings, storm::pomdp::cli::processOptions, argc, argv);
+    } catch (storm::exceptions::BaseException const& exception) {
+        STORM_LOG_ERROR("An exception caused Storm-pomdp to terminate. The message of the exception is: " << exception.what());
+        return 1;
+    } catch (std::exception const& exception) {
+        STORM_LOG_ERROR("An unexpected exception occurred and caused Storm-pomdp to terminate. The message of this exception is: " << exception.what());
+        return 2;
+    }
 }
