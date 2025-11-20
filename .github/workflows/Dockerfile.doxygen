@@ -17,7 +17,7 @@ LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 # --build-arg <arg_name>=<value>
 
 # Specify number of threads to use for parallel compilation
-ARG no_threads=1
+ARG no_threads=4
 
 
 # Install dependencies
