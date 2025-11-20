@@ -40,7 +40,6 @@ Partition<storm::dd::DdType::CUDD, ValueType> InternalSignatureRefiner<storm::dd
     Partition<storm::dd::DdType::CUDD, ValueType> const& oldPartition, Signature<storm::dd::DdType::CUDD, ValueType> const& signature) {
     std::pair<storm::dd::Add<storm::dd::DdType::CUDD, ValueType>, boost::optional<storm::dd::Add<storm::dd::DdType::CUDD, ValueType>>> newPartitionDds =
         refine(oldPartition, signature.getSignatureAdd());
-    ;
     ++numberOfRefinements;
     return oldPartition.replacePartition(newPartitionDds.first, nextFreeBlockIndex, nextFreeBlockIndex, newPartitionDds.second);
 }

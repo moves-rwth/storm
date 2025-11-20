@@ -178,7 +178,6 @@ bool CostLimitClosure::unionFull(CostLimitClosure const& first, CostLimitClosure
         }
     }
     return solver->check() == storm::solver::SmtSolver::CheckResult::Unsat;
-    ;
 }
 }  // namespace rewardbounded
 }  // namespace helper
