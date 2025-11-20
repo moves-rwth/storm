@@ -19,6 +19,10 @@ In case a new patch needs to be created follow these steps:
 7. Create a new patch file via `git format-patch <new_commit_hash> --stdout > eigen.patch`, where `<new_commit_hash>` is the tag, branch or commit from step 5
 8. add the patch to resources/patches/ and change the resources/3rdparty/CmakeLists.txt file accordingly.
 
+# ExprTk
+
+To update ExrtTk, download the latest version from the [website](https://www.partow.net/programming/exprtk/index.html#downloads) and copy the file `exprtk.hpp` to `$STORM_DIR/resources/3rdparty/exprtk/`.
+
 ## GMM
 To update GMM, simply change the corresponding version in `$STORM_DIR/resources/3rdparty/CmakeLists.txt`.
 
@@ -57,7 +61,7 @@ To update, you can follow these steps:
 ## parallel hashmap
 
 Download the new sources from [GitHub](https://github.com/greg7mdp/parallel-hashmap) and put them to `$STORM_DIR/resources/3rdparty/parallel_hashmap/`.
-Remove directories that are not needed, e.g, `rm -r doc examples html css benchmark tests index.html`.
+Remove directories that are not needed, e.g, `rm -r .github doc examples html css benchmark tests index.html`.
 
 
 ## Spot

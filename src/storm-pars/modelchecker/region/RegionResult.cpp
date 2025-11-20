@@ -19,6 +19,9 @@ std::ostream& operator<<(std::ostream& os, RegionResult const& regionResult) {
         case RegionResult::CenterSat:
             os << "CenterSat";
             break;
+        case RegionResult::CenterIllDefined:
+            os << "CenterIllDefined";
+            break;
         case RegionResult::CenterViolated:
             os << "CenterViolated";
             break;
@@ -30,6 +33,9 @@ std::ostream& operator<<(std::ostream& os, RegionResult const& regionResult) {
             break;
         case RegionResult::AllViolated:
             os << "AllViolated";
+            break;
+        case RegionResult::AllIllDefined:
+            os << "AllIllDefined";
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,

@@ -3,6 +3,7 @@
 
 #include <carl/core/VariablePool.h>
 #include <carl/numbers/numbers.h>
+
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/transformations/DftInstantiator.h"
 

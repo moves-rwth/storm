@@ -102,6 +102,10 @@ ExternalProject_Add(
 )
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
 add_dependencies(eigen3storm eigen_src)
+if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
+        # Ignore warning in Eigen
+        target_compile_options(eigen3storm INTERFACE -Wno-class-memaccess)
+endif()
 # note that we include without StormEigen
 target_include_directories(eigen3storm INTERFACE
         $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}>
@@ -161,8 +165,8 @@ list(APPEND STORM_DEP_TARGETS exprTk)
 
 # Use the shipped version of Parallel Hashmap
 message (STATUS "Storm - Including Parallel Hashmap.")
-set(phmap_SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/parallel_hashmap)
-set(phmap_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel_hashmap)
+set(phmap_SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/parallel-hashmap)
+set(phmap_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/parallel-hashmap)
 add_library(phmap INTERFACE) # Not imported, we are in control of the sources.
 target_include_directories(phmap INTERFACE
         $<BUILD_INTERFACE:${phmap_SOURCE_DIR}>
@@ -553,7 +557,11 @@ SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
 SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
 SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
 FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
-
+if(STORM_WARNING_AS_ERROR)
+    # Ignore explicit warning in storm_wrapper.cpp
+    target_compile_options(sylvan PRIVATE -Wno-cpp)
+endif()
+add_dependencies(sylvan lib_carl)
 add_dependencies(storm_resources sylvan)
 list(APPEND STORM_FETCHED_TARGETS sylvan)
 
@@ -564,10 +572,14 @@ list(APPEND STORM_FETCHED_TARGETS sylvan)
 #############################################################
 
 if(STORM_BUILD_TESTS)
-    set(GTEST_VERSION "1.17.0")
+    # Use commit with workaround for char conversion warning, being recognized by Clang 21+.
+    # See https://github.com/google/googletest/issues/4762
+    set(GTEST_VERSION "fa8438ae6b70c57010177de47a9f13d7041a6328")
+    #set(GTEST_VERSION "1.17.0")
     FETCHCONTENT_DECLARE(
             googletest
-            URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
+            URL https://github.com/google/googletest/archive/${GTEST_VERSION}.zip
+            #URL https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip
     )
     FETCHCONTENT_MAKEAVAILABLE(googletest)
 

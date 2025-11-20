@@ -1,7 +1,8 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "carl/util/stringparser.h"
+#include <carl/util/stringparser.h>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/SettingsManager.h"

@@ -2,6 +2,7 @@
 #define SYLVAN_STORM_RATIONAL_FUNCTION_H
 
 #include <storm_wrapper.h>
+#include <sylvan.h>
 
 #define SYLVAN_HAVE_CARL 1
 

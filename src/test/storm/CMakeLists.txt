@@ -24,7 +24,7 @@ set(REUSE_PCH_FROM "")
 foreach(testsuite ${NON_SPLIT_TESTS})
 	file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp ${STORM_TESTS_BASE_PATH}/../storm_gtest.cpp)
 	add_executable(test-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
-	if (REUSE_PCH_FROM STREQUAL  "")
+	if (REUSE_PCH_FROM STREQUAL "")
 		# note that reusing from storm main leads to errors on arch linux (late 2023).
 		target_precompile_headers(test-${testsuite} PRIVATE ${STORM_PRECOMPILED_HEADERS})
 		set(REUSE_PCH_FROM "test-${testsuite}")
