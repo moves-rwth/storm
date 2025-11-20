@@ -155,14 +155,19 @@ TEST_F(QualitativeAnalysis, Iterative_Maze) {
 }
 
 TEST_F(QualitativeAnalysis, SymbolicBelSup_Simple) {
+#ifdef STORM_HAVE_SYLVAN
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", false);
 
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", true);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", true);
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST_F(QualitativeAnalysis, SymbolicBelSup_Maze) {
+#ifdef STORM_HAVE_SYLVAN
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", false);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", false);
@@ -172,4 +177,7 @@ TEST_F(QualitativeAnalysis, SymbolicBelSup_Maze) {
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", true);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", true);
     symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", true);
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }

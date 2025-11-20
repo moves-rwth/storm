@@ -52,17 +52,25 @@ struct SftTestData {
 class SftBddTest : public testing::TestWithParam<SftTestData> {
    protected:
     void SetUp() override {
+#ifdef STORM_HAVE_SYLVAN
         auto const &param{TestWithParam::GetParam()};
         auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
         checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+#else
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
     }
 
     std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> checker;
 };
 
 TEST_P(SftBddTest, bddHash) {
+#ifdef STORM_HAVE_SYLVAN
     auto const &param{TestWithParam::GetParam()};
     EXPECT_EQ(checker->getTransformator()->transformTopLevel().GetShaHash(), param.bddHash);
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST_P(SftBddTest, ProbabilityAtTimeOne) {
@@ -178,6 +186,7 @@ static std::vector<SftTestData> sftTestData{
 INSTANTIATE_TEST_SUITE_P(SFTs, SftBddTest, testing::ValuesIn(sftTestData), [](auto const &info) { return info.param.testname; });
 
 TEST(TestBdd, AndOrRelevantEvents) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager = std::make_shared<storm::dft::storage::SylvanBddManager>();
     storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
@@ -191,9 +200,13 @@ TEST(TestBdd, AndOrRelevantEvents) {
     EXPECT_EQ(result.at("F1").GetShaHash(), "c5cf2304417926961c3e1ce1d876fc2886ece1365fd946bfd3e1abd71401696d");
     EXPECT_EQ(result.at("F2").GetShaHash(), "a4f129fa27c6cd32625b088811d4b12f8059ae0547ee035c083deed9ef9d2c59");
     EXPECT_EQ(result.at("x1").GetShaHash(), "b0d991484e405a391b6d3d241fed9c00d4a2e5bf6f57300512394d819253893d");
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST(TestBdd, AndOrRelevantEventsChecked) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
     storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
@@ -209,17 +222,25 @@ TEST(TestBdd, AndOrRelevantEventsChecked) {
     EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["F2"], 1), 0.75, 1e-6);
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["x1"], 1), 0.5, 1e-6);
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST(TestBdd, AndOrFormulaFail) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties("P=? [F < 1 !\"F2_failed\"];"))};
     storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     STORM_SILENT_EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 TEST(TestBdd, AndOrFormula) {
+#ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto const props{
         storm::api::extractFormulasFromProperties(storm::api::parseProperties("P=? [F <= 1 \"failed\"];"
@@ -276,6 +297,9 @@ TEST(TestBdd, AndOrFormula) {
     EXPECT_EQ(result[5].GetShaHash(), "a4f129fa27c6cd32625b088811d4b12f8059ae0547ee035c083deed9ef9d2c59");
     EXPECT_EQ(result[6].GetShaHash(), "c5cf2304417926961c3e1ce1d876fc2886ece1365fd946bfd3e1abd71401696d");
     EXPECT_EQ(result[7].GetShaHash(), "a4f129fa27c6cd32625b088811d4b12f8059ae0547ee035c083deed9ef9d2c59");
+#else
+    GTEST_SKIP() << "Library Sylvan not available.";
+#endif
 }
 
 }  // namespace

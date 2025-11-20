@@ -10,17 +10,33 @@
 
 class Cudd {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
 };
 
 class Sylvan {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
 };
 
 template<typename TestType>
 class FullySymbolicGameSolverTest : public ::testing::Test {
    public:
+    void SetUp() override {
+        TestType::checkLibraryAvailable();
+    }
+
     static const storm::dd::DdType DdType = TestType::DdType;
 };
 
