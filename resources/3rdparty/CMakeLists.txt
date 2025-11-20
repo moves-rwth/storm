@@ -349,12 +349,17 @@ endif()
 
 #############################################################
 ##
-##	CUDD
+##	CUDD (optional)
 ##
 #############################################################
 
-include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
-
+if(NOT STORM_DISABLE_CUDD)
+    include(${STORM_3RDPARTY_SOURCE_DIR}/include_cudd.cmake)
+    set(STORM_HAVE_CUDD ON)
+else()
+    message(STATUS "Storm - Not linking with CUDD.")
+    set(STORM_HAVE_CUDD OFF)
+endif()
 
 #############################################################
 ##
@@ -539,31 +544,38 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 
 #############################################################
 ##
-##	Sylvan
+##	Sylvan (optional)
 ##
 #############################################################
 
-FETCHCONTENT_DECLARE(
-        sylvanfetch
-        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-)
-SET(SYLVAN_GMP ON)
-SET(USE_CARL ON)
-set(SYLVAN_PORTABLE ${STORM_PORTABLE})
-SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR}/sylvan)
-SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan)
-SET(SYLVAN_INSTALL_INCLUDEDIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/sylvan)
-SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
-SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
-SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
-FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
-if(STORM_WARNING_AS_ERROR)
-    # Ignore explicit warning in storm_wrapper.cpp
-    target_compile_options(sylvan PRIVATE -Wno-cpp)
+if(NOT STORM_DISABLE_SYLVAN)
+    FETCHCONTENT_DECLARE(
+            sylvanfetch
+            SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
+    )
+    SET(SYLVAN_GMP ON)
+    SET(USE_CARL ON)
+    set(SYLVAN_PORTABLE ${STORM_PORTABLE})
+    SET(SYLVAN_INSTALL_BINDIR ${STORM_RESOURCE_BIN_INSTALL_DIR}/sylvan)
+    SET(SYLVAN_INSTALL_LIBDIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan)
+    SET(SYLVAN_INSTALL_INCLUDEDIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/sylvan)
+    SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
+    SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
+    SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
+    FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
+    if(STORM_WARNING_AS_ERROR)
+        # Ignore explicit warning in storm_wrapper.cpp
+        target_compile_options(sylvan PRIVATE -Wno-cpp)
+    endif()
+    add_dependencies(sylvan lib_carl)
+    add_dependencies(storm_resources sylvan)
+    MESSAGE(STATUS "Storm - Linking with Sylvan")
+    list(APPEND STORM_FETCHED_TARGETS sylvan)
+    set(STORM_HAVE_SYLVAN ON)
+else()
+    message(STATUS "Storm - Not linking with Sylvan.")
+    set(STORM_HAVE_SYLVAN OFF)
 endif()
-add_dependencies(sylvan lib_carl)
-add_dependencies(storm_resources sylvan)
-list(APPEND STORM_FETCHED_TARGETS sylvan)
 
 #############################################################
 ##

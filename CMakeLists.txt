@@ -73,6 +73,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
 option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.33")
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
+option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
 set(GLPK_ROOT "" CACHE STRING "A hint to the root directory of GLPK.")
 MARK_AS_ADVANCED(GLPK_ROOT)
@@ -90,6 +91,7 @@ option(STORM_DISABLE_SPOT "Sets whether linking with Spot should be disabled." O
 option(STORM_SPOT_FORCE_SHIPPED "Sets whether system versions of Spot should be ignored (if available)." OFF)
 set(SPOT_ROOT "" CACHE STRING "A hint to the root directory of Spot.")
 MARK_AS_ADVANCED(SPOT_ROOT)
+option(STORM_DISABLE_SYLVAN "Sets whether linking with Sylvan should be disabled." OFF)
 option(STORM_DISABLE_XERCES "Sets whether linking with Xerces should be disabled." OFF)
 set(XERCESC_ROOT "" CACHE STRING "A hint to the root directory of Xerces (optional).")
 mark_as_advanced(XERCESC_ROOT)
@@ -408,11 +410,31 @@ else()
 	set(STORM_HAVE_LP_SOLVER OFF)
 	message(WARNING "Storm - Compiled without an LP solver. This may yield errors at run time.")
 endif()
+if(STORM_HAVE_CUDD OR STORM_HAVE_SYLVAN)
+	set(STORM_HAVE_DD_LIBRARY ON)
+	message(STATUS "Storm - Compiled with a DD library.")
+else()
+	set(STORM_HAVE_DD_LIBRARY OFF)
+	message(WARNING "Storm - Compiled without a DD library. Symbolic model representations are not supported.")
+endif()
+
+export_option(STORM_HAVE_CUDD)
+export_option(STORM_HAVE_GMM)
+export_option(STORM_HAVE_GLPK)
+export_option(STORM_HAVE_GUROBI)
+export_option(STORM_HAVE_MATHSAT)
+export_option(STORM_HAVE_SOPLEX)
+export_option(STORM_HAVE_SPOT)
+export_option(STORM_HAVE_SYLVAN)
+export_option(STORM_HAVE_XERCES)
+export_option(STORM_HAVE_Z3)
+export_option(STORM_HAVE_LP_SOLVER)
 
 if(PROJECT_IS_TOP_LEVEL)
 	# Include Doxygen
 	include(resources/doxygen/CMakeLists.txt)
 endif()
+
 #############################################################
 ##
 ##	CMake-generated Config File for Storm
@@ -499,13 +521,7 @@ endif()
 set(STORM_TARGETS "")
 add_subdirectory(src)
 
-export_option(STORM_HAVE_GMM)
-export_option(STORM_HAVE_GUROBI)
-export_option(STORM_HAVE_SPOT)
-export_option(STORM_HAVE_SOPLEX)
-export_option(STORM_HAVE_XERCES)
-export_option(STORM_HAVE_Z3)
-
+# Export options
 include(export)
 
 install(DIRECTORY ${STORM_CMAKE_FIND_MODULES} DESTINATION ${STORM_CMAKE_INSTALL_DIR})

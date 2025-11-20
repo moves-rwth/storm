@@ -76,13 +76,16 @@
 // Dependencies
 // ############
 // Whether the libraries are available and to be used
+#cmakedefine STORM_HAVE_CUDD
 #cmakedefine STORM_HAVE_GMM
 #cmakedefine STORM_HAVE_GLPK
 #cmakedefine STORM_HAVE_GUROBI
 #cmakedefine STORM_HAVE_MATHSAT
 #cmakedefine STORM_HAVE_SOPLEX
 #cmakedefine STORM_HAVE_SPOT
+#cmakedefine STORM_HAVE_SYLVAN
 #cmakedefine STORM_HAVE_XERCES
+#cmakedefine STORM_HAVE_DD_LIBRARY
 #cmakedefine STORM_HAVE_LP_SOLVER
 // Whether LTL model checking shall be enabled
 #ifdef STORM_HAVE_SPOT
