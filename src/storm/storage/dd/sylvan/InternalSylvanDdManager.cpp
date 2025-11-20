@@ -267,11 +267,8 @@ uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const 
 
 template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
 template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
 template InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-
-#ifdef STORM_HAVE_CARL
 template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddUndefined() const;
-#endif
+
 }  // namespace dd
 }  // namespace storm
