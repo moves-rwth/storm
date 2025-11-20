@@ -1,18 +1,12 @@
-#include "storm/utility/initialize.h"
+#include <typeinfo>
 
+#include "storm-cli-utilities/cli.h"
+#include "storm-cli-utilities/model-handling.h"
+#include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm-pomdp-cli/settings/PomdpSettings.h"
-#include "storm/analysis/GraphConditions.h"
-
-#include "storm-cli-utilities/cli.h"
-#include "storm-cli-utilities/model-handling.h"
-
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
@@ -27,16 +21,16 @@
 #include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
+#include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-
-#include <typeinfo>
 
 namespace storm {
 namespace pomdp {

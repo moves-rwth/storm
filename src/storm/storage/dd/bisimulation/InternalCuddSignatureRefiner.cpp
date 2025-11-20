@@ -1,7 +1,7 @@
 #include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
 
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/Signature.h"
 
@@ -9,6 +9,7 @@ namespace storm {
 namespace dd {
 namespace bisimulation {
 
+#ifdef STORM_HAVE_CUDD
 template<typename ValueType>
 InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType>::InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager,
                                                                                        storm::expressions::Variable const& blockVariable,
@@ -398,6 +399,27 @@ std::pair<DdNodePtr, DdNodePtr> InternalSignatureRefiner<storm::dd::DdType::CUDD
         return pairResult;
     }
 }
+#else
+template<typename ValueType>
+InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType>::InternalSignatureRefiner(storm::dd::DdManager<storm::dd::DdType::CUDD> const& manager,
+                                                                                       storm::expressions::Variable const& blockVariable,
+                                                                                       std::set<storm::expressions::Variable> const& stateVariables,
+                                                                                       storm::dd::Bdd<storm::dd::DdType::CUDD> const& nondeterminismVariables,
+                                                                                       storm::dd::Bdd<storm::dd::DdType::CUDD> const& nonBlockVariables,
+                                                                                       InternalSignatureRefinerOptions const& options) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+
+template<typename ValueType>
+Partition<storm::dd::DdType::CUDD, ValueType> InternalSignatureRefiner<storm::dd::DdType::CUDD, ValueType>::refine(
+    Partition<storm::dd::DdType::CUDD, ValueType> const& oldPartition, Signature<storm::dd::DdType::CUDD, ValueType> const& signature) {
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                    "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a version "
+                    "of Storm with CUDD support.");
+}
+#endif
 
 template class InternalSignatureRefiner<storm::dd::DdType::CUDD, double>;
 
