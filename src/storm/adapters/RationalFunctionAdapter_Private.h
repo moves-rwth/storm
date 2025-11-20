@@ -5,6 +5,8 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmacro-redefined"  // clash for likely() macro between Ginac and Sylvan
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 #pragma GCC diagnostic ignored "-Wpessimizing-move"
@@ -16,6 +18,7 @@
 #include <carl/core/VariablePool.h>
 
 #pragma GCC diagnostic pop
+#pragma clang diagnostic pop
 
 namespace carl {
 // Define hash values for all polynomials and rational function.

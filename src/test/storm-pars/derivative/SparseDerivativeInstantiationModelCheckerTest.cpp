@@ -1,4 +1,3 @@
-#include "carl/core/RationalFunction.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 

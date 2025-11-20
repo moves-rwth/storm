@@ -9,8 +9,6 @@
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/dd/sylvan/utility.h"
 
-#include <parallel_hashmap/phmap.h>
-
 namespace storm {
 namespace dd {
 template<storm::dd::DdType DdType>

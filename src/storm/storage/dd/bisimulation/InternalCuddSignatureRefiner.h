@@ -11,7 +11,10 @@
 
 #include "storm/storage/dd/cudd/utility.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <parallel_hashmap/phmap.h>
+#pragma GCC diagnostic pop
 
 namespace storm {
 namespace dd {

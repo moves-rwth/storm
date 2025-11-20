@@ -3,7 +3,7 @@
 
 #include "storm/adapters/RationalNumberForward.h"
 #ifdef STORM_CARL_SUPPORTS_FWD_DECL
-#include "carl/core/MultivariatePolynomialForward.h"
+#include <carl/core/MultivariatePolynomialForward.h>
 #else
 // This must be included first
 // (for old version. Once STORM_CARL_SUPPORTS_FWD_DECL is true, this is no longer relevant).

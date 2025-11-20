@@ -9,7 +9,6 @@
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionForward.h"
-#include "storm/adapters/RationalNumberForward.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
