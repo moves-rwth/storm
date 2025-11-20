@@ -20,6 +20,7 @@ jobs:
     name: Indepth Tests (${{ matrix.config.name }}, ${{ matrix.config.buildType }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         config:
           - {name: "GMP exact; GMP rational functions; All dependencies",
@@ -71,6 +72,63 @@ jobs:
              disable_soplex: "OFF",
              disable_spot: "OFF",
              disable_sylvan: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "ON",
+             AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "Temp without Sylvan",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "OFF",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_sylvan: "ON",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "ON",
+             AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "Temp without CUDD",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "ON",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_sylvan: "OFF",
+             disable_xerces: "OFF",
+             disable_z3: "OFF",
+             Developer: "ON",
+             ClnExact: "ON",
+             ClnRatfunc: "ON",
+             AllSanitizers: "OFF",
+             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
+          }
+          - {name: "Temp without CUDD & Sylvan",
+             baseImg: "storm-dependencies:latest",
+             buildType: "Debug",
+             disable_cudd: "ON",
+             disable_glpk: "OFF",
+             disable_gmm: "OFF",
+             disable_gurobi: "OFF",
+             disable_mathsat: "OFF",
+             disable_soplex: "OFF",
+             disable_spot: "OFF",
+             disable_sylvan: "ON",
              disable_xerces: "OFF",
              disable_z3: "OFF",
              Developer: "ON",
