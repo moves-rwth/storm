@@ -1,28 +1,22 @@
-#include "test/storm_gtest.h"
-
-#include "test/storm_gtest.h"
-
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
+#include "storm-parsers/parser/AutoParser.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
-#include "storm-parsers/parser/FormulaParser.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-
 #include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm-parsers/parser/AutoParser.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
+#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
 namespace {
 

@@ -1,8 +1,6 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include <carl/core/VariablePool.h>
-
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

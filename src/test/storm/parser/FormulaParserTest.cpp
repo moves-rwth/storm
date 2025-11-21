@@ -1,11 +1,13 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "test/storm_gtest.h"
 
 TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;

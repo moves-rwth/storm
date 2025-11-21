@@ -1,13 +1,4 @@
-/*
- * MarkovAutomatonParserTest.cpp
- *
- *  Created on: 03.12.2013
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-config.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "test/storm_gtest.h"
 
 #include <vector>
@@ -18,9 +9,8 @@
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/settings/SettingMemento.h"
-
-#define STATE_COUNT 6ul
-#define CHOICE_COUNT 7ul
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 TEST(MarkovAutomatonSparseTransitionParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
@@ -41,15 +31,15 @@ TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
     storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0, 0));
 
     // Test all sizes and counts.
-    ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
-    ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
+    ASSERT_EQ(6ul, transitionMatrix.getColumnCount());
+    ASSERT_EQ(7ul, transitionMatrix.getRowCount());
     ASSERT_EQ(12ul, transitionMatrix.getEntryCount());
     ASSERT_EQ(6ul, transitionMatrix.getRowGroupCount());
     ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices().size());
-    ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
-    ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
+    ASSERT_EQ(7ul, result.markovianChoices.size());
+    ASSERT_EQ(6ul, result.markovianStates.size());
     ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
-    ASSERT_EQ(STATE_COUNT, result.exitRates.size());
+    ASSERT_EQ(6ul, result.exitRates.size());
 
     // Test the general structure of the transition system (that will be an Markov automaton).
 
@@ -120,15 +110,15 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
     storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build());
 
     // Test all sizes and counts.
-    ASSERT_EQ(STATE_COUNT, transitionMatrix.getColumnCount());
-    ASSERT_EQ(CHOICE_COUNT, transitionMatrix.getRowCount());
+    ASSERT_EQ(6ul, transitionMatrix.getColumnCount());
+    ASSERT_EQ(7ul, transitionMatrix.getRowCount());
     ASSERT_EQ(12ul, transitionMatrix.getEntryCount());
     ASSERT_EQ(6ul, transitionMatrix.getRowGroupCount());
     ASSERT_EQ(7ul, transitionMatrix.getRowGroupIndices().size());
-    ASSERT_EQ(CHOICE_COUNT, result.markovianChoices.size());
-    ASSERT_EQ(STATE_COUNT, result.markovianStates.size());
+    ASSERT_EQ(7ul, result.markovianChoices.size());
+    ASSERT_EQ(6ul, result.markovianStates.size());
     ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
-    ASSERT_EQ(STATE_COUNT, result.exitRates.size());
+    ASSERT_EQ(6ul, result.exitRates.size());
 
     // Test the general structure of the transition system (that will be an Markov automaton).
 
@@ -197,14 +187,14 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 
     // Test if the result is consistent with the parsed Markov Automaton.
     storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build());
-    ASSERT_EQ(STATE_COUNT + 1, resultMatrix.getColumnCount());
+    ASSERT_EQ(7ul, resultMatrix.getColumnCount());
     ASSERT_EQ(13ul, resultMatrix.getEntryCount());
     ASSERT_EQ(7ul, resultMatrix.getRowGroupCount());
     ASSERT_EQ(8ul, resultMatrix.getRowGroupIndices().size());
-    ASSERT_EQ(CHOICE_COUNT + 1, result.markovianChoices.size());
-    ASSERT_EQ(STATE_COUNT + 1, result.markovianStates.size());
+    ASSERT_EQ(8ul, result.markovianChoices.size());
+    ASSERT_EQ(7ul, result.markovianStates.size());
     ASSERT_EQ(2ul, result.markovianStates.getNumberOfSetBits());
-    ASSERT_EQ(STATE_COUNT + 1, result.exitRates.size());
+    ASSERT_EQ(7ul, result.exitRates.size());
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {

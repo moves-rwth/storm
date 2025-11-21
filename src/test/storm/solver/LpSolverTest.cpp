@@ -10,6 +10,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
+
 namespace {
 
 class DefaultEnvironment {

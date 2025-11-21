@@ -6,8 +6,8 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/utility/vector.h"
+
 namespace {
 
 class NativeDoublePowerEnvironment {

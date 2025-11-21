@@ -1,11 +1,12 @@
-#include <storm/exceptions/InvalidArgumentException.h>
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Property.h"
-#include "test/storm_gtest.h"
 
 TEST(JaniParser, DieExampleTest) {
     std::string testInput = R"({
