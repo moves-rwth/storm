@@ -1,10 +1,9 @@
 #pragma once
 
-#include "storm-config.h"
-
 #include <boost/optional.hpp>
 #include <functional>
 
+#include "storm-config.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
 #include "storm/storage/dd/cudd/InternalCuddAdd.h"
