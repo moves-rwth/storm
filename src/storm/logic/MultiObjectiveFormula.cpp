@@ -88,6 +88,12 @@ void MultiObjectiveFormula::gatherReferencedRewardModels(std::set<std::string>& 
     }
 }
 
+void MultiObjectiveFormula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+    for (auto const& subformula : this->subformulas) {
+        subformula->gatherUsedVariables(usedVariables);
+    }
+}
+
 std::ostream& MultiObjectiveFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
     // No parentheses necessary
     out << "multi";
