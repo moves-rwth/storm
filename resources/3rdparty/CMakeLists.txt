@@ -102,6 +102,10 @@ ExternalProject_Add(
 )
 add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
 add_dependencies(eigen3storm eigen_src)
+if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
+        # Ignore warning in Eigen
+        target_compile_options(eigen3storm INTERFACE -Wno-class-memaccess)
+endif()
 # note that we include without StormEigen
 target_include_directories(eigen3storm INTERFACE
         $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}>
@@ -553,7 +557,11 @@ SET(CMAKE_POSITION_INDEPENDENT_CODE ON) # Likely only necessary on linux
 SET(STORM_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src/") # TODO this is ugly.
 SET(STORM_BINARY_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include/") #TODO this is ugly.
 FETCHCONTENT_MAKEAVAILABLE(sylvanfetch)
-
+if(STORM_WARNING_AS_ERROR)
+    # Ignore explicit warning in storm_wrapper.cpp
+    target_compile_options(sylvan PRIVATE -Wno-cpp)
+endif()
+add_dependencies(sylvan lib_carl)
 add_dependencies(storm_resources sylvan)
 list(APPEND STORM_FETCHED_TARGETS sylvan)
 

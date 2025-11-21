@@ -35,7 +35,6 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_die) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
@@ -70,7 +69,6 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_leader) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));
@@ -109,7 +107,6 @@ TEST_F(SparseDtmcMultiDimensionalRewardUnfoldingTest, cost_bounded_crowds) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc =
         storm::api::buildSparseModel<storm::RationalNumber>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
     uint_fast64_t const initState = *dtmc->getInitialStates().begin();
-    ;
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     result = storm::api::verifyWithSparseEngine(dtmc, storm::api::createTask<storm::RationalNumber>(formulas[0], true));

@@ -55,7 +55,6 @@ transformContinuousToDiscreteTimeSparseModel(std::shared_ptr<storm::models::spar
                         "Transformation of a " << model->getType() << " to a discrete time model is not supported");
     }
     return std::make_pair(nullptr, newFormulas);
-    ;
 }
 
 /*!
@@ -87,7 +86,6 @@ transformContinuousToDiscreteTimeSparseModel(storm::models::sparse::Model<ValueT
                         "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
     }
     return std::make_pair(nullptr, newFormulas);
-    ;
 }
 
 template<typename ValueType>

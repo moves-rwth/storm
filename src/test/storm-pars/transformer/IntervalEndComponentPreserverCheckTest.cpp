@@ -1,8 +1,9 @@
-#include <carl/formula/Constraint.h>
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include <memory>
 #include <string>
-#include "gtest/gtest.h"
-#include "storm-config.h"
+
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
@@ -11,6 +12,7 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/transformer/RobustParameterLifter.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -32,14 +34,11 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/prism.h"
-#include "storm/utility/vector.h"
-#include "test/storm_gtest.h"
-
-#include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/prism.h"
+#include "storm/utility/vector.h"
 
 void testModelInterval(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -50,13 +49,12 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    uint64_t initialStateModel = dtmc->getStates("init").getNextSetIndex(0);
 
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
     storm::storage::BitVector psiStates =
-        std::move(propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
-                      ->asExplicitQualitativeCheckResult()
-                      .getTruthValuesVector());
+        propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
+            ->asExplicitQualitativeCheckResult()
+            .getTruthValuesVector();
 
     std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());
     storm::utility::vector::setVectorValues(target, psiStates, storm::utility::one<storm::RationalFunction>());

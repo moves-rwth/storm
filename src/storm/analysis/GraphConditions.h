@@ -1,8 +1,10 @@
 #pragma once
 
-#include <carl/formula/Formula.h>
 #include <type_traits>
 #include <unordered_set>
+
+#include <carl/formula/Formula.h>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
 

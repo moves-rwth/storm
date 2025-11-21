@@ -79,7 +79,9 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExtern
         int status;
 
         // wait for completion
-        while (wait(&status) != pid);
+        while (wait(&status) != pid) {
+            // Intentionally left emtpty
+        }
 
         int rv;
         if (WIFEXITED(status)) {
