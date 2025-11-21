@@ -23,12 +23,14 @@ ARG build_type=Release
 # Carl tag to use
 ARG carl_tag="14.33"
 # Specify Storm configuration (ON/OFF)
+ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
 ARG disable_mathsat="OFF"
 ARG disable_soplex="OFF"
 ARG disable_spot="OFF"
+ARG disable_sylvan="OFF"
 ARG disable_xerces="OFF"
 ARG disable_z3="OFF"
 ARG developer="OFF"
@@ -56,12 +58,14 @@ WORKDIR /opt/storm/build
 RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_PORTABLE=ON \
           -DSTORM_CARL_GIT_TAG=$carl_tag \
-          -DSTORM_DISABLE_GMM=$disable_gmm \
+          -DSTORM_DISABLE_CUDD=$disable_cudd \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
+          -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
           -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
           -DSTORM_DISABLE_SOPLEX=$disable_soplex \
           -DSTORM_DISABLE_SPOT=$disable_spot \
+          -DSTORM_DISABLE_SYLVAN=$disable_sylvan \
           -DSTORM_DISABLE_XERCES=$disable_xerces \
           -DSTORM_DISABLE_Z3=$disable_z3 \
           -DSTORM_DEVELOPER=$developer \

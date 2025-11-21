@@ -22,30 +22,27 @@ if(NOT TARGET lib_carl)
     message(FATAL_ERROR "Including ${CMAKE_CURRENT_LIST_DIR}/carlConfig.cmake did not define target lib_carl.")
 endif()
 set(storm_carl_DIR "${CMAKE_CURRENT_LIST_DIR}")
-include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
 
 set(CMAKE_MODULE_PATH_save "${CMAKE_MODULE_PATH}")
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}/find_modules/")
 
+
+# Dependencies
 find_dependency(Boost QUIET NO_MODULE)
-if(@STORM_HAVE_Z3@)  # STORM_HAVE_Z3
-    if(@STORM_Z3_CONFIG@)
-        find_dependency(Z3 4.8.7 NO_MODULE)
-    else()
-        find_dependency(Z3)
-        add_library(z3 SHARED IMPORTED)
-        set_target_properties(
-                z3
-                PROPERTIES
-                IMPORTED_LOCATION ${Z3_LIBRARIES}
-                INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
-        )
-    endif()
-endif()
 find_dependency(Threads)
+
+if(@STORM_HAVE_CUDD@)  # STORM_HAVE_CUDD
+    add_library(cudd3 STATIC IMPORTED)
+    set_target_properties(
+            cudd3
+            PROPERTIES
+            IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libcudd@STATIC_EXT@
+            INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
+    )
+endif()
+
 if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     find_dependency(GLPK)
-
     add_library(glpk SHARED IMPORTED)
     set_target_properties(
             glpk
@@ -55,13 +52,7 @@ if(@STORM_HAVE_GLPK@)  # STORM_HAVE_GLPK
     )
 endif()
 
-if(@STORM_HAVE_XERCES@) # STORM_HAVE_XERCES
-    find_dependency(XercesC)
-endif()
-if(@STORM_HAVE_SOPLEX@) # STORM_HAVE_SOPLEX
-    find_dependency(soplex)
-endif()
-if(@STORM_HAVE_GUROBI@) # STORM_HAVE_GUROBI
+if(@STORM_HAVE_GUROBI@)  # STORM_HAVE_GUROBI
     find_dependency(GUROBI)
     add_library(GUROBI UNKNOWN IMPORTED)
     set_target_properties(
@@ -72,21 +63,29 @@ if(@STORM_HAVE_GUROBI@) # STORM_HAVE_GUROBI
     )
 endif()
 
-add_library(cudd3 STATIC IMPORTED)
-set_target_properties(
-		cudd3
-		PROPERTIES
-		IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libcudd@STATIC_EXT@
-		INTERFACE_INCLUDE_DIRECTORIES ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/cudd/
-)
+if(@STORM_HAVE_MATHSAT@)  # STORM_HAVE_MATHSAT
+    set(MATHSAT_ROOT "@MATHSAT_ROOT@")
+    find_dependency(MATHSAT QUIET)
+    add_library(mathsat UNKNOWN IMPORTED)
+    set_target_properties(
+            mathsat
+            PROPERTIES
+            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
+            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
+    )
+endif()
 
-if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT
-    if(@STORM_SHIPPED_SPOT@) # STORM_SHIPPED_SPOT
+if(@STORM_HAVE_SOPLEX@)  # STORM_HAVE_SOPLEX
+    find_dependency(soplex)
+endif()
+
+if(@STORM_HAVE_SPOT@)  # STORM_HAVE_SPOT
+    if(@STORM_SHIPPED_SPOT@)  # STORM_SHIPPED_SPOT
         add_library(Storm::Spot-bddx SHARED IMPORTED)
-            set_target_properties(Storm::Spot-bddx PROPERTIES
-                    INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
-                    IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx@DYNAMIC_EXT@
-                    )
+        set_target_properties(Storm::Spot-bddx PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/spot/"
+                IMPORTED_LOCATION ${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/libbddx@DYNAMIC_EXT@
+        )
 
         add_library(Storm::Spot SHARED IMPORTED)
         set_target_properties(Storm::Spot PROPERTIES
@@ -107,17 +106,27 @@ if(@STORM_HAVE_SPOT@) # STORM_HAVE_SPOT
     endif()
 endif()
 
+if(@STORM_HAVE_SYLVAN@)  # STORM_HAVE_SYLVAN
+    include("${STORM_RESOURCE_LIBRARY_INSTALL_DIR}/sylvan/cmake/sylvan/sylvan-config.cmake")
+endif()
 
-if(@STORM_HAVE_MATHSAT@)  # STORM_HAVE_MATHSAT
-    set(MATHSAT_ROOT "@MATHSAT_ROOT@")
-    find_dependency(MATHSAT QUIET)
-    add_library(mathsat UNKNOWN IMPORTED)
-    set_target_properties(
-            mathsat
-            PROPERTIES
-            IMPORTED_LOCATION ${MATHSAT_LIBRARIES}
-            INTERFACE_INCLUDE_DIRECTORIES ${MATHSAT_INCLUDE_DIRS}
-    )
+if(@STORM_HAVE_XERCES@)  # STORM_HAVE_XERCES
+    find_dependency(XercesC)
+endif()
+
+if(@STORM_HAVE_Z3@)  # STORM_HAVE_Z3
+    if(@STORM_Z3_CONFIG@)
+        find_dependency(Z3 4.8.7 NO_MODULE)
+    else()
+        find_dependency(Z3)
+        add_library(z3 SHARED IMPORTED)
+        set_target_properties(
+                z3
+                PROPERTIES
+                IMPORTED_LOCATION ${Z3_LIBRARIES}
+                INTERFACE_INCLUDE_DIRECTORIES ${Z3_INCLUDE_DIR}
+        )
+    endif()
 endif()
 
 
