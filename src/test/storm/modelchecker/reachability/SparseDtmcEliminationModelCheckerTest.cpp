@@ -3,6 +3,7 @@
 
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"

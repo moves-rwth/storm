@@ -2,6 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/NondeterministicModelParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
