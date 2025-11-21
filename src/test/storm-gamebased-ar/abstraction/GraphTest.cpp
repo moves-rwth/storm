@@ -429,7 +429,6 @@ TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     storm::dd::Add<DdType, double> stateDistributionsUnderStrategies =
         (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>())
             .sumAbstract(game.getColumnVariables());
-    ;
     EXPECT_EQ(2831ull, stateDistributionsUnderStrategies.getNonZeroCount());
 
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).

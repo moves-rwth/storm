@@ -570,7 +570,6 @@ void DeterministicSchedsObjectiveHelper<ModelType>::computeLowerUpperBounds(Envi
         ValueType rewardValueForPosInfCase;
         if (getInfinityCase() == InfinityCase::HasPositiveInfinite) {
             rewardValueForPosInfCase = getThreshold();
-            ;
             // We need to substract a lower bound for the value at the initial state
             std::vector<ValueType> rewards2Negative;
             rewards2Negative.reserve(rewards2.size());

@@ -889,7 +889,6 @@ typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplo
     STORM_LOG_ASSERT(!pomdpValueBounds.lower.empty(), "Requested lower value bounds but none were available.");
     STORM_LOG_ASSERT(pomdpValueBounds.lower.size() > schedulerId, "Requested lower value bound for scheduler with ID " << schedulerId << " not available.");
     return beliefManager->getWeightedSum(beliefId, pomdpValueBounds.lower[schedulerId]);
-    ;
 }
 
 template<typename PomdpType, typename BeliefValueType>
