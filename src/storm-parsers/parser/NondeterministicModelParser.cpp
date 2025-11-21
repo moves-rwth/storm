@@ -3,13 +3,11 @@
 #include <string>
 #include <vector>
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
 #include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
 #include "storm-parsers/parser/SparseItemLabelingParser.h"
 #include "storm-parsers/parser/SparseStateRewardParser.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
