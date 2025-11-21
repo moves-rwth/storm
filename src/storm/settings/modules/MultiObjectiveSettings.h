@@ -133,6 +133,8 @@ class MultiObjectiveSettings : public ModuleSettings {
      */
     virtual bool check() const override;
 
+    virtual void finalize() override;
+
     const static std::string moduleName;
 
    private:
