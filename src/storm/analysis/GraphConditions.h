@@ -3,7 +3,10 @@
 #include <type_traits>
 #include <unordered_set>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmacro-redefined"  // clash for likely() macro between Ginac and Sylvan
 #include <carl/formula/Formula.h>
+#pragma clang diagnostic pop
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
