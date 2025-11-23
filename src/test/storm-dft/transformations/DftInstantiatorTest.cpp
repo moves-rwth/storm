@@ -3,6 +3,7 @@
 
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/transformations/DftInstantiator.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace {
 

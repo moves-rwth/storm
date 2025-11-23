@@ -1,6 +1,8 @@
 #include "storm-dft/storage/DFTState.h"
+
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm::dft {

@@ -1,5 +1,11 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 
+#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
+#include "storm-dft/settings/modules/DftIOSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/utility/SymmetryFinder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/io/DirectEncodingExporter.h"
@@ -9,12 +15,6 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/utility/bitoperations.h"
-
-#include "storm-dft/api/storm-dft.h"
-#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
-#include "storm-dft/settings/modules/DftIOSettings.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/utility/SymmetryFinder.h"
 
 namespace storm::dft {
 namespace modelchecker {

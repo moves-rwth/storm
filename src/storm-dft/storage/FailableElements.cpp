@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "storm-dft/storage/DFT.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::dft {
 namespace storage {

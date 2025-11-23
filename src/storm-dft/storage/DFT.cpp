@@ -2,13 +2,13 @@
 
 #include <map>
 
+#include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/utility/RelevantEvents.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/vector.h"
-
-#include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm::dft {
 namespace storage {
