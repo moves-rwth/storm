@@ -1,17 +1,15 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 
 #include <algorithm>
-#include <storm/adapters/RationalNumberAdapter.h>
 #include <unordered_map>
 
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
+#include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/storage/geometry/nativepolytopeconversion/HyperplaneCollector.h"
-#include "storm/storage/geometry/nativepolytopeconversion/SubsetEnumerator.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace storage {

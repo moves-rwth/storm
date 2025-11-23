@@ -1,10 +1,11 @@
 #include "storm/transformer/SubsystemBuilder.h"
 
 #include <boost/optional.hpp>
-#include <storm/exceptions/UnexpectedException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -16,10 +17,6 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace transformer {
