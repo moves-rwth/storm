@@ -494,14 +494,6 @@ boost::any FormulaToJaniJson::visit(storm::logic::ProbabilityOperatorFormula con
 
 boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
-
-    std::string instantName;
-    if (model.isDiscreteTimeModel()) {
-        instantName = "step-instant";
-    } else {
-        instantName = "time-instant";
-    }
-
     std::string rewardModelName;
     if (f.hasRewardModelName()) {
         rewardModelName = f.getRewardModelName();
@@ -534,32 +526,70 @@ boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f
     }
 
     opDecl["op"] = opString;
+    auto setRewardAccumulation = [&opDecl, &rewardModelName, this](auto const& subformula) {
+        opDecl["accumulate"] = subformula.hasRewardAccumulation() ? constructRewardAccumulation(subformula.getRewardAccumulation(), rewardModelName)
+                                                                  : constructStandardRewardAccumulation(rewardModelName);
+    };
 
     if (f.getSubformula().isEventuallyFormula()) {
         opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
-        if (f.getSubformula().asEventuallyFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asEventuallyFormula().getRewardAccumulation(), rewardModelName);
-        } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-        }
+        setRewardAccumulation(f.getSubformula().asEventuallyFormula());
     } else if (f.getSubformula().isCumulativeRewardFormula()) {
-        // TODO: support for reward bounded formulas
-        STORM_LOG_WARN_COND(!f.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isRewardBound(),
-                            "Export for cumulative reward formulas with reward instant currently unsupported.");
-        opDecl[instantName] = buildExpression(f.getSubformula().asCumulativeRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
-        if (f.getSubformula().asCumulativeRewardFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asCumulativeRewardFormula().getRewardAccumulation(), rewardModelName);
+        auto const& subf = f.getSubformula().asCumulativeRewardFormula();
+        setRewardAccumulation(subf);
+        auto isStepInstant = [this, &subf](uint64_t i) {
+            return subf.getTimeBoundReference(i).isStepBound() || (model.isDiscreteTimeModel() && subf.getTimeBoundReference(i).isTimeBound());
+        };
+        auto getInstantExpression = [&subf, &isStepInstant](uint64_t i) {
+            auto instantExpr = subf.getBound(i);
+            // handle strict bounds
+            if (subf.isBoundStrict(i)) {
+                // Jani can't represent strict bounds. Only in case of step bounds we can decrease the bound by one as a workaround.
+                STORM_LOG_THROW(isStepInstant(i), storm::exceptions::NotSupportedException,
+                                "Jani export of cumulative reward formula " << subf << " with strict time or reward bound is not supported.");
+                instantExpr = instantExpr - subf.getBound(i).getManager().integer(1);
+            }
+            // ensure correct type for step instants
+            if (isStepInstant(i) && !instantExpr.getType().isIntegerType()) {
+                instantExpr = storm::expressions::floor(instantExpr);
+            }
+            return instantExpr;
+        };
+        if (subf.isMultiDimensional() || subf.getTimeBoundReference().isRewardBound()) {
+            opDecl["reward-instants"] = ExportJsonType::array();
+            for (uint64_t i = 0; i < subf.getDimension(); ++i) {
+                ExportJsonType instantDecl;
+                auto const& tbr = subf.getTimeBoundReference(i);
+                instantDecl["exp"] =
+                    tbr.isRewardBound() ? buildExpression(model.getRewardModelExpression(tbr.getRewardName()), model.getConstants(), model.getGlobalVariables())
+                                        : ExportJsonType(1);
+                if (tbr.isRewardBound()) {
+                    if (tbr.hasRewardAccumulation()) {
+                        instantDecl["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation(), tbr.getRewardName());
+                    } else {
+                        instantDecl["accumulate"] = constructStandardRewardAccumulation(tbr.getRewardName());
+                    }
+                } else if (isStepInstant(i)) {
+                    instantDecl["accumulate"] = constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, false));
+                } else {
+                    instantDecl["accumulate"] = constructRewardAccumulation(storm::logic::RewardAccumulation(false, true, false));
+                }
+                instantDecl["instant"] = buildExpression(getInstantExpression(i), model.getConstants(), model.getGlobalVariables());
+                opDecl["reward-instants"].push_back(std::move(instantDecl));
+            }
         } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
+            opDecl[isStepInstant(0) ? "step-instant" : "time-instant"] =
+                buildExpression(getInstantExpression(0), model.getConstants(), model.getGlobalVariables());
         }
+    } else if (f.getSubformula().isTotalRewardFormula()) {
+        setRewardAccumulation(f.getSubformula().asTotalRewardFormula());
     } else if (f.getSubformula().isInstantaneousRewardFormula()) {
-        opDecl[instantName] = buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
+        opDecl[model.isDiscreteTimeModel() ? "step-instant" : "time-instant"] =
+            buildExpression(f.getSubformula().asInstantaneousRewardFormula().getBound(), model.getConstants(), model.getGlobalVariables());
     } else if (f.getSubformula().isLongRunAverageRewardFormula()) {
-        if (f.getSubformula().asLongRunAverageRewardFormula().hasRewardAccumulation()) {
-            opDecl["accumulate"] = constructRewardAccumulation(f.getSubformula().asLongRunAverageRewardFormula().getRewardAccumulation(), rewardModelName);
-        } else {
-            opDecl["accumulate"] = constructStandardRewardAccumulation(rewardModelName);
-        }
+        setRewardAccumulation(f.getSubformula().asLongRunAverageRewardFormula());
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled subformula for jani export: " << f.getSubformula());
     }
     opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
 
