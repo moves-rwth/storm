@@ -1,20 +1,19 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
-#include <storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h>
-
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityChecker.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/solver/OptimizationDirection.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

@@ -1,5 +1,7 @@
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+
 namespace storm::modelchecker {
 
 template<typename ParametricType>

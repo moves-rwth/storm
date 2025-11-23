@@ -1,11 +1,11 @@
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm::modelchecker {
 

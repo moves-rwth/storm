@@ -1,4 +1,6 @@
-#include "LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace analysis {

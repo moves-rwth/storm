@@ -33,6 +33,10 @@ The following contains some general guidelines for developers.
   ```
 
 ### Includes
+- Header files should start with
+  ```
+  #pragma once
+  ```
 - Includes should follow the following order:
   ```
   #include "storm/header.h"  // If cpp file

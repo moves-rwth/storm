@@ -1,4 +1,4 @@
-#include "BigStep.h"
+#include "storm-pars/transformer/BigStep.h"
 
 #include <sys/types.h>
 #include <algorithm>
@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/UntilFormula.h"
 #include "storm/modelchecker/CheckTask.h"

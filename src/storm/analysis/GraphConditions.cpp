@@ -1,5 +1,5 @@
+#include "storm/analysis/GraphConditions.h"
 
-#include "GraphConditions.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
