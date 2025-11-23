@@ -1,18 +1,14 @@
-#ifndef STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_
-#define STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_
+#pragma once
 
 #include <vector>
 
-#include "MDPModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
+#include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
+#include "storm/solver/SolveGoal.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/solver/SolveGoal.h"
 #include "storm/utility/solver.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 
@@ -116,5 +112,3 @@ class SparseMdpPrctlHelper {
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#endif /* STORM_MODELCHECKER_SPARSE_MDP_PRCTL_MODELCHECKER_HELPER_H_ */

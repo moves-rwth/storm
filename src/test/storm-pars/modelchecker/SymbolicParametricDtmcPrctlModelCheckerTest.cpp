@@ -4,6 +4,7 @@
 #include "storm-pars/utility/parametric.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/logic/Formulas.h"
