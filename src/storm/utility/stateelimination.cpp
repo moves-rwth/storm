@@ -11,6 +11,7 @@
 
 #include "storm/settings/SettingsManager.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/utility/constants.h"

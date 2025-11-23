@@ -1,15 +1,12 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <memory>
 #include <vector>
 
-#include <boost/optional.hpp>
-
-#include "storm/storage/sparse/StateType.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/settings/modules/EliminationSettings.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace solver {
@@ -42,10 +39,8 @@ bool eliminationOrderIsStatic(storm::settings::modules::EliminationSettings::Eli
 template<typename ValueType>
 uint_fast64_t estimateComplexity(ValueType const& value);
 
-#ifdef STORM_HAVE_CARL
 template<>
 uint_fast64_t estimateComplexity(storm::RationalFunction const& value);
-#endif
 
 template<typename ValueType>
 uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix,
