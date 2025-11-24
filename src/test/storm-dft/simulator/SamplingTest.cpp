@@ -6,13 +6,7 @@
 namespace {
 
 TEST(SamplingTest, SampleExponential) {
-#if BOOST_VERSION < 106400
-    // Boost changed implementation of exponential distribution
-    // -> different values are returned
-    GTEST_SKIP();
-    return;
-#endif
-    boost::mt19937 gen(5u);
+    std::mt19937 gen(5u);
     storm::utility::ExponentialDistributionGenerator dist(5);
 
     // Ensure that pseudo random numbers are the same on all machines

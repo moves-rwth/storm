@@ -36,13 +36,13 @@ uint64_t RandomProbabilityGenerator<RationalNumber>::random_uint(uint64_t min, u
 
 BernoulliDistributionGenerator::BernoulliDistributionGenerator(double prob) : distribution(prob) {}
 
-bool BernoulliDistributionGenerator::random(boost::mt19937& engine) {
+bool BernoulliDistributionGenerator::random(std::mt19937& engine) {
     return distribution(engine);
 }
 
 ExponentialDistributionGenerator::ExponentialDistributionGenerator(double rate) : distribution(rate) {}
 
-double ExponentialDistributionGenerator::random(boost::mt19937& engine) {
+double ExponentialDistributionGenerator::random(std::mt19937& engine) {
     return distribution(engine);
 }
 }  // namespace utility

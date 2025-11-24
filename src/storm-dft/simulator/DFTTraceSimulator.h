@@ -41,14 +41,14 @@ class DFTTraceSimulator {
      * @param randomGenerator Random number generator.
      */
     DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo,
-                      boost::mt19937& randomGenerator);
+                      std::mt19937& randomGenerator);
 
     /*!
      * Set the random number generator.
      *
      * @param randomNumberGenerator Random number generator.
      */
-    void setRandomNumberGenerator(boost::mt19937& randomNumberGenerator);
+    void setRandomNumberGenerator(std::mt19937& randomNumberGenerator);
 
     /*!
      * Set the current state back to the initial state in order to start a new simulation.
@@ -145,7 +145,7 @@ class DFTTraceSimulator {
     double time;
 
     // Random number generator
-    boost::mt19937& randomGenerator;
+    std::mt19937& randomGenerator;
 };
 
 }  // namespace simulator

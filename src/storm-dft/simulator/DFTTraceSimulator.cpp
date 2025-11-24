@@ -5,14 +5,14 @@ namespace simulator {
 
 template<typename ValueType>
 DFTTraceSimulator<ValueType>::DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft,
-                                                storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo, boost::mt19937& randomGenerator)
+                                                storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo, std::mt19937& randomGenerator)
     : dft(dft), stateGenerationInfo(stateGenerationInfo), generator(dft, stateGenerationInfo), randomGenerator(randomGenerator) {
     // Set initial state
     resetToInitial();
 }
 
 template<typename ValueType>
-void DFTTraceSimulator<ValueType>::setRandomNumberGenerator(boost::mt19937& randomNumberGenerator) {
+void DFTTraceSimulator<ValueType>::setRandomNumberGenerator(std::mt19937& randomNumberGenerator) {
     this->randomGenerator = randomNumberGenerator;
 }
 

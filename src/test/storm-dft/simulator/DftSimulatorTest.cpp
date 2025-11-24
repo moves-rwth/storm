@@ -25,7 +25,7 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
 
     // Init random number generator
     // storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
-    boost::mt19937 gen(5u);
+    std::mt19937 gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, stateGenerationInfo, gen);
 
     size_t count = 0;
@@ -69,12 +69,7 @@ TEST(DftSimulatorTest, VotingUnreliability) {
     result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/voting3.dft", 1, 10000);
     EXPECT_NEAR(result, 0.3496529873, 0.01);
     result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/voting4.dft", 1, 10000);
-#if BOOST_VERSION > 106400
     EXPECT_NEAR(result, 0.693568287, 0.01);
-#else
-    // Older Boost versions yield different value
-    EXPECT_NEAR(result, 0.693568287, 0.015);
-#endif
 }
 
 TEST(DftSimulatorTest, PandUnreliability) {
