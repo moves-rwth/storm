@@ -1,10 +1,11 @@
-#include "DFTGalileoParser.h"
+#include "storm-dft/parser/DFTGalileoParser.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <optional>
 #include <regex>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"

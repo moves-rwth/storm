@@ -1,11 +1,10 @@
-#ifndef STORM_SOLVER_SMT2SMTSOLVER
-#define STORM_SOLVER_SMT2SMTSOLVER
+#pragma once
 
 #include <fstream>
 #include <iostream>
 
 #include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/Smt2ExpressionAdapter.h"
 #include "storm/solver/SmtSolver.h"
 
@@ -46,14 +45,13 @@ class SmtlibSmtSolver : public SmtSolver {
     virtual void reset() override;
 
     virtual void add(storm::expressions::Expression const& assertion) override;
-#ifdef STORM_HAVE_CARL
+
     // adds the constraint "leftHandSide relation rightHandSide"
     virtual void add(storm::RationalFunction const& leftHandSide, storm::CompareRelation const& relation,
                      storm::RationalFunction const& rightHandSide = storm::RationalFunction(0));
 
     // asserts that the given variable has the given value. The variable should have type 'bool'
     void add(storm::RationalFunctionVariable const& variable, bool value);
-#endif
 
     virtual CheckResult check() override;
 
@@ -140,4 +138,3 @@ class SmtlibSmtSolver : public SmtSolver {
 };
 }  // namespace solver
 }  // namespace storm
-#endif  // STORM_SOLVER_SMT2SMTSOLVER

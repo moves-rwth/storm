@@ -1,21 +1,14 @@
-/*!
- * LabParser.cpp
- *
- *  Created on: 21.11.2012
- *      Author: Gereon Kremer
- */
-
 #include "storm-parsers/parser/AtomicPropositionLabelingParser.h"
 
 #include <cstring>
 #include <iostream>
 #include <string>
-#include "storm/utility/macros.h"
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace parser {

@@ -1,5 +1,7 @@
-#include "DftInstantiator.h"
+#include "storm-dft/transformations/DftInstantiator.h"
+
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 
 namespace storm::dft {

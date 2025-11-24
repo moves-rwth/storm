@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <set>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/Dtmc.h"

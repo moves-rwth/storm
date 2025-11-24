@@ -1,10 +1,9 @@
 #include "storm-config.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "test/storm_gtest.h"
 
-#include "storm/utility/solver.h"
-
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/utility/solver.h"
 
 #ifdef STORM_HAVE_MATHSAT
 TEST(JaniModelTest, FlattenComposition) {

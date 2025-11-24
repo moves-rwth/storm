@@ -1,10 +1,12 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/permutation.h"
-#include "test/storm_gtest.h"
 
 TEST(SparseMatrixBuilder, CreationEmpty) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder;

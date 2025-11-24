@@ -1,7 +1,9 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/storage/BitVector.h"
-#include "test/storm_gtest.h"
 
 TEST(BitVectorTest, InitToZero) {
     storm::storage::BitVector vector(32);

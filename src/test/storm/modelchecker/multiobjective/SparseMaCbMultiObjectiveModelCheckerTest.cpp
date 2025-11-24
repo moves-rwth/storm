@@ -3,6 +3,7 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/api/storm.h"
+#include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -12,8 +13,6 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/storage/jani/Property.h"
-
-#include "storm/environment/Environment.h"
 
 class SparseMaCbMultiObjectiveModelCheckerTest : public ::testing::Test {
    protected:

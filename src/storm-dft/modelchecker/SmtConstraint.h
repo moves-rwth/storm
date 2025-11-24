@@ -1,7 +1,8 @@
 #pragma once
 
-#include <storm/storage/expressions/Expression.h>
 #include <string>
+
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm::dft {
 namespace modelchecker {

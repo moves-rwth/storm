@@ -1,7 +1,9 @@
 #include "cli.h"
 
+#include "storm-cli-utilities/model-handling.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-cli-utilities/resources.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/OptionParserException.h"
 #include "storm/io/file.h"
 #include "storm/settings/SettingsManager.h"
@@ -12,8 +14,6 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
-
-#include "storm-cli-utilities/model-handling.h"
 
 namespace storm {
 namespace cli {

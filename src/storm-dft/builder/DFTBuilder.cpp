@@ -2,13 +2,13 @@
 
 #include <algorithm>
 
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/OrderDFTElementsById.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
-
-#include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/OrderDFTElementsById.h"
 
 namespace storm::dft {
 namespace builder {

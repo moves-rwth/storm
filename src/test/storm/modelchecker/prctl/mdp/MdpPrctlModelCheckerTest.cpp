@@ -6,7 +6,6 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"

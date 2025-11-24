@@ -1,5 +1,6 @@
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/logic/FragmentSpecification.h"

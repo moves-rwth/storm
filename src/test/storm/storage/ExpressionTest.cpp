@@ -1,3 +1,6 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include <map>
 #include <string>
 
@@ -11,7 +14,6 @@
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
-#include "test/storm_gtest.h"
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());

@@ -1,18 +1,10 @@
-/*
- * MappedFile.cpp
- *
- *  Created on: Jan 21, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-parsers/parser/MappedFile.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <boost/integer/integer_mask.hpp>
 #include <cstring>
 #include <fstream>
-
-#include <boost/integer/integer_mask.hpp>
 
 #include "storm/exceptions/FileIoException.h"
 #include "storm/io/file.h"

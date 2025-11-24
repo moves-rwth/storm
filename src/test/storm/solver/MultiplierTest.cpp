@@ -4,8 +4,8 @@
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/utility/vector.h"
+
 namespace {
 
 class NativeEnvironment {

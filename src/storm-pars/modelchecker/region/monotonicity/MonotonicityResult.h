@@ -1,12 +1,11 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <ostream>
 #include <set>
 
-#include <memory>
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityKind.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm {

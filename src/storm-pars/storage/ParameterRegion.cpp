@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/constants.h"

@@ -8,6 +8,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"

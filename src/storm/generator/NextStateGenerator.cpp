@@ -1,18 +1,14 @@
 #include "storm/generator/NextStateGenerator.h"
-#include <storm/exceptions/NotImplementedException.h>
-#include <storm/exceptions/WrongFormatException.h>
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-
+#include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
-#include "storm/models/sparse/StateLabeling.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {

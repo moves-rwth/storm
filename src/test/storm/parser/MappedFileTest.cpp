@@ -1,14 +1,8 @@
-/*
- * MappedFileTest.cpp
- *
- *  Created on: Feb 25, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include <string>
+
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
 #include "storm/exceptions/FileIoException.h"
