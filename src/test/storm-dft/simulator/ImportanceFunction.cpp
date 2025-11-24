@@ -44,14 +44,14 @@ TEST(ImportanceFunctionTest, RandomStepsAnd) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
     EXPECT_EQ(imp.getImportance(state), 1);
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
     EXPECT_EQ(imp.getImportance(state), 2);

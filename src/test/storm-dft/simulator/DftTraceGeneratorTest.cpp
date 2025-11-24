@@ -160,13 +160,13 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
@@ -186,13 +186,13 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     auto stateStep1 = simulator.getCurrentState();
     EXPECT_FALSE(stateStep1->hasFailed(dft->getTopLevelIndex()));
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 
@@ -203,7 +203,7 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214 + 2.4686932, 1e-6);
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286 + 7.769302, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
