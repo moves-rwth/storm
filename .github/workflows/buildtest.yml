@@ -109,7 +109,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -198,7 +198,7 @@ jobs:
             }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Replace Dockerfile
         run: cp .github/workflows/Dockerfile.${{ matrix.config.distro }} Dockerfile
       - name: Build storm from Dockerfile
@@ -254,7 +254,7 @@ jobs:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -323,7 +323,7 @@ jobs:
         with:
           xcode-version: ${{ matrix.config.xcode }}
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install dependencies
         # cmake and gmp are already installed
         run: |
@@ -390,7 +390,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Git describe
         id: ghd
         uses: proudust/gh-describe@v2
