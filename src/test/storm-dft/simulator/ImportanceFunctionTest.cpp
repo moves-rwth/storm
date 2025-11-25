@@ -28,7 +28,7 @@ TEST(ImportanceFunctionTest, RandomStepsAnd) {
     auto dft = pair.first;
 
     // Init random number generator
-    std::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     // Init importance function

@@ -151,7 +151,7 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
 
     // Init random number generator
-    std::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     auto state = simulator.getCurrentState();
@@ -177,7 +177,7 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
 
     // Init random number generator
-    std::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     auto state = simulator.getCurrentState();
@@ -213,7 +213,7 @@ TYPED_TEST(DftTraceGeneratorTest, Fdep) {
     auto dft = pair.first;
 
     // Init random number generator. Will not be important as we are choosing the steps deterministically.
-    std::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     // Start with initial state

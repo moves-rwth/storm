@@ -30,7 +30,7 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::randomStep() 
     if (model.getTransitionMatrix().getRowGroupSize(currentState) == 0) {
         return false;
     }
-    return step(generator.random_uint(0, model.getTransitionMatrix().getRowGroupSize(currentState) - 1));
+    return step(generator.randomSelect(0, model.getTransitionMatrix().getRowGroupSize(currentState) - 1));
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -38,7 +38,7 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
     // TODO lots of optimization potential.
     //  E.g., do not sample random numbers if there is only a single transition
     lastRewards = zeroRewards;
-    ValueType probability = generator.random();
+    ValueType probability = generator.randomProbability();
     STORM_LOG_ASSERT(action < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions");
     uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[currentState] + action;
     uint64_t i = 0;

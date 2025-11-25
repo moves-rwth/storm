@@ -24,8 +24,7 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
     storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
 
     // Init random number generator
-    // storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
-    std::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, stateGenerationInfo, gen);
 
     size_t count = 0;

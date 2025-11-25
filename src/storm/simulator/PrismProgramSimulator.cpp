@@ -29,7 +29,7 @@ void DiscreteTimePrismProgramSimulator<ValueType>::setSeed(uint64_t newSeed) {
 
 template<typename ValueType>
 bool DiscreteTimePrismProgramSimulator<ValueType>::step(uint64_t actionNumber) {
-    uint32_t nextState = behavior.getChoices()[actionNumber].sampleFromDistribution(generator.random());
+    uint32_t nextState = behavior.getChoices()[actionNumber].sampleFromDistribution(generator.randomProbability());
     lastActionRewards = behavior.getChoices()[actionNumber].getRewards();
     STORM_LOG_ASSERT(lastActionRewards.size() == stateGenerator->getNumberOfRewardModels(), "Reward vector should have as many rewards as model.");
     currentState = idToState[nextState];
