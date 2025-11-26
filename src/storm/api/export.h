@@ -115,7 +115,8 @@ inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model
     std::ofstream stream;
     storm::io::openFile(filename, stream);
     if (checkResult->isExplicitQualitativeCheckResult()) {
-        auto j = checkResult->asExplicitQualitativeCheckResult().toJson<storm::RationalNumber>(model->getOptionalStateValuations(), model->getStateLabeling());
+        auto j = checkResult->template asExplicitQualitativeCheckResult<ValueType>().template toJson<storm::RationalNumber>(model->getOptionalStateValuations(),
+                                                                                                                            model->getStateLabeling());
         stream << storm::dumpJson(j);
     } else {
         STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException,

@@ -27,7 +27,8 @@ storm::storage::MemoryStructure getGoalMemory(SparseModelType const& model, stor
                     "The  subformula " << propositionalGoalStateFormula << " should be propositional.");
 
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(model);
-    storm::storage::BitVector goalStates = mc.check(propositionalGoalStateFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector goalStates =
+        mc.check(propositionalGoalStateFormula)->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>().getTruthValuesVector();
 
     // Check if the formula is already satisfied for all initial states. In such a case the trivial memory structure suffices.
     if (model.getInitialStates().isSubsetOf(goalStates)) {

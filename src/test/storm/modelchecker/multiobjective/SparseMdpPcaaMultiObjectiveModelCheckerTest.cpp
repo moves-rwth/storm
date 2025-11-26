@@ -228,11 +228,11 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<double>()[initState]);
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[2]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<double>()[initState]);
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, zeroconf) {
@@ -304,7 +304,7 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, tiny_rewards_negative) {
 
     std::unique_ptr<storm::modelchecker::CheckResult> result =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[0]->asMultiObjectiveFormula());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<double>()[initState]);
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
@@ -328,7 +328,7 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
 
     std::unique_ptr<storm::modelchecker::CheckResult> result =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[0]->asMultiObjectiveFormula());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<double>()[initState]);
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, dpm) {

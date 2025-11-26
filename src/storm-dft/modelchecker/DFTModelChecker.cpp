@@ -461,7 +461,7 @@ std::vector<ValueType> DFTModelChecker<ValueType>::checkModel(std::shared_ptr<st
             storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, true)));
 
         if (result) {
-            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));
             ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
             results.push_back(resultValue);
         } else {

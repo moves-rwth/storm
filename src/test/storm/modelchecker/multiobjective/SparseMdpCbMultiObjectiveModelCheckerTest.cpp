@@ -43,11 +43,11 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, consensus) {
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[2]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
 TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
@@ -69,7 +69,7 @@ TEST_F(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
     std::unique_ptr<storm::modelchecker::CheckResult> result =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
 /* This test takes a little bit too long ...
@@ -88,6 +88,6 @@ formulas)->as<storm::models::sparse::Mdp<storm::RationalNumber>>(); uint_fast64_
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(*mdp,
 formulas[0]->asMultiObjectiveFormula()) ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 */

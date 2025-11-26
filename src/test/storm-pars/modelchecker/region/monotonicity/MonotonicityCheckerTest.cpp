@@ -52,7 +52,7 @@ TEST_F(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::storage::BitVector psiStates;
     phiStates = storm::storage::BitVector(model->getTransitionMatrix().getRowCount(), true);
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
-    psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    psiStates = propositionalChecker.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<storm::RationalFunction>().getTruthValuesVector();
     // Get the maybeStates
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
@@ -100,7 +100,7 @@ TEST_F(MonotonicityCheckerTest, Simple1_small_region) {
     storm::storage::BitVector psiStates;
     phiStates = storm::storage::BitVector(model->getTransitionMatrix().getRowCount(), true);
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
-    psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    psiStates = propositionalChecker.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<storm::RationalFunction>().getTruthValuesVector();
     // Get the maybeStates
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
@@ -149,7 +149,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy1) {
     storm::storage::BitVector psiStates;
     phiStates = storm::storage::BitVector(model->getTransitionMatrix().getRowCount(), true);
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
-    psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    psiStates = propositionalChecker.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<storm::RationalFunction>().getTruthValuesVector();
     // Get the maybeStates
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
@@ -202,7 +202,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy2) {
     storm::storage::BitVector psiStates;
     phiStates = storm::storage::BitVector(model->getTransitionMatrix().getRowCount(), true);
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
-    psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    psiStates = propositionalChecker.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<storm::RationalFunction>().getTruthValuesVector();
     // Get the maybeStates
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
@@ -256,7 +256,7 @@ TEST_F(MonotonicityCheckerTest, Casestudy3) {
     storm::storage::BitVector psiStates;
     phiStates = storm::storage::BitVector(model->getTransitionMatrix().getRowCount(), true);
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
-    psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    psiStates = propositionalChecker.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<storm::RationalFunction>().getTruthValuesVector();
     // Get the maybeStates
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);

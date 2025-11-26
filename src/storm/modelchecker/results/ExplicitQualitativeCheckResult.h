@@ -9,12 +9,15 @@
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/sparse/StateValuations.h"
 
 namespace storm {
 
 namespace modelchecker {
+
+template<typename ValueType>
 class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
    public:
     typedef storm::storage::BitVector vector_type;
@@ -69,6 +72,9 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
 
     // The values of the quantitative check result.
     boost::variant<vector_type, map_type> truthValues;
+
+    // An optional scheduler that accompanies the values.
+    boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
 };
 }  // namespace modelchecker
 }  // namespace storm

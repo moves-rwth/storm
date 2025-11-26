@@ -164,7 +164,7 @@ class QuantileQueryTest : public ::testing::Test {
 
     std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
         std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model) const {
-        return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->getInitialStates());
+        return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(model->getInitialStates());
     }
 };
 

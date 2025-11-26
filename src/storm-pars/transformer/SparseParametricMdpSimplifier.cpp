@@ -35,9 +35,9 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForUntilProbabiliti
         return false;
     }
     storm::storage::BitVector phiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+        propositionalChecker.check(formula.getSubformula().asUntilFormula().getLeftSubformula())->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>().getTruthValuesVector());
     storm::storage::BitVector psiStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+        propositionalChecker.check(formula.getSubformula().asUntilFormula().getRightSubformula())->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>().getTruthValuesVector());
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
         minimizing ? storm::utility::graph::performProb01Min(this->originalModel, phiStates, psiStates)
                    : storm::utility::graph::performProb01Max(this->originalModel, phiStates, psiStates);
@@ -121,10 +121,10 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForBoundedUntilProb
         return false;
     }
     storm::storage::BitVector phiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getLeftSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector psiStates = std::move(propositionalChecker.check(formula.getSubformula().asBoundedUntilFormula().getRightSubformula())
-                                                        ->asExplicitQualitativeCheckResult()
+                                                        ->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>()
                                                         .getTruthValuesVector());
     storm::storage::BitVector probGreater0States =
         minimizing ? storm::utility::graph::performProbGreater0A(this->originalModel.getTransitionMatrix(),
@@ -182,7 +182,7 @@ bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewa
         return false;
     }
     storm::storage::BitVector targetStates = std::move(
-        propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
+        propositionalChecker.check(formula.getSubformula().asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<typename SparseModelType::ValueType>().getTruthValuesVector());
     // The set of target states can be extended by the states that reach target with probability 1 without collecting any reward
     // TODO for the call of Prob1E we could restrict the analysis to actions with zero reward instead of states with zero reward
     targetStates =

@@ -903,14 +903,14 @@ inline void printCounterexample(std::shared_ptr<storm::counterexamples::Countere
 }
 
 template<typename ModelType>
-    requires(!std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&) {
+requires(!std::derived_from<ModelType, storm::models::sparse::Model<double>>) inline void generateCounterexamples(std::shared_ptr<ModelType> const&,
+                                                                                                                  SymbolicInput const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 
 template<typename ModelType>
-    requires(std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input) {
+requires(std::derived_from<ModelType, storm::models::sparse::Model<double>>) inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel,
+                                                                                                                 SymbolicInput const& input) {
     using ValueType = typename ModelType::ValueType;
 
     for (auto& rewModel : sparseModel->getRewardModels()) {
@@ -966,8 +966,8 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
 }
 
 template<typename ValueType>
-    requires(!storm::IsIntervalType<ValueType>)
-void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::modelchecker::FilterType ft) {
+requires(!storm::IsIntervalType<ValueType>) void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result,
+                                                                     storm::modelchecker::FilterType ft) {
     if (result->isQuantitative()) {
         if (ft == storm::modelchecker::FilterType::VALUES) {
             STORM_PRINT(*result);
@@ -1034,9 +1034,9 @@ inline void printModelCheckingProperty(storm::jani::Property const& property) {
 }
 
 template<typename ValueType>
-    requires(!storm::IsIntervalType<ValueType>)
-void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::logic::Formula const& filterStatesFormula,
-                 storm::modelchecker::FilterType const& filterType, storm::utility::Stopwatch* watch = nullptr) {
+requires(!storm::IsIntervalType<ValueType>) void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result,
+                                                             storm::logic::Formula const& filterStatesFormula,
+                                                             storm::modelchecker::FilterType const& filterType, storm::utility::Stopwatch* watch = nullptr) {
     if (result) {
         std::stringstream ss;
         ss << "'" << filterStatesFormula << "'";
@@ -1302,7 +1302,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
 
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
-            filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
+            filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
             filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, storm::api::createTask<ValueType>(states, false));
         }

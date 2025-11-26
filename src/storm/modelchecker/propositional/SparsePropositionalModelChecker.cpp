@@ -35,9 +35,9 @@ std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::c
     Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) {
     storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
     if (stateFormula.isTrueFormula()) {
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(storm::storage::BitVector(model.getNumberOfStates(), true)));
     } else {
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates())));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(storm::storage::BitVector(model.getNumberOfStates())));
     }
 }
 
@@ -47,7 +47,7 @@ std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::c
     storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
     STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException,
                     "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
+    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(model.getStates(stateFormula.getLabel())));
 }
 
 template<typename SparseModelType>
