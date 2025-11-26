@@ -50,7 +50,7 @@ void SparseModelSimulator<ValueType, RewardModelType>::resetToInitial() {
 
 template<typename ValueType, typename RewardModelType>
 uint64_t SparseModelSimulator<ValueType, RewardModelType>::choice(uint64_t choice) {
-    STORM_LOG_ASSERT(choice < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions");
+    STORM_LOG_ASSERT(choice < getCurrentNumberOfChoices(), "Action index higher than number of actions");
     lastRewards = zeroRewards;
     uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[currentState] + choice;
 
@@ -159,6 +159,15 @@ uint64_t SparseModelSimulator<ValueType, RewardModelType>::getCurrentState() con
 template<typename ValueType, typename RewardModelType>
 ValueType SparseModelSimulator<ValueType, RewardModelType>::getCurrentTime() const {
     return currentTime;
+}
+template<typename ValueType, typename RewardModelType>
+uint64_t SparseModelSimulator<ValueType, RewardModelType>::getCurrentNumberOfChoices() const {
+    return model.getTransitionMatrix().getRowGroupSize(currentState);
+}
+
+template<typename ValueType, typename RewardModelType>
+std::set<std::string> SparseModelSimulator<ValueType, RewardModelType>::getCurrentStateLabelling() const {
+    return model.getStateLabeling().getLabelsOfState(currentState);
 }
 
 template<typename ValueType, typename RewardModelType>

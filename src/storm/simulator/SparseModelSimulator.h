@@ -37,6 +37,8 @@ class SparseModelSimulator {
 
     uint64_t getCurrentState() const;
     ValueType getCurrentTime() const;
+    uint64_t getCurrentNumberOfChoices() const;
+    std::set<std::string> getCurrentStateLabelling() const;
     std::vector<ValueType> const& getLastRewards() const;
 
    private:
