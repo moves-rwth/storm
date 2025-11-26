@@ -41,13 +41,16 @@ ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm:
 }
 
 template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues) : truthValues(truthValues) {
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues,
+                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+    : truthValues(truthValues), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues)
-    : truthValues(std::move(truthValues)) {
+ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues,
+                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+    : truthValues(std::move(truthValues)), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
@@ -268,6 +271,28 @@ void ExplicitQualitativeCheckResult<ValueType>::filter(QualitativeCheckResult co
 
         this->truthValues = newMap;
     }
+}
+
+template<typename ValueType>
+bool ExplicitQualitativeCheckResult<ValueType>::hasScheduler() const {
+    return static_cast<bool>(scheduler);
+}
+
+template<typename ValueType>
+void ExplicitQualitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler) {
+    this->scheduler = std::move(scheduler);
+}
+
+template<typename ValueType>
+storm::storage::Scheduler<ValueType> const& ExplicitQualitativeCheckResult<ValueType>::getScheduler() const {
+    STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+    return *scheduler.get();
+}
+
+template<typename ValueType>
+storm::storage::Scheduler<ValueType>& ExplicitQualitativeCheckResult<ValueType>::getScheduler() {
+    STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+    return *scheduler.get();
 }
 
 template<typename JsonRationalType>
