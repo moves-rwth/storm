@@ -7,6 +7,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -15,8 +16,6 @@
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace models {
@@ -730,10 +729,9 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 }
 
 template class Model<double>;
-template class Model<storm::Interval>;
-
-template class Model<storm::RationalNumber>;
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class Model<storm::RationalNumber>;
+template class Model<storm::Interval>;
 template class Model<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

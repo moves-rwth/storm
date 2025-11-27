@@ -2,8 +2,6 @@
 
 #include "storm/models/sparse/Mdp.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
 namespace storm {
 namespace models {
 namespace sparse {

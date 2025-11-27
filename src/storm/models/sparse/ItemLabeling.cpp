@@ -1,10 +1,9 @@
 #include "storm/models/sparse/ItemLabeling.h"
 
-#include "storm/models/sparse/ChoiceLabeling.h"
-#include "storm/models/sparse/StateLabeling.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/models/sparse/StateLabeling.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_STATEANNOTATION_H_
-#define STORM_MODELS_SPARSE_STATEANNOTATION_H_
+#pragma once
 
 #include "storm/storage/sparse/StateType.h"
 
@@ -17,5 +16,3 @@ class StateAnnotation {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_STATEANNOTATION_H_ */

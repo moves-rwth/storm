@@ -1,9 +1,7 @@
 #include "storm/models/sparse/Dtmc.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace models {
@@ -45,14 +43,10 @@ void Dtmc<ValueType, RewardModelType>::reduceToStateBasedRewards() {
 }
 
 template class Dtmc<double>;
-
-#ifdef STORM_HAVE_CARL
-template class Dtmc<storm::RationalNumber>;
-
 template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class Dtmc<storm::RationalFunction>;
+template class Dtmc<storm::RationalNumber>;
 template class Dtmc<storm::Interval>;
-#endif
+template class Dtmc<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

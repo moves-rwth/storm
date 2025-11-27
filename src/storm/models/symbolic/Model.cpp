@@ -2,26 +2,21 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 
 namespace storm {
 namespace models {
@@ -496,11 +491,10 @@ typename std::enable_if<std::is_same<ValueType, NewValueType>::value, std::share
 
 // Explicitly instantiate the template class.
 template class Model<storm::dd::DdType::CUDD, double>;
-template class Model<storm::dd::DdType::Sylvan, double>;
-
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::CUDD, double>>>::type
 Model<storm::dd::DdType::CUDD, double>::toValueType<double>() const;
 
+template class Model<storm::dd::DdType::Sylvan, double>;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template typename std::enable_if<std::is_same<double, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, double>::toValueType<double>() const;
@@ -513,6 +507,7 @@ Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::toValueType<storm::Ra
 template typename std::enable_if<!std::is_same<storm::RationalNumber, double>::value, std::shared_ptr<Model<storm::dd::DdType::Sylvan, double>>>::type
 Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::toValueType<double>() const;
 template class Model<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm

@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_SMG_H_
-#define STORM_MODELS_SPARSE_SMG_H_
+#pragma once
 
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/models/sparse/NondeterministicModel.h"
@@ -46,5 +45,3 @@ class Smg : public NondeterministicModel<ValueType, RewardModelType> {
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_SMG_H_ */
