@@ -338,13 +338,6 @@ class Model : public storm::models::Model<CValueType> {
 
    protected:
     /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix);
-
-    /*!
      * Retrieves the mapping of labels to their defining expressions.
      *
      * @returns The mapping of labels to their defining expressions.

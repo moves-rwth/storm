@@ -612,16 +612,6 @@ std::set<std::string> Model<ValueType, RewardModelType>::getLabelsOfState(storm:
 }
 
 template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
-    this->transitionMatrix = transitionMatrix;
-}
-
-template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
-    this->transitionMatrix = std::move(transitionMatrix);
-}
-
-template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
     for (auto const& entry : this->getTransitionMatrix().getRowGroup(state)) {
         if (entry.getColumn() != state) {

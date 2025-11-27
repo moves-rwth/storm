@@ -395,19 +395,6 @@ class Model : public storm::models::Model<CValueType> {
 
    protected:
     RewardModelType& rewardModel(std::string const& rewardModelName);
-    /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
-
-    /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix);
 
     /*!
      * Prints the information header (number of states and transitions) of the model to the specified stream.

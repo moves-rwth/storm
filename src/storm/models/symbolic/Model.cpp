@@ -220,11 +220,6 @@ std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-void Model<Type, ValueType>::setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix) {
-    this->transitionMatrix = transitionMatrix;
-}
-
-template<storm::dd::DdType Type, typename ValueType>
 std::map<std::string, storm::expressions::Expression> const& Model<Type, ValueType>::getLabelToExpressionMap() const {
     return labelToExpressionMap;
 }
