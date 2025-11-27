@@ -121,7 +121,12 @@ bool SparseModelSimulator<ValueType, RewardModelType>::step(uint64_t action) {
     ValueType probability = generator.randomProbability();
     ValueType sum = storm::utility::zero<ValueType>();
     for (auto const& entry : model.getTransitionMatrix().getRow(row)) {
-        sum += entry.getValue();
+        if (model.getType() == storm::models::ModelType::Ctmc) {
+            // Scale rates to probabilities
+            sum += entry.getValue() / exitRates[currentState];
+        } else {
+            sum += entry.getValue();
+        }
         if (sum >= probability) {
             uint64_t column = entry.getColumn();
             transition(row, column);
