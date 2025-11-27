@@ -1269,6 +1269,11 @@ ModelFeatures Model::restrictToFeatures(ModelFeatures const& features, std::vect
         uncheckedFeatures.remove(ModelFeature::DerivedOperators);
     }
 
+    // There is no elimination of MultiObjective properties
+    if (features.hasDerivedOperators()) {
+        uncheckedFeatures.remove(ModelFeature::MultiObjectiveProperties);
+    }
+
     // There is no elimination of trigonometric operators
     if (features.hasTrigonometricFunctions()) {
         uncheckedFeatures.remove(ModelFeature::TrigonometricFunctions);
