@@ -58,14 +58,6 @@ class Model : public storm::models::Model<CValueType> {
     storm::storage::SparseMatrix<ValueType> getBackwardTransitions() const;
 
     /*!
-     * Returns an object representing the matrix rows associated with the given state.
-     *
-     * @param state The state for which to retrieve the rows.
-     * @return An object representing the matrix rows associated with the given state.
-     */
-    virtual typename storm::storage::SparseMatrix<ValueType>::const_rows getRows(storm::storage::sparse::state_type state) const;
-
-    /*!
      * Returns the number of states of the model.
      *
      * @return The number of states of the model.

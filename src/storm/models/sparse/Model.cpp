@@ -154,11 +154,6 @@ storm::storage::SparseMatrix<ValueType> Model<ValueType, RewardModelType>::getBa
 }
 
 template<typename ValueType, typename RewardModelType>
-typename storm::storage::SparseMatrix<ValueType>::const_rows Model<ValueType, RewardModelType>::getRows(storm::storage::sparse::state_type state) const {
-    return this->getTransitionMatrix().getRowGroup(state);
-}
-
-template<typename ValueType, typename RewardModelType>
 uint_fast64_t Model<ValueType, RewardModelType>::getNumberOfStates() const {
     return this->getTransitionMatrix().getColumnCount();
 }
