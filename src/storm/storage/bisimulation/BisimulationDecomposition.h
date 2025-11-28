@@ -1,6 +1,6 @@
-#ifndef STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_
+#pragma once
 
+#include "storm/logic/Formulas.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/solver/OptimizationDirection.h"
@@ -8,10 +8,6 @@
 #include "storm/storage/StateBlock.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/bisimulation/Partition.h"
-#include "storm/storage/sparse/StateType.h"
-
-#include "storm/logic/Formulas.h"
-
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 
@@ -56,7 +52,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          * Creates an object representing the options necessary to obtain the quotient while still preserving
          * the given formula.
          *
-         * @param The model for which the quotient model shall be computed. This needs to be given in order to
+         * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formula The formula that is to be preserved.
          */
@@ -66,7 +62,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
          * Creates an object representing the options necessary to obtain the smallest quotient while still
          * preserving the given formulas.
          *
-         * @param The model for which the quotient model shall be computed. This needs to be given in order to
+         * @param model The model for which the quotient model shall be computed. This needs to be given in order to
          * derive a suitable initial partition.
          * @param formulas The formulas that need to be preserved.
          */
@@ -140,7 +136,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
        private:
         boost::optional<OptimizationDirection> optimalityType;
 
-        /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should
+        /// A flag that indicates whether the state-rewards of the model are to be respected (and should
         /// be kept in the quotient model, if one is built).
         bool keepRewards;
 
@@ -184,7 +180,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
     };
 
     /*!
-     * Decomposes the given model into equivalance classes of a bisimulation.
+     * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
      * @param options The options to use during for the decomposition.
@@ -208,7 +204,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
    protected:
     /*!
-     * Decomposes the given model into equivalance classes of a bisimulation.
+     * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
      * @param backwardTransition The backward transitions of the model.
@@ -231,11 +227,10 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
      * @param splitterVector The vector into which to insert the newly discovered potential splitters.
      */
     virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter,
-                                                std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) = 0;
+                                                std::vector<bisimulation::Block<BlockDataType>*>& splitterVector) = 0;
 
     /*!
-     * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
-     * of the decomposition.
+     * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks of the decomposition).
      */
     virtual void buildQuotient() = 0;
 
@@ -297,10 +292,8 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
     // A comparator used for comparing the distances of constants.
     storm::utility::ConstantsComparator<ValueType> comparator;
 
-    // The quotient, if it was build. Otherwhise a null pointer.
+    // The quotient, if it was build. Otherwise a null pointer.
     std::shared_ptr<ModelType> quotient;
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATIONDECOMPOSITION_H_ */

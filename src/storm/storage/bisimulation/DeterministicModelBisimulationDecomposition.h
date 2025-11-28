@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_BISIMULATION_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
-#define STORM_STORAGE_BISIMULATION_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_
+#pragma once
 
 #include "storm/storage/bisimulation/BisimulationDecomposition.h"
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
@@ -136,5 +135,3 @@ class DeterministicModelBisimulationDecomposition : public BisimulationDecomposi
 };
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_DETERMINISTICMODELBISIMULATIONDECOMPOSITION_H_ */

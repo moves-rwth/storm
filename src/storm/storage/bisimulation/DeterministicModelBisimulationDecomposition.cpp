@@ -3,24 +3,18 @@
 #include <algorithm>
 #include <boost/iterator/zip_iterator.hpp>
 #include <chrono>
-#include <iomanip>
 #include <unordered_map>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
 namespace storage {
@@ -330,7 +324,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingSta
                 moveStateToMarker1(predecessor, predecessorBlock);
             }
 
-            // We must not insert the the splitter itself if we are not computing a weak bisimulation on CTMCs.
+            // We must not insert the splitter itself if we are not computing a weak bisimulation on CTMCs.
             if (this->options.getType() != BisimulationType::Weak || this->model.getType() != storm::models::ModelType::Ctmc || predecessorBlock != splitter) {
                 insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
             }
@@ -728,12 +722,10 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
 
-#ifdef STORM_HAVE_CARL
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>>;
 
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
-#endif
 }  // namespace storage
 }  // namespace storm
