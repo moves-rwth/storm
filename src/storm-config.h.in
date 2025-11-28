@@ -78,6 +78,7 @@
 // Whether the libraries are available and to be used
 #cmakedefine STORM_HAVE_CUDD
 #cmakedefine STORM_HAVE_GMM
+#cmakedefine STORM_HAVE_GMM_ILU // Disable ilu preconditioner due to current issues
 #cmakedefine STORM_HAVE_GLPK
 #cmakedefine STORM_HAVE_GUROBI
 #cmakedefine STORM_HAVE_MATHSAT
