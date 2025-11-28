@@ -1,11 +1,8 @@
-#include <queue>
-
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/stateelimination/StateEliminator.h"
-#include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/SubsystemBuilder.h"
 #include "storm/utility/ConstantsComparator.h"
@@ -13,8 +10,6 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace models {
@@ -258,15 +253,10 @@ void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(
 }
 
 template class MarkovAutomaton<double>;
-#ifdef STORM_HAVE_CARL
-
-template class MarkovAutomaton<storm::RationalNumber>;
-
 template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-
-template class MarkovAutomaton<storm::RationalFunction>;
+template class MarkovAutomaton<storm::RationalNumber>;
 template class MarkovAutomaton<storm::Interval>;
-#endif
+template class MarkovAutomaton<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

@@ -1,10 +1,10 @@
-#ifndef STORM_MODELS_SYMBOLIC_MODEL_H_
-#define STORM_MODELS_SYMBOLIC_MODEL_H_
+#pragma once
 
 #include <memory>
 #include <set>
 #include <unordered_map>
 
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/storage/dd/Add.h"
@@ -12,9 +12,6 @@
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionForward.h"
 
 namespace storm {
 namespace dd {
@@ -341,13 +338,6 @@ class Model : public storm::models::Model<CValueType> {
 
    protected:
     /*!
-     * Sets the transition matrix of the model.
-     *
-     * @param transitionMatrix The new transition matrix of the model.
-     */
-    void setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix);
-
-    /*!
      * Retrieves the mapping of labels to their defining expressions.
      *
      * @returns The mapping of labels to their defining expressions.
@@ -442,5 +432,3 @@ class Model : public storm::models::Model<CValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_MODEL_H_ */

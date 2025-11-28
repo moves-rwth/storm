@@ -1,11 +1,10 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace models {
@@ -559,7 +558,6 @@ template void StandardRewardModel<double>::setStateReward(uint_fast64_t state, d
 template class StandardRewardModel<double>;
 template std::ostream& operator<< <double>(std::ostream& out, StandardRewardModel<double> const& rewardModel);
 
-#ifdef STORM_HAVE_CARL
 template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(
     uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& filter) const;
 template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(
@@ -662,7 +660,6 @@ template storm::storage::BitVector StandardRewardModel<storm::Interval>::getChoi
     storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix) const;
 template class StandardRewardModel<storm::Interval>;
 template std::ostream& operator<< <storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);
-#endif
 }  // namespace sparse
 
 }  // namespace models

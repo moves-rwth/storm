@@ -1,11 +1,8 @@
 #include "storm/models/sparse/Mdp.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/vector.h"
-
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace models {
@@ -43,11 +40,10 @@ Mdp<ValueType, RewardModelType>::Mdp(storm::storage::sparse::ModelComponents<Val
 }
 
 template class Mdp<double>;
-template class Mdp<storm::RationalNumber>;
-
 template class Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class Mdp<storm::RationalFunction>;
+template class Mdp<storm::RationalNumber>;
 template class Mdp<storm::Interval>;
+template class Mdp<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

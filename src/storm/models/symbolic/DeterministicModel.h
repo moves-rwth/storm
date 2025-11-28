@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_
-#define STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_
+#pragma once
 
 #include "storm/models/symbolic/Model.h"
 
@@ -72,5 +71,3 @@ class DeterministicModel : public Model<Type, ValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_DETERMINISTICMODEL_H_ */

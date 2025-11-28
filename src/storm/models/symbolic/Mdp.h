@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SYMBOLIC_MDP_H_
-#define STORM_MODELS_SYMBOLIC_MDP_H_
+#pragma once
 
 #include "storm/models/symbolic/NondeterministicModel.h"
 
@@ -79,5 +78,3 @@ class Mdp : public NondeterministicModel<Type, ValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_MDP_H_ */

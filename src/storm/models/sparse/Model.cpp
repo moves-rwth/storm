@@ -7,6 +7,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -15,8 +16,6 @@
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace models {
@@ -151,11 +150,6 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
 template<typename ValueType, typename RewardModelType>
 storm::storage::SparseMatrix<ValueType> Model<ValueType, RewardModelType>::getBackwardTransitions() const {
     return this->getTransitionMatrix().transpose(true);
-}
-
-template<typename ValueType, typename RewardModelType>
-typename storm::storage::SparseMatrix<ValueType>::const_rows Model<ValueType, RewardModelType>::getRows(storm::storage::sparse::state_type state) const {
-    return this->getTransitionMatrix().getRowGroup(state);
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -618,16 +612,6 @@ std::set<std::string> Model<ValueType, RewardModelType>::getLabelsOfState(storm:
 }
 
 template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
-    this->transitionMatrix = transitionMatrix;
-}
-
-template<typename ValueType, typename RewardModelType>
-void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
-    this->transitionMatrix = std::move(transitionMatrix);
-}
-
-template<typename ValueType, typename RewardModelType>
 bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
     for (auto const& entry : this->getTransitionMatrix().getRowGroup(state)) {
         if (entry.getColumn() != state) {
@@ -735,10 +719,9 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 }
 
 template class Model<double>;
-template class Model<storm::Interval>;
-
-template class Model<storm::RationalNumber>;
 template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+template class Model<storm::RationalNumber>;
+template class Model<storm::Interval>;
 template class Model<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models

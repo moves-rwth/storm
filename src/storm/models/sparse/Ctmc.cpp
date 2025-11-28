@@ -1,4 +1,5 @@
 #include "storm/models/sparse/Ctmc.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
@@ -91,14 +92,10 @@ storm::storage::SparseMatrix<ValueType> Ctmc<ValueType, RewardModelType>::comput
 }
 
 template class Ctmc<double>;
-
-#ifdef STORM_HAVE_CARL
 template class Ctmc<storm::RationalNumber>;
-
 template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 template class Ctmc<storm::RationalFunction>;
 template class Ctmc<storm::Interval>;
-#endif
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
