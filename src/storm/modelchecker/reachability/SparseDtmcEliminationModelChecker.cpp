@@ -40,7 +40,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationMod
 }
 
 template<typename SparseDtmcModelType>
-bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula, SolutionType> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     storm::logic::FragmentSpecification fragment = storm::logic::prctl().setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
     fragment.setNestedOperatorsAllowed(false)
@@ -52,7 +52,7 @@ bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(
-    Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
     storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
     storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -119,7 +119,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(
-    Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) {
     // Do some sanity checks to establish some required properties.
     RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
     STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
@@ -183,7 +183,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 }
 
 template<typename SparseDtmcModelType>
-std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType>
+std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SolutionType>
 SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                              storm::storage::BitVector const& initialStates,
@@ -340,7 +340,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(sto
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(
-    Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, SolutionType> const& checkTask) {
     storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
 
     STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException,
@@ -451,7 +451,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(
-    Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::UntilFormula, SolutionType> const& checkTask) {
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
 
     // Retrieve the appropriate bitvectors by model checking the subformulas.
@@ -532,7 +532,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(
-    Environment const& env, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
 
     // Retrieve the appropriate bitvectors by model checking the subformulas.
@@ -640,7 +640,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
-    Environment const& env, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
     storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
 
     // Retrieve the appropriate bitvectors by model checking the subformulas.

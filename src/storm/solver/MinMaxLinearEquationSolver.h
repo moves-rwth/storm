@@ -273,6 +273,9 @@ class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolv
     using MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::create;
 
     virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> create(Environment const& env) const override;
+
+   protected:
+    MinMaxMethod getMethod(Environment env) const;
 };
 
 }  // namespace solver
