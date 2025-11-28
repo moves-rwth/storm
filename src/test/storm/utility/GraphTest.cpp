@@ -18,11 +18,23 @@
 
 class Cudd {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
 };
 
 class Sylvan {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
 };
 
@@ -34,8 +46,9 @@ class GraphTestSymbolic : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+        GTEST_SKIP() << "Library Z3 not available.";
 #endif
+        TestType::checkLibraryAvailable();
     }
 };
 
@@ -43,7 +56,7 @@ class GraphTestExplicit : public ::testing::Test {
    protected:
     void SetUp() override {
 #ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+        GTEST_SKIP() << "Library Z3 not available.";
 #endif
     }
 };

@@ -94,6 +94,11 @@ void printVersion() {
 
     // Print linked dependencies
     STORM_PRINT("Linked with CArL v" << STORM_CARL_VERSION << ".\n");
+#ifdef STORM_HAVE_CUDD
+    STORM_PRINT("Linked with CUDD.\n");
+#else
+    STORM_PRINT("Not linked with CUDD.\n");
+#endif
 #ifdef STORM_HAVE_GLPK
     STORM_PRINT("Linked with GLPK v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
 #else
@@ -125,6 +130,11 @@ void printVersion() {
     STORM_PRINT("Linked with Spot v" << spot::version() << ".\n");
 #else
     STORM_PRINT("Not linked with Spot.\n");
+#endif
+#ifdef STORM_HAVE_SYLVAN
+    STORM_PRINT("Linked with Sylvan.\n");
+#else
+    STORM_PRINT("Not linked with Sylvan.\n");
 #endif
 #ifdef STORM_HAVE_XERCES
     STORM_PRINT("Linked with Xerces-C v" << gXercesMajVersion << "." << gXercesMinVersion << "." << gXercesRevision << ".\n");

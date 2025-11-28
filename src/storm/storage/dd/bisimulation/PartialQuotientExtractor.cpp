@@ -164,11 +164,9 @@ std::shared_ptr<storm::models::symbolic::Model<DdType, ExportValueType>> Partial
 template class PartialQuotientExtractor<storm::dd::DdType::CUDD, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, double>;
 
-#ifdef STORM_HAVE_CARL
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalNumber, double>;
 template class PartialQuotientExtractor<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 
 }  // namespace bisimulation
 }  // namespace dd
