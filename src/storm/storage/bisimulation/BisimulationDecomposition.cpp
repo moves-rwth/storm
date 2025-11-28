@@ -6,23 +6,16 @@
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidOptionException.h"
-
 #include "storm/logic/FormulaInformation.h"
 #include "storm/logic/FragmentSpecification.h"
-
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
-
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 
@@ -187,15 +180,22 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::addToRespecte
 
 template<typename ModelType, typename BlockDataType>
 BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, Options const& options)
-    : BisimulationDecomposition(model, model.getBackwardTransitions(), options) {
+    : BisimulationDecomposition(model, model.getTransitionMatrix(), model.getBackwardTransitions(), options) {
     // Intentionally left empty.
 }
 
 template<typename ModelType, typename BlockDataType>
 BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model,
+                                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                Options const& options)
-    : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
+    : model(model),
+      transitionMatrix(transitionMatrix),
+      backwardTransitions(backwardTransitions),
+      options(options),
+      partition(),
+      comparator(),
+      quotient(nullptr) {
     STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException,
                     "Bisimulation currently only supports models with at most one reward model.");
     STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || !model.getUniqueRewardModel().hasTransitionRewards(),
@@ -316,8 +316,7 @@ void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionB
             actionRewards.reserve(model.getNumberOfStates());
             for (storm::storage::sparse::state_type state = 0; state < model.getNumberOfStates(); ++state) {
                 std::set<ValueType> rewardsAtState;
-                for (auto choice = model.getTransitionMatrix().getRowGroupIndices()[state];
-                     choice < model.getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choice) {
+                for (auto choice = transitionMatrix.getRowGroupIndices()[state]; choice < transitionMatrix.getRowGroupIndices()[state + 1]; ++choice) {
                     rewardsAtState.insert(rewardModel.getStateActionReward(choice));
                 }
                 actionRewards.push_back(std::move(rewardsAtState));
@@ -404,7 +403,6 @@ template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>, bi
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<double>, bisimulation::DeterministicBlockData>;
 
-#ifdef STORM_HAVE_CARL
 template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
@@ -412,6 +410,5 @@ template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::Ratio
 template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
-#endif
 }  // namespace storage
 }  // namespace storm

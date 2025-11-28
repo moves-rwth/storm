@@ -1,7 +1,4 @@
-#ifndef STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_
-#define STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_
-
-#include <cstdint>
+#pragma once
 
 #include "storm/storage/bisimulation/Block.h"
 
@@ -92,5 +89,3 @@ std::ostream& operator<<(std::ostream& out, DeterministicBlockData const& data);
 }  // namespace bisimulation
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_DETERMINISTICBLOCKDATA_H_ */

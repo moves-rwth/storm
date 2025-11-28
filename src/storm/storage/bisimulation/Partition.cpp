@@ -2,9 +2,8 @@
 
 #include <iostream>
 
-#include "storm/storage/bisimulation/DeterministicBlockData.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
