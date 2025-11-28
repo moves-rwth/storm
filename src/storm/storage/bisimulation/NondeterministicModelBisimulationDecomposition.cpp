@@ -15,8 +15,8 @@ template<typename ModelType>
 NondeterministicModelBisimulationDecomposition<ModelType>::NondeterministicModelBisimulationDecomposition(
     ModelType const& model,
     typename BisimulationDecomposition<ModelType, NondeterministicModelBisimulationDecomposition::BlockDataType>::Options const& options)
-    : BisimulationDecomposition<ModelType, NondeterministicModelBisimulationDecomposition::BlockDataType>(model, model.getTransitionMatrix().transpose(false),
-                                                                                                          options),
+    : BisimulationDecomposition<ModelType, NondeterministicModelBisimulationDecomposition::BlockDataType>(
+          model, model.getTransitionMatrix(), model.getTransitionMatrix().transpose(false), options),
       choiceToStateMapping(model.getNumberOfChoices()),
       quotientDistributions(model.getNumberOfChoices()),
       orderedQuotientDistributions(model.getNumberOfChoices()) {

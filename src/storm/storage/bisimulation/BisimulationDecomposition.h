@@ -207,10 +207,12 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
      * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
-     * @param backwardTransition The backward transitions of the model.
+     * @param transitionMatrix The (probability) transition matrix of the model.
+     * @param backwardTransitions The backward transitions of the model.
      * @param options The options to use during for the decomposition.
      */
-    BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options);
+    BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                              storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options);
 
     /*!
      * Performs the partition refinement on the model and thereby computes the equivalence classes under strong
@@ -279,6 +281,9 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
     // The model to decompose.
     ModelType const& model;
+
+    // The transition matrix of the model.
+    storm::storage::SparseMatrix<ValueType> transitionMatrix;
 
     // The backward transitions of the model.
     storm::storage::SparseMatrix<ValueType> backwardTransitions;
