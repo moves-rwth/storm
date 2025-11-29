@@ -46,7 +46,13 @@ template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager,
                                                              NextStateGeneratorOptions const& options,
                                                              std::shared_ptr<ActionMask<ValueType, StateType>> const& mask)
-    : options(options),  comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {}
+    : options(options),
+      comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      expressionManager(expressionManager.getSharedPointer()),
+      variableInformation(),
+      evaluator(nullptr),
+      state(nullptr),
+      actionMask(mask) {}
 
 template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::~NextStateGenerator() = default;

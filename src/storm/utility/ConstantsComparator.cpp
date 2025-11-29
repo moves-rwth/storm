@@ -11,10 +11,8 @@
 namespace storm {
 namespace utility {
 
-
 template<typename ValueType>
-ConstantsComparator<ValueType>::ConstantsComparator(ValueType const& precision, bool relative)
-    : precision(precision), relative(relative) {
+ConstantsComparator<ValueType>::ConstantsComparator(ValueType const& precision, bool relative) : precision(precision), relative(relative) {
     // Intentionally left empty
 }
 
@@ -43,7 +41,6 @@ bool ConstantsComparator<ValueType>::isEqual(ValueType const& value1, ValueType 
         }
     }
 }
-
 
 template<typename ValueType>
 bool ConstantsComparator<ValueType>::isLess(ValueType const& value1, ValueType const& value2) const {

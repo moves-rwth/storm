@@ -3,11 +3,11 @@
 #include <cmath>
 #include <type_traits>
 
-#include "storm/storage/sparse/StateType.h"
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/NumberTraits.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
@@ -58,7 +58,6 @@ bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& prec
         return absDiff <= precision;
     }
 }
-
 
 template<typename ValueType>
 bool isPositive(ValueType const& a) {
@@ -919,7 +918,6 @@ bool isNonNegative(storm::RationalFunction const& a) {
     return a.isConstant() && isNonNegative(convertNumber<RationalFunctionCoefficient>(a));
 }
 
-
 template<>
 bool isPositive(storm::RationalFunction const& a) {
     return a.isConstant() && isPositive(convertNumber<RationalFunctionCoefficient>(a));
@@ -929,9 +927,9 @@ template<>
 bool isBetween(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& c, bool strict) {
     STORM_LOG_ASSERT(a.isConstant(), "lower bound must be a constant");
     STORM_LOG_ASSERT(c.isConstant(), "upper bound must be a constant");
-    return b.isConstant() && isBetween(convertNumber<RationalFunctionCoefficient>(a),convertNumber<RationalFunctionCoefficient>(b),convertNumber<RationalFunctionCoefficient>(c),strict);
+    return b.isConstant() && isBetween(convertNumber<RationalFunctionCoefficient>(a), convertNumber<RationalFunctionCoefficient>(b),
+                                       convertNumber<RationalFunctionCoefficient>(c), strict);
 }
-
 
 template<>
 std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&) {
@@ -989,7 +987,6 @@ std::string to_string(RationalFunction const& f) {
     return ss.str();
 }
 
-
 template<>
 double convertNumber(std::string const& value) {
     return convertNumber<double>(convertNumber<storm::RationalNumber>(value));
@@ -1043,11 +1040,11 @@ storm::Interval abs(storm::Interval const& interval) {
 }
 
 template<>
-bool isApproxEqual(storm::Interval const& a, storm::Interval const&  b, storm::Interval const& precision, bool relative) {
+bool isApproxEqual(storm::Interval const& a, storm::Interval const& b, storm::Interval const& precision, bool relative) {
     STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval");
-    return isApproxEqual<double>(a.lower(), b.lower(), precision.center(), relative) && isApproxEqual<double>(a.upper(), b.upper(), precision.center(), relative);
+    return isApproxEqual<double>(a.lower(), b.lower(), precision.center(), relative) &&
+           isApproxEqual<double>(a.upper(), b.upper(), precision.center(), relative);
 }
-
 
 // Explicit instantiations.
 
@@ -1116,7 +1113,8 @@ template bool isInfinity(uint32_t const& value);
 template storm::storage::sparse::state_type one();
 template storm::storage::sparse::state_type zero();
 template storm::storage::sparse::state_type infinity();
-template bool isApproxEqual(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b, storm::storage::sparse::state_type const& precision, bool relative);
+template bool isApproxEqual(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b,
+                            storm::storage::sparse::state_type const& precision, bool relative);
 template bool isOne(storm::storage::sparse::state_type const& value);
 template bool isZero(storm::storage::sparse::state_type const& value);
 template bool isConstant(storm::storage::sparse::state_type const& value);
@@ -1184,7 +1182,6 @@ template storm::GmpRationalNumber round(storm::GmpRationalNumber const& number);
 template std::string to_string(storm::GmpRationalNumber const& value);
 template uint64_t numDigits(const storm::GmpRationalNumber& number);
 #endif
-
 
 // Instantiations for rational function.
 template RationalFunction one();

@@ -38,9 +38,7 @@ SparseDeterministicInfiniteHorizonHelper<ValueType>::SparseDeterministicInfinite
 template<typename ValueType>
 SparseDeterministicInfiniteHorizonHelper<ValueType>::SparseDeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                               std::vector<ValueType> const& exitRates)
-    : SparseInfiniteHorizonHelper<ValueType, false>(transitionMatrix, exitRates) {
-
-}
+    : SparseInfiniteHorizonHelper<ValueType, false>(transitionMatrix, exitRates) {}
 
 template<typename ValueType>
 void SparseDeterministicInfiniteHorizonHelper<ValueType>::createDecomposition() {

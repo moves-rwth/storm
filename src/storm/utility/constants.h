@@ -89,7 +89,7 @@ template<typename ValueType>
 bool isNonNegative(ValueType const& a);
 
 template<typename ValueType>
-bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict=false);
+bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict = false);
 
 template<typename ValueType>
 bool isOne(ValueType const& a);

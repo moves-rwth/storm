@@ -657,7 +657,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         newDTMC.addRewardModel(*stateRewardName, newRewardModel);
     }
 
-    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(storm::zero<RationalFunction()), "Internal error: resulting matrix not probabilistic!");
+    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(storm::zero < RationalFunction()), "Internal error: resulting matrix not probabilistic!");
 
     lastSavedAnnotations.clear();
     for (auto const& entry : storedAnnotations) {

@@ -137,7 +137,8 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 
         transitionMatrixBuilder.newRowGroup(newRowGroupStart);
         STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state");
-        STORM_LOG_ASSERT(!storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()), "Risk must be a probability");
+        STORM_LOG_ASSERT(!storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()),
+                         "Risk must be a probability");
         // std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << '\n';
         if (!storm::utility::isOne(risk[unfoldedToOldEntry.second])) {
             transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>() - risk[unfoldedToOldEntry.second]);

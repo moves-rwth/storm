@@ -78,10 +78,10 @@ BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPTyp
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
 BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp,
                                                                                                                        Options options)
-    : options(options), inputPomdp(pomdp),
+    : options(options),
+      inputPomdp(pomdp),
       beliefTypeCC(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false),
-      valueTypeCC(this->options.numericPrecision, false)
-{
+      valueTypeCC(this->options.numericPrecision, false) {
     STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
     STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
 }

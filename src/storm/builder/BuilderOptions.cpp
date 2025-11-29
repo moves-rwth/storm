@@ -9,8 +9,8 @@
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace builder {

@@ -121,8 +121,8 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
         ValueType getTolerance() const {
             return storm::NumberTraits<ValueType>::IsExact
-                ? storm::utility::zero<ValueType>()
-                : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                       ? storm::utility::zero<ValueType>()
+                       : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
         }
 
         OptimizationDirection getOptimizationDirection() const {

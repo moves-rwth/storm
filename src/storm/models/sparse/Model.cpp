@@ -12,9 +12,9 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/SparseMatrixOperations.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
 #include "storm/utility/vector.h"
@@ -32,7 +32,6 @@ Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sp
       choiceLabeling(components.choiceLabeling),
       stateValuations(components.stateValuations),
       choiceOrigins(components.choiceOrigins) {
-
     assertValidityOfComponents(components);
 }
 
@@ -52,7 +51,9 @@ template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
-    ValueType const stochasticTolerance = isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    ValueType const stochasticTolerance =
+        isExact() ? storm::utility::zero<ValueType>()
+                  : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     uint64_t stateCount = this->getNumberOfStates();
     uint64_t choiceCount = this->getTransitionMatrix().getRowCount();
@@ -60,8 +61,9 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(stochasticTolerance),
-                     "The matrix is not probabilistic.");
+    STORM_LOG_ASSERT(
+        components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(stochasticTolerance),
+        "The matrix is not probabilistic.");
     if (this->hasUncertainty()) {
         STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
     }

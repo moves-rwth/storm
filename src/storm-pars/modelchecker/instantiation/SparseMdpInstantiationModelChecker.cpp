@@ -7,9 +7,9 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/storage/Scheduler.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 
@@ -30,12 +30,12 @@ std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType,
 
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     if (instantiatedModel.isExact()) {
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()), storm::exceptions::InvalidArgumentException,
-                        "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()),
+                        storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     } else {
         auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())), storm::exceptions::InvalidArgumentException,
-                        "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())),
+                        storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     }
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>> modelChecker(instantiatedModel);

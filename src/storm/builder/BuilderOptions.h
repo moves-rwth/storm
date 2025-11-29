@@ -127,7 +127,6 @@ class BuilderOptions {
      */
     storm::RationalNumber const& getStochasticTolerance() const;
 
-
     /**
      * Should all reward models be built? If not set, only required reward models are build.
      * @param newValue The new value (default true)

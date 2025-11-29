@@ -19,8 +19,8 @@
 #include "storm/generator/StateBehavior.h"
 #include "storm/generator/VariableInformation.h"
 
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
 namespace expressions {

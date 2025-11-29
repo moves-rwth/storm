@@ -26,12 +26,12 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
     STORM_LOG_THROW(this->currentCheckTask, storm::exceptions::InvalidStateException, "Checking has been invoked but no property has been specified before.");
     auto const& instantiatedModel = modelInstantiator.instantiate(valuation);
     if (instantiatedModel.isExact()) {
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()), storm::exceptions::InvalidArgumentException,
-                        "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::zero<ConstantType>()),
+                        storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     } else {
         auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())), storm::exceptions::InvalidArgumentException,
-                        "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
+        STORM_LOG_THROW(instantiatedModel.getTransitionMatrix().isProbabilistic(storm::utility::convertNumber<ConstantType>(generalSettings.getPrecision())),
+                        storm::exceptions::InvalidArgumentException, "Instantiation point is invalid as the transition matrix becomes non-stochastic.");
     }
 
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>> modelChecker(instantiatedModel);
