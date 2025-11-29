@@ -1,5 +1,4 @@
-#ifndef STORM_UTILITY_CONSTANTS_H_
-#define STORM_UTILITY_CONSTANTS_H_
+#pragma once
 
 #ifdef max
 #undef max
@@ -79,6 +78,18 @@ ValueType zero();
 
 template<typename ValueType>
 ValueType infinity();
+
+template<typename ValueType>
+bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& precision, bool relative);
+
+template<typename ValueType>
+bool isPositive(ValueType const& a);
+
+template<typename ValueType>
+bool isNonNegative(ValueType const& a);
+
+template<typename ValueType>
+bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict=false);
 
 template<typename ValueType>
 bool isOne(ValueType const& a);
@@ -198,5 +209,3 @@ template<typename ValueType>
 std::string to_string(ValueType const& value);
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_CONSTANTS_H_ */

@@ -4,13 +4,9 @@
 #include <type_traits>
 
 #include "storm/storage/sparse/StateType.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/NumberTraits.h"
-
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -51,6 +47,41 @@ bool isNan(ValueType const&) {
 template<>
 bool isNan(double const& value) {
     return std::isnan(value);
+}
+
+template<typename ValueType>
+bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& precision, bool relative) {
+    ValueType const absDiff = storm::utility::abs<ValueType>(a - b);
+    if (relative) {
+        return absDiff <= precision * (storm::utility::abs(a) + storm::utility::abs(b));
+    } else {
+        return absDiff <= precision;
+    }
+}
+
+
+template<typename ValueType>
+bool isPositive(ValueType const& a) {
+    STORM_LOG_ASSERT(isConstant(a), "Checking whether something is positive is only sensible on constants.");
+    return a > zero<ValueType>();
+}
+
+template<typename ValueType>
+bool isNonNegative(ValueType const& a) {
+    STORM_LOG_ASSERT(isConstant(a), "Checking whether something is nonnegative is only sensible on constants.");
+    return a >= zero<ValueType>();
+}
+
+template<typename ValueType>
+bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict) {
+    STORM_LOG_ASSERT(isConstant(a), "Checking whether something is between two values is only sensible on constants.");
+    STORM_LOG_ASSERT(isConstant(b), "Checking whether something is between two values is only sensible on constants.");
+    STORM_LOG_ASSERT(isConstant(c), "Checking whether something is between two values is only sensible on constants.");
+    if (strict) {
+        return a < b && b < c;
+    } else {
+        return a <= b && b <= c;
+    }
 }
 
 template<typename ValueType>
@@ -726,7 +757,6 @@ storm::ClnRationalNumber convertNumber(storm::GmpRationalNumber const& number) {
 }
 #endif
 
-#ifdef STORM_HAVE_CARL
 template<>
 storm::RationalFunction infinity() {
     // FIXME: this should be treated more properly.
@@ -761,6 +791,11 @@ bool isConstant(storm::RationalFunction const& a) {
 template<>
 bool isConstant(storm::Polynomial const& a) {
     return a.isConstant();
+}
+
+bool isApproxEqual(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& precision, bool relative) {
+    STORM_LOG_ASSERT(isZero(precision), "Approx equal is only welldefined for precision zero")
+    return a == b;
 }
 
 template<>
@@ -880,6 +915,25 @@ bool isAlmostOne(storm::RationalFunction const& a) {
 }
 
 template<>
+bool isNonNegative(storm::RationalFunction const& a) {
+    return a.isConstant() && isNonNegative(convertNumber<RationalFunctionCoefficient>(a));
+}
+
+
+template<>
+bool isPositive(storm::RationalFunction const& a) {
+    return a.isConstant() && isPositive(convertNumber<RationalFunctionCoefficient>(a));
+}
+
+template<>
+bool isBetween(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& c, bool strict) {
+    STORM_LOG_ASSERT(a.isConstant(), "lower bound must be a constant");
+    STORM_LOG_ASSERT(c.isConstant(), "upper bound must be a constant");
+    return b.isConstant() && isBetween(convertNumber<RationalFunctionCoefficient>(a),convertNumber<RationalFunctionCoefficient>(b),convertNumber<RationalFunctionCoefficient>(c),strict);
+}
+
+
+template<>
 std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum/maximum for rational functions is not defined.");
 }
@@ -935,7 +989,6 @@ std::string to_string(RationalFunction const& f) {
     return ss.str();
 }
 
-#endif
 
 template<>
 double convertNumber(std::string const& value) {
@@ -989,6 +1042,13 @@ storm::Interval abs(storm::Interval const& interval) {
     return interval.abs();
 }
 
+template<>
+bool isApproxEqual(storm::Interval const& a, storm::Interval const&  b, storm::Interval const& precision, bool relative) {
+    STORM_LOG_ASSERT(precision.isPointInterval(), "Precision must be a point interval");
+    return isApproxEqual<double>(a.lower(), b.lower(), precision.center(), relative) && isApproxEqual<double>(a.upper(), b.upper(), precision.center(), relative);
+}
+
+
 // Explicit instantiations.
 
 // double
@@ -997,11 +1057,15 @@ template double zero();
 template double infinity();
 template bool isOne(double const& value);
 template bool isZero(double const& value);
+template bool isNonNegative(double const& value);
+template bool isPositive(double const& value);
 template bool isAlmostZero(double const& value);
 template bool isAlmostOne(double const& value);
 template bool isConstant(double const& value);
 template bool isInfinity(double const& value);
 template bool isInteger(double const& number);
+template bool isBetween(double const& a, double const& b, double const& c, bool strict);
+template bool isApproxEqual(double const& a, double const& b, double const& precision, bool relative);
 template double simplify(double value);
 template std::pair<double, double> minmax(std::vector<double> const&);
 template double minimum(std::vector<double> const&);
@@ -1033,6 +1097,9 @@ template bool isOne(int const& value);
 template bool isZero(int const& value);
 template bool isConstant(int const& value);
 template bool isInfinity(int const& value);
+template bool isNonNegative(int const& value);
+template bool isPositive(int const& value);
+template bool isApproxEqual(int const& a, int const& b, int const& precision, bool relative);
 
 // uint32_t
 template uint32_t one();
@@ -1041,15 +1108,20 @@ template uint32_t infinity();
 template bool isOne(uint32_t const& value);
 template bool isZero(uint32_t const& value);
 template bool isConstant(uint32_t const& value);
+template bool isNonNegative(uint32_t const& value);
+template bool isPositive(uint32_t const& value);
 template bool isInfinity(uint32_t const& value);
 
 // storm::storage::sparse::state_type
 template storm::storage::sparse::state_type one();
 template storm::storage::sparse::state_type zero();
 template storm::storage::sparse::state_type infinity();
+template bool isApproxEqual(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b, storm::storage::sparse::state_type const& precision, bool relative);
 template bool isOne(storm::storage::sparse::state_type const& value);
 template bool isZero(storm::storage::sparse::state_type const& value);
 template bool isConstant(storm::storage::sparse::state_type const& value);
+template bool isPositive(storm::storage::sparse::state_type const& value);
+template bool isNonNegative(storm::storage::sparse::state_type const& value);
 template bool isInfinity(storm::storage::sparse::state_type const& value);
 
 // other instantiations
@@ -1063,10 +1135,13 @@ template NumberTraits<storm::ClnRationalNumber>::IntegerType one();
 template storm::ClnRationalNumber zero();
 template bool isZero(NumberTraits<storm::ClnRationalNumber>::IntegerType const& value);
 template bool isConstant(storm::ClnRationalNumber const& value);
+template bool isPositive(storm::ClnRationalNumber const& value);
+template bool isNonNegative(storm::ClnRationalNumber const& value);
 template bool isInfinity(storm::ClnRationalNumber const& value);
 template bool isNan(storm::ClnRationalNumber const& value);
 template bool isAlmostZero(storm::ClnRationalNumber const& value);
 template bool isAlmostOne(storm::ClnRationalNumber const& value);
+template bool isApproxEqual(storm::ClnRationalNumber const& a, storm::ClnRationalNumber const& b, storm::ClnRationalNumber const& precision, bool relative);
 template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
 template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
 template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -1089,10 +1164,13 @@ template NumberTraits<storm::GmpRationalNumber>::IntegerType one();
 template storm::GmpRationalNumber zero();
 template bool isZero(NumberTraits<storm::GmpRationalNumber>::IntegerType const& value);
 template bool isConstant(storm::GmpRationalNumber const& value);
+template bool isPositive(storm::GmpRationalNumber const& value);
+template bool isNonNegative(storm::GmpRationalNumber const& value);
 template bool isInfinity(storm::GmpRationalNumber const& value);
 template bool isNan(storm::GmpRationalNumber const& value);
 template bool isAlmostZero(storm::GmpRationalNumber const& value);
 template bool isAlmostOne(storm::GmpRationalNumber const& value);
+template bool isApproxEqual(storm::GmpRationalNumber const& a, storm::GmpRationalNumber const& b, storm::GmpRationalNumber const& precision, bool relative);
 template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
 template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
 template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);
@@ -1107,10 +1185,7 @@ template std::string to_string(storm::GmpRationalNumber const& value);
 template uint64_t numDigits(const storm::GmpRationalNumber& number);
 #endif
 
-#if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
-#endif
 
-#ifdef STORM_HAVE_CARL
 // Instantiations for rational function.
 template RationalFunction one();
 template RationalFunction zero();
@@ -1128,9 +1203,8 @@ template bool isOne(Interval const& value);
 template bool isZero(Interval const& value);
 template bool isInfinity(Interval const& value);
 template bool isAlmostZero(Interval const& value);
-
+template bool isNonNegative(Interval const& value);
 template std::string to_string(storm::Interval const& value);
-#endif
 
 }  // namespace utility
 }  // namespace storm

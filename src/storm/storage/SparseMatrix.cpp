@@ -2259,8 +2259,8 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNoncons
 }
 
 template<typename ValueType>
-bool SparseMatrix<ValueType>::isProbabilistic() const {
-    storm::utility::ConstantsComparator<ValueType> comparator;
+bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance) const {
+    storm::utility::ConstantsComparator<ValueType> comparator(tolerance);
     for (index_type row = 0; row < this->rowCount; ++row) {
         auto rowSum = getRowSum(row);
         if (!comparator.isOne(rowSum)) {
@@ -2268,8 +2268,8 @@ bool SparseMatrix<ValueType>::isProbabilistic() const {
         }
     }
     for (auto const& entry : *this) {
-        if (comparator.isConstant(entry.getValue())) {
-            if (comparator.isLess(entry.getValue(), storm::utility::zero<ValueType>())) {
+        if (storm::utility::isConstant(entry.getValue())) {
+            if (!storm::utility::isNonNegative(entry.getValue())) {
                 return false;
             }
         }
@@ -2279,9 +2279,8 @@ bool SparseMatrix<ValueType>::isProbabilistic() const {
 
 template<typename ValueType>
 bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
-    storm::utility::ConstantsComparator<ValueType> comparator;
     for (auto const& entry : *this) {
-        if (!comparator.isLess(storm::utility::zero<ValueType>(), entry.getValue())) {
+        if (!storm::utility::isPositive(storm::entry.getValue())) {
             return false;
         }
     }

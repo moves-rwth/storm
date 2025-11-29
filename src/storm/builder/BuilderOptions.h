@@ -121,6 +121,12 @@ class BuilderOptions {
     uint64_t getReservedBitsForUnboundedVariables() const;
     bool isAddOverlappingGuardLabelSet() const;
     uint64_t getShowProgressDelay() const;
+    /**
+     * Some distributions may not sum to one. This tolerance allows handling this case.
+     * @return The tolerance
+     */
+    storm::RationalNumber const& getStochasticTolerance() const;
+
 
     /**
      * Should all reward models be built? If not set, only required reward models are build.
@@ -276,6 +282,9 @@ class BuilderOptions {
 
     /// The delay for printing progress information.
     uint64_t showProgressDelay;
+
+    /// The tolerance that is used for checking whether something is a distribution.
+    storm::RationalNumber stochasticTolerance;
 };
 
 }  // namespace builder

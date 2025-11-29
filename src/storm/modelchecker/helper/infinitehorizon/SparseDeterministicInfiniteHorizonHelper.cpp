@@ -39,8 +39,7 @@ template<typename ValueType>
 SparseDeterministicInfiniteHorizonHelper<ValueType>::SparseDeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                               std::vector<ValueType> const& exitRates)
     : SparseInfiniteHorizonHelper<ValueType, false>(transitionMatrix, exitRates) {
-    // For the CTMC case we assert that the caller actually provided the probabilistic transitions
-    STORM_LOG_ASSERT(this->_transitionMatrix.isProbabilistic(), "Non-probabilistic transitions");
+
 }
 
 template<typename ValueType>

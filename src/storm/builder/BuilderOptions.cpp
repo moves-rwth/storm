@@ -10,6 +10,7 @@
 
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
 namespace builder {
@@ -54,7 +55,9 @@ BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels)
       reservedBitsForUnboundedVariables(32),
       showProgress(false),
       showProgressDelay(0) {
-    // Intentionally left empty.
+    // Note that we would like to move this out of here, but SJ doesn't want to change everything at once.
+    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+    stochasticTolerance = storm::utility::convertNumber<storm::RationalNumber>(generalSettings.getPrecision());
 }
 
 BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription)
@@ -205,6 +208,10 @@ bool BuilderOptions::isShowProgressSet() const {
 
 uint64_t BuilderOptions::getShowProgressDelay() const {
     return showProgressDelay;
+}
+
+storm::RationalNumber const& BuilderOptions::getStochasticTolerance() const {
+    return stochasticTolerance;
 }
 
 BuilderOptions& BuilderOptions::setExplorationChecks(bool newValue) {

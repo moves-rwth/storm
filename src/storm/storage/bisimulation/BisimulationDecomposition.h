@@ -3,6 +3,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/Decomposition.h"
 #include "storm/storage/StateBlock.h"
@@ -116,6 +117,12 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
         bool isOptimizationDirectionSet() const {
             return static_cast<bool>(optimalityType);
+        }
+
+        ValueType getTolerance() const {
+            return storm::NumberTraits<ValueType>::IsExact
+                ? storm::utility::zero<ValueType>()
+                : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
         }
 
         OptimizationDirection getOptimizationDirection() const {
