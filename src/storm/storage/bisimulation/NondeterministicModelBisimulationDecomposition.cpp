@@ -273,7 +273,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::updateQuotientDi
             }
 
             // Now shift the probability from this transition from the old block to the new one.
-            this->quotientDistributions[predecessorChoice].shiftProbability(oldBlock.getId(), newBlock.getId(), predecessorEntry.getValue());
+            this->quotientDistributions[predecessorChoice].shiftProbability(oldBlock.getId(), newBlock.getId(), predecessorEntry.getValue(), this->comparator);
         }
     }
 
@@ -298,7 +298,7 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
                 distribution.addProbability(this->partition.getBlock(element.getColumn()).getId(), element.getValue());
             }
 
-            if (!distribution.equals(quotientDistributions[choice])) {
+            if (!distribution.equals(quotientDistributions[choice], this->comparator)) {
                 std::cout << "the distributions for choice " << choice << " of state " << state << " do not match.\n";
                 std::cout << "is: " << quotientDistributions[choice] << " but should be " << distribution << '\n';
                 exit(-1);
@@ -307,7 +307,7 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
             bool less1 = distribution.less(quotientDistributions[choice], this->comparator);
             bool less2 = quotientDistributions[choice].less(distribution, this->comparator);
 
-            if (distribution.equals(quotientDistributions[choice]) && (less1 || less2)) {
+            if (distribution.equals(quotientDistributions[choice], this->comparator) && (less1 || less2)) {
                 std::cout << "mismatch of equality and less for \n";
                 std::cout << quotientDistributions[choice] << " vs " << distribution << '\n';
                 exit(-1);

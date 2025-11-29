@@ -1027,7 +1027,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         if (this->options.isExplorationChecksSet()) {
             // Check that the resulting distribution is in fact a distribution.
-            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                             storm::exceptions::WrongFormatException,
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
         }

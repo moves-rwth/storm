@@ -716,7 +716,7 @@ std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::ge
 
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                                 storm::exceptions::WrongFormatException,
                                 "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
             }
@@ -967,7 +967,7 @@ void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::v
 
                 if (this->options.isExplorationChecksSet()) {
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                                     storm::exceptions::WrongFormatException,
                                     "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                 }
