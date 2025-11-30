@@ -789,6 +789,7 @@ bool isConstant(storm::Polynomial const& a) {
     return a.isConstant();
 }
 
+template<>
 bool isApproxEqual(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& precision, bool relative) {
     STORM_LOG_ASSERT(isZero(precision), "Approx equal on rational functions is only defined for precision zero");
     return a == b;
