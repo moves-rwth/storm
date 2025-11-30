@@ -2280,7 +2280,7 @@ bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance) const 
 template<typename ValueType>
 bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
     for (auto const& entry : *this) {
-        if (!storm::utility::isPositive(storm::entry.getValue())) {
+        if (!storm::utility::isPositive(entry.getValue())) {
             return false;
         }
     }

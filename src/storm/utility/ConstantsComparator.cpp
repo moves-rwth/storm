@@ -44,7 +44,7 @@ bool ConstantsComparator<ValueType>::isEqual(ValueType const& value1, ValueType 
 
 template<typename ValueType>
 bool ConstantsComparator<ValueType>::isLess(ValueType const& value1, ValueType const& value2) const {
-    STORM_LOG_ASSERT(!relative, "Relative precision and constants comparator is currently not supported.")
+    STORM_LOG_ASSERT(!relative, "Relative precision and constants comparator is currently not supported.");
     return value1 < value2 - precision;
 }
 

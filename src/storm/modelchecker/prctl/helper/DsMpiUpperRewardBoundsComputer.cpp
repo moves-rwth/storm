@@ -105,9 +105,11 @@ ValueType DsMpiDtmcUpperRewardBoundsComputer<ValueType>::computeLambdaForChoice(
         for (auto const& e : transitionMatrix.getRow(choice)) {
             rewardSum += e.getValue() * w[e.getColumn()];
         }
-        STORM_LOG_WARN_COND(w[state] >= rewardSum || storm::utility::ConstantsComparator<ValueType>().isEqual(w[state], rewardSum),
+        // The following is a bit of a hack but I'd prefer not getting the settings into this part of the code for such a simple check.
+        storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.0001));
+        STORM_LOG_WARN_COND(w[state] >= rewardSum || cc.isEqual(w[state], rewardSum),
                             "Expected condition (II) to hold in state " << state << ", but " << w[state] << " < " << rewardSum << ".");
-        STORM_LOG_WARN_COND(storm::utility::ConstantsComparator<ValueType>().isEqual(probSum, p[state]),
+        STORM_LOG_WARN_COND(cc.isEqual(probSum, p[state]),
                             "Expected condition (II) to hold in state " << state << ", but " << probSum << " != " << p[state] << ".");
 #endif
     }

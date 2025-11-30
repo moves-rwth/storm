@@ -111,7 +111,7 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     } else if (this->isOfType(ModelType::S2pg)) {
         STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException,
                         "No player 1 matrix given for stochastic game.");
-        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(stochasticTolerance),
+        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(0),
                          "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
         STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException,
                         "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");

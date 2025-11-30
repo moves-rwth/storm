@@ -793,7 +793,7 @@ bool isConstant(storm::Polynomial const& a) {
 }
 
 bool isApproxEqual(storm::RationalFunction const& a, storm::RationalFunction const& b, storm::RationalFunction const& precision, bool relative) {
-    STORM_LOG_ASSERT(isZero(precision), "Approx equal is only welldefined for precision zero")
+    STORM_LOG_ASSERT(isZero(precision), "Approx equal on rational functions is only defined for precision zero");
     return a == b;
 }
 
@@ -1201,6 +1201,7 @@ template bool isZero(Interval const& value);
 template bool isInfinity(Interval const& value);
 template bool isAlmostZero(Interval const& value);
 template bool isNonNegative(Interval const& value);
+template bool isPositive(Interval const& value);
 template std::string to_string(storm::Interval const& value);
 
 }  // namespace utility
