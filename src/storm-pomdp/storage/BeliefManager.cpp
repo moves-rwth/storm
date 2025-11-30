@@ -81,7 +81,7 @@ std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision,
                                                                     TriangulationMode const &triangulationMode)
-    : pomdp(pomdp), triangulationMode(triangulationMode), cc(precision, false) {
+    : pomdp(pomdp), cc(precision, false), triangulationMode(triangulationMode) {
     beliefToIdMap.resize(pomdp.getNrObservations());
     initialBeliefId = computeInitialBelief();
 }
