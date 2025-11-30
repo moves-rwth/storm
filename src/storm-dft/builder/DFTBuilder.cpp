@@ -162,7 +162,7 @@ void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
     if (storm::utility::isZero<ValueType>(rate)) {
         addBasicElementConst(name, false);
     } else {
-        STORM_LOG_THROW(storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Failure rate " << rate << " of BE " << name << " must be positive.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
                         "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");

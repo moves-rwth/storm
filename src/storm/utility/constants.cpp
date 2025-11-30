@@ -61,20 +61,17 @@ bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& prec
 
 template<typename ValueType>
 bool isPositive(ValueType const& a) {
-    STORM_LOG_ASSERT(isConstant(a), "Checking whether something is positive is only sensible on constants.");
     return a > zero<ValueType>();
 }
 
 template<typename ValueType>
 bool isNonNegative(ValueType const& a) {
-    STORM_LOG_ASSERT(isConstant(a), "Checking whether something is nonnegative is only sensible on constants.");
     return a >= zero<ValueType>();
 }
 
 template<typename ValueType>
 bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict) {
     STORM_LOG_ASSERT(isConstant(a), "Checking whether something is between two values is only sensible on constants.");
-    STORM_LOG_ASSERT(isConstant(b), "Checking whether something is between two values is only sensible on constants.");
     STORM_LOG_ASSERT(isConstant(c), "Checking whether something is between two values is only sensible on constants.");
     if (strict) {
         return a < b && b < c;
