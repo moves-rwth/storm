@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_DD_ODD_H_
-#define STORM_STORAGE_DD_ODD_H_
+#pragma once
 
 #include <functional>
 #include <map>
@@ -18,10 +17,9 @@ class Odd {
     /*!
      * Constructs an offset-labeled DD with the given topmost DD node, else- and then-successor.
      *
-     * @param dd The DD node associated with this ODD node.
-     * @param elseNode The else-successor of thie ODD node.
+     * @param elseNode The else-successor of this ODD node.
      * @param elseOffset The offset of the else-successor.
-     * @param thenNode The then-successor of thie ODD node.
+     * @param thenNode The then-successor of this ODD node.
      * @param thenOffset The offset of the then-successor.
      */
     Odd(std::shared_ptr<Odd> elseNode, uint_fast64_t elseOffset, std::shared_ptr<Odd> thenNode, uint_fast64_t thenOffset);
@@ -153,7 +151,7 @@ class Odd {
      * Adds all nodes below the current one to the given mapping.
      *
      * @param levelToOddNodesMap A mapping of the level to the ODD node.
-     * @param The level of the current node.
+     * @param level The level of the current node.
      */
     void addToLevelToOddNodesMap(std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>>& levelToOddNodesMap, uint_fast64_t level = 0) const;
 
@@ -185,5 +183,3 @@ class Odd {
 };
 }  // namespace dd
 }  // namespace storm
-
-#endif /* STORM_STORAGE_DD_ODD_H_ */

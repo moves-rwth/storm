@@ -5,20 +5,18 @@
 #include <set>
 #include <unordered_map>
 
-#include "storm-config.h"
 #include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/AddIterator.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/InternalDdManager.h"
-#include "storm/storage/dd/MetaVariablePosition.h"
 #include "storm/storage/dd/cudd/InternalCuddDdManager.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace dd {
+
 // Declare DdManager class so we can then specialize it for the different DD types.
 template<DdType LibraryType>
 class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
@@ -36,7 +34,7 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
      */
     DdManager();
 
-    // Explictly forbid copying a DdManager, but allow moving it.
+    // Explicitly forbid copying a DdManager, but allow moving it.
     DdManager(DdManager<LibraryType> const& other) = delete;
     DdManager<LibraryType>& operator=(DdManager<LibraryType> const& other) = delete;
     DdManager(DdManager<LibraryType>&& other) = default;
@@ -263,7 +261,7 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
     bool supportsOrderedInsertion() const;
 
     /*!
-     * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager (if supported).
+     * Sets whether dynamic reordering is allowed for the DDs managed by this manager (if supported).
      *
      * @param value If set to true, dynamic reordering is allowed and forbidden otherwise.
      */
@@ -299,8 +297,6 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
     /*!
      * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
      *
-     * @param manager The manager responsible for the DD.
-     * @param metaVariable The set of meta variables for which to retrieve the index list.
      * @return The sorted list of variable indices.
      */
     std::vector<uint_fast64_t> getSortedVariableIndices() const;
@@ -308,8 +304,7 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
     /*!
      * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
      *
-     * @param manager The manager responsible for the DD.
-     * @param metaVariable The set of meta variables for which to retrieve the index list.
+     * @param metaVariables The set of meta variables for which to retrieve the index list.
      * @return The sorted list of variable indices.
      */
     std::vector<uint_fast64_t> getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) const;
@@ -335,7 +330,7 @@ class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
 
     /*!
      * All code that manipulates DDs shall be called through this function.
-     * This is generally needed to set-up the correct context.
+     * This is generally needed to set up the correct context.
      * Specifically for sylvan, this is required to make sure that DD-manipulating code is executed as a LACE task.
      * Example usage: `manager->execute([&]() { bar = foo(arg1,arg2); }`
      *

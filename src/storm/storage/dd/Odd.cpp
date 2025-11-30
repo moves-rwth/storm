@@ -4,14 +4,12 @@
 #include <fstream>
 #include <set>
 
-#include "storm/storage/BitVector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/io/file.h"
-#include "storm/utility/macros.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/io/file.h"
+#include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace dd {
