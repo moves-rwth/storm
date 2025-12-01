@@ -206,7 +206,7 @@ void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, Valu
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
-    STORM_LOG_THROW(storm::utility::isPositive(standardDeviation), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::utility::isConstant(standardDeviation) || storm::utility::isPositive(standardDeviation), storm::exceptions::WrongFormatException,
                     "Log-normal distribution of BE " << name << " requires a positive standard deviation.");
     addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
