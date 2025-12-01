@@ -190,7 +190,7 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
-    STORM_LOG_THROW(storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive scale.");
     STORM_LOG_THROW(storm::utility::isPositive(shape), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive shape.");
