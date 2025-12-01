@@ -53,7 +53,7 @@ template<typename ValueType>
 bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& precision, bool relative) {
     ValueType const absDiff = storm::utility::abs<ValueType>(a - b);
     if (relative) {
-        return absDiff <= precision * (storm::utility::abs(a) + storm::utility::abs(b));
+        return absDiff <= precision * storm::utility::max(storm::utility::abs(a), storm::utility::abs(b));
     } else {
         return absDiff <= precision;
     }
