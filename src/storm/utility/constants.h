@@ -88,6 +88,9 @@ bool isPositive(ValueType const& a);
 template<typename ValueType>
 bool isNonNegative(ValueType const& a);
 
+/*!
+ * Check whether a <= b <= c holds (if not strict, the default) or a < b < c (if strict).
+ */
 template<typename ValueType>
 bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict = false);
 
