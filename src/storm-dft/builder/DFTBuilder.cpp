@@ -179,7 +179,7 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
         // shape=1 reduces to exponential distribution
         addBasicElementExponential(name, rate, dormancyFactor);
     } else {
-        STORM_LOG_THROW(storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Erlang distribution of BE " << name << " requires a positive rate.");
         STORM_LOG_THROW(phases > 0, storm::exceptions::WrongFormatException, "Erlang distribution of BE " << name << " requires a positive number of phases.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
