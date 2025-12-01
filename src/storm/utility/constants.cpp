@@ -51,9 +51,9 @@ bool isNan(double const& value) {
 
 template<typename ValueType>
 bool isApproxEqual(ValueType const& a, ValueType const& b, ValueType const& precision, bool relative) {
-    ValueType const absDiff = storm::utility::abs<ValueType>(a - b);
+    ValueType const absDiff = abs<ValueType>(a - b);
     if (relative) {
-        return absDiff <= precision * storm::utility::max(storm::utility::abs(a), storm::utility::abs(b));
+        return absDiff <= precision * max(abs(a), abs(b));
     } else {
         return absDiff <= precision;
     }
@@ -69,6 +69,14 @@ bool isNonNegative(ValueType const& a) {
     return a >= zero<ValueType>();
 }
 
+/**
+ * Compare whether a <= b <= c or a < b < c, based on the strictness parameter.
+ * @param a A constant value
+ * @param b Some value
+ * @param c A constant value
+ * @param strict Changes the type of the comparison
+ * @return true if b is between a and c.
+ */
 template<typename ValueType>
 bool isBetween(ValueType const& a, ValueType const& b, ValueType const& c, bool strict) {
     STORM_LOG_ASSERT(isConstant(a), "Checking whether something is between two values is only sensible on constants.");
@@ -1095,6 +1103,8 @@ template bool isInfinity(int const& value);
 template bool isNonNegative(int const& value);
 template bool isPositive(int const& value);
 template bool isApproxEqual(int const& a, int const& b, int const& precision, bool relative);
+template bool isBetween(int const& a, int const& b, int const& c, bool strict);
+
 
 // uint32_t
 template uint32_t one();
@@ -1106,6 +1116,8 @@ template bool isConstant(uint32_t const& value);
 template bool isNonNegative(uint32_t const& value);
 template bool isPositive(uint32_t const& value);
 template bool isInfinity(uint32_t const& value);
+template bool isBetween(uint32_t const& a, uint32_t const& b, uint32_t const& c, bool strict);
+
 
 // storm::storage::sparse::state_type
 template storm::storage::sparse::state_type one();
@@ -1119,6 +1131,9 @@ template bool isConstant(storm::storage::sparse::state_type const& value);
 template bool isPositive(storm::storage::sparse::state_type const& value);
 template bool isNonNegative(storm::storage::sparse::state_type const& value);
 template bool isInfinity(storm::storage::sparse::state_type const& value);
+template bool isBetween(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b,
+                        storm::storage::sparse::state_type const& c, bool strict);
+
 
 // other instantiations
 template unsigned long convertNumber(long const&);
@@ -1202,6 +1217,8 @@ template bool isInfinity(Interval const& value);
 template bool isAlmostZero(Interval const& value);
 template bool isNonNegative(Interval const& value);
 template bool isPositive(Interval const& value);
+template bool isBetween(Interval const&, Interval const&, Interval const& value, bool);
+
 template std::string to_string(storm::Interval const& value);
 
 }  // namespace utility
