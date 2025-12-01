@@ -436,13 +436,29 @@ boost::any FormulaToJaniJson::visit(storm::logic::MultiObjectiveFormula const& f
     opDecl["properties"] = ExportJsonType::array();
     for (auto const& subformula : f.getSubformulas()) {
         auto p = ExportJsonType::object();
-        p["exp"] = anyToJson(subformula->accept(*this, data));
-        if (subformula->hasQuantitativeResult()) {
+        auto subFormulaCopy = subformula->clone();
+        if (subFormulaCopy->isOperatorFormula()) {
+            auto& operatorFormula = subFormulaCopy->asOperatorFormula();
+            if (operatorFormula.hasBound()) {
+                if (!operatorFormula.hasOptimalityType()) {
+                    // Set a sane optimality type because JANI properties require some
+                    auto const derivedOptimalityType = storm::logic::isLowerBound(operatorFormula.getBound().comparisonType)
+                                                           ? storm::solver::OptimizationDirection::Maximize
+                                                           : storm::solver::OptimizationDirection::Minimize;
+                    operatorFormula.setOptimalityType(derivedOptimalityType);
+                }
+            } else {
+                STORM_LOG_THROW(
+                    operatorFormula.hasOptimalityType(), storm::exceptions::NotSupportedException,
+                    "Unable to export a multi-objective formula since the optimization direction for subformula " << *subFormulaCopy << " can not be derived.");
+                p["opt"] = storm::solver::minimize(subformula->asOperatorFormula().getOptimalityType()) ? "min" : "max";
+            }
+        } else {
             STORM_LOG_THROW(
-                subformula->isOperatorFormula(), storm::exceptions::NotSupportedException,
-                "Unable to export a multi-objective formula since the optimization direction for subformula " << *subformula << " can not be derived.");
-            p["opt"] = storm::solver::minimize(subformula->asOperatorFormula().getOptimalityType()) ? "min" : "max";
+                subFormulaCopy->hasQualitativeResult(), storm::exceptions::NotSupportedException,
+                "Unable to export a multi-objective formula since the optimization direction for subformula " << *subFormulaCopy << " can not be derived.");
         }
+        p["exp"] = anyToJson(subFormulaCopy->accept(*this, data));
         opDecl["properties"].push_back(std::move(p));
     }
     return opDecl;
