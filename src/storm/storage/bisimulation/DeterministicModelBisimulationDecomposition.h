@@ -126,6 +126,9 @@ class DeterministicModelBisimulationDecomposition : public BisimulationDecomposi
     // Inserts the block into the list of predecessors if it is not already contained.
     void insertIntoPredecessorList(bisimulation::Block<BlockDataType>& predecessorBlock, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
 
+    ValueType getTransitionValue(storm::storage::MatrixEntry<storm::storage::sparse::state_type, ValueType> const& matrixEntry,
+                                 [[maybe_unused]] storm::storage::sparse::state_type state) const;
+
     // A vector that holds the probabilities of states going into the splitter. This is used by the method that
     // refines a block based on probabilities.
     std::vector<ValueType> probabilitiesToCurrentSplitter;
