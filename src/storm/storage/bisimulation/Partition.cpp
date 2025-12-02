@@ -23,7 +23,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates) : stateToBlockMapping
 
 template<typename DataType>
 Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States,
-                               boost::optional<storm::storage::sparse::state_type> representativeProb1State)
+                               std::optional<storm::storage::sparse::state_type> representativeProb1State)
     : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
     storm::storage::sparse::state_type position = 0;
     Block<DataType>* firstBlock = nullptr;
@@ -53,7 +53,7 @@ Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVe
             ++position;
         }
         secondBlock->data().setAbsorbing(true);
-        secondBlock->data().setRepresentativeState(representativeProb1State.get());
+        secondBlock->data().setRepresentativeState(representativeProb1State.value());
     }
 
     storm::storage::BitVector otherStates = ~(prob0States | prob1States);

@@ -31,7 +31,7 @@ DeterministicModelBisimulationDecomposition<ModelType>::DeterministicModelBisimu
 
 template<typename ModelType>
 std::pair<storm::storage::BitVector, storm::storage::BitVector> DeterministicModelBisimulationDecomposition<ModelType>::getStatesWithProbability01() {
-    return storm::utility::graph::performProb01(this->backwardTransitions, this->options.phiStates.get(), this->options.psiStates.get());
+    return storm::utility::graph::performProb01(this->backwardTransitions, this->options.phiStates.value(), this->options.psiStates.value());
 }
 
 template<typename ModelType>
@@ -598,7 +598,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 
     // Prepare the new state labeling for (b).
     storm::models::sparse::StateLabeling newLabeling(this->size());
-    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.get();
+    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.value();
     atomicPropositionsSet.insert("init");
     std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
     for (auto const& ap : atomicPropositions) {

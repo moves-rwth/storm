@@ -116,25 +116,25 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
 
         OptimizationDirection getOptimizationDirection() const {
             STORM_LOG_ASSERT(optimalityType, "Optimality type not set.");
-            return optimalityType.get();
+            return optimalityType.value();
         }
 
         // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
         // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
         // measure driven initial partition wrt. to the states phi and psi is taken.
         bool measureDrivenInitialPartition;
-        boost::optional<storm::storage::BitVector> phiStates;
-        boost::optional<storm::storage::BitVector> psiStates;
+        std::optional<storm::storage::BitVector> phiStates;
+        std::optional<storm::storage::BitVector> psiStates;
 
         /// An optional set of strings that indicate which of the atomic propositions of the model are to be
         /// respected and which may be ignored. If not given, all atomic propositions of the model are respected.
-        boost::optional<std::set<std::string>> respectedAtomicPropositions;
+        std::optional<std::set<std::string>> respectedAtomicPropositions;
 
         /// A flag that governs whether the quotient model is actually built or only the decomposition is computed.
         bool buildQuotient;
 
        private:
-        boost::optional<OptimizationDirection> optimalityType;
+        std::optional<OptimizationDirection> optimalityType;
 
         /// A flag that indicates whether the state-rewards of the model are to be respected (and should
         /// be kept in the quotient model, if one is built).

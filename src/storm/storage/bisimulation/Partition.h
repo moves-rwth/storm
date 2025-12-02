@@ -33,7 +33,7 @@ class Partition {
      * model will receive exactly the atomic propositions of the representative state.
      */
     Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States,
-              boost::optional<storm::storage::sparse::state_type> representativeProb1State);
+              std::optional<storm::storage::sparse::state_type> representativeProb1State);
 
     Partition() = default;
     Partition(Partition const& other) = default;

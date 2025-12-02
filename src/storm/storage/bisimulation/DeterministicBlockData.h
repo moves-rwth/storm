@@ -82,7 +82,7 @@ class DeterministicBlockData {
 
     // An optional representative state for the block. If this is set, this state is used to derive the
     // atomic propositions of the meta state in the quotient model.
-    boost::optional<storm::storage::sparse::state_type> valRepresentativeState;
+    std::optional<storm::storage::sparse::state_type> valRepresentativeState;
 };
 
 std::ostream& operator<<(std::ostream& out, DeterministicBlockData const& data);
