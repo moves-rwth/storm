@@ -108,7 +108,7 @@ class DeterministicModelBisimulationDecomposition : public BisimulationDecomposi
     void refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
 
     // Refines the predecessor blocks of the splitter wrt. weak bisimulation in DTMCs.
-    void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter,
+    void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType> const& splitter,
                                                std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks,
                                                std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue);
 

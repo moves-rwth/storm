@@ -9,7 +9,6 @@
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/bisimulation/Partition.h"
 #include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace logic {
@@ -207,7 +206,7 @@ class BisimulationDecomposition : public Decomposition<StateBlock> {
      * Decomposes the given model into equivalence classes of a bisimulation.
      *
      * @param model The model to decompose.
-     * @param backwardTransition The backward transitions of the model.
+     * @param backwardTransitions The backward transitions of the model.
      * @param options The options to use during for the decomposition.
      */
     BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options);

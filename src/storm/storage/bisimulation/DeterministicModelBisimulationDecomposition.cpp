@@ -1,7 +1,6 @@
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
 #include <algorithm>
-#include <boost/iterator/zip_iterator.hpp>
 #include <chrono>
 #include <unordered_map>
 
@@ -469,7 +468,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBl
 
 template<typename ModelType>
 void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(
-    bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks,
+    bisimulation::Block<BlockDataType> const& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks,
     std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
     for (auto block : predecessorBlocks) {
         if (block->data().hasRewards()) {
@@ -544,7 +543,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBase
             // We keep track of the probability of the predecessor moving to the splitter.
             increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
 
-            // We only need to move the predecessor if its not already known as a predecessor already.
+            // We only need to move the predecessor if it is not already known as a predecessor already.
             if (predecessorPosition >= predecessorBlock.data().marker1()) {
                 // If the predecessor block is not the splitter, we can move the state easily.
                 if (predecessorBlock != splitter) {
@@ -716,7 +715,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
     }
 
     // Finally construct the quotient model.
-    this->quotient = std::shared_ptr<ModelType>(new ModelType(builder.build(), std::move(newLabeling), std::move(rewardModels)));
+    this->quotient = std::make_shared<ModelType>(builder.build(), std::move(newLabeling), std::move(rewardModels));
 }
 
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
