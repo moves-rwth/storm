@@ -3,8 +3,10 @@
 
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
@@ -118,4 +120,57 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(65ul, result->getNumberOfStates());
     EXPECT_EQ(105ul, result->getNumberOfTransitions());
+}
+
+TEST(DeterministicModelBisimulationDecomposition, Cluster) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
+    std::shared_ptr<storm::models::sparse::Model<double>> model =
+        storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
+
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+    std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
+    ASSERT_EQ(3478ul, ctmc->getNumberOfStates());
+    ASSERT_EQ(14639ul, ctmc->getNumberOfTransitions());
+
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim(*ctmc);
+    std::shared_ptr<storm::models::sparse::Model<double>> result;
+    ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
+    ASSERT_NO_THROW(result = bisim.getQuotient());
+
+    EXPECT_EQ(storm::models::ModelType::Ctmc, result->getType());
+    EXPECT_EQ(1731ul, result->getNumberOfStates());
+    EXPECT_EQ(8619ul, result->getNumberOfTransitions());
+
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::Options options;
+    options.respectedAtomicPropositions = std::set<std::string>({"down"});
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim2(*ctmc, options);
+    ASSERT_NO_THROW(bisim2.computeBisimulationDecomposition());
+    ASSERT_NO_THROW(result = bisim2.getQuotient());
+
+    EXPECT_EQ(storm::models::ModelType::Ctmc, result->getType());
+    EXPECT_EQ(1618ul, result->getNumberOfStates());
+    EXPECT_EQ(8816ul, result->getNumberOfTransitions());
+
+    options.setType(storm::storage::BisimulationType::Weak);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim3(*ctmc, options);
+    ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());
+    ASSERT_NO_THROW(result = bisim3.getQuotient());
+
+    EXPECT_EQ(storm::models::ModelType::Ctmc, result->getType());
+    EXPECT_EQ(41ul, result->getNumberOfStates());
+    EXPECT_EQ(159ul, result->getNumberOfTransitions());
+
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::Options options3(*ctmc, *formula);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>> bisim5(*ctmc, options3);
+    ASSERT_NO_THROW(bisim5.computeBisimulationDecomposition());
+    ASSERT_NO_THROW(result = bisim5.getQuotient());
+
+    EXPECT_EQ(storm::models::ModelType::Ctmc, result->getType());
+    EXPECT_EQ(1618ul, result->getNumberOfStates());
+    EXPECT_EQ(8816ul, result->getNumberOfTransitions());
 }
