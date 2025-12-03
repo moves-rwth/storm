@@ -3,12 +3,10 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/utility/SymmetryFinder.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/InvalidModelException.h"
-#include "storm/io/DirectEncodingExporter.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/ModelType.h"
@@ -299,14 +297,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         STORM_LOG_TRACE("Symmetries: \n" << symmetries);
     }
 
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    ValueType const precision = std::is_same<ValueType, storm::RationalFunction>::value
-                                    ? storm::utility::zero<ValueType>()
-                                    : storm::utility::convertNumber<ValueType>(generalSettings.getPrecision());
     if (approximationError > 0.0) {
-        // Comparator for checking the error of the approximation
-        storm::utility::ConstantsComparator<ValueType> comparator(precision);
-
         // Build approximate Markov Automata for lower and upper bound
         approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
@@ -398,7 +389,6 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         return results;
     } else {
         // Build a single Markov Automaton
-        auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
         STORM_LOG_DEBUG("Building Model...");
         storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
         builder.buildModel(0, 0.0);
