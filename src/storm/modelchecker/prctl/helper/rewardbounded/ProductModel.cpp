@@ -132,9 +132,12 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
         for (auto dim : objectiveDimensions[objIndex]) {
             auto const& dimension = dimensions[dim];
             STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
-            constraintStates &=
-                (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector() |
-                 mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector());
+            constraintStates &= (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())
+                                     ->template asExplicitQualitativeCheckResult<ValueType>()
+                                     .getTruthValuesVector() |
+                                 mc.check(dimension.formula->asBoundedUntilFormula().getRightSubformula())
+                                     ->template asExplicitQualitativeCheckResult<ValueType>()
+                                     .getTruthValuesVector());
         }
 
         // Build the transitions between the memory states
@@ -155,7 +158,8 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
                             storm::logic::BinaryBooleanStateFormula::OperatorType::And, transitionFormula, subObjFormula);
                     }
 
-                    storm::storage::BitVector transitionStates = mc.check(*transitionFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                    storm::storage::BitVector transitionStates =
+                        mc.check(*transitionFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     if (memStatePrimeBV.empty()) {
                         transitionStates |= ~constraintStates;
                     } else {
@@ -426,9 +430,11 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                         }
                     }
 
-                    storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                    storm::storage::BitVector relevantStates =
+                        mc.check(*relevantStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     storm::storage::BitVector relevantChoices = getProduct().getTransitionMatrix().getRowFilter(relevantStates);
-                    storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                    storm::storage::BitVector goalStates =
+                        mc.check(*goalStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                     for (auto choice : relevantChoices) {
                         objRew[choice] += getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                     }

@@ -128,8 +128,10 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
         auto const& pathFormula = opFormula->asOperatorFormula().getSubformula();
         if (opFormula->isProbabilityOperatorFormula()) {
             if (pathFormula.isUntilFormula()) {
-                auto lhs = mc.check(pathFormula.asUntilFormula().getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-                auto rhs = mc.check(pathFormula.asUntilFormula().getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto lhs =
+                    mc.check(pathFormula.asUntilFormula().getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto rhs =
+                    mc.check(pathFormula.asUntilFormula().getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs | rhs);
             } else if (pathFormula.isBoundedUntilFormula()) {
@@ -138,10 +140,12 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
                     storm::storage::BitVector absorbingStatesForSubSubformula;
                     for (uint64_t i = 0; i < pathFormula.asBoundedUntilFormula().getDimension(); ++i) {
                         auto subPathFormula = pathFormula.asBoundedUntilFormula().restrictToDimension(i);
-                        auto lhs =
-                            mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula(i))->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-                        auto rhs =
-                            mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula(i))->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                        auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula(i))
+                                       ->template asExplicitQualitativeCheckResult<ValueType>()
+                                       .getTruthValuesVector();
+                        auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula(i))
+                                       ->template asExplicitQualitativeCheckResult<ValueType>()
+                                       .getTruthValuesVector();
                         absorbingStatesForSubSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
                         if (pathFormula.asBoundedUntilFormula().hasLowerBound(i)) {
                             absorbingStatesForSubSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
@@ -151,8 +155,12 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
                         absorbingStatesForSubformula &= absorbingStatesForSubSubformula;
                     }
                 } else {
-                    auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-                    auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                    auto lhs = mc.check(pathFormula.asBoundedUntilFormula().getLeftSubformula())
+                                   ->template asExplicitQualitativeCheckResult<ValueType>()
+                                   .getTruthValuesVector();
+                    auto rhs = mc.check(pathFormula.asBoundedUntilFormula().getRightSubformula())
+                                   ->template asExplicitQualitativeCheckResult<ValueType>()
+                                   .getTruthValuesVector();
                     absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, lhs, rhs);
                     if (pathFormula.asBoundedUntilFormula().hasLowerBound()) {
                         absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, ~lhs);
@@ -161,12 +169,14 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
                     }
                 }
             } else if (pathFormula.isGloballyFormula()) {
-                auto phi = mc.check(pathFormula.asGloballyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto phi =
+                    mc.check(pathFormula.asGloballyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                 auto notPhi = ~phi;
                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, phi, notPhi);
                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, notPhi);
             } else if (pathFormula.isEventuallyFormula()) {
-                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto phi =
+                    mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, ~phi, phi);
                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
             } else {
@@ -181,7 +191,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
                 storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
                 // Make states that can not reach a state with non-zero reward absorbing
                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
-                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto phi =
+                    mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                 // Make states that reach phi with prob 1 while only visiting states with reward 0 absorbing
                 absorbingStatesForSubformula |= storm::utility::graph::performProb1A(
                     model->getTransitionMatrix(), model->getTransitionMatrix().getRowGroupIndices(), backwardTransitions, statesWithoutReward, phi);
@@ -210,7 +221,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(s
             }
         } else if (opFormula->isTimeOperatorFormula()) {
             if (pathFormula.isEventuallyFormula()) {
-                auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+                auto phi =
+                    mc.check(pathFormula.asEventuallyFormula().getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
                 absorbingStatesForSubformula = getOnlyReachableViaPhi(*model, phi);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
@@ -432,7 +444,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessLongRunAverage
 
     // Create and add the new reward model that only gives one reward for goal states
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*data.model);
-    storm::storage::BitVector subFormulaResult = mc.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector subFormulaResult =
+        mc.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
     std::vector<typename SparseModelType::ValueType> lraRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
     storm::utility::vector::setVectorValues(lraRewards, subFormulaResult, storm::utility::one<typename SparseModelType::ValueType>());
     data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(lraRewards)));
@@ -445,7 +458,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
     // Try to transform the formula to expected total (or cumulative) rewards
 
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*data.model);
-    storm::storage::BitVector rightSubformulaResult = mc.check(formula.getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector rightSubformulaResult =
+        mc.check(formula.getRightSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
     // Check if the formula is already satisfied in the initial state because then the transformation to expected rewards will fail.
     // TODO: Handle this case more properly
     STORM_LOG_THROW((data.model->getInitialStates() & rightSubformulaResult).empty(), storm::exceptions::NotImplementedException,
@@ -455,7 +469,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
 
     // Whenever a state that violates the left subformula or satisfies the right subformula is reached, the objective is 'decided', i.e., no more reward should
     // be collected from there
-    storm::storage::BitVector notLeftOrRight = mc.check(formula.getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector notLeftOrRight =
+        mc.check(formula.getLeftSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
     notLeftOrRight.complement();
     notLeftOrRight |= rightSubformulaResult;
 
@@ -542,7 +557,8 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessEventuallyForm
 
     // Analyze the subformula
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*data.model);
-    storm::storage::BitVector subFormulaResult = mc.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector subFormulaResult =
+        mc.check(formula.getSubformula())->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 
     // Get the states that are reachable from a goal state
     storm::storage::BitVector allStates(data.model->getNumberOfStates(), true), noStates(data.model->getNumberOfStates(), false);
