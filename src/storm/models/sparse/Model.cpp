@@ -12,6 +12,8 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/rationalfunction.h"
@@ -49,15 +51,19 @@ template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) const {
     // More costly checks are only asserted to avoid doing them in release mode.
+    ValueType const stochasticTolerance =
+        isExact() ? storm::utility::zero<ValueType>()
+                  : storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
-    uint_fast64_t stateCount = this->getNumberOfStates();
-    uint_fast64_t choiceCount = this->getTransitionMatrix().getRowCount();
+    uint64_t stateCount = this->getNumberOfStates();
+    uint64_t choiceCount = this->getTransitionMatrix().getRowCount();
 
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(),
-                     "The matrix is not probabilistic.");
+    STORM_LOG_ASSERT(
+        components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(stochasticTolerance),
+        "The matrix is not probabilistic.");
     if (this->hasUncertainty()) {
         STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
     }
@@ -105,7 +111,7 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     } else if (this->isOfType(ModelType::S2pg)) {
         STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException,
                         "No player 1 matrix given for stochastic game.");
-        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(),
+        STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(0),
                          "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
         STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException,
                         "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");

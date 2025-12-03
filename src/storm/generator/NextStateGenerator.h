@@ -19,6 +19,7 @@
 #include "storm/generator/StateBehavior.h"
 #include "storm/generator/VariableInformation.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
@@ -192,7 +193,7 @@ class NextStateGenerator {
     /// The currently loaded state.
     CompressedState const* state;
 
-    /// A comparator used to compare constants.
+    /// A comparator used to approximately compare constants, e.g., whether they sum to one..
     storm::utility::ConstantsComparator<ValueType> comparator;
 
     /// The mask to compute the observability class (Constructed upon first use)
