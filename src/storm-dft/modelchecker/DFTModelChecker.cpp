@@ -356,7 +356,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             // Check lower bounds
             newResult = checkModel(model, {property});
             STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
-            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(newResult[0], approxResult.first),
+            STORM_LOG_ASSERT(iteration == 0 || storm::utility::isNonNegative(newResult[0] - approxResult.first),
                              "New under-approximation " << newResult[0] << " is smaller than old result " << approxResult.first);
             approxResult.first = newResult[0];
 
@@ -368,11 +368,11 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             // Check upper bound
             newResult = checkModel(model, {property});
             STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
-            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(approxResult.second, newResult[0]),
+            STORM_LOG_ASSERT(iteration == 0 || storm::utility::isNonNegative(approxResult.second - newResult[0]),
                              "New over-approximation " << newResult[0] << " is greater than old result " << approxResult.second);
             approxResult.second = newResult[0];
 
-            STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) || comparator.isEqual(approxResult.first, approxResult.second),
+            STORM_LOG_ASSERT(storm::utility::isNonNegative(approxResult.second - approxResult.first),
                              "Under-approximation " << approxResult.first << " is greater than over-approximation " << approxResult.second);
             totalTimer.stop();
             if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
