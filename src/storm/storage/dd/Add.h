@@ -1,9 +1,7 @@
 #pragma once
 
-#include <functional>
 #include <map>
 
-#include "storm-config.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/dd/Dd.h"
 #include "storm/storage/dd/DdType.h"
@@ -117,7 +115,7 @@ class Add : public Dd<LibraryType> {
     /*!
      * Subtracts the ADD from the constant zero function.
      *
-     * @return The resulting function represented as a ADD.
+     * @return The resulting function represented as an ADD.
      */
     Add<LibraryType, ValueType> operator-() const;
 
@@ -265,9 +263,9 @@ class Add : public Dd<LibraryType> {
      * @return The resulting function represented as an ADD.
      */
     template<typename TargetValueType>
-    typename std::enable_if<std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type toValueType() const;
+    typename std::enable_if_t<std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, TargetValueType>> toValueType() const;
     template<typename TargetValueType>
-    typename std::enable_if<!std::is_same<TargetValueType, ValueType>::value, Add<LibraryType, TargetValueType>>::type toValueType() const;
+    typename std::enable_if_t<!std::is_same_v<TargetValueType, ValueType>, Add<LibraryType, TargetValueType>> toValueType() const;
 
     /*!
      * Sum-abstracts from the given meta variables.
@@ -331,8 +329,8 @@ class Add : public Dd<LibraryType> {
     Add<LibraryType, ValueType> renameVariables(std::set<storm::expressions::Variable> const& from, std::set<storm::expressions::Variable> const& to) const;
 
     /*!
-     * Renames the given meta variables in the ADD. The number of the underlying DD variables of the from meta
-     * variable set needs to be at least as large as the to meta variable set. If the amount of variables coincide,
+     * Renames the given meta variables in the ADD. The number of the underlying DD variables of the meta
+     * variable set needs to be at least as large as the meta variable set. If the amount of variables coincides,
      * this operation coincides with renameVariables. Otherwise, it first abstracts from the superfluous variables
      * and then performs the renaming.
      *
@@ -369,8 +367,7 @@ class Add : public Dd<LibraryType> {
      * variables.
      *
      * @param otherMatrix The matrix with which to multiply.
-     * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
-     * matrix multiplication.
+     * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-matrix multiplication.
      * @return An ADD representing the result of the matrix-matrix multiplication.
      */
     Add<LibraryType, ValueType> multiplyMatrix(Add<LibraryType, ValueType> const& otherMatrix,
@@ -381,8 +378,7 @@ class Add : public Dd<LibraryType> {
      * the given meta variables.
      *
      * @param otherMatrix The matrix with which to multiply.
-     * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
-     * matrix multiplication.
+     * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-matrix multiplication.
      * @return An ADD representing the result of the matrix-matrix multiplication.
      */
     Add<LibraryType, ValueType> multiplyMatrix(Bdd<LibraryType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const;
@@ -597,7 +593,7 @@ class Add : public Dd<LibraryType> {
      * @param columnMetaVariables The meta variables that encode the columns of the matrix.
      * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
      * @param rowOdd The ODD used for determining the correct row.
-     * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
+     * @return The matrix that is represented by this ADD and a vector corresponding to the symbolic vector
      * (if it was given).
      * @return The vector that is represented by this ADD.
      */
@@ -745,7 +741,7 @@ class Add : public Dd<LibraryType> {
      * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
      *
      * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
-     * if a meta variable does not at all influence the the function value.
+     * if a meta variable does not at all influence the function value.
      * @return An iterator that points to the first meta variable assignment with a non-zero function value.
      */
     AddIterator<LibraryType, ValueType> begin(bool enumerateDontCareMetaVariables = true) const;
@@ -813,7 +809,7 @@ class Add : public Dd<LibraryType> {
      * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
      * @param rowOdd The ODD used for determining the correct row.
      * @param columnOdd The ODD used for determining the correct column.
-     * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
+     * @return The matrix that is represented by this ADD and a vector corresponding to the symbolic vector
      * (if it was given).
      */
     std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector,
