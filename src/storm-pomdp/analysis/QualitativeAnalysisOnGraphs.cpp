@@ -202,7 +202,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::checkPropositi
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<ValueType>> mc(pomdp);
     STORM_LOG_THROW(mc.canHandle(propositionalFormula), storm::exceptions::InvalidPropertyException,
                     "Propositional model checker can not handle formula " << propositionalFormula);
-    return mc.check(propositionalFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    return mc.check(propositionalFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 }
 
 template class QualitativeAnalysisOnGraphs<storm::RationalNumber>;

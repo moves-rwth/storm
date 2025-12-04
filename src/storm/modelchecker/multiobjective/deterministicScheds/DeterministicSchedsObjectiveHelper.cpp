@@ -39,7 +39,7 @@ storm::storage::BitVector evaluatePropositionalFormula(ModelType const& model, s
     auto checkResult = mc.check(formula);
     STORM_LOG_THROW(checkResult && checkResult->isExplicitQualitativeCheckResult(), storm::exceptions::UnexpectedException,
                     "Unexpected type of check result for subformula " << formula << ".");
-    return checkResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    return checkResult->template asExplicitQualitativeCheckResult<typename ModelType::ValueType>().getTruthValuesVector();
 }
 
 template<typename ValueType>

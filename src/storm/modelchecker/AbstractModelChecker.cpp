@@ -150,7 +150,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormul
     std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
     if (resultPointer->isExplicitQualitativeCheckResult()) {
         STORM_LOG_ASSERT(ModelType::Representation == storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
-        return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(resultPointer->asExplicitQualitativeCheckResult());
+        return std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(resultPointer->template asExplicitQualitativeCheckResult<SolutionType>());
     } else {
         STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
         STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");

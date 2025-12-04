@@ -34,7 +34,7 @@ template<class SparseModelType>
 std::unique_ptr<CheckResult> SparseCbAchievabilityQuery<SparseModelType>::check(Environment const& env) {
     bool result = this->checkAchievability();
 
-    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), result));
+    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0), result));
 }
 
 template<class SparseModelType>
