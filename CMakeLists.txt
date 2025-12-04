@@ -420,6 +420,7 @@ endif()
 
 export_option(STORM_HAVE_CUDD)
 export_option(STORM_HAVE_GMM)
+export_option(STORM_HAVE_GMM_ILU)
 export_option(STORM_HAVE_GLPK)
 export_option(STORM_HAVE_GUROBI)
 export_option(STORM_HAVE_MATHSAT)

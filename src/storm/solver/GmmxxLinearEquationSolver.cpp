@@ -70,7 +70,11 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
         method == GmmxxLinearEquationSolverMethod::Gmres) {
         // Make sure that the requested preconditioner is available
         if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu && !iluPreconditioner) {
+#ifdef STORM_HAVE_GMM_ILU
             iluPreconditioner = std::make_unique<gmm::ilu_precond<gmm::csr_matrix<ValueType>>>(*gmmxxA);
+#else
+            diagonalPreconditioner = std::make_unique<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>>(*gmmxxA);
+#endif
         } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
             diagonalPreconditioner = std::make_unique<gmm::diagonal_precond<gmm::csr_matrix<ValueType>>>(*gmmxxA);
         }
@@ -91,7 +95,12 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
             // Invoke gmm with the corresponding settings
             if (method == GmmxxLinearEquationSolverMethod::Bicgstab) {
                 if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+#ifdef STORM_HAVE_GMM_ILU
                     gmm::bicgstab(*gmmxxA, x, b, *iluPreconditioner, iter);
+#else
+                    STORM_LOG_WARN("Preconditioner Ilu not available, using diagonal preconditioner instead.");
+                    gmm::bicgstab(*gmmxxA, x, b, *diagonalPreconditioner, iter);
+#endif
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
                     gmm::bicgstab(*gmmxxA, x, b, *diagonalPreconditioner, iter);
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
@@ -99,7 +108,12 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
                 }
             } else if (method == GmmxxLinearEquationSolverMethod::Qmr) {
                 if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+#ifdef STORM_HAVE_GMM_ILU
                     gmm::qmr(*gmmxxA, x, b, *iluPreconditioner, iter);
+#else
+                    STORM_LOG_WARN("Preconditioner Ilu not available, using diagonal preconditioner instead.");
+                    gmm::qmr(*gmmxxA, x, b, *diagonalPreconditioner, iter);
+#endif
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
                     gmm::qmr(*gmmxxA, x, b, *diagonalPreconditioner, iter);
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
@@ -107,7 +121,12 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
                 }
             } else if (method == GmmxxLinearEquationSolverMethod::Gmres) {
                 if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+#ifdef STORM_HAVE_GMM_ILU
                     gmm::gmres(*gmmxxA, x, b, *iluPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
+#else
+                    STORM_LOG_WARN("Preconditioner Ilu not available, using diagonal preconditioner instead.");
+                    gmm::gmres(*gmmxxA, x, b, *diagonalPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
+#endif
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
                     gmm::gmres(*gmmxxA, x, b, *diagonalPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
                 } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
@@ -151,7 +170,9 @@ LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquat
 template<typename ValueType>
 void GmmxxLinearEquationSolver<ValueType>::clearCache() const {
 #ifdef STORM_HAVE_GMM
+#ifdef STORM_HAVE_GMM_ILU
     iluPreconditioner.reset();
+#endif
     diagonalPreconditioner.reset();
     LinearEquationSolver<ValueType>::clearCache();
 #else
