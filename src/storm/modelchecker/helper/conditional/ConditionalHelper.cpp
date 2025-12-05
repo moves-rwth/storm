@@ -1296,7 +1296,21 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler = nullptr;
     if (auto trivialValue = internal::handleTrivialCases<ValueType, SolutionType>(initialState, normalFormData); trivialValue.has_value()) {
         initialStateValue = *trivialValue;
-        scheduler = std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
+        if (initialStateValue == storm::utility::zero<ValueType>() && !normalFormData.terminalStates.get(initialState) && checkTask.isProduceSchedulersSet()) {
+            // we need to compute a scheduler that at least reaches the condition with non-zero probability
+            auto initialStateBitVector = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+            initialStateBitVector.set(initialState, true);
+            auto const conditionReachResult = helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeUntilProbabilities(
+                env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, initialStateBitVector), transitionMatrix, transitionMatrix.transpose(true), storm::storage::BitVector(conditionStates.size(), true), conditionStates, false, true);
+            scheduler = std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
+            auto stateId = 0;
+            for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                scheduler->setChoice(conditionReachResult.scheduler->getChoice(stateId), state);
+                ++stateId;
+            }
+        } else {
+            scheduler = std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
+        }
         STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
         STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state");
@@ -1404,9 +1418,17 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
             // set choices for memory 0
             if (conditionStates.get(state)) {
-                finalScheduler->setChoice(normalFormData.schedulerChoicesForReachingTargetStates->getChoice(state), state, 0);
+                if (normalFormData.schedulerChoicesForReachingTargetStates->isChoiceSelected(state)) {
+                    finalScheduler->setChoice(normalFormData.schedulerChoicesForReachingTargetStates->getChoice(state), state, 0);
+                } else {
+                    finalScheduler->setChoice(0, state, 0);  // arbitrary choice if no choice was recorded, TODO: this could be problematic for paynt?
+                }
             } else if (targetStates.get(state)) {
-                finalScheduler->setChoice(normalFormData.schedulerChoicesForReachingConditionStates->getChoice(state), state, 0);
+                if (normalFormData.schedulerChoicesForReachingConditionStates->isChoiceSelected(state)) {
+                    finalScheduler->setChoice(normalFormData.schedulerChoicesForReachingConditionStates->getChoice(state), state, 0);
+                } else {
+                    finalScheduler->setChoice(0, state, 0);  // arbitrary choice if no choice was recorded, TODO: this could be problematic for paynt?
+                }
             } else {
                 finalScheduler->setChoice(scheduler->getChoice(state), state, 0);
             }
