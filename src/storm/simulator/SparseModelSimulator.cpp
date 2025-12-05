@@ -10,7 +10,7 @@ SparseModelSimulator<ValueType, RewardModelType>::SparseModelSimulator(std::shar
     : model(model), zeroRewards(model->getNumberOfRewardModels(), storm::utility::zero<ValueType>()), generator() {
     resetToInitial();
 
-    if (!model->isDiscreteTimeModel()) {
+    if (isContinuousTimeModel()) {
         if (model->getType() == storm::models::ModelType::Ctmc) {
             exitRates = model->template as<storm::models::sparse::Ctmc<ValueType, RewardModelType>>()->getExitRateVector();
         } else {
@@ -147,7 +147,7 @@ bool SparseModelSimulator<ValueType, RewardModelType>::step(uint64_t action, uin
 
 template<typename ValueType, typename RewardModelType>
 void SparseModelSimulator<ValueType, RewardModelType>::randomTime() {
-    STORM_LOG_ASSERT(!model->isDiscreteTimeModel(), "Model must be continuous-time model");
+    STORM_LOG_ASSERT(isContinuousTimeModel(), "Model must be continuous-time model");
     ValueType exitRate = exitRates[currentState];
     if (!storm::utility::isZero(exitRate)) {
         STORM_LOG_ASSERT(model->getTransitionMatrix().getRowGroupSize(currentState) == 1, "Markovian state should have a trivial row group.");
@@ -178,6 +178,11 @@ std::set<std::string> SparseModelSimulator<ValueType, RewardModelType>::getCurre
 template<typename ValueType, typename RewardModelType>
 std::vector<ValueType> const& SparseModelSimulator<ValueType, RewardModelType>::getLastRewards() const {
     return lastRewards;
+}
+
+template<typename ValueType, typename RewardModelType>
+bool SparseModelSimulator<ValueType, RewardModelType>::isContinuousTimeModel() const {
+    return !model->isDiscreteTimeModel();
 }
 
 template class SparseModelSimulator<double>;

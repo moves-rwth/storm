@@ -41,6 +41,8 @@ class SparseModelSimulator {
     std::set<std::string> getCurrentStateLabelling() const;
     std::vector<ValueType> const& getLastRewards() const;
 
+    bool isContinuousTimeModel() const;
+
    private:
     /**
      * Select choice, update state-action rewards and return corresponding row.
