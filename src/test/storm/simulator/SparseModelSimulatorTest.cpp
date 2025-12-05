@@ -5,7 +5,31 @@
 #include "storm/api/builder.h"
 #include "storm/simulator/SparseModelSimulator.h"
 
-TEST(SparseModelSimulatorTest, KnuthYaoDieTest) {
+TEST(SparseModelSimulatorTest, KnuthYaoDieDtmc) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+    storm::builder::BuilderOptions options;
+    options.setBuildAllRewardModels();
+    options.setBuildAllLabels();
+    auto model = storm::api::buildSparseModel<double>(program, options)->template as<storm::models::sparse::Dtmc<double>>();
+
+    storm::simulator::SparseModelSimulator<double> sim(model);
+    sim.setSeed(42);
+    EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
+    EXPECT_EQ(0ul, sim.getCurrentState());
+    auto rew = sim.getLastRewards();
+    rew = sim.getLastRewards();
+    EXPECT_EQ(1ul, rew.size());
+    EXPECT_EQ(0.0, rew[0]);
+    auto labels = sim.getCurrentStateLabelling();
+    EXPECT_EQ(1ul, labels.size());
+    EXPECT_EQ("init", *labels.begin());
+    EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+}
+
+TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
@@ -15,7 +39,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieTest) {
     options.setBuildAllLabels();
     auto model = storm::api::buildSparseModel<double>(program, options)->template as<storm::models::sparse::Mdp<double>>();
 
-    storm::simulator::SparseModelSimulator<double> sim(*model);
+    storm::simulator::SparseModelSimulator<double> sim(model);
     sim.setSeed(42);
     EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
     EXPECT_EQ(0ul, sim.getCurrentState());
@@ -78,7 +102,7 @@ TEST(SparseModelSimulatorTest, SimpleMATest) {
     options.setBuildAllLabels();
     auto model = storm::api::buildSparseModel<double>(program, options)->template as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    storm::simulator::SparseModelSimulator<double> sim(*model);
+    storm::simulator::SparseModelSimulator<double> sim(model);
     sim.setSeed(5);
     EXPECT_EQ(0ul, model->getRewardModels().size());
 
