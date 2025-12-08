@@ -17,7 +17,9 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieDtmc) {
 
     storm::simulator::SparseModelSimulator<double> sim(model);
     sim.setSeed(42);
-    EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
+    EXPECT_FALSE(sim.isContinuousTimeModel());
+    EXPECT_EQ("coin_flips", sim.getRewardNames()[0]);
+
     EXPECT_EQ(0ul, sim.getCurrentState());
     auto rew = sim.getCurrentRewards();
     rew = sim.getCurrentRewards();
@@ -27,6 +29,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieDtmc) {
     EXPECT_EQ(1ul, labels.size());
     EXPECT_EQ("init", *labels.begin());
     EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+    EXPECT_EQ(0, sim.getCurrentTime());
 }
 
 TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
@@ -41,7 +44,8 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 
     storm::simulator::SparseModelSimulator<double> sim(model);
     sim.setSeed(42);
-    EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
+    EXPECT_FALSE(sim.isContinuousTimeModel());
+    EXPECT_EQ("coin_flips", sim.getRewardNames()[0]);
     EXPECT_EQ(0ul, sim.getCurrentState());
     auto rew = sim.getCurrentRewards();
     rew = sim.getCurrentRewards();
@@ -75,8 +79,8 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
     EXPECT_EQ(1.0, rew[0]);
     labels = sim.getCurrentStateLabelling();
     EXPECT_EQ(2ul, labels.size());
-    EXPECT_TRUE(std::count(labels.begin(), labels.end(), "done") == 1);
-    EXPECT_TRUE(std::count(labels.begin(), labels.end(), "five") == 1);
+    EXPECT_TRUE(labels.contains("done"));
+    EXPECT_TRUE(labels.contains("five"));
     EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
 
     sim.randomStep();
@@ -86,13 +90,55 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
     EXPECT_EQ(0.0, rew[0]);
     labels = sim.getCurrentStateLabelling();
     EXPECT_EQ(2ul, labels.size());
-    EXPECT_TRUE(std::count(labels.begin(), labels.end(), "done") == 1);
-    EXPECT_TRUE(std::count(labels.begin(), labels.end(), "five") == 1);
+    EXPECT_TRUE(labels.contains("done"));
+    EXPECT_TRUE(labels.contains("five"));
 
     EXPECT_EQ(0, sim.getCurrentTime());
 }
 
-TEST(SparseModelSimulatorTest, SimpleMATest) {
+TEST(SparseModelSimulatorTest, SimpleCtmc) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/simple2.sm");
+    storm::builder::BuilderOptions options;
+    options.setBuildAllRewardModels();
+    options.setBuildAllLabels();
+    auto model = storm::api::buildSparseModel<double>(program, options)->template as<storm::models::sparse::Ctmc<double>>();
+
+    storm::simulator::SparseModelSimulator<double> sim(model);
+    sim.setSeed(5);
+    EXPECT_TRUE(sim.isContinuousTimeModel());
+    EXPECT_EQ(2ul, sim.getRewardNames().size());
+
+    EXPECT_EQ(0ul, sim.getCurrentState());
+    EXPECT_EQ(2ul, sim.getCurrentRewards().size());
+    auto labels = sim.getCurrentStateLabelling();
+    EXPECT_EQ(1ul, labels.size());
+    EXPECT_EQ("init", *labels.begin());
+    EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+    EXPECT_EQ(0, sim.getCurrentTime());
+
+    sim.randomStep();
+    EXPECT_EQ(2ul, sim.getCurrentState());
+    EXPECT_EQ(0ul, sim.getCurrentStateLabelling().size());
+    EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+    EXPECT_NEAR(0.007095, sim.getCurrentTime(), 1e-6);
+
+    sim.randomStep();
+    EXPECT_EQ(3ul, sim.getCurrentState());
+    EXPECT_EQ(0ul, sim.getCurrentStateLabelling().size());
+    EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+    EXPECT_NEAR(0.007095 + 0.452143, sim.getCurrentTime(), 1e-6);
+
+    sim.randomStep();
+    EXPECT_EQ(4ul, sim.getCurrentState());
+    EXPECT_EQ(0ul, sim.getCurrentStateLabelling().size());
+    EXPECT_EQ(1ul, sim.getCurrentNumberOfChoices());
+    EXPECT_NEAR(0.007095 + 0.452143 + 0.094114, sim.getCurrentTime(), 1e-6);
+}
+
+TEST(SparseModelSimulatorTest, SimpleMA) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
@@ -104,13 +150,12 @@ TEST(SparseModelSimulatorTest, SimpleMATest) {
 
     storm::simulator::SparseModelSimulator<double> sim(model);
     sim.setSeed(5);
-    EXPECT_EQ(0ul, model->getRewardModels().size());
+    EXPECT_TRUE(sim.isContinuousTimeModel());
+    EXPECT_EQ(0ul, sim.getRewardNames().size());
 
     // 1st run
     EXPECT_EQ(0ul, sim.getCurrentState());
-    auto rew = sim.getCurrentRewards();
-    rew = sim.getCurrentRewards();
-    EXPECT_EQ(0ul, rew.size());
+    EXPECT_EQ(0ul, sim.getCurrentRewards().size());
     auto labels = sim.getCurrentStateLabelling();
     EXPECT_EQ(1ul, labels.size());
     EXPECT_EQ("init", *labels.begin());

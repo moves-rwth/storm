@@ -3,8 +3,27 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/api/builder.h"
+#include "storm/simulator/PrismProgramSimulator.h"
 #include "storm/simulator/SparseModelSimulator.h"
 #include "storm/simulator/TraceSimulator.h"
+
+template<typename CValueType>
+class PrismProgramSimulator {
+   public:
+    typedef CValueType ValueType;
+
+    static std::shared_ptr<storm::simulator::TraceSimulator<ValueType>> createSimulator(std::string const& file, uint64_t seed) {
+        storm::prism::Program program = storm::api::parseProgram(file, true);
+        program = storm::utility::prism::preprocess(program, "");  // Needed for Tandem for some reason
+        storm::builder::BuilderOptions options;
+        options.setBuildAllRewardModels();
+        options.setBuildAllLabels();
+
+        auto prismProgramSimulator = std::make_shared<storm::simulator::PrismProgramSimulator<ValueType>>(program, options);
+        prismProgramSimulator->setSeed(seed);
+        return std::make_shared<storm::simulator::TraceSimulator<ValueType>>(prismProgramSimulator);
+    }
+};
 
 template<typename CValueType>
 class SparseModelSimulator {
@@ -45,7 +64,7 @@ class TraceSimulatorTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseModelSimulator<double>> TestingTypes;
+typedef ::testing::Types<PrismProgramSimulator<double>, SparseModelSimulator<double>> TestingTypes;
 
 TYPED_TEST_SUITE(TraceSimulatorTest, TestingTypes, );
 
