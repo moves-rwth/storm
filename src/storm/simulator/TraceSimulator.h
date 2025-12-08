@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/simulator/SparseModelSimulator.h"
+#include "storm/simulator/ModelSimulator.h"
 
 namespace storm {
 namespace simulator {
@@ -13,7 +13,7 @@ namespace simulator {
  */
 enum class SimulationTraceResult { GOAL_REACHED, BOUND_REACHED, DEADLOCK };
 
-/**
+/*!
  * Perform simulation runs of a model.
  */
 template<typename ValueType>
@@ -23,7 +23,7 @@ class TraceSimulator {
      * Constructor.
      * @param simulator Underlying simulator.
      */
-    TraceSimulator(std::shared_ptr<storm::simulator::SparseModelSimulator<ValueType>> simulator);
+    TraceSimulator(std::shared_ptr<storm::simulator::ModelSimulator<ValueType>> simulator);
 
     /*!
      * Simulate a single (untimed) trace until either the goal label or the step bound is reached.
@@ -65,7 +65,7 @@ class TraceSimulator {
      * Return the underlying simulator.
      * @return Simulator.
      */
-    std::shared_ptr<storm::simulator::SparseModelSimulator<ValueType> const> getSimulator() const;
+    std::shared_ptr<storm::simulator::ModelSimulator<ValueType> const> getSimulator() const;
 
    private:
     /*!
@@ -76,7 +76,7 @@ class TraceSimulator {
     bool reachedLabel(std::optional<std::string> const& goalLabel) const;
 
     /// The underlying simulator
-    std::shared_ptr<storm::simulator::SparseModelSimulator<ValueType>> simulator;
+    std::shared_ptr<storm::simulator::ModelSimulator<ValueType>> simulator;
 };
 }  // namespace simulator
 }  // namespace storm

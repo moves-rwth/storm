@@ -7,10 +7,11 @@ namespace storm {
 namespace simulator {
 template<typename ValueType, typename RewardModelType>
 SparseModelSimulator<ValueType, RewardModelType>::SparseModelSimulator(std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType> const> model)
-    : model(model), zeroRewards(model->getNumberOfRewardModels(), storm::utility::zero<ValueType>()), generator() {
-    resetToInitial();
+    : storm::simulator::ModelSimulator<ValueType>(), model(model) {
+    this->zeroRewards = std::vector<ValueType>(model->getNumberOfRewardModels(), storm::utility::zero<ValueType>());
+    this->resetToInitial();
 
-    if (isContinuousTimeModel()) {
+    if (this->isContinuousTimeModel()) {
         if (model->getType() == storm::models::ModelType::Ctmc) {
             exitRates = model->template as<storm::models::sparse::Ctmc<ValueType, RewardModelType>>()->getExitRateVector();
         } else {
@@ -29,20 +30,17 @@ SparseModelSimulator<ValueType, RewardModelType>::SparseModelSimulator(std::shar
 }
 
 template<typename ValueType, typename RewardModelType>
-void SparseModelSimulator<ValueType, RewardModelType>::setSeed(uint64_t seed) {
-    generator = storm::utility::RandomProbabilityGenerator<ValueType>(seed);
-}
-template<typename ValueType, typename RewardModelType>
 void SparseModelSimulator<ValueType, RewardModelType>::resetToInitial() {
     STORM_LOG_WARN_COND(model->getInitialStates().getNumberOfSetBits() == 1,
                         "The model has multiple initial states. This simulator assumes it starts from the initial state with the lowest index.");
     currentState = *model->getInitialStates().begin();
-    currentTime = storm::utility::zero<ValueType>();
-    lastRewards = zeroRewards;
+    this->currentTime = storm::utility::zero<ValueType>();
+    // Set state rewards
+    this->currentRewards = this->zeroRewards;
     uint64_t i = 0;
     for (auto const& rewModPair : model->getRewardModels()) {
         if (rewModPair.second.hasStateRewards()) {
-            lastRewards[i] += rewModPair.second.getStateReward(currentState);
+            this->currentRewards[i] += rewModPair.second.getStateReward(currentState);
         }
         ++i;
     }
@@ -51,14 +49,14 @@ void SparseModelSimulator<ValueType, RewardModelType>::resetToInitial() {
 template<typename ValueType, typename RewardModelType>
 uint64_t SparseModelSimulator<ValueType, RewardModelType>::choice(uint64_t choice) {
     STORM_LOG_ASSERT(choice < getCurrentNumberOfChoices(), "Action index higher than number of actions");
-    lastRewards = zeroRewards;
     uint64_t row = model->getTransitionMatrix().getRowGroupIndices()[currentState] + choice;
 
-    // Add state-action reward
+    // Set state-action reward
+    this->currentRewards = this->zeroRewards;
     uint64_t i = 0;
     for (auto const& rewModPair : model->getRewardModels()) {
         if (rewModPair.second.hasStateActionRewards()) {
-            lastRewards[i] += rewModPair.second.getStateActionReward(row);
+            this->currentRewards[i] += rewModPair.second.getStateActionReward(row);
         }
         ++i;
     }
@@ -82,27 +80,10 @@ void SparseModelSimulator<ValueType, RewardModelType>::transition(uint64_t row, 
     uint64_t i = 0;
     for (auto const& rewModPair : model->getRewardModels()) {
         if (rewModPair.second.hasStateRewards()) {
-            lastRewards[i] += rewModPair.second.getStateReward(currentState);
+            this->currentRewards[i] += rewModPair.second.getStateReward(currentState);
         }
         ++i;
     }
-}
-
-template<typename ValueType, typename RewardModelType>
-bool SparseModelSimulator<ValueType, RewardModelType>::randomStep() {
-    if (!model->isDiscreteTimeModel()) {
-        // First choose time when to leave the state
-        randomTime();
-    }
-
-    if (model->getTransitionMatrix().getRowGroupSize(currentState) == 0) {
-        return false;
-    }
-    if (model->getTransitionMatrix().getRowGroupSize(currentState) == 1) {
-        return step(0);
-    }
-    // Select action by uniform distribution
-    return step(generator.randomSelect(0, model->getTransitionMatrix().getRowGroupSize(currentState) - 1));
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -111,30 +92,28 @@ bool SparseModelSimulator<ValueType, RewardModelType>::step(uint64_t action) {
     uint64_t row = choice(action);
 
     if (model->getTransitionMatrix().getRow(row).getNumberOfEntries() == 1) {
-        // Select only transition
+        // Select the only transition
         uint64_t column = model->getTransitionMatrix().getRow(row).begin()->getColumn();
         transition(row, column);
         return true;
     }
 
     // Randomly select transition
-    ValueType probability = generator.randomProbability();
+    ValueType probability = this->randomGenerator.randomProbability();
+    if (model->getType() == storm::models::ModelType::Ctmc) {
+        // Scale probability to exit rate
+        probability *= getCurrentExitRate();
+    }
     ValueType sum = storm::utility::zero<ValueType>();
     for (auto const& entry : model->getTransitionMatrix().getRow(row)) {
-        if (model->getType() == storm::models::ModelType::Ctmc) {
-            // Scale rates to probabilities
-            sum += entry.getValue() / exitRates[currentState];
-        } else {
-            sum += entry.getValue();
-        }
+        sum += entry.getValue();
         if (sum >= probability) {
-            uint64_t column = entry.getColumn();
-            transition(row, column);
+            transition(row, entry.getColumn());
             return true;
         }
     }
 
-    // This position should never be reached
+    STORM_LOG_ASSERT(false, "This line should not be reached.");
     return false;
 }
 
@@ -146,14 +125,17 @@ bool SparseModelSimulator<ValueType, RewardModelType>::step(uint64_t action, uin
 }
 
 template<typename ValueType, typename RewardModelType>
-void SparseModelSimulator<ValueType, RewardModelType>::randomTime() {
-    STORM_LOG_ASSERT(isContinuousTimeModel(), "Model must be continuous-time model");
-    ValueType exitRate = exitRates[currentState];
-    if (!storm::utility::isZero(exitRate)) {
-        STORM_LOG_ASSERT(model->getTransitionMatrix().getRowGroupSize(currentState) == 1, "Markovian state should have a trivial row group.");
-        ValueType time = generator.randomExponential(exitRate);
-        currentTime += time;
+std::vector<std::string> SparseModelSimulator<ValueType, RewardModelType>::getRewardNames() const {
+    std::vector<std::string> names;
+    for (auto name : model->getRewardModels()) {
+        names.push_back(name.first);
     }
+    return names;
+}
+
+template<typename ValueType, typename RewardModelType>
+ValueType SparseModelSimulator<ValueType, RewardModelType>::getCurrentExitRate() const {
+    return exitRates[currentState];
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -161,10 +143,6 @@ uint64_t SparseModelSimulator<ValueType, RewardModelType>::getCurrentState() con
     return currentState;
 }
 
-template<typename ValueType, typename RewardModelType>
-ValueType SparseModelSimulator<ValueType, RewardModelType>::getCurrentTime() const {
-    return currentTime;
-}
 template<typename ValueType, typename RewardModelType>
 uint64_t SparseModelSimulator<ValueType, RewardModelType>::getCurrentNumberOfChoices() const {
     return model->getTransitionMatrix().getRowGroupSize(currentState);
@@ -176,8 +154,8 @@ std::set<std::string> SparseModelSimulator<ValueType, RewardModelType>::getCurre
 }
 
 template<typename ValueType, typename RewardModelType>
-std::vector<ValueType> const& SparseModelSimulator<ValueType, RewardModelType>::getLastRewards() const {
-    return lastRewards;
+bool SparseModelSimulator<ValueType, RewardModelType>::isCurrentStateDeadlock() const {
+    return model->getTransitionMatrix().getRowGroupSize(currentState) == 0;
 }
 
 template<typename ValueType, typename RewardModelType>

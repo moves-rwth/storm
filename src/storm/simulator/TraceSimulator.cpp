@@ -1,13 +1,14 @@
 #include "storm/simulator/TraceSimulator.h"
 
 #include "storm/exceptions/UnsupportedModelException.h"
-#include "storm/simulator/SparseModelSimulator.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace simulator {
 
 template<typename ValueType>
-TraceSimulator<ValueType>::TraceSimulator(std::shared_ptr<storm::simulator::SparseModelSimulator<ValueType>> simulator) : simulator(simulator) {
+TraceSimulator<ValueType>::TraceSimulator(std::shared_ptr<storm::simulator::ModelSimulator<ValueType>> simulator) : simulator(simulator) {
     // Intentionally left empty.
 }
 
@@ -88,7 +89,7 @@ bool TraceSimulator<ValueType>::reachedLabel(std::optional<std::string> const& g
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::simulator::SparseModelSimulator<ValueType> const> TraceSimulator<ValueType>::getSimulator() const {
+std::shared_ptr<storm::simulator::ModelSimulator<ValueType> const> TraceSimulator<ValueType>::getSimulator() const {
     return simulator;
 }
 

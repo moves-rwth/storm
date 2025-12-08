@@ -19,8 +19,8 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieDtmc) {
     sim.setSeed(42);
     EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
     EXPECT_EQ(0ul, sim.getCurrentState());
-    auto rew = sim.getLastRewards();
-    rew = sim.getLastRewards();
+    auto rew = sim.getCurrentRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
     auto labels = sim.getCurrentStateLabelling();
@@ -43,8 +43,8 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
     sim.setSeed(42);
     EXPECT_EQ("coin_flips", model->getRewardModels().begin()->first);
     EXPECT_EQ(0ul, sim.getCurrentState());
-    auto rew = sim.getLastRewards();
-    rew = sim.getLastRewards();
+    auto rew = sim.getCurrentRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
     auto labels = sim.getCurrentStateLabelling();
@@ -54,7 +54,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 
     sim.step(0);
     EXPECT_EQ(2ul, sim.getCurrentState());
-    rew = sim.getLastRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
     EXPECT_EQ(0ul, sim.getCurrentStateLabelling().size());
@@ -62,7 +62,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 
     sim.randomStep();
     EXPECT_EQ(5ul, sim.getCurrentState());
-    rew = sim.getLastRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(1.0, rew[0]);
     EXPECT_EQ(0ul, sim.getCurrentStateLabelling().size());
@@ -70,7 +70,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 
     sim.randomStep();
     EXPECT_EQ(11ul, sim.getCurrentState());
-    rew = sim.getLastRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(1.0, rew[0]);
     labels = sim.getCurrentStateLabelling();
@@ -81,7 +81,7 @@ TEST(SparseModelSimulatorTest, KnuthYaoDieMdp) {
 
     sim.randomStep();
     EXPECT_EQ(11ul, sim.getCurrentState());
-    rew = sim.getLastRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
     labels = sim.getCurrentStateLabelling();
@@ -108,8 +108,8 @@ TEST(SparseModelSimulatorTest, SimpleMATest) {
 
     // 1st run
     EXPECT_EQ(0ul, sim.getCurrentState());
-    auto rew = sim.getLastRewards();
-    rew = sim.getLastRewards();
+    auto rew = sim.getCurrentRewards();
+    rew = sim.getCurrentRewards();
     EXPECT_EQ(0ul, rew.size());
     auto labels = sim.getCurrentStateLabelling();
     EXPECT_EQ(1ul, labels.size());
