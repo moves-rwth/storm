@@ -1,13 +1,14 @@
 #include "storm-pomdp/analysis/WinningRegion.h"
+
 #include <boost/algorithm/string.hpp>
 #include <iostream>
-#include <storm/exceptions/WrongFormatException.h>
+
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
-
-#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace pomdp {

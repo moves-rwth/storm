@@ -1,5 +1,10 @@
-
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
+#include <memory>
+#include <sstream>
+#include <string>
+
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/builder/ExplicitModelBuilder.h"
@@ -8,14 +13,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "test/storm_gtest.h"
-
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProductBuilder.h"
-
-#include <memory>
-#include <sstream>
-#include <string>
 
 TEST(DAProductBuilderTest_aUb, Dtmc) {
 #ifndef STORM_HAVE_Z3

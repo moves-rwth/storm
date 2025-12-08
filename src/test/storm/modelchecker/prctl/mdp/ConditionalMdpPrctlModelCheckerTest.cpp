@@ -1,17 +1,14 @@
-#include "test/storm_gtest.h"
-
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
-#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 namespace {
 

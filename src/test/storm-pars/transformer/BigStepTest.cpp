@@ -1,7 +1,9 @@
+#include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include <memory>
 #include <string>
-#include "gtest/gtest.h"
-#include "storm-config.h"
+
 #include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
@@ -25,11 +27,9 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
-#include "storm/utility/prism.h"
-#include "test/storm_gtest.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/prism.h"
 
 void testModel(std::string programFile, std::string formulaAsString, std::string constantsAsString) {
     storm::prism::Program program = storm::api::parseProgram(programFile);

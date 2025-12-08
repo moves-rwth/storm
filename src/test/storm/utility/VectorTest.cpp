@@ -1,8 +1,9 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm/storage/BitVector.h"
 #include "storm/utility/permutation.h"
 #include "storm/utility/vector.h"
-#include "test/storm_gtest.h"
 
 TEST(VectorTest, sum_if) {
     std::vector<double> a = {1.0, 2.0, 4.0, 8.0, 16.0};

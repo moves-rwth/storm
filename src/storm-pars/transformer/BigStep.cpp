@@ -1,4 +1,4 @@
-#include "BigStep.h"
+#include "storm-pars/transformer/BigStep.h"
 
 #include <sys/types.h>
 #include <algorithm>
@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/UntilFormula.h"
 #include "storm/modelchecker/CheckTask.h"
@@ -390,7 +389,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
 
-    STORM_LOG_ASSERT(transitionMatrix.isProbabilistic(), "Gave big-step a nonprobabilistic transition matrix.");
+    STORM_LOG_ASSERT(transitionMatrix.isProbabilistic(storm::utility::zero<RationalFunction>()), "Gave big-step a nonprobabilistic transition matrix.");
 
     uint64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
 
@@ -602,8 +601,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             break;
         }
 
-        // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsTransitions.createSparseMatrix(), "");
-
 #if WRITE_DTMCS
         models::sparse::Dtmc<RationalFunction> newnewnewDTMC(flexibleMatrix.createSparseMatrix(), runningLabeling);
         if (stateRewardVector) {
@@ -614,7 +611,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         storm::io::openFile("dots/travel_" + std::to_string(flexibleMatrix.getRowCount()) + ".dot", file2);
         newnewnewDTMC.writeDotToStream(file2);
         storm::io::closeFile(file2);
-        newnewnewDTMC.getTransitionMatrix().isProbabilistic();
 #endif
     }
 
@@ -661,7 +657,8 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
         newDTMC.addRewardModel(*stateRewardName, newRewardModel);
     }
 
-    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(), "Internal error: resulting matrix not probabilistic!");
+    STORM_LOG_ASSERT(newDTMC.getTransitionMatrix().isProbabilistic(storm::utility::zero<RationalFunction>()),
+                     "Internal error: resulting matrix not probabilistic!");
 
     lastSavedAnnotations.clear();
     for (auto const& entry : storedAnnotations) {

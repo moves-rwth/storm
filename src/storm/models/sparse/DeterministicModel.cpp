@@ -61,13 +61,10 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
 }
 
 template class DeterministicModel<double>;
-#ifdef STORM_HAVE_CARL
-template class DeterministicModel<storm::RationalNumber>;
-
 template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class DeterministicModel<storm::RationalFunction>;
+template class DeterministicModel<storm::RationalNumber>;
 template class DeterministicModel<storm::Interval>;
-#endif
+template class DeterministicModel<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

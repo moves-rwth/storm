@@ -8,7 +8,6 @@
 #include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 namespace {

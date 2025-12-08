@@ -19,7 +19,9 @@ namespace adapters {
 
 class SFTBDDPropertyFormulaAdapter {
     using ValueType = double;
+#ifdef STORM_HAVE_SYLVAN
     using Bdd = sylvan::Bdd;
+#endif
     using FormulaCPointer = std::shared_ptr<storm::logic::Formula const>;
     using StateFormulaCPointer = std::shared_ptr<storm::logic::StateFormula const>;
     using UnaryStateFormulaCPointer = std::shared_ptr<storm::logic::UnaryBooleanStateFormula const>;
@@ -28,6 +30,7 @@ class SFTBDDPropertyFormulaAdapter {
     using FormulaVector = std::vector<FormulaCPointer>;
 
    public:
+#ifdef STORM_HAVE_SYLVAN
     SFTBDDPropertyFormulaAdapter(
         std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas, storm::dft::utility::RelevantEvents relevantEvents = {},
         std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>())
@@ -38,39 +41,73 @@ class SFTBDDPropertyFormulaAdapter {
         auto const transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<ValueType>>(dft, sylvanBddManager, relevantEvents)};
         checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(transformator);
     }
+#else
+    SFTBDDPropertyFormulaAdapter(
+        std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas, storm::dft::utility::RelevantEvents relevantEvents = {},
+        std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>()) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+    }
+#endif
 
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const {
+#ifdef STORM_HAVE_SYLVAN
         return checker->getDFT();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const {
+#ifdef STORM_HAVE_SYLVAN
         return checker->getSylvanBddManager();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
      * \return The internal SftToBddTransformator
      */
-    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const noexcept {
+    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const {
+#ifdef STORM_HAVE_SYLVAN
         return checker->getTransformator();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
      * \return The internal SFTBDDChecker
      */
-    std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> getSFTBDDChecker() const noexcept {
+    std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> getSFTBDDChecker() const {
+#ifdef STORM_HAVE_SYLVAN
         return checker;
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
      * Calculate the properties specified by the formulas
      */
     std::vector<ValueType> check(size_t const chunksize = 0) {
+#ifdef STORM_HAVE_SYLVAN
         auto const bdds{formulasToBdd()};
 
         std::map<uint64_t, Bdd> BDDToBdd{};
@@ -107,8 +144,14 @@ class SFTBDDPropertyFormulaAdapter {
         }
 
         return rval;
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
+#ifdef STORM_HAVE_SYLVAN
     /**
      * \return
      * The bdds representing the StatesFormulas of the given formulas
@@ -124,6 +167,7 @@ class SFTBDDPropertyFormulaAdapter {
         }
         return rval;
     }
+#endif
 
     // TODO: Move formulahandling into its own module
     /**
@@ -131,6 +175,7 @@ class SFTBDDPropertyFormulaAdapter {
      * where op is in {<=, <, =} and phi is a state formula
      */
     static void checkForm(FormulaVector const &formulas) {
+#ifdef STORM_HAVE_SYLVAN
         for (auto const &formula : formulas) {
             if (formula->isProbabilityOperatorFormula()) {
                 auto const probabilityOperator{std::static_pointer_cast<storm::logic::ProbabilityOperatorFormula const>(formula)};
@@ -165,6 +210,11 @@ class SFTBDDPropertyFormulaAdapter {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Only ProbabilityOperatorFormulas are supported.");
             }
         }
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     /**
@@ -172,6 +222,7 @@ class SFTBDDPropertyFormulaAdapter {
      * The upper timebound of the given formula
      */
     static double getTimebound(FormulaCPointer const &formula) {
+#ifdef STORM_HAVE_SYLVAN
         auto const probabilityOperator{std::static_pointer_cast<storm::logic::ProbabilityOperatorFormula const>(formula)};
 
         auto const subFormula{probabilityOperator->getSubformula().asSharedPointer()};
@@ -179,9 +230,15 @@ class SFTBDDPropertyFormulaAdapter {
         auto const boundedUntil{std::static_pointer_cast<storm::logic::BoundedUntilFormula const>(subFormula)};
 
         return boundedUntil->getUpperBound().evaluateAsDouble();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> checker;
     FormulaVector formulas;
 
@@ -317,6 +374,7 @@ class SFTBDDPropertyFormulaAdapter {
     Bdd atomicLabelFormulaToBdd(AtomicLabelFormulaCPointer const &formula) const {
         return getTransformator()->transformRelevantEvents().at(getAtomicLabelString(formula));
     }
+#endif
 };
 
 }  // namespace adapters

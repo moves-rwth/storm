@@ -1,4 +1,6 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
@@ -10,7 +12,6 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/utility/cli.h"
-#include "test/storm_gtest.h"
 
 namespace {
 

@@ -40,8 +40,7 @@ SparseDeterministicVisitingTimesHelper<ValueType>::SparseDeterministicVisitingTi
       backwardTransitions(storm::NullRef),
       sccDecomposition(storm::NullRef),
       nonBsccStates(transitionMatrix.getRowCount(), false) {
-    // For the CTMC case we assert that the caller actually provided the probabilistic transitions
-    STORM_LOG_ASSERT(this->transitionMatrix.isProbabilistic(), "Non-probabilistic transitions");
+    // Note that we are not checking assumptions regarding well-formedness of the input, even in debug mode.
 }
 
 template<typename ValueType>

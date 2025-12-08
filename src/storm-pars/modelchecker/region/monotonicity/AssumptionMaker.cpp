@@ -1,4 +1,6 @@
-#include "AssumptionMaker.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace analysis {

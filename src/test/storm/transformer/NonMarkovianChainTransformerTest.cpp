@@ -1,10 +1,11 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/jani/Property.h"
-#include "test/storm_gtest.h"
 
 TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
 #ifndef STORM_HAVE_Z3

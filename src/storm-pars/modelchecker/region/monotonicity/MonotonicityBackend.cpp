@@ -1,6 +1,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
 
 namespace storm::modelchecker {

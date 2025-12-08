@@ -1,4 +1,3 @@
-
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 

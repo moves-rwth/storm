@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_ABSTRACTMODEL_H_
-#define STORM_MODELS_ABSTRACTMODEL_H_
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -185,5 +184,3 @@ class ModelBase : public std::enable_shared_from_this<ModelBase> {
 
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_ABSTRACTMODEL_H_ */

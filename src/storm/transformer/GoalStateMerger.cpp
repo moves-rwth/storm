@@ -2,9 +2,10 @@
 
 #include <limits>
 #include <memory>
-#include <storm/exceptions/UnexpectedException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
@@ -12,9 +13,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace transformer {

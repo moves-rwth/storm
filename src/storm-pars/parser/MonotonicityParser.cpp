@@ -1,9 +1,10 @@
 #include "storm-pars/parser/MonotonicityParser.h"
+
 #include <boost/algorithm/string.hpp>
-#include <storm/exceptions/WrongFormatException.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"

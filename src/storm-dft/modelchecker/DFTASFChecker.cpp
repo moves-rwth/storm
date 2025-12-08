@@ -1,7 +1,8 @@
 #include "DFTASFChecker.h"
-#include <string>
-#include "SmtConstraint.cpp"
 
+#include <string>
+
+#include "storm-dft/modelchecker/SmtConstraint.h"
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -659,13 +660,13 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkDependencyConflict(uin
     STORM_LOG_DEBUG("Check " << dft.getElement(dep1Index)->name() << " and " << dft.getElement(dep2Index)->name());
     andConstr.clear();
     // AND FDEP1 is triggered before FDEP2 is resolved
-    andConstr.push_back(std::make_shared<IsGreaterEqual>(timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
+    andConstr.push_back(std::make_shared<IsLessEqual>(timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
     andConstr.push_back(std::make_shared<IsLess>(timePointVariables.at(dep1Index), dependencyVariables.at(dep2Index)));
     std::shared_ptr<SmtConstraint> betweenConstr1 = std::make_shared<And>(andConstr);
 
     andConstr.clear();
     // AND FDEP2 is triggered before FDEP1 is resolved
-    andConstr.push_back(std::make_shared<IsGreaterEqual>(timePointVariables.at(dep2Index), timePointVariables.at(dep1Index)));
+    andConstr.push_back(std::make_shared<IsLessEqual>(timePointVariables.at(dep1Index), timePointVariables.at(dep2Index)));
     andConstr.push_back(std::make_shared<IsLess>(timePointVariables.at(dep2Index), dependencyVariables.at(dep1Index)));
     std::shared_ptr<SmtConstraint> betweenConstr2 = std::make_shared<And>(andConstr);
 

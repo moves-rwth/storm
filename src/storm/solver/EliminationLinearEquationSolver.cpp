@@ -2,12 +2,11 @@
 
 #include <numeric>
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/EliminationSettings.h"
-
 #include "storm/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "storm/solver/stateelimination/StatePriorityQueue.h"
-
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/stateelimination.h"

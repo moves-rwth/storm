@@ -4,15 +4,14 @@
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
+#include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/environment/solver/EigenSolverEnvironment.h"
-#include "storm/environment/solver/GmmxxSolverEnvironment.h"
-#include "storm/environment/solver/NativeSolverEnvironment.h"
 
 namespace {
 

@@ -1,22 +1,14 @@
-/*
- * DeterministicSparseTransitionParserTest.cpp
- *
- *  Created on: Feb 24, 2014
- *      Author: Manuel Sascha Weiand
- */
-
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/DeterministicSparseTransitionParser.h"
 #include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!

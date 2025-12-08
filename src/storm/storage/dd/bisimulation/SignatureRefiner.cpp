@@ -1,8 +1,8 @@
 #include "storm/storage/dd/bisimulation/SignatureRefiner.h"
 
 #include "storm/storage/dd/DdManager.h"
-
 #include "storm/storage/dd/bisimulation/InternalCuddSignatureRefiner.h"
+#include "storm/storage/dd/bisimulation/InternalSignatureRefiner.h"
 #include "storm/storage/dd/bisimulation/InternalSylvanSignatureRefiner.h"
 
 namespace storm {

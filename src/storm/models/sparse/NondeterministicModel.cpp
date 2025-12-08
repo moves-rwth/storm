@@ -1,7 +1,6 @@
 #include "storm/models/sparse/NondeterministicModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -188,13 +187,10 @@ uint_least64_t NondeterministicModel<ValueType, RewardModelType>::getChoiceIndex
 }
 
 template class NondeterministicModel<double>;
-
-#ifdef STORM_HAVE_CARL
-template class NondeterministicModel<storm::RationalNumber>;
 template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-template class NondeterministicModel<storm::RationalFunction>;
 template class NondeterministicModel<storm::Interval>;
-#endif
+template class NondeterministicModel<storm::RationalNumber>;
+template class NondeterministicModel<storm::RationalFunction>;
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm

@@ -65,13 +65,26 @@ CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility
                              .build())
             .build());
 
-    std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.")
-                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries))
-                                         .setDefaultValueString("sylvan")
-                                         .build())
-                        .build());
+    // Initialize options for DD libraries
+    std::vector<std::string> ddLibraries;
+    std::string ddDefault = "";
+#ifdef STORM_HAVE_CUDD
+    ddLibraries.push_back("cudd");
+    ddDefault = "cudd";
+#endif
+#ifdef STORM_HAVE_SYLVAN
+    ddLibraries.push_back("sylvan");
+    ddDefault = "sylvan";  // Overwrite previous default and give Sylvan priority
+#endif
+    if (!ddLibraries.empty()) {
+        this->addOption(
+            storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
+                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.")
+                                 .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries))
+                                 .setDefaultValueString(ddDefault)
+                                 .build())
+                .build());
+    }
 
     std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3", "soplex"};
     this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")

@@ -5,13 +5,13 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/environment/solver/SolverEnvironment.h"
 namespace {
 
 class EigenEnvironment {

@@ -1,9 +1,10 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/storm.h"
 #include "storm/transformer/AddUncertainty.h"
-#include "test/storm_gtest.h"
 
 TEST(AddUncertaintyTransformerTest, BrpTest) {
 #ifndef STORM_HAVE_Z3

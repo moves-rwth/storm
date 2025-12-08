@@ -19,18 +19,32 @@ namespace {
 
 class Cudd {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
 };
 
 class Sylvan {
    public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
 };
 
 template<typename TestType>
 class DdJaniModelBuilderTest : public ::testing::Test {
    public:
-    static const storm::dd::DdType DdType = TestType::DdType;
+    void SetUp() override {
+        TestType::checkLibraryAvailable();
+    }
 
     storm::jani::Model getJaniModelFromPrism(std::string const& pathInTestResourcesDir, bool prismCompatability = false) {
         storm::storage::SymbolicModelDescription modelDescription =
@@ -40,6 +54,8 @@ class DdJaniModelBuilderTest : public ::testing::Test {
         EXPECT_TRUE(unsupportedFeatures.empty()) << "Model '" << pathInTestResourcesDir << "' uses unsupported feature(s) " << unsupportedFeatures.toString();
         return m;
     }
+
+    static const storm::dd::DdType DdType = TestType::DdType;
 };
 
 typedef ::testing::Types<Cudd, Sylvan> TestingTypes;

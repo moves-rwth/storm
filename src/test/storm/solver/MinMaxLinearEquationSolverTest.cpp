@@ -1,8 +1,6 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "test/storm_gtest.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"

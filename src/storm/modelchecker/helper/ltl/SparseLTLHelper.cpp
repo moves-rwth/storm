@@ -1,21 +1,17 @@
 #include "SparseLTLHelper.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/automata/LTL2DeterministicAutomaton.h"
-
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
-
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
 namespace modelchecker {

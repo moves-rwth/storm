@@ -1,5 +1,11 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 
+#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
+#include "storm-dft/settings/modules/DftIOSettings.h"
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-dft/utility/SymmetryFinder.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/InvalidModelException.h"
 #include "storm/io/DirectEncodingExporter.h"
@@ -9,12 +15,6 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/utility/bitoperations.h"
-
-#include "storm-dft/api/storm-dft.h"
-#include "storm-dft/builder/ExplicitDFTModelBuilder.h"
-#include "storm-dft/settings/modules/DftIOSettings.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/utility/SymmetryFinder.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -299,9 +299,14 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         STORM_LOG_TRACE("Symmetries: \n" << symmetries);
     }
 
+    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+    ValueType const precision = std::is_same<ValueType, storm::RationalFunction>::value
+                                    ? storm::utility::zero<ValueType>()
+                                    : storm::utility::convertNumber<ValueType>(generalSettings.getPrecision());
     if (approximationError > 0.0) {
         // Comparator for checking the error of the approximation
-        storm::utility::ConstantsComparator<ValueType> comparator;
+        storm::utility::ConstantsComparator<ValueType> comparator(precision);
+
         // Build approximate Markov Automata for lower and upper bound
         approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model;

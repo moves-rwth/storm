@@ -1,5 +1,4 @@
-#ifndef STORM_ADAPTERS_SMT2EXPRESSIONADAPTER_H_
-#define STORM_ADAPTERS_SMT2EXPRESSIONADAPTER_H_
+#pragma once
 
 #include <unordered_map>
 
@@ -149,5 +148,3 @@ class Smt2ExpressionAdapter {
 };
 }  // namespace adapters
 }  // namespace storm
-
-#endif /* STORM_ADAPTERS_SMT2EXPRESSIONADAPTER_H_ */

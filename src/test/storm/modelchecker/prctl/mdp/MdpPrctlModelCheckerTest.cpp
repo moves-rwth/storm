@@ -6,7 +6,6 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
@@ -312,6 +311,13 @@ class HybridCuddDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -326,6 +332,13 @@ class HybridSylvanDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -340,6 +353,13 @@ class HybridCuddDoubleSoundValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().setForceSoundness(true);
@@ -356,6 +376,13 @@ class HybridCuddDoubleOptimisticValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().setForceSoundness(true);
@@ -372,6 +399,13 @@ class HybridCuddDoubleGuessingValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().setForceSoundness(true);
@@ -388,6 +422,13 @@ class HybridSylvanRationalPolicyIterationEnvironment {
     static const bool isExact = true;
     typedef storm::RationalNumber ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
@@ -401,6 +442,13 @@ class DdCuddDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -415,6 +463,13 @@ class JaniDdCuddDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -429,6 +484,13 @@ class DdSylvanDoubleValueIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -443,6 +505,13 @@ class DdCuddDoublePolicyIterationEnvironment {
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_CUDD
+        GTEST_SKIP() << "Library CUDD not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
@@ -457,6 +526,13 @@ class DdSylvanRationalRationalSearchEnvironment {
     static const bool isExact = true;
     typedef storm::RationalNumber ValueType;
     typedef storm::models::symbolic::Mdp<ddType, ValueType> ModelType;
+
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch);
@@ -477,6 +553,9 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
 #ifndef STORM_HAVE_Z3
         GTEST_SKIP() << "Z3 not available.";
 #endif
+        if constexpr (TestType::engine == MdpEngine::Hybrid || TestType::engine == MdpEngine::PrismDd || TestType::engine == MdpEngine::JaniDd) {
+            TestType::checkLibraryAvailable();
+        }
     }
 
     storm::Environment const& env() const {

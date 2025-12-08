@@ -6,7 +6,8 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
-
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
@@ -14,9 +15,6 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 namespace {
 class DoubleViEnvironment {

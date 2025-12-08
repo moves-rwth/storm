@@ -1,41 +1,29 @@
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#include <parallel_hashmap/phmap.h>
+#pragma GCC diagnostic pop
 #include <numeric>
 
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/Ctmc.h"
-#include "storm/models/symbolic/Dtmc.h"
-#include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/MissingLibraryException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
-
-#include "storm/storage/dd/cudd/utility.h"
-#include "storm/storage/dd/sylvan/utility.h"
-
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/utility/macros.h"
-
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#include <parallel_hashmap/phmap.h>
-#pragma GCC diagnostic pop
+#include "storm/storage/dd/DdManager.h"
 
 namespace storm {
 namespace dd {
@@ -75,10 +63,17 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
    public:
     InternalRepresentativeComputer(storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, std::set<storm::expressions::Variable> const& rowVariables)
         : InternalRepresentativeComputerBase<storm::dd::DdType::CUDD>(partitionBdd, rowVariables) {
+#ifdef STORM_HAVE_CUDD
         this->ddman = this->internalDdManager->getCuddManager().getManager();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+#endif
     }
 
     storm::dd::Bdd<storm::dd::DdType::CUDD> getRepresentatives() {
+#ifdef STORM_HAVE_CUDD
         return storm::dd::Bdd<storm::dd::DdType::CUDD>(
             *this->ddManager,
             storm::dd::InternalBdd<storm::dd::DdType::CUDD>(
@@ -86,9 +81,15 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
                 cudd::BDD(this->internalDdManager->getCuddManager(), this->getRepresentativesRec(this->partitionBdd.getInternalBdd().getCuddDdNode(),
                                                                                                  this->rowVariablesCube.getInternalBdd().getCuddDdNode()))),
             this->rowVariables);
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+#endif
     }
 
    private:
+#ifdef STORM_HAVE_CUDD
     DdNodePtr getRepresentativesRec(DdNodePtr partitionNode, DdNodePtr stateVariablesCube) {
         if (partitionNode == Cudd_ReadLogicZero(ddman)) {
             return partitionNode;
@@ -160,6 +161,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
 
     ::DdManager* ddman;
     phmap::flat_hash_map<DdNode const*, bool> visitedNodes;
+#endif
 };
 
 template<>
@@ -167,19 +169,31 @@ class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public Interna
    public:
     InternalRepresentativeComputer(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& partitionBdd, std::set<storm::expressions::Variable> const& rowVariables)
         : InternalRepresentativeComputerBase<storm::dd::DdType::Sylvan>(partitionBdd, rowVariables) {
+#ifndef STORM_HAVE_SYLVAN
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
         // Intentionally left empty.
     }
 
     storm::dd::Bdd<storm::dd::DdType::Sylvan> getRepresentatives() {
+#ifdef STORM_HAVE_SYLVAN
         return storm::dd::Bdd<storm::dd::DdType::Sylvan>(
             *this->ddManager,
             storm::dd::InternalBdd<storm::dd::DdType::Sylvan>(
                 this->internalDdManager, sylvan::Bdd(this->getRepresentativesRec(this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(),
                                                                                  this->rowVariablesCube.getInternalBdd().getSylvanBdd().GetBDD()))),
             this->rowVariables);
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
    private:
+#ifdef STORM_HAVE_SYLVAN
     BDD getRepresentativesRec(BDD partitionNode, BDD stateVariablesCube) {
         if (partitionNode == sylvan_false) {
             return sylvan_false;
@@ -241,6 +255,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public Interna
     }
 
     phmap::flat_hash_map<BDD, bool> visitedNodes;
+#endif
 };
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
@@ -437,6 +452,7 @@ class InternalSparseQuotientExtractorBase {
 template<typename ValueType>
 class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : public InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType> {
    public:
+#ifdef STORM_HAVE_CUDD
     InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model,
                                     storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, storm::expressions::Variable const& blockVariable,
                                     uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives)
@@ -444,25 +460,48 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : publ
           ddman(this->manager.getInternalDdManager().getCuddManager().getManager()) {
         this->createBlockToOffsetMapping();
     }
+#else
+    InternalSparseQuotientExtractor(storm::models::symbolic::Model<storm::dd::DdType::CUDD, ValueType> const& model,
+                                    storm::dd::Bdd<storm::dd::DdType::CUDD> const& partitionBdd, storm::expressions::Variable const& blockVariable,
+                                    uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::CUDD> const& representatives)
+        : InternalSparseQuotientExtractorBase<storm::dd::DdType::CUDD, ValueType>(model, partitionBdd, blockVariable, numberOfBlocks, representatives) {
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+    }
+#endif
 
    private:
     virtual storm::storage::SparseMatrix<ValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& matrix) override {
+#ifdef STORM_HAVE_CUDD
+
         this->createMatrixEntryStorage();
         extractTransitionMatrixRec(matrix.getInternalAdd().getCuddDdNode(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0,
                                    this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(),
                                    this->allSourceVariablesCube.getInternalBdd().getCuddDdNode(),
                                    this->nondeterminismVariablesCube.getInternalBdd().getCuddDdNode(), this->isNondeterministic ? &this->odd : nullptr, 0);
         return this->createMatrixFromEntries();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+#endif
     }
 
     virtual std::vector<ValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::CUDD, ValueType> const& vector,
                                                          storm::dd::Bdd<storm::dd::DdType::CUDD> const& variablesCube, storm::dd::Odd const& odd) override {
+#ifdef STORM_HAVE_CUDD
         std::vector<ValueType> result(odd.getTotalOffset());
         extractVectorRec(vector.getInternalAdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(),
                          variablesCube.getInternalBdd().getCuddDdNode(), odd, 0, result);
         return result;
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for CUDD. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with CUDD support.");
+#endif
     }
-
+#ifdef STORM_HAVE_CUDD
     void createBlockToOffsetMapping() {
         this->createBlockToOffsetMappingRec(this->partitionBdd.getInternalBdd().getCuddDdNode(), this->representatives.getInternalBdd().getCuddDdNode(),
                                             this->rowVariablesCube.getInternalBdd().getCuddDdNode(), this->odd, 0);
@@ -679,6 +718,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : publ
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
     phmap::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
+#endif
 };
 
 template<typename ValueType, typename ExportValueType>
@@ -690,11 +730,18 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
                                     uint64_t numberOfBlocks, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& representatives)
         : InternalSparseQuotientExtractorBase<storm::dd::DdType::Sylvan, ValueType, ExportValueType>(model, partitionBdd, blockVariable, numberOfBlocks,
                                                                                                      representatives) {
+#ifdef STORM_HAVE_SYLVAN
         this->createBlockToOffsetMapping();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
    private:
     virtual storm::storage::SparseMatrix<ExportValueType> extractMatrixInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& matrix) override {
+#ifdef STORM_HAVE_SYLVAN
         this->createMatrixEntryStorage();
         extractTransitionMatrixRec(matrix.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->isNondeterministic ? this->nondeterminismOdd : this->odd, 0,
                                    this->partitionBdd.getInternalBdd().getSylvanBdd().GetBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(),
@@ -702,17 +749,29 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
                                    this->nondeterminismVariablesCube.getInternalBdd().getSylvanBdd().GetBDD(), this->isNondeterministic ? &this->odd : nullptr,
                                    0);
         return this->createMatrixFromEntries();
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
     virtual std::vector<ExportValueType> extractVectorInternal(storm::dd::Add<storm::dd::DdType::Sylvan, ValueType> const& vector,
                                                                storm::dd::Bdd<storm::dd::DdType::Sylvan> const& variablesCube,
                                                                storm::dd::Odd const& odd) override {
+#ifdef STORM_HAVE_SYLVAN
         std::vector<ExportValueType> result(odd.getTotalOffset());
         extractVectorRec(vector.getInternalAdd().getSylvanMtbdd().GetMTBDD(), this->representatives.getInternalBdd().getSylvanBdd().GetBDD(),
                          variablesCube.getInternalBdd().getSylvanBdd().GetBDD(), odd, 0, result);
         return result;
+#else
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
+                        "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
+                        "version of Storm with Sylvan support.");
+#endif
     }
 
+#ifdef STORM_HAVE_SYLVAN
     void extractVectorRec(MTBDD vector, BDD representativesNode, BDD variables, storm::dd::Odd const& odd, uint64_t offset,
                           std::vector<ExportValueType>& result) {
         if (representativesNode == sylvan_false || mtbdd_iszero(vector)) {
@@ -902,6 +961,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
     phmap::flat_hash_map<BDD, uint64_t> blockToOffset;
+#endif
 };
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>

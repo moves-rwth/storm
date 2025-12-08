@@ -1,12 +1,11 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/storm.h"
@@ -15,8 +14,6 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/graph.h"
-
-#include "test/storm_gtest.h"
 
 class MonotonicityCheckerTest : public ::testing::Test {
    protected:

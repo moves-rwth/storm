@@ -1,6 +1,6 @@
-
 #include "storm/storage/SparseMatrixOperations.h"
-#include "storm/storage/SparseMatrix.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::storage {
 #ifdef STORM_HAVE_CARL

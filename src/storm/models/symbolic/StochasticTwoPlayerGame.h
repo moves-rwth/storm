@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SYMBOLIC_STOCHASTICTWOPLAYERGAME_H_
-#define STORM_MODELS_SYMBOLIC_STOCHASTICTWOPLAYERGAME_H_
+#pragma once
 
 #include "storm/models/symbolic/NondeterministicModel.h"
 
@@ -135,5 +134,3 @@ class StochasticTwoPlayerGame : public NondeterministicModel<Type, ValueType> {
 }  // namespace symbolic
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SYMBOLIC_STOCHASTICTWOPLAYERGAME_H_ */

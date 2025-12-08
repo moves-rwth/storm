@@ -59,7 +59,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::splitOffDivergentSt
             // Now traverse the forward transitions of the current state and check whether there is a
             // transition to some other block.
             bool isDirectlyNonDivergent = false;
-            for (auto const& successor : this->model.getRows(*stateIt)) {
+            for (auto const& successor : this->model.getTransitionMatrix().getRowGroup(*stateIt)) {
                 // If there is such a transition, then we can mark all states in the current block that can
                 // reach the state as non-divergent.
                 if (this->partition.getBlock(successor.getColumn()) != block) {
@@ -105,7 +105,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::initializeSilentPro
     silentProbabilities.resize(this->model.getNumberOfStates(), storm::utility::zero<ValueType>());
     for (storm::storage::sparse::state_type state = 0; state < this->model.getNumberOfStates(); ++state) {
         Block<BlockDataType> const* currentBlockPtr = &this->partition.getBlock(state);
-        for (auto const& successorEntry : this->model.getRows(state)) {
+        for (auto const& successorEntry : this->model.getTransitionMatrix().getRowGroup(state)) {
             if (&this->partition.getBlock(successorEntry.getColumn()) == currentBlockPtr) {
                 silentProbabilities[state] += successorEntry.getValue();
             }
@@ -410,7 +410,7 @@ std::vector<storm::storage::BitVector> DeterministicModelBisimulationDecompositi
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
 
-                    if (this->comparator.isZero(predecessorEntry.getValue())) {
+                    if (storm::utility::isZero(predecessorEntry.getValue())) {
                         continue;
                     }
 

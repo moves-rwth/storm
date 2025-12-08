@@ -1,6 +1,9 @@
 #include "storm-dft/storage/elements/DFTElement.h"
+
 #include <set>
+
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 

@@ -1,15 +1,15 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-
-#include "storm-parsers/parser/AutoParser.h"
 #include "storm/settings/SettingMemento.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {

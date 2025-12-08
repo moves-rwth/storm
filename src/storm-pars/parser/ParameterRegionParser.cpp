@@ -1,9 +1,10 @@
-#include <boost/algorithm/string.hpp>
-#include <storm/exceptions/WrongFormatException.h>
-
 #include "storm-pars/parser/ParameterRegionParser.h"
 
+#include <boost/algorithm/string.hpp>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/file.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"

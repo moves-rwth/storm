@@ -1,18 +1,16 @@
-#ifndef STORM_MONOTONICITYCHECKER_H
-#define STORM_MONOTONICITYCHECKER_H
+#pragma once
 
 #include <boost/container/flat_map.hpp>
 #include <map>
-#include "LocalMonotonicityResult.h"
-#include "MonotonicityResult.h"
-#include "Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
 
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
@@ -66,4 +64,3 @@ class MonotonicityChecker {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_MONOTONICITYCHECKER_H

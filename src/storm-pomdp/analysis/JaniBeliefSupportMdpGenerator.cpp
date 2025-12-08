@@ -1,5 +1,6 @@
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 #include "storm-parsers/api/properties.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/verification.h"
 #include "storm/io/file.h"

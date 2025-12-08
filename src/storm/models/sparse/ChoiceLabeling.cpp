@@ -1,8 +1,5 @@
 #include "storm/models/sparse/ChoiceLabeling.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/OutOfRangeException.h"
-
 namespace storm {
 namespace models {
 namespace sparse {

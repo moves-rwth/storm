@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: moves-rwth/storm
       - name: Update carl-storm version

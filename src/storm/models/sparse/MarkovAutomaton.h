@@ -1,5 +1,4 @@
-#ifndef STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_
-#define STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_
+#pragma once
 
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/NondeterministicModel.h"
@@ -193,5 +192,3 @@ class MarkovAutomaton : public NondeterministicModel<ValueType, RewardModelType>
 }  // namespace sparse
 }  // namespace models
 }  // namespace storm
-
-#endif /* STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_ */

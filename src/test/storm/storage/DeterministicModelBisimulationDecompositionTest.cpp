@@ -1,10 +1,11 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
+
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
-#include "test/storm_gtest.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =

@@ -1,11 +1,12 @@
+#include "storm/solver/SmtlibSmtSolver.h"
+
 #include <errno.h>
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#include "storm/solver/SmtlibSmtSolver.h"
+#include <boost/algorithm/string.hpp>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
@@ -18,8 +19,6 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/utility/macros.h"
-
-#include <boost/algorithm/string.hpp>
 
 namespace storm {
 namespace solver {

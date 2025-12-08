@@ -1,14 +1,14 @@
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include <memory>
 #include <vector>
+
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
-
 #include "storm/api/builder.h"
 #include "storm/api/storm.h"
 #include "storm/logic/Formulas.h"
@@ -16,8 +16,6 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/graph.h"
-
-#include "test/storm_gtest.h"
 
 class OrderExtenderTest : public ::testing::Test {
    protected:

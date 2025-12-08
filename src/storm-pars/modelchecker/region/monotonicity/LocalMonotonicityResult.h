@@ -1,9 +1,8 @@
-#ifndef STORM_LOCALMONOTONICITYRESULT_H
-#define STORM_LOCALMONOTONICITYRESULT_H
+#pragma once
 
 #include <vector>
+
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/BitVector.h"
 
 namespace storm {
@@ -106,5 +105,3 @@ class LocalMonotonicityResult {
 };
 }  // namespace analysis
 }  // namespace storm
-
-#endif  // STORM_LOCALMONOTONICITYRESULT_H

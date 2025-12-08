@@ -25,12 +25,14 @@ jobs:
           - {name: "GMP exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest",
              buildType: "Debug",
+             disable_cudd: "OFF",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
+             disable_sylvan: "OFF",
              disable_xerces: "OFF",
              disable_z3: "OFF",
              Developer: "ON",
@@ -42,12 +44,14 @@ jobs:
           - {name: "CLN exact; GMP rational functions; All dependencies",
              baseImg: "storm-dependencies:latest",
              buildType: "Debug",
+             disable_cudd: "OFF",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
+             disable_sylvan: "OFF",
              disable_xerces: "OFF",
              disable_z3: "OFF",
              Developer: "ON",
@@ -59,12 +63,14 @@ jobs:
           - {name: "CLN exact; CLN rational functions; All dependencies",
              baseImg: "storm-dependencies:latest",
              buildType: "Debug",
+             disable_cudd: "OFF",
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
+             disable_sylvan: "OFF",
              disable_xerces: "OFF",
              disable_z3: "OFF",
              Developer: "ON",
@@ -76,12 +82,14 @@ jobs:
           - {name: "GMP exact; CLN rational functions; No dependencies",
              baseImg: "storm-dependencies:latest",
              buildType: "Debug",
+             disable_cudd: "ON",
              disable_glpk: "ON",
              disable_gmm: "ON",
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
+             disable_sylvan: "ON",
              disable_xerces: "ON",
              disable_z3: "ON",
              Developer: "ON",
@@ -93,12 +101,14 @@ jobs:
           - {name: "Minimal dependencies (without CLN)",
              baseImg: "storm-basesystem:minimal_dependencies",
              buildType: "Debug",
+             disable_cudd: "ON",
              disable_glpk: "ON",
              disable_gmm: "ON",
              disable_gurobi: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
+             disable_sylvan: "ON",
              disable_xerces: "ON",
              disable_z3: "ON",
              Developer: "ON",
@@ -109,19 +119,21 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
             --build-arg BASE_IMAGE=movesrwth/${{ matrix.config.baseImg }} \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg carl_tag="master" \
+            --build-arg disable_cudd="${{ matrix.config.disable_cudd }}" \
             --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
             --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
             --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
             --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
             --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
+            --build-arg disable_sylvan="${{ matrix.config.disable_sylvan }}" \
             --build-arg disable_xerces="${{ matrix.config.disable_xerces }}" \
             --build-arg disable_z3="${{ matrix.config.disable_z3 }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
@@ -198,7 +210,7 @@ jobs:
             }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Replace Dockerfile
         run: cp .github/workflows/Dockerfile.${{ matrix.config.distro }} Dockerfile
       - name: Build storm from Dockerfile
@@ -254,7 +266,7 @@ jobs:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Build storm from Dockerfile
         run: |
           docker build -t movesrwth/storm:ci . \
@@ -323,7 +335,7 @@ jobs:
         with:
           xcode-version: ${{ matrix.config.xcode }}
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install dependencies
         # cmake and gmp are already installed
         run: |
@@ -390,7 +402,7 @@ jobs:
           }
     steps:
       - name: Git clone
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Git describe
         id: ghd
         uses: proudust/gh-describe@v2
