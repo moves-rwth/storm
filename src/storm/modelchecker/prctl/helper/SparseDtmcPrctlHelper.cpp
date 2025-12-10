@@ -151,7 +151,8 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseDtmcPrctlHelper
 
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
-                                                            storm::storage::SparseMatrix<ValueType>&& submatrix, std::vector<ValueType> const& b) {
+                                                            storm::storage::SparseMatrix<ValueType>&& submatrix, std::vector<ValueType> const& b,
+                                                            bool computeReward) {
     // Initialize the solution vector.
     std::vector<SolutionType> x = std::vector<SolutionType>(submatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
 
@@ -160,11 +161,14 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
-    solver->setUncertaintyIsRobust(goal.isRobust());
+    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
     solver->setHasUniqueSolution(false);
     solver->setHasNoEndComponents(false);
-    solver->setLowerBound(storm::utility::zero<SolutionType>());
-    solver->setUpperBound(storm::utility::one<SolutionType>());
+
+    if (!computeReward) {
+        solver->setLowerBound(storm::utility::zero<SolutionType>());
+        solver->setUpperBound(storm::utility::one<SolutionType>());
+    }
 
     // Solve the corresponding system of equations.
     solver->solveEquations(env, x, b);
@@ -240,7 +244,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 // the accumulated probability of going from state i to some state that has probability 1.
                 storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(statesWithProbability1));
 
-                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b);
+                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, false);
 
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<SolutionType>(result, maybeStates, x);
@@ -637,7 +641,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
                 std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
 
                 // Compute values for maybe states.
-                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b);
+                std::vector<SolutionType> x = computeRobustValuesForMaybeStates(env, std::move(goal), std::move(submatrix), b, true);
 
                 // Set values of resulting vector according to result.
                 storm::utility::vector::setVectorValues<SolutionType>(result, maybeStates, x);

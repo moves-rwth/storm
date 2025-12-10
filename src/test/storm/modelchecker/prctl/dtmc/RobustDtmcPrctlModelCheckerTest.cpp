@@ -11,7 +11,6 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/solver/OptimizationDirection.h"
 #include "storm/transformer/AddUncertainty.h"
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
@@ -37,7 +36,8 @@ double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse
     return result->asQuantitativeCheckResult<double>().getMin();
 }
 
-void expectThrow(std::string const& path, std::string const& formulaString) {
+void expectThrow(std::string const& path, std::string const& formulaString,
+                 std::optional<storm::UncertaintyResolutionMode> uncertaintyResolutionMode = std::nullopt) {
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
 
@@ -47,6 +47,9 @@ void expectThrow(std::string const& path, std::string const& formulaString) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    if (uncertaintyResolutionMode.has_value()) {
+        task.setUncertaintyResolutionMode(uncertaintyResolutionMode.value());
+    }
 
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>(*dtmc);
     STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::BaseException);
@@ -70,7 +73,7 @@ void expectThrowPrism(std::string const& path, std::string const& formulaString)
     STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidArgumentException);
 }
 
-void checkExplicitModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double max, double min) {
+void checkExplicitModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double min, double max) {
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
@@ -79,18 +82,20 @@ void checkExplicitModelForQuantitativeResult(std::string const& path, std::strin
     std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
 
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>(*dtmc);
     auto resultMax = checker.check(env, taskMax);
     EXPECT_NEAR(max, getQuantitativeResultAtInitialState(dtmc, resultMax), 0.0001);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
 
     auto resultMin = checker.check(env, taskMin);
     EXPECT_NEAR(min, getQuantitativeResultAtInitialState(dtmc, resultMin), 0.0001);
 }
 
-void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double max, double min) {
+void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double min, double max) {
     storm::prism::Program program = storm::api::parseProgram(path);
     program = storm::utility::prism::preprocess(program, "");
 
@@ -103,12 +108,14 @@ void checkPrismModelForQuantitativeResult(std::string const& path, std::string c
     std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
     auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
 
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>(*dtmc);
     auto resultMax = checker.check(env, taskMax);
     EXPECT_NEAR(max, getQuantitativeResultAtInitialState(dtmc, resultMax), 0.0001);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
 
     auto resultMin = checker.check(env, taskMin);
     EXPECT_NEAR(min, getQuantitativeResultAtInitialState(dtmc, resultMin), 0.0001);
@@ -146,17 +153,24 @@ void checkModelForQualitativeResult(std::string const& path, std::string const& 
 
 TEST(RobustDtmcModelCheckerTest, Tiny01ReachMaxMinProbs) {
     // Maximal Reachability probabilities using explicit format.
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.3, 0.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];P=? [ F \"target\"]", 0.3, 0.5);
 }
 
-TEST(RobustDtmcModelCheckerTest, Tiny01MaxReachProbNoOptimizationdirection) {
-    // Nature requires an optimization direction, expect thrown.
-    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];");
+TEST(RobustDtmcModelCheckerTest, Tiny01MaxReachProbNoUncertaintyResolutionMode) {
+    // Nature requires a resolution mode, expect thrown.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];",
+                std::make_optional<storm::UncertaintyResolutionMode>(storm::UncertaintyResolutionMode::Unset));
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny01MaxReachProbNoOptimizationDirectionButRobust) {
+    // Nature requires a resolution mode, expect thrown.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];",
+                std::make_optional<storm::UncertaintyResolutionMode>(storm::UncertaintyResolutionMode::Robust));
 }
 
 TEST(RobustDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
     // Globally not yet supported, expect throw.
-    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-02.drn", "Pmax=? [ G \"target\"];Pmin=? [ G \"target\"]");
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-02.drn", "P=? [ G \"target\"];P=? [ G \"target\"]");
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
@@ -164,8 +178,7 @@ TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Pmax=? [ F \"one\"];Pmin=? [ F \"one\"]", 9.0 / 189.0,
-                                         72.0 / 189.0);
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]", 9.0 / 189.0, 72.0 / 189.0);
 }
 
 TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
@@ -173,7 +186,7 @@ TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "Pmax=? [ F \"error\" ];Pmin=? [ F \"error\" ]",
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
                                          2.559615918664207e-10, 0.0008464876763422187);
 }
 
@@ -182,22 +195,22 @@ TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     // Maxima reachability rewards using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "Rmax=? [ F \"done\"];Rmin=? [ F \"done\"]", 3.25, 4.6);
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]", 3.25, 4.6);
 }
 
 TEST(RobustDtmcModelCheckerTest, Tiny03MaxMinRewards) {
     // Maxima reachability rewards using explicit format.
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]", 6.5, 8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"];R=? [ F \"target\"]", 6.5, 8.5);
 }
 
-TEST(RobustDtmcModelCheckerTest, Tiny03RewardsNoOptimizationDirection) {
-    // Nature requires an optimization direction, expect thrown.
-    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"]");
+TEST(RobustDtmcModelCheckerTest, Tiny03RewardsNoUncertaintyResolutionMode) {
+    // Nature requires a resolution mode, expect thrown.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"]", storm::UncertaintyResolutionMode::Unset);
 }
 
 TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
     // Maxima reachability rewards using explicit format - infinite reward case.
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "Rmax=? [ F \"target\"];Rmin=? [ F \"target\"]",
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
                                             std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 }
 

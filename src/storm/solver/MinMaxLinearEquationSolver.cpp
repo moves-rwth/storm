@@ -22,7 +22,13 @@ namespace storm::solver {
 
 template<typename ValueType, typename SolutionType>
 MinMaxLinearEquationSolver<ValueType, SolutionType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction)
-    : direction(direction), trackScheduler(false), uniqueSolution(false), noEndComponents(false), cachingEnabled(false), requirementsChecked(false) {
+    : direction(direction),
+      trackScheduler(false),
+      uniqueSolution(false),
+      noEndComponents(false),
+      cachingEnabled(false),
+      requirementsChecked(false),
+      uncertaintyResolutionMode(UncertaintyResolutionMode::Unset) {
     // Intentionally left empty.
 }
 
@@ -44,6 +50,8 @@ template<typename ValueType, typename SolutionType>
 void MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environment const& env, std::vector<SolutionType>& x,
                                                                          std::vector<ValueType> const& b) const {
     STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
+    STORM_LOG_THROW(isSet(this->uncertaintyResolutionMode) || !storm::IsIntervalType<ValueType>, storm::exceptions::IllegalFunctionCallException,
+                    "Uncertainty resolution mode not set.");
     solveEquations(env, convert(this->direction), x, b);
 }
 
@@ -192,13 +200,13 @@ bool MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::isRequirementsC
 }
 
 template<typename ValueType, typename SolutionType>
-void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyIsRobust(bool robust) {
-    this->robustUncertainty = robust;
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyResolutionMode(storm::solver::UncertaintyResolutionMode uncertaintyResolutionMode) {
+    this->uncertaintyResolutionMode = uncertaintyResolutionMode;
 }
 
 template<typename ValueType, typename SolutionType>
-bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isUncertaintyRobust() const {
-    return this->robustUncertainty;
+UncertaintyResolutionMode MinMaxLinearEquationSolver<ValueType, SolutionType>::getUncertaintyResolutionMode() const {
+    return this->uncertaintyResolutionMode;
 }
 
 template<typename ValueType, typename SolutionType>

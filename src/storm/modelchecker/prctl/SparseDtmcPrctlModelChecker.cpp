@@ -142,8 +142,14 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     Environment const& env, CheckTask<storm::logic::UntilFormula, SolutionType> const& checkTask) {
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
     if (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
-                        "Formula needs to specify whether nature is resolved in a worst-case or best-case fashion on interval model.");
+        STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution mode must be set for uncertain (interval) models.");
+        STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
+                            checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
+                        storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().hasOnlyPositiveEntries(), storm::exceptions::InvalidSettingsException,
+                        "Computing until probabilities on uncertain model requires graph-preservation.");
     }
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
@@ -292,8 +298,14 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     Environment const& env, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     if (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
-                        "Formula needs to specify whether nature is resolved in a worst-case or best-case fashion on interval model.");
+        STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution mode must be set for uncertain (interval) models.");
+        STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
+                            checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
+                        storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().hasOnlyPositiveEntries(), storm::exceptions::InvalidSettingsException,
+                        "Computing rewards on uncertain model requires graph-preservation.");
     }
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();

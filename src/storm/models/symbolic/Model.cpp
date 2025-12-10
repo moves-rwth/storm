@@ -317,7 +317,7 @@ std::vector<std::string> Model<Type, ValueType>::getLabels() const {
 template<storm::dd::DdType Type, typename ValueType>
 void Model<Type, ValueType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (symbolic)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (symbolic)\n";
     out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)\n";
     out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)\n";
 }

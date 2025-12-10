@@ -167,7 +167,8 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
 
 template<typename ValueType, typename SolutionType>
 void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractScheduler(std::vector<SolutionType>& x, std::vector<ValueType> const& b,
-                                                                                    OptimizationDirection const& dir, bool updateX, bool robust) const {
+                                                                                    OptimizationDirection const& dir,
+                                                                                    UncertaintyResolutionMode uncertaintyResolutionMode, bool updateX) const {
     if (std::is_same_v<ValueType, storm::Interval> && this->A->hasTrivialRowGrouping()) {
         // Create robust scheduler index if it doesn't exist yet
         if (!this->robustSchedulerIndex) {
@@ -203,14 +204,14 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractSchedu
     if (viOperatorTriv) {
         if constexpr (std::is_same<ValueType, storm::Interval>() && std::is_same<SolutionType, double>()) {
             storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, true> schedHelper(viOperatorTriv);
-            schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
+            schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, uncertaintyResolutionMode, updateX ? &x : nullptr, this->robustSchedulerIndex);
         } else {
             STORM_LOG_ERROR("SchedulerTrackingHelper not implemented for this setting (trivial row grouping but not Interval->double).");
         }
     }
     if (viOperatorNontriv) {
         storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, false> schedHelper(viOperatorNontriv);
-        schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, updateX ? &x : nullptr, this->robustSchedulerIndex);
+        schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, uncertaintyResolutionMode, updateX ? &x : nullptr, this->robustSchedulerIndex);
     }
 }
 
@@ -602,7 +603,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {
@@ -651,7 +652,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {
@@ -735,12 +736,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {
@@ -753,12 +754,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->isUncertaintyRobust());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {
@@ -812,7 +813,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {
@@ -863,7 +864,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         this->reportStatus(status, numIterations);
@@ -960,7 +961,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
-            this->extractScheduler(x, b, dir, this->isUncertaintyRobust());
+            this->extractScheduler(x, b, dir, this->getUncertaintyResolutionMode());
         }
 
         if (!this->isCachingEnabled()) {

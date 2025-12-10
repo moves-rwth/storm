@@ -2,6 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/SolverSelectionOptions.h"
@@ -107,6 +108,18 @@ class MinMaxEquationSolverSettings : public ModuleSettings {
      * Retrieves whether equality should be enforced where possible
      */
     bool getLpUseEqualityForTrivialActions() const;
+
+    /*!
+     * Retrieves the mode deciding how the uncertainty should be resolved.
+     *
+     * @return The nature resolution mode
+     */
+    UncertaintyResolutionModeSetting getUncertaintyResolutionMode() const;
+
+    /*!
+     * @return whether the mode for how the uncertainty should be resolved has been set.
+     */
+    bool isUncertaintyResolutionModeSet() const;
 
     // The name of the module.
     static const std::string moduleName;

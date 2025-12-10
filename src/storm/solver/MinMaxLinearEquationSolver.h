@@ -10,6 +10,7 @@
 #include "storm/solver/MinMaxLinearEquationSolverRequirements.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/sparse/StateType.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -72,14 +73,14 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     void unsetOptimizationDirection();
 
     /*!
-     * Set whether uncertainty should be interpreted adverserially (robust) or not
+     * Sets how the uncertainty should be resolved.
      */
-    void setUncertaintyIsRobust(bool robust);
+    void setUncertaintyResolutionMode(UncertaintyResolutionMode uncertaintyResolutionMode);
 
     /*!
-     * Is the uncertainty to be interpreted robustly (adverserially) or not?
+     * Retrieves the mode indicating how the uncertainty should be resolved.
      */
-    bool isUncertaintyRobust() const;
+    UncertaintyResolutionMode getUncertaintyResolutionMode() const;
 
     /*!
      * Sets the states for which the choices are fixed.
@@ -235,8 +236,8 @@ class MinMaxLinearEquationSolver : public AbstractEquationSolver<SolutionType> {
     /// A flag storing whether the requirements of the solver were checked.
     bool requirementsChecked;
 
-    /// For uncertain models, if this flag is set to true, the uncertainty is resolved adverserially and angelically otherwise.
-    bool robustUncertainty;
+    /// For uncertain models, this mode decides how the uncertainty will be resolved by nature.
+    UncertaintyResolutionMode uncertaintyResolutionMode;
 };
 
 template<typename ValueType, typename SolutionType = ValueType>

@@ -90,6 +90,11 @@ bool SolveGoal<ValueType, SolutionType>::minimize() const {
 
 template<typename ValueType, typename SolutionType>
 OptimizationDirection SolveGoal<ValueType, SolutionType>::direction() const {
+    if (!optimizationDirection.has_value()) {
+        // required for IDTMCs with explicit uncertainty resolution flag
+        STORM_LOG_WARN("Optimization direction not set, defaulting to maximize.");
+        return OptimizationDirection::Maximize;
+    }
     return optimizationDirection.get();
 }
 
@@ -109,8 +114,8 @@ bool SolveGoal<ValueType, SolutionType>::boundIsStrict() const {
 }
 
 template<typename ValueType, typename SolutionType>
-bool SolveGoal<ValueType, SolutionType>::isRobust() const {
-    return robustAgainstUncertainty;
+UncertaintyResolutionMode SolveGoal<ValueType, SolutionType>::getUncertaintyResolutionMode() const {
+    return uncertaintyResolutionMode;
 }
 
 template<typename ValueType, typename SolutionType>

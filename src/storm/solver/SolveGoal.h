@@ -6,6 +6,7 @@
 
 #include "storm/logic/ComparisonType.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/BitVector.h"
 
 #include "storm/solver/LinearEquationSolver.h"
@@ -56,7 +57,7 @@ class SolveGoal {
             comparisonType = checkTask.getBoundComparisonType();
             threshold = checkTask.getBoundThreshold();
         }
-        robustAgainstUncertainty = checkTask.getRobustUncertainty();
+        uncertaintyResolutionMode = checkTask.getUncertaintyResolutionMode();
     }
 
     SolveGoal(bool minimize);
@@ -76,7 +77,7 @@ class SolveGoal {
 
     OptimizationDirection direction() const;
 
-    bool isRobust() const;
+    UncertaintyResolutionMode getUncertaintyResolutionMode() const;
 
     bool isBounded() const;
 
@@ -100,7 +101,7 @@ class SolveGoal {
     boost::optional<storm::logic::ComparisonType> comparisonType;
     boost::optional<SolutionType> threshold;
     boost::optional<storm::storage::BitVector> relevantValueVector;
-    bool robustAgainstUncertainty = true;  // If set to false, the uncertainty is interpreted as controllable.
+    UncertaintyResolutionMode uncertaintyResolutionMode;
 };
 
 template<typename ValueType, typename MatrixType, typename SolutionType>
