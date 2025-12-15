@@ -29,6 +29,7 @@
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
@@ -422,6 +423,7 @@ inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property
 
 inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+    auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
 
     SymbolicInput output = input;
 
@@ -429,7 +431,7 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
     if (ioSettings.isPropertiesAsMultiSet()) {
         STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidArgumentException,
                         "Can not translate properties to multi-objective formula because no properties were specified.");
-        output.properties = {storm::api::createMultiObjectiveProperty(output.properties)};
+        output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
     }
 
     // Substitute constant definitions in symbolic input.
