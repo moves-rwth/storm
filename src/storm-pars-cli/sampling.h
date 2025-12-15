@@ -115,7 +115,7 @@ void verifyPropertiesAtSamplePoints(ModelType const& model, cli::SymbolicInput c
                 valuationWatch.stop();
 
                 if (result) {
-                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
+                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<SolveValueType>(model.getInitialStates()));
                 }
                 printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
 

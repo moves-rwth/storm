@@ -43,9 +43,9 @@ TEST_F(SparseMaCbMultiObjectiveModelCheckerTest, server) {
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 
     result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<storm::RationalNumber>()[initState]);
 }

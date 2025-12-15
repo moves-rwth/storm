@@ -176,7 +176,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
 
     // Convert the explicit result
     if (explicitResult->isExplicitQualitativeCheckResult()) {
-        if (explicitResult->asExplicitQualitativeCheckResult()[*sparseModel->getInitialStates().begin()]) {
+        if (explicitResult->template asExplicitQualitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()]) {
             return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(
                 this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddOne()));
         } else {

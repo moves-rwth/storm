@@ -190,7 +190,7 @@ std::unique_ptr<CheckResult> SparseDtmcInstantiationModelChecker<SparseModelType
         // Note that we can not consider the states with probability one since a state might reach a target state with prob 1 within >0 steps
         std::unique_ptr<CheckResult> subFormulaResult =
             modelChecker.check(env, this->currentCheckTask->getFormula().asOperatorFormula().getSubformula().asBoundedUntilFormula().getRightSubformula());
-        maybeStates = maybeStates & ~(subFormulaResult->asExplicitQualitativeCheckResult().getTruthValuesVector());
+        maybeStates = maybeStates & ~(subFormulaResult->template asExplicitQualitativeCheckResult<ConstantType>().getTruthValuesVector());
         hint.setMaybeStates(std::move(maybeStates));
         hint.setComputeOnlyMaybeStates(true);
     } else {

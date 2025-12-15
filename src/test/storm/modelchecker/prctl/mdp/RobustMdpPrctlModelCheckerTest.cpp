@@ -17,11 +17,11 @@
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model) {
-    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->getInitialStates());
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(model->getInitialStates());
 }
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(std::shared_ptr<storm::models::sparse::Model<double>> const& model) {
-    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->getInitialStates());
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(model->getInitialStates());
 }
 
 double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model,

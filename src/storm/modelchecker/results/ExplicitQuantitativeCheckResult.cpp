@@ -61,7 +61,7 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boos
 }
 
 template<typename ValueType>
-ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other) {
+ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult<ValueType> const& other) {
     if (other.isResultForAllStates()) {
         storm::storage::BitVector const& bvValues = other.getTruthValuesVector();
 
@@ -73,7 +73,7 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(Expl
 
         values = newVector;
     } else {
-        ExplicitQualitativeCheckResult::map_type const& bitMap = other.getTruthValuesMap();
+        typename ExplicitQualitativeCheckResult<ValueType>::map_type const& bitMap = other.getTruthValuesMap();
 
         map_type newMap;
         for (auto const& e : bitMap) {
@@ -109,8 +109,8 @@ void ExplicitQuantitativeCheckResult<ValueType>::filter(QualitativeCheckResult c
     STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException,
                     "Cannot filter explicit check result with non-explicit filter.");
     STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
-    ExplicitQualitativeCheckResult const& explicitFilter = filter.asExplicitQualitativeCheckResult();
-    ExplicitQualitativeCheckResult::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
+    ExplicitQualitativeCheckResult<ValueType> const& explicitFilter = filter.template asExplicitQualitativeCheckResult<ValueType>();
+    typename ExplicitQualitativeCheckResult<ValueType>::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
 
     if (this->isResultForAllStates()) {
         map_type newMap;
@@ -369,7 +369,7 @@ std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compare
                 }
                 break;
         }
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(std::move(result)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(std::move(result), std::move(scheduler)));
     } else {
         map_type const& valuesAsMap = boost::get<map_type>(values);
         std::map<storm::storage::sparse::state_type, bool> result;
@@ -395,7 +395,7 @@ std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compare
                 }
                 break;
         }
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(std::move(result)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ValueType>(std::move(result), std::move(scheduler)));
     }
 }
 

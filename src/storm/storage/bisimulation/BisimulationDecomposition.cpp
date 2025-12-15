@@ -160,8 +160,8 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::checkAndSetMe
         storm::modelchecker::SparsePropositionalModelChecker<ModelType> checker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> phiStatesCheckResult = checker.check(*leftSubformula);
         std::unique_ptr<storm::modelchecker::CheckResult> psiStatesCheckResult = checker.check(*rightSubformula);
-        phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
-        psiStates = psiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
+        phiStates = phiStatesCheckResult->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+        psiStates = psiStatesCheckResult->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
     } else {
         optimalityType = boost::none;
     }

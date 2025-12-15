@@ -53,7 +53,7 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
     storm::storage::BitVector psiStates =
         propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
-            ->asExplicitQualitativeCheckResult()
+            ->template asExplicitQualitativeCheckResult<storm::RationalFunction>()
             .getTruthValuesVector();
 
     std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());

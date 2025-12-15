@@ -273,7 +273,7 @@ bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> co
                                                                        storm::api::createTask<ValueType>(formula.asSharedPointer(), true));
         if (resultPtr) {
             auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
-            result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
+            result.filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(pomdp->getInitialStates()));
             if (storm::utility::resources::isTerminate()) {
                 STORM_PRINT_AND_LOG("\nResult till abort: ");
             } else {

@@ -51,7 +51,8 @@ std::unique_ptr<CheckResult> SparsePcaaAchievabilityQuery<SparseModelType, Geome
 
     bool result = this->checkAchievability(env);
 
-    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), result));
+    return std::unique_ptr<CheckResult>(
+        new ExplicitQualitativeCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0), result));
 }
 
 template<class SparseModelType, typename GeometryValueType>

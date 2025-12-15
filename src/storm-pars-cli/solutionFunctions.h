@@ -31,7 +31,7 @@ void computeSolutionFunctionsWithSparseEngine(std::shared_ptr<storm::models::spa
             std::unique_ptr<storm::modelchecker::CheckResult> result =
                 storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true));
             if (result) {
-                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>(model->getInitialStates()));
             }
             return result;
         },

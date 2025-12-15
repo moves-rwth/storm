@@ -91,7 +91,8 @@ std::unique_ptr<CheckResult> SparsePcaaQuantitativeQuery<SparseModelType, Geomet
         return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<typename SparseModelType::ValueType>(
             this->originalModel.getInitialStates().getNextSetIndex(0), resultForOriginalModel));
     } else {
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(this->originalModel.getInitialStates().getNextSetIndex(0), false));
+        return std::unique_ptr<CheckResult>(
+            new ExplicitQualitativeCheckResult<typename SparseModelType::ValueType>(this->originalModel.getInitialStates().getNextSetIndex(0), false));
     }
 }
 
