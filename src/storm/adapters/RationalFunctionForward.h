@@ -1,9 +1,9 @@
 #pragma once
-#include "storm-config.h"
-
-#include "storm/adapters/RationalNumberForward.h"
 
 #include <carl/core/MultivariatePolynomialForward.h>
+
+#include "storm-config.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 namespace carl {
 
@@ -38,7 +38,6 @@ typedef GmpRationalNumber RationalFunctionCoefficient;
 typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
 typedef carl::UnivariatePolynomial<RationalFunctionCoefficient> RawUnivariatePolynomial;
 typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-
 typedef carl::RationalFunction<Polynomial, true> RationalFunction;
 
 }  // namespace storm

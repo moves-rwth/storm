@@ -1,8 +1,7 @@
 #pragma once
+
 #include "storm-config.h"
-
-#include "RationalFunctionForward.h"
-
+#include "storm/adapters/RationalFunctionForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 
 #pragma clang diagnostic push
@@ -40,13 +39,6 @@ inline size_t hash_value(carl::RationalFunction<Pol, AutoSimplify> const& f) {
     std::hash<carl::RationalFunction<Pol, AutoSimplify>> h;
     return h(f);
 }
-
-template<typename Number>
-inline size_t hash_value(carl::Interval<Number> const& i) {
-    std::hash<carl::Interval<Number>> h;
-    return h(i);
-}
-
 }  // namespace carl
 
 namespace storm {
