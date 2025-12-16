@@ -6,23 +6,16 @@
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidOptionException.h"
-
 #include "storm/logic/FormulaInformation.h"
 #include "storm/logic/FragmentSpecification.h"
-
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
-
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 
@@ -404,7 +397,6 @@ template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>, bi
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<double>, bisimulation::DeterministicBlockData>;
 
-#ifdef STORM_HAVE_CARL
 template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>, bisimulation::DeterministicBlockData>;
@@ -412,6 +404,5 @@ template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::Ratio
 template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
-#endif
 }  // namespace storage
 }  // namespace storm

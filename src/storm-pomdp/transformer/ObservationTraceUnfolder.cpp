@@ -1,9 +1,8 @@
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/ConstantsComparator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 

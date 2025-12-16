@@ -1,9 +1,8 @@
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/utility/macros.h"
 
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

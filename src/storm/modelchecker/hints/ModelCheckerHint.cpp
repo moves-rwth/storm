@@ -1,5 +1,6 @@
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+
+#include "storm/adapters/ValueTypes.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 
 namespace storm {

@@ -2,6 +2,7 @@
 
 #include <boost/random.hpp>
 #include <random>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {

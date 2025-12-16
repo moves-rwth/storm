@@ -4,7 +4,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotImplementedException.h"

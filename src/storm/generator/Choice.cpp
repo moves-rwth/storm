@@ -1,12 +1,10 @@
 #include "storm/generator/Choice.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/utility/constants.h"
-
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BoostTypes.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

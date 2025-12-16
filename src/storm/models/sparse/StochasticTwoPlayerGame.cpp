@@ -1,6 +1,6 @@
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {

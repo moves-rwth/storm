@@ -1,15 +1,10 @@
 #include "storm/solver/SolveGoal.h"
 
-#include <memory>
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-
+#include "storm/adapters/ValueTypes.h"
 #include "storm/modelchecker/CheckTask.h"
-
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/utility/solver.h"
 
 namespace storm {
 namespace storage {

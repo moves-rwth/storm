@@ -1,10 +1,9 @@
 #include "storm/solver/TerminationCondition.h"
-#include "storm/utility/vector.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace solver {

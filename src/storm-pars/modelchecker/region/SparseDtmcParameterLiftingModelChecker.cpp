@@ -1,4 +1,5 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
+
 #include <memory>
 #include <vector>
 
@@ -6,36 +7,32 @@
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionSplitEstimateKind.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderBasedMonotonicityBackend.h"
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/transformer/IntervalEndComponentPreserver.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/environment/Environment.h"
-#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
-#include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/BitVector.h"
-
-#include "storm-pars/transformer/BigStep.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/utility/graph.h"
-#include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
-#include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace modelchecker {

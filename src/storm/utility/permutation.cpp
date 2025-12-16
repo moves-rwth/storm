@@ -5,8 +5,7 @@
 #include <numeric>
 #include <random>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"

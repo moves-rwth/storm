@@ -1,24 +1,20 @@
-#include <boost/functional/hash.hpp>
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/sparse/StateType.h"
 
-#include "storm/storage/BitVector.h"
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/permutation.h"
-#include "storm/utility/vector.h"
+#include <iterator>
 
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
-
+#include "storm/storage/BitVector.h"
+#include "storm/storage/sparse/StateType.h"
+#include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include <iterator>
+#include "storm/utility/permutation.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace storage {
@@ -2478,7 +2474,6 @@ template class SparseMatrix<storm::storage::sparse::state_type>;
 template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::storage::sparse::state_type> const& matrix);
 template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
 
-#ifdef STORM_HAVE_CARL
 // Rational Numbers
 
 #if defined(STORM_HAVE_CLN)
@@ -2540,7 +2535,6 @@ template std::vector<storm::Interval> SparseMatrix<Interval>::getPointwiseProduc
 template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
 
 template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
-#endif
 
 }  // namespace storage
 }  // namespace storm

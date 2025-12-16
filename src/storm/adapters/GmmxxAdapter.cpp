@@ -4,7 +4,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -45,12 +44,8 @@ std::unique_ptr<gmm::csr_matrix<T>> GmmxxAdapter<T>::toGmmxxSparseMatrix(storm::
 }
 
 template class GmmxxAdapter<double>;
-
-#ifdef STORM_HAVE_CARL
 template class GmmxxAdapter<storm::RationalNumber>;
 template class GmmxxAdapter<storm::RationalFunction>;
-#endif
-
 #endif
 
 }  // namespace adapters

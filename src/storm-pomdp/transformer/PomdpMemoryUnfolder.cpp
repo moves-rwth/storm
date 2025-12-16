@@ -3,10 +3,9 @@
 #include <limits>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/graph.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace transformer {
@@ -208,9 +207,8 @@ uint64_t PomdpMemoryUnfolder<ValueType>::getMemoryStateFromObservation(uint32_t 
     return unfoldingObservation % memory.getNumberOfStates();
 }
 
+template class PomdpMemoryUnfolder<double>;
 template class PomdpMemoryUnfolder<storm::RationalNumber>;
 template class PomdpMemoryUnfolder<storm::RationalFunction>;
-
-template class PomdpMemoryUnfolder<double>;
 }  // namespace transformer
 }  // namespace storm

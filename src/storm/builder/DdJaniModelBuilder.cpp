@@ -1,15 +1,26 @@
 #include "storm/builder/DdJaniModelBuilder.h"
 
+#include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include <boost/algorithm/string/join.hpp>
-
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-
-#include "storm/adapters/RationalNumberAdapter.h"
-
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BuildSettings.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -21,32 +32,9 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/models/symbolic/Ctmc.h"
-#include "storm/models/symbolic/Dtmc.h"
-#include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/dd.h"
-#include "storm/utility/jani.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/math.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace builder {

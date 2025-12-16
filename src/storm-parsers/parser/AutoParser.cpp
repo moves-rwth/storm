@@ -1,19 +1,14 @@
 #include "storm-parsers/parser/AutoParser.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm-parsers/parser/MappedFile.h"
-
 #include "storm-parsers/parser/DeterministicModelParser.h"
+#include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/parser/MarkovAutomatonParser.h"
 #include "storm-parsers/parser/NondeterministicModelParser.h"
-#include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm-parsers/util/cstring.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace parser {
@@ -108,9 +103,7 @@ storm::models::ModelType AutoParser<ValueType, RewardValueType>::analyzeHint(std
 // Explicitly instantiate the parser.
 template class AutoParser<double, double>;
 
-#ifdef STORM_HAVE_CARL
 template class AutoParser<double, storm::Interval>;
-#endif
 
 }  // namespace parser
 }  // namespace storm

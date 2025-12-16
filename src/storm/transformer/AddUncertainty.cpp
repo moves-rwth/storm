@@ -1,5 +1,6 @@
 #include "storm/transformer/AddUncertainty.h"
-#include "storm/adapters/RationalNumberAdapter.h"
+
+#include "storm/adapters/NumberRepresentation.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/models/sparse/Dtmc.h"

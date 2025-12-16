@@ -1,32 +1,18 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/numerical.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/FormatUnsupportedBySolverException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
 namespace modelchecker {

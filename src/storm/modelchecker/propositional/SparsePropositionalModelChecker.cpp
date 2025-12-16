@@ -1,7 +1,9 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/ValueTypes.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/logic/FragmentSpecification.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -9,12 +11,6 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/Smg.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-
-#include "storm/logic/FragmentSpecification.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -64,7 +60,6 @@ template class SparsePropositionalModelChecker<storm::models::sparse::Pomdp<doub
 template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<double>>;
 
-#ifdef STORM_HAVE_CARL
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 
@@ -84,6 +79,5 @@ template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAuto
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

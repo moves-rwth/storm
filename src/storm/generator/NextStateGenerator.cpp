@@ -1,7 +1,7 @@
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/adapters/JsonAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"

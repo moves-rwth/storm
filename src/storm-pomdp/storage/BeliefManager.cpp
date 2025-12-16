@@ -818,11 +818,9 @@ std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType
 }
 
 template class BeliefManager<storm::models::sparse::Pomdp<double>>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
 
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
 }  // namespace storage
 }  // namespace storm

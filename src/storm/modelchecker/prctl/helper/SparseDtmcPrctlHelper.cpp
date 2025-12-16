@@ -1,45 +1,33 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/io/export.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
-
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
-#include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
-#include "storm/storage/DynamicPriorityQueue.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
 #include "storm/modelchecker/helper/DiscountingHelper.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
-#include "storm/environment/solver/SolverEnvironment.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
-
-#include "storm/io/export.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
+#include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace modelchecker {
@@ -823,10 +811,8 @@ std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::comput
 
 template class SparseDtmcPrctlHelper<double>;
 
-#ifdef STORM_HAVE_CARL
 template class SparseDtmcPrctlHelper<storm::RationalNumber>;
 template class SparseDtmcPrctlHelper<storm::RationalFunction>;
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

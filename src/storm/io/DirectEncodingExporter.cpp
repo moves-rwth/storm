@@ -1,12 +1,10 @@
 #include "storm/io/DirectEncodingExporter.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"

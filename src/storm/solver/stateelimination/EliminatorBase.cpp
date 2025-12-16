@@ -331,13 +331,11 @@ bool EliminatorBase<ValueType, Mode>::isFilterPredecessor() const {
 template class EliminatorBase<double, ScalingMode::Divide>;
 template class EliminatorBase<double, ScalingMode::DivideOneMinus>;
 
-#ifdef STORM_HAVE_CARL
 template class EliminatorBase<storm::RationalNumber, ScalingMode::Divide>;
 template class EliminatorBase<storm::RationalFunction, ScalingMode::Divide>;
 
 template class EliminatorBase<storm::RationalNumber, ScalingMode::DivideOneMinus>;
 template class EliminatorBase<storm::RationalFunction, ScalingMode::DivideOneMinus>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

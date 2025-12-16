@@ -1,9 +1,8 @@
 #include "storm/utility/constants.h"
 
 #include <cmath>
-#include <type_traits>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/sparse/StateType.h"

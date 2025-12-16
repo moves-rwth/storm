@@ -1,11 +1,10 @@
 #pragma once
+
 #include <boost/variant.hpp>
-#include <functional>
 #include <map>
 #include <optional>
 
 #include "storm/adapters/JsonForward.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"

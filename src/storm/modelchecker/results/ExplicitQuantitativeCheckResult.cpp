@@ -1,4 +1,4 @@
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first
+#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
@@ -500,10 +500,7 @@ storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::Rati
 }
 
 template class ExplicitQuantitativeCheckResult<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
 template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

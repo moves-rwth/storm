@@ -1,10 +1,9 @@
 #include "storm/storage/FlexibleSparseMatrix.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -358,13 +357,11 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
 template class FlexibleSparseMatrix<double>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
 
-#ifdef STORM_HAVE_CARL
 template class FlexibleSparseMatrix<storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalNumber> const& matrix);
 
 template class FlexibleSparseMatrix<storm::RationalFunction>;
 template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalFunction> const& matrix);
-#endif
 
 }  // namespace storage
 }  // namespace storm

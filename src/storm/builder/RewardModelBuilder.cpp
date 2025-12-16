@@ -1,10 +1,8 @@
 #include "storm/builder/RewardModelBuilder.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/adapters/ValueTypes.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

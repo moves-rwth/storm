@@ -1,17 +1,15 @@
+#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
+
 #include <functional>
-#include <limits>
 #include <type_traits>
 
-#include "storm/adapters/RationalNumberForward.h"
-#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/OptimizationDirection.h"
-
+#include "storm/adapters/NumberRepresentation.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/SolverGuarantee.h"
 #include "storm/solver/helper/GuessingValueIterationHelper.h"
 #include "storm/solver/helper/IntervalterationHelper.h"
@@ -20,7 +18,6 @@
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"

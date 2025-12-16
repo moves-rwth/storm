@@ -1,14 +1,10 @@
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
-#include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/utility/graph.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/utility/macros.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -445,9 +441,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::refinePartitionB
 
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>;
 
-#ifdef STORM_HAVE_CARL
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>>;
-#endif
 }  // namespace storage
 }  // namespace storm

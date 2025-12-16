@@ -1,27 +1,20 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 
 #include <boost/any.hpp>
-#include <boost/container/flat_map.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
-
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
-
-#include "storm/generator/Distribution.h"
-
-#include "storm/solver/SmtSolver.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/exceptions/WrongFormatException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
 #include "storm/utility/vector.h"
 
 namespace storm {

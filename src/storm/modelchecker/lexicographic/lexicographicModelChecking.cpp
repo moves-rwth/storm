@@ -1,13 +1,9 @@
-#include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/environment/Environment.h"
-#include "storm/modelchecker/CheckTask.h"
-#include "storm/models/sparse/Mdp.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/utility/macros.h"
-
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {

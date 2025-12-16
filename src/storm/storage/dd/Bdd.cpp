@@ -1,13 +1,13 @@
+#include "storm/storage/dd/Bdd.h"
+
 #include <algorithm>
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/Odd.h"

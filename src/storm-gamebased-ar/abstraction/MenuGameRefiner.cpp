@@ -1,29 +1,19 @@
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
-#include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
-
 #include "storm-gamebased-ar/abstraction/ExplicitQualitativeGameResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/ExplicitQuantitativeResultMinMax.h"
+#include "storm-gamebased-ar/abstraction/MenuGameAbstractor.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/solver/MathsatSmtSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ExplicitGameStrategyPair.h"
-
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Odd.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/shortestPaths.h"
-#include "storm/utility/solver.h"
-
-#include "storm/solver/MathsatSmtSolver.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/exceptions/InvalidStateException.h"
-
-#include "storm/settings/SettingsManager.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -1703,11 +1693,6 @@ bool MenuGameRefiner<Type, ValueType>::addedAllGuards() const {
 template class MenuGameRefiner<storm::dd::DdType::CUDD, double>;
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, double>;
 template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-
-#ifdef STORM_HAVE_CARL
-// Currently, this instantiation does not work.
-// template class MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction>;
-#endif
 
 }  // namespace abstraction
 }  // namespace storm::gbar

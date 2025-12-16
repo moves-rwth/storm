@@ -1,6 +1,6 @@
 #include "storm/generator/StateBehavior.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 
 namespace storm {
 namespace generator {

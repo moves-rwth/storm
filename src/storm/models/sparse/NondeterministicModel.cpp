@@ -1,6 +1,6 @@
 #include "storm/models/sparse/NondeterministicModel.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"

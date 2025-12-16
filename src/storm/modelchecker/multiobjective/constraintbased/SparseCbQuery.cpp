@@ -1,17 +1,13 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/GoalStateMerger.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -54,13 +50,11 @@ SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectiv
     expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparseCbQuery<storm::models::sparse::Mdp<double>>;
 template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<double>>;
 
 template class SparseCbQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class SparseCbQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

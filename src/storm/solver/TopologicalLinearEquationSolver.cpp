@@ -1,11 +1,7 @@
 #include "storm/solver/TopologicalLinearEquationSolver.h"
 
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/UnexpectedException.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
@@ -306,13 +302,11 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> TopologicalLinearEquatio
 template class TopologicalLinearEquationSolver<double>;
 template class TopologicalLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class TopologicalLinearEquationSolver<storm::RationalNumber>;
 template class TopologicalLinearEquationSolverFactory<storm::RationalNumber>;
 
 template class TopologicalLinearEquationSolver<storm::RationalFunction>;
 template class TopologicalLinearEquationSolverFactory<storm::RationalFunction>;
 
-#endif
 }  // namespace solver
 }  // namespace storm

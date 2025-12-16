@@ -1,6 +1,6 @@
 #include "storm/models/sparse/Pomdp.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/ValueTypes.h"
 
 namespace storm {
 namespace models {

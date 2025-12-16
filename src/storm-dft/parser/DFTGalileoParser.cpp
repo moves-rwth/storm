@@ -1,7 +1,6 @@
 #include "storm-dft/parser/DFTGalileoParser.h"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/replace.hpp>
 #include <optional>
 #include <regex>
 

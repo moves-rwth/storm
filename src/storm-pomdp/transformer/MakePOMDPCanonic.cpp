@@ -1,9 +1,9 @@
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/AmbiguousModelException.h"
-#include "storm/storage/sparse/ModelComponents.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/sparse/ModelComponents.h"
 
 namespace storm {
 namespace transformer {

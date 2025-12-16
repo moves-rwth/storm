@@ -3,12 +3,11 @@
 #include <algorithm>
 #include <iostream>
 
+#include "storm/adapters/ValueTypes.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace storage {

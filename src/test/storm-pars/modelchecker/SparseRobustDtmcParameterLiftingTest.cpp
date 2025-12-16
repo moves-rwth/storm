@@ -3,14 +3,11 @@
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/storm.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 class IsGraphPreserving {

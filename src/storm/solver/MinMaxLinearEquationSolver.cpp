@@ -1,21 +1,17 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-#include <cstdint>
 #include <memory>
 
+#include "storm/adapters/NumberRepresentation.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 #include "storm/storage/Scheduler.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm::solver {
