@@ -431,5 +431,3 @@ template class lexicographic::LexicographicModelCheckerHelper<storm::models::spa
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#pragma clang diagnostic pop
