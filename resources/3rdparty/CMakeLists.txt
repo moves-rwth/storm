@@ -404,9 +404,6 @@ message(STATUS "Storm - Using carl version ${carl_VERSION} from ${carl_SOURCE_DI
 #
 # TODO this old flag is no longer really relevant as CARL must always be present.
 set(STORM_HAVE_CARL ON)
-# This flag is currently required to pick the right carl adapter.
-# TODO It can be removed as the old versions that did not support forward declarations are no longer supported either way.
-set(STORM_CARL_SUPPORTS_FWD_DECL ON)
 add_dependencies(storm_resources lib_carl)
 list(APPEND STORM_FETCHED_TARGETS lib_carl)
 
