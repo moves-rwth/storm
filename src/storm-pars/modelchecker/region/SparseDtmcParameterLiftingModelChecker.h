@@ -11,6 +11,7 @@
 #include "storm-pars/transformer/ParameterLifter.h"
 #include "storm-pars/transformer/RobustParameterLifter.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/Scheduler.h"
 

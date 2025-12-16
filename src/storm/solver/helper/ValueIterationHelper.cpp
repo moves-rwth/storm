@@ -1,6 +1,7 @@
 #include "storm/solver/helper/ValueIterationHelper.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
 
@@ -100,11 +101,17 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
 template<storm::OptimizationDirection Dir, bool Relative>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
-                                                                                   uint64_t& numIterations, SolutionType const& precision,
-                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
-    if (adversarialRobust) {
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
+    std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, SolutionType const& precision,
+    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
+    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode) const {
+    bool robustUncertainty = false;
+    if (storm::IsIntervalType<ValueType>) {
+        auto resolutionMode = uncertaintyResolutionMode.value();
+        robustUncertainty = isUncertaintyResolvedRobust(resolutionMode, Dir);
+    }
+
+    if (robustUncertainty) {
         return VI<Dir, Relative, invert(Dir)>(operand, offsets, numIterations, precision, iterationCallback, mult);
     } else {
         return VI<Dir, Relative, Dir>(operand, offsets, numIterations, precision, iterationCallback, mult);
@@ -112,35 +119,46 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
 }
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
-                                                                                   uint64_t& numIterations, bool relative, SolutionType const& precision,
-                                                                                   std::optional<storm::OptimizationDirection> const& dir,
-                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
+    std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, SolutionType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
+    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode) const {
+    if (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(uncertaintyResolutionMode.has_value(), storm::exceptions::IllegalFunctionCallException,
+                        "Uncertainty resolution mode must be set for uncertain (interval) models.");
+        STORM_LOG_THROW(dir.has_value() || (uncertaintyResolutionMode != UncertaintyResolutionMode::Robust &&
+                                            uncertaintyResolutionMode != UncertaintyResolutionMode::Cooperative),
+                        storm::exceptions::IllegalFunctionCallException,
+                        "Robust or cooperative nature resolution modes cannot be used if optimization direction is not set.");
+    }
+
     STORM_LOG_ASSERT(TrivialRowGrouping || dir.has_value(), "no optimization direction given!");
     if (!dir.has_value() || maximize(*dir)) {
         if (relative) {
-            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
+            return VI<storm::OptimizationDirection::Maximize, true>(operand, offsets, numIterations, precision, iterationCallback, mult,
+                                                                    uncertaintyResolutionMode);
         } else {
-            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
+            return VI<storm::OptimizationDirection::Maximize, false>(operand, offsets, numIterations, precision, iterationCallback, mult,
+                                                                     uncertaintyResolutionMode);
         }
     } else {
         if (relative) {
-            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
+            return VI<storm::OptimizationDirection::Minimize, true>(operand, offsets, numIterations, precision, iterationCallback, mult,
+                                                                    uncertaintyResolutionMode);
         } else {
-            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult, adversarialRobust);
+            return VI<storm::OptimizationDirection::Minimize, false>(operand, offsets, numIterations, precision, iterationCallback, mult,
+                                                                     uncertaintyResolutionMode);
         }
     }
 }
 
 template<typename ValueType, bool TrivialRowGrouping, typename SolutionType>
-SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets,
-                                                                                   bool relative, SolutionType const& precision,
-                                                                                   std::optional<storm::OptimizationDirection> const& dir,
-                                                                                   std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
-                                                                                   MultiplicationStyle mult, bool adversarialRobust) const {
+SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::VI(
+    std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
+    std::optional<storm::OptimizationDirection> const& dir, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback, MultiplicationStyle mult,
+    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode) const {
     uint64_t numIterations = 0;
-    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, adversarialRobust);
+    return VI(operand, offsets, numIterations, relative, precision, dir, iterationCallback, mult, uncertaintyResolutionMode);
 }
 
 template class ValueIterationHelper<double, true>;
