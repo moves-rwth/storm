@@ -3,23 +3,17 @@
 namespace storm {
 namespace solver {
 std::ostream& operator<<(std::ostream& out, UncertaintyResolutionMode mode) {
-    switch (mode) {
-        case UncertaintyResolutionMode::Minimize:
-            out << "minimize";
-            break;
-        case UncertaintyResolutionMode::Maximize:
-            out << "maximize";
-            break;
-        case UncertaintyResolutionMode::Robust:
-            out << "robust";
-            break;
-        case UncertaintyResolutionMode::Cooperative:
-            out << "cooperative";
-            break;
-        case UncertaintyResolutionMode::Unset:
-            out << "unset";
-            STORM_LOG_WARN("Uncertainty resolution mode not set.");
-            break;
+    if (mode == UncertaintyResolutionMode::Minimize) {
+        return out << "minimize";
+    } else if (mode == UncertaintyResolutionMode::Maximize) {
+        return out << "maximize";
+    } else if (mode == UncertaintyResolutionMode::Robust) {
+        return out << "robust";
+    } else if (mode == UncertaintyResolutionMode::Cooperative) {
+        return out << "cooperative";
+    } else {
+        STORM_LOG_WARN("Uncertainty resolution mode not set.");
+        return out << "unset";
     }
 }
 
@@ -59,17 +53,7 @@ bool isUncertaintyResolvedRobust(UncertaintyResolutionMode uncertaintyResolution
 UncertaintyResolutionMode convert(UncertaintyResolutionModeSetting settingMode) {
     STORM_LOG_THROW(settingMode != UncertaintyResolutionModeSetting::Both, storm::exceptions::InvalidSettingsException,
                     "Cannot convert uncertainty resolution setting mode 'both'");
-
-    switch (settingMode) {
-        case UncertaintyResolutionModeSetting::Maximize:
-            return UncertaintyResolutionMode::Maximize;
-        case UncertaintyResolutionModeSetting::Minimize:
-            return UncertaintyResolutionMode::Minimize;
-        case UncertaintyResolutionModeSetting::Robust:
-            return UncertaintyResolutionMode::Robust;
-        case UncertaintyResolutionModeSetting::Cooperative:
-            return UncertaintyResolutionMode::Cooperative;
-    }
+    return static_cast<UncertaintyResolutionMode>(settingMode);
 }
 
 }  // namespace solver
