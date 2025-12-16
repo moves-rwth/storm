@@ -1,28 +1,22 @@
 #include "storm/solver/GlpkLpSolver.h"
 
 #include <cmath>
-#include <iostream>
-
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/storage/expressions/BinaryRelationType.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/OperatorType.h"
-
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
-
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GlpkSettings.h"
+#include "storm/storage/expressions/BinaryRelationType.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace solver {

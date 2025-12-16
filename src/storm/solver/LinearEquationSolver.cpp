@@ -3,6 +3,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/AcyclicLinearEquationSolver.h"
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"

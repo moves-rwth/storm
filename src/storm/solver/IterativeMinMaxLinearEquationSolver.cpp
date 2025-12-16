@@ -7,6 +7,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/OptimizationDirection.h"
