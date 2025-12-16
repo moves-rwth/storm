@@ -1,4 +1,4 @@
-#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
+#include "storm/modelchecker/lexicographic/LexicographicModelChecking.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
@@ -18,8 +18,8 @@ helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment cons
     storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
 
     // Define the helper that contains all functions
-    helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true> lMC =
-        helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true>(formula, model.getTransitionMatrix());
+    helper::lexicographic::LexicographicModelCheckerHelper<SparseModelType, ValueType, true> lMC =
+        helper::lexicographic::LexicographicModelCheckerHelper<SparseModelType, ValueType, true>(formula, model.getTransitionMatrix());
 
     // get the product of (i) the product-automaton of all subformuale, and (ii) the model
     auto res = lMC.getCompleteProductModel(model, formulaChecker);
