@@ -29,8 +29,7 @@ bool RationalLiteralExpression::isLiteral() const {
     return true;
 }
 
-void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
-}
+void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {}
 
 std::shared_ptr<BaseExpression const> RationalLiteralExpression::simplify() const {
     return this->shared_from_this();

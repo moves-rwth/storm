@@ -3,19 +3,19 @@
 #include <sstream>
 #include <vector>
 
+#include "storm-pomdp/analysis/WinningRegion.h"
+#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/solver.h"
-#include "storm-pomdp/analysis/WinningRegion.h"
-#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
 
 namespace storm {
 namespace pomdp {
 
 enum class MemlessSearchPathVariables { BooleanRanking, IntegerRanking, RealRanking };
-MemlessSearchPathVariables pathVariableTypeFromString(std::string const& in) {
+inline MemlessSearchPathVariables pathVariableTypeFromString(std::string const& in) {
     if (in == "int") {
         return MemlessSearchPathVariables::IntegerRanking;
     } else if (in == "real") {

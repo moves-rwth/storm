@@ -190,7 +190,7 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::prepareScheduler(uin
                         // Set choice For non-accepting states that are not in any accepting EC
                         this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET),
                                                        reachScheduler->getChoice(pState)});
-                    };
+                    }
                     // All other InfSet combinations are unreachable (dontCare)
                     static_assert(DEFAULT_INFSET == 0, "This code assumes that the default infset is 0");
                     for (uint_fast64_t infSet = 1; infSet < _infSets.size(); ++infSet) {
