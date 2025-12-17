@@ -72,7 +72,7 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 * Ulises Torrella
 * Lukas Westhofen
 
-For an exhaustive list of contributors and more details, see the [Github page](https://github.com/moves-rwth/storm/graphs/contributors).
+For an exhaustive list of contributors and more details, see the [GitHub page](https://github.com/moves-rwth/storm/graphs/contributors).
 
 
 Citing Storm

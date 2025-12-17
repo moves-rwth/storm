@@ -141,7 +141,7 @@ Version 1.6.x
 - Added support for PRISM models that use unbounded integer variables.
 - Added support for nested arrays in JANI.
 - Added `--location-elimination` that can be applied to Jani DTMC models to reduce the size of the resulting Markov models, see [here](https://arxiv.org/abs/2011.00983).
-- Added an export of check results to json. Use `--exportresult` in the command line interface.
+- Added an export of check results to JSON. Use `--exportresult` in the command line interface.
 - Added `--exportbuilt` option that exports the built model in various formats. Deprecates `--io:exportexplicit`, `--io:exportdd` and `--io:exportdot`
 - Added export of built model in .json. which can be used to debug and explore the model.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
@@ -150,9 +150,9 @@ Version 1.6.x
 - API: Simulation of prism-models 
 - API: Model-builder takes a callback function to prevent extension of particular actions, prism-to-explicit mapping can be exported
 - API: Export of dice-formatted expressions
-- Prism-language/explicit builder: Allow action names in commands writing to global variables if these (clearly) do not conflict with assignments of synchronizing commads.
+- Prism-language/explicit builder: Allow action names in commands writing to global variables if these (clearly) do not conflict with assignments of synchronizing commands.
 - Prism-language: n-ary predicates are supported (e.g., ExactlyOneOf)
-- Added support for continuous integration with Github Actions.
+- Added support for continuous integration with GitHub Actions.
 - `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
 - `storm-dft`: Support for analysis of static fault trees via BDDs (Flag `--bdd`). In particular, efficient computation of multiple time bounds was added and support for several importance measures (Argument `--importance`).
 - `storm-dft`: Computation of minimal cut sets for static fault trees (Flag `--mcs`).
@@ -169,7 +169,7 @@ Version 1.6.x
     * transient variable expressions in properties,
     * constants in properties, and
     * integer variables with either only an upper or only a lower bound.
-- `storm-pomdp`: States can be labelled with values for observable predicates.
+- `storm-pomdp`: States can be labeled with values for observable predicates.
 - `storm-pomdp`: (Only API) Track state estimates.
 - `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP.
 
@@ -188,13 +188,13 @@ Version 1.6.x
 - CMake: Search for Gurobi prefers new versions.
 - CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats.
 - CMake: Added option `STORM_LOAD_QVBS` to automatically download the quantitative verification benchmark set.
-- Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode versions.
+- Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent Xcode versions.
 - Tests: Enabled tests for permissive schedulers.
 - `storm-counterexamples`: fix when computing multiple counterexamples in debug mode.
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
-- `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
+- `storm-pomdp`: Implemented approximation algorithms that explore (a discretization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
 - `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based.
-- `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved).
+- `storm-pomdp`: Various changes such that transformation to pMCs is now again supported (and improved).
 - Fixed several compiler warnings.
 
 
@@ -325,7 +325,7 @@ Version 1.2.x
 - Several bug fixes
 
 ### Version 1.2.1 (2018/02)
-- Multi-dimensional reward bounded reachability properties for DTMCs.
+- Multidimensional reward bounded reachability properties for DTMCs.
 - `storm-dft`: transformation of DFTs to GSPNs
 - Several bug fixes
 
@@ -337,14 +337,14 @@ Version 1.2.x
 - DRN parser improved
 - LP-based MDP model checking
 - Sound (interval) value iteration
-- Support for Multi-objective multi-dimensional reward bounded reachability properties for MDPs.
+- Support for Multi-objective multidimensional reward bounded reachability properties for MDPs.
 - RationalSearch method to solve equation systems exactly
 - WalkerChae method for solving linear equation systems with guaranteed convergence
 - Performance improvements for sparse model building
 - Performance improvements for conditional properties on MDPs
 - Automatically convert MA without probabilistic states into CTMC
-- Fixed implemention of Fox and Glynn' algorithm
-- `storm-pars`: support for welldefinedness constraints in mdps.
+- Fixed implementation of Fox and Glynn's algorithm
+- `storm-pars`: support for welldefinedness constraints in MDPs.
 - `storm-dft`: split DFT settings into IO settings and fault tree settings
 - `storm-dft`: removed obsolete explicit model builder for DFTs
 - Features for developers:

@@ -1,5 +1,5 @@
 name: Release new version
-# Triggered by new a release on Github
+# Triggered by new a release on GitHub
 # - deploys Docker containers
 # - updates stable branch
 # - updates Storm version in stormpy via PR
@@ -58,7 +58,7 @@ jobs:
       personal_access_token: ${{ secrets.CI_token }}
 
   set_storm_dev:
-    # Update Storm version again to reflect fufure development version
+    # Update Storm version again to reflect future development version
     needs: [deploy_docker, deploy_docker_stable]
     runs-on: ubuntu-latest
     steps:
