@@ -30,7 +30,6 @@ bool RationalLiteralExpression::isLiteral() const {
 }
 
 void RationalLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
-    return;
 }
 
 std::shared_ptr<BaseExpression const> RationalLiteralExpression::simplify() const {

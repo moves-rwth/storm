@@ -577,19 +577,15 @@ std::shared_ptr<Formula const> Formula::asSharedPointer() const {
 }
 
 void Formula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>&) const {
-    return;
 }
 
 void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>&) const {
-    return;
 }
 
 void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
-    return;
 }
 
 void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>&) const {
-    return;
 }
 
 std::string Formula::toString() const {

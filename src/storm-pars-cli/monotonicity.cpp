@@ -104,7 +104,6 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
 
     monotonicityWatch.stop();
     STORM_PRINT("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
-    return;
 }
 
 template void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model, cli::SymbolicInput const& input,
