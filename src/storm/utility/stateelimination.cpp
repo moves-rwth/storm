@@ -51,7 +51,6 @@ uint_fast64_t estimateComplexity(ValueType const&) {
     return 1;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 uint_fast64_t estimateComplexity(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
@@ -63,7 +62,6 @@ uint_fast64_t estimateComplexity(storm::RationalFunction const& value) {
         return value.denominator().complexity() * value.nominator().complexity();
     }
 }
-#endif
 
 template<typename ValueType>
 uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix,

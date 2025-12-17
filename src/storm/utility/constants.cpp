@@ -335,7 +335,7 @@ std::string to_string(ValueType const& value) {
     return ss.str();
 }
 
-#if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_CLN)
+#if defined(STORM_HAVE_CLN)
 template<>
 storm::ClnRationalNumber infinity() {
     // FIXME: this should be treated more properly.
@@ -534,7 +534,7 @@ NumberTraits<ClnRationalNumber>::IntegerType denominator(ClnRationalNumber const
 }
 #endif
 
-#if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP)
+#if defined(STORM_HAVE_GMP)
 template<>
 storm::GmpRationalNumber infinity() {
     // FIXME: this should be treated more properly.
@@ -750,7 +750,7 @@ typename NumberTraits<GmpRationalNumber>::IntegerType denominator(GmpRationalNum
 }
 #endif
 
-#if defined(STORM_HAVE_CARL) && defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
+#if defined(STORM_HAVE_GMP) && defined(STORM_HAVE_CLN)
 template<>
 storm::GmpRationalNumber convertNumber(storm::ClnRationalNumber const& number) {
     return carl::parse<storm::GmpRationalNumber>(to_string(number));

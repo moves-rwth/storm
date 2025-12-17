@@ -1,17 +1,12 @@
 #include "storm/modelchecker/multiobjective/pcaa/StandardMdpPcaaWeightVectorChecker.h"
 
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -131,9 +126,7 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Enviro
 }
 
 template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;
-#ifdef STORM_HAVE_CARL
 template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
-#endif
 
 }  // namespace multiobjective
 }  // namespace modelchecker

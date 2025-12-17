@@ -26,7 +26,7 @@ LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
     storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
     std::vector<uint64_t> acceptanceConditions;
 
-    // Get the big product automton for all subformulae
+    // Get the big product automaton for all subformulae
     std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton = spothelper::ltl2daSpotProduct(this->formula, extracted, acceptanceConditions);
 
     // Compute Satisfaction sets for the Atomic propositions (which represent the state-subformulae)

@@ -215,7 +215,6 @@ template std::ostream& operator<<(std::ostream& out, Distribution<double> const&
 template class Distribution<double, uint64_t>;
 template std::ostream& operator<<(std::ostream& out, Distribution<double, uint_fast64_t> const& distribution);
 
-#ifdef STORM_HAVE_CARL
 template class Distribution<storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalNumber> const& distribution);
 template class Distribution<storm::RationalNumber, uint64_t>;
@@ -231,6 +230,5 @@ template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interva
 template class Distribution<storm::Interval, uint64_t>;
 template std::ostream& operator<<(std::ostream& out, Distribution<storm::Interval, uint64_t> const& distribution);
 
-#endif
 }  // namespace storage
 }  // namespace storm
