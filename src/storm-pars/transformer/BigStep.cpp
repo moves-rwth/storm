@@ -687,7 +687,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalFunctionCoefficient>();
 
     while (!activeStates.empty()) {
-        auto const& state = activeStates.front();
+        auto state = activeStates.front();
         activeStates.pop();
         visitedStatesInBFSOrder.push_back(state);
         for (auto const& entry : flexibleMatrix.getRow(state)) {
