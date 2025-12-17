@@ -1,5 +1,4 @@
-#ifndef _STORM_PARSER_READVALUES_H
-#define _STORM_PARSER_READVALUES_H
+#pragma once
 
 #include "storm-parsers/util/cstring.h"
 
@@ -16,5 +15,3 @@ double readValue<double>(char const* buf) {
 
 }  // namespace parser
 }  // namespace storm
-
-#endif

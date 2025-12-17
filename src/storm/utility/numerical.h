@@ -1,4 +1,5 @@
-#include <cstdint>
+#pragma once
+
 #include <vector>
 
 namespace storm {

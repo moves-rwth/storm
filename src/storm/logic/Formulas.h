@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/logic/AtomicExpressionFormula.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BinaryBooleanPathFormula.h"
