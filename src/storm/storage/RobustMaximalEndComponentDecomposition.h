@@ -52,14 +52,6 @@ class RobustMaximalEndComponentDecomposition : public Decomposition<StronglyConn
                                            storm::storage::BitVector const& states);
 
     /*!
-     * Creates an MEC decomposition of the given subsystem in the given model.
-     *
-     * @param model The model whose subsystem to decompose into MECs.
-     * @param states The states of the subsystem to decompose.
-     */
-    RobustMaximalEndComponentDecomposition(storm::models::sparse::DeterministicModel<ValueType> const& model, storm::storage::BitVector const& states);
-
-    /*!
      * Creates an MEC decomposition by copying the contents of the given MEC decomposition.
      *
      * @param other The MEC decomposition to copy.

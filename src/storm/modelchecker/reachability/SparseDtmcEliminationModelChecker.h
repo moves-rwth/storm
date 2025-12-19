@@ -89,13 +89,6 @@ class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker
                                                 storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,
                                                 storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates,
                                                 bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values,
-                                                boost::optional<std::vector<ValueType>>& additionalStateValues,
-                                                boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
-
-    static void performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
-                                                storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,
-                                                storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates,
-                                                bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values,
                                                 boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
 
     static uint_fast64_t performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions,

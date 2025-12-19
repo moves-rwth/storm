@@ -289,11 +289,6 @@ class Order {
     void addStateSorted(uint_fast64_t state);
 
     /*!
-     * If the order is fully built, this can be set to true.
-     */
-    void setDoneBuilding(bool done = true);
-
-    /*!
      * Prints the dot output to normal STORM_PRINT.
      */
     void toDotOutput() const;
@@ -316,13 +311,8 @@ class Order {
 
     bool isInvalid() const;
 
-   protected:
-    storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
-
    private:
     bool above(Node* node1, Node* node2);
-
-    bool above(Node* node1, Node* node2, storm::analysis::Order::Node* nodePrev, storm::storage::BitVector* statesSeen);
 
     bool aboveFast(Node* node1, Node* node2) const;
 
@@ -333,8 +323,6 @@ class Order {
     std::string nodeLabel(Node n) const;
 
     bool invalid;
-
-    void nodeOutput();
 
     bool doneBuilding;
 
