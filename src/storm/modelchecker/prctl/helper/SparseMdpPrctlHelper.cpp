@@ -1033,8 +1033,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Reward model for formula is empty. Skipping formula.");
     return computeReachabilityRewardsHelper(
         env, std::move(goal), transitionMatrix, backwardTransitions,
-        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-            return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transMatrix, storm::storage::BitVector const& maybeStates) {
+            return rewardModel.getTotalRewardVector(rowCount, transMatrix, maybeStates);
         },
         targetStates, qualitative, produceScheduler, [&]() { return rewardModel.getStatesWithZeroReward(transitionMatrix); },
         [&]() { return rewardModel.getChoicesWithZeroReward(transitionMatrix); }, hint);

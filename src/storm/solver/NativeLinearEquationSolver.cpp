@@ -564,7 +564,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
                                         gviCallback);
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-        *lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+        *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
