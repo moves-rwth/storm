@@ -13,7 +13,7 @@ namespace storm {
 namespace parser {
 
 ExpressionCreator::ExpressionCreator(storm::expressions::ExpressionManager const& manager) : manager(manager) {
-    // Intenetionally left empty.
+    // Intentionally left empty.
 }
 
 ExpressionCreator::~ExpressionCreator() {
