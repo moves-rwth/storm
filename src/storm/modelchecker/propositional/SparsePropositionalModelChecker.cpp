@@ -1,6 +1,8 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"

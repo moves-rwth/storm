@@ -2,7 +2,9 @@
 
 #include <map>
 
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
 #include "storm/exceptions/AbortException.h"

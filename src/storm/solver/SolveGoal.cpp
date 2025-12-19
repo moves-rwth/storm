@@ -1,7 +1,8 @@
 #include "storm/solver/SolveGoal.h"
 
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/adapters/ValueTypes.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"

@@ -7,7 +7,9 @@
 #include <string>
 
 #include "storm-parsers/parser/ValueParser.h"
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"

@@ -3,7 +3,8 @@
 #include <functional>
 #include <type_traits>
 
-#include "storm/adapters/NumberRepresentation.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"

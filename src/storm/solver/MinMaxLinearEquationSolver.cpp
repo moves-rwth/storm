@@ -2,7 +2,8 @@
 
 #include <memory>
 
-#include "storm/adapters/NumberRepresentation.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidSettingsException.h"

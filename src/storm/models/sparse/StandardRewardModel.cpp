@@ -1,6 +1,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/rationalfunction.h"

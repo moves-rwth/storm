@@ -1,6 +1,8 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/BitVector.h"

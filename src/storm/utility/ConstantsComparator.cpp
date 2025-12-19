@@ -2,7 +2,9 @@
 
 #include <type_traits>
 
-#include "storm/adapters/ValueTypes.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"

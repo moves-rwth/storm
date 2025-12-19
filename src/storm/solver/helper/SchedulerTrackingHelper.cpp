@@ -1,6 +1,7 @@
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 
-#include "storm/adapters/NumberRepresentation.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/macros.h"
