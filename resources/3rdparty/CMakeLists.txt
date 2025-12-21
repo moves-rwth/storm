@@ -51,8 +51,9 @@ if(NOT STORM_DISABLE_GMM)
             gmm_src
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
-            # First check whether patch was already applied (-R), otherwise apply patch
-            PATCH_COMMAND patch --dry-run -R -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch || patch -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch
+            # Try to apply patch and otherwise check that patch was already applied
+            # Needed because while -N ignores already applied patches it still returns with exit code 1
+            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch | grep "Reversed (or previously applied) patch detected!"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
