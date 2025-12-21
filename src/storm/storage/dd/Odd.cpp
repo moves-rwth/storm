@@ -2,7 +2,6 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <fstream>
-#include <set>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"

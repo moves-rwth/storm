@@ -6,11 +6,12 @@
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/initialize.h"
 

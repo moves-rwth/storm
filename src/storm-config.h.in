@@ -35,8 +35,6 @@
 // ###################
 // Whether carl is available and to be used
 #cmakedefine STORM_HAVE_CARL
-// Whether carl has headers for forward declarations
-#cmakedefine STORM_CARL_SUPPORTS_FWD_DECL
 // Version of CARL used by Storm.
 #define STORM_CARL_VERSION_MAJOR @carl_VERSION_MAJOR@
 #define STORM_CARL_VERSION_MINOR @carl_VERSION_MINOR@

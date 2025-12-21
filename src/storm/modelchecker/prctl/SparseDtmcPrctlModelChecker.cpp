@@ -5,6 +5,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseDeterministicStepBoundedHorizonHelper.h"
@@ -18,7 +19,6 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/macros.h"
@@ -417,10 +417,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
 }
 
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
-
-#ifdef STORM_HAVE_CARL
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

@@ -1,3 +1,5 @@
+#include "storm/utility/shortestPaths.h"
+
 #include <ostream>
 #include <queue>
 #include <set>
@@ -6,11 +8,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/sparse/StateType.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/shortestPaths.h"
 
 // FIXME: I've accidentally used k=0 *twice* now without realizing that k>=1 is required!
 // (Also, did I document this? I think so, somewhere. I went with k>=1 because
@@ -362,9 +361,6 @@ void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, unsigned 
     }
 }
 
-template class ShortestPathsGenerator<double>;
-template class ShortestPathsGenerator<storm::RationalNumber>;
-
 // only prints the info stored in the Path struct;
 // does not traverse the actual path (see printKShortestPath for that)
 template<typename T>
@@ -374,6 +370,9 @@ std::ostream& operator<<(std::ostream& out, Path<T> const& p) {
     return out;
 }
 template std::ostream& operator<<(std::ostream& out, Path<double> const& p);
+
+template class ShortestPathsGenerator<double>;
+template class ShortestPathsGenerator<storm::RationalNumber>;
 }  // namespace ksp
 }  // namespace utility
 }  // namespace storm

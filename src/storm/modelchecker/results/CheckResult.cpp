@@ -1,8 +1,6 @@
 #include "storm/modelchecker/results/CheckResult.h"
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -11,9 +9,6 @@
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/utility/macros.h"
 
 namespace storm {
 namespace modelchecker {
@@ -215,7 +210,6 @@ template SymbolicParetoCurveCheckResult<storm::dd::DdType::Sylvan, double> const
 template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>& CheckResult::asHybridQuantitativeCheckResult();
 template HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double> const& CheckResult::asHybridQuantitativeCheckResult() const;
 
-#ifdef STORM_HAVE_CARL
 template QuantitativeCheckResult<storm::RationalNumber>& CheckResult::asQuantitativeCheckResult();
 template QuantitativeCheckResult<storm::RationalNumber> const& CheckResult::asQuantitativeCheckResult() const;
 
@@ -234,6 +228,5 @@ template ExplicitParetoCurveCheckResult<storm::RationalNumber> const& CheckResul
 template LexicographicCheckResult<storm::RationalNumber>& CheckResult::asLexicographicCheckResult();
 template LexicographicCheckResult<storm::RationalNumber> const& CheckResult::asLexicographicCheckResult() const;
 
-#endif
 }  // namespace modelchecker
 }  // namespace storm

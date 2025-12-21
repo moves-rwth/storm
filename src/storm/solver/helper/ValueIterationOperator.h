@@ -1,13 +1,15 @@
 #pragma once
+
 #include <algorithm>
+#include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/irange.hpp>
 #include <functional>
 #include <optional>
 #include <utility>
 #include <vector>
 
-#include <boost/range/adaptor/reversed.hpp>
-#include <boost/range/irange.hpp>
-
+#include "storm/adapters/IntervalForward.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/SchedulerTrackingHelper.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
@@ -15,7 +17,6 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/vector.h"  // TODO
 
 namespace storm {
 class Environment;

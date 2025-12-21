@@ -1,15 +1,16 @@
-#include "storm/modelchecker/lexicographic/lexicographicModelCheckerHelper.h"
+#include "storm/modelchecker/lexicographic/LexicographicModelCheckerHelper.h"
+
 #include "storm//modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/automata/APSet.h"
 #include "storm/automata/DeterministicAutomaton.h"
+#include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 #include "storm/logic/Formula.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
-#include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
+#include "storm/modelchecker/lexicographic/spotHelper/SpotProduct.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/SchedulerChoice.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/SubsystemBuilder.h"
 
@@ -20,7 +21,7 @@ namespace lexicographic {
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint64_t>>
-lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getCompleteProductModel(const SparseModelType& model,
+LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getCompleteProductModel(const SparseModelType& model,
                                                                                                        CheckFormulaCallback const& formulaChecker) {
     storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
     std::vector<uint64_t> acceptanceConditions;
@@ -59,7 +60,7 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>>
-lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getLexArrays(
+LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getLexArrays(
     std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint64_t>& acceptanceConditions) {
     storm::storage::BitVector allowed(productModel->getProductModel().getTransitionMatrix().getRowGroupCount(), true);
     // get MEC decomposition
@@ -104,7 +105,7 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::lexReachability(
+MDPSparseModelCheckingHelperReturnType<ValueType> LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::lexReachability(
     storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs, std::vector<std::vector<bool>> const& mecLexArray,
     std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, SparseModelType const& originalMdp) {
     // Eliminate all MECs and generate one sink state instead
@@ -163,7 +164,7 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr>
-lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getStreettPairs(
+LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getStreettPairs(
     storm::automata::AcceptanceCondition::acceptance_expr::ptr const& current) {
     std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> accConds;
     if (current->isOR()) {
@@ -190,7 +191,7 @@ const storm::storage::BitVector& getStreettSet(storm::automata::AcceptanceCondit
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::isAcceptingStreettConditions(
+bool LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::isAcceptingStreettConditions(
     storm::storage::MaximalEndComponent const& scc, std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
     storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType const& model) {
     // initialize the states and choices we have to consider for mec decomposition
@@ -253,7 +254,7 @@ bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministi
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-storm::storage::BitVector lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getGoodStates(
+storm::storage::BitVector LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getGoodStates(
     storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,
     std::vector<uint64_t> const& oldToNewStateMapping, uint64_t const& condition, uint64_t const numStates,
     std::vector<uint64_t> const& compressedToReducedMapping, std::map<uint64_t, uint64_t> const& bccToStStateMapping) {
@@ -277,7 +278,7 @@ storm::storage::BitVector lexicographicModelCheckerHelper<SparseModelType, Value
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::solveOneReachability(
+MDPSparseModelCheckingHelperReturnType<ValueType> LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::solveOneReachability(
     std::vector<uint64_t>& newInitalStates, storm::storage::BitVector const& psiStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     SparseModelType const& originalMdp, std::vector<uint64_t> const& compressedToReducedMapping, std::vector<uint64_t> const& oldToNewStateMapping) {
     Environment env;
@@ -307,8 +308,8 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-typename lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::SubsystemReturnType
-lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getReducedSubsystem(
+typename LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::SubsystemReturnType
+LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getReducedSubsystem(
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
     std::vector<uint64_t> const& newInitalStates, storm::storage::BitVector const& goodStates) {
     std::vector<std::vector<uint64_t>> optimalActions;
@@ -354,7 +355,7 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::g
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 std::pair<storm::storage::SparseMatrix<ValueType>, std::map<uint64_t, uint64_t>>
-lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::addSinkStates(
+LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::addSinkStates(
     storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
     std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel) {
     storm::storage::SparseMatrix<ValueType> const matrix = productModel->getProductModel().getTransitionMatrix();
@@ -412,7 +413,7 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::a
 }
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-std::map<std::string, storm::storage::BitVector> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::computeApSets(
+std::map<std::string, storm::storage::BitVector> LexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::computeApSets(
     std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker) {
     std::map<std::string, storm::storage::BitVector> apSets;
     for (auto& p : extracted) {
@@ -422,13 +423,11 @@ std::map<std::string, storm::storage::BitVector> lexicographicModelCheckerHelper
     return apSets;
 }
 
-template class lexicographic::lexicographicModelCheckerHelper<storm::models::sparse::Mdp<double>, double, true>;
-template class lexicographic::lexicographicModelCheckerHelper<storm::models::sparse::Mdp<double>, double, false>;
-template class lexicographic::lexicographicModelCheckerHelper<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, true>;
-template class lexicographic::lexicographicModelCheckerHelper<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, false>;
+template class lexicographic::LexicographicModelCheckerHelper<storm::models::sparse::Mdp<double>, double, true>;
+template class lexicographic::LexicographicModelCheckerHelper<storm::models::sparse::Mdp<double>, double, false>;
+template class lexicographic::LexicographicModelCheckerHelper<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, true>;
+template class lexicographic::LexicographicModelCheckerHelper<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, false>;
 }  // namespace lexicographic
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm
-
-#pragma clang diagnostic pop

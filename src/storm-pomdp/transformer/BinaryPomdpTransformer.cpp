@@ -1,4 +1,5 @@
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
+
 #include <queue>
 
 #include "storm/adapters/RationalFunctionAdapter.h"

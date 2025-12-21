@@ -1,3 +1,6 @@
+#pragma once
+
+#include "storm/adapters/IntervalForward.h"
 #include "storm/models/sparse/Model.h"
 
 namespace storm::transformer {

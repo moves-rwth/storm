@@ -126,8 +126,6 @@ std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionPars
     return result;
 }
 
-#ifdef STORM_HAVE_CARL
 template class ParameterRegionParser<storm::RationalFunction>;
-#endif
 }  // namespace parser
 }  // namespace storm

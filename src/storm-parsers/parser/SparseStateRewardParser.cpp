@@ -1,14 +1,14 @@
 #include "storm-parsers/parser/SparseStateRewardParser.h"
+
 #include <iostream>
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
@@ -67,10 +67,6 @@ std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateRewar
 }
 
 template class SparseStateRewardParser<double>;
-
-#ifdef STORM_HAVE_CARL
 template class SparseStateRewardParser<storm::Interval>;
-#endif
-
 }  // namespace parser
 }  // namespace storm

@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::storage {
-#ifdef STORM_HAVE_CARL
 std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix) {
     std::set<storm::RationalFunctionVariable> result;
     for (auto const& entry : matrix) {
@@ -12,5 +11,4 @@ std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::Ratio
     return result;
 }
 
-#endif
 }  // namespace storm::storage

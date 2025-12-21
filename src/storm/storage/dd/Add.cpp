@@ -1,9 +1,7 @@
 #include "storm/storage/dd/Add.h"
 
 #include <boost/algorithm/string/join.hpp>
-#include <cstdint>
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -13,7 +11,6 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/Odd.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

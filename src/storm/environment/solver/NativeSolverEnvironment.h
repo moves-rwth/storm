@@ -1,8 +1,7 @@
 #pragma once
 
-#include "storm/environment/solver/SolverEnvironment.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/SolverSelectionOptions.h"
 

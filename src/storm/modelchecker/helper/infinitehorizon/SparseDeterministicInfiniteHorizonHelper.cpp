@@ -1,29 +1,23 @@
-#include "SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
-
+#include "storm/solver/LinearEquationSolver.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-
-#include "storm/utility/SignalHandler.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
-
-#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
 namespace modelchecker {

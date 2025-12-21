@@ -1,7 +1,6 @@
 #include "storm-dft/parser/DFTJsonParser.h"
 
 #include <boost/algorithm/string.hpp>
-#include <iostream>
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/utility/RelevantEvents.h"

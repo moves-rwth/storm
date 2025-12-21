@@ -1,20 +1,15 @@
 #include "storm/solver/multiplier/Multiplier.h"
 
-#include "storm-config.h"
-
-#include "storm/storage/SparseMatrix.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
-
-#include "storm/solver/multiplier/NativeMultiplier.h"
-
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/multiplier/NativeMultiplier.h"
 #include "storm/solver/multiplier/ViOperatorMultiplier.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"

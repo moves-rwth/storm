@@ -1,9 +1,7 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include <cmath>
-#include <iostream>
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"

@@ -1,12 +1,8 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 
 #include "storm/adapters/EigenAdapter.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/environment/solver/EigenSolverEnvironment.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 
@@ -276,12 +272,10 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> EigenLinearEquationSolve
 template class EigenLinearEquationSolver<double>;
 template class EigenLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class EigenLinearEquationSolver<storm::RationalNumber>;
 template class EigenLinearEquationSolver<storm::RationalFunction>;
 
 template class EigenLinearEquationSolverFactory<storm::RationalNumber>;
 template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
-#endif
 }  // namespace solver
 }  // namespace storm

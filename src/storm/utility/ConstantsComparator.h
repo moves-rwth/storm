@@ -1,8 +1,5 @@
 #pragma once
 
-#include <type_traits>
-#include "storm/utility/ConstantsComparatorForward.h"
-
 namespace storm::utility {
 
 template<typename ValueType>

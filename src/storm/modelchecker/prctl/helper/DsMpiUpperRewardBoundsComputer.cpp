@@ -1,15 +1,11 @@
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm-config.h"
-
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/storage/BitVector.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 #include "storm/storage/SparseMatrix.h"
-
 #include "storm/storage/sparse/StateType.h"
-
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -314,10 +310,8 @@ void DsMpiMdpUpperRewardBoundsComputer<ValueType>::setChoiceInState(uint64_t sta
 template class DsMpiDtmcUpperRewardBoundsComputer<double>;
 template class DsMpiMdpUpperRewardBoundsComputer<double>;
 
-#ifdef STORM_HAVE_CARL
 template class DsMpiDtmcUpperRewardBoundsComputer<storm::RationalNumber>;
 template class DsMpiMdpUpperRewardBoundsComputer<storm::RationalNumber>;
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

@@ -6,7 +6,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/storm.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 class DoubleViEnvironment {
