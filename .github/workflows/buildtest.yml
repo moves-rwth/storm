@@ -202,7 +202,7 @@ jobs:
               buildType: "Debug",
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
+              packages: "patch", # Needed for gmm patch
               distro: "alpine"
             }
     steps:
