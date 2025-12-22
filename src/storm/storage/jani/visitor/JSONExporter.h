@@ -105,7 +105,6 @@ class JsonExporter {
    private:
     void convertModel(storm::jani::Model const& model, bool commentExpressions = true);
     void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);
-    void appendVariableDeclaration(storm::jani::Variable const& variable);
 
     ExportJsonType finalize();
 

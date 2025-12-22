@@ -128,6 +128,10 @@ bool QualitativePOMDPAnalysisSettings::isPrintWinningRegionSet() const {
     return this->getOption(printWinningRegionOption).getHasOptionBeenSet();
 }
 
+bool QualitativePOMDPAnalysisSettings::isGraphPreprocessingAllowed() const {
+    return this->getOption(preventGraphPreprocessing).getHasOptionBeenSet();
+}
+
 bool QualitativePOMDPAnalysisSettings::isMemlessSearchSet() const {
     return this->getOption(memlessSearchOption).getHasOptionBeenSet();
 }

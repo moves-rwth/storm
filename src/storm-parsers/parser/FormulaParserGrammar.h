@@ -203,8 +203,6 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
 
     bool areConstantDefinitionsAllowed() const;
     void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
-    void addProperty(std::vector<storm::jani::Property>& properties, boost::optional<std::string> const& name,
-                     std::shared_ptr<storm::logic::Formula const> const& formula);
 
     std::shared_ptr<storm::logic::TimeBoundReference> createTimeBoundReference(storm::logic::TimeBoundType const& type,
                                                                                boost::optional<std::string> const& rewardModelName) const;

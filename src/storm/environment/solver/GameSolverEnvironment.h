@@ -21,8 +21,6 @@ class GameSolverEnvironment {
     void setPrecision(storm::RationalNumber value);
     bool const& getRelativeTerminationCriterion() const;
     void setRelativeTerminationCriterion(bool value);
-    storm::solver::MultiplicationStyle const& getMultiplicationStyle() const;
-    void setMultiplicationStyle(storm::solver::MultiplicationStyle value);
 
    private:
     storm::solver::GameMethod gameMethod;

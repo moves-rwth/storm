@@ -82,12 +82,6 @@ class GurobiLpSolver : public LpSolver<ValueType, RawMode> {
     GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment);
 
     /*!
-     * Creates a (deep) copy of this solver.
-     * @param other
-     */
-    GurobiLpSolver(GurobiLpSolver<ValueType> const& other);
-
-    /*!
      * Destructs a solver by freeing the pointers to Gurobi's structures.
      */
     virtual ~GurobiLpSolver();
