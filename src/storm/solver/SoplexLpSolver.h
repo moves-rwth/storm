@@ -84,6 +84,8 @@ class SoplexLpSolver : public LpSolver<ValueType, RawMode> {
     virtual bool getBinaryValue(Variable const& name) const override;
 
    private:
+    void ensureSolved() const;
+
 #ifdef STORM_HAVE_SOPLEX
     typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DVector, soplex::DVectorRational> TypedDVector;
     typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DSVector, soplex::DSVectorRational> TypedDSVector;
