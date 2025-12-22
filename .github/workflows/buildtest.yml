@@ -186,7 +186,6 @@ jobs:
         config:
           - {name: "GCC",
              buildType: "Debug",
-             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
              packages: "",
@@ -194,7 +193,6 @@ jobs:
           }
           - {name: "Clang",
              buildType: "Debug",
-             disable_gmm: "ON", # TOOD: enable again if GMM was fixed
              Developer: "ON",
              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
              packages: "clang",
@@ -202,10 +200,9 @@ jobs:
           }
           - { name: "musl",
               buildType: "Debug",
-              disable_gmm: "ON", # TOOD: enable again if GMM was fixed
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
+              packages: "patch", # Needed for gmm patch
               distro: "alpine"
             }
     steps:
@@ -218,7 +215,6 @@ jobs:
           docker build -t movesrwth/storm:ci . \
             --build-arg build_type="${{ matrix.config.buildType }}" \
             --build-arg carl_tag="master" \
-            --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg developer="${{ matrix.config.Developer }}" \
             --build-arg cmake_args="${{ matrix.config.cmakeArgs }}" \
             --build-arg packages="${{ matrix.config.packages }}" \
