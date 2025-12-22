@@ -95,7 +95,6 @@ Polytope<ValueType>::~Polytope() {
     // Intentionally left empty
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::RationalNumber>::getVerticesInClockwiseOrder() const {
     std::vector<Point> vertices = getVertices();
@@ -151,7 +150,6 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
 
     return result;
 }
-#endif
 
 template<typename ValueType>
 std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVerticesInClockwiseOrder() const {

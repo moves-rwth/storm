@@ -228,13 +228,11 @@ bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkIfThr
     return true;
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
 
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

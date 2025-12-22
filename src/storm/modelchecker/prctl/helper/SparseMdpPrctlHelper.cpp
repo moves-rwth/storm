@@ -1054,7 +1054,6 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         [&]() { return storm::storage::BitVector(transitionMatrix.getRowCount(), false); }, hint);
 }
 
-#ifdef STORM_HAVE_CARL
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -1092,7 +1091,6 @@ std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::
     storm::storage::BitVector const&, bool) {
     STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Computing reachability rewards is unsupported for this data type.");
 }
-#endif
 
 struct QualitativeStateSetsReachabilityRewards {
     storm::storage::BitVector maybeStates;
@@ -1506,7 +1504,6 @@ template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<dou
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative,
     bool produceScheduler, double discountFactor, ModelCheckerHint const& hint);
 
-#ifdef STORM_HAVE_CARL
 template class SparseMdpPrctlHelper<storm::RationalNumber>;
 template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
@@ -1532,7 +1529,6 @@ template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdp
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative, bool produceScheduler,
     storm::RationalNumber discountFactor, ModelCheckerHint const& hint);
-#endif
 
 template class SparseMdpPrctlHelper<storm::Interval, double>;
 template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::computeInstantaneousRewards(

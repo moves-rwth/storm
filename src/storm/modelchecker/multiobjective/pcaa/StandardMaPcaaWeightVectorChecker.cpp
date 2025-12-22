@@ -2,7 +2,12 @@
 
 #include <cmath>
 
-#include "storm/logic/Formulas.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
@@ -11,14 +16,6 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/SolverEnvironment.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -525,7 +522,7 @@ template void StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAut
 template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::LinEqSolverData>
 StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::initLinEqSolver<double>(
     Environment const& env, StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel const& PS, bool acyclic) const;
-#ifdef STORM_HAVE_CARL
+
 template class StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 template storm::RationalNumber StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<
     storm::RationalNumber>(std::vector<storm::RationalNumber> const& direction) const;
@@ -539,7 +536,6 @@ template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::model
 StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::initLinEqSolver<storm::RationalNumber>(
     Environment const& env, StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel const& PS,
     bool acyclic) const;
-#endif
 
 }  // namespace multiobjective
 }  // namespace modelchecker

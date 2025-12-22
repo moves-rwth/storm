@@ -63,7 +63,6 @@ EigenLinearEquationSolverMethod EigenLinearEquationSolver<ValueType>::getMethod(
     return method;
 }
 
-#ifdef STORM_HAVE_CARL
 // Specialization for storm::RationalNumber
 template<>
 bool EigenLinearEquationSolver<storm::RationalNumber>::internalSolveEquations(Environment const& env, std::vector<storm::RationalNumber>& x,
@@ -100,7 +99,6 @@ bool EigenLinearEquationSolver<storm::RationalFunction>::internalSolveEquations(
     solver._solve_impl(eigenB, eigenX);
     return solver.info() == Eigen::ComputationInfo::Success;
 }
-#endif
 
 template<typename ValueType>
 bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {

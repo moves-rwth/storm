@@ -1652,7 +1652,6 @@ typename std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueTyp
     return std::make_pair(luBuilder.build(), std::move(invertedDiagonal));
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 typename std::pair<storm::storage::SparseMatrix<Interval>, std::vector<Interval>> SparseMatrix<Interval>::getJacobiDecomposition() const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
@@ -1663,7 +1662,6 @@ typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<R
     const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
 }
-#endif
 
 template<typename ValueType>
 template<typename OtherValueType, typename ResultValueType>
@@ -1817,12 +1815,10 @@ void SparseMatrix<ValueType>::performSuccessiveOverRelaxationStep(ValueType omeg
     }
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval, std::vector<Interval>&, std::vector<Interval> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
-#endif
 
 template<typename ValueType>
 void SparseMatrix<ValueType>::performWalkerChaeStep(std::vector<ValueType> const& x, std::vector<ValueType> const& columnSums, std::vector<ValueType> const& b,
@@ -2108,12 +2104,10 @@ void SparseMatrix<ValueType>::divideRowsInPlace(std::vector<ValueType> const& di
     }
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 void SparseMatrix<Interval>::divideRowsInPlace(std::vector<Interval> const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
 }
-#endif
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {

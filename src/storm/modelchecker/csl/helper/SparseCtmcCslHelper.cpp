@@ -817,7 +817,6 @@ template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(
                                                                                 std::vector<double> const* addVector, double timeBound,
                                                                                 double uniformizationRate, std::vector<double> values, double epsilon);
 
-#ifdef STORM_HAVE_CARL
 template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
@@ -878,7 +877,6 @@ template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper
 template storm::storage::SparseMatrix<storm::RationalFunction> SparseCtmcCslHelper::computeProbabilityMatrix(
     storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRates);
 
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

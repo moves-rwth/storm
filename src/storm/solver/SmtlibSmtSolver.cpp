@@ -41,10 +41,6 @@ std::string SmtlibSmtSolver::SmtlibModelReference::toString() const {
 
 SmtlibSmtSolver::SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions)
     : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), useCarlExpressions(useCarlExpressions) {
-#ifndef STORM_HAVE_CARL
-    STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalArgumentException, "Tried to use carl expressions but storm is not linked with CARL");
-#endif
-
     processIdOfSolver = 0;
     this->expressionAdapter =
         std::unique_ptr<storm::adapters::Smt2ExpressionAdapter>(new storm::adapters::Smt2ExpressionAdapter(this->getManager(), this->useReadableVarNames));
