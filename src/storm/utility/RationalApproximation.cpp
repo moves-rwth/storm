@@ -148,8 +148,8 @@ storm::RationalNumber findRational(storm::RationalNumber const& lowerBound, bool
     }
     return result;
 
-    STORM_LOG_ASSERT(result > lowerBound || lowerInclusive && result == lowerBound, "Result is below lower bound.");
-    STORM_LOG_ASSERT(result < upperBound || upperInclusive && result == upperBound, "Result is above upper bound.");
+    STORM_LOG_ASSERT(result > lowerBound || (lowerInclusive && result == lowerBound), "Result is below lower bound.");
+    STORM_LOG_ASSERT(result < upperBound || (upperInclusive && result == upperBound), "Result is above upper bound.");
     return result;
 }
 
