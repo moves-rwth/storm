@@ -1533,7 +1533,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
             for (auto player2PredecessorEntry : player1BackwardTransitions.getRow(currentState)) {
                 uint64_t player2Predecessor = player2PredecessorEntry.getColumn();
                 if (!player2Solution.get(player2PredecessorEntry.getColumn())) {
-                    bool addPlayer2State = player2Direction == storm::OptimizationDirection::Minimize ? true : false;
+                    bool addPlayer2State = player2Direction == storm::OptimizationDirection::Minimize;
 
                     uint64_t validChoice = transitionMatrix.getRowGroupIndices()[player2Predecessor];
                     for (uint64_t row = validChoice; row < transitionMatrix.getRowGroupIndices()[player2Predecessor + 1]; ++row) {
@@ -1572,7 +1572,7 @@ ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<ValueType> co
                         uint64_t player1Predecessor = player2BackwardTransitions[player2Predecessor];
 
                         if (!player1Solution.get(player1Predecessor)) {
-                            bool addPlayer1State = player1Direction == storm::OptimizationDirection::Minimize ? true : false;
+                            bool addPlayer1State = player1Direction == storm::OptimizationDirection::Minimize;
 
                             validChoice = player1Groups[player1Predecessor];
                             for (uint64_t player2Successor = validChoice; player2Successor < player1Groups[player1Predecessor + 1]; ++player2Successor) {

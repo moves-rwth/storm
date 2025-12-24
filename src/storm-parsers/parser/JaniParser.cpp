@@ -1376,7 +1376,7 @@ storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const
                     if (first) {
                         commonType = elements.back()->getType();
                         first = false;
-                    } else if (!(commonType == elements.back()->getType())) {
+                    } else if (commonType != elements.back()->getType()) {
                         if (commonType.isIntegerType() && elements.back()->getType().isRationalType()) {
                             commonType = elements.back()->getType();
                         } else {

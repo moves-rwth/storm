@@ -13,7 +13,7 @@ namespace storm {
 namespace parser {
 
 ExpressionCreator::ExpressionCreator(storm::expressions::ExpressionManager const& manager) : manager(manager) {
-    // Intenetionally left empty.
+    // Intentionally left empty.
 }
 
 ExpressionCreator::~ExpressionCreator() {
@@ -27,7 +27,7 @@ storm::expressions::Expression ExpressionCreator::createIteExpression(storm::exp
     if (this->createExpressions) {
         try {
             return storm::expressions::ite(e1, e2, e3);
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -50,7 +50,7 @@ storm::expressions::Expression ExpressionCreator::createOrExpression(storm::expr
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -71,7 +71,7 @@ storm::expressions::Expression ExpressionCreator::createAndExpression(storm::exp
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
         return result;
@@ -101,7 +101,7 @@ storm::expressions::Expression ExpressionCreator::createRelationalExpression(sto
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -124,7 +124,7 @@ storm::expressions::Expression ExpressionCreator::createEqualsExpression(storm::
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -147,7 +147,7 @@ storm::expressions::Expression ExpressionCreator::createPlusExpression(storm::ex
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -170,7 +170,7 @@ storm::expressions::Expression ExpressionCreator::createMultExpression(storm::ex
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -196,7 +196,7 @@ storm::expressions::Expression ExpressionCreator::createPowerModuloLogarithmExpr
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -222,7 +222,7 @@ storm::expressions::Expression ExpressionCreator::createUnaryExpression(std::vec
                 }
             }
             return result;
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -283,7 +283,7 @@ storm::expressions::Expression ExpressionCreator::createMinimumMaximumExpression
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -305,7 +305,7 @@ storm::expressions::Expression ExpressionCreator::createFloorCeilExpression(stor
                     STORM_LOG_ASSERT(false, "Invalid operation.");
                     break;
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -316,7 +316,7 @@ storm::expressions::Expression ExpressionCreator::createRoundExpression(storm::e
     if (this->createExpressions) {
         try {
             return storm::expressions::round(e1);
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }
@@ -337,7 +337,7 @@ storm::expressions::Expression ExpressionCreator::createPredicateExpression(stor
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Operator type " << opTyp << " invalid for predicate expression.");
             }
-        } catch (storm::exceptions::InvalidTypeException const& e) {
+        } catch (storm::exceptions::InvalidTypeException const&) {
             pass = false;
         }
     }

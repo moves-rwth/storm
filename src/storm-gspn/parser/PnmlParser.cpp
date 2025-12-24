@@ -390,7 +390,7 @@ bool PnmlParser::traverseTransitionType(xercesc::DOMNode const* const node) {
         auto child = node->getChildNodes()->item(i);
         auto name = storm::adapters::getName(child);
         if (name == "value") {
-            result = storm::adapters::getName(child->getFirstChild()) == "true" ? true : false;
+            result = storm::adapters::getName(child->getFirstChild()) == "true";
         } else if (isOnlyWhitespace(name)) {
             // ignore node (contains only whitespace)
         } else {

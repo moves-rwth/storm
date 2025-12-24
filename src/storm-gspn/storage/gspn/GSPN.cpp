@@ -269,7 +269,7 @@ bool GSPN::testPlaces() const {
             result = false;
         }
 
-        if (place.getNumberOfInitialTokens() > place.getNumberOfInitialTokens()) {
+        if (place.getNumberOfInitialTokens() > place.getCapacity()) {
             STORM_PRINT_AND_LOG("number of initial tokens is greater than the capacity for place \"" + place.getName() + "\"\n");
             result = false;
         }

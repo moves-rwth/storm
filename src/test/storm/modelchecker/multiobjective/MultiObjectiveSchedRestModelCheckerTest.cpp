@@ -245,7 +245,6 @@ TYPED_TEST_SUITE(MultiObjectiveSchedRestModelCheckerTest, TestingTypes, );
 
 TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     typedef typename TestFixture::ValueType ValueType;
-    typedef typename TestFixture::Point Point;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_stairs.nm";
     std::string constantsString = "N=3";

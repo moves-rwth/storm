@@ -40,10 +40,6 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
 }
 
 template<typename RM>
-boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double, RM>> mdp,
-                                                                               storm::logic::ProbabilityOperatorFormula const& safeProp) {}
-
-template<typename RM>
 boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double, RM> const& mdp,
                                                                                 storm::logic::ProbabilityOperatorFormula const& safeProp) {
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(mdp);

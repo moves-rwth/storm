@@ -637,7 +637,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
                                                  storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-            lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+            lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
 
         this->reportStatus(statusIters, numIterations);
 

@@ -98,8 +98,8 @@ class MILPMinimalLabelSetGenerator {
      * @param psiStates A bit vector characterizing all states satisfying psi.
      * @return A structure that stores the relevant and problematic states.
      */
-    static struct StateInformation determineRelevantAndProblematicStates(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates,
-                                                                         storm::storage::BitVector const& psiStates) {
+    static StateInformation determineRelevantAndProblematicStates(storm::models::sparse::Mdp<T> const& mdp, storm::storage::BitVector const& phiStates,
+                                                                  storm::storage::BitVector const& psiStates) {
         StateInformation result;
         result.relevantStates = storm::utility::graph::performProbGreater0E(mdp.getBackwardTransitions(), phiStates, psiStates);
         result.relevantStates &= ~psiStates;
@@ -122,10 +122,9 @@ class MILPMinimalLabelSetGenerator {
      * @return A structure that stores the relevant and problematic choices in the model as well as the set
      * of relevant labels.
      */
-    static struct ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp,
-                                                                           std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
-                                                                           StateInformation const& stateInformation,
-                                                                           storm::storage::BitVector const& psiStates) {
+    static ChoiceInformation determineRelevantAndProblematicChoices(storm::models::sparse::Mdp<T> const& mdp,
+                                                                    std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
+                                                                    StateInformation const& stateInformation, storm::storage::BitVector const& psiStates) {
         // Create result and shortcuts to needed data for convenience.
         ChoiceInformation result;
         storm::storage::SparseMatrix<T> const& transitionMatrix = mdp.getTransitionMatrix();

@@ -29,7 +29,6 @@ DeterministicSchedsAchievabilityChecker<SparseModelType, GeometryValueType>::Det
 
 template<class SparseModelType, typename GeometryValueType>
 std::unique_ptr<CheckResult> DeterministicSchedsAchievabilityChecker<SparseModelType, GeometryValueType>::check(Environment const& env) {
-    using Point = typename std::vector<GeometryValueType>;
     uint64_t const numObj = objectiveHelper.size();
     // Create a polytope that contains all the points that would certify achievability of the point induced by the objective threshold
     std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> thresholdHalfspaces;

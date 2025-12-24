@@ -32,7 +32,7 @@ At this point, all relevant pull requests should have been merged into Storm and
 6. Create a new pull request with the changes of steps 4 and 5.
    When the CI checks are successful, stash and merge the pull request into the master branch.
 
-7. (The tag can also automatically be set in the next step when creating the release on Github.)
+7. (The tag can also automatically be set in the next step when creating the release on GitHub.)
    Set the new tag in Git, use the flag `-s` to sign the tag.
    ```console
    git tag -a X.Y.Z -m "Storm version X.Y.Z" -s

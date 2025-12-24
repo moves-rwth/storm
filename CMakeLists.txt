@@ -132,7 +132,7 @@ set(STORM_LIB_INSTALL_DIR lib/storm CACHE PATH "Installation directory for libra
 set(STORM_BIN_INSTALL_DIR bin/storm CACHE PATH "Installation directory for executables")
 set(STORM_CMAKE_INSTALL_DIR lib/cmake/storm CACHE PATH  "Installation directory for CMake files")
 set(STORM_RESOURCE_INCLUDE_INSTALL_DIR include/storm/resources/ CACHE PATH "Installation directory for dependency header files")
-set(STORM_RESOURCE_LIBRARY_INSTALL_DIR lib/storm/resources/ CACHE PATH "Installation directory for depency library files")
+set(STORM_RESOURCE_LIBRARY_INSTALL_DIR lib/storm/resources/ CACHE PATH "Installation directory for dependency library files")
 if(PROJECT_IS_TOP_LEVEL)
 	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)

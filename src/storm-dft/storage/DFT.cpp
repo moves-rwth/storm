@@ -649,8 +649,8 @@ std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
                     if (isdElemId == child->id())
                         continue;
                     if (std::find_if(children.begin(), children.end(),
-                                     [&isdElemId](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& e) {
-                                         return e->id() == isdElemId;
+                                     [&isdElemId](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& element) {
+                                         return element->id() == isdElemId;
                                      }) != children.end()) {
                         // element in subtree is also child
                         rewrite.push_back(isdElemId);
