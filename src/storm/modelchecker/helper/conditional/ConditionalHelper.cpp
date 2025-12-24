@@ -441,13 +441,13 @@ class WeightedReachabilityHelper {
             }
             cachedSolver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>().create(solverEnv, submatrix);
             cachedSolver->setCachingEnabled(true);
-            cachedSolver->setOptimizationDirection(dir);
             cachedSolver->setRequirementsChecked();
             cachedSolver->setHasUniqueSolution(true);
             cachedSolver->setHasNoEndComponents(true);
             cachedSolver->setLowerBound(-storm::utility::one<ValueType>());
             cachedSolver->setUpperBound(storm::utility::one<ValueType>());
         }
+        cachedSolver->setOptimizationDirection(dir);
 
         // Initialize the right-hand side vector.
         createScaledVector(cachedB, targetWeight, targetRowValues, conditionWeight, conditionRowValues);
@@ -526,9 +526,7 @@ class WeightedReachabilityHelper {
                             std::vector<ValueType> const& v2) const {
         STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match");
         out.resize(v1.size());
-        for (size_t i = 0; i < v1.size(); ++i) {
-            out[i] = w1 * v1[i] + w2 * v2[i];
-        }
+        storm::utility::vector::applyPointwise(v1, v2, out, [&w1, &w2](ValueType const& a, ValueType const& b) -> ValueType { return w1 * a + w2 * b; });
     }
 
     storm::storage::SparseMatrix<ValueType> submatrix;
