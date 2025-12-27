@@ -28,7 +28,7 @@ TEST(ImportanceFunctionTest, RandomStepsAnd) {
     auto dft = pair.first;
 
     // Init random number generator
-    boost::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     // Init importance function
@@ -44,20 +44,14 @@ TEST(ImportanceFunctionTest, RandomStepsAnd) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
     EXPECT_EQ(imp.getImportance(state), 1);
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
     EXPECT_EQ(imp.getImportance(state), 2);

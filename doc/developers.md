@@ -59,6 +59,9 @@ The following contains some general guidelines for developers.
   #include ...
   ```
 
+### File structure
+- Test files in `src/test/` end with the suffix `*Test.cpp`.
+
 ### Output
 - We provide custom macros for output and logging.
   The use of `std::cout` should be avoided and instead, macros such as `STORM_LOG_DEBUG`, `STORM_LOG_INFO` or `STORM_PRINT_AND_LOG` should be used.

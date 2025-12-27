@@ -5,15 +5,16 @@ namespace simulator {
 
 template<typename ValueType>
 DFTTraceSimulator<ValueType>::DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft,
-                                                storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo, boost::mt19937& randomGenerator)
+                                                storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo,
+                                                storm::utility::RandomProbabilityGenerator<ValueType> randomGenerator)
     : dft(dft), stateGenerationInfo(stateGenerationInfo), generator(dft, stateGenerationInfo), randomGenerator(randomGenerator) {
     // Set initial state
     resetToInitial();
 }
 
 template<typename ValueType>
-void DFTTraceSimulator<ValueType>::setRandomNumberGenerator(boost::mt19937& randomNumberGenerator) {
-    this->randomGenerator = randomNumberGenerator;
+void DFTTraceSimulator<ValueType>::setRandomGenerator(storm::utility::RandomProbabilityGenerator<ValueType> randomGenerator) {
+    this->randomGenerator = randomGenerator;
 }
 
 template<typename ValueType>
@@ -65,8 +66,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
         bool successful = true;
         if (!dependency->isFDEP()) {
             // Flip a coin whether the PDEP is successful
-            storm::utility::BernoulliDistributionGenerator probGenerator(dependency->probability());
-            successful = probGenerator.random(randomGenerator);
+            successful = randomGenerator.randomProbability() <= dependency->probability();
         }
         STORM_LOG_TRACE("Let dependency " << *dependency << " " << (successful ? "successfully" : "unsuccessfully") << " fail");
         return std::make_tuple(iterFailable, 0, successful);
@@ -75,15 +75,13 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
         // Initialize with first BE
         storm::dft::storage::FailableElements::const_iterator nextFail = iterFailable;
         double rate = state->getBERate(nextFail.asBE(dft)->id());
-        storm::utility::ExponentialDistributionGenerator rateGenerator(rate);
-        double smallestTimebound = rateGenerator.random(randomGenerator);
+        double smallestTimebound = randomGenerator.randomExponential(rate);
         ++iterFailable;
 
         // Consider all other BEs and find the one which fails first
         for (; iterFailable != state->getFailableElements().end(); ++iterFailable) {
             rate = state->getBERate(iterFailable.asBE(dft)->id());
-            rateGenerator = storm::utility::ExponentialDistributionGenerator(rate);
-            double timebound = rateGenerator.random(randomGenerator);
+            double timebound = randomGenerator.randomExponential(rate);
             if (timebound < smallestTimebound) {
                 // BE fails earlier -> use as nextFail
                 nextFail = iterFailable;

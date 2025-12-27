@@ -151,7 +151,7 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
 
     // Init random number generator
-    boost::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     auto state = simulator.getCurrentState();
@@ -160,19 +160,13 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
@@ -183,7 +177,7 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
 
     // Init random number generator
-    boost::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     auto state = simulator.getCurrentState();
@@ -192,19 +186,13 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
     // First random step
     storm::dft::simulator::SimulationStepResult res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522, 1e-6);
     auto stateStep1 = simulator.getCurrentState();
     EXPECT_FALSE(stateStep1->hasFailed(dft->getTopLevelIndex()));
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 
@@ -215,10 +203,7 @@ TYPED_TEST(DftTraceGeneratorTest, Reset) {
 
     res = simulator.randomStep();
     EXPECT_EQ(res, storm::dft::simulator::SimulationStepResult::SUCCESSFUL);
-#if BOOST_VERSION > 106400
-    // Older Boost versions yield different value
-    EXPECT_NEAR(simulator.getCurrentTime(), 0.522079 + 0.9497214 + 2.4686932, 1e-6);
-#endif
+    EXPECT_NEAR(simulator.getCurrentTime(), 0.113522 + 0.904286 + 7.769302, 1e-6);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
@@ -228,7 +213,7 @@ TYPED_TEST(DftTraceGeneratorTest, Fdep) {
     auto dft = pair.first;
 
     // Init random number generator. Will not be important as we are choosing the steps deterministically.
-    boost::mt19937 gen(5u);
+    storm::utility::RandomProbabilityGenerator<double> gen(5u);
     storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
 
     // Start with initial state

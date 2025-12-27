@@ -4,7 +4,6 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DFTState.h"
 #include "storm-dft/storage/FailableElements.h"
-
 #include "storm/utility/random.h"
 
 namespace storm::dft {
@@ -41,14 +40,14 @@ class DFTTraceSimulator {
      * @param randomGenerator Random number generator.
      */
     DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo,
-                      boost::mt19937& randomGenerator);
+                      storm::utility::RandomProbabilityGenerator<ValueType> randomGenerator);
 
     /*!
      * Set the random number generator.
      *
-     * @param randomNumberGenerator Random number generator.
+     * @param randomGenerator Random number generator.
      */
-    void setRandomNumberGenerator(boost::mt19937& randomNumberGenerator);
+    void setRandomGenerator(storm::utility::RandomProbabilityGenerator<ValueType> randomGenerator);
 
     /*!
      * Set the current state back to the initial state in order to start a new simulation.
@@ -144,8 +143,8 @@ class DFTTraceSimulator {
     // Currently elapsed time
     double time;
 
-    // Random number generator
-    boost::mt19937& randomGenerator;
+    // Random generator
+    storm::utility::RandomProbabilityGenerator<ValueType> randomGenerator;
 };
 
 }  // namespace simulator

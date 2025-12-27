@@ -7,7 +7,7 @@
 
 namespace {
 
-TEST(TestBddVarOrdering, VariableOrdering) {
+TEST(BddVarOrderingTest, VariableOrdering) {
 #ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
@@ -42,7 +42,7 @@ TEST(TestBddVarOrdering, VariableOrdering) {
 #endif
 }
 
-TEST(TestBddVarOrdering, OrderParser) {
+TEST(BddVarOrderingTest, OrderParser) {
 #ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
 
