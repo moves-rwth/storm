@@ -1,11 +1,10 @@
 #pragma once
+
 #include <boost/variant.hpp>
-#include <functional>
 #include <map>
 #include <optional>
 
 #include "storm/adapters/JsonForward.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/BitVector.h"
@@ -38,7 +37,6 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     virtual std::unique_ptr<CheckResult> clone() const override;
 
     bool operator[](storm::storage::sparse::state_type index) const;
-    void setValue(storm::storage::sparse::state_type, bool value);
 
     virtual bool isExplicit() const override;
     virtual bool isResultForAllStates() const override;

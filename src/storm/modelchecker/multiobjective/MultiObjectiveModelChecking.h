@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
 #include "storm/modelchecker/results/CheckResult.h"
 
 namespace storm {

@@ -86,10 +86,6 @@ class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingMode
     virtual void reset() override;
 
    private:
-    void computeSchedulerDeltaSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint64_t> const& schedulerChoices,
-                                             storm::storage::ParameterRegion<ParametricType> const& region,
-                                             storm::solver::OptimizationDirection const& dirForParameters);
-
     bool isOrderBasedMonotonicityBackend() const;
     OrderBasedMonotonicityBackend<ParametricType, ConstantType>& getOrderBasedMonotonicityBackend();
 

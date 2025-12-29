@@ -1,19 +1,12 @@
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 
-#include "storm/solver/EigenLinearEquationSolver.h"
-#include "storm/solver/EliminationLinearEquationSolver.h"
-#include "storm/solver/GmmxxLinearEquationSolver.h"
-#include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
-#include "storm/solver/NativeLinearEquationSolver.h"
-#include "storm/solver/TopologicalLinearEquationSolver.h"
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/utility/macros.h"
+#include "storm/solver/EigenLinearEquationSolver.h"
+#include "storm/solver/TopologicalLinearEquationSolver.h"
 #include "storm/utility/vector.h"
+
 namespace storm::solver {
 
 template<typename ValueType, typename SolutionType>

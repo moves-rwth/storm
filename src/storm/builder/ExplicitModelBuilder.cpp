@@ -2,39 +2,24 @@
 
 #include <map>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/RewardModelBuilder.h"
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
-
 #include "storm/exceptions/AbortException.h"
-#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
-
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
-
-#include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
-
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ParallelComposition.h"
-
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/prism.h"
 
 namespace storm {
 namespace builder {

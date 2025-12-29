@@ -297,13 +297,6 @@ class Model : public storm::models::Model<CValueType> {
     std::unordered_map<std::string, RewardModelType>& getRewardModels();
     std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
 
-    /*!
-     * Retrieves the number of reward models associated with this model.
-     *
-     * @return The number of reward models associated with this model.
-     */
-    uint_fast64_t getNumberOfRewardModels() const;
-
     virtual void printModelInformationToStream(std::ostream& out) const override;
 
     virtual bool isSymbolicModel() const override;

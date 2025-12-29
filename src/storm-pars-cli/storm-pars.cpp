@@ -1,3 +1,4 @@
+#include "storm-pars/api/storm-pars.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 #include "storm-pars-cli/feasibility.h"
@@ -5,63 +6,38 @@
 #include "storm-pars-cli/print.h"
 #include "storm-pars-cli/sampling.h"
 #include "storm-pars-cli/solutionFunctions.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm-pars/api/region.h"
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
-
-#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
-#include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/RegionSplittingStrategy.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
-
-#include "storm-pars/transformer/BigStep.h"
-
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
 #include "storm-pars/settings/ParsSettings.h"
-#include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/PartitionSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 #include "storm-pars/settings/modules/SamplingSettings.h"
-
+#include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
-
 #include "storm-pars/utility/parametric.h"
-
-#include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
-
-#include "storm/environment/Environment.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
-
 #include "storm/models/ModelBase.h"
-
 #include "storm/settings/SettingsManager.h"
-
+#include "storm/settings/modules/BisimulationSettings.h"
+#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
-
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/SymbolicModelDescription.h"
-
-#include "storm/io/file.h"
 #include "storm/utility/Engine.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
-
-#include "storm/settings/modules/BisimulationSettings.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/TransformationSettings.h"
 
 namespace storm {
 namespace pars {

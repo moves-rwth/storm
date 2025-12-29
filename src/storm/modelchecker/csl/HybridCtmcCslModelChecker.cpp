@@ -1,8 +1,6 @@
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -12,9 +10,6 @@
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/FilteredRewardModel.h"
 
 namespace storm {

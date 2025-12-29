@@ -1,8 +1,6 @@
 #include "storm-pars/transformer/BigStep.h"
 
-#include <sys/types.h>
 #include <algorithm>
-#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -15,14 +13,10 @@
 #include <utility>
 #include <vector>
 
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/logic/UntilFormula.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/storage/SparseMatrix.h"
@@ -693,7 +687,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     annotations.at(start)[std::vector<uint64_t>()] = utility::one<RationalFunctionCoefficient>();
 
     while (!activeStates.empty()) {
-        auto const& state = activeStates.front();
+        auto state = activeStates.front();
         activeStates.pop();
         visitedStatesInBFSOrder.push_back(state);
         for (auto const& entry : flexibleMatrix.getRow(state)) {
@@ -1071,6 +1065,5 @@ void BigStep::updateTreeStates(std::map<RationalFunctionVariable, std::map<uint6
     }
 }
 
-class BigStep;
 }  // namespace transformer
 }  // namespace storm

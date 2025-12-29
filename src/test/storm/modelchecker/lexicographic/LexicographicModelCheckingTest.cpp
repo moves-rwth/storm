@@ -6,7 +6,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
+#include "storm/modelchecker/lexicographic/LexicographicModelChecking.h"
 #include "storm/modelchecker/results/LexicographicCheckResult.h"
 
 TEST(LexicographicModelCheckingTest, prob_sched1) {

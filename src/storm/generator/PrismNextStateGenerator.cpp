@@ -1,27 +1,21 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 
 #include <boost/any.hpp>
-#include <boost/container/flat_map.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/models/sparse/StateLabeling.h"
-
-#include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/sparse/PrismChoiceOrigins.h"
-
-#include "storm/generator/Distribution.h"
-
-#include "storm/solver/SmtSolver.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/generator/Distribution.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -114,11 +108,7 @@ bool PrismNextStateGenerator<ValueType, StateType>::canHandle(storm::prism::Prog
 template<typename ValueType, typename StateType>
 void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
     // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-#ifdef STORM_HAVE_CARL
     if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
-#else
-    if (program.hasUndefinedConstants()) {
-#endif
         std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
         std::stringstream stream;
         bool printComma = false;
@@ -132,16 +122,13 @@ void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
         }
         stream << ".";
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
+    } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
         auto undef = program.getUndefinedConstantsAsString();
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, "
                         "which is not admitted. Undefined constants are: "
                             << undef);
     }
-#endif
 }
 
 template<typename ValueType, typename StateType>

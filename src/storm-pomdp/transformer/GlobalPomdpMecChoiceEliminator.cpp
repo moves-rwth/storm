@@ -1,14 +1,14 @@
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
+
 #include <vector>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/transformer/ChoiceSelector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 
 namespace storm {
 namespace transformer {
@@ -237,8 +237,7 @@ storm::storage::BitVector GlobalPomdpMecChoiceEliminator<ValueType>::checkPropos
     return mc.check(propositionalFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
 }
 
-template class GlobalPomdpMecChoiceEliminator<storm::RationalNumber>;
-
 template class GlobalPomdpMecChoiceEliminator<double>;
+template class GlobalPomdpMecChoiceEliminator<storm::RationalNumber>;
 }  // namespace transformer
 }  // namespace storm

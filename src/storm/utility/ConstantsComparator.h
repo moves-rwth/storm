@@ -1,7 +1,6 @@
 #pragma once
 
-#include <type_traits>
-#include "storm/utility/ConstantsComparatorForward.h"
+#include "storm/adapters/IntervalAdapter.h"
 
 namespace storm::utility {
 

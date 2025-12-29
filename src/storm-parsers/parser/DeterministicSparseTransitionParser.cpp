@@ -1,23 +1,18 @@
 #include "storm-parsers/parser/DeterministicSparseTransitionParser.h"
 
 #include <clocale>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
 #include <string>
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm-parsers/util/cstring.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/constants.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
@@ -241,13 +236,11 @@ template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParse
 template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser<double>::parse(std::string const& filename, bool isRewardFile,
                                                                                                  storm::storage::SparseMatrix<double> const& transitionMatrix);
 
-#ifdef STORM_HAVE_CARL
 template class DeterministicSparseTransitionParser<storm::Interval>;
 
 template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parseDeterministicTransitionRewards(
     std::string const& filename, storm::storage::SparseMatrix<double> const& transitionMatrix);
 template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parse(
     std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& transitionMatrix);
-#endif
 }  // namespace parser
 }  // namespace storm

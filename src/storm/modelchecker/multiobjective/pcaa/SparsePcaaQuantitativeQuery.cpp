@@ -1,16 +1,14 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -230,13 +228,11 @@ bool SparsePcaaQuantitativeQuery<SparseModelType, GeometryValueType>::checkIfThr
     return true;
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
 
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
 template class SparsePcaaQuantitativeQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

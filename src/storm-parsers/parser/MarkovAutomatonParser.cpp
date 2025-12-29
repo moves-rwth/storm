@@ -1,14 +1,11 @@
-#include "MarkovAutomatonParser.h"
-#include "NondeterministicSparseTransitionParser.h"
-#include "SparseItemLabelingParser.h"
-#include "SparseStateRewardParser.h"
+#include "storm-parsers/parser/MarkovAutomatonParser.h"
 
+#include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
+#include "storm-parsers/parser/SparseItemLabelingParser.h"
+#include "storm-parsers/parser/SparseStateRewardParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
-
-#include "storm/exceptions/WrongFormatException.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace parser {
@@ -68,10 +65,7 @@ MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(std::str
 }
 
 template class MarkovAutomatonParser<double, double>;
-
-#ifdef STORM_HAVE_CARL
 template class MarkovAutomatonParser<double, storm::Interval>;
-#endif
 
 }  // namespace parser
 }  // namespace storm

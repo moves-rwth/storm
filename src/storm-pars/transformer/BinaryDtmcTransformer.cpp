@@ -1,9 +1,7 @@
 #include "storm-pars/transformer/BinaryDtmcTransformer.h"
 
-#include <cstdint>
-#include <queue>
-
 #include <carl/formula/Constraint.h>
+#include <queue>
 
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

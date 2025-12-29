@@ -1,13 +1,11 @@
+#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
+
 #include <string>
 
 #include "storm/adapters/ExprttkAdapter.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -88,9 +86,7 @@ double ExprtkExpressionEvaluator::asRational(Expression const& expression) const
 
 template class ExprtkExpressionEvaluatorBase<double>;
 
-#ifdef STORM_HAVE_CARL
 template class ExprtkExpressionEvaluatorBase<RationalNumber>;
 template class ExprtkExpressionEvaluatorBase<RationalFunction>;
-#endif
 }  // namespace expressions
 }  // namespace storm

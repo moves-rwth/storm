@@ -1,12 +1,11 @@
 #include "ExpressionCreator.h"
 
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/OperatorType.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

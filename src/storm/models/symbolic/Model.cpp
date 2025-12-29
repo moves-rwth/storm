@@ -3,6 +3,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"

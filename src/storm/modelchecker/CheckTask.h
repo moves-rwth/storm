@@ -7,6 +7,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/utility/constants.h"
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
@@ -46,7 +47,7 @@ class CheckTask {
         this->qualitative = false;
         this->uncertaintyResolutionMode = UncertaintyResolutionMode::Unset;
 
-        if (storm::IsIntervalType<ValueType>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             STORM_LOG_THROW(minMaxSettings.isUncertaintyResolutionModeSet() || isSet(uncertaintyResolutionMode), storm::exceptions::InvalidSettingsException,
                             "Uncertainty resolution mode required for uncertain (interval) models.");

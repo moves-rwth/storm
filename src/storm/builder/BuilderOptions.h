@@ -189,8 +189,6 @@ class BuilderOptions {
      */
     BuilderOptions& setExplorationChecks(bool newValue = true);
 
-    BuilderOptions& setInferObservationsFromActions(bool newValue = true);
-
     /**
      * Should extra checks be performed during exploration
      * @param newValue The new value (default true)

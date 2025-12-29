@@ -1,4 +1,5 @@
-#include "SparseLTLSchedulerHelper.h"
+#include "storm/modelchecker/helper/ltl/internal/SparseLTLSchedulerHelper.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
@@ -334,12 +335,9 @@ storm::storage::Scheduler<ValueType> SparseLTLSchedulerHelper<ValueType, Nondete
 template class SparseLTLSchedulerHelper<double, false>;
 template class SparseLTLSchedulerHelper<double, true>;
 
-#ifdef STORM_HAVE_CARL
 template class SparseLTLSchedulerHelper<storm::RationalNumber, false>;
 template class SparseLTLSchedulerHelper<storm::RationalNumber, true>;
 template class SparseLTLSchedulerHelper<storm::RationalFunction, false>;
-
-#endif
 
 }  // namespace internal
 }  // namespace helper

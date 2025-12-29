@@ -1,5 +1,6 @@
 #include "storm/solver/helper/ValueIterationHelper.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/solver/helper/ValueIterationOperator.h"

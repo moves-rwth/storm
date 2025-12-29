@@ -2,6 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"

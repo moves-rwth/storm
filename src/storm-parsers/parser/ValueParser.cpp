@@ -4,7 +4,9 @@
 #include <boost/lexical_cast.hpp>
 
 #include "storm-parsers/parser/ExpressionParser.h"
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/utility/constants.h"

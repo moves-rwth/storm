@@ -2,18 +2,15 @@
 
 #include <random>
 
-#include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
-#include "storm/solver/stateelimination/StatePriorityQueue.h"
-#include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
-
-#include "storm/storage/BitVector.h"
-#include "storm/storage/FlexibleSparseMatrix.h"
-
-#include "storm/settings/SettingsManager.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/solver/stateelimination/DynamicStatePriorityQueue.h"
+#include "storm/solver/stateelimination/StatePriorityQueue.h"
+#include "storm/solver/stateelimination/StaticStatePriorityQueue.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/FlexibleSparseMatrix.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -54,7 +51,6 @@ uint_fast64_t estimateComplexity(ValueType const&) {
     return 1;
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 uint_fast64_t estimateComplexity(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
@@ -66,7 +62,6 @@ uint_fast64_t estimateComplexity(storm::RationalFunction const& value) {
         return value.denominator().complexity() * value.nominator().complexity();
     }
 }
-#endif
 
 template<typename ValueType>
 uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix,
@@ -251,7 +246,6 @@ template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatr
                                                       storm::storage::BitVector const& initialStates, std::vector<double> const& oneStepProbabilities,
                                                       bool forward);
 
-#ifdef STORM_HAVE_CARL
 template uint_fast64_t estimateComplexity(storm::RationalNumber const& value);
 template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities,
                                                                       storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix,
@@ -296,7 +290,6 @@ template std::vector<uint_fast64_t> getStateDistances(storm::storage::SparseMatr
                                                       storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrixTransposed,
                                                       storm::storage::BitVector const& initialStates,
                                                       std::vector<storm::RationalFunction> const& oneStepProbabilities, bool forward);
-#endif
 }  // namespace stateelimination
 }  // namespace utility
 }  // namespace storm

@@ -1,28 +1,17 @@
 #include "storm/storage/dd/bisimulation/Partition.h"
 
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/storage/dd/bisimulation/PreservationInformation.h"
-
-#include "storm/logic/AtomicExpressionFormula.h"
-#include "storm/logic/AtomicLabelFormula.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
-
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-
+#include "storm/models/symbolic/Mdp.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/utility/macros.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {

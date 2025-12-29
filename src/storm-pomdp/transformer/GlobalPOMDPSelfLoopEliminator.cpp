@@ -1,5 +1,7 @@
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
+
 #include <vector>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -98,7 +100,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> GlobalPOMDPSelfLoopElim
     return res;
 }
 
-template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;
 template class GlobalPOMDPSelfLoopEliminator<double>;
+template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;
 }  // namespace transformer
 }  // namespace storm

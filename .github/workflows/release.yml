@@ -79,7 +79,7 @@ jobs:
           git commit -am "Set development version of Storm"
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: ci/storm-dev-version
           delete-branch: true

@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
@@ -61,7 +62,7 @@ template class ConstantsComparator<ClnRationalNumber>;
 template class ConstantsComparator<GmpRationalNumber>;
 #endif
 
-template class ConstantsComparator<RationalFunction>;
-template class ConstantsComparator<Interval>;
+template class ConstantsComparator<storm::RationalFunction>;
+template class ConstantsComparator<storm::Interval>;
 }  // namespace utility
 }  // namespace storm
