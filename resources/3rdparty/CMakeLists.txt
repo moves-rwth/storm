@@ -339,7 +339,7 @@ if(NOT STORM_DISABLE_GUROBI)
             list(APPEND STORM_DEP_IMP_TARGETS GUROBI)
         else()
             # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 11.0.0, please contact the Storm developers.")
+            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 13.0.0, please contact the Storm developers.")
         endif()
     else()
         message(STATUS "Storm - Not linking with Gurobi.")
