@@ -22,7 +22,6 @@ const std::string forceUniqueSolutionRequirementOptionName = "force-require-uniq
 const std::string lpEqualityForUniqueActionsOptionName = "lp-eq-unique-actions";
 const std::string lpUseNonTrivialBoundsOptionName = "lp-use-nontrivial-bounds";
 const std::string lpOptimizeOnlyInitialStateOptionName = "lp-objective-type";
-const std::string uncertaintyResolutionModeName = "uncertainty-resolution";
 
 MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> minMaxSolvingTechniques = {"vi",          "value-iteration",
@@ -98,14 +97,6 @@ MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(mo
                              .setDefaultValueString("all")
                              .build())
             .build());
-
-    std::vector<std::string> uncertaintyResolutionModes = {"minimize", "maximize", "robust", "cooperative", "min", "max"};
-    this->addOption(storm::settings::OptionBuilder(moduleName, uncertaintyResolutionModeName, false, "Mode to resolve the uncertainty (intervals)")
-                        .setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Mode to resolve the uncertainty (intervals) by nature.")
-                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(uncertaintyResolutionModes))
-                                         .build())
-                        .build());
 }
 
 storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
@@ -182,28 +173,6 @@ storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterati
         return storm::solver::MultiplicationStyle::Regular;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
-}
-
-UncertaintyResolutionModeSetting MinMaxEquationSolverSettings::getUncertaintyResolutionMode() const {
-    std::string uncertaintyResolutionModeString = this->getOption(uncertaintyResolutionModeName).getArgumentByName("mode").getValueAsString();
-
-    if (uncertaintyResolutionModeString == "minimize" || uncertaintyResolutionModeString == "min") {
-        return UncertaintyResolutionModeSetting::Minimize;
-    } else if (uncertaintyResolutionModeString == "maximize" || uncertaintyResolutionModeString == "max") {
-        return UncertaintyResolutionModeSetting::Maximize;
-    } else if (uncertaintyResolutionModeString == "robust") {
-        return UncertaintyResolutionModeSetting::Robust;
-    } else if (uncertaintyResolutionModeString == "cooperative") {
-        return UncertaintyResolutionModeSetting::Cooperative;
-    } else if (uncertaintyResolutionModeString == "both") {
-        STORM_LOG_ERROR("Uncertainty resolution mode 'both' not yet supported.");
-        return UncertaintyResolutionModeSetting::Both;
-    }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown nature resolution mode '" << uncertaintyResolutionModeString << "'.");
-}
-
-bool MinMaxEquationSolverSettings::isUncertaintyResolutionModeSet() const {
-    return this->getOption(uncertaintyResolutionModeName).getHasOptionBeenSet();
 }
 
 bool MinMaxEquationSolverSettings::isForceUniqueSolutionRequirementSet() const {

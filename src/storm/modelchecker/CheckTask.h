@@ -11,9 +11,6 @@
 #include "storm/logic/ComparisonType.h"
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/UncertaintyResolutionMode.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -39,22 +36,12 @@ class CheckTask {
     /*!
      * Creates a task object with the default options for the given formula.
      */
-    CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false,
-              UncertaintyResolutionMode uncertaintyResolutionMode = UncertaintyResolutionMode::Unset)
+    CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false, UncertaintyResolutionMode = UncertaintyResolutionMode::Unset)
         : formula(formula), hint(new ModelCheckerHint()) {
         this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
         this->produceSchedulers = false;
         this->qualitative = false;
         this->uncertaintyResolutionMode = UncertaintyResolutionMode::Unset;
-
-        if constexpr (storm::IsIntervalType<ValueType>) {
-            auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-            STORM_LOG_THROW(minMaxSettings.isUncertaintyResolutionModeSet() || isSet(uncertaintyResolutionMode), storm::exceptions::InvalidSettingsException,
-                            "Uncertainty resolution mode required for uncertain (interval) models.");
-
-            this->uncertaintyResolutionMode =
-                (isSet(uncertaintyResolutionMode)) ? uncertaintyResolutionMode : convert(minMaxSettings.getUncertaintyResolutionMode());
-        }
 
         updateOperatorInformation();
     }

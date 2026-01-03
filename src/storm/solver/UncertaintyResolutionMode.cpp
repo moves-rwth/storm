@@ -3,18 +3,24 @@
 namespace storm {
 namespace solver {
 std::ostream& operator<<(std::ostream& out, UncertaintyResolutionMode mode) {
-    if (mode == UncertaintyResolutionMode::Minimize) {
-        return out << "minimize";
-    } else if (mode == UncertaintyResolutionMode::Maximize) {
-        return out << "maximize";
-    } else if (mode == UncertaintyResolutionMode::Robust) {
-        return out << "robust";
-    } else if (mode == UncertaintyResolutionMode::Cooperative) {
-        return out << "cooperative";
-    } else {
-        STORM_LOG_WARN("Uncertainty resolution mode not set.");
-        return out << "unset";
+    switch (mode) {
+        case UncertaintyResolutionMode::Minimize:
+            out << "minimize";
+            break;
+        case UncertaintyResolutionMode::Maximize:
+            out << "maximize";
+            break;
+        case UncertaintyResolutionMode::Robust:
+            out << "robust";
+            break;
+        case UncertaintyResolutionMode::Cooperative:
+            out << "cooperative";
+            break;
+        case UncertaintyResolutionMode::Unset:
+            out << "unset";
+            break;
     }
+    return out;
 }
 
 bool isSet(UncertaintyResolutionMode uncertaintyResolutionMode) {
@@ -22,31 +28,20 @@ bool isSet(UncertaintyResolutionMode uncertaintyResolutionMode) {
 }
 
 bool isUncertaintyResolvedRobust(UncertaintyResolutionMode uncertaintyResolutionMode, OptimizationDirection optimizationDirection) {
-    if (uncertaintyResolutionMode == UncertaintyResolutionMode::Minimize) {
-        if (optimizationDirection != OptimizationDirection::Minimize) {
+    switch (uncertaintyResolutionMode) {
+        case UncertaintyResolutionMode::Maximize:
+            return optimizationDirection != OptimizationDirection::Maximize;
+        case UncertaintyResolutionMode::Minimize:
+            return optimizationDirection != OptimizationDirection::Minimize;
+        case UncertaintyResolutionMode::Robust:
             return true;
-        } else {
+        case UncertaintyResolutionMode::Cooperative:
             return false;
-        }
+        case UncertaintyResolutionMode::Unset:
+            STORM_LOG_WARN("Uncertainty resolution mode not set properly, assuming to resolve uncertainty in a robust fashion.");
+            break;
     }
 
-    if (uncertaintyResolutionMode == UncertaintyResolutionMode::Maximize) {
-        if (optimizationDirection != OptimizationDirection::Maximize) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    if (uncertaintyResolutionMode == UncertaintyResolutionMode::Cooperative) {
-        return false;
-    }
-
-    if (uncertaintyResolutionMode == UncertaintyResolutionMode::Robust) {
-        return true;
-    }
-
-    STORM_LOG_WARN("Uncertainty resolution mode not set properly, assuming to resolve uncertainty in a robust fashion.");
     return true;
 }
 

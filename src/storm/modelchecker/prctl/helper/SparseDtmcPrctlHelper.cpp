@@ -147,15 +147,30 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
-    solver->setRequirementsChecked();
     solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
     solver->setHasUniqueSolution(false);
     solver->setHasNoEndComponents(false);
 
+    // check requirements of solver
     if (!computeReward) {
         solver->setLowerBound(storm::utility::zero<SolutionType>());
         solver->setUpperBound(storm::utility::one<SolutionType>());
     }
+
+    auto req = solver->getRequirements(env);
+    if (!computeReward) {
+        req.clearBounds();
+    } else {
+        req.clearLowerBounds();
+        // TODO: to compute the upper bound for expected rewards of interval models, one needs to implement the functionality of
+        // `DsMpiMdpUpperRewardBoundsComputer` for IMCs.
+        // As the robust VI does not use the lower and upper bounds, we are okay for now to just clear the requirement.
+        req.clearUpperBounds();
+    }
+    STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException,
+                    "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
+
+    solver->setRequirementsChecked();
 
     // Solve the corresponding system of equations.
     solver->solveEquations(env, x, b);
@@ -282,7 +297,6 @@ template<typename ValueType, typename RewardModelType, typename SolutionType>
 std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeAllUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
-    // Is this method even needed anymore?
     if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support computing all until probabilities with interval models.");
     } else {
@@ -526,7 +540,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
     return computeReachabilityRewards(
         env, std::move(goal), transitionMatrix, backwardTransitions,
         [&](uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const& maybeStates) {
-            std::vector<ValueType> result(numberOfRows, storm::utility::one<ValueType>());
+            std::vector<ValueType> result(numberOfRows, storm::utility::zero<ValueType>());
             storm::utility::vector::selectVectorValues(result, maybeStates, totalStateRewardVector);
             return result;
         },
@@ -621,8 +635,7 @@ std::vector<SolutionType> SparseDtmcPrctlHelper<ValueType, RewardModelType, Solu
             if constexpr (storm::IsIntervalType<ValueType>) {
                 // In this case we have to compute the reward values for the remaining states.
                 // We can eliminate the rows and columns from the original transition probability matrix.
-                storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-                submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
+                storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
 
                 // Prepare the right-hand side of the equation system.
                 std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);

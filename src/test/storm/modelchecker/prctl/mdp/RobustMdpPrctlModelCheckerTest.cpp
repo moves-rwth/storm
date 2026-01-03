@@ -83,10 +83,10 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
     EXPECT_NEAR(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust), 0.0001);
 }
 
-void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin,
-                                          double maxmax) {
+void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
+                                          std::string constantsString) {
     storm::prism::Program program = storm::api::parseProgram(path);
-    program = storm::utility::prism::preprocess(program, "");
+    program = storm::utility::prism::preprocess(program, constantsString);
 
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
@@ -123,13 +123,14 @@ void checkPrismModelForQuantitativeResult(std::string const& path, std::string c
     EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxMax), 0.0001);
 }
 
-TEST(RobustMdpModelCheckerTest, RobotRewardsMinMaxTest) {
+TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
     // Maxima reachability rewards using PRISM format.
-    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/imdp/robot-delta-0.1.prism",
-                                         "Pmin=? [ F \"goal2\"];Pmin=? [ F \"goal2\"];Pmax=? [ F \"goal2\"];Pmax=? [ F \"goal2\"]", 0.4, 0.6, 1.0, 1.0);
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism",
+                                         "Pmin=? [ F \"goal2\"];Pmin=? [ F \"goal2\"];Pmax=? [ F \"goal2\"];Pmax=? [ F \"goal2\"]", 0.4, 0.6, 1.0, 1.0,
+                                         "delta=0.1");
 }
 
 void makeUncertainAndCheck(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {

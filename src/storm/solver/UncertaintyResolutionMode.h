@@ -1,5 +1,4 @@
-#ifndef STORM_UNCERTAINTYRESOLUTIONMODE_H
-#define STORM_UNCERTAINTYRESOLUTIONMODE_H
+#pragma once
 
 #include <iostream>
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -24,5 +23,3 @@ UncertaintyResolutionMode convert(UncertaintyResolutionModeSetting uncertaintyRe
 using UncertaintyResolutionModeSetting = solver::UncertaintyResolutionModeSetting;
 using UncertaintyResolutionMode = solver::UncertaintyResolutionMode;
 }  // namespace storm
-
-#endif  // STORM_UNCERTAINTYRESOLUTIONMODE_H

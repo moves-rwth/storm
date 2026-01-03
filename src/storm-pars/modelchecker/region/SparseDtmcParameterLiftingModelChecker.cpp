@@ -26,6 +26,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"

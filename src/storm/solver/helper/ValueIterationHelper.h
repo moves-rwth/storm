@@ -25,21 +25,18 @@ class ValueIterationHelper {
 
     template<storm::OptimizationDirection Dir, bool Relative>
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, SolutionType const& precision,
-                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode =
-                        std::make_optional<UncertaintyResolutionMode>(UncertaintyResolutionMode::Unset)) const;
+                    const std::function<SolverStatus(const SolverStatus&)>& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative,
                     SolutionType const& precision, std::optional<storm::OptimizationDirection> const& dir = {},
                     std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {}, MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode =
-                        std::make_optional<UncertaintyResolutionMode>(UncertaintyResolutionMode::Unset)) const;
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
     SolverStatus VI(std::vector<SolutionType>& operand, std::vector<ValueType> const& offsets, bool relative, SolutionType const& precision,
                     std::optional<storm::OptimizationDirection> const& dir = {}, std::function<SolverStatus(SolverStatus const&)> const& iterationCallback = {},
                     MultiplicationStyle mult = MultiplicationStyle::GaussSeidel,
-                    std::optional<UncertaintyResolutionMode> const& uncertaintyResolutionMode =
-                        std::make_optional<UncertaintyResolutionMode>(UncertaintyResolutionMode::Unset)) const;
+                    UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
    private:
     std::shared_ptr<ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>> viOperator;
