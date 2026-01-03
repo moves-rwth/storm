@@ -107,9 +107,10 @@ class SolveGoal {
 template<typename ValueType, typename MatrixType, typename SolutionType>
 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> configureMinMaxLinearEquationSolver(
     Environment const& env, SolveGoal<ValueType, SolutionType>&& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType, SolutionType> const& factory,
-    MatrixType&& matrix) {
+    MatrixType&& matrix, OptimizationDirectionSetting optimizationDirectionSetting = OptimizationDirectionSetting::Unset) {
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
-    solver->setOptimizationDirection(goal.direction());
+    solver->setOptimizationDirection((optimizationDirectionSetting == OptimizationDirectionSetting::Unset) ? goal.direction()
+                                                                                                           : convert(optimizationDirectionSetting));
     if (goal.isBounded()) {
         if (goal.boundIsALowerBound()) {
             solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<SolutionType>>(

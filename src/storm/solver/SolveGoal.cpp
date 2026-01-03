@@ -3,6 +3,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
@@ -86,11 +87,7 @@ bool SolveGoal<ValueType, SolutionType>::minimize() const {
 
 template<typename ValueType, typename SolutionType>
 OptimizationDirection SolveGoal<ValueType, SolutionType>::direction() const {
-    if (!optimizationDirection.has_value()) {
-        // required for IDTMCs with explicit uncertainty resolution flag
-        STORM_LOG_WARN("Optimization direction not set, defaulting to maximize.");
-        return OptimizationDirection::Maximize;
-    }
+    STORM_LOG_THROW(optimizationDirection.has_value(), storm::exceptions::InvalidPropertyException, "Optimization direction not set.");
     return optimizationDirection.get();
 }
 

@@ -145,8 +145,9 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
 
     // Set up the solver.
     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType> minMaxLinearEquationSolverFactory;
-    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
-        storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver = storm::solver::configureMinMaxLinearEquationSolver(
+        env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix),
+        convert(OptimizationDirection::Maximize));  // default to maximize for IDTMCs; does not affect the result
     solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
     solver->setHasUniqueSolution(false);
     solver->setHasNoEndComponents(false);
