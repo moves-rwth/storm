@@ -36,6 +36,7 @@ We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. 
 ## Gurobi
 
 To support newer versions of Gurobi, adapt `$STORM_DIR/resources/cmake/find_modules/FindGUROBI.cmake` with the new version numbers.
+Also update the error message in the Gurobi section of `$STORM_DIR/resources/CMakeLists.txt`
 
 
 ## l3pp
