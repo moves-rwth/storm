@@ -1,31 +1,25 @@
-#include "graph.h"
+#include "storm/utility/graph.h"
+
 #include <algorithm>
 
-#include "storm-config.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/sparse/StateType.h"
-
-#include "storm/storage/ExplicitGameStrategyPair.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/models/sparse/DeterministicModel.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/DeterministicModel.h"
 #include "storm/models/symbolic/NondeterministicModel.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/storage/ExplicitGameStrategyPair.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/sparse/StateType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include <queue>
 
 namespace storm {
 namespace utility {
@@ -1965,11 +1959,9 @@ template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMa
 template storm::storage::BitVector performProb0E(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#ifdef STORM_HAVE_CARL
 template storm::storage::BitVector performProb0E(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#endif
 template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                  std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
                                                  storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates,
@@ -1978,11 +1970,9 @@ template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<do
 template storm::storage::BitVector performProb1A(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#ifdef STORM_HAVE_CARL
 template storm::storage::BitVector performProb1A(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#endif
 template storm::storage::BitVector performProb1A(storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                  std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,
                                                  storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates,
@@ -1997,11 +1987,9 @@ template std::pair<storm::storage::BitVector, storm::storage::BitVector> perform
 template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model,
     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#ifdef STORM_HAVE_CARL
 template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(
     storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model,
     storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-#endif
 
 template ExplicitGameProb01Result performProb0(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping,
                                                storm::storage::SparseMatrix<double> const& player1BackwardTransitions,
@@ -2019,7 +2007,6 @@ template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<doub
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
 
 // Instantiations for storm::RationalNumber.
-#ifdef STORM_HAVE_CARL
 template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
                                                       storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
                                                       storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps,
@@ -2381,7 +2368,6 @@ template std::pair<storm::storage::BitVector, storm::storage::BitVector> perform
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
-#endif
 
 // Instantiations for CUDD.
 

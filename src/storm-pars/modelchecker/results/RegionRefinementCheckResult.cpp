@@ -1,7 +1,5 @@
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 
-#include <map>
-
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
@@ -119,8 +117,6 @@ std::ostream& RegionRefinementCheckResult<ValueType>::writeIllustrationToStream(
     return out;
 }
 
-#ifdef STORM_HAVE_CARL
 template class RegionRefinementCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

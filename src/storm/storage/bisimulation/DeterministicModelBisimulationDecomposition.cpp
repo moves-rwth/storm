@@ -10,8 +10,6 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 
@@ -403,7 +401,7 @@ std::vector<storm::storage::BitVector> DeterministicModelBisimulationDecompositi
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
 
-                    if (this->comparator.isZero(predecessorEntry.getValue())) {
+                    if (storm::utility::isZero(predecessorEntry.getValue())) {
                         continue;
                     }
 

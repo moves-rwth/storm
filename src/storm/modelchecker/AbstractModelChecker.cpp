@@ -2,7 +2,9 @@
 
 #include <boost/core/typeinfo.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/exceptions/InternalTypeErrorException.h"
@@ -12,7 +14,6 @@
 #include "storm/logic/FormulaInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
-#include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Ctmc.h"
@@ -26,11 +27,8 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -291,10 +289,12 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
-        if (env.modelchecker().multi().isLexicographicModelCheckingSet()) {
-            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        auto const& mof = stateFormula.asMultiObjectiveFormula();
+        if (mof.isLexicographic() || env.modelchecker().multi().isLexicographicModelCheckingSet()) {
+            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(mof));
         } else {
-            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+            STORM_LOG_ASSERT(mof.isTradeoff(), "Unexpected multi-objective formula type.");
+            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(mof));
         }
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));

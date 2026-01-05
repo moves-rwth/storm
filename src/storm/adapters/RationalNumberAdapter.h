@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm-config.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 #if defined(STORM_HAVE_CLN)
 #pragma clang diagnostic push
@@ -13,7 +13,6 @@
 #include <gmpxx.h>
 #endif
 
-#include <carl/interval/Interval.h>
 #include <carl/numbers/numbers.h>
 
 #if defined(STORM_HAVE_CLN)
@@ -31,22 +30,3 @@ inline size_t hash_value(mpq_class const& q) {
     return h(q);
 }
 #endif
-
-namespace storm {
-#if defined(STORM_HAVE_CLN)
-typedef cln::cl_RA ClnRationalNumber;
-#endif
-#if defined(STORM_HAVE_GMP)
-typedef mpq_class GmpRationalNumber;
-#endif
-
-#if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_EA)
-typedef ClnRationalNumber RationalNumber;
-#elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
-typedef GmpRationalNumber RationalNumber;
-#elif defined(STORM_USE_CLN_EA)
-#error CLN is to be used, but is not available.
-#else
-#error GMP is to be used, but is not available.
-#endif
-}  // namespace storm

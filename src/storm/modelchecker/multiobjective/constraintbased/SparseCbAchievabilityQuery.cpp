@@ -1,6 +1,9 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
@@ -12,10 +15,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -229,13 +228,11 @@ std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::spa
     return this->preprocessedModel->getRewardModel(rewardModelName).getTotalRewardVector(this->preprocessedModel->getTransitionMatrix());
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparseCbAchievabilityQuery<storm::models::sparse::Mdp<double>>;
 template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>>;
 
 template class SparseCbAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class SparseCbAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

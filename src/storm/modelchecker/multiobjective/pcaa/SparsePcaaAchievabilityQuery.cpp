@@ -1,6 +1,7 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
@@ -8,8 +9,6 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -112,13 +111,11 @@ bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkIfTh
     return true;
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparsePcaaAchievabilityQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
 template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
 
 template class SparsePcaaAchievabilityQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
 template class SparsePcaaAchievabilityQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

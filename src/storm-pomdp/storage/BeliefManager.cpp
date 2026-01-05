@@ -81,8 +81,7 @@ std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t
 template<typename PomdpType, typename BeliefValueType, typename StateType>
 BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision,
                                                                     TriangulationMode const &triangulationMode)
-    : pomdp(pomdp), triangulationMode(triangulationMode) {
-    cc = storm::utility::ConstantsComparator<BeliefValueType>(precision, false);
+    : pomdp(pomdp), cc(precision, false), triangulationMode(triangulationMode) {
     beliefToIdMap.resize(pomdp.getNrObservations());
     initialBeliefId = computeInitialBelief();
 }
@@ -819,11 +818,9 @@ std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType
 }
 
 template class BeliefManager<storm::models::sparse::Pomdp<double>>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
 
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
-
 template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
 }  // namespace storage
 }  // namespace storm

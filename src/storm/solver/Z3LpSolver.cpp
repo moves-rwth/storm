@@ -2,20 +2,18 @@
 
 #include <numeric>
 
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
-#include "storm/storage/expressions/OperatorType.h"
-
-#include "storm/io/file.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/io/file.h"
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/storage/expressions/OperatorType.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace solver {

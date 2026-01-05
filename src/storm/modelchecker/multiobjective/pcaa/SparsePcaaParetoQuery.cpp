@@ -110,13 +110,11 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
     STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
 }
 
-#ifdef STORM_HAVE_CARL
 template class SparsePcaaParetoQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
 template class SparsePcaaParetoQuery<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
 
 template class SparsePcaaParetoQuery<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
 template class SparsePcaaParetoQuery<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
-#endif
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

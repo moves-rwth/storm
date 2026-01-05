@@ -1,13 +1,10 @@
 #include "storm/storage/dd/DdManager.h"
 
 #include <cmath>
-#include <iostream>
 
-#include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -476,7 +473,7 @@ std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices(std:
     }
 
     // Next, we need to sort them, since they may be arbitrarily ordered otherwise.
-    std::sort(ddVariableIndices.begin(), ddVariableIndices.end());
+    std::ranges::sort(ddVariableIndices);
     return ddVariableIndices;
 }
 

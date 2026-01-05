@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+
 #include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
@@ -10,8 +11,6 @@
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/logic/Formula.h"
-#include "storm/solver/LinearEquationSolver.h"
-
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"

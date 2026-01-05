@@ -4,6 +4,7 @@
 
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
+#include "storm/adapters/RationalFunctionAdapter.h"  // TODO: use forward header
 #include "storm/solver/OptimizationDirection.h"
 
 namespace storm {

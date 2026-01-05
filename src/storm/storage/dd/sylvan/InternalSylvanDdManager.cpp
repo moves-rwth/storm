@@ -1,8 +1,5 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
-#include <cmath>
-#include <iostream>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/sylvan.h"
 #include "storm/exceptions/InvalidSettingsException.h"

@@ -1,15 +1,26 @@
 #include "storm/builder/DdJaniModelBuilder.h"
 
+#include <boost/algorithm/string/join.hpp>
 #include <sstream>
 
-#include <boost/algorithm/string/join.hpp>
-
+#include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
-
-#include "storm/adapters/RationalNumberAdapter.h"
-
+#include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Dtmc.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/BuildSettings.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/storage/dd/Bdd.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/Variable.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -21,32 +32,9 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/adapters/AddExpressionAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
-
-#include "storm/models/symbolic/Ctmc.h"
-#include "storm/models/symbolic/Dtmc.h"
-#include "storm/models/symbolic/MarkovAutomaton.h"
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/dd.h"
-#include "storm/utility/jani.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/math.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace builder {
@@ -56,6 +44,7 @@ storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJani
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
+    features.add(storm::jani::ModelFeature::MultiObjectiveProperties);
     // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
     // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
     return features;
@@ -69,6 +58,7 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     if (!features.empty()) {
         STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
         return false;
@@ -2428,6 +2418,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     auto features = model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
 
     storm::jani::Model preparedModel = model;
     preparedModel.simplifyComposition();

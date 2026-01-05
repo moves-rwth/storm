@@ -1,15 +1,14 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace analysis {
@@ -205,8 +204,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::checkPropositi
     return mc.check(propositionalFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
 }
 
-template class QualitativeAnalysisOnGraphs<storm::RationalNumber>;
-
 template class QualitativeAnalysisOnGraphs<double>;
+template class QualitativeAnalysisOnGraphs<storm::RationalNumber>;
 }  // namespace analysis
 }  // namespace storm

@@ -1,19 +1,12 @@
 #include "storm/modelchecker/helper/finitehorizon/SparseDeterministicStepBoundedHorizonHelper.h"
-#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
-#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/utility/SignalHandler.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 namespace storm::modelchecker::helper {
 

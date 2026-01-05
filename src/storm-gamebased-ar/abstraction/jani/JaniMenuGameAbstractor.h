@@ -141,14 +141,6 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
      */
     std::unique_ptr<MenuGame<DdType, ValueType>> buildGame();
 
-    /*!
-     * Decodes the given choice over the auxiliary and successor variables to a mapping from update indices
-     * to bit vectors representing the successors under these updates.
-     *
-     * @param choice The choice to decode.
-     */
-    std::map<uint_fast64_t, storm::storage::BitVector> decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const;
-
     // The concrete model this abstractor refers to.
     std::reference_wrapper<storm::jani::Model const> model;
 

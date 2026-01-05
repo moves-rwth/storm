@@ -1,11 +1,12 @@
-#include <algorithm>
-#include <iterator>
-
 #include "storm/modelchecker/helper/conditional/ConditionalHelper.h"
+
+#include <algorithm>
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/SolveGoal.h"
@@ -18,9 +19,6 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::modelchecker {
 

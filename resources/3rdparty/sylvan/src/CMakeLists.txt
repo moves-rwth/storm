@@ -152,7 +152,6 @@ target_include_directories(sylvan PUBLIC
 
 option(USE_CARL "Sets whether carl should be included." ON)
 if(USE_CARL)
-    target_compile_definitions(sylvan PRIVATE SYLVAN_HAVE_CARL)
     message(STATUS "Sylvan - Using CArL.")
     #    find_package(carl REQUIRED PATHS ${carl_DIR} NO_DEFAULT_PATH)
     target_link_libraries(sylvan PUBLIC lib_carl)

@@ -88,7 +88,8 @@ void FormulaParserGrammar::initialize() {
            (formula(qi::_r1, qi::_r2) > qi::lit(")")))  // If we're starting with '(' but this is not an expression, we must have a formula inside the brackets
         | labelFormula | negationPropositionalFormula(qi::_r1, qi::_r2) | operatorFormula |
         (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2))  // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
-        | multiOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
+        | multiLexOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
+        | multiOperatorFormula     // Has to come after multilex to avoid failing to parse multilex
         | quantileFormula | gameFormula;
 
     // Propositional Logic operators
@@ -205,8 +206,13 @@ void FormulaParserGrammar::initialize() {
 
     // Multi-objective, quantiles
     multiOperatorFormula = (qi::lit("multi") > qi::lit("(") > (operatorFormula % qi::lit(",")) >
-                            qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1)];
+                            qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1,
+                                                                   storm::logic::MultiObjectiveFormula::Type::Tradeoff)];
     multiOperatorFormula.name("multi-objective operator formula");
+    multiLexOperatorFormula = (qi::lit("multilex") > qi::lit("(") > (operatorFormula % qi::lit(",")) >
+                               qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1,
+                                                                      storm::logic::MultiObjectiveFormula::Type::Lexicographic)];
+    multiLexOperatorFormula.name("multi-objective lexicographic operator formula");
     quantileBoundVariable = (-optimalityOperator_ >> identifier >>
                              qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_1, qi::_2)];
     quantileBoundVariable.name("quantile bound variable");
@@ -279,6 +285,7 @@ void FormulaParserGrammar::initialize() {
     //            debug(playerCoalition)
     //            debug(gameFormula)
     //            debug(multiOperatorFormula)
+    //            debug(multiLexOperatorFormula)
     //            debug(quantileBoundVariable)
     //            debug(quantileFormula)
     //            debug(formula)
@@ -321,6 +328,7 @@ void FormulaParserGrammar::initialize() {
     qi::on_error<qi::fail>(playerCoalition, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(gameFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(multiOperatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+    qi::on_error<qi::fail>(multiLexOperatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(quantileBoundVariable, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(quantileFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(formula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -675,8 +683,8 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiBo
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiOperatorFormula(
-    std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
-    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas, storm::logic::MultiObjectiveFormula::Type type) {
+    return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas, type));
 }
 
 storm::expressions::Variable FormulaParserGrammar::createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir,

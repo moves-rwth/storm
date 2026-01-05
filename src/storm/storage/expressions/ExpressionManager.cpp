@@ -63,12 +63,6 @@ ExpressionManager::ExpressionManager()
       numberOfBitVectorVariables(0),
       numberOfRationalVariables(0),
       numberOfArrayVariables(0),
-      numberOfAuxiliaryVariables(0),
-      numberOfAuxiliaryBooleanVariables(0),
-      numberOfAuxiliaryIntegerVariables(0),
-      numberOfAuxiliaryBitVectorVariables(0),
-      numberOfAuxiliaryRationalVariables(0),
-      numberOfAuxiliaryArrayVariables(0),
       freshVariableCounter(0) {
     // Intentionally left empty.
 }

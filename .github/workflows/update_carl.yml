@@ -39,7 +39,7 @@ jobs:
           git commit -am "Use carl-storm ${{ inputs.carl_version }}"
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.personal_access_token }}
           branch: ci/update-carl-storm

@@ -1,11 +1,9 @@
 #pragma once
 
-#include <memory>
-
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/modelchecker/lexicographic/lexicographicModelCheckerHelper.h"
-#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/CheckTask.h"
+#include "storm/modelchecker/lexicographic/LexicographicModelCheckerHelper.h"
 
 namespace storm {
 

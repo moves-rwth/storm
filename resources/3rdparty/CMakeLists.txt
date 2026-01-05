@@ -51,6 +51,9 @@ if(NOT STORM_DISABLE_GMM)
             gmm_src
             URL https://download-mirror.savannah.gnu.org/releases/getfem/stable/gmm-${GMM_VERSION}.tar.gz
             SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/gmm
+            # Try to apply patch and otherwise check that patch was already applied
+            # Needed because while -N ignores already applied patches it still returns with exit code 1
+            PATCH_COMMAND patch -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch || patch --dry-run -N -p1 -s -i ${STORM_3RDPARTY_SOURCE_DIR}/patches/gmm544.patch | grep "Reversed (or previously applied) patch detected!"
             UPDATE_COMMAND ""
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
@@ -336,7 +339,7 @@ if(NOT STORM_DISABLE_GUROBI)
             list(APPEND STORM_DEP_IMP_TARGETS GUROBI)
         else()
             # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 11.0.0, please contact the Storm developers.")
+            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 13.0.0, please contact the Storm developers.")
         endif()
     else()
         message(STATUS "Storm - Not linking with Gurobi.")
@@ -375,8 +378,6 @@ else()
     set(SHIPPED_CARL_USE_GINAC OFF)
 endif()
 
-set(STORM_HAVE_CARL OFF)
-
 include(FetchContent)
 FETCHCONTENT_DECLARE(
         carl
@@ -401,12 +402,7 @@ include(${carl_BINARY_DIR}/carlConfig.cmake)
 set(STORM_HAVE_CLN ${CARL_HAVE_CLN})
 set(STORM_HAVE_GINAC ${CARL_HAVE_GINAC})
 message(STATUS "Storm - Using carl version ${carl_VERSION} from ${carl_SOURCE_DIR} (CLN: ${STORM_HAVE_CLN}, GiNaC: ${STORM_HAVE_GINAC})")
-#
-# TODO this old flag is no longer really relevant as CARL must always be present.
-set(STORM_HAVE_CARL ON)
-# This flag is currently required to pick the right carl adapter.
-# TODO It can be removed as the old versions that did not support forward declarations are no longer supported either way.
-set(STORM_CARL_SUPPORTS_FWD_DECL ON)
+
 add_dependencies(storm_resources lib_carl)
 list(APPEND STORM_FETCHED_TARGETS lib_carl)
 

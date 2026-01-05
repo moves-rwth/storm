@@ -1,7 +1,9 @@
 #include "storm/generator/NextStateGenerator.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/logic/Formulas.h"
@@ -37,6 +39,7 @@ NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions:
       variableInformation(variableInformation),
       evaluator(nullptr),
       state(nullptr),
+      comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
       actionMask(mask) {
     initializeSpecialStates();
 }
@@ -45,7 +48,13 @@ template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager,
                                                              NextStateGeneratorOptions const& options,
                                                              std::shared_ptr<ActionMask<ValueType, StateType>> const& mask)
-    : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask) {}
+    : options(options),
+      expressionManager(expressionManager.getSharedPointer()),
+      variableInformation(),
+      evaluator(nullptr),
+      state(nullptr),
+      comparator(storm::utility::convertNumber<ValueType>(options.getStochasticTolerance())),
+      actionMask(mask) {}
 
 template<typename ValueType, typename StateType>
 NextStateGenerator<ValueType, StateType>::~NextStateGenerator() = default;

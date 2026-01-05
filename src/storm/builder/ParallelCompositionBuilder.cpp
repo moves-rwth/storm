@@ -1,7 +1,6 @@
 #include "storm/builder/ParallelCompositionBuilder.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/utility/constants.h"
 
 namespace storm {
 namespace builder {
@@ -163,10 +162,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
 
 // Explicitly instantiate the class.
 template class ParallelCompositionBuilder<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ParallelCompositionBuilder<storm::RationalFunction>;
-#endif
 
 }  // namespace builder
 }  // namespace storm

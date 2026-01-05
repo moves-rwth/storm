@@ -188,7 +188,7 @@ template<typename ModelType, typename BlockDataType>
 BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model,
                                                                                storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                Options const& options)
-    : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
+    : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(options.getTolerance()), quotient(nullptr) {
     STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException,
                     "Bisimulation currently only supports models with at most one reward model.");
     STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || !model.getUniqueRewardModel().hasTransitionRewards(),

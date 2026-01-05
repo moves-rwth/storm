@@ -446,14 +446,6 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
      */
     uint_fast64_t getNumberOfVariables(storm::expressions::Type const& variableType) const;
 
-    /*!
-     * Retrieves the number of auxiliary variables with the given type. Note that this considers bounded integer
-     * variables to be of the same type, no matter which bit width they have.
-     *
-     * @param variableType The type for which to query the number of auxiliary variables.
-     */
-    uint_fast64_t getNumberOfAuxiliaryVariables(storm::expressions::Type const& variableType) const;
-
     // The set of all known variables.
     std::set<Variable> variableSet;
 
@@ -472,16 +464,6 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t numberOfBitVectorVariables;
     uint_fast64_t numberOfRationalVariables;
     uint_fast64_t numberOfArrayVariables;
-
-    // The number of declared auxiliary variables.
-    uint_fast64_t numberOfAuxiliaryVariables;
-
-    // Store counts for auxiliary variables.
-    uint_fast64_t numberOfAuxiliaryBooleanVariables;
-    uint_fast64_t numberOfAuxiliaryIntegerVariables;
-    uint_fast64_t numberOfAuxiliaryBitVectorVariables;
-    uint_fast64_t numberOfAuxiliaryRationalVariables;
-    uint_fast64_t numberOfAuxiliaryArrayVariables;
 
     // A counter used to create fresh variables.
     uint_fast64_t freshVariableCounter;

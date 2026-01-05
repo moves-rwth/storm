@@ -1,14 +1,15 @@
 #include "storm/builder/BuilderType.h"
 
-#include "storm/storage/dd/DdType.h"
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
+#include "storm/storage/dd/DdType.h"
 #include "storm/storage/jani/ModelFeatures.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

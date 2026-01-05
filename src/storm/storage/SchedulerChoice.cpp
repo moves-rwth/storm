@@ -1,11 +1,11 @@
 #include "storm/storage/SchedulerChoice.h"
 
-#include "storm/utility/constants.h"
-#include "storm/utility/macros.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
