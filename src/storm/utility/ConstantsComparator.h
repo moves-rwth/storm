@@ -1,7 +1,5 @@
 #pragma once
 
-#include "storm/adapters/IntervalAdapter.h"
-
 namespace storm::utility {
 
 template<typename ValueType>
