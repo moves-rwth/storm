@@ -720,39 +720,15 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 template<typename ModelType>
 DeterministicModelBisimulationDecomposition<ModelType>::ValueType DeterministicModelBisimulationDecomposition<ModelType>::getTransitionValue(
     storm::storage::MatrixEntry<storm::storage::sparse::state_type, ValueType> const& matrixEntry, storm::storage::sparse::state_type state) const {
-    return matrixEntry.getValue();
-}
-
-// Need to specialize for all ValueType
-template<>
-double DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>::getTransitionValue(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, double> const& matrixEntry, storm::storage::sparse::state_type state) const {
-    double transitionValue = matrixEntry.getValue();
-    // Currently not needed as CTMCs are stored as rate matrix
-    // TODO: enable when removing CTMC rate matrix
-    // transitionValue *= this->model.getExitRateVector().at(state);
-    return transitionValue;
-}
-
-template<>
-storm::RationalNumber DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>>::getTransitionValue(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber> const& matrixEntry, storm::storage::sparse::state_type state) const {
-    storm::RationalNumber transitionValue = matrixEntry.getValue();
-    // Currently not needed as CTMCs are stored as rate matrix
-    // TODO: enable when removing CTMC rate matrix
-    // transitionValue *= this->model.getExitRateVector().at(state);
-    return transitionValue;
-}
-
-template<>
-storm::RationalFunction DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>::getTransitionValue(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalFunction> const& matrixEntry,
-    storm::storage::sparse::state_type state) const {
-    storm::RationalFunction transitionValue = matrixEntry.getValue();
-    // Currently not needed as CTMCs are stored as rate matrix
-    // TODO: enable when removing CTMC rate matrix
-    // transitionValue *= this->model.getExitRateVector().at(state);
-    return transitionValue;
+    if constexpr (std::is_same_v<ModelType, storm::models::sparse::Ctmc<typename ModelType::ValueType>>) {
+        auto transitionValue = matrixEntry.getValue();
+        // TODO: enable when removing CTMC rate matrix
+        // transitionValue *= this->model.getExitRateVector().at(state);
+        return transitionValue;
+    } else {
+        STORM_LOG_ASSERT(this->model.isDiscreteTimeModel(), "Unhandled model type");
+        return matrixEntry.getValue();
+    }
 }
 
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
