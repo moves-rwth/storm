@@ -6,7 +6,7 @@
 # --build-arg BASE_IMAGE=<new_base_image>
 
 # Set base image
-ARG BASE_IMAGE=alpine:latest
+ARG BASE_IMAGE=alpine:edge
 FROM $BASE_IMAGE
 LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
@@ -44,8 +44,6 @@ ARG cmake_args=""
 # Additional Alpine packages
 ARG packages=""
 
-RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-RUN echo "@community https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk add --no-cache \
     bash \
     cmake \
@@ -57,12 +55,13 @@ RUN apk add --no-cache \
     automake \
     libc-dev \
     linux-headers \
+    patch \
     boost-dev \
     gmp-dev \
-    cln-dev@testing \
-    ginac-dev@testing \
-    z3-dev@community \
-    glpk-dev@community \
+    cln-dev \
+    ginac-dev \
+    z3-dev \
+    glpk-dev \
     $packages
 
 
