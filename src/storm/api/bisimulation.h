@@ -1,16 +1,13 @@
 #pragma once
 
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
-
-#include "storm/storage/dd/BisimulationDecomposition.h"
 #include "storm/storage/dd/DdType.h"
-
-#include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
