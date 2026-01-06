@@ -300,7 +300,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
         if (computeValue) {
             std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
             std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+            if (boost::get<Nesterov>(&gradientDescentType)) {
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> modelCheckPosition(position);
                 if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                     for (auto const& parameter : parameters) {

@@ -53,7 +53,7 @@ To update, you can follow these steps:
 1. Check out the above commit in a separate repository
 2. Copy the contents of `$STORM_DIR/resources/3rdparty/modernjson/include` to the repository you just checked out and commit to a fresh branch
 3. The diff for that commit shows you the exact modifications we made.
-4. Merge the json version you want to update to into your branch.
+4. Merge the JSON version you want to update to into your branch.
 5. Resolve potential conflicts and review what has changed, in particular if it affects handling of floating point numbers.
 6. When this is all done, copy the contents back into the storm directory. Make sure to not apply any unnecessary code formatting to keep the diff smallish.
 7. *Update the commit hash mentioned in this document*

@@ -6,7 +6,7 @@ namespace storm::dft {
 namespace transformations {
 
 // Prevent some magic constants
-static constexpr const uint64_t defaultCapacity = 1;
+static constexpr uint64_t defaultCapacity = 1;
 
 template<typename ValueType>
 DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::dft::storage::DFT<ValueType> const &dft) : mDft(dft) {

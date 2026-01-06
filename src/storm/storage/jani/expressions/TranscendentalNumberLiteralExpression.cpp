@@ -33,7 +33,6 @@ bool TranscendentalNumberLiteralExpression::isLiteral() const {
 
 void TranscendentalNumberLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {
     // A constant value is not supposed to have any variable
-    return;
 }
 
 std::shared_ptr<BaseExpression const> TranscendentalNumberLiteralExpression::simplify() const {

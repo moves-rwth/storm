@@ -107,8 +107,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         if (isOrderBasedMonotonicityBackend()) {
             getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);
             getOrderBasedMonotonicityBackend().registerPLABoundFunction(
-                [this](storm::Environment const& env, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
-                    return this->computeQuantitativeValues(env, region, dir);  // sets known value bounds within the region
+                [this](storm::Environment const& environment, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
+                    return this->computeQuantitativeValues(environment, region, dir);  // sets known value bounds within the region
                 });
         }
     }

@@ -12,8 +12,7 @@ namespace adapters {
 #ifdef STORM_HAVE_GMM
 template<typename T>
 std::unique_ptr<gmm::csr_matrix<T>> GmmxxAdapter<T>::toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
-    uint_fast64_t realNonZeros = matrix.getEntryCount();
-    STORM_LOG_TRACE("Converting " << matrix.getRowCount() << "x" << matrix.getColumnCount() << " matrix with " << realNonZeros
+    STORM_LOG_TRACE("Converting " << matrix.getRowCount() << "x" << matrix.getColumnCount() << " matrix with " << matrix.getEntryCount()
                                   << " non-zeros to gmm++ format.");
 
     // Prepare the resulting matrix.

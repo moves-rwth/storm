@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm/environment/Environment.h"
 

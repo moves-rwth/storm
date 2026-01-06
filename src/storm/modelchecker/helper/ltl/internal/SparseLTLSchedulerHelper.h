@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/MaximalEndComponent.h"

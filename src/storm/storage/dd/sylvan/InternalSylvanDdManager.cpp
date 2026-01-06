@@ -32,7 +32,7 @@ VOID_TASK_0(gc_end) {
 VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*, e) {
     try {
         (*f)();
-    } catch (std::exception& exception) {
+    } catch (std::exception&) {
         *e = std::current_exception();
     }
 }

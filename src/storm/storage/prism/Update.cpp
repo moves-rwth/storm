@@ -192,9 +192,9 @@ std::ostream& operator<<(std::ostream& stream, Update const& update) {
     } else {
         std::vector<std::string> assignmentsAsStrings;
         std::for_each(update.getAssignments().cbegin(), update.getAssignments().cend(), [&assignmentsAsStrings](Assignment const& assignment) {
-            std::stringstream stream;
-            stream << assignment;
-            assignmentsAsStrings.push_back(stream.str());
+            std::stringstream sstream;
+            sstream << assignment;
+            assignmentsAsStrings.push_back(sstream.str());
         });
         stream << boost::algorithm::join(assignmentsAsStrings, " & ");
     }

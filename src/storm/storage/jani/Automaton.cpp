@@ -226,7 +226,7 @@ Automaton::Edges Automaton::getEdgesFromLocation(uint64_t locationIndex, uint64_
         it2 = it1;
         step = count / 2;
         std::advance(it2, step);
-        if (!(actionIndex < it2->getActionIndex())) {
+        if (actionIndex >= it2->getActionIndex()) {
             first = ++it2;
             count -= step + 1;
         } else
@@ -275,7 +275,7 @@ Automaton::ConstEdges Automaton::getEdgesFromLocation(uint64_t locationIndex, ui
         it2 = first;
         step = count / 2;
         std::advance(it2, step);
-        if (!(actionIndex < it2->getActionIndex())) {
+        if (actionIndex >= it2->getActionIndex()) {
             first = ++it2;
             count -= step + 1;
         } else

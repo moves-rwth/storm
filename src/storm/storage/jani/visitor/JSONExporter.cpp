@@ -233,7 +233,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanPathFormula const
     return opDecl;
 }
 boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const&) const {
-    ExportJsonType opDecl(f.isTrueFormula() ? true : false);
+    ExportJsonType opDecl(f.isTrueFormula());
     return opDecl;
 }
 boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
