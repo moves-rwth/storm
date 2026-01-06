@@ -1349,7 +1349,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
             k1 = rotl64(k1, 31);
             k1 *= c2;
             h1 ^= k1;
-    };
+    }
 
     //----------
     // finalization

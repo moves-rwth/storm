@@ -64,8 +64,8 @@ template<typename ModelType, typename BlockDataType>
 void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveFormula(storm::logic::Formula const& formula) {
     // Disable the measure driven initial partition.
     measureDrivenInitialPartition = false;
-    phiStates = boost::none;
-    psiStates = boost::none;
+    phiStates.reset();
+    psiStates.reset();
 
     // Retrieve information about formula.
     storm::logic::FormulaInformation info = formula.info();
@@ -156,7 +156,7 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::checkAndSetMe
         phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
         psiStates = psiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
     } else {
-        optimalityType = boost::none;
+        optimalityType.reset();
     }
 }
 
@@ -174,7 +174,7 @@ void BisimulationDecomposition<ModelType, BlockDataType>::Options::addToRespecte
     if (!respectedAtomicPropositions) {
         respectedAtomicPropositions = labelsToRespect;
     } else {
-        respectedAtomicPropositions.get().insert(labelsToRespect.begin(), labelsToRespect.end());
+        respectedAtomicPropositions.value().insert(labelsToRespect.begin(), labelsToRespect.end());
     }
 }
 
@@ -340,7 +340,7 @@ template<typename ModelType, typename BlockDataType>
 void BisimulationDecomposition<ModelType, BlockDataType>::initializeLabelBasedPartition() {
     partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates());
 
-    for (auto const& label : options.respectedAtomicPropositions.get()) {
+    for (auto const& label : options.respectedAtomicPropositions.value()) {
         if (label == "init") {
             continue;
         }
@@ -358,14 +358,14 @@ template<typename ModelType, typename BlockDataType>
 void BisimulationDecomposition<ModelType, BlockDataType>::initializeMeasureDrivenPartition() {
     std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = this->getStatesWithProbability01();
 
-    boost::optional<storm::storage::sparse::state_type> representativePsiState;
-    if (!options.psiStates.get().empty()) {
-        representativePsiState = *options.psiStates.get().begin();
+    std::optional<storm::storage::sparse::state_type> representativePsiState;
+    if (!options.psiStates.value().empty()) {
+        representativePsiState = *options.psiStates.value().begin();
     }
 
     partition = storm::storage::bisimulation::Partition<BlockDataType>(
         model.getNumberOfStates(), statesWithProbability01.first,
-        options.getBounded() || options.getKeepRewards() ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
+        options.getBounded() || options.getKeepRewards() ? options.psiStates.value() : statesWithProbability01.second, representativePsiState);
 
     // If the model has state rewards, we need to consider them, because otherwise reward properties are not
     // preserved.

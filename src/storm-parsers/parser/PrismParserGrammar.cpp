@@ -487,7 +487,7 @@ void PrismParserGrammar::createFormulaIdentifiers(std::vector<storm::prism::Form
                         variable = manager->declareRationalVariable(formulas[formulaIndex].getName());
                     }
                     this->identifiers_.add(formulas[formulaIndex].getName(), variable.getExpression());
-                } catch (storm::exceptions::InvalidArgumentException const& e) {
+                } catch (storm::exceptions::InvalidArgumentException const&) {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                                     "Parsing error in " << this->getFilename() << ": illegal identifier '" << formulas[formulaIndex].getName() << "' at line '"
                                                         << formulas[formulaIndex].getLineNumber());
@@ -666,7 +666,7 @@ storm::prism::Constant PrismParserGrammar::createUndefinedBooleanConstant(std::s
         try {
             storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -679,7 +679,7 @@ storm::prism::Constant PrismParserGrammar::createUndefinedIntegerConstant(std::s
         try {
             storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -692,7 +692,7 @@ storm::prism::Constant PrismParserGrammar::createUndefinedDoubleConstant(std::st
         try {
             storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -705,7 +705,7 @@ storm::prism::Constant PrismParserGrammar::createDefinedBooleanConstant(std::str
         try {
             storm::expressions::Variable newVariable = manager->declareBooleanVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -718,7 +718,7 @@ storm::prism::Constant PrismParserGrammar::createDefinedIntegerConstant(std::str
         try {
             storm::expressions::Variable newVariable = manager->declareIntegerVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -731,7 +731,7 @@ storm::prism::Constant PrismParserGrammar::createDefinedDoubleConstant(std::stri
         try {
             storm::expressions::Variable newVariable = manager->declareRationalVariable(newConstant, true);
             this->identifiers_.add(newConstant, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << newConstant << "'.");
         }
@@ -867,7 +867,7 @@ storm::prism::BooleanVariable PrismParserGrammar::createBooleanVariable(std::str
         try {
             storm::expressions::Variable newVariable = manager->declareBooleanVariable(variableName);
             this->identifiers_.add(variableName, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << variableName << "'.");
         }
@@ -886,7 +886,7 @@ storm::prism::IntegerVariable PrismParserGrammar::createIntegerVariable(std::str
         try {
             storm::expressions::Variable newVariable = manager->declareIntegerVariable(variableName);
             this->identifiers_.add(variableName, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << variableName << "'.");
         }
@@ -905,7 +905,7 @@ storm::prism::ClockVariable PrismParserGrammar::createClockVariable(std::string 
         try {
             storm::expressions::Variable newVariable = manager->declareRationalVariable(variableName);
             this->identifiers_.add(variableName, newVariable.getExpression());
-        } catch (storm::exceptions::InvalidArgumentException const& e) {
+        } catch (storm::exceptions::InvalidArgumentException const&) {
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                             "Parsing error in " << this->getFilename() << ": illegal identifier '" << variableName << "'.");
         }

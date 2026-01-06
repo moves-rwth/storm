@@ -325,7 +325,7 @@ class CheckTask {
      * Conversion operator that strips the type of the formula.
      */
     operator CheckTask<storm::logic::Formula, ValueType>() const {
-        return this->substituteFormula<storm::logic::Formula>(this->getFormula());
+        return this->template substituteFormula<storm::logic::Formula>(this->getFormula());
     }
 
    private:

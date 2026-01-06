@@ -121,7 +121,7 @@ TEST_P(SftBddTest, RRW) {
     expectVectorNear(checker->getAllRRWsAtTimebound(1), param.RRW);
 }
 
-static std::vector<SftTestData> sftTestData{
+std::vector<SftTestData> sftTestData{
     {
         "And",
         STORM_TEST_RESOURCES_DIR "/dft/bdd/AndTest.dft",

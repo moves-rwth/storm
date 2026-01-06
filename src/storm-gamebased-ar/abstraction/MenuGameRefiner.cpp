@@ -1411,8 +1411,6 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame
                 maxPlayer1Strategy && abstractionInformation.encodePlayer2Choice(player2Labeling[player2Choice], 0, game.getPlayer2Variables().size());
         }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-
     boost::optional<RefinementPredicates> predicates;
     if (useInterpolation) {
         predicates = derivePredicatesFromInterpolation(game, pivotStateResult, odd);
@@ -1420,7 +1418,6 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::gbar::abstraction::MenuGame
     if (!predicates) {
         predicates = derivePredicatesFromPivotState(game, symbolicPivotState, minPlayer1Strategy, minPlayer2Strategy, maxPlayer1Strategy, maxPlayer2Strategy);
     }
-    end = std::chrono::high_resolution_clock::now();
     STORM_LOG_THROW(static_cast<bool>(predicates), storm::exceptions::InvalidStateException, "Predicates needed to continue.");
 
     std::vector<storm::expressions::Expression> preparedPredicates = preprocessPredicates(predicates.get().getPredicates(), predicates.get().getSource());

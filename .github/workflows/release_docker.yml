@@ -1,5 +1,5 @@
 name: Release Docker
-# Builds Storm and deploys images to Dockerhub
+# Builds Storm and deploys images to DockerHub
 # Build is distributed across multiple runners based on:
 # https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 

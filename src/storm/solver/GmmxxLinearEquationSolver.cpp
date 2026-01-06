@@ -114,7 +114,7 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
                     gmm::gmres(*gmmxxA, x, b, gmm::identity_matrix(), env.solver().gmmxx().getRestartThreshold(), iter);
                 }
             }
-        } catch (storm::exceptions::AbortException const& e) {
+        } catch (storm::exceptions::AbortException const&) {
             // Do nothing
         }
 
