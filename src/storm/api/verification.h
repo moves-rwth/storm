@@ -42,18 +42,19 @@ namespace storm {
 namespace api {
 
 template<typename ValueType>
+    requires(!storm::IsIntervalType<ValueType>)
 storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> createTask(std::shared_ptr<const storm::logic::Formula> const& formula,
                                                                             bool onlyInitialStatesRelevant = false) {
-    auto checkTask = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula, onlyInitialStatesRelevant);
+    return storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula, onlyInitialStatesRelevant);
+}
 
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-        STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
-                        "Uncertainty resolution mode required for uncertain (interval) models.");
-
-        checkTask.setUncertaintyResolutionMode(convert(ioSettings.getUncertaintyResolutionMode()));
-    }
-
+template<typename ValueType>
+    requires(storm::IsIntervalType<ValueType>)
+storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> createTask(std::shared_ptr<const storm::logic::Formula> const& formula,
+                                                                            storm::UncertaintyResolutionMode uncertaintyResolution,
+                                                                            bool onlyInitialStatesRelevant = false) {
+    storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask(*formula, onlyInitialStatesRelevant);
+    checkTask.setUncertaintyResolutionMode(uncertaintyResolution);
     return checkTask;
 }
 
