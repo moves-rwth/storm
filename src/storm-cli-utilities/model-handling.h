@@ -1347,12 +1347,9 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                                     "--buildchoicelab or --buildchoiceorig.");
             }
             if (result->isExplicitQuantitativeCheckResult()) {
-                if constexpr (storm::IsIntervalType<ValueType>) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
-                } else {
-                    storm::api::exportScheduler(sparseModel, result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler(),
-                                                schedulerExportPath.string());
-                }
+                storm::api::exportScheduler(sparseModel,
+                                            result->template asExplicitQuantitativeCheckResult<storm::IntervalBaseType<ValueType>>().getScheduler(),
+                                            schedulerExportPath.string());
             } else if (result->isExplicitParetoCurveCheckResult()) {
                 if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for models of this value type is not supported.");
