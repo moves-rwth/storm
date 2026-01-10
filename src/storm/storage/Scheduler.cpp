@@ -173,7 +173,8 @@ boost::optional<storm::storage::MemoryStructure> const& Scheduler<ValueType>::ge
 }
 
 template<typename ValueType>
-void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices,
+template<typename ModelValueType>
+void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ModelValueType>> model, bool skipUniqueChoices,
                                          bool skipDontCareStates) const {
     STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException,
                     "The given model is not compatible with this scheduler.");
@@ -308,7 +309,8 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
 }
 
 template<typename ValueType>
-void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices,
+template<typename ModelValueType>
+void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ModelValueType>> model, bool skipUniqueChoices,
                                              bool skipDontCareStates) const {
     STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException,
                     "The given model is not compatible with this scheduler.");
@@ -391,6 +393,25 @@ template class Scheduler<double>;
 template class Scheduler<storm::RationalNumber>;
 template class Scheduler<storm::RationalFunction>;
 template class Scheduler<storm::Interval>;
+
+template void Scheduler<double>::printToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<double>>, bool, bool) const;
+template void Scheduler<storm::RationalNumber>::printToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>>, bool,
+                                                              bool) const;
+template void Scheduler<storm::RationalFunction>::printToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>, bool,
+                                                                bool) const;
+template void Scheduler<storm::IntervalBaseType<storm::Interval>>::printToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::Interval>>,
+                                                                                 bool, bool) const;
+template void Scheduler<storm::Interval>::printToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::Interval>>, bool, bool) const;
+
+template void Scheduler<double>::printJsonToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<double>>, bool, bool) const;
+template void Scheduler<storm::RationalNumber>::printJsonToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>>, bool,
+                                                                  bool) const;
+template void Scheduler<storm::RationalFunction>::printJsonToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>, bool,
+                                                                    bool) const;
+template void Scheduler<storm::IntervalBaseType<storm::Interval>>::printJsonToStream(std::ostream&,
+                                                                                     std::shared_ptr<storm::models::sparse::Model<storm::Interval>>, bool,
+                                                                                     bool) const;
+template void Scheduler<storm::Interval>::printJsonToStream(std::ostream&, std::shared_ptr<storm::models::sparse::Model<storm::Interval>>, bool, bool) const;
 
 }  // namespace storage
 }  // namespace storm

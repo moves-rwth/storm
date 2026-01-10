@@ -79,8 +79,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     solver2->setMatrix(withoutMECs);
     auto x2 = std::vector<double>(target2.size(), 0);
 
-    solver1->setUncertaintyIsRobust(false);
-    solver2->setUncertaintyIsRobust(false);
+    solver1->setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
+    solver2->setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
 
     // Check that maximize is the same
     solver1->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);

@@ -138,7 +138,8 @@ class Scheduler {
      *                          Requires a model to be given.
      * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
      */
-    void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false,
+    template<typename ModelValueType>
+    void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ModelValueType>> model = nullptr, bool skipUniqueChoices = false,
                        bool skipDontCareStates = false) const;
 
     /*!
@@ -150,7 +151,8 @@ class Scheduler {
      *                          Requires a model to be given.
      * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
      */
-    void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false,
+    template<typename ModelValueType>
+    void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ModelValueType>> model = nullptr, bool skipUniqueChoices = false,
                            bool skipDontCareStates = false) const;
 
    private:

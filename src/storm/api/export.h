@@ -62,8 +62,8 @@ void exportSymbolicModelAsDot(std::shared_ptr<storm::models::symbolic::Model<Typ
     model->writeDotToFile(filename);
 }
 
-template<typename ValueType>
-void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::storage::Scheduler<ValueType> const& scheduler,
+template<typename ValueType, typename SolutionType = ValueType>
+void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::storage::Scheduler<SolutionType> const& scheduler,
                      std::string const& filename) {
     std::ofstream stream;
     storm::io::openFile(filename, stream);
