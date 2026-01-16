@@ -1,8 +1,4 @@
-#ifndef STORM_STORAGE_BISIMULATION_BLOCK_H_
-#define STORM_STORAGE_BISIMULATION_BLOCK_H_
-
-#include <boost/optional.hpp>
-#include <list>
+#pragma once
 
 #include "storm/storage/sparse/StateType.h"
 
@@ -105,5 +101,3 @@ class Block {
 }  // namespace bisimulation
 }  // namespace storage
 }  // namespace storm
-
-#endif /* STORM_STORAGE_BISIMULATION_BLOCK_H_ */

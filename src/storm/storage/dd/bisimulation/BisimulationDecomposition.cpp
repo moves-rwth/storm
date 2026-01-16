@@ -1,20 +1,17 @@
-#include "storm/storage/dd/BisimulationDecomposition.h"
+#include "storm/storage/dd/bisimulation/BisimulationDecomposition.h"
 
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/Model.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
 #include "storm/storage/dd/bisimulation/PartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/QuotientExtractor.h"
-
-#include "storm/models/symbolic/Mdp.h"
-#include "storm/models/symbolic/Model.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

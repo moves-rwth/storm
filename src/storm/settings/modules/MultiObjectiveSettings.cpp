@@ -99,7 +99,7 @@ MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
                         .build());
 
     this->addOption(storm::settings::OptionBuilder(moduleName, lexicographicOptionName, false,
-                                                   "If set, lexicographic model checking instead of normal multi objective is performed.")
+                                                   "(Deprecated) If set, lexicographic model checking instead of normal multi objective is performed.")
                         .build());
 }
 
@@ -217,6 +217,11 @@ bool MultiObjectiveSettings::isRedundantBsccConstraintsSet() const {
 
 bool MultiObjectiveSettings::isLexicographicModelCheckingSet() const {
     return this->getOption(lexicographicOptionName).getHasOptionBeenSet();
+}
+
+void MultiObjectiveSettings::finalize() {
+    STORM_LOG_WARN_COND(!isLexicographicModelCheckingSet(),
+                        "Option '--" << moduleName << ":" << lexicographicOptionName << "' is deprecated. Use a `multilex(..)` formula instead.");
 }
 
 bool MultiObjectiveSettings::check() const {

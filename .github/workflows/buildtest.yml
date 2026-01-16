@@ -1,6 +1,6 @@
 name: Build Test
 # Builds and tests storm on various platforms
-# also deploys images to Dockerhub
+# also deploys images to DockerHub
 
 on:
   schedule:
@@ -202,7 +202,7 @@ jobs:
               buildType: "Debug",
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "patch", # Needed for gmm patch
+              packages: "",
               distro: "alpine"
             }
     steps:
@@ -310,17 +310,17 @@ jobs:
       matrix:
         config:
           
-          - {name: "XCode 15.4, ARM",
+          - {name: "Xcode 15.4, ARM",
              distro: "macos-14",
              xcode: "15.4",
              buildType: "Debug"
             }
-          - {name: "XCode Latest, ARM",
+          - {name: "Xcode Latest, ARM",
              distro: "macos-15",
              xcode: "latest-stable",
              buildType: "Debug"
             }
-          - {name: "XCode Latest, Intel",
+          - {name: "Xcode Latest, Intel",
              distro: "macos-15-intel",
              xcode: "latest-stable",
              buildType: "Debug"

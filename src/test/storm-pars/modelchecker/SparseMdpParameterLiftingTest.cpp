@@ -65,8 +65,6 @@ typedef ::testing::Types<DoubleViEnvironment, RationalPIEnvironment> TestingType
 TYPED_TEST_SUITE(SparseMdpParameterLiftingTest, TestingTypes, );
 
 TYPED_TEST(SparseMdpParameterLiftingTest, two_dice_Prob) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/two_dice.nm";
     std::string formulaFile = "P<=0.17 [ F \"doubles\" ]";
 
@@ -95,8 +93,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, two_dice_Prob) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, two_dice_Prob_bounded) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/two_dice.nm";
     std::string formulaFile = "P<=0.17 [ F<100 \"doubles\" ]";
 
@@ -187,8 +183,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, two_dice_Prob_bounded_exactValidation)
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, coin_Prob) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/coin2_2.nm";
     std::string formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
 
@@ -218,8 +212,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, coin_Prob) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, brp_Prop) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/brp16_2.nm";
     std::string formulaAsString = "P<=0.84 [ F (s=5 & T) ]";
     std::string constantsAsString = "TOMsg=0.0,TOAck=0.0";
@@ -251,8 +243,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Prop) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/brp16_2.nm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
@@ -284,8 +274,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew_bounded) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/brp16_2.nm";
     std::string formulaAsString = "R>2.5 [ C<=300 ]";
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
@@ -317,8 +305,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, brp_Rew_bounded) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, Brp_Rew_Infty) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/brp16_2.nm";
     std::string formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
     std::string constantsAsString = "";
@@ -342,8 +328,6 @@ TYPED_TEST(SparseMdpParameterLiftingTest, Brp_Rew_Infty) {
 }
 
 TYPED_TEST(SparseMdpParameterLiftingTest, Brp_Rew_4Par) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pmdp/brp16_2.nm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "";  //!! this model will have 4 parameters

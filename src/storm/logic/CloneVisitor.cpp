@@ -118,7 +118,7 @@ boost::any CloneVisitor::visit(MultiObjectiveFormula const& f, boost::any const&
     for (auto const& subF : f.getSubformulas()) {
         subformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(subF->accept(*this, data)));
     }
-    return std::static_pointer_cast<Formula>(std::make_shared<MultiObjectiveFormula>(subformulas));
+    return std::static_pointer_cast<Formula>(std::make_shared<MultiObjectiveFormula>(subformulas, f.getType()));
 }
 
 boost::any CloneVisitor::visit(QuantileFormula const& f, boost::any const& data) const {

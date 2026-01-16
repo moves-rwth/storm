@@ -38,7 +38,7 @@ bool ChoiceLabeling::operator==(ChoiceLabeling const& other) const {
 }
 
 ChoiceLabeling ChoiceLabeling::getSubLabeling(storm::storage::BitVector const& choices) const {
-    return ChoiceLabeling(ItemLabeling::getSubLabeling(choices));
+    return ChoiceLabeling(ItemLabeling::getSubItemLabeling(choices));
 }
 
 std::set<std::string> ChoiceLabeling::getLabelsOfChoice(uint64_t choice) const {

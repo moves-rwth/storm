@@ -21,7 +21,7 @@ namespace cli {
 bool parseOptions(const int argc, const char* argv[]) {
     try {
         storm::settings::mutableManager().setFromCommandLine(argc, argv);
-    } catch (storm::exceptions::OptionParserException& e) {
+    } catch (storm::exceptions::OptionParserException&) {
         STORM_LOG_ERROR("Unable to parse command line options. Type '" + std::string(argv[0]) + " --help' or '" + std::string(argv[0]) +
                         " --help all' for help.");
         return false;

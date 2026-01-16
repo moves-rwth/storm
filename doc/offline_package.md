@@ -18,13 +18,13 @@ The downloaded `*.deb` files have to be included in the installation package.
 
 Apart from that we will need to download the sources from _carl_ (recall to use the master14 branch) and, of course, the storm sources.
 
-We currently checkout the _l3pp_ and _eigen_ git repositories during the building process. To make this possible in an offline fashion you might need to
+We currently check out the _l3pp_ and _eigen_ git repositories during the building process. To make this possible in an offline fashion you might need to
  
- * remove the `GIT_REPOSITORY ...` and `GIT_TAG ...` arguments in the the _l3pp_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`,
- * remove the `ExternalProject_Add(..)` statement in the the _eigen_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`, and
+ * remove the `GIT_REPOSITORY ...` and `GIT_TAG ...` arguments in the _l3pp_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`,
+ * remove the `ExternalProject_Add(..)` statement in the _eigen_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`, and
  * make sure that `$STORMDIR/build/include/resources/3rdparty/StormEigen` already exist and contains the Eigen sources before running `cmake`/`make`. You can take these files from a working Storm installation.
  
-Assuming that the directory `dependencies` contains the `*.deb` files, and `carl` and `storm` contain the source files of Carl and Storm, respecteively, an installation script can look as follows:
+Assuming that the directory `dependencies` contains the `*.deb` files, and `carl` and `storm` contain the source files of Carl and Storm, respectively, an installation script can look as follows:
 
 ```console
 #!/bin/bash
