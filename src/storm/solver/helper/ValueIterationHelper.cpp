@@ -106,7 +106,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    uint64_t& numIterations, SolutionType const& precision,
                                                                                    const std::function<SolverStatus(const SolverStatus&)>& iterationCallback,
                                                                                    MultiplicationStyle mult,
-                                                                                   const UncertaintyResolutionMode& uncertaintyResolutionMode) const {
+                                                                                   UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
     bool robustUncertainty = false;
     if (storm::IsIntervalType<ValueType>) {
         robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, Dir);

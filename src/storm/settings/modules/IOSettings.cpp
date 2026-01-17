@@ -10,6 +10,7 @@
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -541,8 +542,8 @@ UncertaintyResolutionModeSetting IOSettings::getUncertaintyResolutionMode() cons
     } else if (uncertaintyResolutionModeString == "cooperative") {
         return UncertaintyResolutionModeSetting::Cooperative;
     } else if (uncertaintyResolutionModeString == "both") {
-        STORM_LOG_ERROR("Uncertainty resolution mode 'both' not yet supported.");
-        return UncertaintyResolutionModeSetting::Both;
+        STORM_LOG_ASSERT(false, "Uncertainty resolution mode 'both' not yet implemented.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Uncertainty resolution mode 'both' not yet implemented.");
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown nature resolution mode '" << uncertaintyResolutionModeString << "'.");
 }

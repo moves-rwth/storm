@@ -38,8 +38,7 @@ bool isUncertaintyResolvedRobust(UncertaintyResolutionMode uncertaintyResolution
         case UncertaintyResolutionMode::Cooperative:
             return false;
         case UncertaintyResolutionMode::Unset:
-            STORM_LOG_WARN("Uncertainty resolution mode not set properly, assuming to resolve uncertainty in a robust fashion.");
-            break;
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Uncertainty resolution mode not set properly.");
     }
 
     return true;

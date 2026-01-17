@@ -149,24 +149,15 @@ std::vector<SolutionType> computeRobustValuesForMaybeStates(Environment const& e
         env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix),
         convert(OptimizationDirection::Maximize));  // default to maximize for IDTMCs; does not affect the result
     solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
-    solver->setHasUniqueSolution(false);
+    solver->setHasUniqueSolution(computeReward);  // As we check for graph-preservation, in case of rewards on IDTMCs, we have a unique solution
     solver->setHasNoEndComponents(false);
 
     // check requirements of solver
+    auto req = solver->getRequirements(env);
     if (!computeReward) {
         solver->setLowerBound(storm::utility::zero<SolutionType>());
         solver->setUpperBound(storm::utility::one<SolutionType>());
-    }
-
-    auto req = solver->getRequirements(env);
-    if (!computeReward) {
         req.clearBounds();
-    } else {
-        req.clearLowerBounds();
-        // TODO: to compute the upper bound for expected rewards of interval models, one needs to implement the functionality of
-        // `DsMpiMdpUpperRewardBoundsComputer` for IMCs.
-        // As the robust VI does not use the lower and upper bounds, we are okay for now to just clear the requirement.
-        req.clearUpperBounds();
     }
     STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException,
                     "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
