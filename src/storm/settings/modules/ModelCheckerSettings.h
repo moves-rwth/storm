@@ -3,6 +3,7 @@
 #include "storm-config.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace settings {
@@ -43,6 +44,12 @@ class ModelCheckerSettings : public ModuleSettings {
      * Retrieves the specified algorithm for conditional probabilities.
      */
     ConditionalAlgorithmSetting getConditionalAlgorithmSetting() const;
+
+    /*!
+     * TODO probably generalize
+     * Retrieves
+     */
+    storm::RationalNumber getConditionalTolerance() const;
 
     // The name of the module.
     static const std::string moduleName;

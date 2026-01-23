@@ -8,6 +8,7 @@
 #include "storm/environment/SubEnvironment.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 
@@ -28,6 +29,10 @@ class ModelCheckerEnvironment {
     ConditionalAlgorithmSetting getConditionalAlgorithmSetting() const;
     void setConditionalAlgorithmSetting(ConditionalAlgorithmSetting value);
 
+    // TODO: This should probably be moved.
+    storm::RationalNumber getConditionalTolerance() const;
+    void setConditionalTolerance(storm::RationalNumber const& value);
+
     bool isAllowOptimizationForBoundedPropertiesSet() const;
     void setAllowOptimizationForBoundedProperties(bool value);
 
@@ -42,5 +47,6 @@ class ModelCheckerEnvironment {
     SteadyStateDistributionAlgorithm steadyStateDistributionAlgorithm;
     ConditionalAlgorithmSetting conditionalAlgorithmSetting;
     bool allowOptimizationForBoundedProperties;
+    storm::RationalNumber conditionalToleranceSetting;
 };
 }  // namespace storm
