@@ -361,15 +361,16 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     storm::storage::BitVector choicesAllowedForInitialComponent = allowedChoices & ~disallowedInitialComponentExits;
 
     storm::storage::BitVector goodInitialComponentStates = initialComponentStates;
+    bool progress = false;
     for (auto state : initialComponentExitStates) {
         auto const groupStart = transitionMatrix.getRowGroupIndices()[state];
         auto const groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
         bool const allChoicesAreDisallowed = disallowedInitialComponentExits.getNextUnsetIndex(groupStart) >= groupEnd;
         if (allChoicesAreDisallowed) {
             goodInitialComponentStates.set(state, false);
+            progress = true;
         }
     }
-    bool progress = true;
     while (progress) {
         progress = false;
         for (auto state : goodInitialComponentStates) {
