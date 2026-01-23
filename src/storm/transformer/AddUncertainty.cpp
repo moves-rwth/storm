@@ -17,15 +17,21 @@ template<typename ValueType>
 AddUncertainty<ValueType>::AddUncertainty(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& originalModel) : origModel(originalModel) {}
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType>::transform(double additiveUncertainty, double minimalTransitionProbability) {
+std::shared_ptr<storm::models::sparse::Model<Interval>> AddUncertainty<ValueType>::transform(double additiveUncertainty, double minimalTransitionProbability, uint64_t maxSuccessors) {
     // we first build the matrix and later copy the row grouping.
     auto newMatrixBuilder =
         storage::SparseMatrixBuilder<storm::Interval>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
                                                       origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
     // Build transition matrix (without row grouping)
     for (uint64_t rowIndex = 0; rowIndex < origModel->getTransitionMatrix().getRowCount(); ++rowIndex) {
-        for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
-            newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
+        if (origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors)  {
+            for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
+                newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
+            }
+        } else {
+            for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
+                newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), 0, 0));
+            }
         }
     }
     storm::storage::sparse::ModelComponents<storm::Interval> modelComponents(newMatrixBuilder.build(), origModel->getStateLabeling());

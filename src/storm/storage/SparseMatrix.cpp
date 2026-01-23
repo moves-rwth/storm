@@ -672,16 +672,22 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getEntryCo
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGroupEntryCount(index_type const group) const {
-    index_type result = 0;
     if (!this->hasTrivialRowGrouping()) {
+        index_type result = 0;
         for (auto row : this->getRowGroupIndices(group)) {
             result += (this->rowIndications[row + 1] - this->rowIndications[row]);
         }
+        return result;
     } else {
-        result += (this->rowIndications[group + 1] - this->rowIndications[group]);
+        return (this->rowIndications[group + 1] - this->rowIndications[group]);
     }
-    return result;
 }
+
+template<typename ValueType>
+typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowEntryCount(index_type const row) const {
+    return (this->rowIndications[row + 1] - this->rowIndications[row]);
+}
+
 
 template<typename ValueType>
 typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
