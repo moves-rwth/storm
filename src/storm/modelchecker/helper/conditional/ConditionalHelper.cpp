@@ -517,7 +517,7 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
         initStateInReduced = ecElimResult2->oldToNewStateMapping[initStateInReduced];
     }
 
-    STORM_LOG_INFO("Processed model has " << matrix.getRowGroupCount() << " states and " << matrix.getRowGroupCount() << " choices and "
+    STORM_PRINT_AND_LOG("Processed model has " << matrix.getRowGroupCount() << " states and " << matrix.getRowGroupCount() << " choices and "
                                           << matrix.getEntryCount() << " transitions.");
 
     // Finally, solve the equation system, potentially computing a scheduler
@@ -757,7 +757,7 @@ class WeightedReachabilityHelper {
             initialStateInSubmatrix = ecResult->oldToNewStateMapping[initialStateInSubmatrix];
         }
         isAcyclic = !storm::utility::graph::hasCycle(submatrix);
-        STORM_LOG_INFO("Processed model has " << submatrix.getRowGroupCount() << " states and " << submatrix.getRowGroupCount() << " choices and "
+        STORM_PRINT_AND_LOG("Processed model has " << submatrix.getRowGroupCount() << " states and " << submatrix.getRowGroupCount() << " choices and "
                                               << submatrix.getEntryCount() << " transitions. Matrix is " << (isAcyclic ? "acyclic." : "cyclic."));
 
         if (computeScheduler) {
@@ -1309,7 +1309,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         if (alg == ConditionalAlgorithmSetting::Default) {
             alg = ConditionalAlgorithmSetting::Restart;
         }
-        STORM_LOG_INFO("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg << ".");
+        STORM_PRINT_AND_LOG("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg << ".");
         // sw.restart();
         internal::ResultReturnType<SolutionType> result{storm::utility::zero<SolutionType>()};
         switch (alg) {
