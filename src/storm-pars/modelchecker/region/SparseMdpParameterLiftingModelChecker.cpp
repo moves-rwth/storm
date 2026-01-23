@@ -93,6 +93,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     STORM_LOG_THROW(checkTask.getFormula().hasUpperBound(), storm::exceptions::NotSupportedException, "Expected a bounded until formula with an upper bound.");
     STORM_LOG_THROW(checkTask.getFormula().getTimeBoundReference().isStepBound() || checkTask.getFormula().getTimeBoundReference().isTimeBound(),
                     storm::exceptions::NotSupportedException, "Expected a bounded until formula with step bounds.");
+    STORM_LOG_WARN_COND(!checkTask.getFormula().getTimeBoundReference().isTimeBound(), "Time bound on discrete-time model will be handled as step bound.");
     stepBound = checkTask.getFormula().getUpperBound().evaluateAsInt();
     STORM_LOG_THROW(*stepBound > 0, storm::exceptions::NotSupportedException,
                     "Can not apply parameter lifting on step bounded formula: The step bound has to be positive.");
