@@ -1072,12 +1072,12 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
                                                << ".");
         }
         if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
-            STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations. Difference is "
+            STORM_PRINT_AND_LOG("Bisection method converged after " << iterationCount << " iterations. Difference is "
                                                                << std::setprecision(std::numeric_limits<double>::digits10)
                                                                << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
         } else if (usePolicyTracking && lowerScheduler && upperScheduler && (*lowerScheduler == *upperScheduler)) {
-            STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations due to identical schedulers for lower and upper bound.");
+            STORM_PRINT_AND_LOG("Bisection method converged after " << iterationCount << " iterations due to identical schedulers for lower and upper bound.");
             auto result = wrh.evaluateScheduler(env, *lowerScheduler);
             lowerBound &= result;
             upperBound &= result;
@@ -1086,7 +1086,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         }
         // Check if bounds are fully below or above threshold
         if (goal.isBounded() && (*upperBound <= goal.thresholdValue() || (*lowerBound >= goal.thresholdValue()))) {
-            STORM_LOG_INFO("Bisection method determined result after " << iterationCount << " iterations. Found bounds are ["
+            STORM_PRINT_AND_LOG("Bisection method determined result after " << iterationCount << " iterations. Found bounds are ["
                                                                        << storm::utility::convertNumber<double>(*lowerBound) << ", "
                                                                        << storm::utility::convertNumber<double>(*upperBound) << "], threshold is "
                                                                        << storm::utility::convertNumber<double>(goal.thresholdValue()) << ".");
@@ -1094,7 +1094,7 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         }
         // check for early termination
         if (storm::utility::resources::isTerminate()) {
-            STORM_LOG_WARN("Bisection solver aborted after " << iterationCount << "iterations. Bound difference is "
+            STORM_PRINT_AND_LOG("Bisection solver aborted after " << iterationCount << "iterations. Bound difference is "
                                                              << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
         }

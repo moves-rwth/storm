@@ -40,8 +40,8 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, conditionalToleranceName, false, "The internally used tolerance for computing conditional probabilities..")
                         .setShortName("condtol")
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.")
-                                         .setDefaultValueDouble(1e-04)
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                                         .setDefaultValueDouble(1e-06)
+                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0, 1.0))
                                          .build())
                         .build());
 }
