@@ -14,6 +14,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/OptionalRef.h"
@@ -678,9 +679,6 @@ class WeightedReachabilityHelper {
         originalToReducedStateIndexMap = subMatrixRowGroups.getNumberOfSetBitsBeforeIndices();
         initialStateInSubmatrix = originalToReducedStateIndexMap[initialState];
         auto const eliminatedInitialComponentStates = normalForm.maybeStates & ~subMatrixRowGroups;
-        for (auto state : eliminatedInitialComponentStates) {
-            originalToReducedStateIndexMap[state] = initialStateInSubmatrix;  // map all eliminated states to the initial state
-        }
 
         // build matrix, rows that sum up to 1, target values, condition values
         storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(numSubmatrixRows, numSubmatrixRowGroups, 0, true, true, numSubmatrixRowGroups);
@@ -693,13 +691,10 @@ class WeightedReachabilityHelper {
 
             // Put the row processing into a lambda for avoiding code duplications
             auto processRow = [&](uint64_t origRowIndex) {
-                // We make two passes. First, we find out the probability to reach an eliminated initial component state
-                ValueType const eliminatedInitialComponentProbability = transitionMatrix.getConstrainedRowSum(origRowIndex, eliminatedInitialComponentStates);
-                // Second, we insert the submatrix entries and find out the target and condition probabilities for this row
+                // insert the submatrix entries and find out the target and condition probabilities for this row
                 ValueType targetProbability = storm::utility::zero<ValueType>();
                 ValueType conditionProbability = storm::utility::zero<ValueType>();
                 bool rowSumIsLess1 = false;
-                bool initialStateEntryInserted = false;
                 for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
                         STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero");
@@ -711,19 +706,11 @@ class WeightedReachabilityHelper {
                         } else {
                             conditionProbability += scaledTargetValue;  // for terminal, non-condition states, the condition value equals the target value
                         }
-                    } else if (!eliminatedInitialComponentStates.get(entry.getColumn())) {
+                    } else if (eliminatedInitialComponentStates.get(entry.getColumn())) {
+                        rowSumIsLess1 = true;
+                    } else {
                         auto const columnIndex = originalToReducedStateIndexMap[entry.getColumn()];
-                        if (!initialStateEntryInserted && columnIndex >= initialStateInSubmatrix) {
-                            if (columnIndex == initialStateInSubmatrix) {
-                                matrixBuilder.addNextValue(currentRow, initialStateInSubmatrix, eliminatedInitialComponentProbability + entry.getValue());
-                            } else {
-                                matrixBuilder.addNextValue(currentRow, initialStateInSubmatrix, eliminatedInitialComponentProbability);
-                                matrixBuilder.addNextValue(currentRow, columnIndex, entry.getValue());
-                            }
-                            initialStateEntryInserted = true;
-                        } else {
-                            matrixBuilder.addNextValue(currentRow, columnIndex, entry.getValue());
-                        }
+                        matrixBuilder.addNextValue(currentRow, columnIndex, entry.getValue());
                     }
                 }
                 if (rowSumIsLess1) {
@@ -898,8 +885,8 @@ class WeightedReachabilityHelper {
     std::unique_ptr<storm::storage::Scheduler<ValueType>> constructSchedulerForInputModel(
         std::vector<uint64_t> const& schedulerForReducedModel, storm::storage::SparseMatrix<ValueType> const& originalTransitionMatrix,
         storm::storage::SparseMatrix<ValueType> const& originalBackwardTransitions, NormalFormData<ValueType> const& normalForm) const {
-        std::vector<uint64_t> originalRowToStateIndexMap;  // maps original row indices to original state indices. transitionMatrix.getRowGroupIndices() are the
-                                                           // inverse of that mapping
+        std::vector<uint64_t> originalRowToStateIndexMap;  // maps original row indices to original state indices. transitionMatrix.getRowGroupIndices() are
+                                                           // the inverse of that mapping
         originalRowToStateIndexMap.reserve(originalTransitionMatrix.getRowCount());
         for (uint64_t originalStateIndex = 0; originalStateIndex < originalTransitionMatrix.getRowGroupCount(); ++originalStateIndex) {
             originalRowToStateIndexMap.insert(originalRowToStateIndexMap.end(), originalTransitionMatrix.getRowGroupSize(originalStateIndex),
@@ -1189,11 +1176,18 @@ typename internal::ResultReturnType<ValueType> decideThreshold(Environment const
     }
 
     SolutionType val = wrh.computeWeightedDiff(env, direction, storm::utility::one<ValueType>(), -threshold, schedulerRef);
-    // if val is positive, the conditional probability is (strictly) greater than threshold
-    // if val is negative, the conditional probability is (strictly) smaller than threshold
-    // if val is zero, the conditional probability equals the threshold
-    // so, for the true probability p and comparison ~ we have:  p ~ threshold  <=>  val + threshold ~ threshold
-    auto finalResult = ResultReturnType<SolutionType>(val + threshold);
+    SolutionType outputProbability;
+    if (val > storm::utility::zero<SolutionType>()) {
+        // if val is positive, the conditional probability is (strictly) greater than threshold
+        outputProbability = storm::utility::one<SolutionType>();
+    } else if (val < storm::utility::zero<SolutionType>()) {
+        // if val is negative, the conditional probability is (strictly) smaller than threshold
+        outputProbability = storm::utility::zero<SolutionType>();
+    } else {
+        // if val is zero, the conditional probability equals the threshold
+        outputProbability = threshold;
+    }
+    auto finalResult = ResultReturnType<SolutionType>(outputProbability);
 
     if (computeScheduler) {
         // If requested, construct the scheduler for the original model
