@@ -721,7 +721,7 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
     std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
     parameters.insert(rewardParameters.begin(), rewardParameters.end());
-    std::set<storm::RationalFunctionVariable> rateParameters = getRewardParameters(model);
+    std::set<storm::RationalFunctionVariable> rateParameters = getRateParameters(model);
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
