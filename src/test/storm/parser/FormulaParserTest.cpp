@@ -128,31 +128,45 @@ TEST(FormulaParserTest, UntilOperatorTest) {
     EXPECT_TRUE(nested2.asBoundedUntilFormula().getTimeBoundReference().isTimeBound());
     EXPECT_EQ(3, nested2.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 
-    input = "P<0.9 [\"a\" U{\"rewardname\"}<=3 \"b\"]";
+    input = "P<0.9 [\"a\" Utime<=3 \"b\"]";
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
     EXPECT_TRUE(nested3.isBoundedUntilFormula());
-    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
-    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
-    EXPECT_EQ("rewardname", nested3.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_TRUE(nested3.asBoundedUntilFormula().getTimeBoundReference().isTimeBound());
     EXPECT_EQ(3, nested3.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 
-    input = "P<0.9 [\"a\" Urew{\"rewardname\"}<=3 \"b\"]";
+    input = "P<0.9 [\"a\" Usteps<=3 \"b\"]";
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     auto const &nested4 = formula->asProbabilityOperatorFormula().getSubformula();
     EXPECT_TRUE(nested4.isBoundedUntilFormula());
-    EXPECT_TRUE(nested4.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
-    EXPECT_TRUE(nested4.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
-    EXPECT_EQ("rewardname", nested4.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_TRUE(nested4.asBoundedUntilFormula().getTimeBoundReference().isStepBound());
     EXPECT_EQ(3, nested4.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 
-    input = "P<0.9 [\"a\" Urew<=3 \"b\"]";
+    input = "P<0.9 [\"a\" U{\"rewardname\"}<=3 \"b\"]";
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     auto const &nested5 = formula->asProbabilityOperatorFormula().getSubformula();
     EXPECT_TRUE(nested5.isBoundedUntilFormula());
     EXPECT_TRUE(nested5.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
-    EXPECT_FALSE(nested5.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_TRUE(nested5.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ("rewardname", nested5.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
     EXPECT_EQ(3, nested5.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+
+    input = "P<0.9 [\"a\" Urew{\"rewardname\"}<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested6 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested6.isBoundedUntilFormula());
+    EXPECT_TRUE(nested6.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_TRUE(nested6.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ("rewardname", nested6.asBoundedUntilFormula().getTimeBoundReference().getRewardName());
+    EXPECT_EQ(3, nested6.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
+
+    input = "P<0.9 [\"a\" Urew<=3 \"b\"]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested7 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested7.isBoundedUntilFormula());
+    EXPECT_TRUE(nested7.asBoundedUntilFormula().getTimeBoundReference().isRewardBound());
+    EXPECT_FALSE(nested7.asBoundedUntilFormula().getTimeBoundReference().hasRewardModelName());
+    EXPECT_EQ(3, nested7.asBoundedUntilFormula().getUpperBound().evaluateAsInt());
 }
 
 TEST(FormulaParserTest, RewardOperatorTest) {
