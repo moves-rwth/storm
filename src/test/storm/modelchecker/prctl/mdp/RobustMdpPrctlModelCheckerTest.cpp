@@ -4,6 +4,7 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
