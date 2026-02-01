@@ -107,11 +107,13 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
     std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets, storm::OptimizationDirection const& dir,
     std::vector<uint64_t>& schedulerStorage, UncertaintyResolutionMode uncertaintyResolutionMode, std::vector<SolutionType>* operandOut,
     boost::optional<std::vector<uint64_t>> const& robustIndices) const {
-    // TODO this currently assumes antagonistic intervals <-> !TrivialRowGrouping
+    bool robustUncertainty = false;
+    if (storm::IsIntervalType<ValueType>) {
+        robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
+    }
 
-    bool robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
     if (maximize(dir)) {
-        if (robustUncertainty && !TrivialRowGrouping) {
+        if (robustUncertainty) {
             return computeScheduler<storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize>(operandIn, offsets, schedulerStorage,
                                                                                                                     operandOut, robustIndices);
         } else {
@@ -119,7 +121,7 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
                                                                                                                     operandOut, robustIndices);
         }
     } else {
-        if (robustUncertainty && !TrivialRowGrouping) {
+        if (robustUncertainty) {
             return computeScheduler<storm::OptimizationDirection::Minimize, OptimizationDirection::Maximize>(operandIn, offsets, schedulerStorage, operandOut,
                                                                                                              robustIndices);
         } else {
