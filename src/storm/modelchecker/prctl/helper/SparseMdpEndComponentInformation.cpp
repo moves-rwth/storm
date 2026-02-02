@@ -104,11 +104,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix,
     std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
-    // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
-    }
+
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
     std::vector<uint64_t> const& maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
     uint64_t numberOfStates = result.numberOfMaybeStatesNotInEc + result.numberOfEc;
@@ -246,11 +242,6 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates,
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
-    // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
-                        "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
-    }
 
     // (1) Compute the number of maybe states not in ECs before any other maybe state.
     std::vector<uint64_t> maybeStatesNotInEcBefore = result.getNumberOfMaybeStatesNotInEcBeforeIndices();
@@ -353,8 +344,9 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
 }
 
 template<typename ValueType>
-void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates,
-                                                            std::vector<ValueType> const& fromResult) {
+template<typename SolutionType>
+void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<SolutionType>& result, storm::storage::BitVector const& maybeStates,
+                                                            std::vector<SolutionType> const& fromResult) {
     // The following assumes that row groups associated to EC states are at the very end.
     auto notInEcResultIt = fromResult.begin();
     for (auto state : maybeStates) {
@@ -422,23 +414,28 @@ template class SparseMdpEndComponentInformation<double>;
 template class SparseMdpEndComponentInformation<storm::RationalNumber>;
 template class SparseMdpEndComponentInformation<storm::Interval>;
 
+template void SparseMdpEndComponentInformation<double>::setValues(std::vector<double>& result, storm::storage::BitVector const& maybeStates,
+                                                                  std::vector<double> const& fromResult);
+template void SparseMdpEndComponentInformation<storm::RationalNumber>::setValues(std::vector<storm::RationalNumber>& result,
+                                                                                 storm::storage::BitVector const& maybeStates,
+                                                                                 std::vector<storm::RationalNumber> const& fromResult);
+template void SparseMdpEndComponentInformation<storm::Interval>::setValues(std::vector<storm::IntervalBaseType<storm::Interval>>& result,
+                                                                           storm::storage::BitVector const& maybeStates,
+                                                                           std::vector<storm::IntervalBaseType<storm::Interval>> const& fromResult);
+
 template void SparseMdpEndComponentInformation<double>::setScheduler(storm::storage::Scheduler<double>& scheduler, storm::storage::BitVector const& maybeStates,
                                                                      storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                      storm::storage::SparseMatrix<double> const& backwardTransitions,
                                                                      std::vector<uint64_t> const& fromResult);
-
 template void SparseMdpEndComponentInformation<storm::RationalNumber>::setScheduler(
     storm::storage::Scheduler<storm::RationalNumber>& scheduler, storm::storage::BitVector const& maybeStates,
     storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
     std::vector<uint64_t> const& fromResult);
-
-template void SparseMdpEndComponentInformation<storm::Interval>::setScheduler(storm::storage::Scheduler<double>& scheduler,
+template void SparseMdpEndComponentInformation<storm::Interval>::setScheduler(storm::storage::Scheduler<storm::IntervalBaseType<storm::Interval>>& scheduler,
                                                                               storm::storage::BitVector const& maybeStates,
                                                                               storm::storage::SparseMatrix<storm::Interval> const& transitionMatrix,
                                                                               storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
                                                                               std::vector<uint64_t> const& fromResult);
-
-// template class SparseMdpEndComponentInformation<storm::RationalFunction>;
 
 }  // namespace helper
 }  // namespace modelchecker

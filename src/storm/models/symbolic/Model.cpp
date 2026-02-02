@@ -3,6 +3,7 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/AddExpressionAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -317,7 +318,7 @@ std::vector<std::string> Model<Type, ValueType>::getLabels() const {
 template<storm::dd::DdType Type, typename ValueType>
 void Model<Type, ValueType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (symbolic)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (symbolic)\n";
     out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)\n";
     out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)\n";
 }

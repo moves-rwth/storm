@@ -416,7 +416,7 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (sparse)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (sparse)\n";
     out << "States: \t" << this->getNumberOfStates() << '\n';
     out << "Transitions: \t" << this->getNumberOfTransitions() << '\n';
 }

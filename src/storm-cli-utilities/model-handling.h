@@ -1295,8 +1295,18 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto verificationCallback = [&sparseModel, &ioSettings, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                   std::shared_ptr<storm::logic::Formula const> const& states) {
+        auto createTask = [&ioSettings](auto const& f, bool onlyInitialStates) {
+            (void)ioSettings;  // suppress unused lambda capture warning. [[maybe_unused]] doesn't work for lambda captures.
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                                "Uncertainty resolution mode required for uncertain (interval) models.");
+                return storm::api::createTask<ValueType>(f, storm::solver::convert(ioSettings.getUncertaintyResolutionMode()), onlyInitialStates);
+            } else {
+                return storm::api::createTask<ValueType>(f, onlyInitialStates);
+            }
+        };
         bool filterForInitialStates = states->isInitialFormula();
-        auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+        auto task = createTask(formula, states->isInitialFormula());
         if (ioSettings.isExportSchedulerSet()) {
             task.setProduceSchedulers(true);
         }
@@ -1306,7 +1316,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
         if (filterForInitialStates) {
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
-            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, storm::api::createTask<ValueType>(states, false));
+            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false));
         }
         if (result && filter) {
             result->filter(filter->asQualitativeCheckResult());
@@ -1337,12 +1347,9 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                                     "--buildchoicelab or --buildchoiceorig.");
             }
             if (result->isExplicitQuantitativeCheckResult()) {
-                if constexpr (storm::IsIntervalType<ValueType>) {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
-                } else {
-                    storm::api::exportScheduler(sparseModel, result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler(),
-                                                schedulerExportPath.string());
-                }
+                storm::api::exportScheduler(sparseModel,
+                                            result->template asExplicitQuantitativeCheckResult<storm::IntervalBaseType<ValueType>>().getScheduler(),
+                                            schedulerExportPath.string());
             } else if (result->isExplicitParetoCurveCheckResult()) {
                 if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || storm::IsIntervalType<ValueType>) {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for models of this value type is not supported.");
