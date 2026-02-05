@@ -10,6 +10,7 @@
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -54,6 +55,8 @@ const std::string IOSettings::qvbsInputOptionName = "qvbs";
 const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
 const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
 const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
+
+const std::string IOSettings::uncertaintyResolutionModeName = "uncertainty-resolution";
 
 std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
 
@@ -253,6 +256,13 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false,
                                                    "If set, the selected properties are interpreted as a multi-objective formula.")
                         .setIsAdvanced()
+                        .build());
+
+    std::vector<std::string> uncertaintyResolutionModes = {"minimize", "maximize", "robust", "cooperative", "min", "max"};
+    this->addOption(storm::settings::OptionBuilder(moduleName, uncertaintyResolutionModeName, false, "Mode to resolve the uncertainty (intervals)")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Mode to resolve the uncertainty (intervals) by nature.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(uncertaintyResolutionModes))
+                                         .build())
                         .build());
 
 #ifdef STORM_HAVE_QVBS
@@ -518,6 +528,28 @@ std::string IOSettings::getQvbsRoot() const {
 
 bool IOSettings::isPropertiesAsMultiSet() const {
     return this->getOption(propertiesAsMultiOptionName).getHasOptionBeenSet();
+}
+
+UncertaintyResolutionModeSetting IOSettings::getUncertaintyResolutionMode() const {
+    std::string uncertaintyResolutionModeString = this->getOption(uncertaintyResolutionModeName).getArgumentByName("mode").getValueAsString();
+
+    if (uncertaintyResolutionModeString == "minimize" || uncertaintyResolutionModeString == "min") {
+        return UncertaintyResolutionModeSetting::Minimize;
+    } else if (uncertaintyResolutionModeString == "maximize" || uncertaintyResolutionModeString == "max") {
+        return UncertaintyResolutionModeSetting::Maximize;
+    } else if (uncertaintyResolutionModeString == "robust") {
+        return UncertaintyResolutionModeSetting::Robust;
+    } else if (uncertaintyResolutionModeString == "cooperative") {
+        return UncertaintyResolutionModeSetting::Cooperative;
+    } else if (uncertaintyResolutionModeString == "both") {
+        STORM_LOG_ASSERT(false, "Uncertainty resolution mode 'both' not yet implemented.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Uncertainty resolution mode 'both' not yet implemented.");
+    }
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown nature resolution mode '" << uncertaintyResolutionModeString << "'.");
+}
+
+bool IOSettings::isUncertaintyResolutionModeSet() const {
+    return this->getOption(uncertaintyResolutionModeName).getHasOptionBeenSet();
 }
 
 void IOSettings::finalize() {

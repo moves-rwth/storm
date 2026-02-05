@@ -26,6 +26,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
@@ -437,7 +438,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         solver->setHasUniqueSolution();
         solver->setHasNoEndComponents();
         // Uncertainty is not robust (=adversarial)
-        solver->setUncertaintyIsRobust(false);
+        solver->setUncertaintyResolutionMode(UncertaintyResolutionMode::Cooperative);
         if (lowerResultBound)
             solver->setLowerBound(lowerResultBound.value());
         if (upperResultBound) {

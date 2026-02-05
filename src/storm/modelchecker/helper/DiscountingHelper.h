@@ -37,7 +37,8 @@ class DiscountingHelper : public SingleValueModelCheckerHelper<ValueType, storm:
 
     void showProgressIterative(uint64_t iteration) const;
 
-    void extractScheduler(std::vector<ValueType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir, bool robust) const;
+    void extractScheduler(std::vector<ValueType>& x, std::vector<ValueType> const& b, OptimizationDirection const& dir,
+                          UncertaintyResolutionMode uncertaintyResolutionMode) const;
 
     mutable std::shared_ptr<storm::solver::helper::ValueIterationOperator<ValueType, TrivialRowGrouping>> viOperator;
     mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector;

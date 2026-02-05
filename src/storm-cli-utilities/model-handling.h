@@ -1295,8 +1295,18 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto verificationCallback = [&sparseModel, &ioSettings, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                   std::shared_ptr<storm::logic::Formula const> const& states) {
-        bool filterForInitialStates = states->isInitialFormula();
-        auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+        auto createTask = [&ioSettings](auto const& f, bool onlyInitialStates) {
+            if constexpr (storm::IsIntervalType<ValueType>) {
+                STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                                "Uncertainty resolution mode required for uncertain (interval) models.");
+                return storm::api::createTask<ValueType>(f, storm::solver::convert(ioSettings.getUncertaintyResolutionMode()), onlyInitialStates);
+            } else {
+                (void)ioSettings;  // suppress unused lambda capture warning. [[maybe_unused]] doesn't work for lambda captures.
+                return storm::api::createTask<ValueType>(f, onlyInitialStates);
+            }
+        };
+        bool const filterForInitialStates = states->isInitialFormula();
+        auto task = createTask(formula, filterForInitialStates);
         if (ioSettings.isExportSchedulerSet()) {
             task.setProduceSchedulers(true);
         }
@@ -1306,7 +1316,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
         if (filterForInitialStates) {
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
-            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, storm::api::createTask<ValueType>(states, false));
+            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false));
         }
         if (result && filter) {
             result->filter(filter->asQualitativeCheckResult());

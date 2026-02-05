@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 
 namespace storm::solver::helper {
@@ -76,7 +77,7 @@ class SchedulerTrackingHelper {
      * @param offsets Offsets that are added to each choice result.
      * @param dir Optimization direction to consider.
      * @param schedulerStorage where the scheduler choices will be stored. Should have the same size as the operand(s).
-     * @param robust Flag whether any uncertainty should be interpreted robustly.
+     * @param uncertaintyResolutionMode Represents the mode indicating how the uncertainty should be resolved.
      * @param operandOut if given, the result values of the performed value iteration step will be stored in this vector. Can be the same as operandIn.
      * @return True if the scheduler coincides with the provided scheduler encoded in schedulerStorage
      *
@@ -84,8 +85,8 @@ class SchedulerTrackingHelper {
      * group i
      */
     bool computeScheduler(std::vector<SolutionType>& operandIn, std::vector<ValueType> const& offsets, storm::OptimizationDirection const& dir,
-                          std::vector<uint64_t>& schedulerStorage, bool robust, std::vector<SolutionType>* operandOut = nullptr,
-                          boost::optional<std::vector<uint64_t>> const& robustIndices = boost::none) const;
+                          std::vector<uint64_t>& schedulerStorage, UncertaintyResolutionMode uncertaintyResolutionMode,
+                          std::vector<SolutionType>* operandOut = nullptr, boost::optional<std::vector<uint64_t>> const& robustIndices = boost::none) const;
 
    private:
     /*!

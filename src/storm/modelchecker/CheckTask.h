@@ -7,10 +7,11 @@
 #include "storm/logic/Formulas.h"
 #include "storm/utility/constants.h"
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/logic/ComparisonType.h"
 #include "storm/logic/PlayerCoalition.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
-#include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 
@@ -35,11 +36,12 @@ class CheckTask {
     /*!
      * Creates a task object with the default options for the given formula.
      */
-    CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula), hint(new ModelCheckerHint()) {
+    CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false, UncertaintyResolutionMode = UncertaintyResolutionMode::Unset)
+        : formula(formula), hint(new ModelCheckerHint()) {
         this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
         this->produceSchedulers = false;
         this->qualitative = false;
-        this->robustUncertainty = true;
+        this->uncertaintyResolutionMode = UncertaintyResolutionMode::Unset;
 
         updateOperatorInformation();
     }
@@ -52,7 +54,7 @@ class CheckTask {
     CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
         CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
                                                     this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
-                                                    this->robustUncertainty);
+                                                    this->uncertaintyResolutionMode);
         result.updateOperatorInformation();
         return result;
     }
@@ -131,7 +133,7 @@ class CheckTask {
     CheckTask<FormulaType, NewValueType> convertValueType() const {
         return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->playerCoalition, this->rewardModel,
                                                     this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint,
-                                                    this->robustUncertainty);
+                                                    this->uncertaintyResolutionMode);
     }
 
     /*!
@@ -299,18 +301,31 @@ class CheckTask {
     }
 
     /*!
+     * Retrieves the mode which decides how the uncertainty will be resolved.
+     */
+    UncertaintyResolutionMode getUncertaintyResolutionMode() const {
+        return uncertaintyResolutionMode;
+    }
+
+    /*!
+     * Sets the mode which decides how the uncertainty will be resolved.
+     */
+    void setUncertaintyResolutionMode(UncertaintyResolutionMode uncertaintyResolutionMode) {
+        this->uncertaintyResolutionMode = uncertaintyResolutionMode;
+    }
+
+    /*!
+     * Returns whether the mode, which decides how the uncertainty will be resolved, is set.
+     */
+    bool isUncertaintyResolutionModeSet() const {
+        return isSet(this->uncertaintyResolutionMode);
+    }
+
+    /*!
      * Conversion operator that strips the type of the formula.
      */
     operator CheckTask<storm::logic::Formula, ValueType>() const {
         return this->template substituteFormula<storm::logic::Formula>(this->getFormula());
-    }
-
-    bool getRobustUncertainty() const {
-        return robustUncertainty;
-    }
-
-    void setRobustUncertainty(bool robust = true) {
-        robustUncertainty = robust;
     }
 
    private:
@@ -332,7 +347,7 @@ class CheckTask {
     CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection,
               boost::optional<storm::logic::PlayerCoalition> playerCoalition, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant,
               boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint,
-              bool robust)
+              UncertaintyResolutionMode uncertaintyResolutionMode)
         : formula(formula),
           optimizationDirection(optimizationDirection),
           playerCoalition(playerCoalition),
@@ -342,7 +357,7 @@ class CheckTask {
           qualitative(qualitative),
           produceSchedulers(produceSchedulers),
           hint(hint),
-          robustUncertainty(robust) {
+          uncertaintyResolutionMode(uncertaintyResolutionMode) {
         // Intentionally left empty.
     }
 
@@ -374,8 +389,8 @@ class CheckTask {
     // A hint that might contain information that speeds up the modelchecking process (if supported by the model checker)
     std::shared_ptr<ModelCheckerHint> hint;
 
-    /// Whether uncertainty should be resolved robust (standard) or angelically.
-    bool robustUncertainty;
+    // Whether uncertainty should be resolved be minimizing, maximizing, acting robust or cooperative.
+    UncertaintyResolutionMode uncertaintyResolutionMode;
 };
 
 }  // namespace modelchecker
