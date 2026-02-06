@@ -4,6 +4,7 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/DirectEncodingParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
@@ -62,23 +63,75 @@ void checkModel(std::string const& path, std::string const& formulaString, doubl
     std::shared_ptr<storm::models::sparse::Mdp<storm::Interval>> mdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
     ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
     auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     taskMax.setProduceSchedulers(produceScheduler);
 
     auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
     auto resultMax = checker.check(env, taskMax);
     EXPECT_NEAR(maxmin, getQuantitativeResultAtInitialState(mdp, resultMax), 0.0001);
-    taskMax.setRobustUncertainty(false);
+    taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMaxNonRobust = checker.check(env, taskMax);
     EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxNonRobust), 0.0001);
 
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Robust);
     taskMin.setProduceSchedulers(produceScheduler);
 
     auto resultMin = checker.check(env, taskMin);
     EXPECT_NEAR(minmax, getQuantitativeResultAtInitialState(mdp, resultMin), 0.0001);
-    taskMin.setRobustUncertainty(false);
+    taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto resultMinNonRobust = checker.check(env, taskMin);
     EXPECT_NEAR(minmin, getQuantitativeResultAtInitialState(mdp, resultMinNonRobust), 0.0001);
+}
+
+void checkPrismModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double minmin, double minmax, double maxmin, double maxmax,
+                                          std::string constantsString) {
+    storm::prism::Program program = storm::api::parseProgram(path);
+    program = storm::utility::prism::preprocess(program, constantsString);
+
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::api::buildSparseModel<storm::Interval>(program, formulas);
+
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+
+    std::shared_ptr<storm::models::sparse::Mdp<storm::Interval>> mdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
+    ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
+
+    auto taskMinMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    taskMinMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+
+    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
+    auto resultMinMin = checker.check(env, taskMinMin);
+    EXPECT_NEAR(minmin, getQuantitativeResultAtInitialState(mdp, resultMinMin), 0.0001);
+
+    auto taskMinMax = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
+    taskMinMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+
+    auto resultMinMax = checker.check(env, taskMinMax);
+    EXPECT_NEAR(minmax, getQuantitativeResultAtInitialState(mdp, resultMinMax), 0.0001);
+
+    auto taskMaxMin = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[2]);
+    taskMaxMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
+
+    auto resultMaxMin = checker.check(env, taskMaxMin);
+    EXPECT_NEAR(maxmin, getQuantitativeResultAtInitialState(mdp, resultMaxMin), 0.0001);
+
+    auto taskMaxMax = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[3]);
+    taskMaxMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
+
+    auto resultMaxMax = checker.check(env, taskMaxMax);
+    EXPECT_NEAR(maxmax, getQuantitativeResultAtInitialState(mdp, resultMaxMax), 0.0001);
+}
+
+TEST(RobustMdpModelCheckerTest, RobotMinMaxTest) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
+    // Maxima reachability rewards using PRISM format.
+    checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism",
+                                         "Pmin=? [ F \"goal2\"];Pmin=? [ F \"goal2\"];Pmax=? [ F \"goal2\"];Pmax=? [ F \"goal2\"]", 0.4, 0.6, 1.0, 1.0,
+                                         "delta=0.1");
 }
 
 void makeUncertainAndCheck(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {
@@ -109,7 +162,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
     auto iresultMin = checker.check(env, task);
     double minValue = getQuantitativeResultAtInitialState(mdp, iresultMin);
     EXPECT_LE(minValue, certainValue);
-    task.setRobustUncertainty(false);
+    task.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
     auto iresultMax = checker.check(env, task);
     double maxValue = getQuantitativeResultAtInitialState(mdp, iresultMax);
     EXPECT_LE(certainValue, maxValue);

@@ -9,6 +9,7 @@
 #include "storm/io/ModelExportFormat.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 namespace storm {
 namespace settings {
@@ -411,6 +412,18 @@ class IOSettings : public ModuleSettings {
      */
     bool isPropertiesAsMultiSet() const;
 
+    /*!
+     * Retrieves the mode deciding how the uncertainty should be resolved.
+     *
+     * @return The nature resolution mode
+     */
+    UncertaintyResolutionModeSetting getUncertaintyResolutionMode() const;
+
+    /*!
+     * @return whether the mode for how the uncertainty should be resolved has been set.
+     */
+    bool isUncertaintyResolutionModeSet() const;
+
     bool check() const override;
     void finalize() override;
 
@@ -457,6 +470,7 @@ class IOSettings : public ModuleSettings {
     static const std::string qvbsInputOptionShortName;
     static const std::string qvbsRootOptionName;
     static const std::string propertiesAsMultiOptionName;
+    static const std::string uncertaintyResolutionModeName;
 };
 
 }  // namespace modules

@@ -416,7 +416,7 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {
     out << "-------------------------------------------------------------- \n";
-    out << "Model type: \t" << this->getType() << " (sparse)\n";
+    out << "Model type: \t" << (storm::IsIntervalType<ValueType> ? "I" : "") << this->getType() << " (sparse)\n";
     out << "States: \t" << this->getNumberOfStates() << '\n';
     out << "Transitions: \t" << this->getNumberOfTransitions() << '\n';
 }
@@ -721,7 +721,7 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
     std::set<storm::RationalFunctionVariable> parameters = getProbabilityParameters(model);
     std::set<storm::RationalFunctionVariable> rewardParameters = getRewardParameters(model);
     parameters.insert(rewardParameters.begin(), rewardParameters.end());
-    std::set<storm::RationalFunctionVariable> rateParameters = getRewardParameters(model);
+    std::set<storm::RationalFunctionVariable> rateParameters = getRateParameters(model);
     parameters.insert(rateParameters.begin(), rateParameters.end());
     return parameters;
 }
