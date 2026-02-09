@@ -180,7 +180,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSe
         valueParser.addParameter(parameter);
     }
     size_t const nrStates = header.nrStates;
-    size_t const nrChoices = header.nrStates;
+    size_t const nrChoices = header.nrChoices;
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents;
     bool const nonDeterministic = (header.modelType == storm::models::ModelType::Mdp || header.modelType == storm::models::ModelType::MarkovAutomaton ||
                                    header.modelType == storm::models::ModelType::Pomdp);
@@ -485,7 +485,7 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSe
         }
     }
     // Derive parser value type from file value type
-    switch (header.valueType) {
+    switch (vt) {
         case Double:
             if constexpr (isCompatibleValueType<ValueType, double>()) {
                 return parseModelSection<ValueType, RewardModelType, double>(file, header, options);
