@@ -586,7 +586,18 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
     } else if (ioSettings.isExplicitDRNSet()) {
         storm::parser::DirectEncodingParserOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
-        result = storm::api::buildExplicitDRNModel<ValueType>(ioSettings.getExplicitDRNFilename(), options);
+        storm::parser::DirectEncodingValueType valueType;
+        using enum storm::parser::DirectEncodingValueType;
+        if constexpr (std::is_same_v<ValueType, double>) {
+            valueType = Double;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            valueType = Rational;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+            valueType = Parametric;
+        } else {
+            static_assert(false, "Unsupported value type for direct encoding input.");
+        }
+        result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
     } else {
         STORM_LOG_THROW(ioSettings.isExplicitIMCASet(), storm::exceptions::InvalidSettingsException, "Unexpected explicit model input type.");
         result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename());

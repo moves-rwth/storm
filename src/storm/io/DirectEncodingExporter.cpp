@@ -65,6 +65,19 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
     os << "// Exported by storm\n";
     os << "// Original model type: " << sparseModel->getType() << '\n';
     os << "@type: " << sparseModel->getType() << '\n';
+    os << "@value_type: ";
+    if constexpr (std::is_same_v<ValueType, double>) {
+        os << "double";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        os << "rational";
+    } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        os << "double-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        os << "parametric";
+    } else {
+        static_assert(false, "Unhandled value type");
+    }
+    os << '\n';
     os << "@parameters\n";
     if (parameters.empty()) {
         for (std::string const& parameter : getParameters(sparseModel)) {
