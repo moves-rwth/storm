@@ -732,15 +732,24 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     if (ioSettings.isExportBuildSet()) {
+        storm::utility::Stopwatch modelExportWatch;
+        modelExportWatch.start();
+        STORM_PRINT("\nExporting model to '" << ioSettings.getExportBuildFilename() << "'.\n");
         switch (ioSettings.getExportBuildFormat()) {
             case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
-            case storm::io::ModelExportFormat::Drn:
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(),
-                                                   input.model ? input.model.get().getParameterNames() : std::vector<std::string>(),
-                                                   !ioSettings.isExplicitExportPlaceholdersDisabled());
+            case storm::io::ModelExportFormat::Drn: {
+                storm::io::DirectEncodingOptions options;
+                options.allowPlaceholders = !ioSettings.isExplicitExportPlaceholdersDisabled();
+                options.compression = ioSettings.getCompressionMode();
+                if (ioSettings.isExportDigitsSet()) {
+                    options.outputPrecision = ioSettings.getExportDigits();
+                }
+                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(), options,
+                                                   input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
                 break;
+            }
             case storm::io::ModelExportFormat::Json:
                 storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
                 break;
@@ -748,6 +757,8 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                 "Exporting sparse models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
+        modelExportWatch.stop();
+        STORM_PRINT("Time for model export: " << modelExportWatch << ".\n\n");
     }
 
     // TODO: The following options are depreciated and shall be removed at some point:

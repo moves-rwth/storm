@@ -4,6 +4,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <string>
 
 #include "storm-parsers/parser/ValueParser.h"
@@ -13,6 +14,7 @@
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/io/ArchiveReader.h"
 #include "storm/io/file.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/builder.h"
@@ -25,10 +27,36 @@ namespace parser {
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseModel(
     std::string const& filename, DirectEncodingParserOptions const& options) {
+    auto archiveReader = storm::io::openArchive(filename);
     // Load file
-    STORM_LOG_INFO("Reading from file " << filename);
-    std::ifstream file;
-    storm::io::openFile(filename, file);
+    if (archiveReader.isReadableArchive()) {
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model;
+        for (auto entry : archiveReader) {
+            if (!entry.isDir()) {
+                STORM_LOG_THROW(!model, storm::exceptions::NotSupportedException, "Multiple files in archive " << filename << " are not supported.");
+                STORM_LOG_INFO("Reading file " << entry.name() << " from archive " << filename);
+                // TODO: read the file line by line instead of loading the entire content into memory
+                std::istringstream filestream(entry.toString());
+                // Parse model
+                model = parseModel(filestream, options);
+            }
+        }
+        STORM_LOG_THROW(model, storm::exceptions::NotSupportedException, "Could not find DRN file in archive " << filename << ".");
+        return model;
+    } else {
+        STORM_LOG_INFO("Reading from file " << filename);
+        std::ifstream filestream;
+        storm::io::openFile(filename, filestream);
+        // Parse model
+        auto model = parseModel(filestream, options);
+        storm::io::closeFile(filestream);
+        return model;
+    }
+}
+
+template<typename ValueType, typename RewardModelType>
+std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseModel(
+    std::istream& file, DirectEncodingParserOptions const& options) {
     std::string line;
 
     // Initialize
@@ -116,8 +144,6 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse line '" << line << "'.");
         }
     }
-    // Done parsing
-    storm::io::closeFile(file);
 
     // Build model
     return storm::utility::builder::buildModelFromComponents(type, std::move(*modelComponents));

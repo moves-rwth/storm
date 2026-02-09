@@ -63,6 +63,10 @@ if(@STORM_HAVE_GUROBI@)  # STORM_HAVE_GUROBI
     )
 endif()
 
+if(@STORM_HAVE_LIBARCHIVE@) # STORM_HAVE_LIBARCHIVE
+     find_dependency(LibArchive)
+endif()
+
 if(@STORM_HAVE_MATHSAT@)  # STORM_HAVE_MATHSAT
     set(MATHSAT_ROOT "@MATHSAT_ROOT@")
     find_dependency(MATHSAT QUIET)

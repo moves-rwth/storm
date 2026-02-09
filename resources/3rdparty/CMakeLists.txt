@@ -40,6 +40,44 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 
 #############################################################
 ##
+## LibArchive (optional)
+##
+############################################################# 
+
+if(NOT STORM_DISABLE_LIBARCHIVE)
+    if(MACOSX)
+        # following https://stackoverflow.com/a/76916842
+        # Homebrew ships libarchive keg only, include dirs have to be set manually
+        execute_process(
+                COMMAND brew --prefix libarchive
+                ERROR_QUIET
+                OUTPUT_VARIABLE LIBARCHIVE_PREFIX
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if (NOT "${LIBARCHIVE_PREFIX}" STREQUAL "" )
+            if(EXISTS "${LIBARCHIVE_PREFIX}/include/archive.h")
+                set(LibArchive_INCLUDE_DIR "${LIBARCHIVE_PREFIX}/include")
+            else()
+                message(STATUS "Storm - LibArchive  not found in ${LIBARCHIVE_PREFIX}/include.")
+            endif()
+        endif()
+    endif()
+    find_package(LibArchive QUIET)
+    if(TARGET LibArchive::LibArchive)
+        SET(STORM_HAVE_LIBARCHIVE ON)
+        message (STATUS "Storm - Linking with LibArchive (version: ${LibArchive_VERSION}, libraries: ${LibArchive_LIBRARIES}, include: ${LibArchive_INCLUDE_DIRS}).")
+        list(APPEND STORM_DEP_IMP_TARGETS LibArchive::LibArchive)
+    else()
+        SET(STORM_HAVE_LIBARCHIVE OFF)
+        message (WARNING "Storm - LibArchive not found. Loading and exporting compressed files will not be supported.")
+	endif()
+else()
+    SET(STORM_HAVE_LIBARCHIVE OFF)
+    message (WARNING "Storm - Not linking with LibArchive. Loading and exporting compressed files such will not be supported.")
+endif()
+
+#############################################################
+##
 ##	gmm
 ##
 #############################################################
@@ -606,4 +644,3 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 list(APPEND STORM_DEP_IMP_TARGETS Threads::Threads)
-

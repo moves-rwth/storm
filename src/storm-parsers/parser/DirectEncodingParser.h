@@ -1,6 +1,8 @@
 #ifndef STORM_PARSER_DIRECTENCODINGPARSER_H_
 #define STORM_PARSER_DIRECTENCODINGPARSER_H_
 
+#include <istream>
+
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
@@ -28,9 +30,15 @@ class DirectEncodingParser {
      * @return A sparse model
      */
     static std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(
-        std::string const& fil, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
+        std::string const& file, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
 
    private:
+    /*!
+     * load a model in DRN format from input stream and create the model
+     */
+    static std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(
+        std::istream& file, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
+
     /*!
      * Parse states and return transition matrix.
      *

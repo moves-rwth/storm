@@ -1,22 +1,34 @@
 #pragma once
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 
+#include "storm/io/DirectEncodingOptions.h"
 #include "storm/models/sparse/Model.h"
 
 namespace storm {
 namespace io {
 
-struct DirectEncodingOptions {
-    bool allowPlaceholders = true;
-};
+/*!
+ * Exports a sparse model into the explicit DRN format.
+ *
+ * @param filename     file to export to
+ * @param sparseModel  Model to export
+ * @param parameters   List of parameters
+ * @param options      Options for direct encoding export
+ */
+template<typename ValueType>
+void explicitExportSparseModel(std::filesystem::path const& filename, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
+                               std::vector<std::string> const& parameters, DirectEncodingOptions const& options = DirectEncodingOptions());
+
 /*!
  * Exports a sparse model into the explicit DRN format.
  *
  * @param os           Stream to export to
  * @param sparseModel  Model to export
  * @param parameters   List of parameters
+ * @param options      Options for direct encoding export
  */
 template<typename ValueType>
 void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
