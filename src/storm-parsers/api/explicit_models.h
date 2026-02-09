@@ -32,7 +32,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(
     return storm::parser::parseDirectEncodingModel<ValueType>(drnFile, options);
 }
 
-std::shared_ptr<storm::models::ModelBase> buildExplicitDRNModel(
+inline std::shared_ptr<storm::models::ModelBase> buildExplicitDRNModel(
     std::string const& drnFile, storm::parser::DirectEncodingValueType valueType = storm::parser::DirectEncodingValueType::Default,
     storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
     return storm::parser::parseDirectEncodingModel(drnFile, valueType, options);
