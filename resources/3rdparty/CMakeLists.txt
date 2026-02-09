@@ -47,20 +47,20 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 if(NOT STORM_DISABLE_LIBARCHIVE)
     if(MACOSX)
         # following https://stackoverflow.com/a/76916842
-        # Homebrew ships libarchive keg only, include dirs have to be set manually
+        # Homebrew ships libarchive keg only
+        # Try to get a hint where libarchive is located in case it is installed via brew.
         execute_process(
                 COMMAND brew --prefix libarchive
-                ERROR_QUIET
-                OUTPUT_VARIABLE LIBARCHIVE_PREFIX
+                ERROR_QUIET # Ignore any error, e.g. if brew is not installed.
+                OUTPUT_VARIABLE LibArchive_BREW_HINT
                 OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        if (NOT "${LIBARCHIVE_PREFIX}" STREQUAL "" )
-            if(EXISTS "${LIBARCHIVE_PREFIX}/include/archive.h")
-                set(LibArchive_INCLUDE_DIR "${LIBARCHIVE_PREFIX}/include")
-            else()
-                message(STATUS "Storm - LibArchive  not found in ${LIBARCHIVE_PREFIX}/include.")
-            endif()
+        # Only use the hint if the main header file is located there.
+        if(EXISTS "${LibArchive_BREW_HINT}/include/archive.h")
+            # LibArchive_INCLUDE_DIR is read by find_package(LibArchive ...) below
+            set(LibArchive_INCLUDE_DIR "${LibArchive_BREW_HINT}/include")
         endif()
+        unset(LibArchive_BREW_HINT)
     endif()
     find_package(LibArchive QUIET)
     if(TARGET LibArchive::LibArchive)
@@ -69,11 +69,11 @@ if(NOT STORM_DISABLE_LIBARCHIVE)
         list(APPEND STORM_DEP_IMP_TARGETS LibArchive::LibArchive)
     else()
         SET(STORM_HAVE_LIBARCHIVE OFF)
-        message (WARNING "Storm - LibArchive not found. Loading and exporting compressed files will not be supported.")
+        message (STATUS "Storm - LibArchive not found. Loading and exporting UMB models and compressed files will not be supported.")
 	endif()
 else()
     SET(STORM_HAVE_LIBARCHIVE OFF)
-    message (WARNING "Storm - Not linking with LibArchive. Loading and exporting compressed files such will not be supported.")
+    message (STATUS "Storm - Not linking with LibArchive. Loading and exporting UMB models and compressed files will not be supported.")
 endif()
 
 #############################################################
