@@ -423,7 +423,6 @@ inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property
 
 inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
 
     SymbolicInput output = input;
 
@@ -431,6 +430,8 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
     if (ioSettings.isPropertiesAsMultiSet()) {
         STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidArgumentException,
                         "Can not translate properties to multi-objective formula because no properties were specified.");
+        // If we come from storm-pars, the following fails as multiObjectiveSettings are not loaded
+        auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
         output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
     }
 
