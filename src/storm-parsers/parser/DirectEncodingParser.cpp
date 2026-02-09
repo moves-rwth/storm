@@ -85,7 +85,7 @@ DrnHeader parseHeader(std::istream& file) {
             STORM_LOG_THROW(header.modelType != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException,
                             "Stochastic Two Player Games in DRN format are not supported.");
             sawModelType = true;
-        } else if (line == "@value_type: ") {
+        } else if (line.starts_with("@value_type: ")) {
             // Parse value type
             STORM_LOG_THROW(header.valueType == DirectEncodingValueType::Default, storm::exceptions::WrongFormatException, "Value type declared twice");
             header.valueType = valueTypeFromString(line.substr(13));
@@ -169,15 +169,15 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSe
     static_assert(isCompatibleValueType<ValueType, ParserValueType>(), "The specified value type is not compatible with the value type declared in the file.");
     // Initialize value parsing
     ValueParser<ParserValueType> valueParser;
+    for (std::string const& parameter : header.parameters) {
+        STORM_LOG_TRACE("New parameter: " << parameter);
+        valueParser.addParameter(parameter);
+    }
     std::unordered_map<std::string, ValueType> placeholders;
     for (auto const& [placeName, valueStr] : header.placeholders) {
         ValueType v = parseValue(valueStr, placeholders, valueParser);
         STORM_LOG_TRACE("Placeholder " << placeName << " for value " << v);
         placeholders.emplace(placeName, std::move(v));
-    }
-    for (std::string const& parameter : header.parameters) {
-        STORM_LOG_TRACE("New parameter: " << parameter);
-        valueParser.addParameter(parameter);
     }
     size_t const nrStates = header.nrStates;
     size_t const nrChoices = header.nrChoices;
