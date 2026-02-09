@@ -54,7 +54,7 @@ bool constexpr isCompatibleValueType() {
         return std::is_same_v<ParsingValueType, double> || std::is_same_v<ParsingValueType, storm::RationalNumber> ||
                std::is_same_v<ParsingValueType, storm::RationalFunction>;
     } else {
-        static_assert(false, "Unsupported value type");
+        return false;
     }
 }
 
@@ -573,18 +573,22 @@ std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(std::filesyst
             case Double: {
                 auto modelComponents = detail::parseModelSection<double>(filestream, header, options);
                 result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
+                break;
             }
             case Rational: {
                 auto modelComponents = detail::parseModelSection<storm::RationalNumber>(filestream, header, options);
                 result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
+                break;
             }
             case DoubleInterval: {
                 auto modelComponents = detail::parseModelSection<storm::Interval>(filestream, header, options);
                 result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
+                break;
             }
             case Parametric: {
                 auto modelComponents = detail::parseModelSection<storm::RationalFunction>(filestream, header, options);
                 result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
+                break;
             }
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Value type is not supported.");
