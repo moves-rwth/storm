@@ -510,7 +510,11 @@ std::shared_ptr<storm::models::ModelBase> parseModel(DirectEncodingValueType val
     STORM_LOG_THROW(valueType != Default, storm::exceptions::WrongFormatException, "Value type cannot be derived from file and is not provided as argument.");
     // Potentially promote to interval
     if (header.valueType == DoubleInterval || header.valueType == RationalInterval) {
-        valueType = valueType == Double ? DoubleInterval : RationalInterval;
+        if (valueType == Double) {
+            valueType = DoubleInterval;
+        } else if (valueType == Rational) {
+            valueType = RationalInterval;
+        }
     }
     // Derive value type for parsing
     switch (valueType) {
