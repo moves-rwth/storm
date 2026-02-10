@@ -699,6 +699,29 @@ class BitVector {
      */
     bool compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length);
 
+    /*!
+     * Retrieves the number of buckets of the underlying storage.
+     *
+     * @return The number of buckets of the underlying storage.
+     */
+    size_t bucketCount() const;
+
+    /*!
+     * Sets the bits in the given bucket to the given value.
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @param value The values to set. E.g., 1ull sets bit i*64 to 1 and all other bits in the bucket to 0
+     * @note: bucketIndex must be below bucketCount(). Values for bitindices > size() are ignored
+     */
+    void setBucket(uint64_t bucketIndex, uint64_t value);
+
+    /*!
+     * Gets the bits in the given bucket to the given value.
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @return The values of the bits in the given bucket.
+     * @note: bucketIndex must be below bucketCount(). Values for bitindices > size() are always 0
+     */
+    uint64_t getBucket(uint64_t bucketIndex) const;
+
     friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
 
     void store(std::ostream&) const;
@@ -764,13 +787,6 @@ class BitVector {
      * @param out Stream to print to.
      */
     void printBits(std::ostream& out) const;
-
-    /*!
-     * Retrieves the number of buckets of the underlying storage.
-     *
-     * @return The number of buckets of the underlying storage.
-     */
-    size_t bucketCount() const;
 
     // The number of bits that this bit vector can hold.
     uint64_t bitCount;

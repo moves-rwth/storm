@@ -28,6 +28,8 @@ const std::string IOSettings::exportCdfOptionName = "exportcdf";
 const std::string IOSettings::exportCdfOptionShortName = "cdf";
 const std::string IOSettings::exportSchedulerOptionName = "exportscheduler";
 const std::string IOSettings::exportCheckResultOptionName = "exportresult";
+const std::string IOSettings::exportCompressionOptionName = "compression";
+const std::string IOSettings::exportDigitsOptionName = "digits";
 const std::string IOSettings::explicitOptionName = "explicit";
 const std::string IOSettings::explicitOptionShortName = "exp";
 const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
@@ -77,7 +79,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueUnsignedInteger(0)
                                          .build())
                         .build());
-    std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json"});
+    std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json", "umb"});
     this->addOption(
         storm::settings::OptionBuilder(moduleName, exportBuildOptionName, false, "Exports the built model to a file.")
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("file", "The output file.").build())
@@ -87,6 +89,20 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                              .makeOptional()
                              .build())
             .build());
+
+    std::vector<std::string> compressionModes({"default", "none", "gzip", "xz"});
+    this->addOption(storm::settings::OptionBuilder(moduleName, exportCompressionOptionName, false, "Configures compression of exported files (if supported).")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The preferred compression mode.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(compressionModes))
+                                         .setDefaultValueString("default")
+                                         .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, exportDigitsOptionName, false, "Sets number of output digits of export (if supported).")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("num", "Number of digits.").build())
+                        .build());
+
     this->addOption(
         storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false,
                                        "If given, the loaded jani model will be written to the specified file in the dot format.")
@@ -303,6 +319,23 @@ storm::io::ModelExportFormat IOSettings::getExportBuildFormat() const {
     } else {
         return storm::io::getModelExportFormatFromString(format);
     }
+}
+
+bool IOSettings::isCompressionSet() const {
+    return this->getOption(exportCompressionOptionName).getHasOptionBeenSet();
+}
+
+storm::io::CompressionMode IOSettings::getCompressionMode() const {
+    auto mode = this->getOption(exportCompressionOptionName).getArgumentByName("mode").getValueAsString();
+    return storm::io::getCompressionModeFromString(mode);
+}
+
+bool IOSettings::isExportDigitsSet() const {
+    return this->getOption(exportDigitsOptionName).getHasOptionBeenSet();
+}
+
+std::size_t IOSettings::getExportDigits() const {
+    return this->getOption(exportDigitsOptionName).getArgumentByName("num").getValueAsUnsignedInteger();
 }
 
 bool IOSettings::isExportJaniDotSet() const {
