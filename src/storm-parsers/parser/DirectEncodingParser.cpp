@@ -202,7 +202,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseM
     STORM_LOG_THROW(
         isCompatibleValueType<ValueType>(header.valueType), storm::exceptions::WrongFormatException,
         "Value type '" << toString(header.valueType) << "' in DRN file is not compatible with output value type '" << valueTypeToString<ValueType>() << "'.");
-    STORM_LOG_TRACE("Parsing model with file value type '" << toString(header.valueType) "' into model with output value type '"
+    STORM_LOG_TRACE("Parsing model with file value type '" << toString(header.valueType) << "' into model with output value type '"
                                                            << valueTypeToString<ValueType>() << "'.");
     ValueParser<ValueType> valueParser;
     for (std::string const& parameter : header.parameters) {
