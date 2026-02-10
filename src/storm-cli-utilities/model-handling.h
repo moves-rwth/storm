@@ -586,16 +586,17 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
     } else if (ioSettings.isExplicitDRNSet()) {
         storm::parser::DirectEncodingParserOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
-        storm::parser::DirectEncodingValueType valueType;
         using enum storm::parser::DirectEncodingValueType;
+        storm::parser::DirectEncodingValueType valueType{Default};
+        static_assert(
+            std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::RationalFunction>,
+            "Unexpected value type.");
         if constexpr (std::is_same_v<ValueType, double>) {
             valueType = Double;
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
             valueType = Rational;
         } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             valueType = Parametric;
-        } else {
-            static_assert(false, "Unsupported value type for direct encoding input.");
         }
         result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
     } else {
