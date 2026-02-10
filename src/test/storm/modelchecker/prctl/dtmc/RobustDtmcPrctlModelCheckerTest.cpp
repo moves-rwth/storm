@@ -39,7 +39,7 @@ double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse
 
 void expectThrow(std::string const& path, std::string const& formulaString,
                  std::optional<storm::UncertaintyResolutionMode> uncertaintyResolutionMode = std::nullopt) {
-    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(path);
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
 
     storm::Environment env;
@@ -75,7 +75,7 @@ void expectThrowPrism(std::string const& path, std::string const& formulaString)
 }
 
 void checkExplicitModelForQuantitativeResult(std::string const& path, std::string const& formulaString, double min, double max) {
-    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(path);
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -123,7 +123,7 @@ void checkPrismModelForQuantitativeResult(std::string const& path, std::string c
 }
 
 void checkModelForQualitativeResult(std::string const& path, std::string const& formulaString, std::vector<storm::storage::BitVector> expectedResultVector) {
-    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::DirectEncodingParser<storm::Interval>::parseModel(path);
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::Interval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);

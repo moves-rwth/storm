@@ -14,6 +14,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/io/ArchiveReader.h"
 #include "storm/io/file.h"
@@ -42,19 +43,55 @@ DirectEncodingValueType valueTypeFromString(std::string const& valueTypeStr) {
     }
 }
 
-template<typename OutputValueType, typename ParsingValueType>
-bool constexpr isCompatibleValueType() {
-    // Return true iff we can output a model with file value type vt using ValueType for the output model
-    if constexpr (std::is_same_v<OutputValueType, double> || std::is_same_v<OutputValueType, storm::RationalNumber>) {
-        return std::is_same_v<ParsingValueType, double> || std::is_same_v<ParsingValueType, storm::RationalNumber>;
-    } else if constexpr (std::is_same_v<OutputValueType, storm::Interval>) {
-        return std::is_same_v<ParsingValueType, double> || std::is_same_v<ParsingValueType, storm::RationalNumber> ||
-               std::is_same_v<ParsingValueType, storm::Interval>;
-    } else if constexpr (std::is_same_v<OutputValueType, storm::RationalFunction>) {
-        return std::is_same_v<ParsingValueType, double> || std::is_same_v<ParsingValueType, storm::RationalNumber> ||
-               std::is_same_v<ParsingValueType, storm::RationalFunction>;
+std::string toString(DirectEncodingValueType const& vt) {
+    using enum DirectEncodingValueType;
+    switch (vt) {
+        case Default:
+            return "Default";
+        case Double:
+            return "double";
+        case DoubleInterval:
+            return "double-interval";
+        case Rational:
+            return "Rational";
+        case RationalInterval:
+            return "rational-interval";
+        case Parametric:
+            return "parametric";
+    }
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected value type.");
+}
+
+template<typename ValueType>
+std::string valueTypeToString() {
+    if constexpr (std::is_same_v<ValueType, double>) {
+        return "double";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        return "rational";
+    } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+        return "double-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        return "parametric";
     } else {
-        return false;
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected value type.");
+    }
+}
+
+template<typename OutputValueType>
+bool isCompatibleValueType(DirectEncodingValueType fileValueType) {
+    // Return true iff we can output a model with the given OutputValueType, given that the file is encoded using the given fileValueType
+    using enum DirectEncodingValueType;
+    if (fileValueType == Default) {
+        return true;  // If no value type is given, just try to parse and let the value parser throw
+    }
+    if constexpr (std::is_same_v<OutputValueType, double> || std::is_same_v<OutputValueType, storm::RationalNumber>) {
+        return fileValueType == Double || fileValueType == Rational;
+    } else if constexpr (std::is_same_v<OutputValueType, storm::Interval>) {
+        return fileValueType == Double || fileValueType == Rational || fileValueType == DoubleInterval || fileValueType == RationalInterval;
+    } else if constexpr (std::is_same_v<OutputValueType, storm::RationalFunction>) {
+        return fileValueType == Double || fileValueType == Rational || fileValueType == Parametric;
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected output value type." << toString(fileValueType));
     }
 }
 
@@ -146,29 +183,28 @@ DrnHeader parseHeader(std::istream& file) {
     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Reached end of file before @model was found.");
 }
 
-template<typename OutputValueType, typename ParserValueType>
-OutputValueType parseValue(std::string const& valueStr, std::unordered_map<std::string, OutputValueType> const& placeholders,
-                           ValueParser<ParserValueType> const& valueParser) {
-    if (boost::starts_with(valueStr, "$")) {
+template<typename ValueType>
+ValueType parseValue(std::string const& valueStr, std::unordered_map<std::string, ValueType> const& placeholders, ValueParser<ValueType> const& valueParser) {
+    if (valueStr.starts_with("$")) {
         auto it = placeholders.find(valueStr.substr(1));
         STORM_LOG_THROW(it != placeholders.end(), storm::exceptions::WrongFormatException, "Placeholder " << valueStr << " unknown.");
         return it->second;
     } else {
         // Use default value parser
-        if constexpr (std::is_same_v<OutputValueType, ParserValueType>) {
-            return valueParser.parseValue(valueStr);
-        } else {
-            return storm::utility::convertNumber<OutputValueType, ParserValueType>(valueParser.parseValue(valueStr));
-        }
+        return valueParser.parseValue(valueStr);
     }
 }
 
-template<typename ValueType, typename RewardModelType, typename ParserValueType>
-storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSection(std::istream& file, DrnHeader const& header,
-                                                                                      DirectEncodingParserOptions const& options) {
-    static_assert(isCompatibleValueType<ValueType, ParserValueType>(), "The specified value type is not compatible with the value type declared in the file.");
+template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(std::istream& file, DrnHeader const& header,
+                                                                                     DirectEncodingParserOptions const& options) {
     // Initialize value parsing
-    ValueParser<ParserValueType> valueParser;
+    STORM_LOG_THROW(
+        isCompatibleValueType<ValueType>(header.valueType), storm::exceptions::WrongFormatException,
+        "Value type '" << toString(header.valueType) << "' in DRN file is not compatible with output value type '" << valueTypeToString<ValueType>() << "'.");
+    STORM_LOG_TRACE("Parsing model with file value type '" << toString(header.valueType) "' into model with output value type '"
+                                                           << valueTypeToString<ValueType>() << "'.");
+    ValueParser<ValueType> valueParser;
     for (std::string const& parameter : header.parameters) {
         STORM_LOG_TRACE("New parameter: " << parameter);
         valueParser.addParameter(parameter);
@@ -461,56 +497,34 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSe
             rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewardVector), std::move(actionRewardVector)));
     }
     STORM_LOG_TRACE("Built reward models");
-    return modelComponents;
+    return storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
 }
 
-template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
-storm::storage::sparse::ModelComponents<ValueType, RewardModelType> parseModelSection(std::istream& file, DrnHeader const& header,
-                                                                                      DirectEncodingParserOptions const& options) {
-    static_assert(std::is_same_v<ValueType, typename RewardModelType::ValueType>, "ValueType and RewardModelType::ValueType are assumed to be the same.");
-    DirectEncodingValueType vt = header.valueType;
+std::shared_ptr<storm::models::ModelBase> parseModel(DirectEncodingValueType valueType, std::istream& file, DrnHeader const& header,
+                                                     DirectEncodingParserOptions const& options) {
+    // Derive output model value type
     using enum DirectEncodingValueType;
-    if (vt == Default) {
-        // Derive default from ValueType
-        if constexpr (std::is_same_v<ValueType, double>) {
-            vt = Double;
-        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
-            vt = Rational;
-        } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-            vt = DoubleInterval;
-        } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
-            vt = Parametric;
-        } else {
-            static_assert(false, "Unhandled value type");
-        }
+    if (valueType == Default) {
+        valueType = header.valueType;
     }
-    // Derive parser value type from file value type
-    switch (vt) {
+    STORM_LOG_THROW(valueType != Default, storm::exceptions::WrongFormatException, "Value type cannot be derived from file and is not provided as argument.");
+    // Potentially promote to interval
+    if (header.valueType == DoubleInterval || header.valueType == RationalInterval) {
+        valueType = valueType == Double ? DoubleInterval : RationalInterval;
+    }
+    // Derive value type for parsing
+    switch (valueType) {
         case Double:
-            if constexpr (isCompatibleValueType<ValueType, double>()) {
-                return parseModelSection<ValueType, RewardModelType, double>(file, header, options);
-            }
-            break;
+            return parseModel<double>(file, header, options);
         case Rational:
-            if constexpr (isCompatibleValueType<ValueType, storm::RationalNumber>()) {
-                return parseModelSection<ValueType, RewardModelType, storm::RationalNumber>(file, header, options);
-            }
-            break;
+            return parseModel<storm::RationalNumber>(file, header, options);
         case DoubleInterval:
-            if constexpr (isCompatibleValueType<ValueType, storm::Interval>()) {
-                return parseModelSection<ValueType, RewardModelType, storm::Interval>(file, header, options);
-            }
-            break;
+            return parseModel<storm::Interval>(file, header, options);
         case Parametric:
-            if constexpr (isCompatibleValueType<ValueType, storm::RationalFunction>()) {
-                return parseModelSection<ValueType, RewardModelType, storm::RationalFunction>(file, header, options);
-            }
-            break;
+            return parseModel<storm::RationalFunction>(file, header, options);
         default:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled value type.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported value type " << toString(valueType) << ".");
     }
-    // Reaching this point means that the file value type is not compatible with the output model value type.
-    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Value type declared in file is not compatible with output model value type.");
 }
 
 auto openFileAsInputStream(std::filesystem::path const& file, auto&& f) {
@@ -543,10 +557,10 @@ auto openFileAsInputStream(std::filesystem::path const& file, auto&& f) {
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseDirectEncodingModel(std::filesystem::path const& file,
                                                                                                    DirectEncodingParserOptions const& options) {
-    return detail::openFileAsInputStream(file, [&options](std::istream& filestream) {
+    static_assert(std::is_same_v<ValueType, typename RewardModelType::ValueType>, "ValueType and RewardModelType::ValueType are assumed to be the same.");
+    return detail::openFileAsInputStream(file, [&file, &options](std::istream& filestream) {
         auto header = detail::parseHeader(filestream);
-        auto modelComponents = detail::parseModelSection<ValueType, RewardModelType>(filestream, header, options);
-        return storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
+        return detail::parseModel<ValueType, RewardModelType>(filestream, header, options);
     });
 }
 
@@ -554,46 +568,7 @@ std::shared_ptr<storm::models::ModelBase> parseDirectEncodingModel(std::filesyst
                                                                    DirectEncodingParserOptions const& options) {
     return detail::openFileAsInputStream(file, [&valueType, &options](std::istream& filestream) {
         auto header = detail::parseHeader(filestream);
-        // Derive output model value type
-        using enum DirectEncodingValueType;
-        if (valueType == Default) {
-            valueType = header.valueType;
-        }
-        STORM_LOG_THROW(valueType != Default, storm::exceptions::WrongFormatException,
-                        "Value type cannot be derived from file and is not provided as argument.");
-        // Potentially promote to interval
-        if (valueType == Double && header.valueType == DoubleInterval) {
-            valueType = DoubleInterval;
-        }
-        if (valueType == Rational && header.valueType == RationalInterval) {
-            valueType = RationalInterval;
-        }
-        std::shared_ptr<storm::models::ModelBase> result;
-        switch (valueType) {
-            case Double: {
-                auto modelComponents = detail::parseModelSection<double>(filestream, header, options);
-                result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
-                break;
-            }
-            case Rational: {
-                auto modelComponents = detail::parseModelSection<storm::RationalNumber>(filestream, header, options);
-                result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
-                break;
-            }
-            case DoubleInterval: {
-                auto modelComponents = detail::parseModelSection<storm::Interval>(filestream, header, options);
-                result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
-                break;
-            }
-            case Parametric: {
-                auto modelComponents = detail::parseModelSection<storm::RationalFunction>(filestream, header, options);
-                result = storm::utility::builder::buildModelFromComponents(header.modelType, std::move(modelComponents));
-                break;
-            }
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Value type is not supported.");
-        }
-        return result;
+        return detail::parseModel(valueType, filestream, header, options);
     });
 }
 
