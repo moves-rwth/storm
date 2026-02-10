@@ -177,7 +177,7 @@ TEST(DirectEncodingParserTest, CompressedParsing) {
 #ifndef STORM_HAVE_LIBARCHIVE
     STORM_SILENT_EXPECT_THROW(storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.drn.gz"),
                               storm::exceptions::NotSupportedException);
-    STORM_SILENT_EXPECT_THROW(storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.drn.xz),
+    STORM_SILENT_EXPECT_THROW(storm::parser::parseDirectEncodingModel<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.drn.xz"),
                               storm::exceptions::NotSupportedException);
     GTEST_SKIP() << "libarchive not available.";
 #endif

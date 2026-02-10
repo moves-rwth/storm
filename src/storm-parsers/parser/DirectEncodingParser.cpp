@@ -562,7 +562,7 @@ template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseDirectEncodingModel(std::filesystem::path const& file,
                                                                                                    DirectEncodingParserOptions const& options) {
     static_assert(std::is_same_v<ValueType, typename RewardModelType::ValueType>, "ValueType and RewardModelType::ValueType are assumed to be the same.");
-    return detail::openFileAsInputStream(file, [&file, &options](std::istream& filestream) {
+    return detail::openFileAsInputStream(file, [&options](std::istream& filestream) {
         auto header = detail::parseHeader(filestream);
         return detail::parseModel<ValueType, RewardModelType>(filestream, header, options);
     });
