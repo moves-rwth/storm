@@ -15,7 +15,8 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
-#include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/OptionalRef.h"
+#include "storm/utility/RationalApproximation.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -425,28 +426,42 @@ class WeightedReachabilityHelper {
         allExceptInit.set(initialStateInSubmatrix, false);
         eliminateEndComponents<ValueType>(allExceptInit, true, std::nullopt, submatrix, initialStateInSubmatrix, rowsWithSum1, targetRowValues,
                                           conditionRowValues);
+        isAcyclic = !storm::utility::graph::hasCycle(submatrix);
         STORM_LOG_INFO("Processed model has " << submatrix.getRowGroupCount() << " states and " << submatrix.getRowGroupCount() << " choices and "
-                                              << submatrix.getEntryCount() << " transitions.");
+                                              << submatrix.getEntryCount() << " transitions. Matrix is " << (isAcyclic ? "acyclic." : "cyclic."));
     }
 
     SolutionType computeWeightedDiff(storm::Environment const& env, storm::OptimizationDirection const dir, ValueType const& targetWeight,
-                                     ValueType const& conditionWeight) const {
-        auto rowValues = createScaledVector(targetWeight, targetRowValues, conditionWeight, conditionRowValues);
+                                     ValueType const& conditionWeight, storm::OptionalRef<std::vector<uint64_t>> schedulerOutput = {}) {
+        // Set up the solver.
+        if (!cachedSolver) {
+            auto solverEnv = env;
+            if (isAcyclic) {
+                STORM_LOG_INFO("Using acyclic min-max solver for weighted reachability computation.");
+                solverEnv.solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+            }
+            cachedSolver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>().create(solverEnv, submatrix);
+            cachedSolver->setCachingEnabled(true);
+            cachedSolver->setRequirementsChecked();
+            cachedSolver->setHasUniqueSolution(true);
+            cachedSolver->setHasNoEndComponents(true);
+            cachedSolver->setLowerBound(-storm::utility::one<ValueType>());
+            cachedSolver->setUpperBound(storm::utility::one<ValueType>());
+        }
+        cachedSolver->setTrackScheduler(schedulerOutput.has_value());
+        cachedSolver->setOptimizationDirection(dir);
+
+        // Initialize the right-hand side vector.
+        createScaledVector(cachedB, targetWeight, targetRowValues, conditionWeight, conditionRowValues);
 
         // Initialize the solution vector.
-        std::vector<SolutionType> x(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+        cachedX.assign(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
-        // Set up the solver.
-        auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>().create(env, submatrix);
-        solver->setOptimizationDirection(dir);
-        solver->setRequirementsChecked();
-        solver->setHasUniqueSolution(true);
-        solver->setHasNoEndComponents(true);
-        solver->setLowerBound(-storm::utility::one<ValueType>());
-        solver->setUpperBound(storm::utility::one<ValueType>());
-
-        solver->solveEquations(env, x, rowValues);
-        return x[initialStateInSubmatrix];
+        cachedSolver->solveEquations(env, cachedX, cachedB);
+        if (schedulerOutput) {
+            *schedulerOutput = cachedSolver->getSchedulerChoices();
+        }
+        return cachedX[initialStateInSubmatrix];
     }
 
     auto getInternalInitialState() const {
@@ -454,7 +469,7 @@ class WeightedReachabilityHelper {
     }
 
     void evaluateScheduler(storm::Environment const& env, std::vector<uint64_t>& scheduler, std::vector<SolutionType>& targetResults,
-                           std::vector<SolutionType>& conditionResults) const {
+                           std::vector<SolutionType>& conditionResults) {
         if (scheduler.empty()) {
             scheduler.resize(submatrix.getRowGroupCount(), 0);
         }
@@ -464,23 +479,31 @@ class WeightedReachabilityHelper {
         if (conditionResults.empty()) {
             conditionResults.resize(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
         }
-        // apply the scheduler
-        storm::solver::GeneralLinearEquationSolverFactory<ValueType> factory;
-        bool const convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
-        auto scheduledMatrix = submatrix.selectRowsFromRowGroups(scheduler, convertToEquationSystem);
-        if (convertToEquationSystem) {
-            scheduledMatrix.convertToEquationSystem();
-        }
-        auto solver = factory.create(env, std::move(scheduledMatrix));
-        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-        solver->setCachingEnabled(true);
+        auto solver = getScheduledSolver(env, scheduler);
 
-        std::vector<ValueType> subB(submatrix.getRowGroupCount());
-        storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
-        solver->solveEquations(env, targetResults, subB);
+        cachedB.resize(submatrix.getRowGroupCount());
+        storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
+        solver->solveEquations(env, targetResults, cachedB);
 
-        storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
-        solver->solveEquations(env, conditionResults, subB);
+        storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
+        solver->solveEquations(env, conditionResults, cachedB);
+    }
+
+    SolutionType evaluateScheduler(storm::Environment const& env, std::vector<uint64_t> const& scheduler) {
+        STORM_LOG_ASSERT(scheduler.size() == submatrix.getRowGroupCount(), "Scheduler size does not match number of row groups");
+        auto solver = getScheduledSolver(env, scheduler);
+        cachedB.resize(submatrix.getRowGroupCount());
+        cachedX.resize(submatrix.getRowGroupCount());
+
+        storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), targetRowValues);
+        solver->solveEquations(env, cachedX, cachedB);
+        SolutionType targetValue = cachedX[initialStateInSubmatrix];
+
+        storm::utility::vector::selectVectorValues<ValueType>(cachedB, scheduler, submatrix.getRowGroupIndices(), conditionRowValues);
+        solver->solveEquations(env, cachedX, cachedB);
+        SolutionType ConditionValue = cachedX[initialStateInSubmatrix];
+
+        return targetValue / ConditionValue;
     }
 
     template<OptimizationDirection Dir>
@@ -512,15 +535,25 @@ class WeightedReachabilityHelper {
     }
 
    private:
-    std::vector<ValueType> createScaledVector(ValueType const& w1, std::vector<ValueType> const& v1, ValueType const& w2,
-                                              std::vector<ValueType> const& v2) const {
+    void createScaledVector(std::vector<ValueType>& out, ValueType const& w1, std::vector<ValueType> const& v1, ValueType const& w2,
+                            std::vector<ValueType> const& v2) const {
         STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match");
-        std::vector<ValueType> result;
-        result.reserve(v1.size());
-        for (size_t i = 0; i < v1.size(); ++i) {
-            result.push_back(w1 * v1[i] + w2 * v2[i]);
+        out.resize(v1.size());
+        storm::utility::vector::applyPointwise(v1, v2, out, [&w1, &w2](ValueType const& a, ValueType const& b) -> ValueType { return w1 * a + w2 * b; });
+    }
+
+    auto getScheduledSolver(storm::Environment const& env, std::vector<uint64_t> const& scheduler) const {
+        // apply the scheduler
+        storm::solver::GeneralLinearEquationSolverFactory<ValueType> factory;
+        bool const convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+        auto scheduledMatrix = submatrix.selectRowsFromRowGroups(scheduler, convertToEquationSystem);
+        if (convertToEquationSystem) {
+            scheduledMatrix.convertToEquationSystem();
         }
-        return result;
+        auto solver = factory.create(env, std::move(scheduledMatrix));
+        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+        solver->setCachingEnabled(true);
+        return solver;
     }
 
     storm::storage::SparseMatrix<ValueType> submatrix;
@@ -528,20 +561,21 @@ class WeightedReachabilityHelper {
     std::vector<ValueType> targetRowValues;
     std::vector<ValueType> conditionRowValues;
     uint64_t initialStateInSubmatrix;
+    bool isAcyclic;
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> cachedSolver;
+    std::vector<ValueType> cachedX;
+    std::vector<ValueType> cachedB;
 };
 
-enum class BisectionMethodBounds { Simple, Advanced };
 template<typename ValueType, typename SolutionType = ValueType>
-SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds boundOption, uint64_t const initialState,
+SolutionType computeViaBisection(Environment const& env, bool const useAdvancedBounds, bool const usePolicyTracking, uint64_t const initialState,
                                  storm::solver::OptimizationDirection const dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                  NormalFormData<ValueType> const& normalForm) {
     // We currently handle sound model checking incorrectly: we would need the actual lower/upper bounds of the weightedReachabilityHelper
     STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
                         "Bisection method does not adequately handle propagation of errors. Result is not necessarily sound.");
-    SolutionType const precision = [&env, boundOption]() {
+    SolutionType const precision = [&env]() {
         if (storm::NumberTraits<SolutionType>::IsExact || env.solver().isForceExact()) {
-            STORM_LOG_WARN_COND(storm::NumberTraits<SolutionType>::IsExact && boundOption == BisectionMethodBounds::Advanced,
-                                "Selected bisection method with exact precision in a setting that might not terminate.");
             return storm::utility::zero<SolutionType>();
         } else {
             return storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision());
@@ -553,38 +587,62 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
     SolutionType pMin{storm::utility::zero<SolutionType>()};
     SolutionType pMax{storm::utility::one<SolutionType>()};
 
-    if (boundOption == BisectionMethodBounds::Advanced) {
+    if (useAdvancedBounds) {
         pMin = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Minimize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
         pMax = wrh.computeWeightedDiff(env, storm::OptimizationDirection::Maximize, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
         STORM_LOG_TRACE("Conditioning event bounds:\n\t Lower bound: " << storm::utility::convertNumber<double>(pMin)
                                                                        << ",\n\t Upper bound: " << storm::utility::convertNumber<double>(pMax));
     }
-    storm::utility::Extremum<storm::OptimizationDirection::Maximize, SolutionType> lowerBound = storm::utility::zero<ValueType>();
-    storm::utility::Extremum<storm::OptimizationDirection::Minimize, SolutionType> upperBound = storm::utility::one<ValueType>();
+    storm::utility::Maximum<SolutionType> lowerBound = storm::utility::zero<ValueType>();
+    storm::utility::Minimum<SolutionType> upperBound = storm::utility::one<ValueType>();
+
+    std::optional<std::vector<uint64_t>> lowerScheduler, upperScheduler, middleScheduler;
+    storm::OptionalRef<std::vector<uint64_t>> middleSchedulerRef;
+    if (usePolicyTracking) {
+        lowerScheduler.emplace();
+        upperScheduler.emplace();
+        middleScheduler.emplace();
+        middleSchedulerRef.reset(*middleScheduler);
+    }
+
     SolutionType middle = (*lowerBound + *upperBound) / 2;
+    [[maybe_unused]] SolutionType rationalCandiate = middle;  // relevant for exact computations
+    [[maybe_unused]] uint64_t rationalCandidateCount = 0;
+    std::set<SolutionType> checkedMiddleValues;  // Middle values that have been checked already
     for (uint64_t iterationCount = 1; true; ++iterationCount) {
         // evaluate the current middle
-        SolutionType const middleValue = wrh.computeWeightedDiff(env, dir, storm::utility::one<ValueType>(), -middle);
+        SolutionType const middleValue = wrh.computeWeightedDiff(env, dir, storm::utility::one<ValueType>(), -middle, middleSchedulerRef);
+        checkedMiddleValues.insert(middle);
         // update the bounds and new middle value according to the bisection method
-        if (boundOption == BisectionMethodBounds::Simple) {
+        if (!useAdvancedBounds) {
             if (middleValue >= storm::utility::zero<ValueType>()) {
-                lowerBound &= middle;
+                if (lowerBound &= middle) {
+                    lowerScheduler.swap(middleScheduler);
+                }
             }
             if (middleValue <= storm::utility::zero<ValueType>()) {
-                upperBound &= middle;
+                if (upperBound &= middle) {
+                    upperScheduler.swap(middleScheduler);
+                }
             }
             middle = (*lowerBound + *upperBound) / 2;  // update middle to the average of the bounds
         } else {
-            STORM_LOG_ASSERT(boundOption == BisectionMethodBounds::Advanced, "Unknown bisection method bounds");
             if (middleValue >= storm::utility::zero<ValueType>()) {
-                lowerBound &= middle + (middleValue / pMax);
+                if (lowerBound &= middle + (middleValue / pMax)) {
+                    lowerScheduler.swap(middleScheduler);
+                }
                 upperBound &= middle + (middleValue / pMin);
             }
             if (middleValue <= storm::utility::zero<ValueType>()) {
                 lowerBound &= middle + (middleValue / pMin);
-                upperBound &= middle + (middleValue / pMax);
+                if (upperBound &= middle + (middleValue / pMax)) {
+                    upperScheduler.swap(middleScheduler);
+                }
             }
-            // update middle to the average of the bounds, but scale it according to the middle value (which is in [-1,1])
+            // update middle to the average of the bounds, but use the middleValue as a hint:
+            // If middleValue is close to -1, we use a value close to lowerBound
+            // If middleValue is close to 0, we use a value close to the avg(lowerBound, upperBound)
+            // If middleValue is close to +1, we use a value close to upperBound
             middle = *lowerBound + (storm::utility::one<SolutionType>() + middleValue) * (*upperBound - *lowerBound) / 2;
 
             if (!storm::NumberTraits<SolutionType>::IsExact && storm::utility::isAlmostZero(*upperBound - *lowerBound)) {
@@ -608,6 +666,12 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
                                                                << std::setprecision(std::numeric_limits<double>::digits10)
                                                                << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
+        } else if (usePolicyTracking && lowerScheduler && upperScheduler && (*lowerScheduler == *upperScheduler)) {
+            STORM_LOG_INFO("Bisection method converged after " << iterationCount << " iterations due to identical schedulers for lower and upper bound.");
+            auto result = wrh.evaluateScheduler(env, *lowerScheduler);
+            lowerBound &= result;
+            upperBound &= result;
+            break;
         }
         // check for early termination
         if (storm::utility::resources::isTerminate()) {
@@ -617,27 +681,53 @@ SolutionType computeViaBisection(Environment const& env, BisectionMethodBounds b
         }
         // process the middle value for the next iteration
         if constexpr (storm::NumberTraits<SolutionType>::IsExact) {
-            // find a rational number with a concise representation close to middle and within the bounds
-            auto const exactMiddle = middle;
-
-            // Find number of digits - 1. Method using log10 does not work since that uses doubles internally.
-            auto numDigits = storm::utility::numDigits<SolutionType>(*upperBound - *lowerBound) - 1;
-
-            do {
-                ++numDigits;
-                middle = storm::utility::kwek_mehlhorn::sharpen<SolutionType, SolutionType>(numDigits, exactMiddle);
-            } while (middle <= *lowerBound || middle >= *upperBound);
+            // Check if the rationalCandidate has been within the bounds for four iterations.
+            // If yes, we take that as our next "middle".
+            // Otherwise, we set a new rationalCandidate.
+            // This heuristic ensures that we eventually check every rational number without affecting the binary search too much
+            if (rationalCandidateCount >= 4 && rationalCandiate >= *lowerBound && rationalCandiate <= *upperBound &&
+                !checkedMiddleValues.contains(rationalCandiate)) {
+                middle = rationalCandiate;
+                rationalCandidateCount = 0;
+            } else {
+                // find a rational number with a concise representation within our current bounds
+                bool const includeLower = !checkedMiddleValues.contains(*lowerBound);
+                bool const includeUpper = !checkedMiddleValues.contains(*upperBound);
+                auto newRationalCandiate = storm::utility::findRational(*lowerBound, includeLower, *upperBound, includeUpper);
+                if (rationalCandiate == newRationalCandiate) {
+                    ++rationalCandidateCount;
+                } else {
+                    rationalCandiate = newRationalCandiate;
+                    rationalCandidateCount = 0;
+                }
+                // Also simplify the middle value
+                SolutionType delta =
+                    std::min<SolutionType>(*upperBound - middle, middle - *lowerBound) / storm::utility::convertNumber<SolutionType, uint64_t>(16);
+                middle = storm::utility::findRational(middle - delta, true, middle + delta, true);
+            }
         }
-        // Since above code never sets 'middle' to exactly zero or one, we check if that could be necessary after a couple of iterations
+        // Since above code might never set 'middle' to exactly zero or one, we check if that could be necessary after a couple of iterations
         if (iterationCount == 8) {  // 8 is just a heuristic value, it could be any number
-            if (storm::utility::isZero(*lowerBound)) {
+            if (storm::utility::isZero(*lowerBound) && !checkedMiddleValues.contains(storm::utility::zero<SolutionType>())) {
                 middle = storm::utility::zero<SolutionType>();
-            } else if (storm::utility::isOne(*upperBound)) {
+            } else if (storm::utility::isOne(*upperBound) && !checkedMiddleValues.contains(storm::utility::one<SolutionType>())) {
                 middle = storm::utility::one<SolutionType>();
             }
         }
     }
     return (*lowerBound + *upperBound) / 2;
+}
+
+template<typename ValueType, typename SolutionType = ValueType>
+SolutionType computeViaBisection(Environment const& env, ConditionalAlgorithmSetting const alg, uint64_t const initialState,
+                                 storm::solver::OptimizationDirection const dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                 NormalFormData<ValueType> const& normalForm) {
+    using enum ConditionalAlgorithmSetting;
+    STORM_LOG_ASSERT(alg == Bisection || alg == BisectionAdvanced || alg == BisectionPolicyTracking || alg == BisectionAdvancedPolicyTracking,
+                     "Unhandled Bisection algorithm " << alg << ".");
+    bool const useAdvancedBounds = (alg == BisectionAdvanced || alg == BisectionAdvancedPolicyTracking);
+    bool const usePolicyTracking = (alg == BisectionPolicyTracking || alg == BisectionAdvancedPolicyTracking);
+    return computeViaBisection(env, useAdvancedBounds, usePolicyTracking, initialState, dir, transitionMatrix, normalForm);
 }
 
 template<typename ValueType, typename SolutionType = ValueType>
@@ -748,12 +838,10 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
                 initialStateValue = internal::computeViaRestartMethod(analysisEnv, initialState, goal.direction(), transitionMatrix, normalFormData);
                 break;
             case ConditionalAlgorithmSetting::Bisection:
-                initialStateValue = internal::computeViaBisection(analysisEnv, internal::BisectionMethodBounds::Simple, initialState, goal.direction(),
-                                                                  transitionMatrix, normalFormData);
-                break;
             case ConditionalAlgorithmSetting::BisectionAdvanced:
-                initialStateValue = internal::computeViaBisection(analysisEnv, internal::BisectionMethodBounds::Advanced, initialState, goal.direction(),
-                                                                  transitionMatrix, normalFormData);
+            case ConditionalAlgorithmSetting::BisectionPolicyTracking:
+            case ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking:
+                initialStateValue = internal::computeViaBisection(analysisEnv, alg, initialState, goal.direction(), transitionMatrix, normalFormData);
                 break;
             case ConditionalAlgorithmSetting::PolicyIteration:
                 initialStateValue = internal::computeViaPolicyIteration(analysisEnv, initialState, goal.direction(), transitionMatrix, normalFormData);
