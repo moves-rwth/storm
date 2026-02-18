@@ -41,7 +41,7 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
         if (formula.isInFragment(storm::logic::propositional())) {
             return true;
         }
-        if (formula.isInFragment(storm::logic::reachability())) {
+        if (formula.isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setRewardOperatorsAllowed(true))) {
             return true;
         }
     } else {

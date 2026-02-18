@@ -1371,11 +1371,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     // If requested, we will produce a scheduler.
     std::unique_ptr<storm::storage::Scheduler<SolutionType>> scheduler;
     if (produceScheduler) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support producing schedulers in this function with interval models.");
-        } else {
-            scheduler = std::make_unique<storm::storage::Scheduler<SolutionType>>(transitionMatrix.getRowGroupCount());
-        }
+        scheduler = std::make_unique<storm::storage::Scheduler<SolutionType>>(transitionMatrix.getRowGroupCount());
     }
 
     // Check if the values of the maybe states are relevant for the SolveGoal
@@ -1472,11 +1468,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isDeterministicScheduler(), "Expected a deterministic scheduler");
     STORM_LOG_ASSERT((!produceScheduler && !scheduler) || scheduler->isMemorylessScheduler(), "Expected a memoryless scheduler");
 
-    if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result));
-    } else {
-        return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
-    }
+    return MDPSparseModelCheckingHelperReturnType<SolutionType>(std::move(result), std::move(scheduler));
 }
 
 template class SparseMdpPrctlHelper<double>;
