@@ -45,25 +45,28 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 ############################################################# 
 
 if(NOT STORM_DISABLE_LIBARCHIVE)
-    if(MACOSX)
-        # following https://stackoverflow.com/a/76916842
-        # Homebrew ships libarchive keg only
-        # Try to get a hint where libarchive is located in case it is installed via brew.
-        execute_process(
-                COMMAND brew --prefix libarchive
-                ERROR_QUIET # Ignore any error, e.g. if brew is not installed.
-                OUTPUT_VARIABLE LibArchive_BREW_HINT
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+    if(MACOSX AND NOT LibArchive_ROOT)
+        # macOS already provides libarchive but no include files.
+        # We catch the common case where libarchive is installed via homebrew following https://stackoverflow.com/a/76916842.
+        # Homebrew ships libarchive keg only. We try to get a hint where libarchive is located
+        find_program(_LibArchive_BREW_EXECUTABLE brew)
+        if (_LibArchive_BREW_EXECUTABLE)
+            execute_process(
+                    COMMAND "${_LibArchive_BREW_EXECUTABLE}" --prefix libarchive
+                    ERROR_QUIET # Ignore any error, e.g. if brew is not installed.
+                    OUTPUT_VARIABLE _LibArchive_BREW_HINT
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif ()
         # Only use the hint if the main header file is located there.
-        if(EXISTS "${LibArchive_BREW_HINT}/include/archive.h")
-            # LibArchive_INCLUDE_DIR is read by find_package(LibArchive ...) below
-            set(LibArchive_INCLUDE_DIR "${LibArchive_BREW_HINT}/include")
+        if(EXISTS "${_LibArchive_BREW_HINT}/include/archive.h")
+            set(LibArchive_ROOT "${_LibArchive_BREW_HINT}")
         endif()
-        unset(LibArchive_BREW_HINT)
+        unset(_LibArchive_BREW_HINT)
+        unset(_LibArchive_BREW_EXECUTABLE)
     endif()
-    find_package(LibArchive QUIET)
-    if(TARGET LibArchive::LibArchive)
+    find_package(LibArchive, QUIET)
+    if(LibArchive_FOUND)
         SET(STORM_HAVE_LIBARCHIVE ON)
         message (STATUS "Storm - Linking with LibArchive (version: ${LibArchive_VERSION}, libraries: ${LibArchive_LIBRARIES}, include: ${LibArchive_INCLUDE_DIRS}).")
         list(APPEND STORM_DEP_IMP_TARGETS LibArchive::LibArchive)
