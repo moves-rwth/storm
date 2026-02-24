@@ -82,6 +82,8 @@ option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
 MARK_AS_ADVANCED(GUROBI_ROOT)
 option(STORM_DISABLE_LIBARCHIVE "Sets whether linking with LibArchive should be disabled." OFF)
+set(LibArchive_ROOT "" CACHE STRING "A hint to the root directory of LibArchive.")
+MARK_AS_ADVANCED(LibArchive_ROOT)
 option(STORM_DISABLE_MATHSAT "Sets whether linking with MathSAT should be disabled." OFF)
 set(MATHSAT_ROOT "" CACHE STRING "A hint to the root directory of MathSAT.")
 MARK_AS_ADVANCED(MATHSAT_ROOT)
