@@ -342,7 +342,7 @@ jobs:
         # cmake and gmp are already installed
         run: |
           brew update
-          brew install automake boost cln ginac glpk hwloc xerces-c z3
+          brew install automake boost cln ginac glpk hwloc libarchive xerces-c z3
       - name: Configure storm
         run: |
           mkdir build
