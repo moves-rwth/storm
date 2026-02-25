@@ -130,7 +130,6 @@ DrnHeader parseHeader(std::istream& file) {
             STORM_LOG_THROW(!sawParameters, storm::exceptions::WrongFormatException, "Parameters declared twice");
             storm::io::getline(file, line);
             if (line != "") {
-                std::vector<std::string> parameters;
                 boost::split(header.parameters, line, boost::is_any_of(" "));
             }
             sawParameters = true;
