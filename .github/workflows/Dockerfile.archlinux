@@ -60,6 +60,7 @@ RUN pacman -S --noconfirm \
         glpk \
         gmp \
         hwloc \
+        libarchive \
         xerces-c \
         z3 \
         $packages
