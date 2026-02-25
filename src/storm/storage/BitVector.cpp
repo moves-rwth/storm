@@ -1125,7 +1125,7 @@ size_t BitVector::bucketCount() const {
 }
 
 void BitVector::setBucket(uint64_t bucketIndex, uint64_t value) {
-    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::getBucket: bucket index " << bucketIndex << " out of bounds.");
+    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::setBucket: bucket index " << bucketIndex << " out of bounds.");
     buckets[bucketIndex] = value;
     if (bucketIndex == bucketCount() - 1) {
         truncateLastBucket();

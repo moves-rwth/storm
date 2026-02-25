@@ -47,13 +47,13 @@ std::string toString(DirectEncodingValueType const& vt) {
     using enum DirectEncodingValueType;
     switch (vt) {
         case Default:
-            return "Default";
+            return "default";
         case Double:
             return "double";
         case DoubleInterval:
             return "double-interval";
         case Rational:
-            return "Rational";
+            return "rational";
         case RationalInterval:
             return "rational-interval";
         case Parametric:
