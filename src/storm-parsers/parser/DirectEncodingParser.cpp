@@ -1,7 +1,6 @@
 #include "storm-parsers/parser/DirectEncodingParser.h"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <iostream>
 #include <istream>
 #include <regex>

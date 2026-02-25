@@ -736,6 +736,32 @@ std::size_t BitVector::getSizeInBytes() const {
     return sizeof(*this) + sizeof(uint64_t) * bucketCount();
 }
 
+size_t BitVector::bucketCount() const {
+    size_t result = (bitCount >> 6);
+    if ((bitCount & mod64mask) != 0) {
+        ++result;
+    }
+    return result;
+}
+
+void BitVector::setBucket(uint64_t bucketIndex, uint64_t value) {
+    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::setBucket: bucket index " << bucketIndex << " out of bounds.");
+    buckets[bucketIndex] = value;
+    if (bucketIndex == bucketCount() - 1) {
+        truncateLastBucket();
+    }
+}
+
+uint64_t BitVector::getBucket(uint64_t bucketIndex) const {
+    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::getBucket: bucket index " << bucketIndex << " out of bounds.");
+    STORM_LOG_ASSERT(bucketIndex < bucketCount() - 1 || buckets[bucketIndex] << (bitCount & mod64mask) == 0ull,
+                     "Bitvector in invalid state: last bucket contains bits beyond bitCount.");
+    if (bucketIndex == bucketCount() - 1) {
+        return buckets[bucketIndex] & ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
+    }
+    return buckets[bucketIndex];
+}
+
 BitVector::const_iterator BitVector::begin() const {
     return const_iterator(buckets, 0, bitCount);
 }
@@ -1114,31 +1140,6 @@ void BitVector::truncateLastBucket() {
     if ((bitCount & mod64mask) != 0) {
         buckets[bucketCount() - 1] &= ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
     }
-}
-
-size_t BitVector::bucketCount() const {
-    size_t result = (bitCount >> 6);
-    if ((bitCount & mod64mask) != 0) {
-        ++result;
-    }
-    return result;
-}
-
-void BitVector::setBucket(uint64_t bucketIndex, uint64_t value) {
-    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::setBucket: bucket index " << bucketIndex << " out of bounds.");
-    buckets[bucketIndex] = value;
-    if (bucketIndex == bucketCount() - 1) {
-        truncateLastBucket();
-    }
-}
-uint64_t BitVector::getBucket(uint64_t bucketIndex) const {
-    STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::getBucket: bucket index " << bucketIndex << " out of bounds.");
-    STORM_LOG_ASSERT(bucketIndex < bucketCount() - 1 || buckets[bucketIndex] << (bitCount & mod64mask) == 0ull,
-                     "Bitvector in invalid state: last bucket contains bits beyond bitCount.");
-    if (bucketIndex == bucketCount() - 1) {
-        return buckets[bucketIndex] & ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
-    }
-    return buckets[bucketIndex];
 }
 
 std::ostream& operator<<(std::ostream& out, BitVector const& bitvector) {

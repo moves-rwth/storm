@@ -28,14 +28,14 @@ void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& fi
 template<typename ValueType>
 void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename,
                             std::vector<std::string> const& parameterNames = {}, bool allowPlaceholders = true) {
-    storm::io::DirectEncodingOptions options;
+    storm::io::DirectEncodingExporterOptions options;
     options.allowPlaceholders = allowPlaceholders;
     storm::io::explicitExportSparseModel(filename, model, parameterNames, options);
 }
 
 template<typename ValueType>
 void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename,
-                            storm::io::DirectEncodingOptions options, std::vector<std::string> const& parameterNames = {}) {
+                            storm::io::DirectEncodingExporterOptions options, std::vector<std::string> const& parameterNames = {}) {
     storm::io::explicitExportSparseModel(filename, model, parameterNames, options);
 }
 

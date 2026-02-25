@@ -1,9 +1,8 @@
 #include "storm/io/ArchiveWriter.h"
 
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::io {
 
@@ -32,7 +31,7 @@ ArchiveWriter::ArchiveWriter(std::filesystem::path const& filename, CompressionM
 }
 #else
 ArchiveWriter::ArchiveWriter(std::filesystem::path const&, CompressionMode const) {
-    throw storm::exceptions::NotSupportedException() << "Writing archives is not supported. Storm is compiled without LibArchive.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Writing archives is not supported. Storm is compiled without LibArchive.");
 }
 #endif
 
@@ -53,7 +52,7 @@ void ArchiveWriter::addDirectory(std::filesystem::path const& archivePath) {
     // Free the entry metadata after we finish writing
     archive_entry_free(entry);
 #else
-    throw storm::exceptions::NotSupportedException() << "Writing archives is not supported. Storm is compiled without LibArchive.";
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Writing archives is not supported. Storm is compiled without LibArchive.");
 #endif
 }
 

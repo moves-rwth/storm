@@ -588,14 +588,12 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         using enum storm::parser::DirectEncodingValueType;
         storm::parser::DirectEncodingValueType valueType{Default};
-        static_assert(
-            std::is_same_v<ValueType, double> || std::is_same_v<ValueType, storm::RationalNumber> || std::is_same_v<ValueType, storm::RationalFunction>,
-            "Unexpected value type.");
         if constexpr (std::is_same_v<ValueType, double>) {
             valueType = Double;
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
             valueType = Rational;
-        } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        } else {
+            static_assert(std::is_same_v<ValueType, storm::RationalFunction>, "Unexpected value type.");
             valueType = Parametric;
         }
         result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
@@ -752,7 +750,7 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
             case storm::io::ModelExportFormat::Drn: {
-                storm::io::DirectEncodingOptions options;
+                storm::io::DirectEncodingExporterOptions options;
                 options.allowPlaceholders = !ioSettings.isExplicitExportPlaceholdersDisabled();
                 options.compression = ioSettings.getCompressionMode();
                 if (ioSettings.isExportDigitsSet()) {

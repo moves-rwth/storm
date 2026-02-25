@@ -6,7 +6,7 @@
 
 namespace storm::io {
 
-struct DirectEncodingOptions {
+struct DirectEncodingExporterOptions {
     /*!
      * Allow placeholders for rational functions in the exported DRN file.
      */
