@@ -112,7 +112,7 @@ Vec<T> ArchiveReader::ArchiveReadEntry::toVector() {
     checkResult(_archive, bytesRead);
     while (true) {
         // process the current buffer contents
-        auto const numValues = bytesRead / sizeof(DataType);  // number of values that we can now append
+        uint64_t const numValues = bytesRead / sizeof(DataType);  // number of values that we can now append
         if constexpr (NativeEndianness || sizeof(DataType) == 1) {
             append(std::span<const DataType>(reinterpret_cast<const DataType*>(buffer.data()), numValues));
         } else {
@@ -121,12 +121,14 @@ Vec<T> ArchiveReader::ArchiveReadEntry::toVector() {
         }
 
         // put the next chunk into the buffer
-        auto offsetBytes = bytesRead % sizeof(DataType);  // number of bytes that could not be processed in this round
+        uint64_t offsetBytes = bytesRead % sizeof(DataType);  // number of bytes that could not be processed in this round
         if (offsetBytes > 0 && numValues > 0) {
             // if some of the bytes could not be processed, we copy them to the beginning of the buffer for the next read
             // the copy is always safe (i.e. no overlap of source and destination) as implied by the asserted expressions below
-            STORM_LOG_ASSERT(bytesRead == numValues * sizeof(DataType) + offsetBytes, "Unsafe copy.");  // by def. of bytesRead and numValues
-            STORM_LOG_ASSERT(bytesRead - offsetBytes > offsetBytes, "Unsafe copy.");  // because numValues > 0 and sizeof(DataType) > offsetBytes
+            STORM_LOG_ASSERT(static_cast<uint64_t>(bytesRead) == numValues * sizeof(DataType) + offsetBytes,
+                             "Unsafe copy.");  // by def. of bytesRead and numValues
+            STORM_LOG_ASSERT(static_cast<uint64_t>(bytesRead - offsetBytes) > offsetBytes,
+                             "Unsafe copy.");  // because numValues > 0 and sizeof(DataType) > offsetBytes
             std::copy(buffer.data() + bytesRead - offsetBytes, buffer.data() + bytesRead, buffer.data());
         }
         bytesRead = archive_read_data(_archive, buffer.data() + offsetBytes, BufferSize - offsetBytes);
