@@ -54,7 +54,6 @@ RUN pacman -S --noconfirm \
         git \
         boost \
         cln \
-        eigen \
         ginac \
         glpk \
         gmp \
