@@ -29,6 +29,7 @@ jobs:
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
+             disable_libarchive: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
@@ -48,6 +49,7 @@ jobs:
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
+             disable_libarchive: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
@@ -67,6 +69,7 @@ jobs:
              disable_glpk: "OFF",
              disable_gmm: "OFF",
              disable_gurobi: "OFF",
+             disable_libarchive: "OFF",
              disable_mathsat: "OFF",
              disable_soplex: "OFF",
              disable_spot: "OFF",
@@ -86,6 +89,7 @@ jobs:
              disable_glpk: "ON",
              disable_gmm: "ON",
              disable_gurobi: "ON",
+             disable_libarchive: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
@@ -105,6 +109,7 @@ jobs:
              disable_glpk: "ON",
              disable_gmm: "ON",
              disable_gurobi: "ON",
+             disable_libarchive: "ON",
              disable_mathsat: "ON",
              disable_soplex: "ON",
              disable_spot: "ON",
@@ -130,6 +135,7 @@ jobs:
             --build-arg disable_glpk="${{ matrix.config.disable_glpk }}" \
             --build-arg disable_gmm="${{ matrix.config.disable_gmm }}" \
             --build-arg disable_gurobi="${{ matrix.config.disable_gurobi }}" \
+            --build-arg disable_libarchive="${{ matrix.config.disable_libarchive }}" \
             --build-arg disable_mathsat="${{ matrix.config.disable_mathsat }}" \
             --build-arg disable_soplex="${{ matrix.config.disable_soplex }}" \
             --build-arg disable_spot="${{ matrix.config.disable_spot }}" \
