@@ -71,7 +71,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.33")
+option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "8c5b337eec6466b720657b63cc278ce6b85494e4") # TODO: replace tag by version once the carl-storm version is available
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)

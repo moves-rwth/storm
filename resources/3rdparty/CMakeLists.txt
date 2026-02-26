@@ -86,11 +86,12 @@ endif()
 
 # Checkout Eigen
 # https://gitlab.com/libeigen/eigen/
-message(STATUS "Storm - Including Eigen commit bc3b39870ecb690a623a3f49149a358b95c5781d (Version 5.0.1).")
+set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
+message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
 ExternalProject_Add(
         eigen_src
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG bc3b39870ecb690a623a3f49149a358b95c5781d
+        GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen
         # First check whether patch was already applied (--reverse --check), otherwise apply patch
         PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
@@ -386,6 +387,7 @@ SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
+SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})
 SET(PORTABLE ${STORM_PORTABLE})
 SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?
