@@ -7,6 +7,7 @@ In Eigen, we have adapted `SparseLU` to work with scalar types that do not defau
 
 To update the Eigen version, just change the corresponding commit hash in `$STORM_DIR/resources/3rdparty/CmakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen.patch` can be applied without issues (in particular check for changes in `Eigen/src/SparseLU/`)
+The Eigen hash should also be updated in [carl-storm](https://github.com/moves-rwth/carl-storm/blob/master/resources/eigen3.cmake).
 
 In case a new patch needs to be created follow these steps:
 
