@@ -27,6 +27,7 @@ ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
+ARG disable_libarchive="OFF"
 ARG disable_mathsat="OFF"
 ARG disable_soplex="OFF"
 ARG disable_spot="OFF"
@@ -61,6 +62,7 @@ RUN mkdir -p /opt/storm/build \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+          -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
           -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
           -DSTORM_DISABLE_SOPLEX=$disable_soplex \
           -DSTORM_DISABLE_SPOT=$disable_spot \

@@ -40,6 +40,42 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 
 #############################################################
 ##
+## LibArchive (optional)
+##
+############################################################# 
+
+if(NOT STORM_DISABLE_LIBARCHIVE)
+    if(MACOSX AND LibArchive_ROOT STREQUAL "")
+        # macOS already provides libarchive but no include files.
+        # We catch the common case where libarchive is installed via homebrew following https://stackoverflow.com/a/76916842.
+        # Homebrew ships libarchive keg only. We try to get a hint where libarchive is located
+        find_program(_LibArchive_BREW_EXECUTABLE brew)
+        if (_LibArchive_BREW_EXECUTABLE)
+            execute_process(
+                    COMMAND "${_LibArchive_BREW_EXECUTABLE}" --prefix libarchive
+                    ERROR_QUIET # Ignore any error, e.g. if brew is not installed.
+                    OUTPUT_VARIABLE LibArchive_ROOT
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif ()
+        unset(_LibArchive_BREW_EXECUTABLE)
+    endif()
+    find_package(LibArchive QUIET)
+    if(LibArchive_FOUND)
+        SET(STORM_HAVE_LIBARCHIVE ON)
+        message (STATUS "Storm - Linking with LibArchive (version: ${LibArchive_VERSION}, libraries: ${LibArchive_LIBRARIES}, include: ${LibArchive_INCLUDE_DIRS}).")
+        list(APPEND STORM_DEP_IMP_TARGETS LibArchive::LibArchive)
+    else()
+        SET(STORM_HAVE_LIBARCHIVE OFF)
+        message (STATUS "Storm - LibArchive not found. Loading and exporting UMB models and compressed files will not be supported.")
+	endif()
+else()
+    SET(STORM_HAVE_LIBARCHIVE OFF)
+    message (STATUS "Storm - Not linking with LibArchive. Loading and exporting UMB models and compressed files will not be supported.")
+endif()
+
+#############################################################
+##
 ##	gmm
 ##
 #############################################################
@@ -606,4 +642,3 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 list(APPEND STORM_DEP_IMP_TARGETS Threads::Threads)
-

@@ -587,7 +587,17 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
     } else if (ioSettings.isExplicitDRNSet()) {
         storm::parser::DirectEncodingParserOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
-        result = storm::api::buildExplicitDRNModel<ValueType>(ioSettings.getExplicitDRNFilename(), options);
+        using enum storm::parser::DirectEncodingValueType;
+        storm::parser::DirectEncodingValueType valueType{Default};
+        if constexpr (std::is_same_v<ValueType, double>) {
+            valueType = Double;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            valueType = Rational;
+        } else {
+            static_assert(std::is_same_v<ValueType, storm::RationalFunction>, "Unexpected value type.");
+            valueType = Parametric;
+        }
+        result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
     } else {
         STORM_LOG_THROW(ioSettings.isExplicitIMCASet(), storm::exceptions::InvalidSettingsException, "Unexpected explicit model input type.");
         result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename());
@@ -733,15 +743,24 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
     if (ioSettings.isExportBuildSet()) {
+        storm::utility::Stopwatch modelExportWatch;
+        modelExportWatch.start();
+        STORM_PRINT("\nExporting model to '" << ioSettings.getExportBuildFilename() << "'.\n");
         switch (ioSettings.getExportBuildFormat()) {
             case storm::io::ModelExportFormat::Dot:
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
-            case storm::io::ModelExportFormat::Drn:
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(),
-                                                   input.model ? input.model.get().getParameterNames() : std::vector<std::string>(),
-                                                   !ioSettings.isExplicitExportPlaceholdersDisabled());
+            case storm::io::ModelExportFormat::Drn: {
+                storm::io::DirectEncodingExporterOptions options;
+                options.allowPlaceholders = !ioSettings.isExplicitExportPlaceholdersDisabled();
+                options.compression = ioSettings.getCompressionMode();
+                if (ioSettings.isExportDigitsSet()) {
+                    options.outputPrecision = ioSettings.getExportDigits();
+                }
+                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(), options,
+                                                   input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
                 break;
+            }
             case storm::io::ModelExportFormat::Json:
                 storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
                 break;
@@ -749,6 +768,8 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                 "Exporting sparse models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
         }
+        modelExportWatch.stop();
+        STORM_PRINT("Time for model export: " << modelExportWatch << ".\n\n");
     }
 
     // TODO: The following options are depreciated and shall be removed at some point:
