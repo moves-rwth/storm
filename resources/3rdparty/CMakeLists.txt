@@ -262,7 +262,7 @@ list(APPEND STORM_DEP_TARGETS ModernJSON)
 #############################################################
 
 if(NOT STORM_DISABLE_Z3)
-    find_package(Z3 QUIET 4.8.7 NO_MODULE)
+    find_package(Z3 QUIET 4.8.12 NO_MODULE)
     # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
     if(TARGET z3::libz3)
         set(STORM_HAVE_Z3 ON)
@@ -275,14 +275,13 @@ if(NOT STORM_DISABLE_Z3)
             message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
             set(Z3_FOUND FALSE)
         else()
-            # Check whether the version of z3 supports optimization
-            message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+            message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
             list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
         endif()
     else()
-        # Debian and Ubuntu packages are as of Debian 14 and Ubuntu 24.04 very old,
+        # Debian and Ubuntu packages are as of Debian 12 and Ubuntu 24.04 very old,
         # such that no Cmake config files are provided. For the time being, we use a FindZ3.cmake script.
-        find_package(Z3 QUIET 4.8.7)
+        find_package(Z3 QUIET 4.8.12)
 
         if(Z3_FOUND)
 
@@ -294,8 +293,7 @@ if(NOT STORM_DISABLE_Z3)
                 message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
                 set(Z3_FOUND FALSE)
             else()
-                # Check whether the version of z3 supports optimization
-                message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+                message(STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}).")
 
                 add_library(z3 SHARED IMPORTED)
                 set_target_properties(
@@ -314,12 +312,6 @@ else()
     message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
-if(Z3_FOUND)
-    # TODO We may remove STORM_HAVE_Z3_OPTIMIZE checks
-    # TODO We may remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
-    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
-    set(STORM_HAVE_Z3_OPTIMIZE ON)
-endif()
 
 #############################################################
 ##

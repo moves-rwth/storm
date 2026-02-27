@@ -18,7 +18,7 @@
 namespace storm {
 namespace solver {
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
+#ifdef STORM_HAVE_Z3
 
 template<typename ValueType, bool RawMode>
 Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir)
