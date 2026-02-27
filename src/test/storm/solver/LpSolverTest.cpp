@@ -394,10 +394,13 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
     ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
     ASSERT_NO_THROW(solver->update());
 
-    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && storm::test::z3AtLeastVersion(4, 8, 8)) {
-        // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
+#ifdef STORM_HAVE_Z3
+    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && storm::test::z3AtLeastVersion(4, 8, 8) &&
+        !storm::test::z3AtLeastVersion(4, 13, 3)) {
+        // z3 v4.8.8 is known to be broken here. It is working for v4.13.3.
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
+#endif
 
     ASSERT_NO_THROW(solver->optimize());
     ASSERT_TRUE(solver->isOptimal());
