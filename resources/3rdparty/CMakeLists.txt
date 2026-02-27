@@ -262,7 +262,7 @@ list(APPEND STORM_DEP_TARGETS ModernJSON)
 #############################################################
 
 if(NOT STORM_DISABLE_Z3)
-    find_package(Z3 QUIET 4.8.7 NO_MODULE)
+    find_package(Z3 QUIET 4.8.12 NO_MODULE)
     # Notice that such old z3 versions do not provide config files, so we could bump this version ahead.
     if(TARGET z3::libz3)
         set(STORM_HAVE_Z3 ON)
@@ -280,9 +280,9 @@ if(NOT STORM_DISABLE_Z3)
             list(APPEND STORM_DEP_IMP_TARGETS z3::libz3)
         endif()
     else()
-        # Debian and Ubuntu packages are as of Debian 14 and Ubuntu 24.04 very old,
+        # Debian and Ubuntu packages are as of Debian 12 and Ubuntu 24.04 very old,
         # such that no Cmake config files are provided. For the time being, we use a FindZ3.cmake script.
-        find_package(Z3 QUIET 4.8.7)
+        find_package(Z3 QUIET 4.8.12)
 
         if(Z3_FOUND)
 
