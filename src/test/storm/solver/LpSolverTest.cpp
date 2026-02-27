@@ -158,13 +158,13 @@ typedef ::testing::Types<DefaultEnvironment
                          ,
                          GurobiEnvironment
 #endif
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-                         ,
-                         Z3Environment
-#endif
 #ifdef STORM_HAVE_SOPLEX
                          ,
                          SoplexEnvironment, SoplexExactEnvironment
+#endif
+#ifdef STORM_HAVE_Z3
+                         ,
+                         Z3Environment
 #endif
                          >
     TestingTypes;
@@ -394,12 +394,10 @@ TYPED_TEST(LpSolverTest, MILPOptimizeMin) {
     ASSERT_NO_THROW(solver->addConstraint("", y - x <= solver->getConstant(this->parseNumber("11/2"))));
     ASSERT_NO_THROW(solver->update());
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
     if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && storm::test::z3AtLeastVersion(4, 8, 8)) {
         // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
-#endif
 
     ASSERT_NO_THROW(solver->optimize());
     ASSERT_TRUE(solver->isOptimal());
@@ -560,12 +558,6 @@ TYPED_TEST(LpSolverTest, Incremental) {
     // max x s.t. x<=12
     ASSERT_TRUE(solver->isOptimal());
     EXPECT_NEAR(this->parseNumber("12"), solver->getContinuousValue(x), this->precision());
-
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-    if (this->solverSelection() == storm::solver::LpSolverTypeSelection::Z3 && !storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
-#endif
 
     solver->push();
     ASSERT_NO_THROW(y = solver->addUnboundedContinuousVariable("y", 10));
