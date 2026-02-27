@@ -14,6 +14,7 @@ const std::string MultiObjectiveSettings::moduleName = "multiobjective";
 const std::string MultiObjectiveSettings::methodOptionName = "method";
 const std::string MultiObjectiveSettings::exportPlotOptionName = "exportplot";
 const std::string MultiObjectiveSettings::precisionOptionName = "precision";
+const std::string MultiObjectiveSettings::weightedSumApproximationTradeoffOptionName = "approxtradeoff";
 const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
 const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "purescheds";
 const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
@@ -41,12 +42,20 @@ MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
             .setIsAdvanced()
             .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision.")
                              .setDefaultValueDouble(1e-04)
-                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                              .build())
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type of precision.")
                              .setDefaultValueString("abs")
                              .makeOptional()
                              .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(precTypes))
+                             .build())
+            .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, weightedSumApproximationTradeoffOptionName, true,
+                                       "Sets the fraction of the approximation error that is allowed during weighted sum optimization in pcaa method.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gamma", "the tradeoff factor.")
+                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                              .build())
             .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, maxStepsOptionName, true,
@@ -135,6 +144,14 @@ bool MultiObjectiveSettings::getPrecisionRelativeToDiff() const {
 
 bool MultiObjectiveSettings::getPrecisionAbsolute() const {
     return this->getOption(precisionOptionName).getArgumentByName("type").getValueAsString() == "abs";
+}
+
+bool MultiObjectiveSettings::isWeightedSumApproximationTradeoffSet() const {
+    return this->getOption(weightedSumApproximationTradeoffOptionName).getHasOptionBeenSet();
+}
+
+double MultiObjectiveSettings::getWeightedSumApproximationTradeoff() const {
+    return this->getOption(weightedSumApproximationTradeoffOptionName).getArgumentByName("gamma").getValueAsDouble();
 }
 
 bool MultiObjectiveSettings::isMaxStepsSet() const {

@@ -37,8 +37,13 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::RewardBoundedMdpPca
 
     // Update the objective bounds with what the reward unfolding can compute
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-        this->objectives[objIndex].lowerResultBound = rewardUnfolding.getLowerObjectiveBound(objIndex);
-        this->objectives[objIndex].upperResultBound = rewardUnfolding.getUpperObjectiveBound(objIndex);
+        auto& obj = this->objectives[objIndex];
+        obj.lowerResultBound = rewardUnfolding.getLowerObjectiveBound(objIndex);
+        obj.upperResultBound = rewardUnfolding.getUpperObjectiveBound(objIndex);
+        if (!obj.upperResultBound) {
+            preprocessing::SparseMultiObjectiveRewardAnalysis<SparseMdpModelType>::computeUpperResultBound(
+                *preprocessorResult.preprocessedModel, obj, preprocessorResult.preprocessedModel->getBackwardTransitions());
+        }
     }
 
     numCheckedEpochs = 0;
@@ -73,11 +78,13 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     auto initEpoch = rewardUnfolding.getStartEpoch();
     auto epochOrder = rewardUnfolding.getEpochComputationOrder(initEpoch);
     EpochCheckingData cachedData;
-    ValueType precision = rewardUnfolding.getRequiredEpochModelPrecision(
-        initEpoch, storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()));
+    ValueType const globalPrecision = this->getWeightedPrecision() / storm::utility::convertNumber<ValueType>(4.0);  // 4=2*2:
+    // We divide the precision by 2 to distribute the approximation error over weighted (minmax) optimization and linear equation solving
+    // We again divide by 2 to account for the fact that we only compute a mid-point p such that the real value is in [p - precision, p + precision].
+    ValueType const epochPrecision = rewardUnfolding.getRequiredEpochModelPrecision(initEpoch, globalPrecision);
     Environment newEnv = env;
-    newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
-    newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+    newEnv.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
+    newEnv.solver().setLinearEquationSolverPrecision(storm::utility::convertNumber<storm::RationalNumber>(epochPrecision));
     storm::utility::ProgressMeasurement progress("epochs");
     progress.setMaxCount(epochOrder.size());
     progress.startNewMeasurement(0);
@@ -119,10 +126,16 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
             weightVector, headers);
     }
     auto solution = rewardUnfolding.getInitialStateResult(initEpoch);
-    auto solutionIt = solution.begin();
-    ++solutionIt;
-    underApproxResult = std::vector<ValueType>(solutionIt, solution.end());
-    overApproxResult = underApproxResult;
+    ValueType const precisionOffset = env.solver().isForceExact() ? storm::utility::zero<ValueType>() : globalPrecision;
+    // compute a point p that is known to be achievable and a value v with sup_{r is achievable} w*r <= v (when assuming only maximizing objectives)
+    // We can use the facts that the computed solutions for the individual objectives are within precisionOffset of the actual values
+    weightedSum = solution[0] + precisionOffset;  // upper bound on sup_{r is achievable} w*r
+    achievablePoint.emplace(this->objectives.size());
+    for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
+        auto& p_i = achievablePoint.value()[objIndex];
+        bool const isMax = storm::solver::maximize(this->objectives[objIndex].formula->getOptimalityType());
+        p_i = solution[objIndex + 1] + (isMax ? -precisionOffset : precisionOffset);
+    }
 }
 
 template<class SparseMdpModelType>
@@ -362,16 +375,16 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::updateCachedDa
 
 template<class SparseMdpModelType>
 std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType>
-RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getUnderApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(underApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
-    return underApproxResult.get();
+RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getAchievablePoint() const {
+    STORM_LOG_THROW(achievablePoint, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
+    return achievablePoint.value();
 }
 
 template<class SparseMdpModelType>
-std::vector<typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType>
-RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getOverApproximationOfInitialStateResults() const {
-    STORM_LOG_THROW(overApproxResult, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
-    return overApproxResult.get();
+typename RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::ValueType
+RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::getOptimalWeightedSum() const {
+    STORM_LOG_THROW(weightedSum, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
+    return weightedSum.value();
 }
 
 template class RewardBoundedMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;

@@ -40,6 +40,9 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
     indicatorConstraints = multiobjectiveSettings.isIndicatorConstraintsSet();
     redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
 
+    if (multiobjectiveSettings.isWeightedSumApproximationTradeoffSet()) {
+        approximationTradeoff = multiobjectiveSettings.getWeightedSumApproximationTradeoff();
+    }
     if (multiobjectiveSettings.isMaxStepsSet()) {
         maxSteps = multiobjectiveSettings.getMaxSteps();
     }
@@ -147,6 +150,22 @@ bool MultiObjectiveModelCheckerEnvironment::getUseRedundantBsccConstraints() con
 
 void MultiObjectiveModelCheckerEnvironment::setUseRedundantBsccConstraints(bool value) {
     redundantBsccConstraints = value;
+}
+
+bool MultiObjectiveModelCheckerEnvironment::isApproximationTradeoffSet() const {
+    return approximationTradeoff.is_initialized();
+}
+
+storm::RationalNumber const& MultiObjectiveModelCheckerEnvironment::getApproximationTradeoff() const {
+    return approximationTradeoff.get();
+}
+
+void MultiObjectiveModelCheckerEnvironment::setApproximationTradeoff(storm::RationalNumber const& value) {
+    approximationTradeoff = value;
+}
+
+void MultiObjectiveModelCheckerEnvironment::unsetApproximationTradeoff() {
+    approximationTradeoff = boost::none;
 }
 
 bool MultiObjectiveModelCheckerEnvironment::isMaxStepsSet() const {
