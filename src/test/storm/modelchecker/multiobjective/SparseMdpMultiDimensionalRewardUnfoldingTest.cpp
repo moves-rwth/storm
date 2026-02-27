@@ -288,8 +288,6 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_lower_bounds) {
     EXPECT_EQ(expectedResult, result->asExplicitQuantitativeCheckResult<storm::RationalNumber>()[initState]);
 }
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-
 TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
     storm::Environment env;
 
@@ -368,9 +366,6 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
 }
 
 TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
     storm::Environment env;
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/one_dim_walk.nm";
@@ -602,5 +597,3 @@ TEST_F(SparseMdpMultiDimensionalRewardUnfoldingTest, lower_bounds) {
     EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
-
-#endif /* STORM_HAVE_Z3_OPTIMIZE */

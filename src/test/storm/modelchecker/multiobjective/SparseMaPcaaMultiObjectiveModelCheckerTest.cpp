@@ -1,7 +1,6 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/api/storm.h"
 #include "storm/environment/Environment.h"
@@ -18,7 +17,16 @@
 #include "storm/storage/geometry/Polytope.h"
 #include "storm/storage/jani/Property.h"
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
+class SparseMaPcaaMultiObjectiveModelCheckerTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -56,11 +64,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
-
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -107,11 +111,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
         << result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->toString(true);
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
-
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -151,7 +151,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
                     ->contains(expectedAchievableValues));
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj) {
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -180,10 +180,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -213,7 +210,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj)
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -326,10 +323,7 @@ std::vector<std::vector<ValueType>> convertPointset(std::vector<std::vector<std:
     return out;
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, simple_lra) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, simple_lra) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -413,10 +407,7 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, simple_lra) {
     }
 }
 
-TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
-    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
-        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
-    }
+TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -461,5 +452,3 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
             << "Pareto point missing.";
     }
 }
-
-#endif /* STORM_HAVE_Z3_OPTIMIZE */

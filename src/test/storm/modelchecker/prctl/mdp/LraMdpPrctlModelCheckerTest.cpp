@@ -120,12 +120,8 @@ class LraMdpPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseValueTypeValueIterationEnvironment, SparseValueTypeLinearProgrammingEnvironment, SparseSoundEnvironment
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-                         ,
-                         SparseRationalLinearProgrammingEnvironment
-#endif
-                         >
+typedef ::testing::Types<SparseValueTypeValueIterationEnvironment, SparseValueTypeLinearProgrammingEnvironment, SparseSoundEnvironment,
+                         SparseRationalLinearProgrammingEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(LraMdpPrctlModelCheckerTest, TestingTypes, );

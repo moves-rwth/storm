@@ -144,12 +144,7 @@ void printVersion() {
 #ifdef STORM_HAVE_Z3
     unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
     Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-    STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber
-                                                  << " (with optimization features).\n");
-#else
     STORM_PRINT("Linked with Z3 Theorem Prover v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
-#endif
 #else
     STORM_PRINT("Not linked with Z3 Theorem Prover\n");
 #endif
