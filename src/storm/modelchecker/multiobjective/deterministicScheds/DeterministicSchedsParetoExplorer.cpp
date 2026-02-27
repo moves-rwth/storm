@@ -306,7 +306,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
     }
     lpChecker = std::make_shared<DeterministicSchedsLpChecker<SparseModelType, GeometryValueType>>(*model, objectiveHelper);
     if (preprocessorResult.containsOnlyTotalRewardFormulas()) {
-        wvChecker = storm::modelchecker::multiobjective::WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
+        wvChecker = storm::modelchecker::multiobjective::createWeightVectorChecker(preprocessorResult);
     } else {
         wvChecker = nullptr;
     }
@@ -468,12 +468,11 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::init
         std::vector<GeometryValueType> pointCoord;
         GeometryValueType offset;
         if (wvChecker) {
+            wvChecker->setWeightedPrecision(storm::utility::convertNumber<ModelValueType>(env.solver().minMax().getPrecision()));
             wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
-            pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+            pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
             negateMinObjectives(pointCoord);
-            auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
-            negateMinObjectives(upperBoundPoint);
-            offset = storm::utility::vector::dotProduct(weightVector, upperBoundPoint);
+            offset = wvChecker->getOptimalWeightedSum();
         } else {
             lpChecker->setCurrentWeightVector(env, weightVector);
             auto optionalPoint = lpChecker->check(env, overApproximation);
@@ -563,12 +562,11 @@ bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::opti
     std::vector<GeometryValueType> pointCoord;
     GeometryValueType offset;
     if (wvChecker) {
+        wvChecker->setWeightedPrecision(storm::utility::convertNumber<ModelValueType>(env.solver().minMax().getPrecision()));
         wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
-        pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getUnderApproximationOfInitialStateResults());
+        pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
         negateMinObjectives(pointCoord);
-        auto upperBoundPoint = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getOverApproximationOfInitialStateResults());
-        negateMinObjectives(upperBoundPoint);
-        offset = storm::utility::vector::dotProduct(f.getHalfspace().normalVector(), upperBoundPoint);
+        offset = wvChecker->getOptimalWeightedSum();
     } else {
         auto currentArea = overApproximation->intersection(f.getHalfspace().invert());
         auto optionalPoint = lpChecker->check(env, overApproximation, eps);

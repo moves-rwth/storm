@@ -1,6 +1,7 @@
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -8,9 +9,7 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsAchievabilityChecker.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
-#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
+#include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessor.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
@@ -42,13 +41,8 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     // Preprocess the model
     auto preprocessorResult = preprocessing::SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(env, model, formula, produceScheduler);
     swPreprocessing.stop();
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds.\n"
-                                                     << " Result: " << preprocessorResult << '\n');
-    } else {
-        STORM_LOG_INFO("Preprocessing done in " << swPreprocessing << " seconds.\n"
-                                                << " Result: " << preprocessorResult << '\n');
-    }
+    STORM_LOG_INFO("Preprocessing done in " << swPreprocessing << " seconds.\n"
+                                            << " Result: " << preprocessorResult << '\n');
 
     // Invoke the analysis
     storm::utility::Stopwatch swAnalysis(true);
@@ -73,27 +67,14 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                     }
                 }
             } else {
-                std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>> query;
-                switch (preprocessorResult.queryType) {
-                    case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability:
-                        query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>>(
-                            new SparsePcaaAchievabilityQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                        break;
-                    case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Quantitative:
-                        query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>>(
-                            new SparsePcaaQuantitativeQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                        break;
-                    case preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Pareto:
-                        query = std::unique_ptr<SparsePcaaQuery<SparseModelType, storm::RationalNumber>>(
-                            new SparsePcaaParetoQuery<SparseModelType, storm::RationalNumber>(preprocessorResult));
-                        break;
-                    default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
-                                        "The multi-objective query type is not supported for the selected solution method '" << toString(method) << "'.");
-                        break;
+                SparsePcaaQuery<SparseModelType, storm::RationalNumber> query(preprocessorResult);
+                // Adapt environment for the query
+                auto subEnv = env;
+                if (storm::NumberTraits<typename SparseModelType::ValueType>::IsExact) {
+                    subEnv.solver().setForceExact(true);
                 }
-
-                result = query->check(env, produceScheduler);
+                // Solve the query
+                result = query.check(subEnv, produceScheduler);
                 if (produceScheduler) {
                     STORM_LOG_THROW(result->isExplicitParetoCurveCheckResult(), storm::exceptions::UnexpectedException,
                                     "Scheduler computation is not implement for the produced result type.");
@@ -103,10 +84,6 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                         // we have information to post-process schedulers
                         transformObjectiveSchedulersToOriginal(preprocessorResult.memoryIncorporationReverseData.value(), paretoRes.getSchedulers());
                     }
-                }
-
-                if (env.modelchecker().multi().isExportPlotSet()) {
-                    query->exportPlotOfCurrentApproximation(env);
                 }
             }
             break;

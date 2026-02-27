@@ -76,8 +76,7 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Enviro
             stepBoundIt->second.set(objIndex);
 
             // There is no error for the values of these objectives.
-            this->offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
-            this->offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
+            this->offsetsToAchievablePoint[objIndex] = storm::utility::zero<ValueType>();
         }
     }
 
@@ -123,6 +122,16 @@ void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Enviro
         }
         --currentEpoch;
     }
+}
+
+template<class SparseMdpModelType>
+typename SparseMdpModelType::ValueType StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::getWeightedPrecisionUnboundedPhase() const {
+    return this->getWeightedPrecision();  // No approx. error in bounded phase.
+}
+
+template<class SparseMdpModelType>
+typename SparseMdpModelType::ValueType StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::getWeightedPrecisionBoundedPhase() const {
+    return storm::utility::zero<ValueType>();  // No approx. error in bounded phase.
 }
 
 template class StandardMdpPcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>;

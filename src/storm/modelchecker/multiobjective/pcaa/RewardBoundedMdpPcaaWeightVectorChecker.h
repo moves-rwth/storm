@@ -36,14 +36,8 @@ class RewardBoundedMdpPcaaWeightVectorChecker : public PcaaWeightVectorChecker<S
      */
     virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) override;
 
-    /*!
-     * Retrieves the results of the individual objectives at the initial state of the given model.
-     * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
-     * Also note that there is no guarantee that the under/over approximation is in fact correct
-     * as long as the underlying solution methods are unsound (e.g., standard value iteration).
-     */
-    virtual std::vector<ValueType> getUnderApproximationOfInitialStateResults() const override;
-    virtual std::vector<ValueType> getOverApproximationOfInitialStateResults() const override;
+    virtual std::vector<ValueType> getAchievablePoint() const override;
+    ValueType getOptimalWeightedSum() const override;
 
    private:
     struct EpochCheckingData {
@@ -71,8 +65,8 @@ class RewardBoundedMdpPcaaWeightVectorChecker : public PcaaWeightVectorChecker<S
 
     helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, false> rewardUnfolding;
 
-    boost::optional<std::vector<ValueType>> underApproxResult;
-    boost::optional<std::vector<ValueType>> overApproxResult;
+    std::optional<std::vector<ValueType>> achievablePoint;
+    std::optional<ValueType> weightedSum;
 };
 
 }  // namespace multiobjective

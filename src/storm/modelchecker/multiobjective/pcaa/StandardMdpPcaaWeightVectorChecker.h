@@ -43,6 +43,9 @@ class StandardMdpPcaaWeightVectorChecker : public StandardPcaaWeightVectorChecke
     virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper(
         storm::storage::SparseMatrix<ValueType> const& transitions) const override;
 
+    virtual ValueType getWeightedPrecisionUnboundedPhase() const override;
+    virtual ValueType getWeightedPrecisionBoundedPhase() const override;
+
    private:
     /*!
      * Computes the maximizing scheduler for the weighted sum of the objectives, including also step bounded objectives.

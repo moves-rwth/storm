@@ -56,6 +56,11 @@ class MultiObjectiveModelCheckerEnvironment {
     bool getUseRedundantBsccConstraints() const;
     void setUseRedundantBsccConstraints(bool value);
 
+    bool isApproximationTradeoffSet() const;
+    storm::RationalNumber const& getApproximationTradeoff() const;
+    void setApproximationTradeoff(storm::RationalNumber const& value);
+    void unsetApproximationTradeoff();
+
     bool isMaxStepsSet() const;
     uint64_t const& getMaxSteps() const;
     void setMaxSteps(uint64_t const& value);
@@ -82,6 +87,7 @@ class MultiObjectiveModelCheckerEnvironment {
     bool bsccOrderEncoding;
     bool redundantBsccConstraints;
     boost::optional<uint64_t> maxSteps;
+    boost::optional<storm::RationalNumber> approximationTradeoff;
     boost::optional<storm::storage::SchedulerClass> schedulerRestriction;
     bool printResults;
     bool useLexicographicModelChecking;
