@@ -312,10 +312,6 @@ else()
     message(WARNING "Storm - Not linking with Z3. Building of Prism/JANI models will not be supported.")
 endif()
 
-if(Z3_FOUND)
-    # TODO We may remove STORM_Z3_API_USES_STANDARD_INTEGERS checks
-    set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
-endif()
 
 #############################################################
 ##
