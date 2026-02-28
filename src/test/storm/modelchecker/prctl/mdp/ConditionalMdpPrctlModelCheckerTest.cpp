@@ -49,6 +49,30 @@ class SparseDoubleBisectionAdvancedEnvironment {
     }
 };
 
+class SparseDoubleBisectionPtEnvironment {
+   public:
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionPolicyTracking);
+        return env;
+    }
+};
+
+class SparseDoubleBisectionAdvancedPtEnvironment {
+   public:
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking);
+        return env;
+    }
+};
+
 class SparseDoublePiEnvironment {
    public:
     static const bool isExact = false;
@@ -94,6 +118,30 @@ class SparseRationalNumberBisectionAdvancedEnvironment {
     static storm::Environment createEnvironment() {
         storm::Environment env;
         env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvanced);
+        return env;
+    }
+};
+
+class SparseRationalNumberBisectionPtEnvironment {
+   public:
+    static const bool isExact = true;
+    typedef storm::RationalNumber ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionPolicyTracking);
+        return env;
+    }
+};
+
+class SparseRationalNumberBisectionAdvancedPtEnvironment {
+   public:
+    static const bool isExact = true;
+    typedef storm::RationalNumber ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.modelchecker().setConditionalAlgorithmSetting(storm::ConditionalAlgorithmSetting::BisectionAdvancedPolicyTracking);
         return env;
     }
 };
@@ -159,9 +207,10 @@ class ConditionalMdpPrctlModelCheckerTest : public ::testing::Test {
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<SparseDoubleRestartEnvironment, SparseDoubleBisectionEnvironment, SparseDoubleBisectionAdvancedEnvironment, SparseDoublePiEnvironment,
+typedef ::testing::Types<SparseDoubleRestartEnvironment, SparseDoubleBisectionEnvironment, SparseDoubleBisectionAdvancedEnvironment,
+                         SparseDoubleBisectionPtEnvironment, SparseDoubleBisectionAdvancedPtEnvironment, SparseDoublePiEnvironment,
                          SparseRationalNumberRestartEnvironment, SparseRationalNumberBisectionEnvironment, SparseRationalNumberBisectionAdvancedEnvironment,
-                         SparseRationalNumberPiEnvironment>
+                         SparseRationalNumberBisectionPtEnvironment, SparseRationalNumberBisectionAdvancedPtEnvironment, SparseRationalNumberPiEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(ConditionalMdpPrctlModelCheckerTest, TestingTypes, );
