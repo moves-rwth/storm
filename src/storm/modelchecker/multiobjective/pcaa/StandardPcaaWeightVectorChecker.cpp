@@ -6,7 +6,7 @@
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
@@ -49,7 +49,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
                         "for all objectives. Be aware that solutions yielding infinite reward are discarded.");
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-    STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!preprocessorResult.containsRewardBoundedObjective(), storm::exceptions::NotSupportedException,
                     "At least one objective was not reduced to an expected (long run, total or cumulative) reward objective during preprocessing. This is not "
                     "supported by the considered weight vector checker.");
     STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
@@ -142,9 +142,14 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
 }
 
 template<class SparseModelType>
-void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
+void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
     // See https://doi.org/10.18154/RWTH-2023-09669 Algorithm 4.2
     checkHasBeenCalled = true;
+    // Normalize weights so the vector has length 1
+    ValueType const normalizationFactor =
+        storm::utility::one<ValueType>() / storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    STORM_LOG_THROW(!storm::utility::isZero(normalizationFactor), storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
+    storm::utility::vector::scaleVectorInPlace(weightVector, normalizationFactor);
     STORM_LOG_INFO("Invoked WeightVectorChecker with weights \n"
                    << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
 
@@ -196,7 +201,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
                        getAchievablePoint()[objIndex];
     }
     ValueType resultingWeightedPrecision = storm::utility::abs<ValueType>(getOptimalWeightedSum() - weightedSum);
-    resultingWeightedPrecision /= storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    // Since the weight vector is normalized (has length 1), the resultingWeightedPrecision coincides with the distance between over- and under-approximaiton
     STORM_LOG_WARN_COND(resultingWeightedPrecision <= this->getWeightedPrecision() + storm::utility::convertNumber<ValueType>(1e-10),
                         "The desired precision was not reached: resulting precision "
                             << resultingWeightedPrecision << " exceeds specified value " << this->getWeightedPrecision() << " by approx. "
@@ -207,7 +212,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
 
 template<class SparseModelType>
 std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::getAchievablePoint() const {
-    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
+    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
     std::vector<ValueType> res;
     res.reserve(this->objectives.size());
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
@@ -218,14 +223,14 @@ std::vector<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType
 
 template<class SparseModelType>
 typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType StandardPcaaWeightVectorChecker<SparseModelType>::getOptimalWeightedSum() const {
-    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
+    STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::InvalidOperationException, "Tried to retrieve results but check(..) has not been called before.");
     return this->weightedResult[initialState] + this->offsetToWeightedSum;
 }
 
 template<class SparseModelType>
 storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
 StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
-    STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException,
+    STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::InvalidOperationException,
                     "Tried to retrieve results but check(..) has not been called before.");
     for (auto const& obj : this->objectives) {
         STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isLongRunAverageRewardFormula(),

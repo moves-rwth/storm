@@ -46,9 +46,9 @@ class PcaaWeightVectorChecker {
      *       we optimize sum_i p_i * (isMinimizing[i] ? -weightVector[i] : weightVector[i]), where p_i is the value of objective i
      *       For instance, a uniform weight vector like weightVector = (1, 1, ..., 1) will give equal weight to all (minimizing and maximizing) objectives.
      * @param env
-     * @param weightVector
+     * @param weightVector the weight vector of the current check. There must be at least one non-zero entry.
      */
-    virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) = 0;
+    virtual void check(Environment const& env, std::vector<ValueType> weightVector) = 0;
 
     /*!
      * Retrieves the result of the individual objectives at the initial state of the given model.

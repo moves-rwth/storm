@@ -49,7 +49,7 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
      * - extracts the scheduler that induces this optimum
      * - computes for each objective the value induced by this scheduler
      */
-    virtual void check(Environment const& env, std::vector<ValueType> const& weightVector) override;
+    virtual void check(Environment const& env, std::vector<ValueType> weightVector) override;
 
     virtual std::vector<ValueType> getAchievablePoint() const override;
     ValueType getOptimalWeightedSum() const override;

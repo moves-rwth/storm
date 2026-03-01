@@ -41,7 +41,7 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
     redundantBsccConstraints = multiobjectiveSettings.isRedundantBsccConstraintsSet();
 
     if (multiobjectiveSettings.isWeightedSumApproximationTradeoffSet()) {
-        approximationTradeoff = multiobjectiveSettings.getWeightedSumApproximationTradeoff();
+        approximationTradeoff = storm::utility::convertNumber<storm::RationalNumber>(multiobjectiveSettings.getWeightedSumApproximationTradeoff());
     }
     if (multiobjectiveSettings.isMaxStepsSet()) {
         maxSteps = multiobjectiveSettings.getMaxSteps();

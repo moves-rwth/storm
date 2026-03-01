@@ -56,6 +56,12 @@ class MultiObjectiveModelCheckerEnvironment {
     bool getUseRedundantBsccConstraints() const;
     void setUseRedundantBsccConstraints(bool value);
 
+    /*!
+     * Configure approximation tradeoff between accuracy of weighted sum optimization vs. Pareto curve exploration.
+     * See gamma in https://doi.org/10.18154/RWTH-2023-09669, Alg. 3.3. We must have 0 < gamma < 1.
+     * A small value means that weighted sum optimization is done with higher accuracy, which can lead to convergence of Pareto exploration within fewer steps.
+     * If no value is set explicitly, a value is set heuristically based on precision requirements.
+     */
     bool isApproximationTradeoffSet() const;
     storm::RationalNumber const& getApproximationTradeoff() const;
     void setApproximationTradeoff(storm::RationalNumber const& value);

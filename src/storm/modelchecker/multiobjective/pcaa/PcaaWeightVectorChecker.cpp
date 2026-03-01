@@ -1,11 +1,10 @@
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/multiobjective/pcaa/RewardBoundedMdpPcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/pcaa/StandardMaPcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/pcaa/StandardMdpPcaaWeightVectorChecker.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -24,7 +23,7 @@ void PcaaWeightVectorChecker<ModelType>::setWeightedPrecision(ValueType const& v
 
 template<typename ModelType>
 typename PcaaWeightVectorChecker<ModelType>::ValueType const& PcaaWeightVectorChecker<ModelType>::getWeightedPrecision() const {
-    STORM_LOG_THROW(weightedPrecision.has_value(), storm::exceptions::IllegalFunctionCallException, "The weighted precision has not been set.");
+    STORM_LOG_THROW(weightedPrecision.has_value(), storm::exceptions::InvalidOperationException, "The weighted precision has not been set.");
     return weightedPrecision.value();
 }
 
@@ -64,14 +63,15 @@ template<typename ModelType>
 std::unique_ptr<PcaaWeightVectorChecker<ModelType>> createWeightVectorChecker(
     preprocessing::SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
     if constexpr (std::is_same_v<ModelType, storm::models::sparse::Mdp<typename ModelType::ValueType>>) {
-        if (preprocessorResult.containsOnlyTrivialObjectives()) {
-            return std::make_unique<StandardMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
-        } else {
-            STORM_LOG_DEBUG("Query contains reward bounded formula");
+        if (preprocessorResult.containsRewardBoundedObjective()) {
             return std::make_unique<RewardBoundedMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
+        } else {
+            return std::make_unique<StandardMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
         }
     } else {
         static_assert(std::is_same_v<ModelType, storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>);
+        STORM_LOG_THROW(!preprocessorResult.containsRewardBoundedObjective(), storm::exceptions::NotSupportedException,
+                        "Reward-bounded objectives are not supported for multi-objective Markov automata.");
         return std::make_unique<StandardMaPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
     }
 }
