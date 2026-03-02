@@ -144,14 +144,15 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
 template<class SparseModelType>
 void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
     // See https://doi.org/10.18154/RWTH-2023-09669 Algorithm 4.2
+    STORM_LOG_INFO("Invoked WeightVectorChecker with weights \n"
+                   << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
+    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::utility::isZero(w_i); }),
+                    storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     checkHasBeenCalled = true;
     // Normalize weights so the vector has length 1
     ValueType const normalizationFactor =
         storm::utility::one<ValueType>() / storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    STORM_LOG_THROW(!storm::utility::isZero(normalizationFactor), storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     storm::utility::vector::scaleVectorInPlace(weightVector, normalizationFactor);
-    STORM_LOG_INFO("Invoked WeightVectorChecker with weights \n"
-                   << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
 
     // Prepare and invoke weighted infinite horizon (long run average) phase
     std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());

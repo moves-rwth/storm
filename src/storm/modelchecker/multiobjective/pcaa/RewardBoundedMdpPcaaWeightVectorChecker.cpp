@@ -69,13 +69,15 @@ RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPc
 
 template<class SparseMdpModelType>
 void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environment const& env, std::vector<ValueType> weightVector) {
+    STORM_LOG_THROW(std::any_of(weightVector.begin(), weightVector.end(), [](auto const& w_i) { return !storm::utility::isZero(w_i); }),
+                    storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     ++numChecks;
+    STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": " << storm::utility::vector::toString(weightVector));
+
     // Normalize weights so the vector has length 1
     ValueType const normalizationFactor =
         storm::utility::one<ValueType>() / storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    STORM_LOG_THROW(!storm::utility::isZero(normalizationFactor), storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     storm::utility::vector::scaleVectorInPlace(weightVector, normalizationFactor);
-    STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": " << storm::utility::vector::toString(weightVector));
 
     // In case we want to export the cdf, we will collect the corresponding data
     std::vector<std::vector<ValueType>> cdfData;

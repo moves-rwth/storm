@@ -566,7 +566,7 @@ bool DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::opti
         wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(f.getHalfspace().normalVector()));
         pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
         negateMinObjectives(pointCoord);
-        offset = wvChecker->getOptimalWeightedSum();
+        offset = storm::utility::convertNumber<GeometryValueType>(wvChecker->getOptimalWeightedSum());
     } else {
         auto currentArea = overApproximation->intersection(f.getHalfspace().invert());
         auto optionalPoint = lpChecker->check(env, overApproximation, eps);
