@@ -423,7 +423,6 @@ inline void ensureNoUndefinedPropertyConstants(std::vector<storm::jani::Property
 
 inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
 
     SymbolicInput output = input;
 
@@ -431,6 +430,8 @@ inline std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicIn
     if (ioSettings.isPropertiesAsMultiSet()) {
         STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidArgumentException,
                         "Can not translate properties to multi-objective formula because no properties were specified.");
+        // If we come from storm-pars, the following fails as multiObjectiveSettings are not loaded
+        auto multiObjSettings = storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>();
         output.properties = {storm::api::createMultiObjectiveProperty(output.properties, multiObjSettings.isLexicographicModelCheckingSet())};
     }
 
@@ -586,8 +587,18 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
     } else if (ioSettings.isExplicitDRNSet()) {
         storm::parser::DirectEncodingParserOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
-        result = storm::api::buildExplicitDRNModel<ValueType>(ioSettings.getExplicitDRNFilename(), options);
-    } else if (ioSettings.isExplicitUmbSet()) {
+        using enum storm::parser::DirectEncodingValueType;
+        storm::parser::DirectEncodingValueType valueType{Default};
+        if constexpr (std::is_same_v<ValueType, double>) {
+            valueType = Double;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            valueType = Rational;
+        } else {
+            static_assert(std::is_same_v<ValueType, storm::RationalFunction>, "Unexpected value type.");
+            valueType = Parametric;
+        }
+        result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
+     } else if (ioSettings.isExplicitUmbSet()) {
         storm::umb::ImportOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
@@ -622,7 +633,7 @@ inline std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const&
                 return buildModelSparse<VT>(input, options);
             });
         }
-    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet() || ioSettings.isExplicitUmbSet()) {
+    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
         result = applyValueType(mpi.buildValueType, [&ioSettings]<typename VT>() {
@@ -753,7 +764,7 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
                 break;
             case storm::io::ModelExportFormat::Drn: {
-                storm::io::DirectEncodingOptions options;
+                storm::io::DirectEncodingExporterOptions options;
                 options.allowPlaceholders = !ioSettings.isExplicitExportPlaceholdersDisabled();
                 options.compression = ioSettings.getCompressionMode();
                 if (ioSettings.isExportDigitsSet()) {
@@ -899,18 +910,6 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModelImpl
         }
         result->first = storm::api::transformSymbolicToSparseModel(symbolicModel, formulas);
         STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The translation to a sparse model is not supported for the given model type.");
-    }
-
-    auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-    if (result && result->first->isSparseModel()) {
-        if (auto order = transformationSettings.getModelPermutation(); order.has_value()) {
-            auto seed = transformationSettings.getModelPermutationSeed();
-            STORM_PRINT_AND_LOG("Permuting model states using " << storm::utility::permutation::orderKindtoString(order.value()) << " order"
-                                                                << (seed.has_value() ? " with seed " + std::to_string(seed.value()) : "") << ".\n");
-            result->first = storm::api::permuteModelStates(result->first->template as<storm::models::sparse::Model<ValueType>>(), order.value(), seed)
-                                ->template as<storm::models::Model<ExportValueType>>();
-            result->second = true;
-        }
     }
 
     return *result;

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <memory>
 
-#include "storm/io/DirectEncodingOptions.h"
+#include "storm/io/DirectEncodingExporterOptions.h"
 #include "storm/models/sparse/Model.h"
 
 namespace storm {
@@ -20,7 +20,7 @@ namespace io {
  */
 template<typename ValueType>
 void explicitExportSparseModel(std::filesystem::path const& filename, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
-                               std::vector<std::string> const& parameters, DirectEncodingOptions const& options = DirectEncodingOptions());
+                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options = DirectEncodingExporterOptions());
 
 /*!
  * Exports a sparse model into the explicit DRN format.
@@ -32,7 +32,7 @@ void explicitExportSparseModel(std::filesystem::path const& filename, std::share
  */
 template<typename ValueType>
 void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel,
-                               std::vector<std::string> const& parameters, DirectEncodingOptions const& options = DirectEncodingOptions());
+                               std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options = DirectEncodingExporterOptions());
 
 /*!
  * Accumulate parameters in the model.

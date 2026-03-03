@@ -30,7 +30,13 @@ inline std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitMod
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(
     std::string const& drnFile, storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
-    return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile, options);
+    return storm::parser::parseDirectEncodingModel<ValueType>(drnFile, options);
+}
+
+inline std::shared_ptr<storm::models::ModelBase> buildExplicitDRNModel(
+    std::string const& drnFile, storm::parser::DirectEncodingValueType valueType = storm::parser::DirectEncodingValueType::Default,
+    storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
+    return storm::parser::parseDirectEncodingModel(drnFile, valueType, options);
 }
 
 inline std::shared_ptr<storm::models::ModelBase> buildExplicitUmbModel(std::string const& umbLocation, storm::umb::ImportOptions const& options = {}) {

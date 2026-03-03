@@ -611,6 +611,37 @@ class BitVector {
     std::size_t getSizeInBytes() const;
 
     /*!
+     * Retrieves the number of buckets of the underlying storage.
+     *
+     * @return The number of buckets of the underlying storage.
+     */
+    size_t bucketCount() const;
+
+    /*!
+     * Sets the bits in the given bucket to the given value.
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @param value The bit values to set for the bucket. The most significant bit is interpreted as the bit with the smallest index, e.g.,
+     *              value=2^63 sets the bit with index bucketIndex*64 to 1 and all other bits in the bucket to 0.
+     *              value=1 sets the bit with index bucketIndex*64+63 to 1 and all other bits in the bucket to 0.
+     * @note: bucketIndex must be below bucketCount().
+     * @note: If the size of this BitVector is not a multiple of 64, the last bucket with index bucketCount() - 1 contains (64 - size() % 64) many unused bits.
+     *        These bits are the least significant bits in the bucket and the value given to these bits is ignored.
+     */
+    void setBucket(uint64_t bucketIndex, uint64_t value);
+
+    /*!
+     * Gets the bits in the given bucket
+     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
+     * @return The values of the bits in the given bucket. The most significant bit is interpreted as the bit with the smallest index, e.g.,
+     *         2^63 means the bit with index bucketIndex*64 is 1 and all other bits in the bucket are 0.
+     *         1 means the bit with index bucketIndex*64+63 is 1 and all other bits in the bucket are 0.
+     * @note: bucketIndex must be below bucketCount().
+     * @note If the size of this BitVector is not a multiple of 64, the last bucket with index bucketCount() - 1 contains (64 - size() % 64) many unused bits.
+     *       These bits are the least significant bits in the bucket and guaranteed to be 0 (false)
+     */
+    uint64_t getBucket(uint64_t bucketIndex) const;
+
+    /*!
      * Returns an iterator to the indices of the set bits in the bit vector.
      * Initially, the iterator points to the smallest index of a bit with value 1
      */
@@ -698,29 +729,6 @@ class BitVector {
      * @return True, if the intervals were swapped, false if nothing changed.
      */
     bool compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length);
-
-    /*!
-     * Retrieves the number of buckets of the underlying storage.
-     *
-     * @return The number of buckets of the underlying storage.
-     */
-    size_t bucketCount() const;
-
-    /*!
-     * Sets the bits in the given bucket to the given value.
-     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
-     * @param value The values to set. E.g., 1ull sets bit i*64 to 1 and all other bits in the bucket to 0
-     * @note: bucketIndex must be below bucketCount(). Values for bitindices > size() are ignored
-     */
-    void setBucket(uint64_t bucketIndex, uint64_t value);
-
-    /*!
-     * Gets the bits in the given bucket to the given value.
-     * @param bucketIndex The bucket. Bucket index i refers to the 64 bits with index i*64 to i*64+63.
-     * @return The values of the bits in the given bucket.
-     * @note: bucketIndex must be below bucketCount(). Values for bitindices > size() are always 0
-     */
-    uint64_t getBucket(uint64_t bucketIndex) const;
 
     friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
 

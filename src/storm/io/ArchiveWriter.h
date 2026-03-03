@@ -7,14 +7,12 @@
 #include <string>
 #include <vector>
 
+#include "storm-config.h"
+#include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/MissingLibraryException.h"
 #include "storm/io/CompressionMode.h"
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm-config.h"
 
 #ifdef STORM_HAVE_LIBARCHIVE
 #include <archive.h>
@@ -156,7 +154,7 @@ class ArchiveWriter {
         // Free the entry metadata after we finish writing
         archive_entry_free(entry);
 #else
-        throw storm::exceptions::NotSupportedException() << "Writing archives is not supported. Storm is compiled without LibArchive.";
+        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Writing archives is not supported. Storm is compiled without LibArchive.");
 #endif
     }
 

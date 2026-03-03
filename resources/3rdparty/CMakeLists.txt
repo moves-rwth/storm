@@ -45,35 +45,33 @@ list(APPEND STORM_DEP_TARGETS l3pp)
 ############################################################# 
 
 if(NOT STORM_DISABLE_LIBARCHIVE)
-    if(MACOSX)
-        # following https://stackoverflow.com/a/76916842
-        # Homebrew ships libarchive keg only, include dirs have to be set manually
-        execute_process(
-                COMMAND brew --prefix libarchive
-                ERROR_QUIET
-                OUTPUT_VARIABLE LIBARCHIVE_PREFIX
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if (NOT "${LIBARCHIVE_PREFIX}" STREQUAL "" )
-            if(EXISTS "${LIBARCHIVE_PREFIX}/include/archive.h")
-                set(LibArchive_INCLUDE_DIR "${LIBARCHIVE_PREFIX}/include")
-            else()
-                message(STATUS "Storm - LibArchive  not found in ${LIBARCHIVE_PREFIX}/include.")
-            endif()
-        endif()
+    if(MACOSX AND LibArchive_ROOT STREQUAL "")
+        # macOS already provides libarchive but no include files.
+        # We catch the common case where libarchive is installed via homebrew following https://stackoverflow.com/a/76916842.
+        # Homebrew ships libarchive keg only. We try to get a hint where libarchive is located
+        find_program(_LibArchive_BREW_EXECUTABLE brew)
+        if (_LibArchive_BREW_EXECUTABLE)
+            execute_process(
+                    COMMAND "${_LibArchive_BREW_EXECUTABLE}" --prefix libarchive
+                    ERROR_QUIET # Ignore any error, e.g. if brew is not installed.
+                    OUTPUT_VARIABLE LibArchive_ROOT
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        endif ()
+        unset(_LibArchive_BREW_EXECUTABLE)
     endif()
     find_package(LibArchive QUIET)
-    if(TARGET LibArchive::LibArchive)
+    if(LibArchive_FOUND)
         SET(STORM_HAVE_LIBARCHIVE ON)
         message (STATUS "Storm - Linking with LibArchive (version: ${LibArchive_VERSION}, libraries: ${LibArchive_LIBRARIES}, include: ${LibArchive_INCLUDE_DIRS}).")
         list(APPEND STORM_DEP_IMP_TARGETS LibArchive::LibArchive)
     else()
         SET(STORM_HAVE_LIBARCHIVE OFF)
-        message (WARNING "Storm - LibArchive not found. Loading and exporting compressed files will not be supported.")
+        message (STATUS "Storm - LibArchive not found. Loading and exporting UMB models and compressed files will not be supported.")
 	endif()
 else()
     SET(STORM_HAVE_LIBARCHIVE OFF)
-    message (WARNING "Storm - Not linking with LibArchive. Loading and exporting compressed files such will not be supported.")
+    message (STATUS "Storm - Not linking with LibArchive. Loading and exporting UMB models and compressed files will not be supported.")
 endif()
 
 #############################################################
@@ -123,17 +121,16 @@ endif()
 #############################################################
 
 # Checkout Eigen
-# We're checking out Eigen using the (currently not officially released) version 3.4.1
-# See here https://gitlab.com/libeigen/eigen/-/commit/bae907b8f6078b1df290729eef946360315bd312
-# The current official release is 3.4.0 which results in issues, see https://github.com/moves-rwth/storm/issues/162
-message(STATUS "Storm - Including Eigen commit bae907b8f6078b1df290729eef946360315bd312 (unofficial 3.4.1 release).")
+# https://gitlab.com/libeigen/eigen/
+set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
+message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
 ExternalProject_Add(
         eigen_src
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG bae907b8f6078b1df290729eef946360315bd312
+        GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen
         # First check whether patch was already applied (--reverse --check), otherwise apply patch
-        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen341alpha.patch
+        PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch --reverse --check -q || git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen501.patch
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
@@ -141,23 +138,23 @@ ExternalProject_Add(
         LOG_DOWNLOAD ON
         LOG_INSTALL ON
 )
-add_library(eigen3storm INTERFACE) # Not imported, we are in control of the sources.
-add_dependencies(eigen3storm eigen_src)
+add_library(eigenstorm INTERFACE) # Not imported, we are in control of the sources.
+add_dependencies(eigenstorm eigen_src)
 if(STORM_WARNING_AS_ERROR AND STORM_COMPILER_GCC)
         # Ignore warning in Eigen
-        target_compile_options(eigen3storm INTERFACE -Wno-class-memaccess)
+        target_compile_options(eigenstorm INTERFACE -Wno-class-memaccess)
 endif()
 # note that we include without StormEigen
-target_include_directories(eigen3storm INTERFACE
+target_include_directories(eigenstorm INTERFACE
         $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}>
         $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}>
 )
-install(TARGETS eigen3storm EXPORT storm_Targets)
+install(TARGETS eigenstorm EXPORT storm_Targets)
 install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/
         DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/StormEigen
         PATTERN ".git" EXCLUDE)
-add_dependencies(storm_resources eigen3storm)
-list(APPEND STORM_DEP_TARGETS eigen3storm)
+add_dependencies(storm_resources eigenstorm)
+list(APPEND STORM_DEP_TARGETS eigenstorm)
 
 #############################################################
 ##
@@ -455,6 +452,7 @@ SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
 SET(THREAD_SAFE ON) #carl thread safe code
 SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
 SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
+SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})
 SET(PORTABLE ${STORM_PORTABLE})
 SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?

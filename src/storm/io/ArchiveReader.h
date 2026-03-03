@@ -6,14 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "storm/utility/bitoperations.h"
-#include "storm/utility/macros.h"
-
-#include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/storage/BitVector.h"
-
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_LIBARCHIVE
@@ -21,7 +13,13 @@
 #include <archive_entry.h>
 #endif
 
-namespace storm::io {
+namespace storm {
+
+namespace storage {
+class BitVector;
+}
+
+namespace io {
 static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "This code is not supported for mixed endian systems.");
 
 class ArchiveReader {
@@ -113,13 +111,13 @@ class ArchiveReader {
 
     /*!
      * @return an iterator to the beginning of the archive entries
-     * @throws if libarchive is not installed.
+     * @throws MissingLibraryException if libarchive is not installed.
      */
     Iterator begin() const;
 
     /*!
      * @return an iterator to the end of the archive entries
-     * @throws if libarchive is not installed
+     * @throws MissingLibraryException if libarchive is not installed
      */
     Iterator end() const;
 
@@ -127,12 +125,11 @@ class ArchiveReader {
     std::filesystem::path const file;
 };
 
-using ArchiveReadEntry = typename ArchiveReader::ArchiveReadEntry;
-
 /*!
  * Reads an archive file
  * @param file path to an archive file
  * @return A range-like object to iterate over the entries in the archive.
  */
 ArchiveReader openArchive(std::filesystem::path const& file);
-}  // namespace storm::io
+}  // namespace io
+}  // namespace storm

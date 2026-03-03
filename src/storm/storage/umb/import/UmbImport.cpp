@@ -45,39 +45,39 @@ void prepareAnnotations(storm::umb::UmbModel& umbModel) {
     }
 }
 
-std::filesystem::path getFilePath(storm::io::ArchiveReadEntry const& src) {
+std::filesystem::path getFilePath(typename storm::io::ArchiveReader::ArchiveReadEntry const& src) {
     return src.name();
 }
 
 template<typename VecT>
     requires std::same_as<VecT, std::vector<typename VecT::value_type>>
-VecT importVector(storm::io::ArchiveReadEntry& src) {
+VecT importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src) {
     return src.template toVector<typename VecT::value_type>();
 }
 
 template<typename VecT>
     requires std::same_as<VecT, storm::storage::BitVector>
-VecT importVector(storm::io::ArchiveReadEntry& src) {
+VecT importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src) {
     return src.template toVector<bool>();
 }
 
 template<typename VecT>
-void importVector(storm::io::ArchiveReadEntry& src, std::optional<VecT>& target) {
+void importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, std::optional<VecT>& target) {
     target = importVector<VecT>(src);
 }
 
 template<typename VecT>
     requires(!IsOptional<VecT>)
-void importVector(storm::io::ArchiveReadEntry& src, VecT& target) {
+void importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, VecT& target) {
     target = importVector<VecT>(src);
 }
 
 template<typename ValueType>
-void importGenericVector(storm::io::ArchiveReadEntry& src, GenericVector& target) {
+void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, GenericVector& target) {
     target.template set<ValueType>(importVector<typename GenericVector::template Vec<ValueType>>(src));
 }
 
-void importGenericVector(storm::io::ArchiveReadEntry& src, SizedType const& type, GenericVector& target) {
+void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, SizedType const& type, GenericVector& target) {
     using enum Type;
     switch (type.type) {
         case Bool:
@@ -108,7 +108,7 @@ void importGenericVector(storm::io::ArchiveReadEntry& src, SizedType const& type
     }
 }
 
-void importGenericVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, GenericVector& target) {
+void importGenericVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, GenericVector& target) {
     // Find type information in the index that matches the given src.
     auto srcPath = getFilePath(src);
     std::vector<std::string> srcPathVec(srcPath.begin(), srcPath.end());
@@ -151,9 +151,11 @@ void importGenericVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelInde
 // Forward declare function so that it can be called recursively
 template<typename UmbStructure>
     requires HasFileNames<UmbStructure>
-bool importVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, UmbStructure& umbStructure, std::filesystem::path const& context);
+bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, UmbStructure& umbStructure,
+                  std::filesystem::path const& context);
 
-bool importVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, FileNameMap auto& umbStructure, std::filesystem::path const& context) {
+bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, FileNameMap auto& umbStructure,
+                  std::filesystem::path const& context) {
     // Assumes that the file name maps are pre-filled (see prepareAnnotations).
     for (auto& [key, value] : umbStructure) {
         if (importVector(src, index, value, context / key)) {
@@ -165,7 +167,8 @@ bool importVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelIndex const
 
 template<typename UmbStructure>
     requires HasFileNames<UmbStructure>
-bool importVector(storm::io::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, UmbStructure& umbStructure, std::filesystem::path const& context) {
+bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, storm::umb::ModelIndex const& index, UmbStructure& umbStructure,
+                  std::filesystem::path const& context) {
     static_assert(UmbStructure::FileNames.size() == boost::pfr::tuple_size_v<UmbStructure>, "Number of file names does not match number of fields in struct.");
 
     // helper to check if src is in the given path

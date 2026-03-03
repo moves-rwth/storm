@@ -1,4 +1,4 @@
-#include "CompressionMode.h"
+#include "storm/io/CompressionMode.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
