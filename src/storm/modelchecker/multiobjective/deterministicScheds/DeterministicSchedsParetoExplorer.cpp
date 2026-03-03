@@ -472,7 +472,7 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::init
             wvChecker->check(env, storm::utility::vector::convertNumericVector<ModelValueType>(weightVector));
             pointCoord = storm::utility::vector::convertNumericVector<GeometryValueType>(wvChecker->getAchievablePoint());
             negateMinObjectives(pointCoord);
-            offset = wvChecker->getOptimalWeightedSum();
+            offset = storm::utility::convertNumber<GeometryValueType>(wvChecker->getOptimalWeightedSum());
         } else {
             lpChecker->setCurrentWeightVector(env, weightVector);
             auto optionalPoint = lpChecker->check(env, overApproximation);

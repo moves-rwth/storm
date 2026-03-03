@@ -150,9 +150,9 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
                     storm::exceptions::InvalidOperationException, "Weight vector must not be the zero vector.");
     checkHasBeenCalled = true;
     // Normalize weights so the vector has length 1
-    ValueType const normalizationFactor =
-        storm::utility::one<ValueType>() / storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    storm::utility::vector::scaleVectorInPlace(weightVector, normalizationFactor);
+    // This is necessary for ensuring the required accuracy, i.e. distance between halfspace induced by weightedSum and weightvector and achievable point.
+    ValueType const inputWeightVectorLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::utility::one<ValueType>() / (inputWeightVectorLength));
 
     // Prepare and invoke weighted infinite horizon (long run average) phase
     std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
@@ -209,6 +209,11 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
                             << (storm::utility::convertNumber<double, ValueType>(resultingWeightedPrecision - this->getWeightedPrecision()))
                             << ". Weight vector is" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector))
                             << ".");
+    if (!storm::utility::isOne(inputWeightVectorLength)) {
+        // reverse the normalization of the weight vector for the returned optimal weighted sum.
+        storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightedResult, inputWeightVectorLength);
+        offsetToWeightedSum *= inputWeightVectorLength;
+    }
 }
 
 template<class SparseModelType>

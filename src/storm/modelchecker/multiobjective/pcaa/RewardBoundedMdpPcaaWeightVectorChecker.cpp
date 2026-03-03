@@ -74,10 +74,10 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     ++numChecks;
     STORM_LOG_INFO("Analyzing weight vector #" << numChecks << ": " << storm::utility::vector::toString(weightVector));
 
-    // Normalize weights so the vector has length 1
-    ValueType const normalizationFactor =
-        storm::utility::one<ValueType>() / storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
-    storm::utility::vector::scaleVectorInPlace(weightVector, normalizationFactor);
+    // Normalize weights so the vector has length 1.
+    // This is necessary for ensuring the required accuracy, i.e. distance between halfspace induced by weightedSum and weightvector and achievable point.
+    ValueType const inputWeightVectorLength = storm::utility::sqrt(storm::utility::vector::dotProduct(weightVector, weightVector));
+    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(weightVector, storm::utility::one<ValueType>() / (inputWeightVectorLength));
 
     // In case we want to export the cdf, we will collect the corresponding data
     std::vector<std::vector<ValueType>> cdfData;
@@ -137,6 +137,8 @@ void RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::check(Environm
     // compute a point p that is known to be achievable and a value v with sup_{r is achievable} w*r <= v (when assuming only maximizing objectives)
     // We can use the facts that the computed solutions for the individual objectives are within precisionOffset of the actual values
     weightedSum = solution[0] + precisionOffset;  // upper bound on sup_{r is achievable} w*r
+    // reverse the normalization of the weight vector for the returned optimal weighted sum.
+    weightedSum.value() *= inputWeightVectorLength;
     achievablePoint.emplace(this->objectives.size());
     for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
         auto& p_i = achievablePoint.value()[objIndex];
