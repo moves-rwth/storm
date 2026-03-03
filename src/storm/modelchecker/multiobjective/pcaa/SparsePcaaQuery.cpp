@@ -266,7 +266,10 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
                         "Producing schedulers is currently not supported for (numerical) achievability queries.");
         // TODO: to get a scheduler, we need to find a convex combination of the achievable points that yields the reference point (using LP)
         if (optObjIndex.has_value()) {
-            GeometryValueType result = referencePoint[optObjIndex.value()];
+            // Return the middle-value of the result interval [ referencePoint[optObjIndex], referencePoint[optObjIndex] + multiPrecisoin ]
+            GeometryValueType result =
+                referencePoint[optObjIndex.value()] + (storm::utility::convertNumber<GeometryValueType>(env.modelchecker().multi().getPrecision()) /
+                                                       storm::utility::convertNumber<GeometryValueType, uint64_t>(2));
             auto resultForOriginalModel =
                 storm::utility::convertNumber<ModelValueType>(transformObjectiveValueToOriginal(objectives[optObjIndex.value()], result));
 
