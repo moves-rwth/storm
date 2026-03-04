@@ -42,14 +42,14 @@ ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm:
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues,
-                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                          std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(truthValues), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues,
-                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                          std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(std::move(truthValues)), scheduler(scheduler) {
     // Intentionally left empty.
 }
