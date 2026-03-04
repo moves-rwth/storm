@@ -5,6 +5,7 @@
 #include "storm/api/storm.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
@@ -125,6 +126,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
     storm::Environment getPositionalDeterministicEnvironment() {
         auto env = TestType::getEnv();
         env.modelchecker().multi().setSchedulerRestriction(storm::storage::SchedulerClass().setPositional().setIsDeterministic());
+        env.solver().setForceExact(true);
         return env;
     }
 
@@ -132,6 +134,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
         auto env = TestType::getEnv();
         env.modelchecker().multi().setSchedulerRestriction(
             storm::storage::SchedulerClass().setMemoryPattern(storm::storage::SchedulerClass::MemoryPattern::GoalMemory).setIsDeterministic());
+        env.solver().setForceExact(true);
         return env;
     }
 

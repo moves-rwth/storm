@@ -53,6 +53,19 @@ class MultiObjectiveSettings : public ModuleSettings {
     bool getPrecisionRelativeToDiff() const;
 
     /*!
+     * Retrieve approximation tradeoff between accuracy of weighted sum optimization vs. Pareto curve exploration.
+     * See gamma in https://doi.org/10.18154/RWTH-2023-09669, Alg. 3.3. We must have 0 < gamma < 1.
+     * A small value means that weighted sum optimization is done with higher accuracy, which can lead to convergence of Pareto exploration within fewer steps.
+     * If no value is set explicitly, a value is set heuristically based on precision requirements.
+     */
+    double getWeightedSumApproximationTradeoff() const;
+
+    /*!
+     * Retrieves whether the fraction of approximation error was set explicitly.
+     */
+    bool isWeightedSumApproximationTradeoffSet() const;
+
+    /*!
      * Retrieves whether or not a threshold for the number of performed refinement steps is given.
      *
      * @return True if a threshold for the number of performed refinement steps is given.
@@ -141,6 +154,7 @@ class MultiObjectiveSettings : public ModuleSettings {
     const static std::string methodOptionName;
     const static std::string exportPlotOptionName;
     const static std::string precisionOptionName;
+    const static std::string weightedSumApproximationTradeoffOptionName;
     const static std::string maxStepsOptionName;
     const static std::string schedulerRestrictionOptionName;
     const static std::string printResultsOptionName;
