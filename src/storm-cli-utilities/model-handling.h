@@ -598,7 +598,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
             valueType = Parametric;
         }
         result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
-     } else if (ioSettings.isExplicitUmbSet()) {
+    } else if (ioSettings.isExplicitUmbSet()) {
         storm::umb::ImportOptions options;
         options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
         options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
