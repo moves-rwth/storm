@@ -1,28 +1,20 @@
 #include "storm-pars/transformer/RobustParameterLifter.h"
 
+#include <carl/core/rootfinder/RootFinder.h>
 #include <algorithm>
 #include <cmath>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
-#include <type_traits>
 #include <vector>
-
-#include <carl/core/rootfinder/RootFinder.h>
 
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/environment/Environment.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/modelchecker/results/CheckResult.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/solver/SmtlibSmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
@@ -30,7 +22,6 @@
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-#include "storm/utility/vector.h"
 
 std::unordered_map<storm::RationalFunction, storm::transformer::Annotation> storm::transformer::BigStep::lastSavedAnnotations;
 

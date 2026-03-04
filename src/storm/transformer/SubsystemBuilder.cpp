@@ -2,18 +2,17 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/builder.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"

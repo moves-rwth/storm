@@ -1,5 +1,4 @@
-
-#include "LpSolver.h"
+#include "storm/solver/LpSolver.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/Expression.h"

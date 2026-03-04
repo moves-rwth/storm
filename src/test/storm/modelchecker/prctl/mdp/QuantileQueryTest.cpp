@@ -19,8 +19,6 @@
 
 namespace {
 
-enum class MdpEngine { PrismSparse, JaniSparse, Hybrid, PrismDd, JaniDd };
-
 class UnsoundEnvironment {
    public:
     typedef double ValueType;

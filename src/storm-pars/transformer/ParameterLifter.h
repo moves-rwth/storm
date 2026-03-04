@@ -8,7 +8,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/utility/parametric.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"  // TODO: use forward header
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -55,26 +55,6 @@ class ParameterLifter {
                     bool useMonotonicity = false);
 
     void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
-
-    /*!
-     * Specifies the region for the parameterlifter, the Bitvector works as a fixed (partial) scheduler, this might not give sound results!
-     * @param region the region
-     * @param dirForParameters the optimization direction
-     * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
-     */
-    void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
-                       storm::storage::BitVector const& selectedRows);
-
-    /*!
-     * Specifies the region for the parameterlifter, the reachability order is used to see if there is local monotonicity, such that a fixed (partial) scheduler
-     * can be used
-     * @param region the region
-     * @param dirForParameters the optimization direction
-     * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
-     */
-    void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters,
-                       std::shared_ptr<storm::analysis::Order> reachabilityOrder,
-                       std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
     // Returns the resulting matrix. Should only be called AFTER specifying a region
     storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;

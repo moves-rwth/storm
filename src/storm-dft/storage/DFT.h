@@ -85,8 +85,6 @@ class DFT {
 
     DFT<ValueType> optimize() const;
 
-    void copyElements(std::vector<size_t> elements, storm::dft::builder::DFTBuilder<ValueType> builder) const;
-
     size_t stateBitVectorSize() const {
         // Ensure multiple of 64
         return (mStateVectorSize / 64 + (mStateVectorSize % 64 != 0)) * 64;

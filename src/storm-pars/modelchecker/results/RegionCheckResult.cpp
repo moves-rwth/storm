@@ -132,8 +132,6 @@ void RegionCheckResult<ValueType>::filter(QualitativeCheckResult const& filter) 
     // Hence, this is intentionally left empty.
 }
 
-#ifdef STORM_HAVE_CARL
 template class RegionCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

@@ -2,19 +2,17 @@
 
 #include <boost/optional.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/models/sparse/Ctmc.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace storage {

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
 #include <set>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalNumberForward.h"
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionAdapter.h"  // TODO: use forward header
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StateLabeling.h"
 

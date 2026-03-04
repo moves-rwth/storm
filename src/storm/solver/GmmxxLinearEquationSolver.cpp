@@ -1,11 +1,11 @@
 #include "GmmxxLinearEquationSolver.h"
 
-#include <cmath>
 #include <utility>
 
 #include "storm/adapters/GmmxxAdapter.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/exceptions/AbortException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
@@ -114,7 +114,7 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
                     gmm::gmres(*gmmxxA, x, b, gmm::identity_matrix(), env.solver().gmmxx().getRestartThreshold(), iter);
                 }
             }
-        } catch (storm::exceptions::AbortException const& e) {
+        } catch (storm::exceptions::AbortException const&) {
             // Do nothing
         }
 

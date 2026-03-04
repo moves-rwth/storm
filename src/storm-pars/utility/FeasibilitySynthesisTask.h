@@ -1,8 +1,8 @@
 #pragma once
 
 #include <optional>
+
 #include "storm-pars/storage/ParameterRegion.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/logic/Bound.h"
 #include "storm/logic/Formula.h"
 #include "storm/solver/OptimizationDirection.h"

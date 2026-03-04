@@ -3,28 +3,19 @@
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/ExpressionTranslator.h"
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
-
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/storage/BitVector.h"
-
-#include "storm/storage/prism/Program.h"
-
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
-
-#include "storm/models/symbolic/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/WrongFormatException.h"
+#include "storm/storage/prism/Program.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::gbar {
 namespace abstraction {
@@ -325,9 +316,7 @@ void PrismMenuGameAbstractor<DdType, ValueType>::notifyGuardsArePredicates() {
 // Explicitly instantiate the class.
 template class PrismMenuGameAbstractor<storm::dd::DdType::CUDD, double>;
 template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, double>;
-#ifdef STORM_HAVE_CARL
 template class PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalNumber>;
-#endif
 }  // namespace prism
 }  // namespace abstraction
 }  // namespace storm::gbar

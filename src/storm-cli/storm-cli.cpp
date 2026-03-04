@@ -8,7 +8,9 @@
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
 

@@ -1,26 +1,17 @@
 #include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
 #include <algorithm>
-#include <boost/iterator/zip_iterator.hpp>
 #include <chrono>
-#include <iomanip>
 #include <unordered_map>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/utility/ConstantsComparator.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 
 namespace storm {
 namespace storage {
@@ -37,7 +28,7 @@ DeterministicModelBisimulationDecomposition<ModelType>::DeterministicModelBisimu
 
 template<typename ModelType>
 std::pair<storm::storage::BitVector, storm::storage::BitVector> DeterministicModelBisimulationDecomposition<ModelType>::getStatesWithProbability01() {
-    return storm::utility::graph::performProb01(this->backwardTransitions, this->options.phiStates.get(), this->options.psiStates.get());
+    return storm::utility::graph::performProb01(this->backwardTransitions, this->options.phiStates.value(), this->options.psiStates.value());
 }
 
 template<typename ModelType>
@@ -107,7 +98,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::initializeSilentPro
         Block<BlockDataType> const* currentBlockPtr = &this->partition.getBlock(state);
         for (auto const& successorEntry : this->model.getTransitionMatrix().getRowGroup(state)) {
             if (&this->partition.getBlock(successorEntry.getColumn()) == currentBlockPtr) {
-                silentProbabilities[state] += successorEntry.getValue();
+                silentProbabilities[state] += getTransitionValue(successorEntry, state);
             }
         }
     }
@@ -322,7 +313,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingSta
             }
 
             // We keep track of the probability of the predecessor moving to the splitter.
-            increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
+            increaseProbabilityToSplitter(predecessor, predecessorBlock, getTransitionValue(predecessorEntry, predecessor));
 
             // Only move the state if it has not been seen as a predecessor before.
             storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
@@ -330,7 +321,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingSta
                 moveStateToMarker1(predecessor, predecessorBlock);
             }
 
-            // We must not insert the the splitter itself if we are not computing a weak bisimulation on CTMCs.
+            // We must not insert the splitter itself if we are not computing a weak bisimulation on CTMCs.
             if (this->options.getType() != BisimulationType::Weak || this->model.getType() != storm::models::ModelType::Ctmc || predecessorBlock != splitter) {
                 insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
             }
@@ -361,7 +352,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::updateSilentProbabi
             ValueType newSilentProbability = storm::utility::zero<ValueType>();
             for (auto const& successorEntry : this->model.getTransitionMatrix().getRow(*stateIt)) {
                 if (this->partition.getBlock(successorEntry.getColumn()) == block) {
-                    newSilentProbability += successorEntry.getValue();
+                    newSilentProbability += getTransitionValue(successorEntry, *stateIt);
                 }
             }
             silentProbabilities[*stateIt] = newSilentProbability;
@@ -410,7 +401,7 @@ std::vector<storm::storage::BitVector> DeterministicModelBisimulationDecompositi
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
 
-                    if (this->comparator.isZero(predecessorEntry.getValue())) {
+                    if (storm::utility::isZero(predecessorEntry.getValue())) {
                         continue;
                     }
 
@@ -475,7 +466,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBl
 
 template<typename ModelType>
 void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(
-    bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks,
+    bisimulation::Block<BlockDataType> const& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks,
     std::vector<bisimulation::Block<BlockDataType>*>& splitterQueue) {
     for (auto block : predecessorBlocks) {
         if (block->data().hasRewards()) {
@@ -548,9 +539,9 @@ void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBase
             }
 
             // We keep track of the probability of the predecessor moving to the splitter.
-            increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
+            increaseProbabilityToSplitter(predecessor, predecessorBlock, getTransitionValue(predecessorEntry, predecessor));
 
-            // We only need to move the predecessor if its not already known as a predecessor already.
+            // We only need to move the predecessor if it is not already known as a predecessor already.
             if (predecessorPosition >= predecessorBlock.data().marker1()) {
                 // If the predecessor block is not the splitter, we can move the state easily.
                 if (predecessorBlock != splitter) {
@@ -604,7 +595,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 
     // Prepare the new state labeling for (b).
     storm::models::sparse::StateLabeling newLabeling(this->size());
-    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.get();
+    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.value();
     atomicPropositionsSet.insert("init");
     std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
     for (auto const& ap : atomicPropositions) {
@@ -667,9 +658,10 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
 
                 auto probIterator = blockProbability.find(targetBlock);
                 if (probIterator != blockProbability.end()) {
-                    probIterator->second += entry.getValue();
+                    probIterator->second += getTransitionValue(entry, representativeState);
                 } else {
-                    blockProbability[targetBlock] = entry.getValue();
+                    blockProbability[targetBlock] = getTransitionValue(entry, representativeState);
+                    ;
                 }
             }
 
@@ -722,18 +714,30 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
     }
 
     // Finally construct the quotient model.
-    this->quotient = std::shared_ptr<ModelType>(new ModelType(builder.build(), std::move(newLabeling), std::move(rewardModels)));
+    this->quotient = std::make_shared<ModelType>(builder.build(), std::move(newLabeling), std::move(rewardModels));
+}
+
+template<typename ModelType>
+DeterministicModelBisimulationDecomposition<ModelType>::ValueType DeterministicModelBisimulationDecomposition<ModelType>::getTransitionValue(
+    storm::storage::MatrixEntry<storm::storage::sparse::state_type, ValueType> const& matrixEntry, storm::storage::sparse::state_type state) const {
+    if constexpr (std::is_same_v<ModelType, storm::models::sparse::Ctmc<typename ModelType::ValueType>>) {
+        auto transitionValue = matrixEntry.getValue();
+        // TODO: enable when removing CTMC rate matrix
+        // transitionValue *= this->model.getExitRateVector().at(state);
+        return transitionValue;
+    } else {
+        STORM_LOG_ASSERT(this->model.isDiscreteTimeModel(), "Unhandled model type");
+        return matrixEntry.getValue();
+    }
 }
 
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
 
-#ifdef STORM_HAVE_CARL
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>>;
 
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
 template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
-#endif
 }  // namespace storage
 }  // namespace storm

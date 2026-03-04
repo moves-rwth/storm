@@ -82,7 +82,6 @@ class SparseDerivativeInstantiationModelChecker {
     void initializeInstantiatedMatrix(storage::SparseMatrix<FunctionType>& matrix, storage::SparseMatrix<ConstantType>& matrixInstantiated,
                                       std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>>& matrixMapping,
                                       std::unordered_map<FunctionType, ConstantType>& functions);
-    void setup(Environment const& env, modelchecker::CheckTask<storm::logic::Formula, FunctionType> const& checkTask);
 
     utility::Stopwatch instantiationWatch;
     utility::Stopwatch approximationWatch;

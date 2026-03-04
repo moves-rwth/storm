@@ -23,16 +23,6 @@ class BEOrderParser {
      * @return List of BE ids corresponding to the BEs in the given DFT.
      */
     static std::vector<size_t> parseBEOrder(std::string const& filename, storm::dft::storage::DFT<ValueType> const& dft);
-
-   private:
-    /*!
-     * Parse element name (strip quotation marks, etc.).
-     *
-     * @param name Element name.
-     *
-     * @return Name.
-     */
-    static std::string parseName(std::string const& name);
 };
 
 }  // namespace parser

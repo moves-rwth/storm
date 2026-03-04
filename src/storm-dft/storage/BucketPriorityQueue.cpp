@@ -1,8 +1,9 @@
-#include "BucketPriorityQueue.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/macros.h"
+#include "storm-dft/storage/BucketPriorityQueue.h"
 
 #include <cmath>
+
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm::dft {
 namespace storage {

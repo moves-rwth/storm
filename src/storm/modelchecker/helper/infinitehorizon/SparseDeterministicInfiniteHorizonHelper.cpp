@@ -1,29 +1,23 @@
-#include "SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 
 #include <numeric>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
-
+#include "storm/solver/LinearEquationSolver.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-
-#include "storm/utility/SignalHandler.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
-
-#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -38,10 +32,7 @@ SparseDeterministicInfiniteHorizonHelper<ValueType>::SparseDeterministicInfinite
 template<typename ValueType>
 SparseDeterministicInfiniteHorizonHelper<ValueType>::SparseDeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                               std::vector<ValueType> const& exitRates)
-    : SparseInfiniteHorizonHelper<ValueType, false>(transitionMatrix, exitRates) {
-    // For the CTMC case we assert that the caller actually provided the probabilistic transitions
-    STORM_LOG_ASSERT(this->_transitionMatrix.isProbabilistic(), "Non-probabilistic transitions");
-}
+    : SparseInfiniteHorizonHelper<ValueType, false>(transitionMatrix, exitRates) {}
 
 template<typename ValueType>
 void SparseDeterministicInfiniteHorizonHelper<ValueType>::createDecomposition() {

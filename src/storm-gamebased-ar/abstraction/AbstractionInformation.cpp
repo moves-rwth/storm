@@ -509,7 +509,7 @@ std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueTy
 
     std::vector<std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>>> result;
     for (auto const& choice : splitChoices) {
-        result.emplace_back(this->decodeChoiceToUpdateSuccessorMapping<ValueType>(choice));
+        result.emplace_back(this->template decodeChoiceToUpdateSuccessorMapping<ValueType>(choice));
     }
 
     return result;

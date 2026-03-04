@@ -3,18 +3,15 @@
 #include <string>
 
 #include "storm-parsers/parser/MappedFile.h"
-#include "storm/exceptions/FileIoException.h"
+#include "storm-parsers/util/cstring.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/WrongFormatException.h"
-
-#include "storm-parsers/util/cstring.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+
 namespace storm {
 namespace parser {
 
@@ -342,14 +339,12 @@ template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionPa
 template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parse(
     std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
 
-#ifdef STORM_HAVE_CARL
 template class NondeterministicSparseTransitionParser<storm::Interval>;
 
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parseNondeterministicTransitionRewards<double>(
     std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
 template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parse<double>(
     std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
-#endif
 
 }  // namespace parser
 }  // namespace storm

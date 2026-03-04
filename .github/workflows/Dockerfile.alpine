@@ -6,7 +6,7 @@
 # --build-arg BASE_IMAGE=<new_base_image>
 
 # Set base image
-ARG BASE_IMAGE=alpine:latest
+ARG BASE_IMAGE=alpine:edge
 FROM $BASE_IMAGE
 LABEL org.opencontainers.image.authors="dev@stormchecker.org"
 
@@ -21,12 +21,13 @@ ARG no_threads=4
 # CMake build type
 ARG build_type=Release
 # Carl tag to use
-ARG carl_tag="14.33"
+ARG carl_tag="14.34"
 # Specify Storm configuration (ON/OFF)
 ARG disable_cudd="OFF"
 ARG disable_glpk="OFF"
 ARG disable_gmm="OFF"
 ARG disable_gurobi="OFF"
+ARG disable_libarchive="OFF"
 ARG disable_mathsat="OFF"
 ARG disable_soplex="OFF"
 ARG disable_spot="OFF"
@@ -44,8 +45,6 @@ ARG cmake_args=""
 # Additional Alpine packages
 ARG packages=""
 
-RUN echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-RUN echo "@community https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk add --no-cache \
     bash \
     cmake \
@@ -57,12 +56,14 @@ RUN apk add --no-cache \
     automake \
     libc-dev \
     linux-headers \
+    patch \
     boost-dev \
     gmp-dev \
-    cln-dev@testing \
-    ginac-dev@testing \
-    z3-dev@community \
-    glpk-dev@community \
+    cln-dev \
+    ginac-dev \
+    z3-dev \
+    glpk-dev \
+    libarchive-dev \
     $packages
 
 
@@ -86,6 +87,7 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
           -DSTORM_DISABLE_GLPK=$disable_glpk \
           -DSTORM_DISABLE_GMM=$disable_gmm \
           -DSTORM_DISABLE_GUROBI=$disable_gurobi \
+          -DSTORM_DISABLE_LIBARCHIVE=$disable_libarchive \
           -DSTORM_DISABLE_MATHSAT=$disable_mathsat \
           -DSTORM_DISABLE_SOPLEX=$disable_soplex \
           -DSTORM_DISABLE_SPOT=$disable_spot \

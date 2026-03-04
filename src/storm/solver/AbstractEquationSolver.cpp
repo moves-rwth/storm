@@ -1,10 +1,8 @@
 #include "storm/solver/AbstractEquationSolver.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/SignalHandler.h"
@@ -376,10 +374,8 @@ SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status
 
 template class AbstractEquationSolver<double>;
 
-#ifdef STORM_HAVE_CARL
 template class AbstractEquationSolver<storm::RationalNumber>;
 template class AbstractEquationSolver<storm::RationalFunction>;
-#endif
 
 }  // namespace solver
 }  // namespace storm

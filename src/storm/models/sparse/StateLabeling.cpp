@@ -38,7 +38,7 @@ bool StateLabeling::operator==(StateLabeling const& other) const {
 }
 
 StateLabeling StateLabeling::getSubLabeling(storm::storage::BitVector const& states) const {
-    return StateLabeling(ItemLabeling::getSubLabeling(states));
+    return StateLabeling(ItemLabeling::getSubItemLabeling(states));
 }
 
 std::set<std::string> StateLabeling::getLabelsOfState(storm::storage::sparse::state_type state) const {

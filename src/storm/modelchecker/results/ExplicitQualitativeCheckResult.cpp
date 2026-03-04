@@ -1,4 +1,4 @@
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first
+#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 

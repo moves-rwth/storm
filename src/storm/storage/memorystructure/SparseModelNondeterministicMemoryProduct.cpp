@@ -1,14 +1,12 @@
 #include "storm/storage/memorystructure/SparseModelNondeterministicMemoryProduct.h"
 
-#include <limits>
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/sparse/ModelComponents.h"
 #include "storm/utility/graph.h"
-
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
 namespace storage {

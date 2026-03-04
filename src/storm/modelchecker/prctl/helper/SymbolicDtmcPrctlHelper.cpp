@@ -6,7 +6,6 @@
 #include "storm/solver/SymbolicLinearEquationSolver.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"

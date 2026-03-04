@@ -1,4 +1,5 @@
-#include "SparseLTLSchedulerHelper.h"
+#include "storm/modelchecker/helper/ltl/internal/SparseLTLSchedulerHelper.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/SchedulerChoice.h"
 #include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
@@ -189,7 +190,7 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::prepareScheduler(uin
                         // Set choice For non-accepting states that are not in any accepting EC
                         this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET),
                                                        reachScheduler->getChoice(pState)});
-                    };
+                    }
                     // All other InfSet combinations are unreachable (dontCare)
                     static_assert(DEFAULT_INFSET == 0, "This code assumes that the default infset is 0");
                     for (uint_fast64_t infSet = 1; infSet < _infSets.size(); ++infSet) {
@@ -334,12 +335,9 @@ storm::storage::Scheduler<ValueType> SparseLTLSchedulerHelper<ValueType, Nondete
 template class SparseLTLSchedulerHelper<double, false>;
 template class SparseLTLSchedulerHelper<double, true>;
 
-#ifdef STORM_HAVE_CARL
 template class SparseLTLSchedulerHelper<storm::RationalNumber, false>;
 template class SparseLTLSchedulerHelper<storm::RationalNumber, true>;
 template class SparseLTLSchedulerHelper<storm::RationalFunction, false>;
-
-#endif
 
 }  // namespace internal
 }  // namespace helper

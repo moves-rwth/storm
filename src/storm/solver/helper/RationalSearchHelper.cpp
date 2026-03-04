@@ -1,10 +1,12 @@
 #include "storm/solver/helper/RationalSearchHelper.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/vector.h"
 
 namespace storm::solver::helper {
 

@@ -2,13 +2,13 @@
 
 #include <vector>
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/utility/solver.h"
 
 namespace storm {
 

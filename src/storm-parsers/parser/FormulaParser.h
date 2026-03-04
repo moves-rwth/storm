@@ -63,8 +63,6 @@ class FormulaParser {
     void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
 
    private:
-    void addFormulasAsIdentifiers(storm::prism::Program const& program);
-
     // The manager used to parse expressions.
     std::shared_ptr<storm::expressions::ExpressionManager const> manager;
 

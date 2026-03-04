@@ -1,13 +1,10 @@
 #include "storm/storage/geometry/Polytope.h"
 
-#include <iostream>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/geometry/NativePolytope.h"
-#include "storm/utility/macros.h"
-
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/storage/geometry/NativePolytope.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -98,7 +95,6 @@ Polytope<ValueType>::~Polytope() {
     // Intentionally left empty
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::RationalNumber>::getVerticesInClockwiseOrder() const {
     std::vector<Point> vertices = getVertices();
@@ -154,7 +150,6 @@ std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::Rat
 
     return result;
 }
-#endif
 
 template<typename ValueType>
 std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVerticesInClockwiseOrder() const {
@@ -256,12 +251,10 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::clean() {
 template class Polytope<double>;
 template std::shared_ptr<Polytope<double>> Polytope<double>::convertNumberRepresentation() const;
 
-#ifdef STORM_HAVE_CARL
 template class Polytope<storm::RationalNumber>;
 template std::shared_ptr<Polytope<double>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
 template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<double>::convertNumberRepresentation() const;
 template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
-#endif
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm

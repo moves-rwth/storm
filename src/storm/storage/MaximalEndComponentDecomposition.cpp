@@ -1,11 +1,12 @@
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+
 #include <algorithm>
 #include <span>
 #include <sstream>
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/graph.h"
 

@@ -11,7 +11,6 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/jani/Property.h"
 
 class ModelInstantiatorTest : public ::testing::Test {
    protected:

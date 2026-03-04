@@ -111,7 +111,6 @@ void FailableElements::removeDependency(size_t id) {
     iter = std::find(failableNonconflictingDependencies.begin(), failableNonconflictingDependencies.end(), id);
     if (iter != failableNonconflictingDependencies.end()) {
         failableNonconflictingDependencies.erase(iter);
-        return;
     }
 }
 

@@ -1385,7 +1385,6 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::adjustActions(uint64_t total
         for (uint64_t i = getCurrentMdpState() + 1; i < exploredChoiceIndices.size(); i++) {
             exploredChoiceIndices[i] -= numberOfActionsToRemove;
         }
-        return;
     }
 }
 

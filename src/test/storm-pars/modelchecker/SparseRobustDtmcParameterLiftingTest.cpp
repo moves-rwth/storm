@@ -3,14 +3,11 @@
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/storm.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 class IsGraphPreserving {
@@ -72,8 +69,6 @@ typedef ::testing::Types<IsGraphPreserving, AssumeGraphPreserving> TestingTypes;
 TYPED_TEST_SUITE(SparseRobustDtmcParameterLiftingTest, TestingTypes, );
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P<=0.84 [F s=5 ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -108,8 +103,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob_no_simplification) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P<=0.84 [F s=5 ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -144,7 +137,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Prob_no_simplification) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew) {
-    typedef typename TestFixture::ValueType ValueType;
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "pL=0.9,TOAck=0.5";
@@ -178,8 +170,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew_4Par) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp_rewards16_2.pm";
     std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string constantsAsString = "";  //!! this model will have 4 parameters
@@ -212,8 +202,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Brp_Rew_4Par) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
@@ -250,8 +238,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_1Par) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "badC=0.3";  // e.g. pL=0.9,TOACK=0.5
@@ -285,8 +271,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_1Par) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_Const) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
     std::string constantsAsString = "PF=0.9,badC=0.2";
@@ -314,8 +298,6 @@ TYPED_TEST(SparseRobustDtmcParameterLiftingTest, Crowds_Prob_Const) {
 }
 
 TYPED_TEST(SparseRobustDtmcParameterLiftingTest, ZeroConf) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
     std::string formulaAsString = "P>0.5 [F s=5 ]";
     std::string constantsAsString = " n = 4";  // e.g. pL=0.9,TOACK=0.5

@@ -1,14 +1,10 @@
 #include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
-#include "storm/models/sparse/Mdp.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/utility/graph.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/utility/macros.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace storage {
@@ -34,10 +30,10 @@ std::pair<storm::storage::BitVector, storm::storage::BitVector> Nondeterministic
                     "Can only compute states with probability 0/1 with an optimization direction (min/max).");
     if (this->options.getOptimizationDirection() == OptimizationDirection::Minimize) {
         return storm::utility::graph::performProb01Min(this->model.getTransitionMatrix(), this->model.getTransitionMatrix().getRowGroupIndices(),
-                                                       this->model.getBackwardTransitions(), this->options.phiStates.get(), this->options.psiStates.get());
+                                                       this->model.getBackwardTransitions(), this->options.phiStates.value(), this->options.psiStates.value());
     } else {
         return storm::utility::graph::performProb01Max(this->model.getTransitionMatrix(), this->model.getTransitionMatrix().getRowGroupIndices(),
-                                                       this->model.getBackwardTransitions(), this->options.phiStates.get(), this->options.psiStates.get());
+                                                       this->model.getBackwardTransitions(), this->options.phiStates.value(), this->options.psiStates.value());
     }
 }
 
@@ -118,7 +114,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() 
 
     // Prepare the new state labeling for (b).
     storm::models::sparse::StateLabeling newLabeling(this->size());
-    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.get();
+    std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.value();
     atomicPropositionsSet.insert("init");
     std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
     for (auto const& ap : atomicPropositions) {
@@ -273,7 +269,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::updateQuotientDi
             }
 
             // Now shift the probability from this transition from the old block to the new one.
-            this->quotientDistributions[predecessorChoice].shiftProbability(oldBlock.getId(), newBlock.getId(), predecessorEntry.getValue());
+            this->quotientDistributions[predecessorChoice].shiftProbability(oldBlock.getId(), newBlock.getId(), predecessorEntry.getValue(), this->comparator);
         }
     }
 
@@ -298,7 +294,7 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
                 distribution.addProbability(this->partition.getBlock(element.getColumn()).getId(), element.getValue());
             }
 
-            if (!distribution.equals(quotientDistributions[choice])) {
+            if (!distribution.equals(quotientDistributions[choice], this->comparator)) {
                 std::cout << "the distributions for choice " << choice << " of state " << state << " do not match.\n";
                 std::cout << "is: " << quotientDistributions[choice] << " but should be " << distribution << '\n';
                 exit(-1);
@@ -307,7 +303,7 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
             bool less1 = distribution.less(quotientDistributions[choice], this->comparator);
             bool less2 = quotientDistributions[choice].less(distribution, this->comparator);
 
-            if (distribution.equals(quotientDistributions[choice]) && (less1 || less2)) {
+            if (distribution.equals(quotientDistributions[choice], this->comparator) && (less1 || less2)) {
                 std::cout << "mismatch of equality and less for \n";
                 std::cout << quotientDistributions[choice] << " vs " << distribution << '\n';
                 exit(-1);
@@ -444,10 +440,7 @@ void NondeterministicModelBisimulationDecomposition<ModelType>::refinePartitionB
 }
 
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>;
-
-#ifdef STORM_HAVE_CARL
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalNumber>>;
 template class NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>>;
-#endif
 }  // namespace storage
 }  // namespace storm

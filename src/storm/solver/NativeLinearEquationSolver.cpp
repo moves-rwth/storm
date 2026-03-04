@@ -4,7 +4,6 @@
 
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/solver/helper/GuessingValueIterationHelper.h"
@@ -14,7 +13,6 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
@@ -566,7 +564,7 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
                                         gviCallback);
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
-        *lowerX, *upperX, x, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+        *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -727,10 +725,8 @@ std::unique_ptr<LinearEquationSolverFactory<ValueType>> NativeLinearEquationSolv
 template class NativeLinearEquationSolver<double>;
 template class NativeLinearEquationSolverFactory<double>;
 
-#ifdef STORM_HAVE_CARL
 template class NativeLinearEquationSolver<storm::RationalNumber>;
 template class NativeLinearEquationSolverFactory<storm::RationalNumber>;
 
-#endif
 }  // namespace solver
 }  // namespace storm

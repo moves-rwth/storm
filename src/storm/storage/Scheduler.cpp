@@ -1,10 +1,11 @@
+#include "storm/storage/Scheduler.h"
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 

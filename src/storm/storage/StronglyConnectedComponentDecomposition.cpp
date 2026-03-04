@@ -1,12 +1,12 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm::storage {
 

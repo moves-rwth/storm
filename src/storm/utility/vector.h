@@ -1,20 +1,16 @@
-#ifndef STORM_UTILITY_VECTOR_H_
-#define STORM_UTILITY_VECTOR_H_
+#pragma once
 
 #include <algorithm>
+#include <boost/optional.hpp>
 #include <functional>
 #include <iosfwd>
 #include <numeric>
+
 #include "storm/adapters/RationalNumberAdapter.h"
-
-#include <boost/optional.hpp>
-
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
 namespace utility {
@@ -1162,5 +1158,3 @@ std::string toString(std::vector<ValueType> const& vector) {
 }  // namespace vector
 }  // namespace utility
 }  // namespace storm
-
-#endif /* STORM_UTILITY_VECTOR_H_ */

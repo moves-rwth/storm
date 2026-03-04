@@ -1,12 +1,10 @@
 #pragma once
+
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 
-#include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
-#include "storm/modelchecker/results/CheckResult.h"
 #include "storm/models/ModelRepresentation.h"
-#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
@@ -23,7 +21,7 @@ namespace helper {
 namespace lexicographic {
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
+class LexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
    public:
     typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
     typedef storm::transformer::SubsystemBuilderReturnType<ValueType, storm::models::sparse::StandardRewardModel<ValueType>> SubsystemReturnType;
@@ -31,7 +29,7 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
     using productModelType = typename storm::models::sparse::Mdp<ValueType>;
 
     // init
-    lexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
+    LexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
         : _transitionMatrix(transitionMatrix), formula(formula) {};
 
     /*!

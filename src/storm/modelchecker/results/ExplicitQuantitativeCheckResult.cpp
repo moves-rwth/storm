@@ -1,4 +1,4 @@
-#include "storm/adapters/RationalNumberAdapter.h"  // Must come first
+#include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
@@ -399,14 +399,12 @@ std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::compare
     }
 }
 
-#ifdef STORM_HAVE_CARL
 template<>
 std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<storm::RationalFunction>::compareAgainstBound(storm::logic::ComparisonType comparisonType,
                                                                                                            storm::RationalFunction const& bound) const {
     // Since it is not possible to compare rational functions against bounds, we simply call the base class method.
     return QuantitativeCheckResult::compareAgainstBound(comparisonType, bound);
 }
-#endif
 
 template<typename ValueType>
 ValueType& ExplicitQuantitativeCheckResult<ValueType>::operator[](storm::storage::sparse::state_type state) {
@@ -500,10 +498,7 @@ storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::Rati
 }
 
 template class ExplicitQuantitativeCheckResult<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
 template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

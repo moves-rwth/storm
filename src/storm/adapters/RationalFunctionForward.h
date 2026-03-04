@@ -1,22 +1,9 @@
 #pragma once
-#include "storm-config.h"
 
-#include "storm/adapters/RationalNumberForward.h"
-#ifdef STORM_CARL_SUPPORTS_FWD_DECL
 #include <carl/core/MultivariatePolynomialForward.h>
-#else
-// This must be included first
-// (for old version. Once STORM_CARL_SUPPORTS_FWD_DECL is true, this is no longer relevant).
-#include <carl/numbers/numbers.h>
-// These must be included later...
-#include <carl/core/FactorizedPolynomial.h>
-#include <carl/core/MultivariatePolynomial.h>
-#include <carl/core/RationalFunction.h>
-#include <carl/core/Relation.h>
-#include <carl/core/UnivariatePolynomial.h>
-#include <carl/core/VariablePool.h>
-#include "storm/adapters/RationalNumberAdapter.h"
-#endif
+
+#include "storm-config.h"
+#include "storm/adapters/RationalNumberForward.h"
 
 namespace carl {
 
@@ -51,7 +38,6 @@ typedef GmpRationalNumber RationalFunctionCoefficient;
 typedef carl::MultivariatePolynomial<RationalFunctionCoefficient> RawPolynomial;
 typedef carl::UnivariatePolynomial<RationalFunctionCoefficient> RawUnivariatePolynomial;
 typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
-
 typedef carl::RationalFunction<Polynomial, true> RationalFunction;
 
 }  // namespace storm

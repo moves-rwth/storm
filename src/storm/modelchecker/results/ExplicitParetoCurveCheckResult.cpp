@@ -1,12 +1,9 @@
-
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -86,8 +83,6 @@ std::vector<typename ExplicitParetoCurveCheckResult<ValueType>::scheduler_type>&
 }
 
 template class ExplicitParetoCurveCheckResult<double>;
-#ifdef STORM_HAVE_CARL
 template class ExplicitParetoCurveCheckResult<storm::RationalNumber>;
-#endif
 }  // namespace modelchecker
 }  // namespace storm

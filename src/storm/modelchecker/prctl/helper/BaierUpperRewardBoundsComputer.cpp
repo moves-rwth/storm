@@ -1,14 +1,13 @@
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm::modelchecker::helper {
 

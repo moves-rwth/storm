@@ -1,7 +1,7 @@
 #include "storm-pars/utility/ModelInstantiator.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {
 namespace utility {
@@ -161,7 +161,6 @@ void ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::chec
     // TODO write some checks
 }
 
-#ifdef STORM_HAVE_CARL
 template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>>;
 template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>>;
 template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<double>>;
@@ -183,6 +182,5 @@ template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunct
 template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalFunction>>;
 template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>,
                                  storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
-#endif
 }  // namespace utility
 }  // namespace storm

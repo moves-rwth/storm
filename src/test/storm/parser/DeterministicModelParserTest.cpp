@@ -4,7 +4,6 @@
 #include "storm-parsers/parser/DeterministicModelParser.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"

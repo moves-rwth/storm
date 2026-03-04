@@ -1,28 +1,31 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-#include <cstdint>
 #include <memory>
 
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 #include "storm/storage/Scheduler.h"
-
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
 namespace storm::solver {
 
 template<typename ValueType, typename SolutionType>
 MinMaxLinearEquationSolver<ValueType, SolutionType>::MinMaxLinearEquationSolver(OptimizationDirectionSetting direction)
-    : direction(direction), trackScheduler(false), uniqueSolution(false), noEndComponents(false), cachingEnabled(false), requirementsChecked(false) {
+    : direction(direction),
+      trackScheduler(false),
+      uniqueSolution(false),
+      noEndComponents(false),
+      cachingEnabled(false),
+      requirementsChecked(false),
+      uncertaintyResolutionMode(UncertaintyResolutionMode::Unset) {
     // Intentionally left empty.
 }
 
@@ -44,6 +47,8 @@ template<typename ValueType, typename SolutionType>
 void MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environment const& env, std::vector<SolutionType>& x,
                                                                          std::vector<ValueType> const& b) const {
     STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
+    STORM_LOG_THROW(isSet(this->uncertaintyResolutionMode) || !storm::IsIntervalType<ValueType>, storm::exceptions::IllegalFunctionCallException,
+                    "Uncertainty resolution mode not set.");
     solveEquations(env, convert(this->direction), x, b);
 }
 
@@ -192,13 +197,13 @@ bool MinMaxLinearEquationSolverFactory<ValueType, SolutionType>::isRequirementsC
 }
 
 template<typename ValueType, typename SolutionType>
-void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyIsRobust(bool robust) {
-    this->robustUncertainty = robust;
+void MinMaxLinearEquationSolver<ValueType, SolutionType>::setUncertaintyResolutionMode(storm::solver::UncertaintyResolutionMode uncertaintyResolutionMode) {
+    this->uncertaintyResolutionMode = uncertaintyResolutionMode;
 }
 
 template<typename ValueType, typename SolutionType>
-bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isUncertaintyRobust() const {
-    return this->robustUncertainty;
+UncertaintyResolutionMode MinMaxLinearEquationSolver<ValueType, SolutionType>::getUncertaintyResolutionMode() const {
+    return this->uncertaintyResolutionMode;
 }
 
 template<typename ValueType, typename SolutionType>
@@ -240,7 +245,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
     Environment const& env) const {
     std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> result;
     // TODO some minmax linear equation solvers only support SolutionType == ValueType.
-    auto method = env.solver().minMax().getMethod();
+    auto method = GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getMethod(env);
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
         method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
         method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
@@ -275,7 +280,7 @@ template<>
 std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::create(
     Environment const& env) const {
     std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
-    auto method = env.solver().minMax().getMethod();
+    auto method = getMethod(env);
     if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch ||
         method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::OptimisticValueIteration ||
         method == MinMaxMethod::GuessingValueIteration || method == MinMaxMethod::ViToPi) {
@@ -292,6 +297,17 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
     return result;
+}
+
+template<typename ValueType, typename SolutionType>
+MinMaxMethod GeneralMinMaxLinearEquationSolverFactory<ValueType, SolutionType>::getMethod(storm::Environment env) const {
+    // Default to robust value iteration in case of interval models.
+    auto method = env.solver().minMax().getMethod();
+    if (storm::IsIntervalType<ValueType> && method != MinMaxMethod::ValueIteration) {
+        STORM_LOG_WARN("Selected method is not supported for this solver and interval models, switching to robust value iteration.");
+        method = MinMaxMethod::ValueIteration;
+    }
+    return method;
 }
 
 template class MinMaxLinearEquationSolver<double>;

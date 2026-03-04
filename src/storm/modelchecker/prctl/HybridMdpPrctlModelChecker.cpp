@@ -1,11 +1,10 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
+#include "storm/modelchecker/multiobjective/MultiObjectiveModelChecking.h"
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -13,10 +12,8 @@
 #include "storm/modelchecker/results/SymbolicParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/utility/FilteredRewardModel.h"
@@ -199,7 +196,6 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
 
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
-
 template class HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker

@@ -1,9 +1,12 @@
 #include "storm/logic/OperatorFormula.h"
-#include <ostream>
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/logic/Bound.h"
 
+#include <ostream>
+
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/logic/Bound.h"
 
 namespace storm {
 namespace logic {

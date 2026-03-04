@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 
-#include "storm/adapters/RationalNumberForward.h"
+#include "storm/adapters/IntervalForward.h"
 
 namespace storm {
 

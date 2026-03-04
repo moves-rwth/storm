@@ -1,6 +1,8 @@
 #include "storm/models/sparse/DeterministicModel.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/export.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"

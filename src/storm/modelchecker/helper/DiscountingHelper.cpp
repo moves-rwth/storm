@@ -63,7 +63,7 @@ bool DiscountingHelper<ValueType, TrivialRowGrouping>::solveWithDiscountedValueI
 
     // If requested, we store the scheduler for retrieval.
     if (this->isTrackSchedulerSet()) {
-        this->extractScheduler(x, b, dir.value(), true);
+        this->extractScheduler(x, b, dir.value(), UncertaintyResolutionMode::Robust);
     }
     return status == solver::SolverStatus::Converged || status == solver::SolverStatus::TerminatedEarly;
 }
@@ -87,15 +87,17 @@ bool DiscountingHelper<ValueType, TrivialRowGrouping>::hasScheduler() const {
 
 template<>
 void DiscountingHelper<double, true>::extractScheduler(std::vector<double>& x, std::vector<double> const& b, OptimizationDirection const& dir,
-                                                       bool robust) const {}
+                                                       UncertaintyResolutionMode uncertaintyResolutionMode) const {}
 
 template<>
 void DiscountingHelper<storm::RationalNumber, true>::extractScheduler(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b,
-                                                                      OptimizationDirection const& dir, bool robust) const {}
+                                                                      OptimizationDirection const& dir,
+                                                                      UncertaintyResolutionMode uncertaintyResolutionMode) const {}
 
 template<typename ValueType, bool TrivialRowGrouping>
 void DiscountingHelper<ValueType, TrivialRowGrouping>::extractScheduler(std::vector<ValueType>& x, std::vector<ValueType> const& b,
-                                                                        OptimizationDirection const& dir, bool robust) const {
+                                                                        OptimizationDirection const& dir,
+                                                                        UncertaintyResolutionMode uncertaintyResolutionMode) const {
     // Make sure that storage for scheduler choices is available
     if (!this->schedulerChoices) {
         this->schedulerChoices = std::vector<uint64_t>(x.size(), 0);
@@ -108,7 +110,7 @@ void DiscountingHelper<ValueType, TrivialRowGrouping>::extractScheduler(std::vec
         setUpViOperator();
     }
     storm::solver::helper::SchedulerTrackingHelper<ValueType> schedHelper(viOperator);
-    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, robust, nullptr);
+    schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, uncertaintyResolutionMode, nullptr);
 }
 
 template<typename ValueType, bool TrivialRowGrouping>

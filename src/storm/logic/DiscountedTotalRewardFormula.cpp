@@ -1,14 +1,12 @@
 #include "storm/logic/DiscountedTotalRewardFormula.h"
-#include <boost/any.hpp>
 
+#include <boost/any.hpp>
 #include <ostream>
 
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/FormulaVisitor.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {

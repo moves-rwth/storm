@@ -57,8 +57,6 @@ class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
                                                uint64_t currentIterations, uint64_t maxIterations,
                                                storm::solver::MultiplicationStyle const& multiplicationStyle) const;
 
-    void logIterations(bool converged, bool terminate, uint64_t iterations) const;
-
     virtual uint64_t getMatrixRowCount() const override;
     virtual uint64_t getMatrixColumnCount() const override;
 

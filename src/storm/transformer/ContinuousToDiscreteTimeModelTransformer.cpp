@@ -1,17 +1,12 @@
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 
-#include <unordered_map>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/ExpectedTimeToExpectedRewardVisitor.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace transformer {

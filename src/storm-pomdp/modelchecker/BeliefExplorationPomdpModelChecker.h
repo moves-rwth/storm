@@ -1,8 +1,8 @@
+#pragma once
+
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm/utility/logging.h"
-
 #include "storm/storage/jani/Property.h"
 #include "storm/utility/Stopwatch.h"
 

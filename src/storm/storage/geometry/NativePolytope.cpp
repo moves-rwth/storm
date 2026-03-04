@@ -1,5 +1,8 @@
 #include "storm/storage/geometry/NativePolytope.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3LpSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -7,10 +10,6 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/solver.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotImplementedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace storage {
@@ -452,9 +451,7 @@ std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::clean() {
 }
 
 template class NativePolytope<double>;
-#ifdef STORM_HAVE_CARL
 template class NativePolytope<storm::RationalNumber>;
-#endif
 }  // namespace geometry
 }  // namespace storage
 }  // namespace storm

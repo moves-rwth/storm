@@ -4,7 +4,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/PairHash.h"
 #include "storm/storage/dd/sylvan/InternalSylvanAdd.h"

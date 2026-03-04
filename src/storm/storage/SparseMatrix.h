@@ -1018,7 +1018,7 @@ class SparseMatrix {
     /*!
      * Checks for each row whether it sums to one.
      */
-    bool isProbabilistic() const;
+    bool isProbabilistic(ValueType const& tolerance) const;
 
     /*!
      * Checks whether each present entry is strictly positive (omitted entries are not considered).

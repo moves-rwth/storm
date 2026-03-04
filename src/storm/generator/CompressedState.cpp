@@ -3,10 +3,8 @@
 #include <boost/algorithm/string/join.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
-
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
-
 #include "storm/generator/VariableInformation.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -237,7 +235,6 @@ CompressedState createCompressedState(VariableInformation const& varInfo,
 template storm::json<double> unpackStateIntoJson<double>(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
 template void unpackStateIntoEvaluator<double>(CompressedState const& state, VariableInformation const& variableInformation,
                                                storm::expressions::ExpressionEvaluator<double>& evaluator);
-#ifdef STORM_HAVE_CARL
 template storm::json<storm::RationalNumber> unpackStateIntoJson<storm::RationalNumber>(CompressedState const& state,
                                                                                        VariableInformation const& variableInformation, bool onlyObservable);
 template storm::json<storm::RationalFunction> unpackStateIntoJson<storm::RationalFunction>(CompressedState const& state,
@@ -246,6 +243,5 @@ template void unpackStateIntoEvaluator<storm::RationalNumber>(CompressedState co
                                                               storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator);
 template void unpackStateIntoEvaluator<storm::RationalFunction>(CompressedState const& state, VariableInformation const& variableInformation,
                                                                 storm::expressions::ExpressionEvaluator<storm::RationalFunction>& evaluator);
-#endif
 }  // namespace generator
 }  // namespace storm

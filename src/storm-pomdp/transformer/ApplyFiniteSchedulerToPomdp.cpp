@@ -1,8 +1,7 @@
 #include "storm-pomdp/transformer/ApplyFiniteSchedulerToPomdp.h"
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
-
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/vector.h"
 
 namespace storm {

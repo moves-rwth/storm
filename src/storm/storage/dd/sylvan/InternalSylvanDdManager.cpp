@@ -1,8 +1,5 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 
-#include <cmath>
-#include <iostream>
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/sylvan.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -35,7 +32,7 @@ VOID_TASK_0(gc_end) {
 VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*, e) {
     try {
         (*f)();
-    } catch (std::exception& exception) {
+    } catch (std::exception&) {
         *e = std::current_exception();
     }
 }

@@ -1,15 +1,16 @@
 #include "storm/utility/builder.h"
-#include "storm/models/sparse/StochasticTwoPlayerGame.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidModelException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/Smg.h"
-
-#include "storm/exceptions/InvalidModelException.h"
+#include "storm/models/sparse/StochasticTwoPlayerGame.h"
 
 namespace storm {
 namespace utility {

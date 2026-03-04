@@ -1,14 +1,16 @@
 #include "storm/generator/JaniNextStateGenerator.h"
 
 #include "storm/adapters/JsonAdapter.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/generator/Distribution.h"
 #include "storm/models/sparse/StateLabeling.h"
-
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/SimpleValuation.h"
-
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/Edge.h"
@@ -16,21 +18,10 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
-
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
-
-#include "storm/generator/Distribution.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/combinatorics.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
@@ -57,6 +48,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
     auto features = this->model.getModelFeatures();
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     // Eliminate arrays if necessary.
     if (features.hasArrays()) {
@@ -154,6 +146,7 @@ storm::jani::ModelFeatures JaniNextStateGenerator<ValueType, StateType>::getSupp
     storm::jani::ModelFeatures features;
     features.add(storm::jani::ModelFeature::DerivedOperators);
     features.add(storm::jani::ModelFeature::StateExitRewards);
+    features.add(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.add(storm::jani::ModelFeature::Arrays);
     features.add(storm::jani::ModelFeature::TrigonometricFunctions);
     // We do not add Functions as these should ideally be substituted before creating this generator.
@@ -168,6 +161,7 @@ bool JaniNextStateGenerator<ValueType, StateType>::canHandle(storm::jani::Model 
     features.remove(storm::jani::ModelFeature::DerivedOperators);
     features.remove(storm::jani::ModelFeature::Functions);  // can be substituted
     features.remove(storm::jani::ModelFeature::StateExitRewards);
+    features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
     features.remove(storm::jani::ModelFeature::TrigonometricFunctions);
     if (!features.empty()) {
         STORM_LOG_INFO("The model can not be build as it contains these unsupported features: " << features.toString());
@@ -1027,7 +1021,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
 
         if (this->options.isExplorationChecksSet()) {
             // Check that the resulting distribution is in fact a distribution.
-            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
+            STORM_LOG_THROW(!this->isDiscreteTimeModel() || !storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum),
                             storm::exceptions::WrongFormatException,
                             "Sum of update probabilities do not sum to one for some edge (actually sum to " << probabilitySum << ").");
         }
@@ -1425,11 +1419,7 @@ storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluate
 template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
     // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-#ifdef STORM_HAVE_CARL
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
-#else
-    if (model.hasUndefinedConstants()) {
-#endif
         std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = model.getUndefinedConstants();
         std::stringstream stream;
         bool printComma = false;
@@ -1443,20 +1433,14 @@ void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
         }
         stream << ".";
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-    }
-#ifdef STORM_HAVE_CARL
-    else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
+    } else if (std::is_same<ValueType, storm::RationalFunction>::value && !model.undefinedConstantsAreGraphPreserving()) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                         "The input model contains undefined constants that influence the graph structure of the underlying model, which is not allowed.");
     }
-#endif
 }
 
 template class JaniNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class JaniNextStateGenerator<storm::RationalNumber>;
 template class JaniNextStateGenerator<storm::RationalFunction>;
-#endif
 }  // namespace generator
 }  // namespace storm

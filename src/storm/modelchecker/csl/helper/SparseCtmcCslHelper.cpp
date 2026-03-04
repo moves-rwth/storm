@@ -1,32 +1,18 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
-#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/numerical.h"
 #include "storm/utility/vector.h"
-
-#include "storm/exceptions/FormatUnsupportedBySolverException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
 namespace modelchecker {
@@ -831,7 +817,6 @@ template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(
                                                                                 std::vector<double> const* addVector, double timeBound,
                                                                                 double uniformizationRate, std::vector<double> values, double epsilon);
 
-#ifdef STORM_HAVE_CARL
 template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
@@ -892,7 +877,6 @@ template storm::storage::SparseMatrix<storm::RationalNumber> SparseCtmcCslHelper
 template storm::storage::SparseMatrix<storm::RationalFunction> SparseCtmcCslHelper::computeProbabilityMatrix(
     storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, std::vector<storm::RationalFunction> const& exitRates);
 
-#endif
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

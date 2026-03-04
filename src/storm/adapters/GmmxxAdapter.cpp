@@ -4,7 +4,6 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -13,8 +12,7 @@ namespace adapters {
 #ifdef STORM_HAVE_GMM
 template<typename T>
 std::unique_ptr<gmm::csr_matrix<T>> GmmxxAdapter<T>::toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
-    uint_fast64_t realNonZeros = matrix.getEntryCount();
-    STORM_LOG_TRACE("Converting " << matrix.getRowCount() << "x" << matrix.getColumnCount() << " matrix with " << realNonZeros
+    STORM_LOG_TRACE("Converting " << matrix.getRowCount() << "x" << matrix.getColumnCount() << " matrix with " << matrix.getEntryCount()
                                   << " non-zeros to gmm++ format.");
 
     // Prepare the resulting matrix.
@@ -45,12 +43,8 @@ std::unique_ptr<gmm::csr_matrix<T>> GmmxxAdapter<T>::toGmmxxSparseMatrix(storm::
 }
 
 template class GmmxxAdapter<double>;
-
-#ifdef STORM_HAVE_CARL
 template class GmmxxAdapter<storm::RationalNumber>;
 template class GmmxxAdapter<storm::RationalFunction>;
-#endif
-
 #endif
 
 }  // namespace adapters

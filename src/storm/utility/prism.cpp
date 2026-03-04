@@ -1,16 +1,10 @@
 #include "storm/utility/prism.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/prism/Program.h"
-
 #include "storm/utility/cli.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-
-#include <boost/algorithm/string.hpp>
 
 namespace storm {
 namespace utility {

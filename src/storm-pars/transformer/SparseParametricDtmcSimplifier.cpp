@@ -7,7 +7,6 @@
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
 

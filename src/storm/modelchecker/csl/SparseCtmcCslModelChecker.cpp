@@ -1,8 +1,6 @@
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -14,7 +12,6 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -324,10 +321,8 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
 // Explicitly instantiate the model checker.
 template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>>;
 
-#ifdef STORM_HAVE_CARL
 template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
 template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
-#endif
 
 }  // namespace modelchecker
 }  // namespace storm

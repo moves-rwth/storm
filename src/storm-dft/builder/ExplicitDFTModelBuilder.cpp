@@ -6,7 +6,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/SettingsManager.h"

@@ -1,24 +1,18 @@
-#ifndef STORM_GENERATOR_NEXTSTATEGENERATOR_H_
-#define STORM_GENERATOR_NEXTSTATEGENERATOR_H_
+#pragma once
 
-#include <cstdint>
 #include <vector>
 
-#include <boost/variant.hpp>
-
+#include "storm/adapters/IntervalForward.h"
+#include "storm/builder/BuilderOptions.h"
+#include "storm/builder/RewardModelInformation.h"
+#include "storm/generator/CompressedState.h"
+#include "storm/generator/StateBehavior.h"
+#include "storm/generator/VariableInformation.h"
 #include "storm/storage/PlayerIndex.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/storage/sparse/StateValuations.h"
-
-#include "storm/builder/BuilderOptions.h"
-#include "storm/builder/RewardModelInformation.h"
-
-#include "storm/generator/CompressedState.h"
-#include "storm/generator/StateBehavior.h"
-#include "storm/generator/VariableInformation.h"
-
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
@@ -192,7 +186,7 @@ class NextStateGenerator {
     /// The currently loaded state.
     CompressedState const* state;
 
-    /// A comparator used to compare constants.
+    /// A comparator used to approximately compare constants, e.g., whether they sum to one..
     storm::utility::ConstantsComparator<ValueType> comparator;
 
     /// The mask to compute the observability class (Constructed upon first use)
@@ -211,5 +205,3 @@ class NextStateGenerator {
 };
 }  // namespace generator
 }  // namespace storm
-
-#endif /* STORM_GENERATOR_NEXTSTATEGENERATOR_H_ */

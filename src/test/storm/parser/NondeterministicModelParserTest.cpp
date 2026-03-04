@@ -4,7 +4,6 @@
 #include "storm-parsers/parser/NondeterministicModelParser.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"

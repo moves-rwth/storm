@@ -1,4 +1,6 @@
 #include "storm/transformer/AddUncertainty.h"
+
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"

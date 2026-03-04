@@ -1,19 +1,14 @@
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
+
 #include <cmath>
-#include <cstdint>
 #include <random>
-#include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
-#include "storm/environment/Environment.h"
+
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 
@@ -305,7 +300,7 @@ ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::s
         if (computeValue) {
             std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
             std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+            if (boost::get<Nesterov>(&gradientDescentType)) {
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> modelCheckPosition(position);
                 if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                     for (auto const& parameter : parameters) {

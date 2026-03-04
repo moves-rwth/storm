@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm/analysis/GraphConditions.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"

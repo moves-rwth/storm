@@ -1,10 +1,9 @@
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
 namespace solver {
@@ -36,10 +35,8 @@ void NondeterministicModelStateEliminator<ValueType>::updatePredecessor(storm::s
 
 template class NondeterministicModelStateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class NondeterministicModelStateEliminator<storm::RationalNumber>;
 template class NondeterministicModelStateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

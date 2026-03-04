@@ -1,4 +1,4 @@
-#include "DFTBuilder.h"
+#include "storm-dft/builder/DFTBuilder.h"
 
 #include <algorithm>
 
@@ -6,7 +6,6 @@
 #include "storm-dft/storage/OrderDFTElementsById.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 
@@ -14,12 +13,12 @@ namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
-DFTBuilder<ValueType>::DFTBuilder() : mNextId(0), comparator() {
+DFTBuilder<ValueType>::DFTBuilder() : mNextId(0) {
     // Intentionally left empty
 }
 
 template<>
-DFTBuilder<double>::DFTBuilder() : mNextId(0), comparator(0 /* Set error to 0*/) {
+DFTBuilder<double>::DFTBuilder() : mNextId(0) {
     // Intentionally left empty
 }
 
@@ -162,7 +161,7 @@ void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
     if (storm::utility::isZero<ValueType>(rate)) {
         addBasicElementConst(name, false);
     } else {
-        STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Failure rate " << rate << " of BE " << name << " must be positive.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
                         "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");
@@ -179,7 +178,7 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
         // shape=1 reduces to exponential distribution
         addBasicElementExponential(name, rate, dormancyFactor);
     } else {
-        STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                         "Erlang distribution of BE " << name << " requires a positive rate.");
         STORM_LOG_THROW(phases > 0, storm::exceptions::WrongFormatException, "Erlang distribution of BE " << name << " requires a positive number of phases.");
         STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
@@ -190,9 +189,9 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
-    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::utility::isConstant(rate) || storm::utility::isPositive(rate), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive scale.");
-    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), shape), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::utility::isConstant(shape) || storm::utility::isPositive(shape), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive shape.");
 
     // Handle special cases
@@ -206,7 +205,7 @@ void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, Valu
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
-    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), standardDeviation), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(!storm::utility::isConstant(standardDeviation) || storm::utility::isPositive(standardDeviation), storm::exceptions::WrongFormatException,
                     "Log-normal distribution of BE " << name << " requires a positive standard deviation.");
     addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
@@ -429,15 +428,12 @@ bool DFTBuilder<ValueType>::nameInUse(std::string const& name) const {
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::isValidProbability(ValueType value) const {
-    if (this->comparator.isZero(value) || this->comparator.isOne(value)) {
-        return true;
-    } else if (!this->comparator.isConstant(value)) {
+    if (!storm::utility::isConstant(value)) {
         // Do not check further if value is non-constant rational function
         return true;
-    } else if (this->comparator.isLess(storm::utility::zero<ValueType>(), value) && this->comparator.isLess(value, storm::utility::one<ValueType>())) {
-        return true;
+    } else {
+        return storm::utility::isBetween(storm::utility::zero<ValueType>(), value, storm::utility::one<ValueType>());
     }
-    return false;
 }
 
 template<typename ValueType>

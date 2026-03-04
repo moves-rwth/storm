@@ -1,6 +1,8 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/SparseMatrixOperations.h"
 #include "storm/utility/rationalfunction.h"
@@ -295,7 +297,7 @@ template<typename MatrixValueType>
 std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(uint_fast64_t numberOfRows,
                                                                             storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,
                                                                             storm::storage::BitVector const& filter) const {
-    std::vector<ValueType> result(numberOfRows);
+    std::vector<ValueType> result(numberOfRows, storm::utility::zero<ValueType>());
     if (this->hasTransitionRewards()) {
         std::vector<ValueType> pointwiseProductRowSumVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
         storm::utility::vector::selectVectorValues(result, filter, transitionMatrix.getRowGroupIndices(), pointwiseProductRowSumVector);

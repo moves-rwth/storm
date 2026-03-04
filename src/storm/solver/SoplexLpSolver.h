@@ -45,12 +45,6 @@ class SoplexLpSolver : public LpSolver<ValueType, RawMode> {
     SoplexLpSolver(OptimizationDirection const& optDir = OptimizationDirection::Minimize);
 
     /*!
-     * Creates a (deep) copy of this solver.
-     * @param other
-     */
-    SoplexLpSolver(SoplexLpSolver<ValueType> const& other);
-
-    /*!
      * Destructs a solver by freeing the pointers to Gurobi's structures.
      */
     virtual ~SoplexLpSolver();

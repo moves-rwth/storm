@@ -4,10 +4,6 @@
 #include <storm_wrapper.h>
 #include <sylvan.h>
 
-#define SYLVAN_HAVE_CARL 1
-
-#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -94,7 +90,5 @@ TASK_DECL_3(MTBDD, sylvan_storm_rational_function_equal_norm_rel_d, MTBDD, MTBDD
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#endif // SYLVAN_HAVE_CARL
 
 #endif // SYLVAN_STORM_RATIONAL_FUNCTION_H

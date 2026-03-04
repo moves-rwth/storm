@@ -1,12 +1,7 @@
 #include "storm/solver/stateelimination/StateEliminator.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/storage/BitVector.h"
-
 #include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/stateelimination.h"
 
@@ -37,10 +32,8 @@ void StateEliminator<ValueType>::eliminateState(storm::storage::sparse::state_ty
 
 template class StateEliminator<double>;
 
-#ifdef STORM_HAVE_CARL
 template class StateEliminator<storm::RationalNumber>;
 template class StateEliminator<storm::RationalFunction>;
-#endif
 }  // namespace stateelimination
 }  // namespace solver
 }  // namespace storm

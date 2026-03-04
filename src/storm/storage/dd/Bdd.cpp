@@ -1,23 +1,17 @@
+#include "storm/storage/dd/Bdd.h"
+
 #include <algorithm>
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/Odd.h"
-
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/logic/ComparisonType.h"
-
+#include "storm/storage/BitVector.h"
+#include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/DdMetaVariable.h"
 #include "storm/storage/dd/Odd.h"
-
-#include "storm/storage/BitVector.h"
-
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/utility/macros.h"
-
-#include "storm-config.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace dd {
@@ -482,7 +476,7 @@ std::vector<Bdd<LibraryType>> Bdd<LibraryType>::split(std::set<storm::expression
             ddGroupVariableIndices.push_back(ddVariable.getIndex());
         }
     }
-    std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
+    std::ranges::sort(ddGroupVariableIndices);
 
     std::vector<InternalBdd<LibraryType>> internalBddGroups = this->internalBdd.splitIntoGroups(ddGroupVariableIndices);
     std::vector<Bdd<LibraryType>> groups;

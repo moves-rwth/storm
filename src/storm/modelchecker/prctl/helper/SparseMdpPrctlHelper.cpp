@@ -1,56 +1,39 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
-#include <boost/container/flat_map.hpp>
-
-#include "storm/modelchecker/prctl/helper/SemanticSolutionType.h"
-
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/io/export.h"
 #include "storm/modelchecker/helper/DiscountingHelper.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/SemanticSolutionType.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpEndComponentInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-
-#include "storm/utility/graph.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-
-#include "storm/storage/Scheduler.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
-
-#include "storm/solver/LpSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/multiplier/Multiplier.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
-
-#include "storm/io/export.h"
-#include "storm/utility/NumberTraits.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
-
-#include "storm/transformer/EndComponentEliminator.h"
-
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
-#include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace modelchecker {
@@ -466,7 +449,7 @@ MaybeStateResult<SolutionType> computeValuesForMaybeStates(Environment const& en
     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType, SolutionType>> solver =
         storm::solver::configureMinMaxLinearEquationSolver(env, std::move(goal), minMaxLinearEquationSolverFactory, std::move(submatrix));
     solver->setRequirementsChecked();
-    solver->setUncertaintyIsRobust(goal.isRobust());
+    solver->setUncertaintyResolutionMode(goal.getUncertaintyResolutionMode());
     solver->setHasUniqueSolution(hint.hasUniqueSolution());
     solver->setHasNoEndComponents(hint.hasNoEndComponents());
     if (hint.hasLowerResultBound()) {
@@ -1050,8 +1033,8 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
     STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Reward model for formula is empty. Skipping formula.");
     return computeReachabilityRewardsHelper(
         env, std::move(goal), transitionMatrix, backwardTransitions,
-        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-            return rewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+        [&rewardModel](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transMatrix, storm::storage::BitVector const& maybeStates) {
+            return rewardModel.getTotalRewardVector(rowCount, transMatrix, maybeStates);
         },
         targetStates, qualitative, produceScheduler, [&]() { return rewardModel.getStatesWithZeroReward(transitionMatrix); },
         [&]() { return rewardModel.getChoicesWithZeroReward(transitionMatrix); }, hint);
@@ -1071,7 +1054,6 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
         [&]() { return storm::storage::BitVector(transitionMatrix.getRowCount(), false); }, hint);
 }
 
-#ifdef STORM_HAVE_CARL
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeReachabilityRewards(
     Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -1109,7 +1091,6 @@ std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::
     storm::storage::BitVector const&, bool) {
     STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Computing reachability rewards is unsupported for this data type.");
 }
-#endif
 
 struct QualitativeStateSetsReachabilityRewards {
     storm::storage::BitVector maybeStates;
@@ -1523,7 +1504,6 @@ template MDPSparseModelCheckingHelperReturnType<double> SparseMdpPrctlHelper<dou
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool qualitative,
     bool produceScheduler, double discountFactor, ModelCheckerHint const& hint);
 
-#ifdef STORM_HAVE_CARL
 template class SparseMdpPrctlHelper<storm::RationalNumber>;
 template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalNumber>::computeInstantaneousRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
@@ -1549,7 +1529,6 @@ template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMdp
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
     storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel, bool qualitative, bool produceScheduler,
     storm::RationalNumber discountFactor, ModelCheckerHint const& hint);
-#endif
 
 template class SparseMdpPrctlHelper<storm::Interval, double>;
 template std::vector<double> SparseMdpPrctlHelper<storm::Interval, double>::computeInstantaneousRewards(

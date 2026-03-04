@@ -3,13 +3,12 @@
 #include <memory>
 #include <vector>
 
+#include "storm/logic/Formula.h"
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
 #include "storm/storage/dd/bisimulation/QuotientFormat.h"
 #include "storm/storage/dd/bisimulation/SignatureMode.h"
-
-#include "storm/logic/Formula.h"
 
 namespace storm {
 namespace models {

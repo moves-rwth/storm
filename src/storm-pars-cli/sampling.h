@@ -288,6 +288,5 @@ void sampleDerivatives(std::shared_ptr<storm::models::sparse::Model<ValueType>> 
         auto result = modelChecker.check(Environment(), instantiation, parameter);
         std::cout << *result << '\n';
     }
-    return;
 }
 }  // namespace storm::pars

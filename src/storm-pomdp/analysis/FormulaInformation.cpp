@@ -1,13 +1,13 @@
 #include "storm-pomdp/analysis/FormulaInformation.h"
+
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {

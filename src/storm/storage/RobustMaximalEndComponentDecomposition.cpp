@@ -1,15 +1,10 @@
-#include <list>
-#include <numeric>
-#include <queue>
-
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/storage/BitVector.h"
-#include "storm/storage/BoostTypes.h"
-#include "storm/storage/StronglyConnectedComponent.h"
-#include "storm/storage/sparse/StateType.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/storage/RobustMaximalEndComponentDecomposition.h"
+
+#include <numeric>
+
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/StronglyConnectedComponent.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
