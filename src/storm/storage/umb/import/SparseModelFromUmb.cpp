@@ -179,8 +179,10 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
             if (rewIndex.appliesToBranches() && rew.branches.has_value()) {
                 transitionRewards = createBranchMatrix<ValueType>(umbModel, rew.branches->values, rewIndex.type);
             }
-            STORM_LOG_THROW(!rewIndex.appliesToObservations(), storm::exceptions::WrongFormatException,
+            STORM_LOG_THROW(!rewIndex.appliesToObservations(), storm::exceptions::NotSupportedException,
                             "Observation rewards are not supported for reward '" << rewName << "'.");
+            STORM_LOG_THROW(!rewIndex.appliesToPlayers(), storm::exceptions::NotSupportedException,
+                            "Player rewards are not supported for reward '" << rewName << "'.");
             rewardModels.emplace(std::move(usedRewName), RewardModel(std::move(stateRewards), std::move(stateActionRewards), std::move(transitionRewards)));
         }
     }
@@ -215,20 +217,20 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
     if (options.buildStateValuations && umbModel.index.valuations.has_value() && umbModel.index.valuations->states.has_value()) {
         STORM_LOG_THROW(umbModel.valuations.states.has_value() && umbModel.valuations.states->valuations.has_value(), storm::exceptions::WrongFormatException,
                         "State valuations mentioned in the index but no files given.");
-        auto const& sv = umbModel.valuations.states.value();
-        storm::umb::Valuations stateValuations(umbModel.index.valuations->states.value().classes, sv.valuations.value(), sv.valuationToClass);
-        for (uint64_t state = 0; state < stateValuations.size(); ++state) {
-            std::cout << state << "=[";
-            stateValuations.read(state, [](uint64_t state, storm::expressions::Variable const& var, auto const& value) {
-                if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, std::nullopt_t>) {
-                    std::cout << "null, ";
-                } else {
-                    std::cout << value << ", ";
-                }
-            });
-            std::cout << std::endl;
-        }
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "State valuations are not yet supported.");
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "State valuations for UMB models are not yet supported.");
+        //        auto const& sv = umbModel.valuations.states.value();
+        //        storm::umb::Valuations stateValuations(umbModel.index.valuations->states.value().classes, sv.valuations.value(), sv.valuationToClass);
+        //        for (uint64_t state = 0; state < stateValuations.size(); ++state) {
+        //            std::cout << state << "=[";
+        //            stateValuations.read(state, [](uint64_t state, storm::expressions::Variable const& var, auto const& value) {
+        //                if constexpr (std::is_same_v<std::remove_cvref_t<decltype(value)>, std::nullopt_t>) {
+        //                    std::cout << "null, ";
+        //                } else {
+        //                    std::cout << value << ", ";
+        //                }
+        //            });
+        //            std::cout << std::endl;
+        //        }
     } else {
         STORM_LOG_WARN_COND(!options.buildStateValuations, "State valuations requested but the UMB model does not have any.");
     }

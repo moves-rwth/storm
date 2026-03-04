@@ -78,17 +78,18 @@ struct ModelIndex {
 
     struct Annotation {
         std::optional<std::string> alias, description;
-        enum class AppliesTo { States, Choices, Branches, Observations };
+        enum class AppliesTo { States, Choices, Branches, Observations, Players };
         struct AppliesToDeclaration {
             using Values = AppliesTo;
-            auto static constexpr Keys = {"states", "choices", "branches", "observations"};
+            auto static constexpr Keys = {"states", "choices", "branches", "observations", "players"};
         };
         std::vector<storm::SerializedEnum<AppliesToDeclaration>> appliesTo;
         SizedType type;
         std::optional<int64_t> lower, upper;
         std::optional<uint64_t> numStrings;
         std::optional<SizedType> probabilityType;
-        auto static constexpr JsonKeys = {"alias", "description", "applies-to", "type", "lower", "upper", "strings", "probability-type"};
+        std::optional<uint64_t> numProbabilities;
+        auto static constexpr JsonKeys = {"alias", "description", "applies-to", "type", "lower", "upper", "#strings", "probability-type", "#probabilities"};
         using JsonSerialization = storm::JsonSerialization;
 
         /*!
@@ -102,13 +103,14 @@ struct ModelIndex {
         bool appliesToChoices() const;
         bool appliesToBranches() const;
         bool appliesToObservations() const;
+        bool appliesToPlayers() const;
     };
     using AnnotationMap = std::map<std::string, Annotation>;
     std::optional<std::map<std::string, AnnotationMap>> annotations;
 
     struct Valuations {
-        std::optional<ValuationDescription> states, choices, branches, observations;
-        auto static constexpr JsonKeys = {"states", "choices", "branches", "observations"};
+        std::optional<ValuationDescription> states, choices, branches, observations, players;
+        auto static constexpr JsonKeys = {"states", "choices", "branches", "observations", "players"};
         using JsonSerialization = storm::JsonSerialization;
     };
     std::optional<Valuations> valuations;

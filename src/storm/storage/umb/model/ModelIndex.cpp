@@ -62,6 +62,10 @@ bool ModelIndex::Annotation::appliesToObservations() const {
     return std::find(appliesTo.begin(), appliesTo.end(), AppliesTo::Observations) != appliesTo.end();
 }
 
+bool ModelIndex::Annotation::appliesToPlayers() const {
+    return std::find(appliesTo.begin(), appliesTo.end(), AppliesTo::Players) != appliesTo.end();
+}
+
 storm::OptionalRef<ModelIndex::AnnotationMap> ModelIndex::aps(bool createIfMissing) {
     return annotation("aps", createIfMissing);
 }

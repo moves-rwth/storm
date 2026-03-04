@@ -4,8 +4,6 @@
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/io/ArchiveReader.h"
-#include "storm/io/file.h"
-#include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/FileIoException.h"
@@ -223,8 +221,6 @@ bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, stor
 }
 
 storm::umb::UmbModel fromArchive(std::filesystem::path const& umbArchive, ImportOptions const& /* options */) {
-    storm::utility::Stopwatch stopwatch;
-    stopwatch.start();
     storm::umb::UmbModel umbModel;
     // First pass: find the index file
     bool indexFound = false;
@@ -239,9 +235,6 @@ storm::umb::UmbModel fromArchive(std::filesystem::path const& umbArchive, Import
     }
     STORM_LOG_THROW(indexFound, storm::exceptions::FileIoException, "File 'index.json' not found in UMB archive.");
     STORM_LOG_TRACE("Index file found in umb archive " << umbArchive << ": \n" << storm::dumpJson(storm::json<storm::RationalNumber>(umbModel.index)));
-    std::cout << "First pass: Index file loaded in " << stopwatch << " seconds.\n";  // TODO: remove this output
-    std::cout << "Index file is #" << i << " file in the archive.\n";
-    stopwatch.restart();
     // Second pass: load the bin files
     prepareAnnotations(umbModel);
     for (auto entry : storm::io::openArchive(umbArchive)) {
@@ -253,7 +246,6 @@ storm::umb::UmbModel fromArchive(std::filesystem::path const& umbArchive, Import
         STORM_LOG_WARN_COND(
             found, "File " << getFilePath(entry) << " in UMB archive " << umbArchive << " will be ignored as it could not be associated with any UMB field.");
     }
-    std::cout << "Second pass: bin files loaded in " << stopwatch << " seconds.\n";
     return umbModel;
 }
 

@@ -50,8 +50,8 @@ class UmbModel {
     // annotations
     template<typename Values>
     struct AppliesToEntity {
-        std::optional<Values> states, choices, branches, observations;
-        auto static constexpr FileNames = {"states/", "choices/", "branches/", "observations/"};
+        std::optional<Values> states, choices, branches, observations, players;
+        auto static constexpr FileNames = {"states/", "choices/", "branches/", "observations/", "players/"};
     };
     struct AnnotationValues {
         TO1<AnyValueType> values;

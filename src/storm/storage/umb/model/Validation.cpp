@@ -100,7 +100,7 @@ bool vectorMatchesType(storm::umb::GenericVector const& vector, storm::umb::Size
         case RationalInterval:
             return vector.isType<storm::RationalNumber>() || vector.isType<uint64_t>();  // rationals might be encoded as uint64_t
         case String:
-            return false;  // GenericVector currently does not have a string variant.
+            return vector.isType<uint64_t>();  // strings are encoded by their indices
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type.");
 }
@@ -194,6 +194,10 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             if (!description.has_value()) {
                 return;
             }
+            if (description->classes.empty()) {
+                err << "A valuation description has no classes.\n";
+                isValid = false;
+            }
             for (auto const& descr : description->classes) {
                 for (auto const& var : descr.variables) {
                     if (std::holds_alternative<ValuationClassDescription::Variable>(var)) {
@@ -276,7 +280,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
         if (!tsIndex.branchProbabilityType.has_value()) {
             err << "branch-to-probability mapping is given but branch probability type is not declared.\n";
             isValid = false;
-        } else if (!validation::vectorMatchesType(umbModel.stateToExitRate, tsIndex.branchProbabilityType.value())) {
+        } else if (!validation::vectorMatchesType(umbModel.branchToProbability, tsIndex.branchProbabilityType.value())) {
             err << "branch-to-probability mapping has values that do not match the declared branch probability type "
                 << tsIndex.branchProbabilityType->toString() << ".\n";
             isValid = false;
@@ -284,49 +288,245 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
     }
 
     // Action labels
-    // TODO
+    auto validateActionLabels = [&isValid, &err](storm::umb::UmbModel::ActionLabels const& al, auto const& entityName, uint64_t const numEntity,
+                                                 uint64_t const numEntityActions) {
+        if (al.values.has_value()) {
+            if (numEntityActions == 0) {
+                err << "actions/" << entityName << "/values given but the number of " << entityName << "-actions is zero.\n";
+                isValid = false;
+            } else if (al.values->size() != numEntity) {
+                err << "actions/" << entityName << "/values has invalid size: " << al.values->size() << " != #" << entityName << "=" << numEntity << ".\n";
+                isValid = false;
+            }
+        }
+        if (al.stringMapping.has_value() && numEntityActions == 0) {
+            err << "actions/" << entityName << "/string-mapping given but the number of " << entityName << "-actions is zero.\n";
+            isValid = false;
+        }
+        if (al.stringMapping.has_value() != al.strings.has_value()) {
+            err << "actions/" << entityName << "/string-mapping is " << (al.stringMapping.has_value() ? "set" : "not set") << " although actions/" << entityName
+                << "/strings is " << (al.strings.has_value() ? "set" : "not set") << ".\n";
+            isValid = false;
+        }
+        if (al.stringMapping.has_value()) {
+            isValid &=
+                validation::validateCsr(al.stringMapping, std::string("actions/") + entityName + "/string-mapping", numEntityActions, al.strings->size(), err);
+        }
+    };
+    if (umbModel.choiceActions.has_value()) {
+        validateActionLabels(umbModel.choiceActions.value(), "choices", tsIndex.numChoices, tsIndex.numChoiceActions);
+    }
+    if (umbModel.branchActions.has_value()) {
+        validateActionLabels(umbModel.branchActions.value(), "branches", tsIndex.numBranches, tsIndex.numBranchActions);
+    }
 
     // Observations
-    // TODO
+    auto validateObservations = [&isValid, &err](storm::umb::UmbModel::Observations const& obs, auto const& entityName, uint64_t const numEntity,
+                                                 uint64_t const numObservations, std::optional<storm::umb::SizedType> const& obsProbType) {
+        uint64_t numObservationValues = obs.probabilities.hasValue() ? obs.probabilities.size() : numEntity;
+        if (obs.values.has_value()) {
+            if (numObservations == 0) {
+                err << "observations/" << entityName << "/values given but the number of observations is zero.\n";
+                isValid = false;
+            } else if (obs.values->size() != numObservationValues) {
+                err << "observations/" << entityName << "/values has invalid size: " << obs.values->size() << " != #" << entityName
+                    << "-observation-values=" << numObservationValues << ".\n";
+                isValid = false;
+            }
+        }
+        isValid &= validation::validateCsr(obs.distributionMapping, std::string("observations/") + entityName + "/distribution-mapping", numEntity,
+                                           numObservationValues, err);
+        if (obs.probabilities.hasValue()) {
+            if (!obsProbType.has_value()) {
+                err << "observations/" << entityName << "/probabilities given but observation probability type is not declared.\n";
+                isValid = false;
+            } else if (!validation::vectorMatchesType(obs.probabilities, obsProbType.value())) {
+                err << "observations/" << entityName << "/probabilities has values that do not match the declared observation probability type "
+                    << obsProbType->toString() << ".\n";
+                isValid = false;
+            }
+        }
+    };
+    if (umbModel.stateObservations.has_value()) {
+        validateObservations(umbModel.stateObservations.value(), "states", tsIndex.numStates, tsIndex.numObservations, tsIndex.observationProbabilityType);
+    }
+    if (umbModel.branchObservations.has_value()) {
+        validateObservations(umbModel.branchObservations.value(), "branches", tsIndex.numBranches, tsIndex.numObservations, tsIndex.observationProbabilityType);
+    }
 
     // Annotations
-    // TODO
+    auto validateAnnotationValues = [&isValid, &err](storm::umb::UmbModel::AnnotationValues const& av, auto const& group, auto const& id,
+                                                     auto const& entityName, uint64_t const numEntity, storm::umb::ModelIndex::Annotation const& ai) {
+        auto const context = std::string("annotations/") + group + "/" + id + "/" + entityName;
+        uint64_t const numAnnotationValues = ai.numProbabilities.value_or(numEntity);
+        if (av.values.hasValue()) {
+            if (av.values.size() != numAnnotationValues) {
+                err << context << "/values has invalid size: " << av.values.size() << " != #" << entityName << "-annotation-values=" << numAnnotationValues;
+                isValid = false;
+            }
+            if (!validation::vectorMatchesType(av.values, ai.type)) {
+                err << context << "/values has values that do not match the declared annotation type " << ai.type.toString() << ".\n";
+                isValid = false;
+            }
+        }
+        if (isStringType(ai.type.type) != av.stringMapping.has_value()) {
+            err << context << "/string-mapping is " << (av.stringMapping.has_value() ? "set" : "not set") << " although the annotation type is "
+                << ai.type.toString() << ".\n";
+            isValid = false;
+        }
+        if (av.stringMapping.has_value() && ai.numStrings.value_or(0) == 0) {
+            err << context << "/string-mapping given but the number of strings is zero.\n";
+            isValid = false;
+        }
+        if (av.stringMapping.has_value() != av.strings.has_value()) {
+            err << context << "/string-mapping is " << (av.stringMapping.has_value() ? "set" : "not set") << " although " << context << "/strings is "
+                << (av.strings.has_value() ? "set" : "not set") << ".\n";
+            isValid = false;
+        }
+        if (av.stringMapping.has_value()) {
+            isValid &= validation::validateCsr(av.stringMapping, context + "/string-mapping", ai.numStrings.value(), av.strings->size(), err);
+        }
+        isValid &= validation::validateCsr(av.distributionMapping, context + "/distribution-mapping", numEntity, numAnnotationValues, err);
+        if (av.probabilities.hasValue()) {
+            if (!ai.probabilityType.has_value()) {
+                err << context << "/probabilities given but annotation probability type is not declared.\n";
+                isValid = false;
+            } else if (!validation::vectorMatchesType(av.probabilities, ai.probabilityType.value())) {
+                err << context << "/probabilities has values that do not match the declared annotation probability type " << ai.probabilityType->toString()
+                    << ".\n";
+                isValid = false;
+            }
+        }
+    };
+    for (auto const& [annotationType, annotationMap] : umbModel.annotations) {
+        if (!umbModel.index.annotations.has_value() || !umbModel.index.annotations->contains(annotationType)) {
+            err << "Annotation '" << annotationType << "' is given but not declared in the index.\n";
+            isValid = false;
+            continue;
+        }
+        for (auto const& [annotationId, annotationValues] : annotationMap) {
+            if (!umbModel.index.annotations->at(annotationType).contains(annotationId)) {
+                err << "Annotation '" << annotationId << "' of type '" << annotationType << "' is given but not declared in the index.\n";
+                isValid = false;
+                continue;
+            }
+            auto const& annotationIndex = index.annotations->at(annotationType).at(annotationId);
+            if (annotationValues.states.has_value()) {
+                if (!annotationIndex.appliesToStates()) {
+                    err << "Annotation '" << annotationId << "' of type '" << annotationType
+                        << "' has states values but does not apply to states according to the index.\n";
+                    isValid = false;
+                }
+                validateAnnotationValues(annotationValues.states.value(), annotationType, annotationId, "states", tsIndex.numStates, annotationIndex);
+            }
+            if (annotationValues.choices.has_value()) {
+                if (!annotationIndex.appliesToChoices()) {
+                    err << "Annotation '" << annotationId << "' of type '" << annotationType
+                        << "' has choices values but does not apply to choices according to the index.\n";
+                    isValid = false;
+                }
+                validateAnnotationValues(annotationValues.choices.value(), annotationType, annotationId, "choices", tsIndex.numChoices, annotationIndex);
+            }
+            if (annotationValues.branches.has_value()) {
+                if (!annotationIndex.appliesToBranches()) {
+                    err << "Annotation '" << annotationId << "' of type '" << annotationType
+                        << "' has branches values but does not apply to branches according to the index.\n";
+                    isValid = false;
+                }
+                validateAnnotationValues(annotationValues.branches.value(), annotationType, annotationId, "branches", tsIndex.numBranches, annotationIndex);
+            }
+            if (annotationValues.observations.has_value()) {
+                if (!annotationIndex.appliesToObservations()) {
+                    err << "Annotation '" << annotationId << "' of type '" << annotationType
+                        << "' has observations values but does not apply to observations according to the index.\n";
+                    isValid = false;
+                }
+                validateAnnotationValues(annotationValues.observations.value(), annotationType, annotationId, "observations", tsIndex.numObservations,
+                                         annotationIndex);
+            }
+            if (annotationValues.players.has_value()) {
+                if (!annotationIndex.appliesToPlayers()) {
+                    err << "Annotation '" << annotationId << "' of type '" << annotationType
+                        << "' has players values but does not apply to players according to the index.\n";
+                    isValid = false;
+                }
+                validateAnnotationValues(annotationValues.players.value(), annotationType, annotationId, "players", tsIndex.numPlayers, annotationIndex);
+            }
+        }
+    }
 
     // Valuations
-    // TODO
+    auto validateValuation = [&isValid, &err](storm::umb::UmbModel::Valuation const& v, auto const& entityName, uint64_t const numEntity,
+                                              storm::umb::ValuationDescription const& descr) {
+        auto const context = std::string("valuations/") + entityName;
+        if (v.valuationToClass.has_value() && v.valuationToClass->size() != numEntity) {
+            err << context << "/valuation-to-class has invalid size: " << v.valuationToClass->size() << " != #" << entityName << "=" << numEntity << ".\n";
+            isValid = false;
+        }
+        if ((!v.valuationToClass.has_value() && !descr.classes.empty()) || descr.classes.size() == 1) {
+            // common case: all entities have the same valuation class
+            auto const& classDescr = descr.classes.front();
+            if (v.valuations.has_value() && v.valuations->size() < classDescr.sizeInBits() * 8 * numEntity) {
+                err << context << "/valuations has invalid size: " << v.valuations->size() << " != size of one valuation class (" << classDescr.sizeInBits()
+                    << " bits) * 8 * #entities=" << (classDescr.sizeInBits() * 8 * numEntity) << ".\n";
+                isValid = false;
+            }
+        }
+        if (v.stringMapping.has_value() && descr.numStrings.value_or(0) == 0) {
+            err << context << "/string-mapping given but the number of strings is zero.\n";
+            isValid = false;
+        }
+        if (v.stringMapping.has_value() != v.strings.has_value()) {
+            err << context << "/string-mapping is " << (v.stringMapping.has_value() ? "set" : "not set") << " although " << context << "/strings is "
+                << (v.strings.has_value() ? "set" : "not set") << ".\n";
+            isValid = false;
+        }
+        if (v.stringMapping.has_value()) {
+            isValid &= validation::validateCsr(v.stringMapping, context + "/string-mapping", descr.numStrings.value(), v.strings->size(), err);
+        }
+    };
+    if (umbModel.valuations.states.has_value()) {
+        if (!umbModel.index.valuations.has_value() || !umbModel.index.valuations->states.has_value()) {
+            err << "State valuations are given but no valuation descriptions are declared in the index.\n";
+            isValid = false;
+        } else {
+            validateValuation(umbModel.valuations.states.value(), "states", tsIndex.numStates, umbModel.index.valuations->states.value());
+        }
+    }
+    if (umbModel.valuations.choices.has_value()) {
+        if (!umbModel.index.valuations.has_value() || !umbModel.index.valuations->choices.has_value()) {
+            err << "Choice valuations are given but no valuation descriptions are declared in the index.\n";
+            isValid = false;
+        } else {
+            validateValuation(umbModel.valuations.choices.value(), "choices", tsIndex.numChoices, umbModel.index.valuations->choices.value());
+        }
+    }
+    if (umbModel.valuations.branches.has_value()) {
+        if (!umbModel.index.valuations.has_value() || !umbModel.index.valuations->branches.has_value()) {
+            err << "Branch valuations are given but no valuation descriptions are declared in the index.\n";
+            isValid = false;
+        } else {
+            validateValuation(umbModel.valuations.branches.value(), "branches", tsIndex.numBranches, umbModel.index.valuations->branches.value());
+        }
+    }
+    if (umbModel.valuations.observations.has_value()) {
+        if (!umbModel.index.valuations.has_value() || !umbModel.index.valuations->observations.has_value()) {
+            err << "Observation valuations are given but no valuation descriptions are declared in the index.\n";
+            isValid = false;
+        } else {
+            validateValuation(umbModel.valuations.observations.value(), "observations", tsIndex.numObservations,
+                              umbModel.index.valuations->observations.value());
+        }
+    }
+    if (umbModel.valuations.players.has_value()) {
+        if (!umbModel.index.valuations.has_value() || !umbModel.index.valuations->players.has_value()) {
+            err << "Player valuations are given but no valuation descriptions are declared in the index.\n";
+            isValid = false;
+        } else {
+            validateValuation(umbModel.valuations.players.value(), "players", tsIndex.numPlayers, umbModel.index.valuations->players.value());
+        }
+    }
 
-    // : add more validations
-
-    //    // Validate state valuations
-    //    if (index.stateValuations.has_value() != umbModel.states.stateValuations.has_value()) {
-    //        if (index.stateValuations.has_value()) {
-    //            err << "State valuations described in index file but not present.\n";
-    //        } else {
-    //            err << "State valuations present but not described in index file.\n";
-    //        }
-    //        isValid = false;
-    //    } else if (index.stateValuations.has_value()) {
-    //        uint64_t const alignment = index.stateValuations->alignment;
-    //        uint64_t const numBytes = umbModel.states.stateValuations->size();
-    //        if (alignment == 0) {
-    //            err << "State valuation alignment is 0.\n";
-    //            isValid = false;
-    //        }
-    //        if (numBytes % alignment != 0) {
-    //            err << "State valuation data size is " << umbModel.states.stateValuations->size() << " which is not a multiple of the alignment '" <<
-    //            alignment
-    //                << "'.\n";
-    //            isValid = false;
-    //        }
-    //        isValid &= validation::validateCsr(umbModel.states.stateToValuation, "state-to-valuation", tsIndex.numStates, numBytes / alignment, err);
-    //    }
-    //
-
-    // If prob type is rational, probabilities are either rational or uint64
-    // if annotation forStates/forChoices/forBranches is set, values are set too
-    // annotations in index are unique, and present as files
-    // rewards are numeric, aps are boolean
-    // annotations appliesTo is consistent with present files, annotation types are consistent (aps = bool, rewards = numeric)
     return isValid;
 }
 

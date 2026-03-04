@@ -9,15 +9,13 @@ namespace storm::umb {
 
 auto inline stringVectorView(SEQ<char> const& strings, CSR const& stringMapping) {
     STORM_LOG_ASSERT(!stringMapping.has_value() || std::ranges::size(stringMapping.value()) > 0, "stringMapping CSR must not be empty.");
-    STORM_LOG_ASSERT(!stringMapping.has_value() || strings.has_value(), "If stringMapping is present, strings must also be present.");
-    auto const numEntries = stringMapping.has_value() ? std::ranges::size(stringMapping.value()) - 1 : (strings.has_value() ? strings->size() : 0);
+    STORM_LOG_ASSERT(stringMapping.has_value() == strings.has_value(), "stringMapping must be present iff strings is present.");
+    auto const numEntries = stringMapping.has_value() ? std::ranges::size(stringMapping.value()) - 1 : 0;
     return std::ranges::iota_view(0ull, numEntries) |
            std::ranges::views::transform([stringPtr = strings.has_value() ? strings.value().data() : nullptr, &stringMapping](auto i) -> std::string_view {
-               if (stringMapping.has_value()) {
-                   return std::string_view(stringPtr + stringMapping.value()[i], stringMapping.value()[i + 1] - stringMapping.value()[i]);
-               } else {
-                   return std::string_view(stringPtr + i, 1);  // single character
-               }
+               // Note: this is only executed if numEntries is positive, i.e., if there actually are strings
+               STORM_LOG_ASSERT(stringPtr != nullptr, "Expected strings to be present if there are entries in the string mapping.");
+               return std::string_view(stringPtr + stringMapping.value()[i], stringMapping.value()[i + 1] - stringMapping.value()[i]);
            });
 }
 
