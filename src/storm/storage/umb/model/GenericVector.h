@@ -47,7 +47,15 @@ class GenericVector {
         return std::holds_alternative<Vec<T>>(data);
     }
 
+    /*!
+     * @return true if this holds some vector of any type.
+     */
     bool hasValue() const;
+
+    /*!
+     * @return the size of the held vector. 0 if no vector is held.
+     */
+    uint64_t size() const;
 
     template<typename FromType, typename ToType>
     auto convertFromTo() const {

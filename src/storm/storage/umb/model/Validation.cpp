@@ -76,9 +76,40 @@ bool validateTypeDeclaration(storm::umb::SizedType const& type, bool requireStan
     }
     return true;
 }
+
+bool vectorMatchesType(storm::umb::GenericVector const& vector, storm::umb::SizedType const& type) {
+    if (!vector.hasValue()) {
+        return true;  // no values are given so nothing wrong with the vector.
+    }
+
+    using enum storm::umb::Type;
+    switch (type.type) {
+        case Bool:
+            return vector.isType<bool>();
+        case Int:
+        case IntInterval:
+            return vector.isType<int64_t>();
+        case Uint:
+        case UintInterval:
+            return vector.isType<uint64_t>();
+        case Double:
+            return vector.isType<double>();
+        case DoubleInterval:
+            return vector.isType<double>() || vector.isType<storm::Interval>();
+        case Rational:
+        case RationalInterval:
+            return vector.isType<storm::RationalNumber>() || vector.isType<uint64_t>();  // rationals might be encoded as uint64_t
+        case String:
+            return false;  // GenericVector currently does not have a string variant.
+    }
+    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type.");
+}
 }  // namespace validation
 
 bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
+    ////////////
+    // Index
+    ////////////
     auto const& index = umbModel.index;
     auto const& tsIndex = index.transitionSystem;
     bool isValid = true;
@@ -182,11 +213,89 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
         });
     }
 
-    // Validate CSR mappings
+    ////////////
+    // Files
+    ////////////
+
+    // States
     isValid &= validation::validateCsr(umbModel.stateToChoices, "state-to-choice", tsIndex.numStates, tsIndex.numChoices, err);
+    if (umbModel.stateToPlayer.has_value()) {
+        if (tsIndex.numPlayers == 0) {
+            err << "state-to-player mapping is given but the model has no players.\n";
+            isValid = false;
+        } else if (umbModel.stateToPlayer->size() != tsIndex.numStates) {
+            err << "state-to-player mapping has invalid size: " << umbModel.stateToPlayer->size() << " != #states=" << tsIndex.numStates << ".\n";
+            isValid = false;
+        }
+    }
+    if (umbModel.stateIsInitial.has_value() && umbModel.stateIsInitial->size() != tsIndex.numStates) {
+        err << "state-is-initial has invalid size: " << umbModel.stateIsInitial->size() << " != #states=" << tsIndex.numStates << ".\n";
+        isValid = false;
+    }
+    if (umbModel.stateIsMarkovian.has_value()) {
+        if (tsIndex.time != ModelIndex::TransitionSystem::Time::UrgentStochastic) {
+            err << "state-is-markovian is given but the model does not have urgent-stochastic time.\n";
+            isValid = false;
+        } else if (umbModel.stateIsMarkovian->size() != tsIndex.numStates) {
+            err << "state-is-markovian has invalid size: " << umbModel.stateIsMarkovian->size() << " != #states=" << tsIndex.numStates << ".\n";
+            isValid = false;
+        }
+    }
+    if (umbModel.stateToExitRate.hasValue()) {
+        if (tsIndex.time == ModelIndex::TransitionSystem::Time::Discrete) {
+            err << "state-to-exit-rate mapping is given but the model has discrete time.\n";
+            isValid = false;
+        }
+        if (umbModel.stateToExitRate.size() != tsIndex.numStates) {
+            err << "state-to-exit-rate mapping has invalid size: " << umbModel.stateToExitRate.size() << " != #states=" << tsIndex.numStates << ".\n";
+            isValid = false;
+        }
+        if (!tsIndex.exitRateType.has_value()) {
+            err << "state-to-exit-rate mapping is given but exit rate type is not declared.\n";
+            isValid = false;
+        } else if (!validation::vectorMatchesType(umbModel.stateToExitRate, tsIndex.exitRateType.value())) {
+            err << "state-to-exit-rate mapping has values that do not match the declared exit rate type " << tsIndex.exitRateType->toString() << ".\n";
+            isValid = false;
+        }
+    }
+
+    // Choices
     isValid &= validation::validateCsr(umbModel.choiceToBranches, "choice-to-branch", tsIndex.numChoices, tsIndex.numBranches, err);
 
-    // TODO: add more validations
+    // Branches
+    if (umbModel.branchToTarget.has_value() && umbModel.branchToTarget->size() != tsIndex.numBranches) {
+        err << "branch-to-target mapping has invalid size: " << umbModel.branchToTarget->size() << " != #branches=" << tsIndex.numBranches << ".\n";
+        isValid = false;
+    }
+    if (umbModel.branchToProbability.hasValue()) {
+        if (umbModel.branchToProbability.size() != tsIndex.numBranches) {
+            err << "branch-to-probability mapping has invalid size: " << umbModel.branchToProbability.size() << " != #branches=" << tsIndex.numBranches
+                << ".\n";
+            isValid = false;
+        }
+        if (!tsIndex.branchProbabilityType.has_value()) {
+            err << "branch-to-probability mapping is given but branch probability type is not declared.\n";
+            isValid = false;
+        } else if (!validation::vectorMatchesType(umbModel.stateToExitRate, tsIndex.branchProbabilityType.value())) {
+            err << "branch-to-probability mapping has values that do not match the declared branch probability type "
+                << tsIndex.branchProbabilityType->toString() << ".\n";
+            isValid = false;
+        }
+    }
+
+    // Action labels
+    // TODO
+
+    // Observations
+    // TODO
+
+    // Annotations
+    // TODO
+
+    // Valuations
+    // TODO
+
+    // : add more validations
 
     //    // Validate state valuations
     //    if (index.stateValuations.has_value() != umbModel.states.stateValuations.has_value()) {
@@ -212,18 +321,6 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
     //        isValid &= validation::validateCsr(umbModel.states.stateToValuation, "state-to-valuation", tsIndex.numStates, numBytes / alignment, err);
     //    }
     //
-    //    // Validate other inputs
-    //    if (!umbModel.branches.branchToTarget.has_value()) {
-    //        err << "Branch to target mapping is missing.\n";
-    //        isValid = false;
-    //    } else if (umbModel.branches.branchToTarget->size() != tsIndex.numBranches) {
-    //        err << "Branch to target mapping has invalid size: " << umbModel.branches.branchToTarget->size() << " != " << tsIndex.numBranches << ".\n";
-    //        isValid = false;
-    //    }
-    //    if (!umbModel.branches.branchToProbability.hasValue()) {
-    //        err << "Branch probabilities are missing.";
-    //        isValid = false;
-    //    }
 
     // If prob type is rational, probabilities are either rational or uint64
     // if annotation forStates/forChoices/forBranches is set, values are set too

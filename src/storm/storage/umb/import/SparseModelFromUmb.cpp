@@ -47,7 +47,7 @@ storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel 
         for (auto const choiceIndex : choices) {
             STORM_LOG_ASSERT(choiceIndex < tsIndex.numChoices, "Choice index out of bounds.");
             for (auto const branchIndex : csrRange(umbModel.choiceToBranches, choiceIndex)) {
-                auto const& branchTarget = umbModel.branchToTarget.value()[branchIndex];
+                auto const branchTarget = umbModel.branchToTarget.has_value() ? umbModel.branchToTarget.value()[branchIndex] : 0ul;
                 STORM_LOG_ASSERT(branchTarget < tsIndex.numStates, "Branch target index out of bounds: " << branchTarget << " >= " << tsIndex.numStates);
                 builder.addNextValue(choiceIndex, branchTarget, branchValues[branchIndex]);
             }
@@ -189,8 +189,6 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
 
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::UmbModel const& umbModel) {
-    STORM_LOG_THROW(umbModel.branchToTarget.has_value(), storm::exceptions::WrongFormatException,
-                    "Branch to target mapping is required to construct transition matrix but not present in the UMB model.");
     if (umbModel.branchToProbability.hasValue()) {
         return createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
     } else {
@@ -259,10 +257,13 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
                         "State observations are required for POMDP models but not present in the UMB model.");
         components.observabilityClasses.emplace(umbModel.stateObservations->values->begin(), umbModel.stateObservations->values->end());
     } else if (modelType == Smg) {
-        STORM_LOG_THROW(umbModel.stateToPlayer.has_value(), storm::exceptions::WrongFormatException,
-                        "Player information is required for SMG models but not present in the UMB model.");
-        auto const& stateToPlayer = umbModel.stateToPlayer.value();
-        components.statePlayerIndications.emplace(stateToPlayer.begin(), stateToPlayer.end());
+        if (umbModel.stateToPlayer.has_value()) {
+            auto const& stateToPlayer = umbModel.stateToPlayer.value();
+            components.statePlayerIndications.emplace(stateToPlayer.begin(), stateToPlayer.end());
+        } else {
+            // Default to all states belonging to player 0
+            components.statePlayerIndications.emplace(umbModel.index.transitionSystem.numStates, 0);
+        }
         if (umbModel.index.transitionSystem.playerNames.has_value()) {
             auto const& names = umbModel.index.transitionSystem.playerNames.value();
             STORM_LOG_THROW(names.size() == umbModel.index.transitionSystem.numPlayers, storm::exceptions::WrongFormatException,

@@ -11,6 +11,11 @@
 #include "storm/utility/OptionalRef.h"
 
 namespace storm::umb {
+/*!
+ * Represents a model in the UMB format. The data is stored in a way that closely reflects the file structure of the UMB format.
+ * @see https://pmc-tools.github.io/umb/spec
+ * @note We use reflexion to associate the data with the expected file names.
+ */
 class UmbModel {
    public:
     // index
