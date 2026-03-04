@@ -224,9 +224,7 @@ storm::umb::UmbModel fromArchive(std::filesystem::path const& umbArchive, Import
     storm::umb::UmbModel umbModel;
     // First pass: find the index file
     bool indexFound = false;
-    uint64_t i = 0;
     for (auto entry : storm::io::openArchive(umbArchive)) {
-        ++i;
         if (entry.name() == "index.json") {
             parseIndexFromString(entry.toString(), umbModel.index);
             indexFound = true;
