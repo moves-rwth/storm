@@ -34,7 +34,7 @@ auto csrRange(auto&& csr, uint64_t i) {
 }
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> createMatrix(storm::umb::UmbModel const& umbModel, std::ranges::input_range auto&& branchValues) {
+storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, std::ranges::input_range auto&& branchValues) {
     auto const& tsIndex = umbModel.index.transitionSystem;
     bool const hasRowGroups = tsIndex.numPlayers >= 1;
     storm::storage::SparseMatrixBuilder<ValueType> builder(tsIndex.numChoices, tsIndex.numStates, tsIndex.numBranches, true, hasRowGroups,
@@ -57,10 +57,17 @@ storm::storage::SparseMatrix<ValueType> createMatrix(storm::umb::UmbModel const&
 }
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> createMatrix(storm::umb::UmbModel const& umbModel, storm::umb::GenericVector const& branchValues,
-                                                     storm::umb::SizedType const& sourceType) {
-    return ValueEncoding::applyDecodedVector<ValueType>([&umbModel](auto&& input) { return createMatrix<ValueType>(umbModel, input); }, branchValues,
+storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, storm::umb::GenericVector const& branchValues,
+                                                           storm::umb::SizedType const& sourceType) {
+    return ValueEncoding::applyDecodedVector<ValueType>([&umbModel](auto&& input) { return createBranchMatrix<ValueType>(umbModel, input); }, branchValues,
                                                         sourceType);
+}
+
+template<typename ValueType>
+storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, ValueType const& defaultValue) {
+    auto const defaultView = std::ranges::iota_view(0ull, umbModel.index.transitionSystem.numBranches) |
+                             std::ranges::views::transform([&defaultValue](auto) -> ValueType { return defaultValue; });
+    return createBranchMatrix<ValueType>(umbModel, defaultView);
 }
 
 storm::storage::BitVector createBitVector(storm::umb::VectorType<bool> const& umbBitVector, uint64_t size) {
@@ -170,7 +177,7 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
                 stateActionRewards = ValueEncoding::createDecodedVector<ValueType>(rew.choices->values, rewIndex.type);
             }
             if (rewIndex.appliesToBranches() && rew.branches.has_value()) {
-                transitionRewards = createMatrix<ValueType>(umbModel, rew.branches->values, rewIndex.type);
+                transitionRewards = createBranchMatrix<ValueType>(umbModel, rew.branches->values, rewIndex.type);
             }
             STORM_LOG_THROW(!rewIndex.appliesToObservations(), storm::exceptions::WrongFormatException,
                             "Observation rewards are not supported for reward '" << rewName << "'.");
@@ -181,6 +188,17 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
 }
 
 template<typename ValueType>
+storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::UmbModel const& umbModel) {
+    STORM_LOG_THROW(umbModel.branchToTarget.has_value(), storm::exceptions::WrongFormatException,
+                    "Branch to target mapping is required to construct transition matrix but not present in the UMB model.");
+    if (umbModel.branchToProbability.hasValue()) {
+        return createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
+    } else {
+        return createBranchMatrix<ValueType>(umbModel, storm::utility::one<ValueType>());
+    }
+}
+
+template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(storm::umb::UmbModel const& umbModel, ImportOptions const& options) {
     umbModel.validateOrThrow();
 
@@ -188,7 +206,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> constructSparseModel(st
     auto stateLabelling = constructStateLabeling(umbModel);
     STORM_LOG_THROW(umbModel.index.transitionSystem.branchProbabilityType.has_value(), storm::exceptions::WrongFormatException,
                     "Branch probability type must be given in the UMB model index.");
-    auto transitionMatrix = createMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
+    auto transitionMatrix = constructTransitionMatrix<ValueType>(umbModel);
     storm::storage::sparse::ModelComponents<ValueType> components(std::move(transitionMatrix), std::move(stateLabelling),
                                                                   constructRewardModels<ValueType>(umbModel));
     if (options.buildChoiceLabeling && umbModel.index.transitionSystem.numChoiceActions > 0) {
