@@ -1,7 +1,7 @@
 #include "storm/modelchecker/results/CheckResult.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
