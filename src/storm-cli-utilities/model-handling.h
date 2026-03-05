@@ -633,7 +633,7 @@ inline std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const&
                 return buildModelSparse<VT>(input, options);
             });
         }
-    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
+    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitUmbSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
         result = applyValueType(mpi.buildValueType, [&ioSettings]<typename VT>() {

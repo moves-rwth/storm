@@ -280,8 +280,8 @@ void setIndexInformation(storm::models::sparse::Model<ValueType> const& model, s
     // file-data:
     index.fileData.emplace();
     index.fileData->setCreationDateToNow();
-    index.fileData->tool = "storm";
-    // TODO: it's apparently difficult to get the version of the tool because the storm library is not linked against storm-version-info
+    index.fileData->tool = "Storm";
+    // Note: it's difficult to get the version of the tool because the storm library is not linked against storm-version-info
 
     // transition-system:
     auto& ts = index.transitionSystem;

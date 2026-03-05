@@ -11,28 +11,28 @@ namespace storm::umb {
 std::string UmbModel::getShortModelInformation() const {
     std::stringstream info;
     if (index.modelData) {
-        info << index.modelData->name.value_or("Unnamed_Model");
+        info << index.modelData->name.value_or("<unnamed_model>");
         if (index.modelData->version) {
             info << " v" << index.modelData->version.value();
         }
     } else {
-        info << "Unnamed_Model";
+        info << "<unnamed_model>";
     }
     return info.str();
 }
 
 std::string UmbModel::getModelInformation() const {
     std::stringstream info;
-    info << "UMB Model " << getShortModelInformation();
+    info << "UMB Model " << getShortModelInformation() << "\n";
     auto optionalPrint = [&info](std::string const& label, auto const& value) {
         if (value) {
-            info << "\t" << label << ": " << value.value() << "\n";
+            info << "\t* " << label << ": " << value.value() << "\n";
         }
     };
     if (index.modelData) {
         auto const& md = index.modelData.value();
         if (md.authors && !md.authors->empty()) {
-            info << "\tAuthors: " << boost::join(md.authors.value(), "; ") << "\n";
+            info << "\t* Authors: " << boost::join(md.authors.value(), "; ") << "\n";
         }
         optionalPrint("Description", md.description);
         optionalPrint("Comment", md.comment);
@@ -42,17 +42,17 @@ std::string UmbModel::getModelInformation() const {
     if (index.fileData) {
         auto const& fd = index.fileData.value();
         if (fd.tool) {
-            info << "\tCreated with tool: " << fd.tool.value();
+            info << "\t* Created with tool: " << fd.tool.value();
             if (fd.toolVersion) {
                 info << " v" << fd.toolVersion.value();
             }
             info << "\n";
         }
         if (fd.creationDate) {
-            info << "\tCreation date: " << fd.creationDateAsString() << "\n";
+            info << "\t* Creation date: " << fd.creationDateAsString() << "\n";
         }
         if (fd.parameters) {
-            info << "\tParameters:\n" << storm::dumpJson(fd.parameters.value()) << "\n";
+            info << "\t* Parameters:\n" << storm::dumpJson(fd.parameters.value()) << "\n";
         }
     }
     return info.str();

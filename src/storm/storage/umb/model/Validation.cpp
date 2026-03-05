@@ -12,7 +12,7 @@
 namespace storm::umb {
 
 namespace validation {
-bool validateCsr(auto const& csr, std::string_view const name, uint64_t numMappedElements, uint64_t expectedlastEntry, std::ostream& err) {
+bool validateCsr(auto const& csr, std::string_view const name, uint64_t numMappedElements, std::optional<uint64_t> expectedlastEntry, std::ostream& err) {
     std::stringstream err_reason;
     if (csr) {
         // Check if csr has expected length and the form {0, ..., expectedlastEntry}
@@ -22,12 +22,12 @@ bool validateCsr(auto const& csr, std::string_view const name, uint64_t numMappe
         if (csr.value()[0] != 0) {
             err_reason << "CSR has unexpected first entry: " << csr.value()[0] << " != 0" << ".";
         }
-        if (csr.value()[numMappedElements] != expectedlastEntry) {
-            err_reason << "CSR has unexpected last entry: " << csr.value()[numMappedElements] << " != " << expectedlastEntry << ".";
+        if (expectedlastEntry.has_value() && csr.value()[numMappedElements] != expectedlastEntry.value()) {
+            err_reason << "CSR has unexpected last entry: " << csr.value()[numMappedElements] << " != " << expectedlastEntry.value() << ".";
         }
-    } else if (numMappedElements != expectedlastEntry) {  // we assume a 1:1 mapping
+    } else if (expectedlastEntry.has_value() && numMappedElements != expectedlastEntry.value()) {  // we assume a 1:1 mapping
         err_reason << "CSR is not given and the default 1:1 mapping {0, ... ," << numMappedElements << "} does not match. Expected the mapping to end with '"
-                   << expectedlastEntry << "'" << ".";
+                   << expectedlastEntry.value() << "'" << ".";
     }
     if (!err_reason.view().empty()) {
         err << "Validation error in CSR mapping '" << name << "':\n\t" << err_reason.str() << "\n";
@@ -221,6 +221,38 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
     // Files
     ////////////
 
+    // Validate the expected size of TO1<..> and SEQ<..> vectors.
+    auto isExpectedBoolVectorSize = [](uint64_t const actual, uint64_t const expected) {
+        return actual == expected || actual == ((expected + 63) / 64) * 64;  // size might be rounded up to the nearest multiple of 64
+    };
+    auto isExpectedTypedVectorSize = [](uint64_t const actual, storm::umb::SizedType const& type, uint64_t const expected) {
+        // Either the size matches exactly or we have a type-dependend encoding where other sizes are possible, too.
+        if (actual == expected) {
+            return true;
+        } else {
+            using enum storm::umb::Type;
+            switch (type.type) {
+                case Bool:
+                    // size might be rounded up to the nearest multiple of 64
+                    return actual == ((expected + 63) / 64) * 64;
+                case IntInterval:
+                case UintInterval:
+                case DoubleInterval:
+                    // vector might be encoded by storing lower and upper separately
+                    return actual == 2 * expected;
+                case Rational:
+                    // might be encoded as uint64
+                    return actual == expected * type.bitSize() / 64;
+                case RationalInterval:
+                    // might be encoded as uint64
+                    return actual == 2 * (expected * type.bitSize() / 64);
+                default:
+                    // for all other types, the size must match exactly which we have checked above already
+                    return false;
+            }
+        }
+    };
+
     // States
     isValid &= validation::validateCsr(umbModel.stateToChoices, "state-to-choice", tsIndex.numStates, tsIndex.numChoices, err);
     if (umbModel.stateToPlayer.has_value()) {
@@ -232,7 +264,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             isValid = false;
         }
     }
-    if (umbModel.stateIsInitial.has_value() && umbModel.stateIsInitial->size() != tsIndex.numStates) {
+    if (umbModel.stateIsInitial.has_value() && !isExpectedBoolVectorSize(umbModel.stateIsInitial->size(), tsIndex.numStates)) {
         err << "state-is-initial has invalid size: " << umbModel.stateIsInitial->size() << " != #states=" << tsIndex.numStates << ".\n";
         isValid = false;
     }
@@ -240,7 +272,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
         if (tsIndex.time != ModelIndex::TransitionSystem::Time::UrgentStochastic) {
             err << "state-is-markovian is given but the model does not have urgent-stochastic time.\n";
             isValid = false;
-        } else if (umbModel.stateIsMarkovian->size() != tsIndex.numStates) {
+        } else if (!isExpectedBoolVectorSize(umbModel.stateIsMarkovian->size(), tsIndex.numStates)) {
             err << "state-is-markovian has invalid size: " << umbModel.stateIsMarkovian->size() << " != #states=" << tsIndex.numStates << ".\n";
             isValid = false;
         }
@@ -250,15 +282,14 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             err << "state-to-exit-rate mapping is given but the model has discrete time.\n";
             isValid = false;
         }
-        if (umbModel.stateToExitRate.size() != tsIndex.numStates) {
-            err << "state-to-exit-rate mapping has invalid size: " << umbModel.stateToExitRate.size() << " != #states=" << tsIndex.numStates << ".\n";
-            isValid = false;
-        }
         if (!tsIndex.exitRateType.has_value()) {
             err << "state-to-exit-rate mapping is given but exit rate type is not declared.\n";
             isValid = false;
         } else if (!validation::vectorMatchesType(umbModel.stateToExitRate, tsIndex.exitRateType.value())) {
             err << "state-to-exit-rate mapping has values that do not match the declared exit rate type " << tsIndex.exitRateType->toString() << ".\n";
+            isValid = false;
+        } else if (!isExpectedTypedVectorSize(umbModel.stateToExitRate.size(), tsIndex.exitRateType.value(), tsIndex.numStates)) {
+            err << "state-to-exit-rate mapping has invalid size: " << umbModel.stateToExitRate.size() << " != #states=" << tsIndex.numStates << ".\n";
             isValid = false;
         }
     }
@@ -272,17 +303,16 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
         isValid = false;
     }
     if (umbModel.branchToProbability.hasValue()) {
-        if (umbModel.branchToProbability.size() != tsIndex.numBranches) {
-            err << "branch-to-probability mapping has invalid size: " << umbModel.branchToProbability.size() << " != #branches=" << tsIndex.numBranches
-                << ".\n";
-            isValid = false;
-        }
         if (!tsIndex.branchProbabilityType.has_value()) {
             err << "branch-to-probability mapping is given but branch probability type is not declared.\n";
             isValid = false;
         } else if (!validation::vectorMatchesType(umbModel.branchToProbability, tsIndex.branchProbabilityType.value())) {
             err << "branch-to-probability mapping has values that do not match the declared branch probability type "
                 << tsIndex.branchProbabilityType->toString() << ".\n";
+            isValid = false;
+        } else if (!isExpectedTypedVectorSize(umbModel.branchToProbability.size(), tsIndex.branchProbabilityType.value(), tsIndex.numBranches)) {
+            err << "branch-to-probability mapping has invalid size: " << umbModel.branchToProbability.size() << " != #branches=" << tsIndex.numBranches
+                << ".\n";
             isValid = false;
         }
     }
@@ -321,29 +351,33 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
     }
 
     // Observations
-    auto validateObservations = [&isValid, &err](storm::umb::UmbModel::Observations const& obs, auto const& entityName, uint64_t const numEntity,
-                                                 uint64_t const numObservations, std::optional<storm::umb::SizedType> const& obsProbType) {
-        uint64_t numObservationValues = obs.probabilities.hasValue() ? obs.probabilities.size() : numEntity;
+    auto validateObservations = [&isValid, &err, &isExpectedTypedVectorSize](storm::umb::UmbModel::Observations const& obs, auto const& entityName,
+                                                                             uint64_t const numEntity, uint64_t const numObservations,
+                                                                             std::optional<storm::umb::SizedType> const& obsProbType) {
         if (obs.values.has_value()) {
             if (numObservations == 0) {
                 err << "observations/" << entityName << "/values given but the number of observations is zero.\n";
                 isValid = false;
-            } else if (obs.values->size() != numObservationValues) {
+            } else if (obs.probabilities.hasValue() || obs.values->size() != numEntity) {
                 err << "observations/" << entityName << "/values has invalid size: " << obs.values->size() << " != #" << entityName
-                    << "-observation-values=" << numObservationValues << ".\n";
+                    << "-observation-values=" << numEntity << ".\n";
                 isValid = false;
             }
-        }
-        isValid &= validation::validateCsr(obs.distributionMapping, std::string("observations/") + entityName + "/distribution-mapping", numEntity,
-                                           numObservationValues, err);
-        if (obs.probabilities.hasValue()) {
-            if (!obsProbType.has_value()) {
-                err << "observations/" << entityName << "/probabilities given but observation probability type is not declared.\n";
-                isValid = false;
-            } else if (!validation::vectorMatchesType(obs.probabilities, obsProbType.value())) {
-                err << "observations/" << entityName << "/probabilities has values that do not match the declared observation probability type "
-                    << obsProbType->toString() << ".\n";
-                isValid = false;
+            isValid &= validation::validateCsr(obs.distributionMapping, std::string("observations/") + entityName + "/distribution-mapping", numEntity,
+                                               obs.values->size(), err);
+            if (obs.probabilities.hasValue()) {
+                if (!obsProbType.has_value()) {
+                    err << "observations/" << entityName << "/probabilities given but observation probability type is not declared.\n";
+                    isValid = false;
+                } else if (!validation::vectorMatchesType(obs.probabilities, obsProbType.value())) {
+                    err << "observations/" << entityName << "/probabilities has values that do not match the declared observation probability type "
+                        << obsProbType->toString() << ".\n";
+                    isValid = false;
+                } else if (!isExpectedTypedVectorSize(obs.probabilities.size(), obsProbType.value(), numObservations)) {
+                    err << "observations/" << entityName << "/probabilities has invalid size: " << obs.probabilities.size()
+                        << " != #observations=" << numObservations << ".\n";
+                    isValid = false;
+                }
             }
         }
     };
@@ -355,17 +389,17 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
     }
 
     // Annotations
-    auto validateAnnotationValues = [&isValid, &err](storm::umb::UmbModel::AnnotationValues const& av, auto const& group, auto const& id,
-                                                     auto const& entityName, uint64_t const numEntity, storm::umb::ModelIndex::Annotation const& ai) {
+    auto validateAnnotationValues = [&isValid, &err, &isExpectedTypedVectorSize](storm::umb::UmbModel::AnnotationValues const& av, auto const& group,
+                                                                                 auto const& id, auto const& entityName, uint64_t const numEntity,
+                                                                                 storm::umb::ModelIndex::Annotation const& ai) {
         auto const context = std::string("annotations/") + group + "/" + id + "/" + entityName;
         uint64_t const numAnnotationValues = ai.numProbabilities.value_or(numEntity);
         if (av.values.hasValue()) {
-            if (av.values.size() != numAnnotationValues) {
-                err << context << "/values has invalid size: " << av.values.size() << " != #" << entityName << "-annotation-values=" << numAnnotationValues;
-                isValid = false;
-            }
             if (!validation::vectorMatchesType(av.values, ai.type)) {
                 err << context << "/values has values that do not match the declared annotation type " << ai.type.toString() << ".\n";
+                isValid = false;
+            } else if (!isExpectedTypedVectorSize(av.values.size(), ai.type, numAnnotationValues)) {
+                err << context << "/values has invalid size: " << av.values.size() << " != #" << entityName << "-annotation-values=" << numAnnotationValues;
                 isValid = false;
             }
         }
@@ -394,6 +428,10 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
             } else if (!validation::vectorMatchesType(av.probabilities, ai.probabilityType.value())) {
                 err << context << "/probabilities has values that do not match the declared annotation probability type " << ai.probabilityType->toString()
                     << ".\n";
+                isValid = false;
+            } else if (!isExpectedTypedVectorSize(av.probabilities.size(), ai.probabilityType.value(), numAnnotationValues)) {
+                err << context << "/probabilities has invalid size: " << av.probabilities.size() << " != #" << entityName
+                    << "-annotation-values=" << numAnnotationValues << ".\n";
                 isValid = false;
             }
         }

@@ -30,7 +30,7 @@ struct ExportOptions {
     /*!
      * The type of compression used for the exported UMB model.
      */
-    storm::io::CompressionMode compression{storm::io::CompressionMode::Xz};
+    storm::io::CompressionMode compression{storm::io::CompressionMode::Default};
 
     /*!
      * Whether to canonicize POMDPs before export.

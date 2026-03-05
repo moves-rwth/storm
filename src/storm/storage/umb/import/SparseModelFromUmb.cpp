@@ -192,7 +192,28 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::UmbModel const& umbModel) {
     if (umbModel.branchToProbability.hasValue()) {
-        return createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
+        auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, umbModel.index.transitionSystem.branchProbabilityType.value());
+        if constexpr (storm::NumberTraits<ValueType>::IsExact) {
+            if (umbModel.branchToProbability.isType<double>() || umbModel.branchToProbability.isType<storm::Interval>()) {
+                // If the branch probabilities are imprecise, we might need to normalize the matrix rows to ensure they sum up to 1.
+                uint64_t numNormalized{0};
+                ValueType maxDiff{storm::utility::zero<ValueType>()};
+                for (uint64_t rowIndex = 0; rowIndex < result.getRowCount(); ++rowIndex) {
+                    auto const rowSum = result.getRowSum(rowIndex);
+                    if (!storm::utility::isOne(rowSum)) {
+                        maxDiff = std::max(maxDiff, storm::utility::abs<ValueType>(storm::utility::one<ValueType>() - rowSum));
+                        ++numNormalized;
+                        for (auto& entry : result.getRow(rowIndex)) {
+                            entry.setValue(entry.getValue() / rowSum);
+                        }
+                    }
+                }
+                STORM_LOG_WARN_COND(numNormalized == 0,
+                                    "Branch probabilities are given in an imprecise type but an exact model was requested. Probabilities for "
+                                        << numNormalized << " choices were normalized to ensure they sum up to 1. Maximum diff to 1 was " << maxDiff << ".");
+            }
+        }
+        return result;
     } else {
         return createBranchMatrix<ValueType>(umbModel, storm::utility::one<ValueType>());
     }

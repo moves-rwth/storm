@@ -137,9 +137,9 @@ void exportFiles(UmbStructure const& umbStructure, storm::io::ArchiveWriter& tar
 
 void toArchive(storm::umb::UmbModel const& umbModel, std::filesystem::path const& archivePath, ExportOptions const& options) {
     auto compression = options.compression;
-    // Set xz as default compression
+    // Set gzip as default compression
     if (compression == storm::io::CompressionMode::Default) {
-        compression = storm::io::CompressionMode::Xz;
+        compression = storm::io::CompressionMode::Gzip;
     }
     storm::io::ArchiveWriter archiveWriter(archivePath, compression);
     detail::exportFiles(umbModel, archiveWriter, {});
