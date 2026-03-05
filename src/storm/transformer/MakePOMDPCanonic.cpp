@@ -1,5 +1,6 @@
-#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
+#include "storm/transformer/MakePOMDPCanonic.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/AmbiguousModelException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -304,6 +305,7 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
 
 template class MakePOMDPCanonic<double>;
 template class MakePOMDPCanonic<storm::RationalNumber>;
+template class MakePOMDPCanonic<storm::Interval>;
 template class MakePOMDPCanonic<storm::RationalFunction>;
 }  // namespace transformer
 }  // namespace storm

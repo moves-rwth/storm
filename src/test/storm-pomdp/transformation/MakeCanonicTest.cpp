@@ -5,10 +5,10 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
-#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/MakePOMDPCanonic.h"
 
 TEST(MakeCanonic, Simple) {
 #ifndef STORM_HAVE_Z3

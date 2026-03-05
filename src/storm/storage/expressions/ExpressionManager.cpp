@@ -63,6 +63,7 @@ ExpressionManager::ExpressionManager()
       numberOfBitVectorVariables(0),
       numberOfRationalVariables(0),
       numberOfArrayVariables(0),
+      numberOfStringVariables(0),
       freshVariableCounter(0) {
     // Intentionally left empty.
 }
@@ -138,6 +139,13 @@ Type const& ExpressionManager::getTranscendentalNumberType() const {
     return transcendentalNumberType.get();
 }
 
+Type const& ExpressionManager::getStringType() const {
+    if (!stringType) {
+        stringType = Type(this->getSharedPointer(), std::shared_ptr<BaseType>(new StringType()));
+    }
+    return stringType.get();
+}
+
 bool ExpressionManager::isValidVariableName(std::string const& name) {
     return name.size() < 2 || name.at(0) != '_' || name.at(1) != '_';
 }
@@ -203,6 +211,8 @@ Variable ExpressionManager::declareOrGetVariable(std::string const& name, storm:
             offset = numberOfRationalVariables++;
         } else if (variableType.isArrayType()) {
             offset = numberOfArrayVariables++;
+        } else if (variableType.isStringType()) {
+            offset = numberOfStringVariables++;
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException,
                             "Trying to declare a variable of unsupported type: '" << variableType.getStringRepresentation() << "'.");
@@ -267,12 +277,15 @@ uint_fast64_t ExpressionManager::getNumberOfVariables(storm::expressions::Type c
         return numberOfRationalVariables;
     } else if (variableType.isArrayType()) {
         return numberOfArrayVariables;
+    } else if (variableType.isStringType()) {
+        return numberOfStringVariables;
     }
     return 0;
 }
 
 uint_fast64_t ExpressionManager::getNumberOfVariables() const {
-    return numberOfBooleanVariables + numberOfIntegerVariables + numberOfBitVectorVariables + numberOfRationalVariables + numberOfArrayVariables;
+    return numberOfBooleanVariables + numberOfIntegerVariables + numberOfBitVectorVariables + numberOfRationalVariables + numberOfArrayVariables +
+           numberOfStringVariables;
 }
 
 uint_fast64_t ExpressionManager::getNumberOfBooleanVariables() const {
@@ -293,6 +306,10 @@ uint_fast64_t ExpressionManager::getNumberOfRationalVariables() const {
 
 uint_fast64_t ExpressionManager::getNumberOfArrayVariables() const {
     return numberOfRationalVariables;
+}
+
+uint_fast64_t ExpressionManager::getNumberOfStringVariables() const {
+    return numberOfStringVariables;
 }
 
 std::string const& ExpressionManager::getVariableName(uint_fast64_t index) const {

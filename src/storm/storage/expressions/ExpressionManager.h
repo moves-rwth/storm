@@ -169,6 +169,12 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     Type const& getTranscendentalNumberType() const;
 
     /*!
+     * Retrieves the string type
+     * @return The string type
+     */
+    Type const& getStringType() const;
+
+    /*!
      * Declares a variable that is a copy of the provided variable (i.e. has the same type).
      *
      * @param variable The variable of which to create a copy.
@@ -350,6 +356,11 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t getNumberOfArrayVariables() const;
 
     /*!
+     * Retrieves the number of array variables.
+     */
+    uint_fast64_t getNumberOfStringVariables() const;
+
+    /*!
      * Retrieves the name of the variable with the given index.
      *
      * @param index The index of the variable whose name to retrieve.
@@ -464,6 +475,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t numberOfBitVectorVariables;
     uint_fast64_t numberOfRationalVariables;
     uint_fast64_t numberOfArrayVariables;
+    uint_fast64_t numberOfStringVariables;
 
     // A counter used to create fresh variables.
     uint_fast64_t freshVariableCounter;
@@ -475,6 +487,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     mutable boost::optional<Type> rationalType;
     mutable std::unordered_set<Type> arrayTypes;
     mutable boost::optional<Type> transcendentalNumberType;
+    mutable boost::optional<Type> stringType;
 
     // A mask that can be used to query whether a variable is an auxiliary variable.
     static const uint64_t auxiliaryMask = (1ull << 50);

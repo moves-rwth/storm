@@ -18,6 +18,8 @@ ModelExportFormat getModelExportFormatFromString(std::string const& input) {
         return ModelExportFormat::Drn;
     } else if (input == "json") {
         return ModelExportFormat::Json;
+    } else if (input == "umb") {
+        return ModelExportFormat::Umb;
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model export format '" << input << "' does not match any known format.");
 }
@@ -32,6 +34,8 @@ std::string toString(ModelExportFormat const& input) {
             return "drn";
         case ModelExportFormat::Json:
             return "json";
+        case ModelExportFormat::Umb:
+            return "umb";
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
 }

@@ -595,6 +595,11 @@ class SparseMatrix {
     boost::integer_range<index_type> getRowGroupIndices(index_type group) const;
 
     /*!
+     * Returns the entry indices within the given row
+     */
+    std::vector<index_type> const& getRowIndices() const;
+
+    /*!
      * Swaps the grouping of rows of this matrix.
      *
      * @return The old grouping of rows of this matrix.

@@ -171,6 +171,35 @@ if(${Boost_VERSION} VERSION_GREATER_EQUAL "1.81.0")
     # TODO Only do this for a specific target?
 endif()
 
+if(${Boost_VERSION} VERSION_LESS "1.75.0") # Debian 12 ships with Boost 1.74.0
+    message(STATUS "Storm - Loading Boost.PFR as it is not part of Boost < 1.75.0")
+    ExternalProject_Add(
+            boost_pfr_src
+            GIT_REPOSITORY https://github.com/boostorg/pfr.git
+            GIT_TAG 2.2.0
+            SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr
+            PATCH_COMMAND ""
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            LOG_DOWNLOAD ON
+            LOG_INSTALL ON
+    )
+    add_library(boost_pfr INTERFACE) # Not imported, we are in control of the sources.
+    add_dependencies(boost_pfr boost_pfr_src)
+    target_include_directories(boost_pfr INTERFACE
+            $<BUILD_INTERFACE:${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include>
+            $<INSTALL_INTERFACE:${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr/include>
+    )
+    install(TARGETS boost_pfr EXPORT storm_Targets)
+    install(DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/boost_pfr/include/
+            DESTINATION ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/boost_pfr/include
+            PATTERN ".git" EXCLUDE)
+    add_dependencies(storm_resources boost_pfr)
+    list(APPEND STORM_DEP_TARGETS boost_pfr)
+endif()
+
 message(STATUS "Storm - Using boost ${Boost_VERSION} (library version ${Boost_LIB_VERSION}).")
 list(APPEND STORM_DEP_IMP_TARGETS Boost::boost)
 
