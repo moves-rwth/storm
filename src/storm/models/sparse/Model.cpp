@@ -66,9 +66,6 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     STORM_LOG_ASSERT(
         components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(stochasticTolerance),
         "The matrix is not probabilistic.");
-    if (this->hasUncertainty()) {
-        STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
-    }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
     for (auto const& rewardModel : this->getRewardModels()) {
