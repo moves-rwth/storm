@@ -17,10 +17,3 @@ template<typename ValueType>
 void exportModelToUmb(storm::models::sparse::Model<ValueType> const& model, std::filesystem::path const& targetLocation, ExportOptions const& options = {});
 
 }  // namespace storm::umb
-
-///*!
-// * Load a model in umb format from a file or directory and create the model.
-// */
-// template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
-// std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(std::string const& file, UmbParserOptions const& options = {});
-//}  // namespace storm::umb
