@@ -16,11 +16,11 @@
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(
     std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model) {
-    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->getInitialStates());
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(model->getInitialStates());
 }
 
 std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilter(std::shared_ptr<storm::models::sparse::Model<double>> const& model) {
-    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->getInitialStates());
+    return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<double>>(model->getInitialStates());
 }
 
 double getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::Interval>> const& model,
@@ -138,7 +138,7 @@ void checkModelForQualitativeResult(std::string const& path, std::string const& 
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
 
     for (size_t i = 0; i < expectedResultVector[0].size(); i++) {
-        EXPECT_EQ(expectedResultVector[0].get(i), result->asExplicitQualitativeCheckResult()[i]);
+        EXPECT_EQ(expectedResultVector[0].get(i), result->template asExplicitQualitativeCheckResult<double>()[i]);
     }
 
     auto task2 = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[1]);
@@ -148,7 +148,7 @@ void checkModelForQualitativeResult(std::string const& path, std::string const& 
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
 
     for (size_t i = 0; i < expectedResultVector[1].size(); i++) {
-        EXPECT_EQ(expectedResultVector[1].get(i), result->asExplicitQualitativeCheckResult()[i]);
+        EXPECT_EQ(expectedResultVector[1].get(i), result->template asExplicitQualitativeCheckResult<double>()[i]);
     }
 }
 

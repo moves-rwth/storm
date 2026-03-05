@@ -30,9 +30,9 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     ExplicitQualitativeCheckResult(vector_type const& truthValues);
     ExplicitQualitativeCheckResult(vector_type&& truthValues);
     ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues,
-                                   boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+                                   std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = {});
     ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues,
-                                   boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = boost::none);
+                                   std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler = {});
 
     ExplicitQualitativeCheckResult(ExplicitQualitativeCheckResult const& other) = default;
     ExplicitQualitativeCheckResult& operator=(ExplicitQualitativeCheckResult const& other) = default;
@@ -79,7 +79,7 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     boost::variant<vector_type, map_type> truthValues;
 
     // An optional scheduler that accompanies the values.
-    boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
+    std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler;
 };
 }  // namespace modelchecker
 }  // namespace storm

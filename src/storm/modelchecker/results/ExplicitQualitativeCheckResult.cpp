@@ -1,3 +1,4 @@
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -286,13 +287,13 @@ void ExplicitQualitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<sto
 template<typename ValueType>
 storm::storage::Scheduler<ValueType> const& ExplicitQualitativeCheckResult<ValueType>::getScheduler() const {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>
 storm::storage::Scheduler<ValueType>& ExplicitQualitativeCheckResult<ValueType>::getScheduler() {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename JsonRationalType>
@@ -337,7 +338,6 @@ template class ExplicitQualitativeCheckResult<double>;
 template storm::json<double> ExplicitQualitativeCheckResult<double>::toJson<double>(std::optional<storm::storage::sparse::StateValuations> const&,
                                                                                     std::optional<storm::models::sparse::StateLabeling> const&) const;
 
-#ifdef STORM_HAVE_CARL
 template storm::json<storm::RationalNumber> ExplicitQualitativeCheckResult<double>::toJson<storm::RationalNumber>(
     std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const;
 
@@ -358,7 +358,6 @@ template storm::json<double> ExplicitQualitativeCheckResult<storm::Interval>::to
                                                                                              std::optional<storm::models::sparse::StateLabeling> const&) const;
 template storm::json<storm::RationalNumber> ExplicitQualitativeCheckResult<storm::Interval>::toJson<storm::RationalNumber>(
     std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const;
-#endif
 
 }  // namespace modelchecker
 }  // namespace storm
