@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "storm/adapters/IntervalForward.h"
 #include "test/storm_gtest.h"
 
 #include "storm-parsers/api/model_descriptions.h"
