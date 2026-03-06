@@ -338,5 +338,8 @@ template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& o
                                                                  std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 template void explicitExportSparseModel<storm::Interval>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::Interval>> sparseModel,
                                                          std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
+template void explicitExportSparseModel<storm::RationalInterval>(std::ostream& os,
+                                                                 std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> sparseModel,
+                                                                 std::vector<std::string> const& parameters, DirectEncodingExporterOptions const& options);
 }  // namespace io
 }  // namespace storm

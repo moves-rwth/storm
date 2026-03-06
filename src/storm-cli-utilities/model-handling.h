@@ -154,7 +154,7 @@ struct ModelProcessingInformation {
     bool transformToJani;
 
     // Which data type is to be used for numbers ...
-    enum class ValueType { FinitePrecision, Exact, Parametric };
+    enum class ValueType { FinitePrecision, Exact, Parametric, FinitePrecisionInterval, ExactInterval };
     ValueType buildValueType;         // ... during model building
     ValueType verificationValueType;  // ... during model verification
 
@@ -222,9 +222,17 @@ inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput co
     if (generalSettings.isParametricSet()) {
         mpi.verificationValueType = ModelProcessingInformation::ValueType::Parametric;
     } else if (generalSettings.isExactSet()) {
-        mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
+        if (generalSettings.isIntervalSet()) {
+            mpi.verificationValueType = ModelProcessingInformation::ValueType::ExactInterval;
+        } else {
+            mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
+        }
     } else {
-        mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
+        if (generalSettings.isIntervalSet()) {
+            mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecisionInterval;
+        } else {
+            mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
+        }
     }
     auto originalVerificationValueType = mpi.verificationValueType;
 

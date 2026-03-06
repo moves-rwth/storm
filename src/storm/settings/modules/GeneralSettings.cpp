@@ -32,6 +32,7 @@ const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
 const std::string GeneralSettings::parametricOptionName = "parametric";
 const std::string GeneralSettings::exactOptionName = "exact";
 const std::string GeneralSettings::soundOptionName = "sound";
+const std::string GeneralSettings::intervalOptionName = "interval";
 
 GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
     this->addOption(
@@ -85,6 +86,8 @@ GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                              .build())
             .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, soundOptionName, false, "Sets whether to force sound model checking.").build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, intervalOptionName, false, "Sets whether to enable interval model checking.").build());
 }
 
 bool GeneralSettings::isHelpSet() const {
@@ -150,6 +153,10 @@ bool GeneralSettings::isExactFinitePrecisionSet() const {
 
 bool GeneralSettings::isSoundSet() const {
     return this->getOption(soundOptionName).getHasOptionBeenSet();
+}
+
+bool GeneralSettings::isIntervalSet() const {
+    return this->getOption(intervalOptionName).getHasOptionBeenSet();
 }
 
 void GeneralSettings::finalize() {

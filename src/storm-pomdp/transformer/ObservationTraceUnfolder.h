@@ -47,7 +47,7 @@ class ObservationTraceUnfolder {
     bool isRejectionSamplingSet() const;
 
    private:
-    storm::models::sparse::Pomdp<ValueType> const& model;
+    storm::models::sparse::Pomdp<ValueType> model;
     std::vector<ValueType> risk;  // TODO reconsider holding this as a reference, but there were some strange bugs
     std::shared_ptr<storm::expressions::ExpressionManager>& exprManager;
     // std::vector<storm::storage::BitVector> statesPerObservation;

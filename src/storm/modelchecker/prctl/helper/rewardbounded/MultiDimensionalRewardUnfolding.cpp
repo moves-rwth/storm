@@ -964,6 +964,8 @@ template class MultiDimensionalRewardUnfolding<double, true>;
 template class MultiDimensionalRewardUnfolding<double, false>;
 template class MultiDimensionalRewardUnfolding<storm::RationalNumber, true>;
 template class MultiDimensionalRewardUnfolding<storm::RationalNumber, false>;
+// template class MultiDimensionalRewardUnfolding<storm::RationalInterval, true>;
+// template class MultiDimensionalRewardUnfolding<storm::RationalInterval, false>;
 }  // namespace rewardbounded
 }  // namespace helper
 }  // namespace modelchecker

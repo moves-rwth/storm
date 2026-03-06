@@ -41,6 +41,12 @@ struct NumberTraits<storm::GmpRationalNumber> {
 #endif
 
 template<>
+struct NumberTraits<storm::RationalInterval> {
+    static const bool SupportsExponential = false;
+    static const bool IsExact = true;
+};
+
+template<>
 struct NumberTraits<storm::RationalFunction> {
     static const bool SupportsExponential = false;
     static const bool IsExact = true;

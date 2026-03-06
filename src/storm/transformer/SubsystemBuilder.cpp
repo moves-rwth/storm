@@ -225,6 +225,10 @@ template SubsystemBuilderReturnType<double, storm::models::sparse::StandardRewar
     storm::models::sparse::Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& originalModel,
     storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
     SubsystemBuilderOptions options = SubsystemBuilderOptions());
+template SubsystemBuilderReturnType<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>> buildSubsystem(
+    storm::models::sparse::Model<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>> const& originalModel,
+    storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
+    SubsystemBuilderOptions options = SubsystemBuilderOptions());
 template SubsystemBuilderReturnType<storm::RationalNumber> buildSubsystem(storm::models::sparse::Model<storm::RationalNumber> const& originalModel,
                                                                           storm::storage::BitVector const& subsystemStates,
                                                                           storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
@@ -235,6 +239,10 @@ template SubsystemBuilderReturnType<storm::RationalFunction> buildSubsystem(stor
                                                                             bool keepUnreachableStates = true,
                                                                             SubsystemBuilderOptions options = SubsystemBuilderOptions());
 template SubsystemBuilderReturnType<storm::Interval> buildSubsystem(storm::models::sparse::Model<storm::Interval> const& originalModel,
+                                                                    storm::storage::BitVector const& subsystemStates,
+                                                                    storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
+                                                                    SubsystemBuilderOptions options = SubsystemBuilderOptions());
+template SubsystemBuilderReturnType<storm::RationalInterval> buildSubsystem(storm::models::sparse::Model<storm::RationalInterval> const& originalModel,
                                                                     storm::storage::BitVector const& subsystemStates,
                                                                     storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
                                                                     SubsystemBuilderOptions options = SubsystemBuilderOptions());

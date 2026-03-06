@@ -135,5 +135,7 @@ template class SchedulerTrackingHelper<double>;
 template class SchedulerTrackingHelper<storm::RationalNumber>;
 template class SchedulerTrackingHelper<storm::Interval, double>;
 template class SchedulerTrackingHelper<storm::Interval, double, true>;
+template class SchedulerTrackingHelper<storm::RationalInterval, storm::RationalNumber>;
+template class SchedulerTrackingHelper<storm::RationalInterval, storm::RationalNumber, true>;
 
 }  // namespace storm::solver::helper

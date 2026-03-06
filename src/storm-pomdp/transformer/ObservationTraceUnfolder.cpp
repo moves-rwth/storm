@@ -1,9 +1,12 @@
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
+#include <algorithm>
 
 #include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/ConstantsComparator.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 
@@ -96,7 +99,8 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
             std::cout << "\tconsider new state " << unfoldedToOldEntry.first << '\n';
 #endif
-            assert(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1);
+            STORM_LOG_ASSERT(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1,
+                             "step " << step << " newRowCount " << newRowCount << " lastRow " << transitionMatrixBuilder.getLastRow());
             svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second), static_cast<int64_t>(step)});
             uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second];
             uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second + 1];
@@ -112,6 +116,13 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
                 for (auto const& oldRowEntry : model.getTransitionMatrix().getRow(oldRowIndex)) {
                     if (model.getObservation(oldRowEntry.getColumn()) != observations[step + 1]) {
                         resetProb += oldRowEntry.getValue();
+                        if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+                            resetProb.setUpper(std::min(resetProb.upper(), 1.0));
+                            resetProb.setLower(std::max(resetProb.lower(), 0.0));
+                        } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+                            resetProb.setUpper(std::min(resetProb.upper(), utility::one<storm::RationalNumber>()));
+                            resetProb.setLower(std::max(resetProb.lower(), utility::zero<storm::RationalNumber>()));
+                        }
                     }
                 }
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
@@ -188,7 +199,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     storm::storage::sparse::ModelComponents<ValueType> components;
     components.transitionMatrix = transitionMatrixBuilder.build();
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-    std::cout << components.transitionMatrix << '\n';
+    // std::cout << components.transitionMatrix << '\n';
 #endif
 
     storm::models::sparse::StateLabeling labeling(components.transitionMatrix.getRowGroupCount());
@@ -225,8 +236,9 @@ bool ObservationTraceUnfolder<ValueType>::isRejectionSamplingSet() const {
 }
 
 template class ObservationTraceUnfolder<double>;
+template class ObservationTraceUnfolder<storm::Interval>;
+template class ObservationTraceUnfolder<storm::RationalInterval>;
 template class ObservationTraceUnfolder<storm::RationalNumber>;
 template class ObservationTraceUnfolder<storm::RationalFunction>;
-template class ObservationTraceUnfolder<storm::Interval>;
 }  // namespace pomdp
 }  // namespace storm
