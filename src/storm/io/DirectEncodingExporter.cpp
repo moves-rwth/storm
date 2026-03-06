@@ -72,6 +72,8 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
         os << "rational";
     } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
         os << "double-interval";
+    } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+        os << "rational-interval";
     } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         os << "parametric";
     } else {

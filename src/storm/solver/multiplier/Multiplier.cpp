@@ -76,14 +76,14 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduce(Environment 
 
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir,
-                                                                              std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n,
-                                                                              ValueType factor) const {
+                                                                              std::vector<SolutionType>& x, std::vector<ValueType> const* b, uint64_t n,
+                                                                              SolutionType factor) const {
     storm::utility::ProgressMeasurement progress("multiplications");
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
         progress.updateProgress(i);
-        std::transform(x.begin(), x.end(), x.begin(), [factor](ValueType& c) { return c * factor; });
+        std::transform(x.begin(), x.end(), x.begin(), [factor](SolutionType& c) { return c * factor; });
         multiplyAndReduce(env, dir, x, b, x);
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
@@ -93,14 +93,14 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduceWithFactor(En
 }
 
 template<typename ValueType, typename SolutionType>
-void Multiplier<ValueType, SolutionType>::repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b,
-                                                                     uint64_t n, ValueType factor) const {
+void Multiplier<ValueType, SolutionType>::repeatedMultiplyWithFactor(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
+                                                                     uint64_t n, SolutionType factor) const {
     storm::utility::ProgressMeasurement progress("multiplications");
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
         progress.updateProgress(i);
-        std::transform(x.begin(), x.end(), x.begin(), [factor](ValueType& c) { return c * factor; });
+        std::transform(x.begin(), x.end(), x.begin(), [factor](SolutionType& c) { return c * factor; });
         multiply(env, x, b, x);
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
@@ -126,17 +126,14 @@ std::unique_ptr<Multiplier<ValueType, SolutionType>> MultiplierFactory<ValueType
 
     // Adjust the type if the ValueType is not supported
     if (type == MultiplierType::ViOperator &&
-        (std::is_same_v<ValueType, storm::RationalFunction> || (std::is_same_v<ValueType, storm::Interval> && std::is_same_v<SolutionType, storm::Interval>) ||
-         (std::is_same_v<ValueType, storm::RationalInterval> && std::is_same_v<SolutionType, storm::RationalInterval>))) {
+        (std::is_same_v<ValueType, storm::RationalFunction> || (storm::IsIntervalType<ValueType> && storm::IsIntervalType<SolutionType>))) {
         STORM_LOG_INFO("Switching multiplier type from 'vioperator' to 'native' because the given ValueType is not supported by the VI Operator multiplier.");
         type = MultiplierType::Native;
     }
 
     switch (type) {
         case MultiplierType::ViOperator:
-            if constexpr (std::is_same_v<ValueType, storm::RationalFunction> ||
-                          (std::is_same_v<ValueType, storm::Interval> && std::is_same_v<SolutionType, storm::Interval>) ||
-                          (std::is_same_v<ValueType, storm::RationalInterval> && std::is_same_v<SolutionType, storm::RationalInterval>)) {
+            if constexpr (std::is_same_v<ValueType, storm::RationalFunction> || (storm::IsIntervalType<ValueType> && storm::IsIntervalType<SolutionType>)) {
                 throw storm::exceptions::NotImplementedException() << "VI Operator multiplier not supported with given value type.";
             }
             if (matrix.hasTrivialRowGrouping()) {

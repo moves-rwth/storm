@@ -61,7 +61,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
 
     // Build choice label map of monitor choices
     std::vector<std::string> monitorChoiceLabels;
-    for (auto i = 0; i < monitor.getTransitionMatrix().getRowCount(); i++) {
+    for (typename storm::storage::SparseMatrix<ValueType>::index_type i = 0; i < monitor.getTransitionMatrix().getRowCount(); i++) {
         auto const& monitorLabels = monitor.getChoiceLabeling().getLabelsOfChoice(i);
         STORM_LOG_THROW(monitorLabels.size() == 1, storm::exceptions::InvalidArgumentException, "Monitor choice has not exactly one choice label");
         monitorChoiceLabels.push_back(*monitorLabels.begin());
@@ -343,7 +343,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         svBuilder.addVariable(monvar);
         svBuilder.addVariable(mcvar);
         std::set<expressions::Variable> variables;
-        for (auto i = 0; i < mc.getNumberOfStates(); i++) {
+        for (uint_fast64_t i = 0; i < mc.getNumberOfStates(); i++) {
             const auto& valAssignment = mc.getStateValuations().at(i);
             for (auto val = valAssignment.begin(); val != valAssignment.end(); ++val) {
                 if (val.isVariableAssignment() && !variables.contains(val.getVariable())) {
@@ -353,8 +353,8 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             }
         }
 
-        for (auto i = 0; i < mc.getNumberOfStates(); i++) {
-            for (auto j = 0; j < monitor.getNumberOfStates(); j++) {
+        for (uint_fast64_t i = 0; i < mc.getNumberOfStates(); i++) {
+            for (uint_fast64_t j = 0; j < monitor.getNumberOfStates(); j++) {
                 product_state_type s(i, j);
                 if (!prodToIndexMap.contains(s))
                     continue;

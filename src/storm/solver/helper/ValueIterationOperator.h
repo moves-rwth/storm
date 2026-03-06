@@ -282,7 +282,7 @@ class ValueIterationOperator {
     template<OptimizationDirection RobustDirection, typename OperandType, typename OffsetType>
     auto applyRow(std::vector<IndexType>::const_iterator& matrixColumnIt, typename std::vector<ValueType>::const_iterator& matrixValueIt,
                   OperandType const& operand, OffsetType const& offsets, uint64_t offsetIndex) const {
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             return applyRowRobust<RobustDirection>(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);
         } else {
             return applyRowStandard(matrixColumnIt, matrixValueIt, operand, offsets, offsetIndex);

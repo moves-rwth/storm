@@ -37,7 +37,7 @@ template<typename SparseMdpModelType>
 bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<storm::logic::Formula, SolutionType> const& checkTask,
                                                                      bool* requiresSingleInitialState) {
     storm::logic::Formula const& formula = checkTask.getFormula();
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         if (formula.isInFragment(storm::logic::propositional())) {
             return true;
         }
@@ -118,7 +118,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     if (pathFormula.isMultiDimensional() || pathFormula.getTimeBoundReference().isRewardBound()) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented multi dimensional bounded until with intervals");
             return nullptr;
         } else {
@@ -143,14 +143,13 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
         std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
         ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
         ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-        storm::modelchecker::helper::SparseNondeterministicStepBoundedHorizonHelper<ValueType> helper;
+        storm::modelchecker::helper::SparseNondeterministicStepBoundedHorizonHelper<ValueType, SolutionType> helper;
         std::vector<SolutionType> numericResult =
             helper.compute(env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
                            this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
                            pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
         return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
     }
-}
 }
 
 template<typename SparseMdpModelType>
@@ -208,7 +207,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeHOAPathProbabilities(
     Environment const& env, CheckTask<storm::logic::HOAPathFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented automata-props with intervals");
     } else {
         storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
@@ -235,7 +234,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeLTLProbabilities(
     Environment const& env, CheckTask<storm::logic::PathFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented  LTL with intervals");
     } else {
         storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
@@ -280,7 +279,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-    if constexpr (std::is_same_v<storm::Interval, ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         throw exceptions::NotImplementedException() << "Conditional Probabilities are not supported with interval models";
     } else {
         return storm::modelchecker::computeConditionalProbabilities(
@@ -437,7 +436,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeLongRunAverageProbabilities(
     Environment const& env, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented LRA probabilities with intervals");
     } else {
         storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
@@ -462,7 +461,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeLongRunAverageRewards(
     Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented lra with intervals");
     } else {
         STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
@@ -483,7 +482,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(
     Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented multi-objective with intervals");
     } else {
         return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula(), checkTask.isProduceSchedulersSet());
@@ -493,7 +492,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
 template<class SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkLexObjectiveFormula(
     const Environment& env, const CheckTask<storm::logic::MultiObjectiveFormula, SolutionType>& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented lexicographic model checking with intervals");
     } else {
         auto formulaChecker = [&](storm::logic::Formula const& formula) {
@@ -508,7 +507,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkQuantileFormula(
     Environment const& env, CheckTask<storm::logic::QuantileFormula, SolutionType> const& checkTask) {
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented quantile formulas with intervals");
     } else {
         STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,

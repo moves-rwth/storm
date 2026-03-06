@@ -1,4 +1,6 @@
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
+#include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
@@ -61,7 +63,7 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
         std::vector<ValueType> b;
         uint64_t subresultSize;
 
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             // For intervals, we cannot remove all non maybe states as that would lead to the upper probability of rows summing to below 1.
             // Instead we only drop all outgoing transitions of non maybe states.
             // See src/storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.cpp:624 for more details.
@@ -88,7 +90,7 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
             multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound - lowerBound + 1);
 
             storm::storage::SparseMatrix<ValueType> submatrix;
-            if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+            if constexpr (storm::IsIntervalType<ValueType>) {
                 submatrix = transitionMatrix.filterEntries(transitionMatrix.getRowFilter(maybeStates));
             } else {
                 submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);

@@ -105,7 +105,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                         "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }
@@ -247,7 +247,7 @@ SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<Val
     storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices) {
     SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
     // TODO: Just like SparseMdpPrctlHelper::computeFixedPointSystemUntilProbabilities, this method must be adapted for intervals.
-    if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                         "We do not support the elimination of end components and the creation of an adequate equation system with interval models.");
     }

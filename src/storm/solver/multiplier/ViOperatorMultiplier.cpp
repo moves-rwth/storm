@@ -1,5 +1,6 @@
 #include "ViOperatorMultiplier.h"
 
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/solver/helper/ValueIterationOperator.h"

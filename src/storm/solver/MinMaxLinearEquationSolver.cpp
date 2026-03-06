@@ -252,19 +252,19 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>>(
             std::make_unique<GeneralLinearEquationSolverFactory<SolutionType>>());
     } else if (method == MinMaxMethod::Topological) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_ERROR("Topological method not implemented for ValueType==Interval.");
         } else {
             result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>>();
         }
     } else if (method == MinMaxMethod::LinearProgramming || method == MinMaxMethod::ViToLp) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_ERROR("LP method not implemented for ValueType==Interval.");
         } else {
             result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
         }
     } else if (method == MinMaxMethod::Acyclic) {
-        if constexpr (std::is_same_v<ValueType, storm::Interval> || std::is_same_v<ValueType, storm::RationalInterval>) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
             STORM_LOG_ERROR("Acyclic method not implemented for ValueType==Interval");
         } else {
             result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();

@@ -43,8 +43,8 @@ class GenerateMonitorVerifier {
    private:
     const storm::models::sparse::Dtmc<ValueType>& mc;
     const storm::models::sparse::Mdp<ValueType>& monitor;
-    std::shared_ptr<storm::expressions::ExpressionManager>& exprManager;
     std::vector<ValueType> risk;
+    std::shared_ptr<storm::expressions::ExpressionManager>& exprManager;
     storm::expressions::Variable monvar;
     storm::expressions::Variable mcvar;
     Options options;

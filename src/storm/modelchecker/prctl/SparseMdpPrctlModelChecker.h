@@ -11,26 +11,10 @@ class Environment;
 namespace modelchecker {
 template<class SparseMdpModelType>
 class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<SparseMdpModelType> {
-   private:
-    template<typename T, typename Dummy>
-    struct GetSolutionType {
-        using type = T;
-    };
-
-    template<typename Dummy>
-    struct GetSolutionType<storm::Interval, Dummy> {
-        using type = double;
-    };
-
-    template<typename Dummy>
-    struct GetSolutionType<storm::RationalInterval, Dummy> {
-        using type = storm::RationalNumber;
-    };
-
    public:
     typedef typename SparseMdpModelType::ValueType ValueType;
     typedef typename SparseMdpModelType::RewardModelType RewardModelType;
-    using SolutionType = typename GetSolutionType<ValueType, void>::type;
+    using SolutionType = storm::IntervalBaseType<ValueType>;
 
     explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model);
 

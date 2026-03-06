@@ -134,7 +134,8 @@ class Multiplier {
      * @param n The number of times to perform the multiplication.
      * @param factor The scalar to multiply with in each iteration.
      */
-    void repeatedMultiplyWithFactor(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+    void repeatedMultiplyWithFactor(Environment const& env, std::vector<SolutionType>& x, std::vector<ValueType> const* b, uint64_t n,
+                                    SolutionType factor) const;
 
     /*!
      * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b, minimizes/maximizes over the row groups
@@ -150,8 +151,8 @@ class Multiplier {
      * @param n The number of times to perform the multiplication.
      * @param factor The scalar to multiply with in each iteration.
      */
-    void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x,
-                                             std::vector<ValueType> const* b, uint64_t n, ValueType factor) const;
+    void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x,
+                                             std::vector<ValueType> const* b, uint64_t n, SolutionType factor) const;
 
    protected:
     std::vector<SolutionType>& provideCachedVector(uint64_t size) const;
