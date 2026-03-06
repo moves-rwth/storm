@@ -1,9 +1,9 @@
 #pragma once
 
 #include "storm-config.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/settings/modules/ModuleSettings.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 namespace settings {

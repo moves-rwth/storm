@@ -4,11 +4,11 @@
 #include <memory>
 #include <string>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
-#include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
 

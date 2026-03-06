@@ -15,7 +15,6 @@ const std::string ModelCheckerSettings::ltl2daToolOptionName = "ltl2datool";
 const std::string ModelCheckerSettings::conditionalAlgorithmOptionName = "conditional";
 static const std::string conditionalToleranceName = "conditional-tolerance";
 
-
 ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false,
                                                    "If set, states with reward zero are filtered out, potentially reducing the size of the equation system")
@@ -37,13 +36,14 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
                                          .build())
                         .build());
     // Would be better if there was a createRationalArgument .
-    this->addOption(storm::settings::OptionBuilder(moduleName, conditionalToleranceName, false, "The internally used tolerance for computing conditional probabilities..")
-                        .setShortName("condtol")
-                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.")
-                                         .setDefaultValueDouble(1e-06)
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0, 1.0))
-                                         .build())
-                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, conditionalToleranceName, false, "The internally used tolerance for computing conditional probabilities..")
+            .setShortName("condtol")
+            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.")
+                             .setDefaultValueDouble(1e-06)
+                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0, 1.0))
+                             .build())
+            .build());
 }
 
 bool ModelCheckerSettings::isFilterRewZeroSet() const {

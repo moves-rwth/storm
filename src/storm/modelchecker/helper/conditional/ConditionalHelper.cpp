@@ -519,7 +519,7 @@ typename internal::ResultReturnType<ValueType> computeViaRestartMethod(Environme
     }
 
     STORM_PRINT_AND_LOG("Processed model has " << matrix.getRowGroupCount() << " states and " << matrix.getRowGroupCount() << " choices and "
-                                          << matrix.getEntryCount() << " transitions.");
+                                               << matrix.getEntryCount() << " transitions.");
 
     // Finally, solve the equation system, potentially computing a scheduler
     std::optional<std::vector<uint64_t>> reducedSchedulerChoices;
@@ -745,7 +745,7 @@ class WeightedReachabilityHelper {
         }
         isAcyclic = !storm::utility::graph::hasCycle(submatrix);
         STORM_PRINT_AND_LOG("Processed model has " << submatrix.getRowGroupCount() << " states and " << submatrix.getRowGroupCount() << " choices and "
-                                              << submatrix.getEntryCount() << " transitions. Matrix is " << (isAcyclic ? "acyclic." : "cyclic."));
+                                                   << submatrix.getEntryCount() << " transitions. Matrix is " << (isAcyclic ? "acyclic." : "cyclic."));
 
         if (computeScheduler) {
             // For easier conversion of schedulers to the original model, we create and update some index mappings
@@ -1060,8 +1060,8 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         }
         if (boundDiff <= (relative ? (precision * *lowerBound) : precision)) {
             STORM_PRINT_AND_LOG("Bisection method converged after " << iterationCount << " iterations. Difference is "
-                                                               << std::setprecision(std::numeric_limits<double>::digits10)
-                                                               << storm::utility::convertNumber<double>(boundDiff) << ".");
+                                                                    << std::setprecision(std::numeric_limits<double>::digits10)
+                                                                    << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
         } else if (usePolicyTracking && lowerScheduler && upperScheduler && (*lowerScheduler == *upperScheduler)) {
             STORM_PRINT_AND_LOG("Bisection method converged after " << iterationCount << " iterations due to identical schedulers for lower and upper bound.");
@@ -1074,15 +1074,15 @@ typename internal::ResultReturnType<ValueType> computeViaBisection(Environment c
         // Check if bounds are fully below or above threshold
         if (goal.isBounded() && (*upperBound <= goal.thresholdValue() || (*lowerBound >= goal.thresholdValue()))) {
             STORM_PRINT_AND_LOG("Bisection method determined result after " << iterationCount << " iterations. Found bounds are ["
-                                                                       << storm::utility::convertNumber<double>(*lowerBound) << ", "
-                                                                       << storm::utility::convertNumber<double>(*upperBound) << "], threshold is "
-                                                                       << storm::utility::convertNumber<double>(goal.thresholdValue()) << ".");
+                                                                            << storm::utility::convertNumber<double>(*lowerBound) << ", "
+                                                                            << storm::utility::convertNumber<double>(*upperBound) << "], threshold is "
+                                                                            << storm::utility::convertNumber<double>(goal.thresholdValue()) << ".");
             break;
         }
         // check for early termination
         if (storm::utility::resources::isTerminate()) {
             STORM_PRINT_AND_LOG("Bisection solver aborted after " << iterationCount << "iterations. Bound difference is "
-                                                             << storm::utility::convertNumber<double>(boundDiff) << ".");
+                                                                  << storm::utility::convertNumber<double>(boundDiff) << ".");
             break;
         }
         // process the middle value for the next iteration
@@ -1267,14 +1267,15 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
     auto normalFormConstructionEnv = env;
     auto analysisEnv = env;
 
-//    if (env.solver().isForceSoundness()) {
-//        // We intuitively have to divide the precision into two parts, one for computations when constructing the normal form and one for the actual analysis.
-//        // As the former is usually less numerically challenging, we use a factor of 1/10 for the normal form construction and 9/10 for the analysis.
-//        auto const normalFormPrecisionFactor = storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10");
-//        normalFormConstructionEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() * normalFormPrecisionFactor);
-//        analysisEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() *
-//                                                   (storm::utility::one<storm::RationalNumber>() - normalFormPrecisionFactor));
-//    }
+    //    if (env.solver().isForceSoundness()) {
+    //        // We intuitively have to divide the precision into two parts, one for computations when constructing the normal form and one for the actual
+    //        analysis.
+    //        // As the former is usually less numerically challenging, we use a factor of 1/10 for the normal form construction and 9/10 for the analysis.
+    //        auto const normalFormPrecisionFactor = storm::utility::convertNumber<storm::RationalNumber, std::string>("1/10");
+    //        normalFormConstructionEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() * normalFormPrecisionFactor);
+    //        analysisEnv.solver().minMax().setPrecision(env.solver().minMax().getPrecision() *
+    //                                                   (storm::utility::one<storm::RationalNumber>() - normalFormPrecisionFactor));
+    //    }
 
     // We first translate the problem into a normal form.
     // @see doi.org/10.1007/978-3-642-54862-8_43
@@ -1303,7 +1304,8 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         if (alg == ConditionalAlgorithmSetting::Default) {
             alg = ConditionalAlgorithmSetting::Restart;
         }
-        STORM_PRINT_AND_LOG("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg << ".");
+        STORM_PRINT_AND_LOG("Analyzing normal form with " << normalFormData.maybeStates.getNumberOfSetBits() << " maybe states using algorithm '" << alg
+                                                          << ".");
         // sw.restart();
         internal::ResultReturnType<SolutionType> result{storm::utility::zero<SolutionType>()};
         switch (alg) {

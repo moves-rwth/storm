@@ -688,7 +688,6 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowEntr
     return (this->rowIndications[row + 1] - this->rowIndications[row]);
 }
 
-
 template<typename ValueType>
 typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonzeroEntryCount() const {
     return nonzeroEntryCount;

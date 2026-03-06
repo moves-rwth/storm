@@ -49,9 +49,8 @@ void ModelCheckerEnvironment::setConditionalTolerance(storm::RationalNumber cons
     conditionalToleranceSetting = value;
 }
 
-
 storm::RationalNumber ModelCheckerEnvironment::getConditionalTolerance() const {
-   return conditionalToleranceSetting;
+    return conditionalToleranceSetting;
 }
 
 bool ModelCheckerEnvironment::isAllowOptimizationForBoundedPropertiesSet() const {
