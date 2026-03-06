@@ -32,7 +32,7 @@ TEST_P(BddModularizerTest, ProbabilityAtTimeOne) {
     EXPECT_NEAR(checker->getProbabilityAtTimebound(1), param.probabilityAtTimeboundOne, 1e-6);
 }
 
-static std::vector<ModularizerTestData> modularizerTestData{
+std::vector<ModularizerTestData> modularizerTestData{
     {
         "And",
         STORM_TEST_RESOURCES_DIR "/dft/bdd/AndTest.dft",

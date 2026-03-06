@@ -339,7 +339,7 @@ void setLowerUpperTotalRewardBoundsToSolver(storm::solver::AbstractEquationSolve
                     .computeUpperBounds());
         }
     }
-    if (reqLower && !upperBound.has_value()) {
+    if (reqLower && !lowerBound.has_value()) {
         // For lower bounds we actually compute upper bounds for the negated rewards.
         // We therefore need tmpRewards in any way.
         tmpRewards.resize(rewards.size());

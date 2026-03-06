@@ -289,10 +289,12 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
-        if (env.modelchecker().multi().isLexicographicModelCheckingSet()) {
-            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        auto const& mof = stateFormula.asMultiObjectiveFormula();
+        if (mof.isLexicographic() || env.modelchecker().multi().isLexicographicModelCheckingSet()) {
+            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(mof));
         } else {
-            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+            STORM_LOG_ASSERT(mof.isTradeoff(), "Unexpected multi-objective formula type.");
+            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(mof));
         }
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
@@ -487,6 +489,7 @@ template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm
 template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
+template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
 
 // DD
 template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;

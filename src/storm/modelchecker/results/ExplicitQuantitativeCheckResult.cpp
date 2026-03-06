@@ -48,14 +48,14 @@ ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(vect
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type> const& values,
-                                                                            boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                            std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : values(values), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values,
-                                                                            boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                            std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : values(std::move(values)), scheduler(scheduler) {
     // Intentionally left empty.
 }
@@ -226,13 +226,13 @@ void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<st
 template<typename ValueType>
 storm::storage::Scheduler<ValueType> const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>
 storm::storage::Scheduler<ValueType>& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>

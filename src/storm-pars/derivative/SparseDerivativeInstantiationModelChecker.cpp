@@ -143,20 +143,20 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     if (this->currentFormula->isRewardOperatorFormula()) {
         auto subformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
             this->currentFormula->asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
-        target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<ConstantType>().getTruthValuesVector();
+        target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
     } else {
         if (this->currentFormula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
             auto rightSubformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula());
             auto leftSubformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula());
-            target = propositionalChecker.check(rightSubformula)->template asExplicitQualitativeCheckResult<ConstantType>().getTruthValuesVector();
-            avoid = propositionalChecker.check(leftSubformula)->template asExplicitQualitativeCheckResult<ConstantType>().getTruthValuesVector();
+            target = propositionalChecker.check(rightSubformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
+            avoid = propositionalChecker.check(leftSubformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
             avoid.complement();
         } else {
             auto subformula = modelchecker::CheckTask<storm::logic::Formula, FunctionType>(
                 this->currentFormula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
-            target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<ConstantType>().getTruthValuesVector();
+            target = propositionalChecker.check(subformula)->template asExplicitQualitativeCheckResult<FunctionType>().getTruthValuesVector();
         }
     }
     initialStateModel = model.getStates("init").getNextSetIndex(0);

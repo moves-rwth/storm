@@ -13,11 +13,15 @@ namespace modelchecker {
 namespace multiobjective {
 
 template<typename ValueType, typename GeometryValueType>
-std::vector<GeometryValueType> transformObjectiveValuesToOriginal(std::vector<Objective<ValueType>> objectives, std::vector<GeometryValueType> const& point);
+GeometryValueType transformObjectiveValueToOriginal(Objective<ValueType> const& objectives, GeometryValueType const& value);
+
+template<typename ValueType, typename GeometryValueType>
+std::vector<GeometryValueType> transformObjectiveValuesToOriginal(std::vector<Objective<ValueType>> const& objectives,
+                                                                  std::vector<GeometryValueType> const& point);
 
 template<typename ValueType, typename GeometryValueType>
 std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformObjectivePolytopeToOriginal(
-    std::vector<Objective<ValueType>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope);
+    std::vector<Objective<ValueType>> const& objectives, std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope);
 
 /*
  * Uses the information from reverse data to edit the objective schedulers in 'schedulers' to ones

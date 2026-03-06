@@ -41,7 +41,7 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> propositionalChecker(*dtmc);
     storm::storage::BitVector psiStates =
         propositionalChecker.check(checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
-            ->asExplicitQualitativeCheckResult<storm::RationalFunction>()
+            ->template asExplicitQualitativeCheckResult<storm::RationalFunction>()
             .getTruthValuesVector();
 
     std::vector<storm::RationalFunction> target(model->getNumberOfStates(), storm::utility::zero<storm::RationalFunction>());
@@ -79,8 +79,8 @@ void testModelInterval(std::string programFile, std::string formulaAsString, std
     solver2->setMatrix(withoutMECs);
     auto x2 = std::vector<double>(target2.size(), 0);
 
-    solver1->setUncertaintyIsRobust(false);
-    solver2->setUncertaintyIsRobust(false);
+    solver1->setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
+    solver2->setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
 
     // Check that maximize is the same
     solver1->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);

@@ -5,9 +5,11 @@
 
 #include "storm-config.h"
 #include "storm/builder/ExplorationOrder.h"
+#include "storm/io/CompressionMode.h"
 #include "storm/io/ModelExportFormat.h"
 #include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 namespace storm {
 namespace settings {
@@ -58,6 +60,28 @@ class IOSettings : public ModuleSettings {
      * Retrieves the specified export format for the exportbuild option
      */
     storm::io::ModelExportFormat getExportBuildFormat() const;
+
+    /*!
+     * Retrieves whether a preferred compression mode has been set
+     * @note The export might not support compression
+     */
+    bool isCompressionSet() const;
+
+    /*!
+     * Retrieves the preferred compression mode
+     * @note The export might not support compression
+     */
+    storm::io::CompressionMode getCompressionMode() const;
+
+    /*!
+     * Retrieves whether the number of digits for exporting floating point numbers was set
+     */
+    bool isExportDigitsSet() const;
+
+    /*!
+     * Retrieves the number of digits for exporting floating point numbers
+     */
+    size_t getExportDigits() const;
 
     /*!
      * Retrieves whether the export-to-dot option for jani was set.
@@ -374,6 +398,18 @@ class IOSettings : public ModuleSettings {
      */
     bool isPropertiesAsMultiSet() const;
 
+    /*!
+     * Retrieves the mode deciding how the uncertainty should be resolved.
+     *
+     * @return The nature resolution mode
+     */
+    UncertaintyResolutionModeSetting getUncertaintyResolutionMode() const;
+
+    /*!
+     * @return whether the mode for how the uncertainty should be resolved has been set.
+     */
+    bool isUncertaintyResolutionModeSet() const;
+
     bool check() const override;
     void finalize() override;
 
@@ -392,6 +428,8 @@ class IOSettings : public ModuleSettings {
     static const std::string exportCdfOptionShortName;
     static const std::string exportSchedulerOptionName;
     static const std::string exportCheckResultOptionName;
+    static const std::string exportCompressionOptionName;
+    static const std::string exportDigitsOptionName;
     static const std::string explicitOptionName;
     static const std::string explicitOptionShortName;
     static const std::string explicitDrnOptionName;
@@ -416,6 +454,7 @@ class IOSettings : public ModuleSettings {
     static const std::string qvbsInputOptionShortName;
     static const std::string qvbsRootOptionName;
     static const std::string propertiesAsMultiOptionName;
+    static const std::string uncertaintyResolutionModeName;
 };
 
 }  // namespace modules

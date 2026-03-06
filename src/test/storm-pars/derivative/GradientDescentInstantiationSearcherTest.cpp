@@ -94,9 +94,9 @@ class GradientDescentInstantiationSearcherTest : public ::testing::Test {
 typedef ::testing::Types<
 // The rational environments take ages... GD is just not made for rational arithmetic.
 #ifdef STORM_HAVE_GMM
-    DoubleGmmxxEnvironment,
+    DoubleGmmxxEnvironment, /*RationalGmmxxEnvironment,*/
 #endif
-    DoubleEigenEnvironment, DoubleEigenTopologicalEnvironment>
+    DoubleEigenEnvironment, DoubleEigenTopologicalEnvironment /*, RationalEigenEnvironment*/>
     TestingTypes;
 }  // namespace
 

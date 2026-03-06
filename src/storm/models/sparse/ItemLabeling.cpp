@@ -51,7 +51,7 @@ bool ItemLabeling::operator==(ItemLabeling const& other) const {
     return true;
 }
 
-ItemLabeling ItemLabeling::getSubLabeling(storm::storage::BitVector const& items) const {
+ItemLabeling ItemLabeling::getSubItemLabeling(storm::storage::BitVector const& items) const {
     ItemLabeling result(items.getNumberOfSetBits());
     for (auto const& labelIndexPair : nameToLabelingIndexMap) {
         result.addLabel(labelIndexPair.first, labelings[labelIndexPair.second] % items);

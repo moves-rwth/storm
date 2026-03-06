@@ -24,7 +24,7 @@ SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectiv
 
     STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException,
                     "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-    STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!preprocessorResult.containsRewardBoundedObjective(), storm::exceptions::NotSupportedException,
                     "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported "
                     "by the considered weight vector checker.");
     STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,

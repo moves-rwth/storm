@@ -341,7 +341,7 @@ OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDes
         bool isReward = rewardVariables.count(assignment.getExpressionVariable().getName());
         auto firstAssignment = substitutionMap.find(assignment.getExpressionVariable());
         if (isReward && firstAssignment != substitutionMap.end()) {
-            auto newAssignment = (*firstAssignment).second + assignment.getAssignedExpression().substitute(substitutionMap);
+            auto newAssignment = firstAssignment->second + assignment.getAssignedExpression().substitute(substitutionMap);
 
             newOa.add(Assignment(assignment.getVariable(), newAssignment));
         } else {

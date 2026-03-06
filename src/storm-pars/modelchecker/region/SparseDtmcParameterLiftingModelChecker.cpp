@@ -26,6 +26,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/constants.h"
@@ -107,8 +108,8 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robus
         if (isOrderBasedMonotonicityBackend()) {
             getOrderBasedMonotonicityBackend().registerParameterLifterReference(*parameterLifter);
             getOrderBasedMonotonicityBackend().registerPLABoundFunction(
-                [this](storm::Environment const& env, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
-                    return this->computeQuantitativeValues(env, region, dir);  // sets known value bounds within the region
+                [this](storm::Environment const& environment, AnnotatedRegion<ParametricType>& region, storm::OptimizationDirection dir) {
+                    return this->computeQuantitativeValues(environment, region, dir);  // sets known value bounds within the region
                 });
         }
     }
@@ -442,7 +443,7 @@ std::vector<ConstantType> SparseDtmcParameterLiftingModelChecker<SparseModelType
         solver->setHasUniqueSolution();
         solver->setHasNoEndComponents();
         // Uncertainty is not robust (=adversarial)
-        solver->setUncertaintyIsRobust(false);
+        solver->setUncertaintyResolutionMode(UncertaintyResolutionMode::Cooperative);
         if (lowerResultBound)
             solver->setLowerBound(lowerResultBound.value());
         if (upperResultBound) {

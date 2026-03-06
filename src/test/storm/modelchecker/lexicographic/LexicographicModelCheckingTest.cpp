@@ -28,7 +28,7 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
     auto mdp = std::move(modelFormulas.first);
     std::vector<storm::modelchecker::CheckTask<storm::logic::MultiObjectiveFormula, ValueType>> tasks;
     for (auto const& f : modelFormulas.second) {
-        tasks.emplace_back((*f).asMultiObjectiveFormula());
+        tasks.emplace_back(f->asMultiObjectiveFormula());
         tasks.back().setProduceSchedulers(true);
     }
 
@@ -64,7 +64,7 @@ TEST(LexicographicModelCheckingTest, prob_sched2) {
     auto mdp = std::move(modelFormulas.first);
     std::vector<storm::modelchecker::CheckTask<storm::logic::MultiObjectiveFormula, ValueType>> tasks;
     for (auto const& f : modelFormulas.second) {
-        tasks.emplace_back((*f).asMultiObjectiveFormula());
+        tasks.emplace_back(f->asMultiObjectiveFormula());
         tasks.back().setProduceSchedulers(true);
     }
 

@@ -267,7 +267,6 @@ std::vector<typename SparseCtmcModelType::ValueType> SparseCtmcCslModelChecker<S
         std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
         std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
         ExplicitQualitativeCheckResult<ValueType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<ValueType>();
-        ;
         ExplicitQualitativeCheckResult<ValueType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<ValueType>();
 
         std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(

@@ -1,3 +1,4 @@
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"  // Must come first. TODO: fix
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -43,14 +44,14 @@ ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(storm:
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type> const& truthValues,
-                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                          std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(truthValues), scheduler(scheduler) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
 ExplicitQualitativeCheckResult<ValueType>::ExplicitQualitativeCheckResult(boost::variant<vector_type, map_type>&& truthValues,
-                                                                          boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
+                                                                          std::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler)
     : truthValues(std::move(truthValues)), scheduler(scheduler) {
     // Intentionally left empty.
 }
@@ -287,13 +288,13 @@ void ExplicitQualitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<sto
 template<typename ValueType>
 storm::storage::Scheduler<ValueType> const& ExplicitQualitativeCheckResult<ValueType>::getScheduler() const {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename ValueType>
 storm::storage::Scheduler<ValueType>& ExplicitQualitativeCheckResult<ValueType>::getScheduler() {
     STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
-    return *scheduler.get();
+    return *scheduler.value();
 }
 
 template<typename JsonRationalType>

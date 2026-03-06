@@ -17,9 +17,9 @@ storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string co
     // initialize xercesc
     try {
         xercesc::XMLPlatformUtils::Initialize();
-    } catch (xercesc::XMLException const& toCatch) {
+    } catch (xercesc::XMLException const&) {
         // Error occurred during the initialization process. Abort parsing since it is not possible.
-        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to initialize xercesc\n");
+        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Failed to initialize xercesc");
     }
 
     auto parser = new xercesc::XercesDOMParser();

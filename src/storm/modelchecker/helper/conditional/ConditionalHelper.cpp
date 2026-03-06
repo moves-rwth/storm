@@ -1250,7 +1250,7 @@ std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, Norm
         // Catch the case where all terminal states have value zero
         if (normalForm.nonZeroTargetStateValues.empty()) {
             return storm::utility::zero<SolutionType>();
-        };
+        }
     }
     return std::nullopt;  // No trivial case applies, we need to compute the value.
 }
