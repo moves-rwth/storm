@@ -2157,8 +2157,8 @@ class SMTMinimalLabelSetGenerator {
             std::unique_ptr<storm::modelchecker::CheckResult> leftResult = modelchecker.check(env, untilFormula.getLeftSubformula());
             std::unique_ptr<storm::modelchecker::CheckResult> rightResult = modelchecker.check(env, untilFormula.getRightSubformula());
 
-            storm::modelchecker::ExplicitQualitativeCheckResult const& leftQualitativeResult = leftResult->asExplicitQualitativeCheckResult();
-            storm::modelchecker::ExplicitQualitativeCheckResult const& rightQualitativeResult = rightResult->asExplicitQualitativeCheckResult();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& leftQualitativeResult = leftResult->template asExplicitQualitativeCheckResult<T>();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& rightQualitativeResult = rightResult->template asExplicitQualitativeCheckResult<T>();
 
             result.phiStates = leftQualitativeResult.getTruthValuesVector();
             result.psiStates = rightQualitativeResult.getTruthValuesVector();
@@ -2167,7 +2167,7 @@ class SMTMinimalLabelSetGenerator {
 
             std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
 
-            storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
+            storm::modelchecker::ExplicitQualitativeCheckResult<T> const& subQualitativeResult = subResult->template asExplicitQualitativeCheckResult<T>();
 
             result.phiStates = storm::storage::BitVector(model.getNumberOfStates(), true);
             result.psiStates = subQualitativeResult.getTruthValuesVector();

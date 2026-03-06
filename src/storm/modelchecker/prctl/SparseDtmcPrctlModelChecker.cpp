@@ -108,8 +108,8 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                             "Formula needs to have discrete upper step bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-            ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-            ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+            ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+            ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
             storm::modelchecker::helper::SparseDeterministicStepBoundedHorizonHelper<ValueType> helper;
             std::vector<ValueType> numericResult =
                 helper.compute(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
@@ -129,7 +129,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     } else {
         storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
         std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
-        ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeNextProbabilities(
                 env, this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
@@ -153,8 +153,8 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     }
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-    ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-    ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+    ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+    ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     std::vector<SolutionType> numericResult =
         storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeUntilProbabilities(
             env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
@@ -171,7 +171,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     } else {
         storm::logic::GloballyFormula const& pathFormula = checkTask.getFormula();
         std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
-        ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeGloballyProbabilities(
                 env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
@@ -192,7 +192,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
 
         auto formulaChecker = [&](storm::logic::Formula const& formula) {
-            return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            return this->check(env, formula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
         };
         auto apSets = helper.computeApSets(pathFormula.getAPMapping(), formulaChecker);
         std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *pathFormula.readAutomaton(), apSets);
@@ -213,7 +213,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
 
         auto formulaChecker = [&](storm::logic::Formula const& formula) {
-            return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            return this->check(env, formula)->template asExplicitQualitativeCheckResult<SolutionType>().getTruthValuesVector();
         };
         std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, pathFormula, formulaChecker);
 
@@ -308,7 +308,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                         "Computing rewards on uncertain model requires graph-preservation.");
     }
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
-    ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+    ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     std::vector<SolutionType> numericResult =
         storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityRewards(
@@ -325,7 +325,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     } else {
         storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
         std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
-        ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityTimes(
                 env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
@@ -380,13 +380,13 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
     } else {
         storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
         std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
-        ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
 
         storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
         storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
         auto values = helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
 
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values)));
+        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(values)));
     }
 }
 
@@ -418,8 +418,8 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
 
         std::unique_ptr<CheckResult> leftResultPointer = this->check(env, conditionalFormula.getSubformula().asEventuallyFormula().getSubformula());
         std::unique_ptr<CheckResult> rightResultPointer = this->check(env, conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
-        ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-        ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+        ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
 
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeConditionalProbabilities(
@@ -443,8 +443,8 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
 
         std::unique_ptr<CheckResult> leftResultPointer = this->check(env, conditionalFormula.getSubformula().asReachabilityRewardFormula().getSubformula());
         std::unique_ptr<CheckResult> rightResultPointer = this->check(env, conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
-        ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
-        ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
+        ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+        ExplicitQualitativeCheckResult<SolutionType> const& rightResult = rightResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
 
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeConditionalRewards(

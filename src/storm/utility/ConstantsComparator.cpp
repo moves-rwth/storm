@@ -64,6 +64,8 @@ template class ConstantsComparator<GmpRationalNumber>;
 #endif
 
 template class ConstantsComparator<storm::RationalFunction>;
+template class ConstantsComparator<storm::Polynomial>;
 template class ConstantsComparator<storm::Interval>;
+template class ConstantsComparator<storm::RationalInterval>;
 }  // namespace utility
 }  // namespace storm

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/SubEnvironment.h"
 #include "storm/modelchecker/helper/conditional/ConditionalAlgorithmSetting.h"
@@ -28,6 +29,13 @@ class ModelCheckerEnvironment {
     ConditionalAlgorithmSetting getConditionalAlgorithmSetting() const;
     void setConditionalAlgorithmSetting(ConditionalAlgorithmSetting value);
 
+    // TODO: This should probably be moved.
+    storm::RationalNumber getConditionalTolerance() const;
+    void setConditionalTolerance(storm::RationalNumber const& value);
+
+    bool isAllowOptimizationForBoundedPropertiesSet() const;
+    void setAllowOptimizationForBoundedProperties(bool value);
+
     bool isLtl2daToolSet() const;
     std::string const& getLtl2daTool() const;
     void setLtl2daTool(std::string const& value);
@@ -38,5 +46,7 @@ class ModelCheckerEnvironment {
     boost::optional<std::string> ltl2daTool;
     SteadyStateDistributionAlgorithm steadyStateDistributionAlgorithm;
     ConditionalAlgorithmSetting conditionalAlgorithmSetting;
+    bool allowOptimizationForBoundedProperties;
+    storm::RationalNumber conditionalToleranceSetting;
 };
 }  // namespace storm

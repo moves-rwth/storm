@@ -276,13 +276,13 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
     ++formulaIndex;
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
     ++formulaIndex;
     {
@@ -295,7 +295,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     {
         auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-        EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+        EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
     }
 }
 
@@ -361,7 +361,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
         } else {
             auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
             ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-            EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+            EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
         }
     }
     ++formulaIndex;
@@ -373,7 +373,7 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
         } else {
             auto result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
             ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-            EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[*mdp->getInitialStates().begin()]);
+            EXPECT_FALSE(result->template asExplicitQualitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()]);
         }
     }
 }

@@ -16,7 +16,7 @@ do
 		exit 1
 	fi
 done
-if ! command -v clang-format &> /dev/null
+if ! command -v clang-format-20 &> /dev/null
 then
     echo "Unable to find clang-format executable. Is it installed?"
     exit 1
@@ -49,4 +49,4 @@ auto_format_find_expression+=" -false ) ) -print"
 set -f 
 
 # find files and invoke clang-format with in-place option
-find $auto_format_find_expression | xargs clang-format -i -style=file
+find $auto_format_find_expression | xargs clang-format-20 -i -style=file
