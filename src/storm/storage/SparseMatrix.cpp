@@ -2267,6 +2267,8 @@ bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance, storm:
     BaseType const oneMinusTolerance = storm::utility::one<BaseType>() - toBaseType(tolerance);
 
     auto isContained = [&toBaseType](ValueType const& value, BaseType const& lower, BaseType const& upper) {
+        // surpress unused lambda capture warning for toBaseType in case it is not needed for the given ValueType.
+        (void)toBaseType;
         if constexpr (storm::IsIntervalType<ValueType>) {
             // check if the interval contains some value in [lower,upper]
             return value.lower() <= upper && value.upper() >= lower;
