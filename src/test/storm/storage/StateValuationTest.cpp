@@ -46,10 +46,20 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     auto const& sv = model->getStateValuations();
     storm::storage::sparse::StateValuationTransform transformer(sv);
     auto svar = program.getManager().getVariable("s");
-    transformer.addBooleanExpression(program.getManager().declareBooleanVariable("sGT3"), svar.getExpression() > program.getManager().integer(3));
+    auto dvar =program.getManager().getVariable("d");
+    auto sgt3Var = program.getManager().declareBooleanVariable("sGT3");
+    auto alwaysTrueVar = program.getManager().declareBooleanVariable("alwaysTrue");
+    auto alwaysFalseVar = program.getManager().declareBooleanVariable("alwaysFalse");
+    transformer.addBooleanExpression(sgt3Var, svar.getExpression() > program.getManager().integer(3));
+    transformer.addBooleanExpression(alwaysTrueVar, svar.getExpression() == svar.getExpression());
+    transformer.addBooleanExpression(alwaysFalseVar, dvar.getExpression() < dvar.getExpression());
     auto newsv = transformer.buildNewStateValuations(true);
     auto val = newsv.at(0).begin();
     ASSERT_EQ(val.getName(), "sGT3");
+    val.operator++();
+    ASSERT_EQ(val.getName(), "alwaysTrue");
+    val.operator++();
+    ASSERT_EQ(val.getName(), "alwaysFalse");
     val.operator++();
     ASSERT_EQ(val.getName(), "s");
     val.operator++();
@@ -57,6 +67,9 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     val.operator++();
     ASSERT_TRUE(val == newsv.at(0).end());
     for (uint64_t state = 0; state < newsv.getNumberOfStates(); ++state) {
+        std::cout << newsv.getStateInfo(state) << "\n";
+        ASSERT_TRUE(newsv.getBooleanValue(state, alwaysTrueVar));
+        ASSERT_FALSE(newsv.getBooleanValue(state, alwaysFalseVar));
         ASSERT_EQ(sv.getIntegerValue(state, svar), newsv.getIntegerValue(state, svar));
         ASSERT_EQ(newsv.getBooleanValue(state, program.getManager().getVariable("sGT3")), newsv.getIntegerValue(state, svar) > 3);
     }
