@@ -1,11 +1,15 @@
 #include "storm/storage/sparse/StateValuationTransformer.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/utility/constants.h"
 
 namespace storm::storage::sparse {
 
 void StateValuationTransform::addBooleanExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) {
+    STORM_LOG_THROW(var.getType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Variable must have type `Boolean`.");
+    STORM_LOG_THROW(expr.getType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Expression must have type `Boolean`.");
     booleanVariables.push_back(var);
     booleanExpressions.push_back(expr);
 }
@@ -21,10 +25,11 @@ StateValuations StateValuationTransform::buildNewStateValuations(bool extend) {
         builder.addVariable(v);
     }
 
+    storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(booleanVariables[0].getManager());
     for (uint64_t state = 0; state < oldStateValuations.getNumberOfStates(); ++state) {
-        storm::expressions::ExpressionEvaluator<storm::RationalNumber> evaluator(booleanVariables[0].getManager());
-        std::vector<bool> booleanValues;
-        std::vector<int64_t> integerValues;
+        std::vector<bool> booleanValues{};
+        std::vector<int64_t> integerValues{};
+        // Copy variables into the new state valuations and setup the expression evaluator for the current state.
         for (auto sv = oldStateValuations.at(state).begin(); sv != oldStateValuations.at(state).end(); ++sv) {
             if (sv.isVariableAssignment()) {
                 auto const& var = sv.getVariable();
@@ -44,7 +49,7 @@ StateValuations StateValuationTransform::buildNewStateValuations(bool extend) {
                     STORM_LOG_THROW(!extend, storm::exceptions::NotSupportedException, "Extending state valuations with rational values is currently not supported.");
                 }
             }
-            // Label assignments can be safely skipped.
+            // TODO: Fix label assignments can be safely skipped.
         }
         for (auto const& expr : booleanExpressions) {
             booleanValues.push_back(evaluator.asBool(expr));

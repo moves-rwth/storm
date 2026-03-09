@@ -8,11 +8,22 @@ namespace storm::storage::sparse {
  * Transforms the given state valuations to a new state valuations over a new variable set.
  * The values of the new variables are determined by evaluating the provided expressions w.r.t. the old variable valuation.
  * The freshly introduced variables may either replace or extend the existing variable set.
+ */
 class StateValuationTransform {
-    // TODO: Also support integer variables.
+    // TODO: Also support adding integer variables.
    public:
     StateValuationTransform(StateValuations const& oldStateValuations) : oldStateValuations(oldStateValuations) {}
+    /*!
+     * Add a Boolean variable defined by the given expression. Note that these should all be over the same expression manager.
+     * @param var A variable with type Bool
+     * @param expr An expression with type Bool
+     */
     void addBooleanExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr);
+    /*!
+     * Build and export the state valuations. Should be called only once.
+     * @param extend Whether to maintain also the existing variables.
+     * @return
+     */
     StateValuations buildNewStateValuations(bool extend);
 
    private:

@@ -46,7 +46,7 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     auto const& sv = model->getStateValuations();
     storm::storage::sparse::StateValuationTransform transformer(sv);
     auto svar = program.getManager().getVariable("s");
-    auto dvar =program.getManager().getVariable("d");
+    auto dvar = program.getManager().getVariable("d");
     auto sgt3Var = program.getManager().declareBooleanVariable("sGT3");
     auto alwaysTrueVar = program.getManager().declareBooleanVariable("alwaysTrue");
     auto alwaysFalseVar = program.getManager().declareBooleanVariable("alwaysFalse");
@@ -71,6 +71,6 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
         ASSERT_TRUE(newsv.getBooleanValue(state, alwaysTrueVar));
         ASSERT_FALSE(newsv.getBooleanValue(state, alwaysFalseVar));
         ASSERT_EQ(sv.getIntegerValue(state, svar), newsv.getIntegerValue(state, svar));
-        ASSERT_EQ(newsv.getBooleanValue(state, program.getManager().getVariable("sGT3")), newsv.getIntegerValue(state, svar) > 3);
+        ASSERT_EQ(newsv.getBooleanValue(state, sgt3Var), newsv.getIntegerValue(state, svar) > 3);
     }
 }
