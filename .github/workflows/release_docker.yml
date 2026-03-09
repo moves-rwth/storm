@@ -76,7 +76,7 @@ jobs:
           password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           file: ${{ matrix.image.file }}
           # Set build arguments
