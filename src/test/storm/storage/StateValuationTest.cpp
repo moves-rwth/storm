@@ -44,6 +44,10 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     std::shared_ptr<storm::models::sparse::Model<double>> model = builder.build();
     ASSERT_TRUE(model->hasStateValuations());
     auto const& sv = model->getStateValuations();
+
+    storm::storage::sparse::StateValuationTransform notransformer(sv);
+    auto newsv = notransformer.buildNewStateValuations(true);
+    ASSERT_EQ(newsv.getNumberOfStates(), sv.getNumberOfStates());
     storm::storage::sparse::StateValuationTransform transformer(sv);
     auto svar = program.getManager().getVariable("s");
     auto dvar = program.getManager().getVariable("d");
@@ -53,7 +57,7 @@ TEST_F(StateValuationTest, StateValuationTransformation) {
     transformer.addBooleanExpression(sgt3Var, svar.getExpression() > program.getManager().integer(3));
     transformer.addBooleanExpression(alwaysTrueVar, svar.getExpression() == svar.getExpression());
     transformer.addBooleanExpression(alwaysFalseVar, dvar.getExpression() < dvar.getExpression());
-    auto newsv = transformer.buildNewStateValuations(true);
+    newsv = transformer.buildNewStateValuations(true);
     auto val = newsv.at(0).begin();
     ASSERT_EQ(val.getName(), "sGT3");
     val.operator++();

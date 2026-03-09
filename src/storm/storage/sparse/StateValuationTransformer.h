@@ -12,13 +12,17 @@ namespace storm::storage::sparse {
 class StateValuationTransform {
     // TODO: Also support adding integer variables.
    public:
-    StateValuationTransform(StateValuations const& oldStateValuations) : oldStateValuations(oldStateValuations) {}
+    StateValuationTransform(StateValuations const& oldStateValuations);
     /*!
      * Add a Boolean variable defined by the given expression. Note that these should all be over the same expression manager.
      * @param var A variable with type Bool
      * @param expr An expression with type Bool
      */
     void addBooleanExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr);
+    /*!
+     * Add a Integer variable defined by the given expression. See also addBooleanExpression.
+     */
+    void addIntegerExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr);
     /*!
      * Build and export the state valuations. Should be called only once.
      * @param extend Whether to maintain also the existing variables.
@@ -30,6 +34,8 @@ class StateValuationTransform {
     StateValuations const& oldStateValuations;
     std::vector<storm::expressions::Variable> booleanVariables;
     std::vector<storm::expressions::Expression> booleanExpressions;
+    std::vector<storm::expressions::Variable> integerVariables;
+    std::vector<storm::expressions::Expression> integerExpressions;
 };
 
 }  // namespace storm::storage::sparse
