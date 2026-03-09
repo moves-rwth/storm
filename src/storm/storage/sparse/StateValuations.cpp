@@ -319,7 +319,7 @@ bool StateValuations::assertValuation(StateValuation const& valuation) const {
             }
             bv->set(varIndex.second, true);
         } else {
-            STORM_LOG_ERROR("Valuation does not provide a value for for variable: " << varIndex.first.getName());
+            STORM_LOG_ERROR("Valuation does not provide a value for variable: " << varIndex.first.getName());
             return false;
         }
     }
