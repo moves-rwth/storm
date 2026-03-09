@@ -41,9 +41,7 @@ StateValuations StateValuationTransform::buildNewStateValuations(bool extend) {
                 } else {
                     STORM_LOG_ASSERT(sv.isRational(), "Must be RationalVariable");
                     evaluator.setRationalValue(var, sv.getRationalValue());
-                    if (extend) {
-                        STORM_LOG_ASSERT(false, "Currently not supported.");
-                    }
+                    STORM_LOG_THROW(!extend, storm::exceptions::NotSupportedException, "Extending state valuations with rational values is currently not supported.");
                 }
             }
             // Label assignments can be safely skipped.
