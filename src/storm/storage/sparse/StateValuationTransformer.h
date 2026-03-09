@@ -4,6 +4,10 @@
 
 namespace storm::storage::sparse {
 
+/*!
+ * Transforms the given state valuations to a new state valuations over a new variable set.
+ * The values of the new variables are determined by evaluating the provided expressions w.r.t. the old variable valuation.
+ * The freshly introduced variables may either replace or extend the existing variable set.
 class StateValuationTransform {
     // TODO: Also support integer variables.
    public:
