@@ -504,7 +504,7 @@ bool validate(storm::umb::UmbModel const& umbModel, std::ostream& err) {
         if ((!v.valuationToClass.has_value() && !descr.classes.empty()) || descr.classes.size() == 1) {
             // common case: all entities have the same valuation class
             auto const& classDescr = descr.classes.front();
-            if (v.valuations.has_value() && v.valuations->size() < classDescr.sizeInBits() * 8 * numEntity) {
+            if (v.valuations.has_value() && v.valuations->size() * 8 < classDescr.sizeInBits() * numEntity) {
                 err << context << "/valuations has invalid size: " << v.valuations->size() << " != size of one valuation class (" << classDescr.sizeInBits()
                     << " bits) * 8 * #entities=" << (classDescr.sizeInBits() * 8 * numEntity) << ".\n";
                 isValid = false;
