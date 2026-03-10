@@ -63,6 +63,7 @@ class UmbRoundTripTest : public ::testing::Test {
 
         auto assertEqualModel = [&model](auto const& otherModelPtr) {
             ASSERT_TRUE(otherModelPtr) << "No model.";
+            EXPECT_EQ(model->getType(), otherModelPtr->getType());
             EXPECT_EQ(model->getNumberOfStates(), otherModelPtr->getNumberOfStates());
             EXPECT_EQ(model->getNumberOfChoices(), otherModelPtr->getNumberOfChoices());
             EXPECT_EQ(model->getNumberOfTransitions(), otherModelPtr->getNumberOfTransitions());
@@ -72,7 +73,7 @@ class UmbRoundTripTest : public ::testing::Test {
             }
             EXPECT_EQ(model->getStateLabeling(), otherModelPtr->getStateLabeling());
             if (model->isNondeterministicModel() && model->hasChoiceLabeling()) {
-                // This test does not work for deterministic models as we might fuse multiple choices labels together
+                // This test does not work for deterministic models as we might fuse multiple (overlapping) choice labels together
                 EXPECT_EQ(model->getChoiceLabeling(), otherModelPtr->getChoiceLabeling());
             }
             EXPECT_EQ(model->getNumberOfRewardModels(), otherModelPtr->getNumberOfRewardModels());
@@ -137,16 +138,28 @@ TEST_F(UmbRoundTripTest, brp_dtmc) {
     run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
 }
 
-TEST_F(UmbRoundTripTest, polling_ma) {
-    storm::umb::ExportOptions options;
-    run<double>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
-    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
-}
-
 TEST_F(UmbRoundTripTest, embedded_ctmc) {
     storm::umb::ExportOptions options;
     run<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+}
+
+TEST_F(UmbRoundTripTest, firewire_mdp) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+    options.allowChoiceOriginsAsActions = true;
+    options.allowChoiceLabelingAsActions = false;
+    run<double>(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm", "", options);
+}
+
+TEST_F(UmbRoundTripTest, polling_ma) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
 }
 
 TEST_F(UmbRoundTripTest, robot_imdp) {
@@ -158,6 +171,7 @@ TEST_F(UmbRoundTripTest, maze_pomdp) {
     storm::umb::ExportOptions options;
     run<double>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
     run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
 }
 
 }  // namespace
