@@ -10,8 +10,8 @@ namespace storm::storage::sparse {
  * The freshly introduced variables may either replace or extend the existing variable set.
  */
 class StateValuationTransformer {
-    public:
-     StateValuationTransformer(StateValuations const& oldStateValuations);
+   public:
+    StateValuationTransformer(StateValuations const& oldStateValuations);
     /*!
      * Add a Boolean variable defined by the given expression. Note that these should all be over the same expression manager.
      * @param var A variable with type Bool
