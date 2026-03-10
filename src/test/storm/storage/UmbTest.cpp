@@ -4,6 +4,7 @@
 #include <span>
 #include <vector>
 
+#include "storm-config.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -109,11 +110,16 @@ class UmbRoundTripTest : public ::testing::Test {
         validationErrors.clear();
         auto model2 = storm::umb::sparseModelFromUmb<ValueType>(umb2, importOptions);
         assertEqualModel(model2);
-        std::cout << umbFile << std::endl;
         removeUmbFile();
     }
 
-    virtual void TearDown() {
+    virtual void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+
+    virtual void TearDown() override {
         removeUmbFile();
     }
 };
