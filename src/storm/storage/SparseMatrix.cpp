@@ -2251,19 +2251,64 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNoncons
 }
 
 template<typename ValueType>
-bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance) const {
-    storm::utility::ConstantsComparator<ValueType> comparator(tolerance);
-    for (index_type row = 0; row < this->rowCount; ++row) {
-        auto rowSum = getRowSum(row);
-        if (!comparator.isOne(rowSum)) {
-            return false;
+bool SparseMatrix<ValueType>::isProbabilistic(ValueType const& tolerance, storm::OptionalRef<std::string> reason) const {
+    using BaseType =
+        std::conditional_t<std::is_same_v<ValueType, storm::RationalFunction>, storm::RationalFunctionCoefficient, storm::IntervalBaseType<ValueType>>;
+    auto toBaseType = [](ValueType const& value) {
+        if constexpr (std::is_same_v<ValueType, BaseType>) {
+            return value;
+        } else {
+            return storm::utility::convertNumber<BaseType>(value);
         }
-    }
-    for (auto const& entry : *this) {
-        if (storm::utility::isConstant(entry.getValue())) {
-            if (!storm::utility::isNonNegative(entry.getValue())) {
+    };
+    STORM_LOG_ASSERT(storm::utility::isConstant(tolerance), "Expected constant tolerance. Got " << tolerance);
+    BaseType const zeroMinusTolerance = storm::utility::zero<BaseType>() - toBaseType(tolerance);
+    BaseType const onePlusTolerance = storm::utility::one<BaseType>() + toBaseType(tolerance);
+    BaseType const oneMinusTolerance = storm::utility::one<BaseType>() - toBaseType(tolerance);
+
+    auto isContained = [&toBaseType](ValueType const& value, BaseType const& lower, BaseType const& upper) {
+        // surpress unused lambda capture warning for toBaseType in case it is not needed for the given ValueType.
+        (void)toBaseType;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            // check if the interval contains some value in [lower,upper]
+            return value.lower() <= upper && value.upper() >= lower;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+            // for rational functions, we only perform a check if the value is constant.
+            if (storm::utility::isConstant(value)) {
+                auto const constValue = toBaseType(value);
+                return constValue <= upper && constValue >= lower;
+            }
+            return true;
+        } else {
+            // in all other cases, we expect the value to be constant
+            STORM_LOG_ASSERT(storm::utility::isConstant(value), "Expected constant value. Got " << value);
+            return value <= upper && value >= lower;
+        }
+    };
+
+    auto toString = [](ValueType const& value) {
+        std::stringstream s;
+        s << value;
+        return s.str();
+    };
+
+    for (index_type row = 0; row < this->rowCount; ++row) {
+        auto rowSum = storm::utility::zero<ValueType>();
+        for (auto const& entry : getRow(row)) {
+            if (!isContained(entry.getValue(), zeroMinusTolerance, onePlusTolerance)) {
+                if (reason) {
+                    *reason = "Entry in row " + std::to_string(row) + " is not a probability: " + toString(entry.getValue());
+                }
                 return false;
             }
+            rowSum += entry.getValue();
+        }
+        if (!isContained(rowSum, oneMinusTolerance, onePlusTolerance)) {
+            if (reason) {
+                // print sum-1 to ensure that the reason is informative even if the sum is very close to one.
+                *reason = "Sum of entries in row " + std::to_string(row) + " is not one: sum-1=" + toString(rowSum - storm::utility::one<ValueType>());
+            }
+            return false;
         }
     }
     return true;
