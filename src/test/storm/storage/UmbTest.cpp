@@ -1,12 +1,160 @@
+#include <filesystem>
 #include <limits>
+#include <random>
 #include <span>
 #include <vector>
 
-#include "storm/storage/umb/model/ValueEncoding.h"
-
+#include "storm-parsers/parser/PrismParser.h"
+#include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/storage/umb/export/SparseModelToUmb.h"
+#include "storm/storage/umb/export/UmbExport.h"
+#include "storm/storage/umb/import/SparseModelFromUmb.h"
+#include "storm/storage/umb/import/UmbImport.h"
+#include "storm/storage/umb/model/UmbModel.h"
+#include "storm/storage/umb/model/ValueEncoding.h"
 #include "storm/utility/constants.h"
 #include "test/storm_gtest.h"
+/*!
+ *  Test round trip encoding and decoding of umb
+ */
+namespace {
+class UmbRoundTripTest : public ::testing::Test {
+   protected:
+    std::filesystem::path umbFile;
+    void removeUmbFile() {
+        if (!umbFile.empty() && std::filesystem::exists(umbFile)) {
+            std::error_code ec;
+            std::filesystem::remove(umbFile);
+            ASSERT_EQ(ec.value(), 0) << "Unable to remove temporary file " << umbFile << " for UMB round trip test: " << ec.message();
+        }
+    }
+
+    void setUpUmbFileName() {
+        std::error_code ec;
+        auto tmp = std::filesystem::temp_directory_path(ec);
+        ASSERT_EQ(ec.value(), 0) << "Unable to get temporary directory for UMB round trip test: " << ec.message();
+        std::random_device rd;
+        do {
+            umbFile = tmp / std::filesystem::path("storm_umb_round_trip_test_" + std::to_string(rd()) + ".umb");
+        } while (std::filesystem::exists(umbFile));
+    }
+
+    template<typename ValueType>
+    void run(std::filesystem::path const& prismfile, std::string const& constants = "", storm::umb::ExportOptions const& exportOptions = {}) {
+        setUpUmbFileName();
+        // Set-up options structs
+        storm::umb::ImportOptions importOptions;
+        importOptions.buildChoiceLabeling = exportOptions.allowChoiceLabelingAsActions || exportOptions.allowChoiceOriginsAsActions;
+        storm::generator::NextStateGeneratorOptions generatorOptions;
+        generatorOptions.setBuildChoiceLabels(exportOptions.allowChoiceLabelingAsActions);
+        generatorOptions.setBuildChoiceOrigins(exportOptions.allowChoiceOriginsAsActions);
+        generatorOptions.setBuildAllRewardModels();
+        generatorOptions.setBuildAllLabels();
+        // TODO: valuations
+
+        // build model from prism file
+        storm::prism::Program program = storm::parser::PrismParser::parse(prismfile, true);
+        program = storm::utility::prism::preprocess(program, constants);
+        auto builder = storm::builder::ExplicitModelBuilder<ValueType>(program, generatorOptions);
+        auto model = builder.build();
+
+        auto assertEqualModel = [&model](auto const& otherModelPtr) {
+            ASSERT_TRUE(otherModelPtr) << "No model.";
+            EXPECT_EQ(model->getNumberOfStates(), otherModelPtr->getNumberOfStates());
+            EXPECT_EQ(model->getNumberOfChoices(), otherModelPtr->getNumberOfChoices());
+            EXPECT_EQ(model->getNumberOfTransitions(), otherModelPtr->getNumberOfTransitions());
+            if (!model->isOfType(storm::models::ModelType::Ctmc) || std::is_same_v<ValueType, storm::RationalNumber>) {
+                // Round trip in CTMC case may yield slightly different probabilities because we translate between rates and probabilities
+                EXPECT_EQ(model->getTransitionMatrix(), otherModelPtr->getTransitionMatrix());
+            }
+            EXPECT_EQ(model->getStateLabeling(), otherModelPtr->getStateLabeling());
+            if (model->isNondeterministicModel() && model->hasChoiceLabeling()) {
+                // This test does not work for deterministic models as we might fuse multiple choices labels together
+                EXPECT_EQ(model->getChoiceLabeling(), otherModelPtr->getChoiceLabeling());
+            }
+            EXPECT_EQ(model->getNumberOfRewardModels(), otherModelPtr->getNumberOfRewardModels());
+            for (auto const& [name, rewardModel] : model->getRewardModels()) {
+                ASSERT_TRUE(otherModelPtr->hasRewardModel(name) || model->hasUniqueRewardModel()) << "Other model does not have reward model '" << name << "'.";
+                auto const& otherRewardModel = model->hasUniqueRewardModel() ? otherModelPtr->getUniqueRewardModel() : otherModelPtr->getRewardModel(name);
+                if (rewardModel.hasStateRewards()) {
+                    ASSERT_TRUE(otherRewardModel.hasStateRewards());
+                    EXPECT_EQ(rewardModel.getStateRewardVector(), otherRewardModel.getStateRewardVector());
+                }
+                if (rewardModel.hasStateActionRewards()) {
+                    ASSERT_TRUE(otherRewardModel.hasStateActionRewards());
+                    EXPECT_EQ(rewardModel.getStateActionRewardVector(), otherRewardModel.getStateActionRewardVector());
+                }
+                if (rewardModel.hasTransitionRewards()) {
+                    ASSERT_TRUE(otherRewardModel.hasTransitionRewards());
+                    EXPECT_EQ(rewardModel.getTransitionRewardMatrix(), otherRewardModel.getTransitionRewardMatrix());
+                }
+            }
+        };
+
+        // Short round trip: model -> umb -> model
+        auto umb1 = storm::umb::sparseModelToUmb(*model, exportOptions);
+        umb1.encodeRationals();
+        std::stringstream validationErrors;
+        ASSERT_TRUE(umb1.validate(validationErrors)) << validationErrors.str();
+        validationErrors.clear();
+        auto model1 = storm::umb::sparseModelFromUmb<ValueType>(umb1, importOptions);
+        assertEqualModel(model1);
+
+        // long round trip: model -> umb -> file -> umb -> model
+        storm::umb::toArchive(umb1, umbFile, exportOptions);
+        auto umb2 = storm::umb::importUmb(umbFile, importOptions);
+        ASSERT_TRUE(umb2.validate(validationErrors)) << validationErrors.str();
+        validationErrors.clear();
+        auto model2 = storm::umb::sparseModelFromUmb<ValueType>(umb2, importOptions);
+        assertEqualModel(model2);
+        std::cout << umbFile << std::endl;
+        removeUmbFile();
+    }
+
+    virtual void TearDown() {
+        removeUmbFile();
+    }
+};
+
+TEST_F(UmbRoundTripTest, brp_dtmc) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    options.compression = storm::io::CompressionMode::Gzip;
+    run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    options.compression = storm::io::CompressionMode::Xz;
+    run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+    options.compression = storm::io::CompressionMode::None;
+    run<double>(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "", options);
+}
+
+TEST_F(UmbRoundTripTest, polling_ma) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+}
+
+TEST_F(UmbRoundTripTest, embedded_ctmc) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", "", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/ma/polling.ma", "N=3,Q=3", options);
+}
+
+TEST_F(UmbRoundTripTest, robot_imdp) {
+    storm::umb::ExportOptions options;
+    run<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/robot.prism", "delta=0.5", options);
+}
+
+TEST_F(UmbRoundTripTest, maze_pomdp) {
+    storm::umb::ExportOptions options;
+    run<double>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
+    run<storm::RationalNumber>(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.5", options);
+}
+
+}  // namespace
 
 TEST(UmbTest, RationalEncoding) {
     auto const one = storm::utility::one<storm::RationalNumber>();
