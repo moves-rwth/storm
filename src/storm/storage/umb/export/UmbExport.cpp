@@ -16,12 +16,6 @@ namespace storm::umb {
 
 namespace detail {
 
-template<typename T>
-
-void createDirectory(std::filesystem::path const& umbDir, std::filesystem::path const& subdirectory) {
-    std::filesystem::create_directories(umbDir / subdirectory);
-}
-
 void createDirectory(storm::io::ArchiveWriter& archiveWriter, std::filesystem::path const& subdirectory) {
     archiveWriter.addDirectory(subdirectory.string());
 }
@@ -33,7 +27,6 @@ void createDirectory(storm::io::ArchiveWriter& archiveWriter, std::filesystem::p
 template<typename VectorType>
     requires(!std::is_same_v<std::remove_cvref_t<VectorType>, storm::umb::GenericVector>)
 void writeVector(VectorType const& vector, storm::io::ArchiveWriter& archiveWriter, std::filesystem::path const& filepath) {
-    STORM_LOG_ASSERT(filepath.extension() == ".bin", "Unexpected file path '" << filepath.filename() << "'. File extension must be .bin");
     archiveWriter.addBinaryFile(filepath.string(), vector);
 }
 
@@ -116,6 +109,13 @@ void exportFiles(UmbStructure const& umbStructure, storm::io::ArchiveWriter& tar
             exportFiles(field, target, context / fieldName);
         } else if constexpr (std::is_same_v<FieldType, storm::umb::ModelIndex>) {
             writeIndexFile(field, target, context / fieldName);
+        } else if constexpr (std::is_same_v<FieldType, decltype(UmbModel::nonStandardFiles)>) {
+            for (auto const& [path, data] : field) {
+                if (path.has_parent_path()) {
+                    createDirectory(target, context / fieldName / path.parent_path());
+                }
+                writeVector(data, target, context / fieldName / path);
+            }
         } else if constexpr (std::is_same_v<FieldType, GenericVector>) {
             if (field.template isType<storm::RationalNumber>()) {
                 // Need to call UMBModel::encodeRationals prior to export

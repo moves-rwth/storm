@@ -1,6 +1,8 @@
 #pragma once
 
+#include <filesystem>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -73,9 +75,10 @@ class UmbModel {
     };
     using Valuations = AppliesToEntity<Valuation>;
     Valuations valuations;
-    // TODO: collect non-standard files so that they are not lost during import/export
-    // non-standard files
-    // std::map<std::string, SEQ<char>> nonStandardFiles;
+
+    // Collects non-standard files (for custom extensions)
+    // Note: As this field matches any file path, we need to make sure that it is the last field so that our importer tries the other fields first.
+    std::map<std::filesystem::path, std::vector<char>> nonStandardFiles;
 
     auto static constexpr FileNames = {"index.json",
                                        "state-to-choices.bin",
@@ -91,7 +94,8 @@ class UmbModel {
                                        "observations/states/",
                                        "observations/branches/",
                                        "annotations/",
-                                       "valuations/"};
+                                       "valuations/",
+                                       ""};
 
     /*!
      * Retrieves a short string that can be used to refer to the model in user output.

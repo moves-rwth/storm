@@ -187,8 +187,8 @@ bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, stor
         return false;
     }
     bool found = false;
-    boost::pfr::for_each_field(umbStructure, [&](auto& field, std::size_t i) {
-        auto fieldPath = context / std::data(UmbStructure::FileNames)[i];
+    boost::pfr::for_each_field(umbStructure, [&](auto& field, std::size_t fieldIndex) {
+        auto fieldPath = context / std::data(UmbStructure::FileNames)[fieldIndex];
         // handle the case that we already found the subfield or that this is not the right subfield
         if (found || !containsSrc(fieldPath)) {
             return;
@@ -205,6 +205,11 @@ bool importVector(typename storm::io::ArchiveReader::ArchiveReadEntry& src, stor
             found = importVector(src, index, field.value(), fieldPath);
         } else if constexpr (FileNameMap<FieldType>) {
             found = importVector(src, index, field, fieldPath);
+        } else if constexpr (std::is_same_v<FieldType, decltype(UmbModel::nonStandardFiles)>) {
+            // The following assumes that we have tried all other fields first as it matches any file.
+            STORM_LOG_ASSERT(fieldIndex + 1 == UmbStructure::FileNames.size(), "The field for non-standard files must be the last field in the struct.");
+            found = true;
+            field.emplace(fieldPath / getFilePath(src), importVector<std::vector<char>>(src));
         } else {
             // reaching this point means that we have found the right field
             STORM_LOG_THROW(fieldPath == getFilePath(src), storm::exceptions::WrongFormatException,
@@ -239,10 +244,11 @@ storm::umb::UmbModel fromArchive(std::filesystem::path const& umbArchive, Import
         if (entry.name() == "index.json" || entry.isDir()) {
             continue;  // skip the index file and directories
         }
-        bool found = importVector(entry, umbModel.index, umbModel, "");
-        STORM_LOG_TRACE("File " << getFilePath(entry) << " in UMB archive " << umbArchive << "' loaded.");
-        STORM_LOG_WARN_COND(
-            found, "File " << getFilePath(entry) << " in UMB archive " << umbArchive << " will be ignored as it could not be associated with any UMB field.");
+        STORM_LOG_TRACE("Loading file " << getFilePath(entry) << " in UMB archive " << umbArchive << "'.");
+        bool const found = importVector(entry, umbModel.index, umbModel, "");
+        // At this point, we must have found a matching field, even for non-standard files.
+        STORM_LOG_THROW(found, storm::exceptions::UnexpectedException,
+                        "File " << getFilePath(entry) << " in UMB archive " << umbArchive << " could not be matched to any UMB field.");
     }
     return umbModel;
 }
