@@ -754,7 +754,7 @@ void BitVector::setBucket(uint64_t bucketIndex, uint64_t value) {
 
 uint64_t BitVector::getBucket(uint64_t bucketIndex) const {
     STORM_LOG_ASSERT(bucketIndex < bucketCount(), "Invalid call to BitVector::getBucket: bucket index " << bucketIndex << " out of bounds.");
-    STORM_LOG_ASSERT(bucketIndex < bucketCount() - 1 || buckets[bucketIndex] << (bitCount & mod64mask) == 0ull,
+    STORM_LOG_ASSERT(bucketIndex < bucketCount() - 1 || (bitCount & mod64mask) == 0ull || (buckets[bucketIndex] << (bitCount & mod64mask)) == 0ull,
                      "Bitvector in invalid state: last bucket contains bits beyond bitCount.");
     if (bucketIndex == bucketCount() - 1) {
         return buckets[bucketIndex] & ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
