@@ -8,11 +8,11 @@
 
 namespace storm::storage::sparse {
 
-StateValuationTransform::StateValuationTransform(StateValuations const& oldStateValuations) : oldStateValuations(oldStateValuations) {
+StateValuationTransformer::StateValuationTransformer(StateValuations const& oldStateValuations) : oldStateValuations(oldStateValuations) {
     // Intentionally left empty.
 }
 
-void StateValuationTransform::addBooleanExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) {
+void StateValuationTransformer::addBooleanExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) {
     STORM_LOG_THROW(var.getType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Variable must have type `Boolean`.");
     STORM_LOG_THROW(expr.getType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Expression must have type `Boolean`.");
     STORM_LOG_THROW(var.getManager() == oldStateValuations.getManager(), storm::exceptions::InvalidArgumentException,
@@ -21,7 +21,7 @@ void StateValuationTransform::addBooleanExpression(storm::expressions::Variable 
     booleanExpressions.push_back(expr);
 }
 
-void StateValuationTransform::addIntegerExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) {
+void StateValuationTransformer::addIntegerExpression(storm::expressions::Variable const& var, storm::expressions::Expression const& expr) {
     STORM_LOG_THROW(var.getType().isIntegerType(), storm::exceptions::InvalidArgumentException, "Variable must have type `Integer`.");
     STORM_LOG_THROW(expr.getType().isIntegerType(), storm::exceptions::InvalidArgumentException, "Expression must have type `Integer`.");
     STORM_LOG_THROW(var.getManager() == oldStateValuations.getManager(), storm::exceptions::InvalidArgumentException,
@@ -30,7 +30,7 @@ void StateValuationTransform::addIntegerExpression(storm::expressions::Variable 
     integerExpressions.push_back(expr);
 }
 
-StateValuations StateValuationTransform::buildNewStateValuations(bool extend) {
+StateValuations StateValuationTransformer::build(bool extend) {
     StateValuationsBuilder builder;
     if (extend) {
         STORM_LOG_ASSERT(oldStateValuations.getNumberOfStates() > 0, "Code assumes that there are states in the state valuations.");
