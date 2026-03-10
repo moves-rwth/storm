@@ -778,7 +778,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !storm::IsIntervalType<ValueType>>(*scheduler, resultForMaybeStates.getScheduler(),
-                                                                                                       qualitativeStateSets.maybeStates);
+                                                                                             qualitativeStateSets.maybeStates);
                 }
             }
         }

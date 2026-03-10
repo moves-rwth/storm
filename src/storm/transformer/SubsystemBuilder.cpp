@@ -243,9 +243,10 @@ template SubsystemBuilderReturnType<storm::Interval> buildSubsystem(storm::model
                                                                     storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
                                                                     SubsystemBuilderOptions options = SubsystemBuilderOptions());
 template SubsystemBuilderReturnType<storm::RationalInterval> buildSubsystem(storm::models::sparse::Model<storm::RationalInterval> const& originalModel,
-                                                                    storm::storage::BitVector const& subsystemStates,
-                                                                    storm::storage::BitVector const& subsystemActions, bool keepUnreachableStates = true,
-                                                                    SubsystemBuilderOptions options = SubsystemBuilderOptions());
+                                                                            storm::storage::BitVector const& subsystemStates,
+                                                                            storm::storage::BitVector const& subsystemActions,
+                                                                            bool keepUnreachableStates = true,
+                                                                            SubsystemBuilderOptions options = SubsystemBuilderOptions());
 
 }  // namespace transformer
 }  // namespace storm

@@ -439,11 +439,10 @@ template void SparseMdpEndComponentInformation<storm::Interval>::setScheduler(st
                                                                               storm::storage::SparseMatrix<storm::Interval> const& backwardTransitions,
                                                                               std::vector<uint64_t> const& fromResult);
 
-template void SparseMdpEndComponentInformation<storm::RationalInterval>::setScheduler(storm::storage::Scheduler<storm::RationalNumber>& scheduler,
-                                                                              storm::storage::BitVector const& maybeStates,
-                                                                              storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
-                                                                              storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions,
-                                                                              std::vector<uint64_t> const& fromResult);
+template void SparseMdpEndComponentInformation<storm::RationalInterval>::setScheduler(
+    storm::storage::Scheduler<storm::RationalNumber>& scheduler, storm::storage::BitVector const& maybeStates,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+    storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions, std::vector<uint64_t> const& fromResult);
 
 // template class SparseMdpEndComponentInformation<storm::RationalFunction>;
 

@@ -86,8 +86,7 @@ GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                              .build())
             .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, soundOptionName, false, "Sets whether to force sound model checking.").build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, intervalOptionName, false, "Sets whether to enable interval model checking.").build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, intervalOptionName, false, "Sets whether to enable interval model checking.").build());
 }
 
 bool GeneralSettings::isHelpSet() const {
