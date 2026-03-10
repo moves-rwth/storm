@@ -14,6 +14,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateType.h"
 
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/constants.h"
 
 // Forward declaration for adapter classes.
@@ -1021,9 +1022,13 @@ class SparseMatrix {
     index_type getNonconstantRowGroupCount() const;
 
     /*!
-     * Checks for each row whether it sums to one.
+     * Checks for each row whether (i) each entry is between zero and one and (ii) all entries sum to one.
+     * For interval models, we check if each interval contains a value between zero and one and if the sum contains one.
+     * For rational functions, we only do these checks if they are constant, i.e., do not contain any parameter.
+     * @param tolerance The tolerance used when comparing values to zero and one.
+     * @param reason if the matrix is not probabilistic, this string will be filled with a human-readable explanation of why the matrix is not probabilistic.
      */
-    bool isProbabilistic(ValueType const& tolerance) const;
+    bool isProbabilistic(ValueType const& tolerance, storm::OptionalRef<std::string> reason = {}) const;
 
     /*!
      * Checks whether each present entry is strictly positive (omitted entries are not considered).

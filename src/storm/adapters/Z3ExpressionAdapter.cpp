@@ -15,13 +15,8 @@ namespace adapters {
 
 #ifdef STORM_HAVE_Z3
 
-#ifdef STORM_Z3_API_USES_STANDARD_INTEGERS
 typedef int64_t Z3_SIGNED_INTEGER;
 typedef uint64_t Z3_UNSIGNED_INTEGER;
-#else
-typedef long long Z3_SIGNED_INTEGER;
-typedef unsigned long long Z3_UNSIGNED_INTEGER;
-#endif
 
 Z3ExpressionAdapter::Z3ExpressionAdapter(storm::expressions::ExpressionManager& manager, z3::context& context)
     : manager(manager), context(context), additionalAssertions(), variableToExpressionMapping() {
