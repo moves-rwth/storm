@@ -278,6 +278,12 @@ inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput co
                 case ModelProcessingInformation::ValueType::FinitePrecision:
                     return storm::utility::canHandle<double>(
                         mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                case ModelProcessingInformation::ValueType::FinitePrecisionInterval:
+                    return storm::utility::canHandle<storm::Interval>(
+                        mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                case ModelProcessingInformation::ValueType::ExactInterval:
+                    return storm::utility::canHandle<storm::RationalInterval>(
+                        mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
             }
             return false;
         };
@@ -389,6 +395,10 @@ auto applyValueType(ModelProcessingInformation::ValueType vt, auto const& callba
             return callback.template operator()<storm::RationalNumber>();
         case Parametric:
             return callback.template operator()<storm::RationalFunction>();
+        case FinitePrecisionInterval:
+            return callback.template operator()<storm::Interval>();
+        case ExactInterval:
+            return callback.template operator()<storm::RationalInterval>();
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected value type.");
 }
@@ -408,6 +418,10 @@ auto applyDdLibValueType(storm::dd::DdType dd, ModelProcessingInformation::Value
                     return callback.template operator()<Sylvan, storm::RationalNumber>();
                 case Parametric:
                     return callback.template operator()<Sylvan, storm::RationalFunction>();
+                case FinitePrecisionInterval:
+                    return callback.template operator()<Sylvan, storm::Interval>();
+                case ExactInterval:
+                    return callback.template operator()<Sylvan, storm::RationalInterval>();
             }
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected DDType or value type.");
@@ -599,8 +613,12 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
         storm::parser::DirectEncodingValueType valueType{Default};
         if constexpr (std::is_same_v<ValueType, double>) {
             valueType = Double;
+        } else if constexpr (std::is_same_v<ValueType, storm::Interval>) {
+            valueType = DoubleInterval;
         } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
             valueType = Rational;
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
+            valueType = RationalInterval;
         } else {
             static_assert(std::is_same_v<ValueType, storm::RationalFunction>, "Unexpected value type.");
             valueType = Parametric;
@@ -1293,30 +1311,38 @@ inline std::vector<std::vector<storm::expressions::Expression>> parseInjectedRef
 
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-    storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    storm::gbar::api::AbstractionRefinementOptions options(
-        parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()),
-        parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Abstraction-refinement engine does not support interval value types.");
+    } else {
+        STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
+        storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+        storm::gbar::api::AbstractionRefinementOptions options(
+            parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()),
+            parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
 
-    verifyProperties<ValueType>(input, [&input, &options, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                                std::shared_ptr<storm::logic::Formula const> const& states) {
-        STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-        return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, input.model.get(),
-                                                                                          storm::api::createTask<ValueType>(formula, true), options);
-    });
+        verifyProperties<ValueType>(input, [&input, &options, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                    std::shared_ptr<storm::logic::Formula const> const& states) {
+            STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
+            return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, input.model.get(),
+                                                                                              storm::api::createTask<ValueType>(formula, true), options);
+        });
+    }
 }
 
 template<typename ValueType>
 void verifyWithExplorationEngine(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
-    STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-    STORM_LOG_THROW((std::is_same<ValueType, double>::value), storm::exceptions::NotSupportedException,
-                    "Exploration does not support other data-types than floating points.");
-    verifyProperties<ValueType>(
-        input, [&input, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
-            STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Exploration can only filter initial states.");
-            return storm::api::verifyWithExplorationEngine<ValueType>(mpi.env, input.model.get(), storm::api::createTask<ValueType>(formula, true));
-        });
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exploration engine does not support interval value types.");
+    } else {
+        STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
+        STORM_LOG_THROW((std::is_same<ValueType, double>::value), storm::exceptions::NotSupportedException,
+                        "Exploration does not support other data-types than floating points.");
+        verifyProperties<ValueType>(
+            input, [&input, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Exploration can only filter initial states.");
+                return storm::api::verifyWithExplorationEngine<ValueType>(mpi.env, input.model.get(), storm::api::createTask<ValueType>(formula, true));
+            });
+    }
 }
 
 template<typename ValueType>
