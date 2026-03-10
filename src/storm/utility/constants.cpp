@@ -37,6 +37,11 @@ bool isOne(ValueType const& a) {
 
 template<typename ValueType>
 bool isZero(ValueType const& a) {
+    static_assert(
+        not std::is_same_v<
+            ValueType,
+            __gmp_expr<__mpq_struct, __gmp_binary_expr<__gmp_expr<__mpq_struct, __mpq_struct>, __gmp_expr<__mpq_struct, __mpq_struct>, __gmp_binary_minus>>>,
+        "Missing template instantiation!");
     return a == zero<ValueType>();
 }
 

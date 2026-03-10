@@ -21,6 +21,8 @@ ModelCheckerEnvironment::ModelCheckerEnvironment() {
     steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
 
     conditionalAlgorithmSetting = mcSettings.getConditionalAlgorithmSetting();
+    conditionalToleranceSetting = mcSettings.getConditionalTolerance();
+    allowOptimizationForBoundedProperties = true;
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
@@ -41,6 +43,22 @@ ConditionalAlgorithmSetting ModelCheckerEnvironment::getConditionalAlgorithmSett
 
 void ModelCheckerEnvironment::setConditionalAlgorithmSetting(ConditionalAlgorithmSetting value) {
     conditionalAlgorithmSetting = value;
+}
+
+void ModelCheckerEnvironment::setConditionalTolerance(storm::RationalNumber const& value) {
+    conditionalToleranceSetting = value;
+}
+
+storm::RationalNumber ModelCheckerEnvironment::getConditionalTolerance() const {
+    return conditionalToleranceSetting;
+}
+
+bool ModelCheckerEnvironment::isAllowOptimizationForBoundedPropertiesSet() const {
+    return allowOptimizationForBoundedProperties;
+}
+
+void ModelCheckerEnvironment::setAllowOptimizationForBoundedProperties(bool value) {
+    allowOptimizationForBoundedProperties = value;
 }
 
 MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
