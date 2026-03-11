@@ -108,7 +108,7 @@ bool SchedulerTrackingHelper<ValueType, SolutionType, TrivialRowGrouping>::compu
     std::vector<uint64_t>& schedulerStorage, UncertaintyResolutionMode uncertaintyResolutionMode, std::vector<SolutionType>* operandOut,
     boost::optional<std::vector<uint64_t>> const& robustIndices) const {
     bool robustUncertainty = false;
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
     }
 
