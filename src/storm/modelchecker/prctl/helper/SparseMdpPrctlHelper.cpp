@@ -778,7 +778,7 @@ MDPSparseModelCheckingHelperReturnType<SolutionType> SparseMdpPrctlHelper<ValueT
                 }
                 if (produceScheduler) {
                     extractSchedulerChoices<SolutionType, !storm::IsIntervalType<ValueType>>(*scheduler, resultForMaybeStates.getScheduler(),
-                                                                                                       qualitativeStateSets.maybeStates);
+                                                                                             qualitativeStateSets.maybeStates);
                 }
             }
         }
@@ -1064,28 +1064,28 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support rational interval rewards with double interval models.");
     } else {
-    return computeReachabilityRewardsHelper(
-               env, std::move(goal), transitionMatrix, backwardTransitions,
-               [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-                   std::vector<ValueType> result;
-                   result.reserve(rowCount);
-                   std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
-                   for (auto const& interval : subIntervalVector) {
-                       result.push_back(lowerBoundOfIntervals ? interval.lower() : interval.upper());
-                   }
-                   return result;
-               },
-               targetStates, qualitative, false,
-               [&]() {
-                   return intervalRewardModel.getStatesWithFilter(
-                       transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
-               },
-               [&]() {
-                   return intervalRewardModel.getChoicesWithFilter(
-                       transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
-               })
-        .values;
-}
+        return computeReachabilityRewardsHelper(
+                   env, std::move(goal), transitionMatrix, backwardTransitions,
+                   [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                       std::vector<ValueType> result;
+                       result.reserve(rowCount);
+                       std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
+                       for (auto const& interval : subIntervalVector) {
+                           result.push_back(lowerBoundOfIntervals ? interval.lower() : interval.upper());
+                       }
+                       return result;
+                   },
+                   targetStates, qualitative, false,
+                   [&]() {
+                       return intervalRewardModel.getStatesWithFilter(
+                           transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
+                   },
+                   [&]() {
+                       return intervalRewardModel.getChoicesWithFilter(
+                           transitionMatrix, [&](storm::Interval const& i) { return storm::utility::isZero(lowerBoundOfIntervals ? i.lower() : i.upper()); });
+                   })
+            .values;
+    }
 }
 
 template<typename ValueType, typename SolutionType>
