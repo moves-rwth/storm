@@ -23,7 +23,7 @@ std::shared_ptr<storm::models::sparse::Model<typename AddUncertainty<ValueType>:
     // we first build the matrix and later copy the row grouping.
     auto newMatrixBuilder =
         storage::SparseMatrixBuilder<IntervalType>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
-                                                      origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
+                                                   origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
     // Build transition matrix (without row grouping)
     for (uint64_t rowIndex = 0; rowIndex < origModel->getTransitionMatrix().getRowCount(); ++rowIndex) {
         if (origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors) {
