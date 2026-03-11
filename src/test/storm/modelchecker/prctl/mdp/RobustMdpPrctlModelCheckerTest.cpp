@@ -272,8 +272,8 @@ TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.4, 0.4, 0.5, 0.5, true);
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber(2, 5),
-                       storm::RationalNumber(2, 5), storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("2/5"), storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
@@ -291,29 +291,29 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
 // ---- RationalInterval tests (exact arithmetic) ----
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny01maxmin) {
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber(2, 5),
-                       storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), storm::RationalNumber(2, 5), false);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), storm::RationalNumber("2/5"), false);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny03maxmin) {
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber(2, 5),
-                       storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), storm::RationalNumber(2, 5), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), storm::RationalNumber("2/5"), true);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, BoundedTiny03maxmin) {
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber(2, 5),
-                       storm::RationalNumber(2, 5), storm::RationalNumber(1, 2), storm::RationalNumber(1, 2), true);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
+                       storm::RationalNumber("2/5"), storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), true);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny04maxmin) {
     // Fill in exact rational values once test output is known.
     checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber(1),
-                       storm::RationalNumber(1), storm::RationalNumber(42857140807299, 100000000000000), storm::RationalNumber(21, 50), false);
+                       storm::RationalNumber(1), storm::RationalNumber("42857140807299/100000000000000"), storm::RationalNumber("21/50"), false);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny05maxmin) {
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber(3, 10),
-                       storm::RationalNumber(2, 5), storm::RationalNumber(2, 5), storm::RationalNumber(3, 10), false);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("3/10"),
+                       storm::RationalNumber("2/5"), storm::RationalNumber("2/5"), storm::RationalNumber("3/10"), false);
 }
 
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {

@@ -362,7 +362,7 @@ TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {
 
 TEST(RobustRationalDtmcModelCheckerTest, Tiny01ReachMaxMinProbs) {
     checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-01.drn", "P=? [ F \"target\"];P=? [ F \"target\"]",
-                                                    storm::RationalNumber(3, 10), storm::RationalNumber(1, 2));
+                                                    storm::RationalNumber("3/10"), storm::RationalNumber("1/2"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, Tiny01MaxReachProbNoUncertaintyResolutionMode) {
@@ -384,7 +384,7 @@ TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMin) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]",
-                                                 storm::RationalNumber(4483008223, 94143178827), storm::RationalNumber(35864065784, 94143178827));
+                                                 storm::RationalNumber("4483008223/94143178827"), storm::RationalNumber("35864065784/94143178827"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
@@ -413,12 +413,12 @@ TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
     GTEST_SKIP() << "Z3 not available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]",
-                                                 storm::RationalNumber(15544649, 4782969), storm::RationalNumber(76715008330675523, 16677181699666569));
+                                                 storm::RationalNumber("15544649/4782969"), storm::RationalNumber("76715008330675523/16677181699666569"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, Tiny03MaxMinRewards) {
     checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
-                                                    storm::RationalNumber(13, 2), storm::RationalNumber(17, 2));
+                                                    storm::RationalNumber("13/2"), storm::RationalNumber("17/2"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, Tiny03RewardsNoUncertaintyResolutionMode) {
