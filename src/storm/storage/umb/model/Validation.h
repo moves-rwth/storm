@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ostream>
+#include <iosfwd>
 
 #include "storm/storage/umb/model/UmbModelForward.h"
 
