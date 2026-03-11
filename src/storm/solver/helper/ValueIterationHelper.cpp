@@ -108,7 +108,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    MultiplicationStyle mult,
                                                                                    UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
     bool robustUncertainty = false;
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, Dir);
     }
 
@@ -126,7 +126,7 @@ SolverStatus ValueIterationHelper<ValueType, TrivialRowGrouping, SolutionType>::
                                                                                    std::function<SolverStatus(SolverStatus const&)> const& iterationCallback,
                                                                                    MultiplicationStyle mult,
                                                                                    UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
-    if (storm::IsIntervalType<ValueType>) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         STORM_LOG_THROW(uncertaintyResolutionMode != UncertaintyResolutionMode::Unset, storm::exceptions::IllegalFunctionCallException,
                         "Uncertainty resolution mode must be set for uncertain (interval) models.");
         STORM_LOG_THROW(dir.has_value() || (uncertaintyResolutionMode != UncertaintyResolutionMode::Robust &&

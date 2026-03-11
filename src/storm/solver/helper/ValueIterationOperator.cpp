@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "storm/adapters/IntervalAdapter.h"
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -33,7 +34,7 @@ void ValueIterationOperator<ValueType, TrivialRowGrouping, SolutionType>::setMat
     matrixColumns.reserve(matrix.getNonzeroEntryCount() + numRows + 1);  // matrixColumns also contain indications for when a row(group) starts
 
     // hasOnlyConstants is only used for Interval matrices, currently only populated for iMCs
-    if constexpr (std::is_same<ValueType, storm::Interval>::value) {
+    if constexpr (storm::IsIntervalType<ValueType>) {
         applyCache.hasOnlyConstants.clear();
         applyCache.hasOnlyConstants.grow(matrix.getRowCount());
     }
