@@ -158,10 +158,11 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                                          .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
                                          .build())
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, explicitUmbOptionName, false, "Parses the model given in the UMB format.")
-                        .setShortName(explicitUmbOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("umb location", "The location of the umb encoding.").build())
-                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, explicitUmbOptionName, false, "Parses the model given in the UMB format. The file can be compressed.")
+            .setShortName(explicitUmbOptionShortName)
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("umb location", "The location of the umb encoding.").build())
+            .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.")
                         .setShortName(explicitDrnOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.")

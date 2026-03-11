@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "storm/models/sparse/Model.h"
 
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/umb/export/ExportOptions.h"
 #include "storm/storage/umb/model/UmbModelForward.h"
 

@@ -1,11 +1,18 @@
 #pragma once
 
 #include <memory>
-#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/umb/import/ImportOptions.h"
 #include "storm/storage/umb/model/UmbModelForward.h"
 
-namespace storm::umb {
+namespace storm {
+
+namespace models {
+enum class ModelType;
+class ModelBase;
+}  // namespace models
+
+namespace umb {
 
 /*!
  * Derives the model type from the given UMB model index.
@@ -34,4 +41,5 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModelFromUmb(stor
  */
 std::shared_ptr<storm::models::ModelBase> sparseModelFromUmb(storm::umb::UmbModel const& umbModel, ImportOptions const& options = {});
 
-}  // namespace storm::umb
+}  // namespace umb
+}  // namespace storm

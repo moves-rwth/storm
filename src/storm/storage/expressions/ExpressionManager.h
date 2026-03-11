@@ -356,7 +356,7 @@ class ExpressionManager : public std::enable_shared_from_this<ExpressionManager>
     uint_fast64_t getNumberOfArrayVariables() const;
 
     /*!
-     * Retrieves the number of array variables.
+     * Retrieves the number of string variables.
      */
     uint_fast64_t getNumberOfStringVariables() const;
 
