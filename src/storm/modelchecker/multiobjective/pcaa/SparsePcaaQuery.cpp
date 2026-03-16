@@ -227,7 +227,7 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
     if (!optObjIndex.has_value()) {
         if (!overApproximation->contains(thresholds)) {
             // The thresholds are not achievable
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(initialStateOfOriginalModel, false));
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ModelValueType>(initialStateOfOriginalModel, false));
         }
         referencePoint = thresholds;
     } else {
@@ -247,7 +247,7 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
         auto optRes = overApproximation->intersection(thresholdPolytope)->optimize(optDirVector);
         if (!optRes.second) {
             // The thresholds are not achievable
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(initialStateOfOriginalModel, false));
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ModelValueType>(initialStateOfOriginalModel, false));
         }
         referencePoint = thresholds;
         referencePoint[optObjIndex.value()] =
@@ -275,7 +275,7 @@ SparsePcaaQuery<SparseModelType, GeometryValueType>::tryAnswerOrNextWeightsAchie
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ModelValueType>(initialStateOfOriginalModel, resultForOriginalModel));
         } else {
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(initialStateOfOriginalModel, true));
+            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<ModelValueType>(initialStateOfOriginalModel, true));
         }
     }
 

@@ -114,7 +114,7 @@ template<typename PomdpType>
 storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFormula, bool formulaInverted, PomdpType const& pomdp) {
     storm::modelchecker::SparsePropositionalModelChecker<PomdpType> mc(pomdp);
     auto checkResult = mc.check(propositionalFormula);
-    storm::storage::BitVector resultBitVector(checkResult->asExplicitQualitativeCheckResult().getTruthValuesVector());
+    storm::storage::BitVector resultBitVector(checkResult->template asExplicitQualitativeCheckResult<typename PomdpType::ValueType>().getTruthValuesVector());
     if (formulaInverted) {
         resultBitVector.complement();
     }

@@ -176,12 +176,12 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3O
     std::unique_ptr<storm::modelchecker::CheckResult> result =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
-    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_TRUE(result->template asExplicitQualitativeCheckResult<double>()[initState]);
 
     std::unique_ptr<storm::modelchecker::CheckResult> result2 =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result2->template asExplicitQualitativeCheckResult<double>()[initState]);
 }
 
 TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
@@ -211,7 +211,7 @@ TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Ob
     std::unique_ptr<storm::modelchecker::CheckResult> result2 =
         storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
-    EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
+    EXPECT_FALSE(result2->template asExplicitQualitativeCheckResult<double>()[initState]);
 }
 
 TEST_F(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {

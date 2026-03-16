@@ -91,8 +91,9 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
             parameterOptDir = storm::solver::invert(parameterOptDir);
         }
 
-        bool preciseResult = preciseChecker.check(env, region, parameterOptDir)
-                                 ->asExplicitQualitativeCheckResult()[*preciseChecker.getConsideredParametricModel().getInitialStates().begin()];
+        bool preciseResult =
+            preciseChecker.check(env, region, parameterOptDir)
+                ->template asExplicitQualitativeCheckResult<PreciseType>()[*preciseChecker.getConsideredParametricModel().getInitialStates().begin()];
         bool preciseResultAgrees = preciseResult == (currentResult == RegionResult::AllSat);
 
         if (!preciseResultAgrees) {
@@ -103,8 +104,9 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
             // Check the other direction in case no hypothesis was given
             if (hypothesis == RegionResultHypothesis::Unknown) {
                 parameterOptDir = storm::solver::invert(parameterOptDir);
-                preciseResult = preciseChecker.check(env, region, parameterOptDir)
-                                    ->asExplicitQualitativeCheckResult()[*preciseChecker.getConsideredParametricModel().getInitialStates().begin()];
+                preciseResult =
+                    preciseChecker.check(env, region, parameterOptDir)
+                        ->template asExplicitQualitativeCheckResult<PreciseType>()[*preciseChecker.getConsideredParametricModel().getInitialStates().begin()];
                 if (preciseResult && parameterOptDir == preciseChecker.getCurrentCheckTask().getOptimizationDirection()) {
                     currentResult = RegionResult::AllSat;
                 } else if (!preciseResult && parameterOptDir == storm::solver::invert(preciseChecker.getCurrentCheckTask().getOptimizationDirection())) {
