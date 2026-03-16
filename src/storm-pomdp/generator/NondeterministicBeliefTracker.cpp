@@ -382,7 +382,9 @@ NondeterministicBeliefTracker<ValueType, BeliefState>::NondeterministicBeliefTra
 
 template<typename ValueType, typename BeliefState>
 bool NondeterministicBeliefTracker<ValueType, BeliefState>::reset(uint32_t observation) {
+    beliefs = std::unordered_set<BeliefState>();
     bool hit = false;
+    beliefs.clear();
     for (auto state : pomdp.getInitialStates()) {
         if (observation == pomdp.getObservation(state)) {
             hit = true;
@@ -492,9 +494,6 @@ bool NondeterministicBeliefTracker<ValueType, BeliefState>::hasTimedOut() const 
 template class SparseBeliefState<double>;
 template bool operator==(SparseBeliefState<double> const&, SparseBeliefState<double> const&);
 template class NondeterministicBeliefTracker<double, SparseBeliefState<double>>;
-// template class ObservationDenseBeliefState<double>;
-// template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
-// template class NondeterministicBeliefTracker<double, ObservationDenseBeliefState<double>>;
 
 template class SparseBeliefState<storm::RationalNumber>;
 template bool operator==(SparseBeliefState<storm::RationalNumber> const&, SparseBeliefState<storm::RationalNumber> const&);
