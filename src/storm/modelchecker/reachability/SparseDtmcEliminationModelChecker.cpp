@@ -52,7 +52,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     Environment const& env, CheckTask<storm::logic::StateFormula, SolutionType> const& checkTask) {
     storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
     std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
-    storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector const& psiStates = subResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
     uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
@@ -109,7 +109,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (checkTask.isOnlyInitialStatesRelevantSet()) {
         // If we computed the results for the initial states only, we need to filter the result to only
         // communicate these results.
-        checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
+        checkResult->filter(ExplicitQualitativeCheckResult<ValueType>(initialStates));
     }
     return checkResult;
 }
@@ -174,7 +174,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (checkTask.isOnlyInitialStatesRelevantSet()) {
         // If we computed the results for the initial states only, we need to filter the result to only
         // communicate these results.
-        checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
+        checkResult->filter(ExplicitQualitativeCheckResult<ValueType>(initialStates));
     }
     return checkResult;
 }
@@ -347,8 +347,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     // Retrieve the appropriate bitvectors by model checking the subformulas.
     std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
-    storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
-    storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector const& phiStates = leftResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector const& psiStates = rightResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 
     // Start by determining the states that have a non-zero probability of reaching the target states within the
     // time bound.
@@ -441,7 +441,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (checkTask.isOnlyInitialStatesRelevantSet()) {
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
         // result to only communicate these results.
-        checkResult->filter(ExplicitQualitativeCheckResult(this->getModel().getInitialStates() | psiStates));
+        checkResult->filter(ExplicitQualitativeCheckResult<ValueType>(this->getModel().getInitialStates() | psiStates));
     }
     return checkResult;
 }
@@ -454,8 +454,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     // Retrieve the appropriate bitvectors by model checking the subformulas.
     std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
-    storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
-    storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector const& phiStates = leftResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector const& psiStates = rightResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 
     return computeUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(),
                                      phiStates, psiStates, checkTask.isOnlyInitialStatesRelevantSet());
@@ -535,7 +535,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     // Retrieve the appropriate bitvectors by model checking the subformulas.
     std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
-    storm::storage::BitVector const& targetStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector const& targetStates = subResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
 
     // Do some sanity checks to establish some required properties.
     RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
@@ -647,8 +647,8 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
 
     std::unique_ptr<CheckResult> leftResultPointer = this->check(conditionalFormula.getSubformula().asEventuallyFormula().getSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
-    storm::storage::BitVector phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
-    storm::storage::BitVector psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    storm::storage::BitVector phiStates = leftResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
+    storm::storage::BitVector psiStates = rightResultPointer->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
     storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
 
     // Do some sanity checks to establish some required properties.

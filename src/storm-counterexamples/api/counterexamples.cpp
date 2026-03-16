@@ -45,7 +45,7 @@ std::shared_ptr<storm::counterexamples::Counterexample> computeKShortestPathCoun
 
     storm::logic::EventuallyFormula const& eventuallyFormula = subformula.asEventuallyFormula();
     std::unique_ptr<storm::modelchecker::CheckResult> subResult = modelchecker.check(env, eventuallyFormula.getSubformula());
-    storm::modelchecker::ExplicitQualitativeCheckResult const& subQualitativeResult = subResult->asExplicitQualitativeCheckResult();
+    storm::modelchecker::ExplicitQualitativeCheckResult<double> const& subQualitativeResult = subResult->template asExplicitQualitativeCheckResult<double>();
 
     // Check if counterexample is even possible
     storm::storage::BitVector phiStates(model->getNumberOfStates(), true);

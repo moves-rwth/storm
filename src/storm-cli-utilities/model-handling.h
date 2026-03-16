@@ -1336,7 +1336,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
 
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
-            filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(sparseModel->getInitialStates());
+            filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<ValueType>>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
             filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false));
         }
@@ -1381,6 +1381,13 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
                 } else {
                     auto const& paretoRes = result->template asExplicitParetoCurveCheckResult<ValueType>();
                     storm::api::exportParetoScheduler(sparseModel, paretoRes.getPoints(), paretoRes.getSchedulers(), schedulerExportPath.string());
+                }
+            } else if (result->isExplicitQualitativeCheckResult()) {
+                if constexpr (storm::IsIntervalType<ValueType>) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export for interval models is not supported.");
+                } else {
+                    storm::api::exportScheduler(sparseModel, result->template asExplicitQualitativeCheckResult<ValueType>().getScheduler(),
+                                                schedulerExportPath.string());
                 }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this value type.");

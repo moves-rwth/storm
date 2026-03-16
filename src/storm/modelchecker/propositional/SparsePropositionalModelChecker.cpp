@@ -33,9 +33,9 @@ std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::c
     Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, SolutionType> const& checkTask) {
     storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
     if (stateFormula.isTrueFormula()) {
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(storm::storage::BitVector(model.getNumberOfStates(), true)));
     } else {
-        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates())));
+        return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(storm::storage::BitVector(model.getNumberOfStates())));
     }
 }
 
@@ -45,7 +45,7 @@ std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::c
     storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
     STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException,
                     "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
-    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
+    return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult<SolutionType>(model.getStates(stateFormula.getLabel())));
 }
 
 template<typename SparseModelType>
@@ -65,6 +65,11 @@ template class SparsePropositionalModelChecker<storm::models::sparse::Smg<double
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 
+template class SparsePropositionalModelChecker<
+    storm::models::sparse::Mdp<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+template class SparsePropositionalModelChecker<
+    storm::models::sparse::Smg<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>>;
+
 template class SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalNumber>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
@@ -82,5 +87,8 @@ template class SparsePropositionalModelChecker<storm::models::sparse::Smg<storm:
 
 template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
 template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
+
+template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
+template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 }  // namespace modelchecker
 }  // namespace storm
