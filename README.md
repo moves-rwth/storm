@@ -33,7 +33,7 @@ Authors
 -----------------------------
 Storm has initially been developed at RWTH Aachen University. It is currently under development at (lexicographically) Eindhoven University of Technology, Radboud University, and RWTH Aachen University. 
 
-###### Principal developers
+###### Principal developers (lexicographical order)
 * Christian Hensel
 * Sebastian Junges
 * Joost-Pieter Katoen
@@ -43,6 +43,7 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 ###### Active Developers (lexicographical order)
 * Alexander Bork
 * Linus Heck
+* Luko van der Maas
 
 ###### Former Developers (lexicographical order)
 * Jana Berger
@@ -64,7 +65,6 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 * Gereon Kremer
 * Sascha Vincent Kurowski
 * Peter Lindner
-* Luko van der Maas
 * Hannah Mertens
 * Stefanie Mohr
 * Stefan Pranger
