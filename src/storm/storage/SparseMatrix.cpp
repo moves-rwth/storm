@@ -772,6 +772,11 @@ std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<Va
 }
 
 template<typename ValueType>
+std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowIndices() const {
+    return rowIndications;
+}
+
+template<typename ValueType>
 boost::integer_range<typename SparseMatrix<ValueType>::index_type> SparseMatrix<ValueType>::getRowGroupIndices(index_type group) const {
     STORM_LOG_ASSERT(group < this->getRowGroupCount(),
                      "Invalid row group index:" << group << ". Only " << this->getRowGroupCount() << " row groups available.");

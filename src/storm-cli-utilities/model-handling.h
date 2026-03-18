@@ -598,6 +598,19 @@ std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::mo
             valueType = Parametric;
         }
         result = storm::api::buildExplicitDRNModel(ioSettings.getExplicitDRNFilename(), valueType, options);
+    } else if (ioSettings.isExplicitUmbSet()) {
+        storm::umb::ImportOptions options;
+        options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
+        options.buildStateValuations = buildSettings.isBuildStateValuationsSet();
+        if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "RationalFunction currently not supported for UMB models.");
+        } else if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+            options.valueType = umb::ImportOptions::ValueType::Rational;
+        } else {
+            static_assert(std::is_same_v<ValueType, double>, "Unhandled value type.");
+            options.valueType = umb::ImportOptions::ValueType::Double;
+        }
+        result = storm::api::buildExplicitUmbModel(ioSettings.getExplicitUmbFilename(), options);
     } else {
         STORM_LOG_THROW(ioSettings.isExplicitIMCASet(), storm::exceptions::InvalidSettingsException, "Unexpected explicit model input type.");
         result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename());
@@ -620,7 +633,7 @@ inline std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const&
                 return buildModelSparse<VT>(input, options);
             });
         }
-    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
+    } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitUmbSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,
                         "Can only use sparse engine with explicit input.");
         result = applyValueType(mpi.buildValueType, [&ioSettings]<typename VT>() {
@@ -764,6 +777,12 @@ void exportModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
             case storm::io::ModelExportFormat::Json:
                 storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
                 break;
+            case storm::io::ModelExportFormat::Umb: {
+                storm::umb::ExportOptions options;
+                options.compression = ioSettings.getCompressionMode();
+                storm::api::exportSparseModelAsUmb(model, ioSettings.getExportBuildFilename(), options);
+                break;
+            }
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                                 "Exporting sparse models in " << storm::io::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
