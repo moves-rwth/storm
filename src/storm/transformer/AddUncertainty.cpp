@@ -26,7 +26,7 @@ std::shared_ptr<storm::models::sparse::Model<typename AddUncertainty<ValueType>:
                                                    origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
     // Build transition matrix (without row grouping)
     for (uint64_t rowIndex = 0; rowIndex < origModel->getTransitionMatrix().getRowCount(); ++rowIndex) {
-        if (maxSuccessors.has_value() && origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors.value()) {
+        if (!maxSuccessors.has_value() || origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors.value()) {
             for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
                 newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
             }
