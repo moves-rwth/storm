@@ -437,6 +437,7 @@ jobs:
       - name: Prepare ccache
         run: |
           ccache --max-size=2G
+          ccache --show-stats --verbose
           ccache --zero-stats
       - name: Configure storm
         run: |
