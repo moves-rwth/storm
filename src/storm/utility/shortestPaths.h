@@ -2,8 +2,8 @@
 #define STORM_UTIL_SHORTESTPATHS_H_
 
 #include <algorithm>
-#include <cassert>
 #include <boost/optional/optional.hpp>
+#include <cassert>
 #include <iosfwd>
 #include <set>
 #include <string>
