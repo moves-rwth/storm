@@ -447,7 +447,7 @@ jobs:
         working-directory: ./build
         run: make -j ${NR_JOBS}
       - name: Print ccache stats
-        run: ccache --show-stats
+        run: ccache --show-stats --verbose
       - name: Save ccache (macOS)
         if: always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

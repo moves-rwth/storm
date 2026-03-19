@@ -108,6 +108,6 @@ RUN cmake -DCMAKE_BUILD_TYPE=$build_type \
 
 # Build Storm
 # (This can be adapted to only build 'storm' or 'binaries' depending on custom needs)
-RUN ccache --max-size=3G && make -j $no_threads && ccache --show-stats
+RUN ccache --max-size=3G && make -j $no_threads && ccache --show-stats --verbose
 
 WORKDIR /opt/storm
