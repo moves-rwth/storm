@@ -7,6 +7,7 @@
 #include "storm/models/Model.h"
 #include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
@@ -22,13 +23,10 @@ class BitVector;
 namespace models {
 namespace sparse {
 
-template<typename ValueType>
-class StandardRewardModel;
-
 /*!
  * Base class for all sparse models.
  */
-template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
+template<class CValueType, class CRewardModelType>
 class Model : public storm::models::Model<CValueType> {
    public:
     typedef CValueType ValueType;

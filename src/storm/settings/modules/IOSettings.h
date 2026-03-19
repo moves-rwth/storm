@@ -199,6 +199,20 @@ class IOSettings : public ModuleSettings {
     bool isExplicitExportPlaceholdersDisabled() const;
 
     /*!
+     * Retrieves whether the explicit option with UMB was set.
+     *
+     * @return True if the explicit option with UMB was set.
+     */
+    bool isExplicitUmbSet() const;
+
+    /*!
+     * Retrieves the name of the file that contains the model in the UMB format.
+     *
+     * @return The name of the UMB file that contains the model.
+     */
+    std::string getExplicitUmbFilename() const;
+
+    /*!
      * Retrieves whether the explicit option with IMCA was set.
      *
      * @return True if the explicit option with IMCA was set.
@@ -434,6 +448,8 @@ class IOSettings : public ModuleSettings {
     static const std::string explicitOptionShortName;
     static const std::string explicitDrnOptionName;
     static const std::string explicitDrnOptionShortName;
+    static const std::string explicitUmbOptionName;
+    static const std::string explicitUmbOptionShortName;
     static const std::string explicitImcaOptionName;
     static const std::string explicitImcaOptionShortName;
     static const std::string prismInputOptionName;

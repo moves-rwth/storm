@@ -34,6 +34,8 @@ const std::string IOSettings::explicitOptionName = "explicit";
 const std::string IOSettings::explicitOptionShortName = "exp";
 const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
 const std::string IOSettings::explicitDrnOptionShortName = "drn";
+const std::string IOSettings::explicitUmbOptionName = "explicit-umb";
+const std::string IOSettings::explicitUmbOptionShortName = "umb";
 const std::string IOSettings::explicitImcaOptionName = "explicit-imca";
 const std::string IOSettings::explicitImcaOptionShortName = "imca";
 const std::string IOSettings::prismInputOptionName = "prism";
@@ -79,7 +81,7 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueUnsignedInteger(0)
                                          .build())
                         .build());
-    std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json"});
+    std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json", "umb"});
     this->addOption(
         storm::settings::OptionBuilder(moduleName, exportBuildOptionName, false, "Exports the built model to a file.")
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("file", "The output file.").build())
@@ -156,6 +158,11 @@ IOSettings::IOSettings() : ModuleSettings(moduleName) {
                                          .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
                                          .build())
                         .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, explicitUmbOptionName, false, "Parses the model given in the UMB format. The file can be compressed.")
+            .setShortName(explicitUmbOptionShortName)
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("umb location", "The location of the umb encoding.").build())
+            .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.")
                         .setShortName(explicitDrnOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.")
@@ -412,6 +419,14 @@ bool IOSettings::isExplicitDRNSet() const {
 
 std::string IOSettings::getExplicitDRNFilename() const {
     return this->getOption(explicitDrnOptionName).getArgumentByName("drn filename").getValueAsString();
+}
+
+bool IOSettings::isExplicitUmbSet() const {
+    return this->getOption(explicitUmbOptionName).getHasOptionBeenSet();
+}
+
+std::string IOSettings::getExplicitUmbFilename() const {
+    return this->getOption(explicitUmbOptionName).getArgumentByName("umb location").getValueAsString();
 }
 
 bool IOSettings::isExplicitIMCASet() const {
