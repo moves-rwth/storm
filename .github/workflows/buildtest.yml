@@ -418,8 +418,11 @@ jobs:
           key: buildtest-brew-${{ matrix.config.distro }}-${{ hashFiles('.github/workflows/buildtest.yml') }}
           restore-keys: |
             buildtest-brew-${{ matrix.config.distro }}-
-      - name: Cache ccache (macOS)
-        uses: actions/cache@v4
+      - name: Ensure ccache directory exists (macOS)
+        run: mkdir -p ~/.ccache
+      - name: Restore ccache (macOS)
+        id: ccache-restore-macos
+        uses: actions/cache/restore@v4
         with:
           path: ~/.ccache
           key: buildtest-ccache-macos-${{ matrix.config.distro }}-${{ matrix.config.buildType }}-${{ github.ref_name }}
@@ -445,6 +448,12 @@ jobs:
         run: make -j ${NR_JOBS}
       - name: Print ccache stats
         run: ccache --show-stats
+      - name: Save ccache (macOS)
+        if: always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache
+          key: ${{ steps.ccache-restore-macos.outputs.cache-primary-key }}
       - name: Run storm (build tree)
         working-directory: ./build
         run: ./bin/storm

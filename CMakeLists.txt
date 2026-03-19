@@ -168,8 +168,16 @@ if(STORM_COMPILE_WITH_CCACHE)
 	mark_as_advanced(CCACHE_FOUND)
 	if(CCACHE_FOUND)
 		message(STATUS "Storm - Using ccache")
+		message(STATUS "Storm - Disabling precompiled headers because of ccache compatibility.")
+		set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+		set(ENV{CCACHE_SLOPPINESS} "pch_defines,time_macros")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+		# set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fpch-preprocess>)
+		elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+			add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Xclang> $<$<COMPILE_LANGUAGE:CXX>:-fno-pch-timestamp>)
+		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")
 	endif()
@@ -312,6 +320,12 @@ endif ()
 SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"
 		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
+
+function(storm_target_precompile_headers target)
+	if(NOT CMAKE_DISABLE_PRECOMPILE_HEADERS)
+		target_precompile_headers(${target} ${ARGN})
+	endif()
+endfunction()
 
 #############################################################
 ##
