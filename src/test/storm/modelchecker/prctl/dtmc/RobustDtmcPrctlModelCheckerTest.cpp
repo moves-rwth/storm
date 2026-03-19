@@ -434,6 +434,6 @@ TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("0.01"));
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("0.05"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/10"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/20"));
 }
