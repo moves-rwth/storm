@@ -49,7 +49,7 @@ TEST(AddUncertaintyTransformerTest, BrpTestRational) {
     auto model = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
 
     auto transformer = storm::transformer::AddUncertainty<storm::RationalNumber>(model);
-    auto uncertainModel = transformer.transform(0.01);
+    auto uncertainModel = transformer.transform(storm::RationalNumber("1/100"));
     EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
     EXPECT_EQ(uncertainModel->getNumberOfTransitions(), model->getNumberOfTransitions());
     EXPECT_TRUE(uncertainModel->hasUncertainty());
@@ -65,7 +65,7 @@ TEST(AddUncertaintyTransformerTest, Coin22TestRational) {
     auto model = storm::api::buildSparseModel<storm::RationalNumber>(program, formulas);
 
     auto transformer = storm::transformer::AddUncertainty<storm::RationalNumber>(model);
-    auto uncertainModel = transformer.transform(0.01);
+    auto uncertainModel = transformer.transform(storm::RationalNumber("1/100"));
     EXPECT_EQ(uncertainModel->getNumberOfStates(), model->getNumberOfStates());
     EXPECT_EQ(uncertainModel->getNumberOfTransitions(), model->getNumberOfTransitions());
     EXPECT_TRUE(uncertainModel->hasUncertainty());

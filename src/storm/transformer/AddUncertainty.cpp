@@ -19,20 +19,20 @@ AddUncertainty<ValueType>::AddUncertainty(std::shared_ptr<storm::models::sparse:
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<typename AddUncertainty<ValueType>::IntervalType>> AddUncertainty<ValueType>::transform(
-    double additiveUncertainty, double minimalTransitionProbability, uint64_t maxSuccessors) {
+    ValueType additiveUncertainty, ValueType minimalTransitionProbability, std::optional<uint64_t> maxSuccessors) {
     // we first build the matrix and later copy the row grouping.
     auto newMatrixBuilder =
         storage::SparseMatrixBuilder<IntervalType>(origModel->getTransitionMatrix().getRowCount(), origModel->getTransitionMatrix().getColumnCount(),
                                                    origModel->getTransitionMatrix().getNonzeroEntryCount(), true, false);
     // Build transition matrix (without row grouping)
     for (uint64_t rowIndex = 0; rowIndex < origModel->getTransitionMatrix().getRowCount(); ++rowIndex) {
-        if (origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors) {
+        if (maxSuccessors.has_value() && origModel->getTransitionMatrix().getRowEntryCount(rowIndex) <= maxSuccessors.value()) {
             for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
                 newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), additiveUncertainty, minimalTransitionProbability));
             }
         } else {
             for (auto const& entry : origModel->getTransitionMatrix().getRow(rowIndex)) {
-                newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), addUncertainty(entry.getValue(), 0, 0));
+                newMatrixBuilder.addNextValue(rowIndex, entry.getColumn(), storm::utility::convertNumber<IntervalType>(entry.getValue()));
             }
         }
     }
@@ -74,17 +74,14 @@ std::shared_ptr<storm::models::sparse::Model<typename AddUncertainty<ValueType>:
 }
 
 template<typename ValueType>
-typename AddUncertainty<ValueType>::IntervalType AddUncertainty<ValueType>::addUncertainty(ValueType const& vt, double additiveUncertainty,
-                                                                                           double minimalValue) {
+typename AddUncertainty<ValueType>::IntervalType AddUncertainty<ValueType>::addUncertainty(ValueType const& vt, ValueType additiveUncertainty,
+                                                                                           ValueType minimalValue) {
     if (utility::isOne(vt)) {
         return IntervalType(storm::utility::one<ValueType>(), storm::utility::one<ValueType>());
     }
-    ValueType const center = vt;
-    ValueType const uncertainty = storm::utility::convertNumber<ValueType>(additiveUncertainty);
-    ValueType const minVal = storm::utility::convertNumber<ValueType>(minimalValue);
-    STORM_LOG_THROW(center >= minVal, storm::exceptions::InvalidArgumentException, "Transition probability is smaller than minimal value");
-    ValueType const lowerBound = storm::utility::max<ValueType>(center - uncertainty, minVal);
-    ValueType const upperBound = storm::utility::min<ValueType>(center + uncertainty, storm::utility::one<ValueType>() - minVal);
+    STORM_LOG_THROW(vt >= minimalValue, storm::exceptions::InvalidArgumentException, "Transition probability is smaller than minimal value");
+    ValueType const lowerBound = storm::utility::max<ValueType>(vt - additiveUncertainty, minimalValue);
+    ValueType const upperBound = storm::utility::min<ValueType>(vt + additiveUncertainty, storm::utility::one<ValueType>() - minimalValue);
     STORM_LOG_ASSERT(storm::utility::isPositive(lowerBound), "Lower bound must be strictly above zero.");
     STORM_LOG_ASSERT(upperBound < storm::utility::one<ValueType>(), "Upper bound must be strictly below one.");
     return IntervalType(lowerBound, upperBound);

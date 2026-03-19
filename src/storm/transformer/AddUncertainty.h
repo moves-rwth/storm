@@ -22,13 +22,13 @@ template<typename ValueType>
 class AddUncertainty {
    public:
     using IntervalType = std::conditional_t<std::is_same_v<ValueType, storm::RationalNumber>, storm::RationalInterval, storm::Interval>;
-
+    static_assert(std::is_same_v<ValueType, storm::IntervalBaseType<IntervalType>>, "Expected ValueType to match the interval base type.");
     AddUncertainty(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& originalModel);
-    std::shared_ptr<storm::models::sparse::Model<IntervalType>> transform(double additiveUncertainty, double minimalValue = 0.0001,
-                                                                          uint64_t maxSuccessors = 10000000);
+    std::shared_ptr<storm::models::sparse::Model<IntervalType>> transform(ValueType additiveUncertainty, ValueType minimalValue = 0.0001,
+                                                                          std::optional<uint64_t> maxSuccessors = {});
 
    private:
-    IntervalType addUncertainty(ValueType const& vt, double additiveUncertainty, double minimalValue);
+    IntervalType addUncertainty(ValueType const& vt, ValueType additiveUncertainty, ValueType minimalValue);
     std::shared_ptr<storm::models::sparse::Model<ValueType>> origModel;
 };
 
