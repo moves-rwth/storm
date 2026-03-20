@@ -134,6 +134,7 @@ jobs:
           key: buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ matrix.config.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
           restore-keys: |
             buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ matrix.config.baseImg }}-
+            buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-
             buildtest-ccache-indepth-
       - name: Build storm from Dockerfile
         run: |
@@ -324,7 +325,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
-          key: buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+          key: buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-${{ github.run_id }}
           restore-keys: |
             buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-
             buildtest-ccache-linux-
@@ -429,7 +430,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/.ccache
-          key: buildtest-ccache-macos-${{ matrix.config.distro }}-${{ matrix.config.buildType }}-${{ hashFiles('CMakeLists.txt', '.github/workflows/buildtest.yml') }}-${{ github.run_id }}
+          key: buildtest-ccache-macos-${{ matrix.config.distro }}-${{ matrix.config.buildType }}-${{ github.run_id }}
           restore-keys: |
             buildtest-ccache-macos-${{ matrix.config.distro }}-${{ matrix.config.buildType }}-
             buildtest-ccache-macos-${{ matrix.config.distro }}-
