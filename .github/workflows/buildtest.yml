@@ -204,13 +204,13 @@ jobs:
              packages: "clang",
              distro: "archlinux"
           }
-          - { name: "musl",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
-              distro: "alpine"
-            }
+          - {name: "musl",
+             buildType: "Debug",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             distro: "alpine"
+          }
     steps:
       - name: Git clone
         uses: actions/checkout@v6
@@ -315,22 +315,26 @@ jobs:
     strategy:
       matrix:
         config:
-          
-          - {name: "Xcode 15.4, ARM",
+          - {name: "MacOS 14, ARM",
              distro: "macos-14",
              xcode: "15.4",
              buildType: "Debug"
-            }
-          - {name: "Xcode Latest, ARM",
+          }
+          - {name: "MacOS 15, ARM",
              distro: "macos-15",
+             xcode: "16.4",
+             buildType: "Debug"
+          }
+          - {name: "MacOS 26, ARM",
+             distro: "macos-26",
              xcode: "latest-stable",
              buildType: "Debug"
-            }
-          - {name: "Xcode Latest, Intel",
-             distro: "macos-15-intel",
+          }
+          - {name: "MacOS 26, Intel",
+             distro: "macos-26-intel",
              xcode: "latest-stable",
              buildType: "Debug"
-            }  
+          }
     runs-on: ${{ matrix.config.distro }}
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
