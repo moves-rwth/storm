@@ -327,7 +327,6 @@ jobs:
           key: buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
           restore-keys: |
             buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-
-            buildtest-ccache-linux-${{ matrix.distro }}-
             buildtest-ccache-linux-
       - name: Build storm from Dockerfile
         run: |
@@ -337,7 +336,7 @@ jobs:
             --build-arg build_type="${{ matrix.buildType }}" \
             --build-arg carl_tag="master" \
             --build-arg no_threads=${NR_JOBS} \
-            --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON"
+            --build-arg cmake_args="-DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF"
             # Omitting arguments developer, disable_*, cln_exact, cln_ratfunc, all_sanitizers
       - name: Export ccache from Docker image
         run: |
