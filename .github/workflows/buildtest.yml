@@ -442,6 +442,7 @@ jobs:
         run: |
           ccache --max-size=2G
           ccache --zero-stats
+          ccache --show-stats --verbose
       - name: Configure storm
         run: |
           mkdir build
@@ -449,8 +450,7 @@ jobs:
           cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF
       - name: Build storm
         working-directory: ./build
-        run: |u
-          ccache --show-stats --verbose
+        run: |
           make -j ${NR_JOBS}
       - name: Print ccache stats
         run: ccache --show-stats --verbose
