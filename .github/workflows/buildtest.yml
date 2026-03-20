@@ -246,9 +246,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
-          key: buildtest-ccache-compiler-${{ matrix.config.distro }}-${{ matrix.config.name }}-${{ matrix.config.buildType }}-${{ hashFiles('.github/workflows/Dockerfile.archlinux', '.github/workflows/Dockerfile.alpine', 'CMakeLists.txt') }}-${{ github.run_id }}
+          key: buildtest-ccache-compiler-${{ matrix.config.distro }}-${{ matrix.config.cmakeArgs }}-${{ matrix.config.buildType }}-${{ github.run_id }}
           restore-keys: |
-            buildtest-ccache-compiler-${{ matrix.config.distro }}-${{ matrix.config.name }}-${{ matrix.config.buildType }}-
+            buildtest-ccache-compiler-${{ matrix.config.distro }}-${{ matrix.config.cmakeArgs }}-${{ matrix.config.buildType }}-
             buildtest-ccache-compiler-${{ matrix.config.distro }}-
             buildtest-ccache-compiler-
       - name: Build storm from Dockerfile
