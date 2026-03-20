@@ -17,6 +17,9 @@ TARGET="storm"
 JOBS="$(command -v nproc >/dev/null 2>&1 && nproc || echo 4)"
 GENERATOR=""
 EXTRA_CMAKE_ARGS=()
+ENABLE_TRACE=0
+NINJATRACING_BIN=""
+NINJATRACING_URL="https://raw.githubusercontent.com/nico/ninjatracing/master/ninjatracing"
 
 usage() {
     cat <<'EOF'
@@ -31,12 +34,15 @@ Options:
     --jobs <n>              Parallel build jobs (default: nproc or 4)
     --generator <name>      CMake generator (e.g. Ninja)
     --cmake-arg <arg>       Extra CMake argument (can be repeated)
+    --trace                 Generate Chrome trace files via ninjatracing
+    --ninjatracing <path>   Path to local ninjatracing script/binary
     --help                  Show this help
 
 Output:
   - Summary table in stdout
   - CSV at <build-root>/results.csv
   - Per-run ccache stats in <build-root>/results/
+    - Optional traces at <build-root>/results/trace-<pch>-<cache>.json
 EOF
 }
 
@@ -67,10 +73,10 @@ run_case() {
     local cache_state="$2"   # cold|warm
     local namespace="storm-bench-pch-${pch_mode}"
     local ccache_dir="${CCACHE_ROOT}/${namespace}"
-    local disable_pch="OFF"
+    local enable_pch="ON"
 
     if [[ "$pch_mode" == "off" ]]; then
-        disable_pch="ON"
+        enable_pch="OFF"
     fi
 
     local build_dir="${BUILD_ROOT}/build-${pch_mode}"
@@ -90,7 +96,7 @@ run_case() {
     ccache --zero-stats >/dev/null
 
     local cmake_cmd=(cmake -S "$SOURCE_DIR" -B "$build_dir"
-        -DCMAKE_DISABLE_PRECOMPILE_HEADERS="$disable_pch"
+        -DSTORM_COMPILE_WITH_PCH="$enable_pch"
         -DCMAKE_BUILD_TYPE="$BUILD_TYPE")
 
     if [[ -n "$GENERATOR" ]]; then
@@ -118,6 +124,16 @@ run_case() {
 
     local stats_file="${result_dir}/ccache-${pch_mode}-${cache_state}.txt"
     ccache --show-stats --verbose >"$stats_file"
+
+    if [[ "$ENABLE_TRACE" == "1" ]]; then
+        local ninja_log="${build_dir}/.ninja_log"
+        local trace_file="${result_dir}/trace-${pch_mode}-${cache_state}.json"
+        if [[ ! -f "$ninja_log" ]]; then
+            echo "Error: ninja log not found at $ninja_log" >&2
+            exit 1
+        fi
+        python3 "$NINJATRACING_BIN" "$ninja_log" >"$trace_file"
+    fi
 
     local elapsed
     elapsed="$(cat "$time_file")"
@@ -175,6 +191,14 @@ while [[ $# -gt 0 ]]; do
             EXTRA_CMAKE_ARGS+=("$2")
             shift 2
             ;;
+        --trace)
+            ENABLE_TRACE=1
+            shift
+            ;;
+        --ninjatracing)
+            NINJATRACING_BIN="$2"
+            shift 2
+            ;;
         --help)
             usage
             exit 0
@@ -191,6 +215,18 @@ require_cmd cmake
 require_cmd ccache
 require_cmd /usr/bin/time
 
+if [[ "$ENABLE_TRACE" == "1" ]]; then
+    require_cmd python3
+    if [[ -z "$GENERATOR" ]]; then
+        GENERATOR="Ninja"
+    fi
+    if [[ "$GENERATOR" != "Ninja" ]]; then
+        echo "Error: --trace requires --generator Ninja (or no generator, which defaults to Ninja)." >&2
+        exit 1
+    fi
+    require_cmd ninja
+fi
+
 if [[ -z "$CCACHE_ROOT" ]]; then
     CCACHE_ROOT="${BUILD_ROOT}/ccache"
 fi
@@ -199,6 +235,24 @@ mkdir -p "$BUILD_ROOT"
 mkdir -p "$CCACHE_ROOT"
 : >"${BUILD_ROOT}/results.csv"
 echo "pch,cache_state,build_seconds,cacheable_calls,hits,misses,uncacheable_calls" >>"${BUILD_ROOT}/results.csv"
+
+if [[ "$ENABLE_TRACE" == "1" ]]; then
+    if [[ -z "$NINJATRACING_BIN" ]]; then
+        NINJATRACING_BIN="${BUILD_ROOT}/tools/ninjatracing"
+        mkdir -p "${BUILD_ROOT}/tools"
+        if [[ ! -f "$NINJATRACING_BIN" ]]; then
+            if command -v curl >/dev/null 2>&1; then
+                curl -fsSL "$NINJATRACING_URL" -o "$NINJATRACING_BIN"
+            elif command -v wget >/dev/null 2>&1; then
+                wget -qO "$NINJATRACING_BIN" "$NINJATRACING_URL"
+            else
+                echo "Error: neither curl nor wget found; provide --ninjatracing <path>." >&2
+                exit 1
+            fi
+            chmod +x "$NINJATRACING_BIN"
+        fi
+    fi
+fi
 
 echo
 echo "Benchmark settings"
@@ -211,6 +265,12 @@ echo "  jobs:        $JOBS"
 if [[ -n "$GENERATOR" ]]; then
     echo "  generator:   $GENERATOR"
 fi
+if [[ "$ENABLE_TRACE" == "1" ]]; then
+    echo "  trace:       enabled"
+    echo "  ninjatrace:  $NINJATRACING_BIN"
+else
+    echo "  trace:       disabled"
+fi
 if [[ ${#EXTRA_CMAKE_ARGS[@]} -gt 0 ]]; then
     echo "  extra args:  ${EXTRA_CMAKE_ARGS[*]}"
 fi
@@ -222,11 +282,14 @@ printf "%-8s %-6s %10s %12s %10s %10s %12s %9s\n" \
 printf "%-8s %-6s %10s %12s %10s %10s %12s %9s\n" \
     "--------" "------" "----------" "------------" "----------" "----------" "------------" "---------"
 
-run_case on cold
-run_case on warm
 run_case off cold
 run_case off warm
+run_case on cold
+run_case on warm
 
 echo
 echo "CSV written to: ${BUILD_ROOT}/results.csv"
 echo "Raw stats in:   ${BUILD_ROOT}/results"
+if [[ "$ENABLE_TRACE" == "1" ]]; then
+    echo "Traces in:      ${BUILD_ROOT}/results"
+fi
