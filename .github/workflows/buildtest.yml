@@ -447,10 +447,10 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEVELOPER=ON
+          cmake .. -DCMAKE_BUILD_TYPE="${{ matrix.config.buildType }}" -DSTORM_CARL_GIT_TAG="master" -DSTORM_WARNING_AS_ERROR=ON -DSTORM_COMPILE_WITH_PCH=OFF
       - name: Build storm
         working-directory: ./build
-        run: |
+        run: |u
           ccache --show-stats --verbose
           make -j ${NR_JOBS}
       - name: Print ccache stats
