@@ -131,9 +131,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
-          key: buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+          key: buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ matrix.config.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
           restore-keys: |
-            buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-
+            buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ matrix.config.baseImg }}-
             buildtest-ccache-indepth-
       - name: Build storm from Dockerfile
         run: |
