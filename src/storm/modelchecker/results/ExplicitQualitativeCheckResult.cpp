@@ -3,6 +3,7 @@
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
