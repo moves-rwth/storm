@@ -2,7 +2,7 @@
  ******************************************************************
  *           C++ Mathematical Expression Toolkit Library          *
  *                                                                *
- * Author: Arash Partow (1999-2024)                               *
+ * Author: Arash Partow (1999-2025)                               *
  * URL: https://www.partow.net/programming/exprtk/index.html      *
  *                                                                *
  * Copyright notice:                                              *
@@ -2691,6 +2691,14 @@ namespace exprtk
 
             while (!is_end(s_itr_))
             {
+               if (details::is_invalid(*s_itr_))
+               {
+                  token_t t;
+                  t.set_error(token::e_error, s_itr_, s_itr_ + 1, base_itr_);
+                  token_list_.push_back(t);
+                  return;
+               }
+
                if ((1 == mode) && test::comment_end(*s_itr_, 0, mode))
                {
                   ++s_itr_;
@@ -4695,6 +4703,14 @@ namespace exprtk
                        static_cast<int>(data_ref_.size())));
       }
 
+      void set_size_ref(std::size_t* size_ref)
+      {
+         size_ref_.push_back(size_ref);
+         exprtk_debug(("vector_view::set_size_ref() - size_ref: %p size_ref_.size(): %d\n",
+                       reinterpret_cast<void*>(size_ref),
+                       static_cast<int>(size_ref_.size())));
+      }
+
       void remove_ref(data_ptr_t* data_ref)
       {
          data_ref_.erase(
@@ -4705,6 +4721,16 @@ namespace exprtk
                        static_cast<int>(data_ref_.size())));
       }
 
+      void remove_size_ref(std::size_t* size_ref)
+      {
+         size_ref_.erase(
+            std::remove(size_ref_.begin(), size_ref_.end(), size_ref),
+            size_ref_.end());
+         exprtk_debug(("vector_view::remove_size_ref() - size_ref: %p size_ref_.size(): %d\n",
+                       reinterpret_cast<void*>(size_ref),
+                       static_cast<int>(size_ref_.size())));
+      }
+
       bool set_size(const std::size_t new_size)
       {
          if ((new_size > 0) && (new_size <= base_size_))
@@ -4713,6 +4739,15 @@ namespace exprtk
             exprtk_debug(("vector_view::set_size() - data_: %p size: %lu\n",
                           reinterpret_cast<void*>(data_),
                           size_));
+
+            if (!size_ref_.empty())
+            {
+               for (std::size_t i = 0; i < size_ref_.size(); ++i)
+               {
+                  (*size_ref_[i]) = new_size;
+               }
+            }
+
             return true;
          }
 
@@ -4728,6 +4763,7 @@ namespace exprtk
       std::size_t size_;
       data_ptr_t  data_;
       std::vector<data_ptr_t*> data_ref_;
+      std::vector<std::size_t*> size_ref_;
    };
 
    template <typename T>
@@ -4745,6 +4781,7 @@ namespace exprtk
    }
 
    template <typename T> class results_context;
+   namespace  details { template <typename T> class vector_interface; }
 
    template <typename T>
    struct type_store
@@ -4761,6 +4798,7 @@ namespace exprtk
       : data(0)
       , size(0)
       , type(e_unknown)
+      , ivec(0)
       {}
 
       union
@@ -4769,8 +4807,11 @@ namespace exprtk
          T*    vec_data;
       };
 
+      typedef details::vector_interface<T>* ivec_t;
+
       std::size_t size;
       store_type  type;
+      ivec_t      ivec;
 
       class parameter_list
       {
@@ -4820,22 +4861,22 @@ namespace exprtk
             return parameter_list_.back();
          }
 
-         inline std::vector<type_store>::const_iterator begin() const
+         inline typename std::vector<type_store>::const_iterator begin() const
          {
             return parameter_list_.begin();
          }
 
-         inline std::vector<type_store>::const_iterator end() const
+         inline typename std::vector<type_store>::const_iterator end() const
          {
             return parameter_list_.end();
          }
 
-         inline std::vector<type_store>::iterator begin()
+         inline typename std::vector<type_store>::iterator begin()
          {
             return parameter_list_.begin();
          }
 
-         inline std::vector<type_store>::iterator end()
+         inline typename std::vector<type_store>::iterator end()
          {
             return parameter_list_.end();
          }
@@ -5872,6 +5913,24 @@ namespace exprtk
       }
 
       template <typename T>
+      inline bool amalgamated_vecop(const expression_node<T>* node)
+      {
+         if (node)
+         {
+            switch (node->type())
+            {
+               case details::expression_node<T>::e_vecvecarith :
+               case details::expression_node<T>::e_vecvalarith :
+               case details::expression_node<T>::e_valvecarith :
+               case details::expression_node<T>::e_vecunaryop  : return true;
+               default                                         : return false;
+            }
+         }
+         else
+            return false;
+      }
+
+      template <typename T>
       inline bool is_constant_node(const expression_node<T>* node)
       {
          return node &&
@@ -6405,6 +6464,12 @@ namespace exprtk
             virtual void remove_ref(value_ptr*)
             {}
 
+            virtual void set_size_ref(std::size_t*)
+            {}
+
+            virtual void remove_size_ref(std::size_t*)
+            {}
+
             virtual vector_view<Type>* rebaseable_instance()
             {
                return reinterpret_cast<vector_view<Type>*>(0);
@@ -6658,11 +6723,27 @@ namespace exprtk
             }
          }
 
+         void set_size_ref(std::size_t* ref)
+         {
+            if (rebaseable())
+            {
+               vector_holder_base_->set_size_ref(ref);
+            }
+         }
+
          void remove_ref(value_ptr* ref)
          {
             if (rebaseable())
             {
                vector_holder_base_->remove_ref(ref);
+            }
+         }
+
+         void remove_size_ref(std::size_t* ref)
+         {
+            if (rebaseable())
+            {
+               vector_holder_base_->remove_size_ref(ref);
             }
          }
 
@@ -11774,7 +11855,7 @@ namespace exprtk
          assert_node(expression_ptr   assert_condition_node,
                      expression_ptr   assert_message_node,
                      assert_check_ptr assert_check,
-                     assert_context_t context)
+                     const assert_context_t& context)
          : assert_message_str_base_(0)
          , assert_check_(assert_check)
          , context_(context)
@@ -14982,9 +15063,14 @@ namespace exprtk
             for (std::size_t i = 0; i < vv_list_.size(); ++i)
             {
                vecview_t& vv = vv_list_[i];
-               if (vv && typestore_list_[i].vec_data)
+               if (vv)
                {
-                  vv->remove_ref(&typestore_list_[i].vec_data);
+                  if (typestore_list_[i].vec_data)
+                  {
+                     vv->remove_ref(&typestore_list_[i].vec_data);
+                  }
+
+                  vv->remove_size_ref(&typestore_list_[i].size);
                   typestore_list_[i].vec_data = 0;
                }
             }
@@ -15024,6 +15110,7 @@ namespace exprtk
                   ts.size = vi->size();
                   ts.data = vi->vds().data();
                   ts.type = type_store_t::e_vector;
+                  ts.ivec = vi;
 
                   if (
                        vi->vec()->vec_holder().rebaseable() &&
@@ -15031,7 +15118,12 @@ namespace exprtk
                      )
                   {
                      vv_list_[i] = vi->vec()->vec_holder().rebaseable_instance();
-                     vv_list_[i]->set_ref(&ts.vec_data);
+                     vv_list_[i]->set_size_ref(&ts.size);
+
+                     if (!amalgamated_vecop(arg_list_[i]))
+                     {
+                        vv_list_[i]->set_ref(&ts.vec_data);
+                     }
                   }
                }
                #ifndef exprtk_disable_string_capabilities
@@ -15129,6 +15221,8 @@ namespace exprtk
 
          inline virtual bool populate_value_list() const
          {
+            assert(branch_.size() == typestore_list_.size());
+
             for (std::size_t i = 0; i < branch_.size(); ++i)
             {
                expr_as_vec1_store_[i] = branch_[i].first->value();
@@ -15414,6 +15508,8 @@ namespace exprtk
          {
             if (gen_function_t::populate_value_list())
             {
+               prepare_typestore_list();
+
                typedef typename type_store<T>::parameter_list parameter_list_t;
 
                results_context_->
@@ -15436,6 +15532,19 @@ namespace exprtk
          }
 
       private:
+
+         void prepare_typestore_list() const
+         {
+            for (std::size_t i = 0; i < gen_function_t::typestore_list_.size(); ++i)
+            {
+               typename gen_function_t::type_store_t& ts = gen_function_t::typestore_list_[i];
+
+               if (ts.ivec)
+               {
+                  ts.size = ts.ivec->size();
+               }
+            }
+         }
 
          results_context_t* results_context_;
       };
@@ -19837,7 +19946,7 @@ namespace exprtk
       std::string parameter_sequence;
       return_type rtrn_type;
 
-      static inline std::string generate_prefix_args(const std::string prefix_args, std::size_t start = 0, std::size_t end = 10)
+      static inline std::string generate_prefix_args(const std::string& prefix_args, std::size_t start = 0, std::size_t end = 10)
       {
          std::string result;
 
@@ -19850,7 +19959,7 @@ namespace exprtk
          return result;
       }
 
-      static inline std::string generate_suffix_args(const std::string suffix_args, std::size_t start = 0, std::size_t end = 10)
+      static inline std::string generate_suffix_args(const std::string& suffix_args, std::size_t start = 0, std::size_t end = 10)
       {
          std::string result;
 
@@ -21931,7 +22040,11 @@ namespace exprtk
 
       inline bool return_invoked() const
       {
-         return (*control_block_->return_invoked);
+         assert(control_block_);
+
+         return control_block_                 &&
+                control_block_->return_invoked &&
+                (*control_block_->return_invoked);
       }
 
    private:
@@ -24753,6 +24866,7 @@ namespace exprtk
             dec_.clear    ();
             sem_.cleanup  ();
             return_cleanup();
+            expr = expression_t();
 
             return false;
          }
@@ -46291,6 +46405,62 @@ namespace exprtk
    };
 
    template <typename T>
+   class select exprtk_final : public exprtk::igeneric_function<T>
+   {
+   public:
+
+      typedef typename exprtk::igeneric_function<T> igfun_t;
+      typedef typename igfun_t::parameter_list_t    parameter_list_t;
+      typedef typename igfun_t::generic_type        generic_type;
+      typedef typename generic_type::vector_view    vector_t;
+
+      using igfun_t::operator();
+
+      select()
+      : exprtk::igeneric_function<T>("VVVV|VVVVTT")
+      /*
+         Overloads:
+         0. VVVV  - out vector, mask, vector 0, vector 1
+         1. VVVV  - out vector, mask, vector 0, vector 1, r0, r1
+      */
+      {}
+
+      inline T operator() (const std::size_t& ps_index, parameter_list_t parameters) exprtk_override
+      {
+               vector_t out (parameters[0]);
+         const vector_t mask(parameters[1]);
+         const vector_t vec0(parameters[2]);
+         const vector_t vec1(parameters[3]);
+
+         std::size_t r0 = 0;
+         std::size_t r1 = out.size() - 1;
+
+         if (1 == ps_index)
+         {
+            std::size_t rng_idx0 = 4;
+            std::size_t rng_idx1 = 5;
+
+            if (!helper::load_vector_range<T>::process(parameters, r0, r1, rng_idx0, rng_idx1, 0))
+            {
+               return T(0);
+            }
+
+            if (helper::invalid_range(out , r0, r1)) return T(0);
+            if (helper::invalid_range(mask, r0, r1)) return T(0);
+            if (helper::invalid_range(vec0, r0, r1)) return T(0);
+            if (helper::invalid_range(vec1, r0, r1)) return T(0);
+         }
+
+         for (std::size_t i = r0; i <= r1; ++i)
+         {
+            out[i] = (mask[i] != T(0)) ? vec0[i] : vec1[i];
+         }
+
+         return T(1);
+      }
+   };
+
+   template <typename T>
    struct package
    {
       all_true       <T> at;
@@ -46323,6 +46493,7 @@ namespace exprtk
       threshold_below<T> tb;
       min_elemwise<T>    miew;
       max_elemwise<T>    maew;
+      select<T>          slct;
 
       bool register_package(exprtk::symbol_table<T>& symtab)
       {
@@ -46367,6 +46538,7 @@ namespace exprtk
          exprtk_register_function("threshold_below" , tb        )
          exprtk_register_function("min_elemwise"    , miew      )
          exprtk_register_function("max_elemwise"    , maew      )
+         exprtk_register_function("select"          , slct      )
 
          #undef exprtk_register_function
 
@@ -46386,11 +46558,11 @@ namespace exprtk
       using ::exprtk::details::char_cptr;
 
       static char_cptr library = "Mathematical Expression Toolkit";
-      static char_cptr version = "2.718281828459045235360287471352662497757"
-                                 "24709369995957496696762772407663035354759"
-                                 "45713821785251664274274663919320030599218"
-                                 "17413596629043572900334295260595630738132";
-      static char_cptr date    = "20240101";
+      static char_cptr version = "2.71828182845904523536028747135266249775724"
+                                 "7093699959574966967627724076630353547594571"
+                                 "3821785251664274274663919320030599218174135"
+                                 "9662904357290033429526059563073813232862794";
+      static char_cptr date    = "20250101";
       static char_cptr min_cpp = "199711L";
 
       static inline std::string data()
