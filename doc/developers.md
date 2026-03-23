@@ -22,7 +22,7 @@ The following contains some general guidelines for developers.
   For more information see [PR#175](https://github.com/moves-rwth/storm/pull/175).
 
 ### Documentation
-- We use Doxygen for documentation, see [storm-doc](https://moves-rwth.github.io/storm-doc/).
+- We use Doxygen for documentation, see [storm-doc](https://stormchecker.github.io/storm-doc/).
   Code blocks should be documented with:
   ```
   /*!

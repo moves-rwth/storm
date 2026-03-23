@@ -34,7 +34,7 @@ jobs:
         with:
           deploy_key: ${{ secrets.DOC_DEPLOY_KEY }}
           publish_dir: ./html
-          external_repository: moves-rwth/storm-doc
+          external_repository: stormchecker/storm-doc
           publish_branch: master
           force_orphan: true
 
