@@ -1,5 +1,5 @@
 The following steps should be performed when releasing a new Storm version.
-Note that in most cases a simultaneous release of [carl-storm](https://github.com/stormchecker/carl-storm), [Storm](https://github.com/moves-rwth/storm) and [stormpy](https://github.com/moves-rwth/stormpy/) is preferred.
+Note that in most cases a simultaneous release of [carl-storm](https://github.com/stormchecker/carl-storm), [Storm](https://github.com/stormchecker/storm) and [stormpy](https://github.com/stormchecker/stormpy/) is preferred.
 
 
 ## Preparations for the release
@@ -12,7 +12,7 @@ Note that in most cases a simultaneous release of [carl-storm](https://github.co
 2. Update the versions of the dependencies in the [storm-dependencies Dockerfile](https://github.com/stormchecker/docker-storm/blob/main/storm-dependencies/Dockerfile).
    Use the [CI of docker-storm](https://github.com/stormchecker/docker-storm/actions/workflows/dependencies.yml) to create new Docker images.
 
-3. Check that Storm [CI](https://github.com/moves-rwth/storm/actions/) builds without errors and all tests are successful.
+3. Check that Storm [CI](https://github.com/stormchecker/storm/actions/) builds without errors and all tests are successful.
 
 
 ## Creating the release
@@ -38,9 +38,9 @@ At this point, all relevant pull requests should have been merged into Storm and
    git tag -a X.Y.Z -m "Storm version X.Y.Z" -s
    git push origin X.Y.Z
    ```
-   The new tag should now be visible on [GitHub](https://github.com/moves-rwth/storm/tags).
+   The new tag should now be visible on [GitHub](https://github.com/stormchecker/storm/tags).
 
-8. [Create a new release](https://github.com/moves-rwth/storm/releases/new) on GitHub.
+8. [Create a new release](https://github.com/stormchecker/storm/releases/new) on GitHub.
    Create a new tag or use the tag created in the previous step.
    Finishing the release automatically triggers a CI workflow which also
    * updates the `stable` branch
@@ -51,7 +51,7 @@ At this point, all relevant pull requests should have been merged into Storm and
 
 ## After the release
 At this point new commits can be added to Storm again.
-A natural next step is to [prepare a stormpy release](https://github.com/moves-rwth/stormpy/blob/master/doc/checklist_new_release.md).
+A natural next step is to [prepare a stormpy release](https://github.com/stormchecker/stormpy/blob/master/doc/checklist_new_release.md).
 
 9. Update the packages for the supported operating systems:
    - macOS: Update the [Homebrew formula](https://github.com/moves-rwth/homebrew-storm)
