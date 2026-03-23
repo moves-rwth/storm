@@ -11,7 +11,7 @@ Usage
 The Storm website [www.stormchecker.org](https://www.stormchecker.org/) provides documentation and background information.
 - For installation and usage instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 - Video tutorials and interactive code examples are available in [Tutorials](https://www.stormchecker.org/tutorials.html).
-- The [Storm starter project](https://github.com/moves-rwth/storm-project-starter-cpp/) provides a starting point for incorporating Storm into C++ projects.
+- The [Storm starter project](https://github.com/stormchecker/storm-project-starter-cpp/) provides a starting point for incorporating Storm into C++ projects.
 - Storm provides a Python interface called [stormpy](https://moves-rwth.github.io/stormpy/) for easy prototyping and interaction with Storm.
 - In case of any issues installing or using Storm, [let us know](https://www.stormchecker.org/documentation/obtain-storm/troubleshooting.html).
 

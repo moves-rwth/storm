@@ -1,5 +1,5 @@
 The following steps should be performed when releasing a new Storm version.
-Note that in most cases a simultaneous release of [carl-storm](https://github.com/moves-rwth/carl-storm), [Storm](https://github.com/moves-rwth/storm) and [stormpy](https://github.com/moves-rwth/stormpy/) is preferred.
+Note that in most cases a simultaneous release of [carl-storm](https://github.com/stormchecker/carl-storm), [Storm](https://github.com/moves-rwth/storm) and [stormpy](https://github.com/moves-rwth/stormpy/) is preferred.
 
 
 ## Preparations for the release
@@ -9,8 +9,8 @@ Note that in most cases a simultaneous release of [carl-storm](https://github.co
    * `STORM_CARL_GIT_TAG` in `CMakeLists.txt`
    * `carl_tag` in `Dockerfile`, `.github/workflows/Dockerfile.alpine`, `.github/workflows/Dockerfile.archlinux` and `.github/workflows/Dockerfile.release`
 
-2. Update the versions of the dependencies in the [storm-dependencies Dockerfile](https://github.com/moves-rwth/docker-storm/blob/main/storm-dependencies/Dockerfile).
-   Use the [CI of docker-storm](https://github.com/moves-rwth/docker-storm/actions/workflows/dependencies.yml) to create new Docker images.
+2. Update the versions of the dependencies in the [storm-dependencies Dockerfile](https://github.com/stormchecker/docker-storm/blob/main/storm-dependencies/Dockerfile).
+   Use the [CI of docker-storm](https://github.com/stormchecker/docker-storm/actions/workflows/dependencies.yml) to create new Docker images.
 
 3. Check that Storm [CI](https://github.com/moves-rwth/storm/actions/) builds without errors and all tests are successful.
 
