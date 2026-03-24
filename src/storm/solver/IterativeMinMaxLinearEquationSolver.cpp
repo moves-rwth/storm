@@ -4,7 +4,6 @@
 #include <type_traits>
 
 #include "storm/adapters/IntervalAdapter.h"
-#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"

@@ -241,18 +241,18 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     if (storm::solver::minimize(dir)) {
         if (choices) {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend, OptimizationDirection::Maximize);
+            apply(backend, OptimizationDirection::Minimize);
         } else {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
-            apply(backend, OptimizationDirection::Maximize);
+            apply(backend, OptimizationDirection::Minimize);
         }
     } else {
         if (choices) {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend, OptimizationDirection::Minimize);
+            apply(backend, OptimizationDirection::Maximize);
         } else {
             detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
-            apply(backend, OptimizationDirection::Minimize);
+            apply(backend, OptimizationDirection::Maximize);
         }
     }
 }

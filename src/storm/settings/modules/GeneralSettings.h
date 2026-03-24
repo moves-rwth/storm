@@ -123,13 +123,6 @@ class GeneralSettings : public ModuleSettings {
      */
     bool isSoundSet() const;
 
-    /*!
-     * Retrieves whether the option enabling interval models is set.
-     *
-     * @return True if the option was set
-     */
-    bool isIntervalSet() const;
-
     bool check() const override;
     void finalize() override;
 
@@ -156,7 +149,6 @@ class GeneralSettings : public ModuleSettings {
     static const std::string parametricOptionName;
     static const std::string exactOptionName;
     static const std::string soundOptionName;
-    static const std::string intervalOptionName;
 };
 
 }  // namespace modules
