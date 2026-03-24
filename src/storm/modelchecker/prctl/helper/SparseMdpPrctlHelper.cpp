@@ -1062,7 +1062,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     // Only compute the result if the reward model is not empty.
     STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
     if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support rational interval rewards with double interval models.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support double interval rewards with rational interval models.");
     } else {
         return computeReachabilityRewardsHelper(
                    env, std::move(goal), transitionMatrix, backwardTransitions,
@@ -1097,7 +1097,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     // Only compute the result if the reward model is not empty.
     STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support interval rewards with rational interval models.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support rational interval rewards with double interval models.");
     } else {
         return computeReachabilityRewardsHelper(
                    env, std::move(goal), transitionMatrix, backwardTransitions,
