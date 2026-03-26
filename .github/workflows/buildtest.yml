@@ -172,7 +172,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
-          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+          key: buildtest-ccache-indepth-${{ matrix.config.buildType }}-${{ matrix.config.ClnExact }}-${{ matrix.config.ClnRatfunc }}-${{ matrix.config.disable_cudd }}-${{ matrix.config.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
@@ -275,7 +275,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
-          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+          key: buildtest-ccache-compiler-${{ matrix.config.distro }}-${{ matrix.config.cmakeArgs }}-${{ matrix.config.buildType }}-${{ github.run_id }}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
@@ -351,7 +351,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
-          key: ${{ steps.ccache-restore.outputs.cache-primary-key }}
+          key: buildtest-ccache-linux-${{ matrix.distro }}-${{ matrix.buildType }}-${{ matrix.runner }}-${{ github.run_id }}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
@@ -460,7 +460,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /Users/runner/.ccache
-          key: ${{ steps.ccache-restore-macos.outputs.cache-primary-key }}
+          key: buildtest-ccache-macos-${{ matrix.config.distro }}-${{ matrix.config.buildType }}-${{ github.run_id }}
       - name: Run storm (build tree)
         working-directory: ./build
         run: ./bin/storm
