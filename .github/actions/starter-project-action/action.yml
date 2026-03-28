@@ -24,8 +24,7 @@ runs:
     - name: Checkout starter-project
       if: ${{ (inputs.docker == 'true') && (inputs.stormDir != '') }}
       run: |
-        docker exec ci bash -c "git clone https://github.com/sjunges/storm-project-starter-cpp /opt/storm-starter" 
-        docker exec ci bash -c "cd /opt/storm-starter; git checkout cmakeupdates"
+        docker exec ci bash -c "git clone https://github.com/stormchecker/storm-project-starter-cpp /opt/storm-starter"
       shell: bash
 
     - name: Configure and make starter project (intree Storm)
@@ -47,8 +46,7 @@ runs:
     - name: Checkout starter-project
       if: ${{ (inputs.docker == 'false') && (inputs.stormDir != '') }}
       run: |
-        cd ..; git clone https://github.com/sjunges/storm-project-starter-cpp storm-starter
-        cd storm-starter; git checkout cmakeupdates
+        cd ..; git clone https://github.com/stormchecker/storm-project-starter-cpp storm-starter
       shell: bash
 
     - name: Configure and make starter project (intree Storm)
