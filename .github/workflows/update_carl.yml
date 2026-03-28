@@ -21,7 +21,7 @@ jobs:
       - name: Git clone
         uses: actions/checkout@v6
         with:
-          repository: moves-rwth/storm
+          repository: stormchecker/storm
       - name: Update carl-storm version
         run: |
           # Update STORM_CARL_GIT_TAG

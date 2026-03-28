@@ -192,7 +192,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, total_reward) {
 }
 
 TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward) {
-    // Test case taken from https://github.com/moves-rwth/storm/issues/297
+    // Test case taken from https://github.com/stormchecker/storm/issues/297
     typedef typename TestFixture::ValueType ValueType;
 
     std::string formulasString = "Rmax=? [ F \"goal\" ];";
@@ -227,7 +227,7 @@ TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward) {
 }
 
 TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reach_reward2) {
-    // Test case taken from https://github.com/moves-rwth/storm/issues/683
+    // Test case taken from https://github.com/stormchecker/storm/issues/683
     typedef typename TestFixture::ValueType ValueType;
 
     std::string formulasString = "Rmax=? [ F \"goal\" ];";
