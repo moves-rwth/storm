@@ -452,10 +452,6 @@ SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})
 SET(CARL_PORTABLE ${STORM_PORTABLE})
 SET(CARL_EXPORT_TO_CMAKE OFF)
 
-# We do not want to build or own version of ginac and cln, it adds levels of complexity that we currently do not want to handle.
-SET(ALLOW_SHIPPED_CLN OFF)
-SET(ALLOW_SHIPPED_GINAC OFF)
-
 # Override carl's install dirs to match system conventions
 SET(CARL_LIB_INSTALL_DIR ${STORM_RESOURCE_LIBRARY_INSTALL_DIR})
 SET(CARL_INCLUDE_INSTALL_DIR ${STORM_RESOURCE_INCLUDE_INSTALL_DIR}/carl)
