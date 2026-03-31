@@ -1,4 +1,4 @@
-// Adapted from https://github.com/moves-rwth/storm/issues/297
+// Adapted from https://github.com/stormchecker/storm/issues/297
 mdp
 
 module main

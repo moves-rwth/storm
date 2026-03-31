@@ -51,7 +51,7 @@ jobs:
   update_stormpy:
     # Trigger generation of PR in stormpy which updates the Storm version
     needs: [deploy_docker, deploy_docker_stable]
-    uses: moves-rwth/stormpy/.github/workflows/update_storm.yml@master
+    uses: stormchecker/stormpy/.github/workflows/update_storm.yml@master
     with:
       storm_version: ${{ github.event.release.tag_name }}
     secrets:
@@ -65,7 +65,7 @@ jobs:
       - name: Git clone
         uses: actions/checkout@v6
         with:
-          repository: moves-rwth/storm
+          repository: stormchecker/storm
           ref: master
       - name: Set Storm dev version
         run: |
