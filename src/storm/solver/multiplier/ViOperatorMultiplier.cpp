@@ -3,6 +3,7 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/solver/OptimizationDirection.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/Extremum.h"
@@ -213,47 +214,57 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
                                                                                           std::vector<uint64_t> const& rowGroupIndices,
                                                                                           std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
                                                                                           std::vector<SolutionType>& result,
+                                                                                          UncertaintyResolutionMode const& uncertaintyResolutionMode,
                                                                                           std::vector<uint64_t>* choices) const {
     if (&result == &x) {
         auto& tmpResult = this->provideCachedVector(x.size());
-        multiplyAndReduce(env, dir, rowGroupIndices, x, b, tmpResult, choices);
+        multiplyAndReduce(env, dir, rowGroupIndices, x, b, tmpResult, uncertaintyResolutionMode, choices);
         std::swap(result, tmpResult);
         return;
     }
     STORM_LOG_THROW(&rowGroupIndices == &this->matrix.getRowGroupIndices(), storm::exceptions::NotSupportedException,
                     "The row group indices must be the same as the ones stored in the matrix of this multiplier");
     auto const& viOp = initialize();
-    auto apply = [&]<typename BT>(BT& backend, OptimizationDirection od) {
-        if (od == OptimizationDirection::Minimize) {
-            if (b) {
-                viOp.template applyRobust<OptimizationDirection::Minimize>(x, result, *b, backend);
+
+    auto applyRobustDirection = [&]<storm::OptimizationDirection Dir, typename BT, typename OffsetType>(BT& backend, OffsetType const& offset) {
+        bool robustUncertainty = false;
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
+        }
+
+        if (robustUncertainty) {
+            viOp.template applyRobust<invert(Dir)>(x, result, offset, backend);
+        } else {
+            viOp.template applyRobust<Dir>(x, result, offset, backend);
+        }
+    };
+
+    auto applyBackend = [&]<typename OffsetType>(OffsetType const& offset) {
+        if (storm::solver::minimize(dir)) {
+            if (choices) {
+                detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices,
+                                                                                                                      this->matrix.getRowGroupIndices());
+                applyRobustDirection.template operator()<OptimizationDirection::Minimize>(backend, offset);
             } else {
-                viOp.template applyRobust<OptimizationDirection::Minimize>(x, result, storm::utility::zero<ValueType>(), backend);
+                detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
+                applyRobustDirection.template operator()<OptimizationDirection::Minimize>(backend, offset);
             }
         } else {
-            if (b) {
-                viOp.template applyRobust<OptimizationDirection::Maximize>(x, result, *b, backend);
+            if (choices) {
+                detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices,
+                                                                                                                      this->matrix.getRowGroupIndices());
+                applyRobustDirection.template operator()<OptimizationDirection::Maximize>(backend, offset);
             } else {
-                viOp.template applyRobust<OptimizationDirection::Maximize>(x, result, storm::utility::zero<ValueType>(), backend);
+                detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
+                applyRobustDirection.template operator()<OptimizationDirection::Maximize>(backend, offset);
             }
         }
     };
-    if (storm::solver::minimize(dir)) {
-        if (choices) {
-            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend, OptimizationDirection::Minimize);
-        } else {
-            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Minimize, false> backend;
-            apply(backend, OptimizationDirection::Minimize);
-        }
+
+    if (b) {
+        applyBackend(*b);
     } else {
-        if (choices) {
-            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, true> backend(*choices, this->matrix.getRowGroupIndices());
-            apply(backend, OptimizationDirection::Maximize);
-        } else {
-            detail::MultiplierBackend<SolutionType, detail::BackendOptimizationDirection::Maximize, false> backend;
-            apply(backend, OptimizationDirection::Maximize);
-        }
+        applyBackend(storm::utility::zero<ValueType>());
     }
 }
 

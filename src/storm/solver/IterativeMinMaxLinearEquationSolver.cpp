@@ -63,7 +63,7 @@ MinMaxMethod IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::getMe
                 "different method.");
             method = MinMaxMethod::PolicyIteration;
         } else {
-            // STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
+            STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
         }
     } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration &&
                method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration &&

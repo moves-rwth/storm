@@ -31,8 +31,9 @@ void Multiplier<ValueType, SolutionType>::clearCache() const {
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType> const& x,
                                                             std::vector<ValueType> const* b, std::vector<SolutionType>& result,
+                                                            UncertaintyResolutionMode const& uncertaintyResolutionMode,
                                                             std::vector<uint_fast64_t>* choices) const {
-    multiplyAndReduce(env, dir, this->matrix.getRowGroupIndices(), x, b, result, choices);
+    multiplyAndReduce(env, dir, this->matrix.getRowGroupIndices(), x, b, result, uncertaintyResolutionMode, choices);
 }
 
 template<typename ValueType, typename SolutionType>
@@ -60,13 +61,14 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiply(Environment const& en
 
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x,
-                                                                    std::vector<ValueType> const* b, uint64_t n) const {
+                                                                    std::vector<ValueType> const* b, uint64_t n,
+                                                                    UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
     storm::utility::ProgressMeasurement progress("multiplications");
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
         progress.updateProgress(i);
-        multiplyAndReduce(env, dir, x, b, x);
+        multiplyAndReduce(env, dir, x, b, x, uncertaintyResolutionMode);
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
             break;
@@ -77,14 +79,15 @@ void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduce(Environment 
 template<typename ValueType, typename SolutionType>
 void Multiplier<ValueType, SolutionType>::repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir,
                                                                               std::vector<SolutionType>& x, std::vector<ValueType> const* b, uint64_t n,
-                                                                              SolutionType factor) const {
+                                                                              SolutionType factor,
+                                                                              UncertaintyResolutionMode const& uncertaintyResolutionMode) const {
     storm::utility::ProgressMeasurement progress("multiplications");
     progress.setMaxCount(n);
     progress.startNewMeasurement(0);
     for (uint64_t i = 0; i < n; ++i) {
         progress.updateProgress(i);
         std::transform(x.begin(), x.end(), x.begin(), [factor](SolutionType& c) { return c * factor; });
-        multiplyAndReduce(env, dir, x, b, x);
+        multiplyAndReduce(env, dir, x, b, x, uncertaintyResolutionMode);
         if (storm::utility::resources::isTerminate()) {
             STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
             break;
