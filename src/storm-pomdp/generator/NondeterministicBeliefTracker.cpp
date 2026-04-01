@@ -252,6 +252,7 @@ ObservationDenseBeliefState<ValueType>::ObservationDenseBeliefState(std::shared_
     : manager(manager), belief(manager->numberOfStatesPerObservation(manager->getObservation(state))) {
     observation = manager->getObservation(state);
     belief[manager->getObservationOffset(state)] = storm::utility::one<ValueType>();
+    risk = manager->getRisk(state);
 }
 
 template<typename ValueType>
@@ -283,7 +284,7 @@ void ObservationDenseBeliefState<ValueType>::updateHelper(std::vector<std::map<u
             }
             std::size_t newHash = 0;
             ValueType risk = storm::utility::zero<ValueType>();
-            std::vector<ValueType> finalBelief(manager->numberOfStatesPerObservation(observation), storm::utility::zero<ValueType>());
+            std::vector<ValueType> finalBelief(manager->numberOfStatesPerObservation(newObservation), storm::utility::zero<ValueType>());
             for (auto& entry : partialBelief) {
                 assert(!storm::utility::isZero(sum));
                 finalBelief[manager->getObservationOffset(entry.first)] = (entry.second / sum);
@@ -330,7 +331,7 @@ std::size_t ObservationDenseBeliefState<ValueType>::hash() const noexcept {
 
 template<typename ValueType>
 ValueType ObservationDenseBeliefState<ValueType>::get(uint64_t state) const {
-    if (manager->getObservation(state) != state) {
+    if (manager->getObservation(state) != observation) {
         return storm::utility::zero<ValueType>();
     }
     return belief[manager->getObservationOffset(state)];
@@ -491,13 +492,21 @@ bool NondeterministicBeliefTracker<ValueType, BeliefState>::hasTimedOut() const 
     return reductionTimedOut;
 }
 
+template class BeliefStateManager<double>;
 template class SparseBeliefState<double>;
 template bool operator==(SparseBeliefState<double> const&, SparseBeliefState<double> const&);
 template class NondeterministicBeliefTracker<double, SparseBeliefState<double>>;
 
+template class BeliefStateManager<storm::RationalNumber>;
 template class SparseBeliefState<storm::RationalNumber>;
 template bool operator==(SparseBeliefState<storm::RationalNumber> const&, SparseBeliefState<storm::RationalNumber> const&);
 template class NondeterministicBeliefTracker<storm::RationalNumber, SparseBeliefState<storm::RationalNumber>>;
+
+template class ObservationDenseBeliefState<double>;
+template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
+
+template class ObservationDenseBeliefState<storm::RationalNumber>;
+template bool operator==(ObservationDenseBeliefState<storm::RationalNumber> const&, ObservationDenseBeliefState<storm::RationalNumber> const&);
 
 }  // namespace generator
 }  // namespace storm
