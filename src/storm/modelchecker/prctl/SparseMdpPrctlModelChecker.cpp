@@ -162,7 +162,8 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     std::vector<SolutionType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
-        env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
+        env, checkTask.getOptimizationDirection(), checkTask.getUncertaintyResolutionMode(), this->getModel().getTransitionMatrix(),
+        subResult.getTruthValuesVector());
     return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
 }
 

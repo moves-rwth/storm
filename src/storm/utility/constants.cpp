@@ -313,6 +313,21 @@ uint64_t numDigits(ValueType const& number) {
 }
 
 template<typename ValueType>
+uint64_t bitsize(ValueType const& number) {
+    if constexpr (std::is_same_v<ValueType, uint64_t>) {
+        return std::bit_width(number);
+    } else {
+        if (storm::utility::isZero(number)) {
+            return 0;
+        } else {
+            // GMPs sizeinbase returns 1 if number is zero.
+            // see https://gmplib.org/manual/Miscellaneous-Integer-Functions
+            return carl::bitsize(number);
+        }
+    }
+}
+
+template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number) {
     return static_cast<typename NumberTraits<ValueType>::IntegerType>(std::trunc(number));
 }
@@ -412,6 +427,12 @@ template<>
 typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<unsigned long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<unsigned long int>(number));
+}
+
+template<>
+typename NumberTraits<ClnRationalNumber>::IntegerType convertNumber(int_fast64_t const& number) {
+    STORM_LOG_ASSERT(static_cast<long int>(number) == number, "Conversion failed, because the number is too large.");
+    return NumberTraits<ClnRationalNumber>::IntegerType(static_cast<long int>(number));
 }
 
 template<>
@@ -631,6 +652,12 @@ template<>
 typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(uint_fast64_t const& number) {
     STORM_LOG_ASSERT(static_cast<unsigned long int>(number) == number, "Conversion failed, because the number is too large.");
     return NumberTraits<GmpRationalNumber>::IntegerType(static_cast<unsigned long int>(number));
+}
+
+template<>
+typename NumberTraits<GmpRationalNumber>::IntegerType convertNumber(int_fast64_t const& number) {
+    STORM_LOG_ASSERT(static_cast<long int>(number) == number, "Conversion failed, because the number is too large.");
+    return NumberTraits<GmpRationalNumber>::IntegerType(static_cast<long int>(number));
 }
 
 template<>
@@ -1187,6 +1214,7 @@ template bool isNonNegative(storm::storage::sparse::state_type const& value);
 template bool isInfinity(storm::storage::sparse::state_type const& value);
 template bool isBetween(storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b, storm::storage::sparse::state_type const& c,
                         bool strict);
+template uint64_t bitsize(storm::storage::sparse::state_type const& number);
 
 // other instantiations
 template unsigned long convertNumber(long const&);
@@ -1220,6 +1248,7 @@ template storm::ClnRationalNumber min(storm::ClnRationalNumber const& first, sto
 template storm::ClnRationalNumber round(storm::ClnRationalNumber const& number);
 template std::string to_string(storm::ClnRationalNumber const& value);
 template uint64_t numDigits(const storm::ClnRationalNumber& number);
+template uint64_t bitsize(storm::ClnIntegerNumber const& number);
 #endif
 
 #if defined(STORM_HAVE_GMP)
@@ -1249,6 +1278,7 @@ template storm::GmpRationalNumber min(storm::GmpRationalNumber const& first, sto
 template storm::GmpRationalNumber round(storm::GmpRationalNumber const& number);
 template std::string to_string(storm::GmpRationalNumber const& value);
 template uint64_t numDigits(const storm::GmpRationalNumber& number);
+template uint64_t bitsize(storm::GmpIntegerNumber const& number);
 #endif
 
 // Instantiations for rational function.
@@ -1271,6 +1301,7 @@ template bool isAlmostZero(Interval const& value);
 template bool isNonNegative(Interval const& value);
 template bool isPositive(Interval const& value);
 template bool isBetween(Interval const&, Interval const&, Interval const& value, bool);
+template Interval convertNumber(Interval const&);
 
 template std::string to_string(storm::Interval const& value);
 

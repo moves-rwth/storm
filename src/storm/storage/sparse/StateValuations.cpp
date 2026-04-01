@@ -319,7 +319,7 @@ bool StateValuations::assertValuation(StateValuation const& valuation) const {
             }
             bv->set(varIndex.second, true);
         } else {
-            STORM_LOG_ERROR("Valuation does not provide a value for all variables");
+            STORM_LOG_ERROR("Valuation does not provide a value for variable: " << varIndex.first.getName());
             return false;
         }
     }
@@ -340,7 +340,7 @@ std::string StateValuations::getStateInfo(state_type const& state) const {
 }
 
 typename StateValuations::StateValueIteratorRange StateValuations::at(state_type const& state) const {
-    STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index.");
+    STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index " << state << ", have only " << getNumberOfStates() << " states.");
     return StateValueIteratorRange({variableToIndexMap, observationLabels, &(valuations[state])});
 }
 
@@ -375,6 +375,11 @@ StateValuations StateValuations::blowup(const std::vector<uint64_t>& mapNewToOld
         newValuations.push_back(valuations[oldState]);
     }
     return StateValuations(variableToIndexMap, std::move(newValuations));
+}
+
+storm::expressions::ExpressionManager const& StateValuations::getManager() const {
+    STORM_LOG_ASSERT(!variableToIndexMap.empty(), "Cannot be called on state valuations without variables.");
+    return variableToIndexMap.begin()->first.getManager();
 }
 
 StateValuationsBuilder::StateValuationsBuilder() : booleanVarCount(0), integerVarCount(0), rationalVarCount(0), labelCount(0) {

@@ -8,10 +8,10 @@
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
-#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/MakePOMDPCanonic.h"
 
 void graphalgorithm_test(std::string const& path, std::string const& constants, std::string formulaString) {
     storm::prism::Program program = storm::parser::PrismParser::parse(path);

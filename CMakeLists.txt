@@ -6,7 +6,7 @@ endif()
 # Set project name
 project (storm
 		LANGUAGES CXX C
-		VERSION 1.11.1.1)
+		VERSION 1.12.0.1)
 # Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
 
 # Add the resources/cmake folder to Module Search Path
@@ -406,7 +406,7 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3_OPTIMIZE)
+if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3)
 	set(STORM_HAVE_LP_SOLVER ON)
 	message(STATUS "Storm - Compiled with an LP solver.")
 else()

@@ -9,6 +9,7 @@
 #include "storm-parsers/parser/DirectEncodingParser.h"
 #include "storm-parsers/parser/ImcaMarkovAutomatonParser.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/storage/umb/Umb.h"
 #include "storm/utility/macros.h"
 
 namespace storm::api {
@@ -36,6 +37,10 @@ inline std::shared_ptr<storm::models::ModelBase> buildExplicitDRNModel(
     std::string const& drnFile, storm::parser::DirectEncodingValueType valueType = storm::parser::DirectEncodingValueType::Default,
     storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
     return storm::parser::parseDirectEncodingModel(drnFile, valueType, options);
+}
+
+inline std::shared_ptr<storm::models::ModelBase> buildExplicitUmbModel(std::string const& umbLocation, storm::umb::ImportOptions const& options = {}) {
+    return storm::umb::buildModelFromUmb(umbLocation, options);
 }
 
 template<typename ValueType>

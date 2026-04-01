@@ -14,8 +14,6 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/SchedulerClass.h"
 
-#ifdef STORM_HAVE_Z3_OPTIMIZE
-
 namespace {
 
 class FlowBigMEnvironment {
@@ -118,6 +116,12 @@ template<typename TestType>
 class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
    public:
     typedef storm::RationalNumber ValueType;
+
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
 
     bool isFlowEncoding() const {
         return TestType::getEnv().modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
@@ -479,5 +483,3 @@ TYPED_TEST(MultiObjectiveSchedRestModelCheckerTest, infrew) {
 }
 
 }  // namespace
-
-#endif /* defined STORM_HAVE_Z3_OPTIMIZE */

@@ -226,7 +226,7 @@ void makeUncertainAndCheck(std::string const& path, std::string const& formulaSt
     EXPECT_LE(certainValue, maxValue);
 }
 
-void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {
+void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
     program = storm::utility::prism::preprocess(program, "");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
@@ -262,18 +262,18 @@ void makeUncertainAndCheckRational(std::string const& path, std::string const& f
     EXPECT_LE(certainValue, maxValue);
 }
 
+// TODO: Add next properties
+
 TEST(RobustMDPModelCheckingTest, Tiny01maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.5, 0.5, 0.4, false);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny03maxmin) {
-    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.5, 0.5, 0.4, true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
 }
 
 TEST(RobustMDPModelCheckingTest, BoundedTiny03maxmin) {
-    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.4, 0.4, 0.5, 0.5, true);
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
-                       storm::RationalNumber("2/5"), storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), true);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", 0.4, 0.6, 0.5, 0.3, true);
 }
 
 TEST(RobustMDPModelCheckingTest, Tiny04maxmin) {
@@ -297,12 +297,12 @@ TEST(RobustRationalMDPModelCheckingTest, Tiny01maxmin) {
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny03maxmin) {
     checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),
-                       storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), storm::RationalNumber("2/5"), true);
+                       storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, BoundedTiny03maxmin) {
     checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-03.drn", "Pmax=? [ F<=3 \"target\"];Pmin=? [ F<=3 \"target\"]", storm::RationalNumber("2/5"),
-                       storm::RationalNumber("2/5"), storm::RationalNumber("1/2"), storm::RationalNumber("1/2"), true);
+                       storm::RationalNumber("3/5"), storm::RationalNumber("1/2"), storm::RationalNumber("3/10"), true);
 }
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny04maxmin) {
@@ -328,6 +328,6 @@ TEST(RobustRationalMDPModelCheckingTest, AddUncertaintyCoin22max) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.1);
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", 0.2);
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/10"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", "Pmax=? [F \"all_coins_equal_1\"]", storm::RationalNumber("1/5"));
 }

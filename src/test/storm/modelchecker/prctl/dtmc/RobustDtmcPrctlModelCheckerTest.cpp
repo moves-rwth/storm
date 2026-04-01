@@ -249,7 +249,7 @@ void checkPrismModelForQuantitativeResultRational(std::string const& path, std::
     EXPECT_EQ(min, getQuantitativeResultAtInitialState(dtmc, resultMin));
 }
 
-void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, double amountOfUncertainty) {
+void makeUncertainAndCheckRational(std::string const& path, std::string const& formulaString, storm::RationalNumber amountOfUncertainty) {
     storm::prism::Program program = storm::api::parseProgram(path);
     program = storm::utility::prism::preprocess(program, "");
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
@@ -434,6 +434,6 @@ TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
 #endif
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", 0.01);
-    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", 0.05);
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/10"));
+    makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/20"));
 }

@@ -96,6 +96,13 @@ class Type {
     bool isTranscendentalNumberType() const;
 
     /*!
+     * Checks whether this type is a string type.
+     *
+     * @return True iff the type is string.
+     */
+    bool isStringType() const;
+
+    /*!
      * Retrieves the bit width of the type, provided that it is a bitvector type.
      *
      * @return The bit width of the bitvector type.
@@ -177,6 +184,7 @@ class BaseType {
     virtual bool isRationalType() const;
     virtual bool isArrayType() const;
     virtual bool isTranscendentalNumberType() const;
+    virtual bool isStringType() const;
 };
 
 class BooleanType : public BaseType {
@@ -264,6 +272,16 @@ class TranscendentalNumberType : public BaseType {
 
    private:
     static const uint64_t mask = (1ull << 60);
+};
+
+class StringType : public BaseType {
+   public:
+    virtual uint64_t getMask() const override;
+    virtual std::string getStringRepresentation() const override;
+    virtual bool isStringType() const override;
+
+   private:
+    static const uint64_t mask = (1ull << 61);
 };
 
 class ErrorType : public BaseType {

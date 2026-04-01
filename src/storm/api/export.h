@@ -11,6 +11,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/umb/Umb.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -58,6 +59,16 @@ void exportSparseModelAsJson(std::shared_ptr<storm::models::sparse::Model<ValueT
     storm::io::openFile(filename, stream);
     model->writeJsonToStream(stream);
     storm::io::closeFile(stream);
+}
+
+template<typename ValueType>
+void exportSparseModelAsUmb(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename,
+                            storm::umb::ExportOptions const& options = {}) {
+    if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of rational functions to UMB is not supported.");
+    } else {
+        storm::umb::exportModelToUmb(*model, filename, options);
+    }
 }
 
 template<storm::dd::DdType Type, typename ValueType>

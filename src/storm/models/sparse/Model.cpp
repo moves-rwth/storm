@@ -63,11 +63,10 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
     // general components for all model types.
     STORM_LOG_THROW(this->getTransitionMatrix().getColumnCount() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid column count of transition matrix.");
-    STORM_LOG_ASSERT(
-        components.rateTransitions || this->hasParameters() || this->hasUncertainty() || this->getTransitionMatrix().isProbabilistic(stochasticTolerance),
-        "The matrix is not probabilistic.");
-    if (this->hasUncertainty()) {
-        STORM_LOG_ASSERT(this->getTransitionMatrix().hasOnlyPositiveEntries(), "Not all entries are (strictly) positive.");
+    {
+        std::string reasonNotProbabilistic [[maybe_unused]];
+        STORM_LOG_ASSERT(components.rateTransitions || this->getTransitionMatrix().isProbabilistic(stochasticTolerance, reasonNotProbabilistic),
+                         "The matrix is not probabilistic. " << reasonNotProbabilistic);
     }
     STORM_LOG_THROW(this->getStateLabeling().getNumberOfItems() == stateCount, storm::exceptions::IllegalArgumentException,
                     "Invalid item count (" << this->getStateLabeling().getNumberOfItems() << ") of state labeling (states: " << stateCount << ").");
