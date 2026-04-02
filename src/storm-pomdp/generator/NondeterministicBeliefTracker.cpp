@@ -4,6 +4,7 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -233,7 +234,7 @@ bool operator==(ObservationDenseBeliefState<ValueType> const& lhs, ObservationDe
     if (lhs.observation != rhs.observation) {
         return false;
     }
-    storm::utility::ConstantsComparator<ValueType> cmp(0.00001, true);
+    storm::utility::ConstantsComparator<ValueType> cmp(storm::utility::convertNumber<ValueType>(0.00001), true);
     auto lhsIt = lhs.belief.begin();
     auto rhsIt = rhs.belief.begin();
     while (lhsIt != lhs.belief.end()) {
