@@ -49,13 +49,13 @@ storm::models::sparse::Dtmc<double> buildSimpleMC() {
 storm::models::sparse::Mdp<double> buildSimpleMonitor() {
     // 5 total choice rows across 3 row groups (states).
     storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
-    builder.newRowGroup(0);       // state 0: rows 0-1
+    builder.newRowGroup(0);           // state 0: rows 0-1
     builder.addNextValue(0, 1, 1.0);  // [a] -> m1
     builder.addNextValue(1, 1, 1.0);  // [b] -> m1
-    builder.newRowGroup(2);       // state 1: rows 2-3
+    builder.newRowGroup(2);           // state 1: rows 2-3
     builder.addNextValue(2, 2, 1.0);  // [a] -> m2
     builder.addNextValue(3, 2, 1.0);  // [b] -> m2
-    builder.newRowGroup(4);       // state 2: row 4
+    builder.newRowGroup(4);           // state 2: row 4
     builder.addNextValue(4, 2, 1.0);  // [a] -> m2 (self-loop)
     auto matrix = builder.build();
 
@@ -92,9 +92,9 @@ storm::models::sparse::Mdp<double> buildSimpleMonitor() {
 }
 
 // Helper: create the generator with common settings and produce the product.
-std::shared_ptr<storm::generator::MonitorVerifier<double>> makeProduct(
-    storm::models::sparse::Dtmc<double> const& mc, storm::models::sparse::Mdp<double> const& monitor,
-    storm::generator::GenerateMonitorVerifier<double>::Options options) {
+std::shared_ptr<storm::generator::MonitorVerifier<double>> makeProduct(storm::models::sparse::Dtmc<double> const& mc,
+                                                                       storm::models::sparse::Mdp<double> const& monitor,
+                                                                       storm::generator::GenerateMonitorVerifier<double>::Options options) {
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::generator::GenerateMonitorVerifier<double> gen(mc, monitor, exprManager, options);
     return gen.createProduct();
@@ -176,7 +176,7 @@ TEST(MonitorVerifier, RejectionSamplingHasNoSink) {
 }
 
 TEST(MonitorVerifier, GoodLabelRoutesToGoalOrStop) {
-    auto mc = buildSimpleMC();   // state 1 has "good", state 2 does not
+    auto mc = buildSimpleMC();  // state 1 has "good", state 2 does not
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
@@ -198,12 +198,16 @@ TEST(MonitorVerifier, GoodLabelRoutesToGoalOrStop) {
     bool foundStopTransition = false;
 
     for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs) continue;
+        if (product.getObservation(state) != acceptingObs)
+            continue;
         for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0) continue;
+            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
+                continue;
             for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState) foundGoalTransition = true;
-                if (entry.getColumn() == stopState) foundStopTransition = true;
+                if (entry.getColumn() == goalState)
+                    foundGoalTransition = true;
+                if (entry.getColumn() == stopState)
+                    foundStopTransition = true;
             }
         }
     }
@@ -239,16 +243,22 @@ TEST(MonitorVerifier, WithRiskAlmostOneGoesToGoal) {
     bool foundStopOnly = false;  // risk=0 accepting state -> only to stop
 
     for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs) continue;
+        if (product.getObservation(state) != acceptingObs)
+            continue;
         for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0) continue;
+            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
+                continue;
             bool toGoal = false, toStop = false;
             for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState) toGoal = true;
-                if (entry.getColumn() == stopState) toStop = true;
+                if (entry.getColumn() == goalState)
+                    toGoal = true;
+                if (entry.getColumn() == stopState)
+                    toStop = true;
             }
-            if (toGoal && !toStop) foundGoalOnly = true;
-            if (!toGoal && toStop) foundStopOnly = true;
+            if (toGoal && !toStop)
+                foundGoalOnly = true;
+            if (!toGoal && toStop)
+                foundStopOnly = true;
         }
     }
 
@@ -282,13 +292,17 @@ TEST(MonitorVerifier, WithRiskIntermediateSplitsGoalStop) {
     bool foundSplit = false;
 
     for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs) continue;
+        if (product.getObservation(state) != acceptingObs)
+            continue;
         for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0) continue;
+            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
+                continue;
             bool toGoal = false, toStop = false;
             for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState) toGoal = true;
-                if (entry.getColumn() == stopState) toStop = true;
+                if (entry.getColumn() == goalState)
+                    toGoal = true;
+                if (entry.getColumn() == stopState)
+                    toStop = true;
             }
             if (toGoal && toStop) {
                 foundSplit = true;
