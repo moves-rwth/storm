@@ -190,21 +190,26 @@ jobs:
     strategy:
       matrix:
         config:          
-          - { name: "Xcode 15.4, ARM",
-              distro: "macos-14",
-              xcode: "15.4",
-              buildType: "Debug"
-            }
-          - { name: "Xcode Latest, ARM",
-              distro: "macos-15",
-              xcode: "latest-stable",
-              buildType: "Debug"
-            }
-          - { name: "Xcode Latest, Intel",
-              distro: "macos-15-intel",
-              xcode: "latest-stable",
-              buildType: "Debug"
-            }
+          - {name: "MacOS 14, ARM",
+             distro: "macos-14",
+             xcode: "15.4",
+             buildType: "Debug"
+          }
+          - {name: "MacOS 15, ARM",
+             distro: "macos-15",
+             xcode: "16.4",
+             buildType: "Debug"
+          }
+          - {name: "MacOS 26, ARM",
+             distro: "macos-26",
+             xcode: "latest-stable",
+             buildType: "Debug"
+          }
+          - {name: "MacOS 26, Intel",
+             distro: "macos-26-intel",
+             xcode: "latest-stable",
+             buildType: "Debug"
+          }
     uses: ./.github/workflows/test-mac.yml
     with:
       NR_JOBS: "4"
@@ -246,10 +251,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [indepthTests, compilerTests, linuxTests, macTests, deploy]
     # Only run in main repo and even if previous step failed
-    if: github.repository_owner == 'moves-rwth' && always()
+    if: github.repository_owner == 'stormchecker' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v15
+      - uses: dawidd6/action-send-mail@v16
         with:
           server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
           server_port: 587

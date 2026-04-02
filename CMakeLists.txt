@@ -72,7 +72,7 @@ set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Veri
 MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
-set(STORM_CARL_GIT_REPO "https://github.com/moves-rwth/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
+set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
 option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.34")
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)

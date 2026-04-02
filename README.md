@@ -1,8 +1,8 @@
 Storm - A Modern Probabilistic Model Checker
 ============================================
 
-[![Build Status](https://github.com/moves-rwth/storm/workflows/Build%20Test/badge.svg)](https://github.com/moves-rwth/storm/actions)
-[![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
+[![Build Status](https://github.com/stormchecker/storm/workflows/Build%20Test/badge.svg)](https://github.com/stormchecker/storm/actions)
+[![GitHub release](https://img.shields.io/github/release/stormchecker/storm.svg)](https://github.com/stormchecker/storm/releases/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
 
@@ -11,8 +11,8 @@ Usage
 The Storm website [www.stormchecker.org](https://www.stormchecker.org/) provides documentation and background information.
 - For installation and usage instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 - Video tutorials and interactive code examples are available in [Tutorials](https://www.stormchecker.org/tutorials.html).
-- The [Storm starter project](https://github.com/moves-rwth/storm-project-starter-cpp/) provides a starting point for incorporating Storm into C++ projects.
-- Storm provides a Python interface called [stormpy](https://moves-rwth.github.io/stormpy/) for easy prototyping and interaction with Storm.
+- The [Storm starter project](https://github.com/stormchecker/storm-project-starter-cpp/) provides a starting point for incorporating Storm into C++ projects.
+- Storm provides a Python interface called [stormpy](https://stormchecker.github.io/stormpy/) for easy prototyping and interaction with Storm.
 - In case of any issues installing or using Storm, [let us know](https://www.stormchecker.org/documentation/obtain-storm/troubleshooting.html).
 
 
@@ -73,7 +73,7 @@ Storm has initially been developed at RWTH Aachen University. It is currently un
 * Ulises Torrella
 * Lukas Westhofen
 
-For an exhaustive list of contributors and more details, see the [GitHub page](https://github.com/moves-rwth/storm/graphs/contributors).
+For an exhaustive list of contributors and more details, see the [GitHub page](https://github.com/stormchecker/storm/graphs/contributors).
 
 
 Citing Storm
