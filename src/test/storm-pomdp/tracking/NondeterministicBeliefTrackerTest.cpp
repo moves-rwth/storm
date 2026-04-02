@@ -20,6 +20,9 @@ std::shared_ptr<storm::models::sparse::Pomdp<double>> buildMaze(std::string cons
 }
 
 TEST(BeliefStateManager, BasicProperties) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::BeliefStateManager<double> manager(*pomdp);
 
@@ -35,6 +38,9 @@ TEST(BeliefStateManager, BasicProperties) {
 }
 
 TEST(BeliefStateManager, ObservationOffsets) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::BeliefStateManager<double> manager(*pomdp);
 
@@ -48,6 +54,9 @@ TEST(BeliefStateManager, ObservationOffsets) {
 }
 
 TEST(SparseBeliefTracker, ResetToInitial) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> tracker(*pomdp);
     tracker.setRisk(std::vector<double>(pomdp->getNumberOfStates(), 0.0));
@@ -61,6 +70,9 @@ TEST(SparseBeliefTracker, ResetToInitial) {
 }
 
 TEST(SparseBeliefTracker, TrackValidObservation) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> tracker(*pomdp);
     tracker.setRisk(std::vector<double>(pomdp->getNumberOfStates(), 0.0));
@@ -87,6 +99,9 @@ TEST(SparseBeliefTracker, TrackValidObservation) {
 }
 
 TEST(SparseBeliefTracker, TrackImpossibleObservation) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> tracker(*pomdp);
     tracker.setRisk(std::vector<double>(pomdp->getNumberOfStates(), 0.0));
@@ -102,6 +117,9 @@ TEST(SparseBeliefTracker, TrackImpossibleObservation) {
 }
 
 TEST(SparseBeliefTracker, UniformRisk) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto pomdp = buildMaze();
     storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> tracker(*pomdp);
 
@@ -123,6 +141,9 @@ TEST(SparseBeliefTracker, UniformRisk) {
 }
 
 TEST(SparseBeliefTracker, MixedRiskMaxMin) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     // Use sl=0.4 so that slipping lets the system stay in the initial state, creating
     // multiple beliefs from a single tracking step. We then assign heterogeneous risk
     // and verify that getCurrentRisk correctly returns the max and the min over beliefs.
