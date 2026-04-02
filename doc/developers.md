@@ -19,10 +19,10 @@ The following contains some general guidelines for developers.
 ### Formatting
 - Code should be formatted according to the given rules set by clang-format.
   Proper formatting can be ensured by executing `make format`.
-  For more information see [PR#175](https://github.com/moves-rwth/storm/pull/175).
+  For more information see [PR#175](https://github.com/stormchecker/storm/pull/175).
 
 ### Documentation
-- We use Doxygen for documentation, see [storm-doc](https://moves-rwth.github.io/storm-doc/).
+- We use Doxygen for documentation, see [storm-doc](https://stormchecker.github.io/storm-doc/).
   Code blocks should be documented with:
   ```
   /*!
@@ -63,12 +63,12 @@ The following contains some general guidelines for developers.
 - We provide custom macros for output and logging.
   The use of `std::cout` should be avoided and instead, macros such as `STORM_LOG_DEBUG`, `STORM_LOG_INFO` or `STORM_PRINT_AND_LOG` should be used.
 - For line breaks, we use `'\n'` instead of `std::endl` to avoid unnecessary flushing.
-  See [PR 178](https://github.com/moves-rwth/storm/pull/178) for details.
+  See [PR 178](https://github.com/stormchecker/storm/pull/178) for details.
 
 
 ## Contributing
 - Check that all tests run successfully: `make test`.
 - Check that the code is properly formatted: `make format`.
   There is also a CI job which can provide automated code formatting.
-- New code should be submitted by opening a [pull request](https://github.com/moves-rwth/storm/pulls).
+- New code should be submitted by opening a [pull request](https://github.com/stormchecker/storm/pulls).
   Our continuous integration automatically checks that the code in the PR is properly formatted and all tests run successfully. 

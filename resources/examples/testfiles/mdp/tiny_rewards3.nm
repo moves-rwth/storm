@@ -1,4 +1,4 @@
-// Taken from https://github.com/moves-rwth/storm/issues/683
+// Taken from https://github.com/stormchecker/storm/issues/683
 mdp
 
 module state_space

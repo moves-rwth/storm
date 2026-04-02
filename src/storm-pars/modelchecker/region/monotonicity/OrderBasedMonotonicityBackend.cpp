@@ -168,7 +168,7 @@ std::map<typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::V
          typename OrderBasedMonotonicityBackend<ParametricType, ConstantType>::MonotonicityKind>
 OrderBasedMonotonicityBackend<ParametricType, ConstantType>::getOptimisticMonotonicityApproximation(AnnotatedRegion<ParametricType> const& region) {
     // TODO: Old implementation had checkForPossibleMonotonicity to determine this based on samples. Consider re-adding that.
-    // https://github.com/moves-rwth/storm/blob/5c89b2d1051b3abdbb8659101d60331c680b7050/src/storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.cpp#L622
+    // https://github.com/stormchecker/storm/blob/5c89b2d1051b3abdbb8659101d60331c680b7050/src/storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.cpp#L622
     // For now, we just do this based on known global monotonicity.
     return MonotonicityBackend<ParametricType>::getOptimisticMonotonicityApproximation(region);
 }

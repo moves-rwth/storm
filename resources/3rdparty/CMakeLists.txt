@@ -440,19 +440,17 @@ FETCHCONTENT_DECLARE(
         GIT_REPOSITORY ${STORM_CARL_GIT_REPO}
         GIT_TAG ${STORM_CARL_GIT_TAG}
 )
-SET(EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
-SET(THREAD_SAFE ON) #carl thread safe code
-SET(USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
-SET(USE_GINAC ${SHIPPED_CARL_USE_GINAC})
+SET(CARL_EXCLUDE_TESTS_FROM_ALL ON)  #carl without tests
+SET(CARL_THREAD_SAFE ON) #carl thread safe code
+SET(CARL_USE_CLN_NUMBERS ${SHIPPED_CARL_USE_CLN_NUMBERS})
+SET(CARL_USE_GINAC ${SHIPPED_CARL_USE_GINAC})
 SET(CARL_EIGEN_GIT_TAG ${STORM_EIGEN_GIT_TAG})
-SET(PORTABLE ${STORM_PORTABLE})
+SET(CARL_PORTABLE ${STORM_PORTABLE})
 SET(CARL_LIB_INSTALL_DIR "lib/storm/resources")
 SET(CARL_INCLUDE_INSTALL_DIR "include/storm/resources") # maybe use resources folder /carl instead for consistency?
 SET(CARL_EXPORT_TO_CMAKE OFF)
 SET(CARL_CMAKE_INSTALL_DIR "lib/cmake/storm")
-# We do not want to build or own version of ginac and cln, it adds levels of complexity that we currently do not want to handle.
-SET(ALLOW_SHIPPED_CLN OFF)
-SET(ALLOW_SHIPPED_GINAC OFF)
+
 FETCHCONTENT_MAKEAVAILABLE(carl)
 include(${carl_BINARY_DIR}/carlConfig.cmake)
 # Read variables from this config.
