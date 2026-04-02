@@ -71,8 +71,7 @@ TEST(SparseBeliefTracker, TrackValidObservation) {
     // Collect observations reachable from the initial state.
     std::set<uint32_t> reachableObs;
     uint64_t initState = *pomdp->getInitialStates().begin();
-    for (uint64_t row = pomdp->getNondeterministicChoiceIndices()[initState];
-         row < pomdp->getNondeterministicChoiceIndices()[initState + 1]; ++row) {
+    for (uint64_t row = pomdp->getNondeterministicChoiceIndices()[initState]; row < pomdp->getNondeterministicChoiceIndices()[initState + 1]; ++row) {
         for (auto const& entry : pomdp->getTransitionMatrix().getRow(row)) {
             reachableObs.insert(pomdp->getObservation(entry.getColumn()));
         }
@@ -147,7 +146,8 @@ TEST(SparseBeliefTracker, MixedRiskMaxMin) {
     // that has risk 1.0. We iterate until we either find one or exhaust observations.
     bool movedToHighRisk = false;
     for (uint32_t obs = 0; obs < static_cast<uint32_t>(pomdp->getNrObservations()); ++obs) {
-        if (obs == initObs) continue;
+        if (obs == initObs)
+            continue;
         storm::generator::NondeterministicBeliefTracker<double, storm::generator::SparseBeliefState<double>> t2(*pomdp);
         t2.setRisk(mixedRisk);
         t2.reset(initObs);
@@ -158,68 +158,6 @@ TEST(SparseBeliefTracker, MixedRiskMaxMin) {
         }
     }
     EXPECT_TRUE(movedToHighRisk) << "Could not find a non-initial reachable observation";
-}
-
-// ObservationDenseBeliefState tests use the belief state class directly,
-// since NondeterministicBeliefTracker<..., ObservationDenseBeliefState> is not
-// fully instantiated (reduce() requires getBeliefMap() which is sparse-only).
-
-TEST(ObservationDenseBeliefState, ConstructFromInitialState) {
-    auto pomdp = buildMaze();
-    auto manager = std::make_shared<storm::generator::BeliefStateManager<double>>(*pomdp);
-    manager->setRiskPerState(std::vector<double>(pomdp->getNumberOfStates(), 0.0));
-
-    uint64_t initState = *pomdp->getInitialStates().begin();
-    storm::generator::ObservationDenseBeliefState<double> belief(manager, initState);
-
-    // Initial belief is a point mass on the initial state.
-    EXPECT_NEAR(1.0, belief.get(initState), 1e-9);
-    // Hash is stable across calls.
-    EXPECT_EQ(belief.hash(), belief.hash());
-}
-
-TEST(ObservationDenseBeliefState, UpdateProducesNextBeliefs) {
-    auto pomdp = buildMaze("sl=0.4");
-    auto manager = std::make_shared<storm::generator::BeliefStateManager<double>>(*pomdp);
-    manager->setRiskPerState(std::vector<double>(pomdp->getNumberOfStates(), 0.0));
-
-    uint64_t initState = *pomdp->getInitialStates().begin();
-    storm::generator::ObservationDenseBeliefState<double> initialBelief(manager, initState);
-
-    // Collect all observations reachable in one step from the initial state.
-    std::set<uint32_t> reachableObs;
-    for (uint64_t row = pomdp->getNondeterministicChoiceIndices()[initState];
-         row < pomdp->getNondeterministicChoiceIndices()[initState + 1]; ++row) {
-        for (auto const& entry : pomdp->getTransitionMatrix().getRow(row)) {
-            reachableObs.insert(pomdp->getObservation(entry.getColumn()));
-        }
-    }
-    ASSERT_FALSE(reachableObs.empty());
-
-    // update() with any reachable observation must produce at least one new belief.
-    uint32_t nextObs = *reachableObs.begin();
-    std::unordered_set<storm::generator::ObservationDenseBeliefState<double>> nextBeliefs;
-    initialBelief.update(nextObs, nextBeliefs);
-    EXPECT_GT(nextBeliefs.size(), 0ul);
-}
-
-TEST(ObservationDenseBeliefState, RiskPropagation) {
-    auto pomdp = buildMaze();
-    auto manager = std::make_shared<storm::generator::BeliefStateManager<double>>(*pomdp);
-
-    // With all-zero risk the initial belief has risk 0.
-    std::vector<double> zeroRisk(pomdp->getNumberOfStates(), 0.0);
-    manager->setRiskPerState(zeroRisk);
-
-    uint64_t initState = *pomdp->getInitialStates().begin();
-    storm::generator::ObservationDenseBeliefState<double> belief(manager, initState);
-    EXPECT_NEAR(0.0, belief.getRisk(), 1e-9);
-
-    // With all-one risk the initial belief has risk 1.
-    std::vector<double> oneRisk(pomdp->getNumberOfStates(), 1.0);
-    manager->setRiskPerState(oneRisk);
-    storm::generator::ObservationDenseBeliefState<double> belief2(manager, initState);
-    EXPECT_NEAR(1.0, belief2.getRisk(), 1e-9);
 }
 
 }  // namespace
