@@ -11,4 +11,5 @@ add_dependencies(binaries storm-gspn-cli)
 install(TARGETS storm-gspn-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )

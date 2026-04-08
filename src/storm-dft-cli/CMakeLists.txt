@@ -11,4 +11,5 @@ add_dependencies(binaries storm-dft-cli)
 install(TARGETS storm-dft-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )

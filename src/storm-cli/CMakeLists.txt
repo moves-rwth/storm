@@ -11,4 +11,5 @@ add_dependencies(binaries storm-cli)
 install(TARGETS storm-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )

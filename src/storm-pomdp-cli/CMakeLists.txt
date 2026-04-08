@@ -14,4 +14,5 @@ add_dependencies(binaries storm-pomdp-cli)
 install(TARGETS storm-pomdp-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )

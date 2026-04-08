@@ -11,4 +11,5 @@ add_dependencies(binaries storm-conv-cli)
 install(TARGETS storm-conv-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )

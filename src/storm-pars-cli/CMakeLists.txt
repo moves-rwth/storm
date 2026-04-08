@@ -16,4 +16,5 @@ add_dependencies(binaries storm-pars-cli)
 install(TARGETS storm-pars-cli
         EXPORT storm_Targets
         RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
 )
