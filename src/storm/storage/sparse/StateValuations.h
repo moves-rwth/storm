@@ -94,6 +94,8 @@ class StateValuations : public storm::models::sparse::StateAnnotation {
     virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const override;
     StateValueIteratorRange at(storm::storage::sparse::state_type const& state) const;
 
+    storm::expressions::ExpressionManager const& getManager() const;
+
     bool getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const;
     int64_t const& getIntegerValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& integerVariable) const;
     storm::RationalNumber const& getRationalValue(storm::storage::sparse::state_type const& stateIndex,

@@ -7,6 +7,7 @@
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/solver/SolveGoal.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -38,6 +39,7 @@ class SparseMdpPrctlHelper {
         storm::storage::BitVector const& initialStates);
 
     static std::vector<SolutionType> computeNextProbabilities(Environment const& env, OptimizationDirection dir,
+                                                              UncertaintyResolutionMode uncertaintyResolutionMode,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::storage::BitVector const& nextStates);
 

@@ -26,6 +26,7 @@ class ViOperatorMultiplier : public Multiplier<ValueType, SolutionType> {
                                      bool backwards = true) const override;
     virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                    std::vector<SolutionType> const& x, std::vector<ValueType> const* b, std::vector<SolutionType>& result,
+                                   UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
                                    std::vector<uint_fast64_t>* choices = nullptr) const override;
     virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                               std::vector<SolutionType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr,

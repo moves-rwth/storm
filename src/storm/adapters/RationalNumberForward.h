@@ -28,8 +28,10 @@ typedef __gmp_expr<mpz_t, mpz_t> GmpIntegerNumber;   // corresponds to mpz_class
 
 #if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_EA)
 typedef ClnRationalNumber RationalNumber;
+static constexpr bool RationalNumberDenominatorAlwaysPositive = true;  // See https://www.ginac.de/CLN/cln.html#Exact-numbers
 #elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_EA)
 typedef GmpRationalNumber RationalNumber;
+static constexpr bool RationalNumberDenominatorAlwaysPositive = true;  // See https://gmplib.org/manual/Rational-Number-Functions
 #elif defined(STORM_USE_CLN_EA)
 #error CLN is to be used, but is not available.
 #else

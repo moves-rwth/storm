@@ -5,6 +5,38 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 1.12.x
+--------------
+
+## Version 1.12.0 (2026/03)
+- Support for verifying IDTMCs.
+- Extended DRN file format:
+    * Use `--io:digits` option to control precision of floats.
+    * Reading from and writing to compressed DRN files (use `.drn.gz` / `.drn.xz` file extensions and/or the new `--compression` option) (requires libarchive).
+    * Added `@value_type` to determine the type of the parsed values.
+    * Support for parsing of DRN interval models.
+- Multi-objective model checking:
+    * Multi-objective model checking in `--sound`mode handles approximation errors correctly.
+    * Added `--multiobjective:approxtradeoff` setting to control Pareto curve approximation heuristic.
+    * Extended support for multi-objective properties: distinguish between trade-off and lexicographic properties, introduce `multilex(..)` syntax for Prism-style properties.
+- `storm-pars`:
+    * Added BigStep transformation.
+    * Added generalized parameter lifting.
+    * Support for not graph-preserving regions and for not well-defined regions.
+    * Region verification API uses `RefinementOptions`.
+- Support build without DD support.
+- Added state-valuation transformer.
+- Preparation for using probability matrix in CTMC bisimulation.
+- Revised check for probabilistic transition matrix.
+- ConstantsComparator no longer depends on global state.
+- New (optional) dependency: libarchive which supports directly reading/writing from an archive.
+- Updated dependencies: carl-storm, Eigen, ExprTk, gmm, googletest, Gurobi, parallel-hashmap, Spot.
+- Bug fixes in returning rate parameters and requiring MultiObjectiveSettings.
+- Developer: modernized CTMC helpers.
+- Developer: general code clean up such as revising includes, assertions and CMake defines.
+- Developer: CI treats compiler warnings as errors.
+
+
 Version 1.11.x
 --------------
 
@@ -101,7 +133,7 @@ Version 1.8.x
 - Experimental support for compiling on Apple Silicon
 - Added SoPlex as a possible LP solver
 - Upgraded shipped version of sylvan
-- Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/moves-rwth/carl-storm) in at least version 14.23.
+- Upgraded repo / version for carl (for polynomials), requires [carl-storm](https://github.com/stormchecker/carl-storm) in at least version 14.23.
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.

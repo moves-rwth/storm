@@ -131,20 +131,16 @@ std::map<storm::storage::sparse::state_type, SolutionType> SparseMdpPrctlHelper<
 
 template<typename ValueType, typename SolutionType>
 std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::computeNextProbabilities(
-    Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    storm::storage::BitVector const& nextStates) {
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support next probabilities with interval models.");
-    } else {
-        // Create the vector with which to multiply and initialize it correctly.
-        std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
-        storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
+    Environment const& env, OptimizationDirection dir, UncertaintyResolutionMode uncertaintyResolutionMode,
+    storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates) {
+    // Create the vector with which to multiply and initialize it correctly.
+    std::vector<SolutionType> result(transitionMatrix.getRowGroupCount());
+    storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<SolutionType>());
 
-        auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->multiplyAndReduce(env, dir, result, nullptr, result);
+    auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, transitionMatrix);
+    multiplier->multiplyAndReduce(env, dir, result, nullptr, result, uncertaintyResolutionMode);
 
-        return result;
-    }
+    return result;
 }
 
 template<typename ValueType, typename SolutionType = ValueType>
@@ -843,7 +839,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<SolutionType> result(rewardModel.getStateRewardVector());
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, nullptr, stepCount);
+        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, nullptr, stepCount, goal.getUncertaintyResolutionMode());
 
         return result;
     }
@@ -867,7 +863,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
         std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<SolutionType>());
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound);
+        multiplier->repeatedMultiplyAndReduce(env, goal.direction(), result, &totalRewardVector, stepBound, goal.getUncertaintyResolutionMode());
 
         return result;
     }
@@ -989,7 +985,8 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     std::vector<SolutionType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
 
     auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, transitionMatrix);
-    multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor);
+    multiplier->repeatedMultiplyAndReduceWithFactor(env, goal.direction(), result, &totalRewardVector, stepBound, discountFactor,
+                                                    goal.getUncertaintyResolutionMode());
 
     return result;
 }
@@ -1062,7 +1059,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     // Only compute the result if the reward model is not empty.
     STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
     if constexpr (std::is_same_v<ValueType, storm::RationalInterval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support rational interval rewards with double interval models.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support double interval rewards with rational interval models.");
     } else {
         return computeReachabilityRewardsHelper(
                    env, std::move(goal), transitionMatrix, backwardTransitions,
@@ -1097,7 +1094,7 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
     // Only compute the result if the reward model is not empty.
     STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
     if constexpr (std::is_same_v<ValueType, storm::Interval>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support interval rewards with rational interval models.");
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We do not support rational interval rewards with double interval models.");
     } else {
         return computeReachabilityRewardsHelper(
                    env, std::move(goal), transitionMatrix, backwardTransitions,

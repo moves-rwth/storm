@@ -13,7 +13,7 @@ The following steps should be performed to integrate pull requests from GitHub.
 
 4. Optional (if not done already): add the GitHub repository as another remote for your local copy of the internal repository:
    ```console
-   git remote add github https://github.com/moves-rwth/storm.git
+   git remote add github https://github.com/stormchecker/storm.git
    ```
    
 5. Fetch the current GitHub master:

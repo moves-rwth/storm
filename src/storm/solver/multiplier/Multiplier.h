@@ -5,6 +5,7 @@
 
 #include "storm/solver/MultiplicationStyle.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/UncertaintyResolutionMode.h"
 
 namespace storm {
 
@@ -65,12 +66,15 @@ class Multiplier {
      * to the number of rows of A.
      * @param result The target vector into which to write the multiplication result. Its length must be equal
      * to the number of rows of A. Can be the same as the x vector.
+     * @param uncertaintyResolutionMode The mode according to which to resolve uncertainty in the reduction step.
      * @param choices If given, the choices made in the reduction process are written to this vector.
      */
     void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType> const& x, std::vector<ValueType> const* b,
-                           std::vector<SolutionType>& result, std::vector<uint_fast64_t>* choices = nullptr) const;
+                           std::vector<SolutionType>& result, UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
+                           std::vector<uint_fast64_t>* choices = nullptr) const;
     virtual void multiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                    std::vector<SolutionType> const& x, std::vector<ValueType> const* b, std::vector<SolutionType>& result,
+                                   UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset,
                                    std::vector<uint_fast64_t>* choices = nullptr) const = 0;
 
     /*!
@@ -119,9 +123,10 @@ class Multiplier {
      * @param result The target vector into which to write the multiplication result. Its length must be equal
      * to the number of rows of A.
      * @param n The number of times to perform the multiplication.
+     * @param uncertaintyResolutionMode The mode according to which to resolve uncertainty in the reduction step.
      */
     void repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x, std::vector<ValueType> const* b,
-                                   uint64_t n) const;
+                                   uint64_t n, UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
     /*!
      * Performs repeated matrix-vector multiplication x' = A*(factor * x) + b. Vector x is scaled by factor in each iteration.
      *
@@ -149,10 +154,12 @@ class Multiplier {
      * @param result The target vector into which to write the multiplication result. Its length must be equal
      * to the number of rows of A.
      * @param n The number of times to perform the multiplication.
+     * @param uncertaintyResolutionMode The mode according to which to resolve uncertainty in the reduction step.
      * @param factor The scalar to multiply with in each iteration.
      */
     void repeatedMultiplyAndReduceWithFactor(Environment const& env, OptimizationDirection const& dir, std::vector<SolutionType>& x,
-                                             std::vector<ValueType> const* b, uint64_t n, SolutionType factor) const;
+                                             std::vector<ValueType> const* b, uint64_t n, SolutionType factor,
+                                             UncertaintyResolutionMode const& uncertaintyResolutionMode = UncertaintyResolutionMode::Unset) const;
 
    protected:
     std::vector<SolutionType>& provideCachedVector(uint64_t size) const;

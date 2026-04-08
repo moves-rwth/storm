@@ -3,7 +3,6 @@
 #include <optional>
 
 #include "storm/adapters/IntervalAdapter.h"
-#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"

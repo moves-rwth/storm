@@ -190,6 +190,12 @@ ValueType sin(ValueType const& number);
 template<typename ValueType>
 uint64_t numDigits(ValueType const& number);
 
+/*!
+ * Returns the minimum number of bits to represent the given number. Ignores sign, i.e. number and -number have the same size.
+ */
+template<typename ValueType>
+uint64_t bitsize(ValueType const& number);
+
 template<typename ValueType>
 typename NumberTraits<ValueType>::IntegerType trunc(ValueType const& number);
 

@@ -85,9 +85,9 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
 
         auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
         if (lowerBound == 0) {
-            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound);
+            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound, goal.getUncertaintyResolutionMode());
         } else {
-            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound - lowerBound + 1);
+            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, upperBound - lowerBound + 1, goal.getUncertaintyResolutionMode());
 
             storm::storage::SparseMatrix<ValueType> submatrix;
             if constexpr (storm::IsIntervalType<ValueType>) {
@@ -98,7 +98,7 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
 
             auto multiplier = storm::solver::MultiplierFactory<ValueType, SolutionType>().create(env, submatrix);
             b = std::vector<ValueType>(b.size(), storm::utility::zero<ValueType>());
-            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, lowerBound - 1);
+            multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, lowerBound - 1, goal.getUncertaintyResolutionMode());
         }
         // Set the values of the resulting vector accordingly.
         storm::utility::vector::setVectorValues(result, maybeStates, subresult);
