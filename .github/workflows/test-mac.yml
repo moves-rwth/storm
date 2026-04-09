@@ -23,6 +23,10 @@ on:
         description: "CMake build type (Debug or Release)"
         type: string
         required: true
+      cache:
+        description: "Enable ccache and Homebrew caching (true/false)"
+        type: boolean
+        default: false
 
 jobs:
   macTests:
@@ -38,7 +42,7 @@ jobs:
       - name: Git clone
         uses: actions/checkout@v6
       - name: Cache Homebrew downloads
-        if: github.ref != 'refs/heads/master'
+        if: inputs.cache
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
@@ -49,7 +53,7 @@ jobs:
         run: mkdir -p /Users/runner/.ccache
       - name: Restore ccache (macOS)
         id: ccache-restore-macos
-        if: github.ref != 'refs/heads/master'
+        if: inputs.cache
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/.ccache
@@ -79,7 +83,7 @@ jobs:
       - name: Print ccache stats
         run: ccache --show-stats --verbose
       - name: Save ccache (macOS)
-        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
+        if: inputs.cache && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: /Users/runner/.ccache

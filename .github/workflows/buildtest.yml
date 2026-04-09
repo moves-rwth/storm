@@ -115,7 +115,7 @@ jobs:
              AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-    uses: ./.github/workflows/test-indepth.yml
+    uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"
       name: ${{ matrix.config.name }}
@@ -137,6 +137,7 @@ jobs:
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
       AllSanitizers: ${{ matrix.config.AllSanitizers }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      cache: ${{ github.ref != 'refs/heads/master' }}
 
   compilerTests:
     strategy:
@@ -147,23 +148,23 @@ jobs:
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
               packages: "",
-              distro: "archlinux"
+              dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
           - { name: "Clang",
               buildType: "Debug",
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
               packages: "clang",
-              distro: "archlinux"
+              dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
           - { name: "musl",
               buildType: "Debug",
               Developer: "ON",
               cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
               packages: "",
-              distro: "alpine"
+              dockerfile: ".github/workflows/Dockerfile.alpine"
           }
-    uses: ./.github/workflows/test-compiler.yml
+    uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"
       name: ${{ matrix.config.name }}
@@ -171,7 +172,9 @@ jobs:
       Developer: ${{ matrix.config.Developer }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
       packages: ${{ matrix.config.packages }}
-      distro: ${{ matrix.config.distro }}
+      dockerfile: ${{ matrix.config.dockerfile }}
+      starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
+      cache: ${{ github.ref != 'refs/heads/master' }}
 
   linuxTests:
     uses: ./.github/workflows/test-linux.yml
@@ -185,6 +188,7 @@ jobs:
       distro: ${{ matrix.distro }}
       buildType: ${{ matrix.buildType }}
       runner: ${{ matrix.runner }}
+      cache: ${{ github.ref != 'refs/heads/master' }}
 
   macTests:
     strategy:
@@ -217,6 +221,7 @@ jobs:
       distro: ${{ matrix.config.distro }}
       xcode: ${{ matrix.config.xcode }}
       buildType: ${{ matrix.config.buildType }}
+      cache: ${{ github.ref != 'refs/heads/master' }}
 
   deploy:
     strategy:

@@ -1,4 +1,4 @@
-name: Indepth Tests
+name: Build Tests
 
 on:
   workflow_call:
@@ -15,14 +15,30 @@ on:
         description: "Display name for the test configuration"
         type: string
         required: true
-      baseImg:
-        description: "Base image name (e.g. storm-dependencies:latest)"
-        type: string
-        default: "storm-dependencies:latest"
       buildType:
         description: "CMake build type (Debug or Release)"
         type: string
         default: "Debug"
+      Developer:
+        description: "Enable developer mode (ON/OFF)"
+        type: string
+        default: "ON"
+      cmakeArgs:
+        description: "Extra CMake arguments"
+        type: string
+        default: ""
+      dockerfile:
+        description: "Path to the Dockerfile to use"
+        type: string
+        default: "Dockerfile"
+      starterProjectCommand:
+        description: "Command to pass to the starter-project"
+        type: string
+        default: "--help"
+      baseImg:
+        description: "Base image name (e.g. storm-dependencies:latest)"
+        type: string
+        default: "storm-dependencies:latest"
       disable_cudd:
         type: string
         default: "OFF"
@@ -56,10 +72,6 @@ on:
       disable_z3:
         type: string
         default: "OFF"
-      Developer:
-        description: "Enable developer mode (ON/OFF)"
-        type: string
-        default: "ON"
       ClnExact:
         description: "Use CLN for exact arithmetic (ON/OFF)"
         type: string
@@ -72,14 +84,18 @@ on:
         description: "Enable all sanitizers (ON/OFF)"
         type: string
         default: "OFF"
-      cmakeArgs:
-        description: "Extra CMake arguments"
+      packages:
+        description: "Extra packages to install (e.g. clang)"
         type: string
-        default: "-DSTORM_WARNING_AS_ERROR=ON"
+        default: ""
+      cache:
+        description: "Enable ccache (true/false)"
+        type: boolean
+        default: false
 
 jobs:
-  indepthTests:
-    name: Indepth Tests (${{ inputs.name }}, ${{ inputs.buildType }})
+  buildTests:
+    name: Build Tests (${{ inputs.name }}, ${{ inputs.buildType }})
     runs-on: ubuntu-latest
     env:
       NR_JOBS: ${{ inputs.NR_JOBS }}
@@ -88,19 +104,19 @@ jobs:
         uses: actions/checkout@v6
       - name: Restore ccache (Docker)
         id: ccache-restore
-        if: github.ref != 'refs/heads/master'
+        if: inputs.cache
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
-          key: buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+          key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}
           restore-keys: |
-            buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-
-            buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-
-            buildtest-ccache-indepth-
+            buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-
+            buildtest-ccache-${{ inputs.name }}-
+            buildtest-ccache-
       - name: Build storm from Dockerfile
         run: |
           mkdir -p .ci-ccache
-          docker build -t movesrwth/storm:ci . \
+          docker build -t movesrwth/storm:ci --file ${{ inputs.dockerfile }} . \
             --build-arg BASE_IMAGE=movesrwth/${{ inputs.baseImg }} \
             --build-arg build_type="${{ inputs.buildType }}" \
             --build-arg carl_tag="${{ inputs.carl_tag }}" \
@@ -120,6 +136,7 @@ jobs:
             --build-arg cln_ratfunc="${{ inputs.ClnRatfunc }}" \
             --build-arg all_sanitizers="${{ inputs.AllSanitizers }}" \
             --build-arg cmake_args="${{ inputs.cmakeArgs }}" \
+            --build-arg packages="${{ inputs.packages }}" \
             --build-arg no_threads=${NR_JOBS}
       - name: Export ccache from Docker image
         run: |
@@ -129,11 +146,11 @@ jobs:
           docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
           docker rm ccache-extract
       - name: Save ccache (Docker)
-        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        if: inputs.cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
-          key: buildtest-ccache-indepth-${{ inputs.buildType }}-${{ inputs.ClnExact }}-${{ inputs.ClnRatfunc }}-${{ inputs.disable_cudd }}-${{ inputs.baseImg }}-${{ hashFiles('Dockerfile', 'CMakeLists.txt') }}-${{ github.run_id }}
+          key: buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-${{ hashFiles(inputs.dockerfile, 'CMakeLists.txt') }}-${{ github.run_id }}
       - name: Run Docker
         run: docker run -d -it --name ci movesrwth/storm:ci
       - name: Run storm
@@ -152,7 +169,7 @@ jobs:
         with:
           docker: true
           stormDir: "/opt/storm/build"
-          command: "--help" # TODO using --help as running the starter-project requires Z3.
+          command: ${{ inputs.starterProjectCommand }}
       - name: Install storm
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
       - name: Remove build dir
@@ -166,4 +183,4 @@ jobs:
         with:
           docker: true
           stormDir: ""
-          command: "--help" # TODO using --help as running the starter-project requires Z3.
+          command: ${{ inputs.starterProjectCommand }}

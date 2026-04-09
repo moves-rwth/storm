@@ -23,6 +23,10 @@ on:
         description: "runner to use for the job"
         type: string
         required: true
+      cache:
+        description: "Enable ccache (true/false)"
+        type: boolean
+        default: false
 
 jobs:
   linuxTests:
@@ -35,7 +39,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Restore ccache (Docker)
         id: ccache-restore
-        if: github.ref != 'refs/heads/master'
+        if: inputs.cache
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
@@ -61,7 +65,7 @@ jobs:
           docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
           docker rm ccache-extract
       - name: Save ccache (Docker)
-        if: github.ref != 'refs/heads/master' && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        if: inputs.cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
