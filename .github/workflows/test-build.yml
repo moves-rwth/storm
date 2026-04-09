@@ -88,10 +88,18 @@ on:
         description: "Extra packages to install (e.g. clang)"
         type: string
         default: ""
-      cache:
-        description: "Enable ccache (true/false)"
+      restore_cache:
+        description: "Restore ccache from cache"
         type: boolean
         default: false
+      save_cache:
+        description: "Save ccache to cache"
+        type: boolean
+        default: false
+      install:
+        description: "Run post-build steps: starter project, install, run installed storm"
+        type: boolean
+        default: true
 
 jobs:
   buildTests:
@@ -104,7 +112,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Restore ccache (Docker)
         id: ccache-restore
-        if: inputs.cache
+        if: inputs.restore_cache
         uses: actions/cache/restore@v4
         with:
           path: .ci-ccache
@@ -146,7 +154,7 @@ jobs:
           docker cp ccache-extract:/root/.ccache/. .ci-ccache/ || true
           docker rm ccache-extract
       - name: Save ccache (Docker)
-        if: inputs.cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
+        if: inputs.save_cache && always() && steps.ccache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: .ci-ccache
@@ -165,20 +173,25 @@ jobs:
         #run: docker exec ci bash -c "cd /opt/storm/build; ASAN_OPTIONS=detect_leaks=0,detect_odr_violation=0 ctest test --output-on-failure"
         run: docker exec ci bash -c "cd /opt/storm/build; ctest test --output-on-failure"
       - name: Build starter-project
+        if: inputs.install
         uses: ./.github/actions/starter-project-action
         with:
           docker: true
           stormDir: "/opt/storm/build"
           command: ${{ inputs.starterProjectCommand }}
       - name: Install storm
+        if: inputs.install
         run: docker exec ci bash -c "cd /opt/storm/build; make install"
       - name: Remove build dir
+        if: inputs.install
         run: |
           docker exec ci bash -c "rm -rf /opt/storm/build"
       - name: Run installed storm
+        if: inputs.install
         run: |
           docker exec ci bash -c "/usr/local/bin/storm --version"
       - name: Build starter-project on installed Storm
+        if: inputs.install
         uses: ./.github/actions/starter-project-action
         with:
           docker: true

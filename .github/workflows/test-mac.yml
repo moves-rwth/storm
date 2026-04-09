@@ -23,10 +23,18 @@ on:
         description: "CMake build type (Debug or Release)"
         type: string
         required: true
-      cache:
-        description: "Enable ccache and Homebrew caching (true/false)"
+      restore_cache:
+        description: "Restore ccache and Homebrew cache"
         type: boolean
         default: false
+      save_cache:
+        description: "Save ccache to cache"
+        type: boolean
+        default: false
+      install:
+        description: "Run post-build steps: starter project, install, run installed storm"
+        type: boolean
+        default: true
 
 jobs:
   macTests:
@@ -42,7 +50,7 @@ jobs:
       - name: Git clone
         uses: actions/checkout@v6
       - name: Cache Homebrew downloads
-        if: inputs.cache
+        if: inputs.restore_cache
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
@@ -53,7 +61,7 @@ jobs:
         run: mkdir -p /Users/runner/.ccache
       - name: Restore ccache (macOS)
         id: ccache-restore-macos
-        if: inputs.cache
+        if: inputs.restore_cache
         uses: actions/cache/restore@v4
         with:
           path: /Users/runner/.ccache
@@ -83,7 +91,7 @@ jobs:
       - name: Print ccache stats
         run: ccache --show-stats --verbose
       - name: Save ccache (macOS)
-        if: inputs.cache && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
+        if: inputs.save_cache && always() && steps.ccache-restore-macos.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: /Users/runner/.ccache
@@ -100,21 +108,26 @@ jobs:
         working-directory: ./build
         run: ctest test --output-on-failure
       - name: Build starter-project
+        if: inputs.install
         uses: ./.github/actions/starter-project-action
         with:
           docker: false
           stormDir: "${GITHUB_WORKSPACE}/build"
           command: "${GITHUB_WORKSPACE}/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
       - name: Install storm
+        if: inputs.install
         working-directory: ./build
         run: sudo make install
       - name: Remove build dir
+        if: inputs.install
         run: |
           rm -rf ${GITHUB_WORKSPACE}/build
       - name: Run installed storm
+        if: inputs.install
         run: |
           /usr/local/bin/storm --version
       - name: Build starter-project on installed Storm
+        if: inputs.install
         uses: ./.github/actions/starter-project-action
         with:
           docker: false

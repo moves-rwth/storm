@@ -1,18 +1,24 @@
-name: PR Tests
+name: CI PR Ready for Review / Master
+# Runs on PRs labelled "ready for review" and on every master push.
+# Full task suite: compile flags, all tests, starter project, install, deploy.
+# Cache is read-only on PRs, disabled on master.
 
 on:
+  push:
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
 jobs:
-  indepthTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
+  buildTests:
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
+      fail-fast: true
       matrix:
         config:
-          - {name: "GMP exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest",
+          - {name: "Debug; All dependencies",
              buildType: "Debug",
+             baseImg: "storm-dependencies:latest",
              disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
              disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
              disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
@@ -20,44 +26,35 @@ jobs:
              Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "CLN exact; GMP rational functions; All dependencies",
+          - {name: "Release; All dependencies",
+             buildType: "Release",
              baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
              disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
              disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
              disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
              disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "ON", ClnExact: "ON", ClnRatfunc: "OFF", AllSanitizers: "OFF",
+             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "CLN exact; CLN rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
+          # TODO: Replace storm-basesystem:latest with the correct image for "required dependencies"
+          - {name: "Release; GMP; GMP; Required dependencies",
+             buildType: "Release",
+             baseImg: "storm-basesystem:latest",
              disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
              disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
              disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
              disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "ON", ClnExact: "ON", ClnRatfunc: "ON", AllSanitizers: "OFF",
+             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "GMP exact; CLN rational functions; No dependencies",
-             baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
-             disable_cudd: "ON", disable_glpk: "ON", disable_gmm: "ON",
-             disable_gurobi: "ON", disable_libarchive: "ON", disable_mathsat: "ON",
-             disable_soplex: "ON", disable_spot: "ON", disable_sylvan: "ON",
-             disable_xerces: "ON", disable_z3: "ON",
-             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "ON", AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - {name: "Minimal dependencies (without CLN)",
-             baseImg: "storm-basesystem:minimal_dependencies",
-             buildType: "Debug",
-             disable_cudd: "ON", disable_glpk: "ON", disable_gmm: "ON",
-             disable_gurobi: "ON", disable_libarchive: "ON", disable_mathsat: "ON",
-             disable_soplex: "ON", disable_spot: "ON", disable_sylvan: "ON",
-             disable_xerces: "ON", disable_z3: "ON",
-             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
+          - {name: "Release; CLN; CLN; Required dependencies",
+             buildType: "Release",
+             baseImg: "storm-basesystem:latest",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "OFF", ClnExact: "ON", ClnRatfunc: "ON", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
     uses: ./.github/workflows/test-build.yml
@@ -82,33 +79,29 @@ jobs:
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
       AllSanitizers: ${{ matrix.config.AllSanitizers }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
-      cache: true
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
 
   compilerTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
+      fail-fast: true
       matrix:
         config:
-          - { name: "GCC",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
-              dockerfile: ".github/workflows/Dockerfile.archlinux"
+          - {name: "GCC",
+             buildType: "Debug",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
-          - { name: "Clang",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "clang",
-              dockerfile: ".github/workflows/Dockerfile.archlinux"
-          }
-          - { name: "musl",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
-              dockerfile: ".github/workflows/Dockerfile.alpine"
+          - {name: "Clang",
+             buildType: "Debug",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "clang",
+             dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
     uses: ./.github/workflows/test-build.yml
     with:
@@ -120,31 +113,40 @@ jobs:
       packages: ${{ matrix.config.packages }}
       dockerfile: ${{ matrix.config.dockerfile }}
       starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      cache: true
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
 
   linuxTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
-    uses: ./.github/workflows/test-linux.yml
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
     strategy:
-      matrix:
-        distro: ["debian-12", "ubuntu-24.04", "debian-13"]
-        buildType: ["Release"]
-        runner: [ubuntu-latest, ubuntu-24.04-arm]
-    with:
-      NR_JOBS: "4"
-      distro: ${{ matrix.distro }}
-      buildType: ${{ matrix.buildType }}
-      runner: ${{ matrix.runner }}
-      cache: true
-
-  macTests:
-    if: contains(github.event.pull_request.labels.*.name, 'ready for review')
-    strategy:
+      fail-fast: true
       matrix:
         config:
-          - { name: "Xcode 15.4, ARM",    distro: "macos-14",       xcode: "15.4",          buildType: "Debug" }
-          - { name: "Xcode Latest, ARM",   distro: "macos-15",       xcode: "latest-stable", buildType: "Debug" }
-          - { name: "Xcode Latest, Intel", distro: "macos-15-intel", xcode: "latest-stable", buildType: "Debug" }
+          - {distro: "debian-12",     buildType: "Release"}
+          - {distro: "debian-13",     buildType: "Release"}
+          - {distro: "ubuntu-24.04",  buildType: "Release"}
+          - {distro: "ubuntu-latest", buildType: "Release"}
+    uses: ./.github/workflows/test-linux.yml
+    with:
+      NR_JOBS: "4"
+      distro: ${{ matrix.config.distro }}
+      buildType: ${{ matrix.config.buildType }}
+      runner: ubuntu-latest
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
+
+  macTests:
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {name: "Mac 14, ARM",   distro: "macos-14",       xcode: "15.4",          buildType: "Release"}
+          - {name: "Mac 15, ARM",   distro: "macos-15",       xcode: "16.4",          buildType: "Release"}
+          - {name: "Mac 26, ARM",   distro: "macos-26",       xcode: "latest-stable", buildType: "Release"}
+          - {name: "Mac 26, Intel", distro: "macos-26-intel", xcode: "latest-stable", buildType: "Release"}
     uses: ./.github/workflows/test-mac.yml
     with:
       NR_JOBS: "4"
@@ -152,4 +154,21 @@ jobs:
       distro: ${{ matrix.config.distro }}
       xcode: ${{ matrix.config.xcode }}
       buildType: ${{ matrix.config.buildType }}
-      cache: true
+      restore_cache: ${{ github.event_name != 'push' }}
+      save_cache: false
+      install: true
+
+  deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'ready for review') || github.event_name == 'push'
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {buildType: "Debug",   dockerTag: "ci-debug"}
+          - {buildType: "Release", dockerTag: "ci"}
+    uses: ./.github/workflows/test-deploy.yml
+    with:
+      NR_JOBS: "4"
+      buildType: ${{ matrix.config.buildType }}
+      dockerTag: ${{ matrix.config.dockerTag }}
+    secrets: inherit

@@ -1,118 +1,44 @@
-name: Build Test
-# Builds and tests storm on various platforms
-# also deploys images to DockerHub
+name: CI PR
+# Runs on every pull request commit: compile-flag checks and short tests.
+# All jobs are cached and fail-fast.
 
 on:
-  schedule:
-    # run daily
-    - cron: '0 6 * * *'
-  # needed to trigger the workflow manually
-  workflow_dispatch:
   pull_request:
 
 jobs:
-  indepthTests:
+  buildTests:
     strategy:
+      fail-fast: true
       matrix:
         config:
-          - {name: "GMP exact; GMP rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest",
+          - {name: "Debug; All dependencies",
              buildType: "Debug",
-             disable_cudd: "OFF",
-             disable_glpk: "OFF",
-             disable_gmm: "OFF",
-             disable_gurobi: "OFF",
-             disable_libarchive: "OFF",
-             disable_mathsat: "OFF",
-             disable_soplex: "OFF",
-             disable_spot: "OFF",
-             disable_sylvan: "OFF",
-             disable_xerces: "OFF",
-             disable_z3: "OFF",
-             Developer: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF",
-             AllSanitizers: "OFF",
+             baseImg: "storm-dependencies:latest",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "CLN exact; GMP rational functions; All dependencies",
+          - {name: "Release; All dependencies",
+             buildType: "Release",
              baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
-             disable_cudd: "OFF",
-             disable_glpk: "OFF",
-             disable_gmm: "OFF",
-             disable_gurobi: "OFF",
-             disable_libarchive: "OFF",
-             disable_mathsat: "OFF",
-             disable_soplex: "OFF",
-             disable_spot: "OFF",
-             disable_sylvan: "OFF",
-             disable_xerces: "OFF",
-             disable_z3: "OFF",
-             Developer: "ON",
-             ClnExact: "ON",
-             ClnRatfunc: "OFF",
-             AllSanitizers: "OFF",
+             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
+             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
+             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
+             disable_xerces: "OFF", disable_z3: "OFF",
+             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
-          - {name: "CLN exact; CLN rational functions; All dependencies",
-             baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
-             disable_cudd: "OFF",
-             disable_glpk: "OFF",
-             disable_gmm: "OFF",
-             disable_gurobi: "OFF",
-             disable_libarchive: "OFF",
-             disable_mathsat: "OFF",
-             disable_soplex: "OFF",
-             disable_spot: "OFF",
-             disable_sylvan: "OFF",
-             disable_xerces: "OFF",
-             disable_z3: "OFF",
-             Developer: "ON",
-             ClnExact: "ON",
-             ClnRatfunc: "ON",
-             AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - {name: "GMP exact; CLN rational functions; No dependencies",
-             baseImg: "storm-dependencies:latest",
-             buildType: "Debug",
-             disable_cudd: "ON",
-             disable_glpk: "ON",
-             disable_gmm: "ON",
-             disable_gurobi: "ON",
-             disable_libarchive: "ON",
-             disable_mathsat: "ON",
-             disable_soplex: "ON",
-             disable_spot: "ON",
-             disable_sylvan: "ON",
-             disable_xerces: "ON",
-             disable_z3: "ON",
-             Developer: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "ON",
-             AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - {name: "Minimal dependencies (without CLN)",
+          - {name: "Release; GMP; GMP; Minimal dependencies",
+             buildType: "Release",
              baseImg: "storm-basesystem:minimal_dependencies",
-             buildType: "Debug",
-             disable_cudd: "ON",
-             disable_glpk: "ON",
-             disable_gmm: "ON",
-             disable_gurobi: "ON",
-             disable_libarchive: "ON",
-             disable_mathsat: "ON",
-             disable_soplex: "ON",
-             disable_spot: "ON",
-             disable_sylvan: "ON",
-             disable_xerces: "ON",
-             disable_z3: "ON",
-             Developer: "ON",
-             ClnExact: "OFF",
-             ClnRatfunc: "OFF",
-             AllSanitizers: "OFF",
+             disable_cudd: "ON", disable_glpk: "ON", disable_gmm: "ON",
+             disable_gurobi: "ON", disable_libarchive: "ON", disable_mathsat: "ON",
+             disable_soplex: "ON", disable_spot: "ON", disable_sylvan: "ON",
+             disable_xerces: "ON", disable_z3: "ON",
+             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
           }
     uses: ./.github/workflows/test-build.yml
@@ -137,32 +63,28 @@ jobs:
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
       AllSanitizers: ${{ matrix.config.AllSanitizers }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
-      cache: ${{ github.ref != 'refs/heads/master' }}
+      restore_cache: true
+      save_cache: true
+      install: false
 
   compilerTests:
     strategy:
+      fail-fast: true
       matrix:
         config:
-          - { name: "GCC",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
-              dockerfile: ".github/workflows/Dockerfile.archlinux"
+          - {name: "GCC",
+             buildType: "Debug",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "",
+             dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
-          - { name: "Clang",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "clang",
-              dockerfile: ".github/workflows/Dockerfile.archlinux"
-          }
-          - { name: "musl",
-              buildType: "Debug",
-              Developer: "ON",
-              cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-              packages: "",
-              dockerfile: ".github/workflows/Dockerfile.alpine"
+          - {name: "Clang",
+             buildType: "Debug",
+             Developer: "ON",
+             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
+             packages: "clang",
+             dockerfile: ".github/workflows/Dockerfile.archlinux"
           }
     uses: ./.github/workflows/test-build.yml
     with:
@@ -174,46 +96,35 @@ jobs:
       packages: ${{ matrix.config.packages }}
       dockerfile: ${{ matrix.config.dockerfile }}
       starterProjectCommand: "/opt/storm/resources/examples/testfiles/dtmc/brp-16-2.pm 'P=? [F s=5]'"
-      cache: ${{ github.ref != 'refs/heads/master' }}
+      restore_cache: true
+      save_cache: true
+      install: false
 
   linuxTests:
-    uses: ./.github/workflows/test-linux.yml
     strategy:
+      fail-fast: true
       matrix:
-        distro: ["debian-12", "ubuntu-24.04", "debian-13"]
-        buildType: ["Release"]
-        runner: [ubuntu-latest, ubuntu-24.04-arm]
+        config:
+          - {distro: "debian-12",    buildType: "Release"}
+          - {distro: "ubuntu-24.04", buildType: "Release"}
+    uses: ./.github/workflows/test-linux.yml
     with:
       NR_JOBS: "4"
-      distro: ${{ matrix.distro }}
-      buildType: ${{ matrix.buildType }}
-      runner: ${{ matrix.runner }}
-      cache: ${{ github.ref != 'refs/heads/master' }}
+      distro: ${{ matrix.config.distro }}
+      buildType: ${{ matrix.config.buildType }}
+      runner: ubuntu-latest
+      restore_cache: true
+      save_cache: true
+      install: false
 
   macTests:
     strategy:
+      fail-fast: true
       matrix:
-        config:          
-          - {name: "MacOS 14, ARM",
-             distro: "macos-14",
-             xcode: "15.4",
-             buildType: "Debug"
-          }
-          - {name: "MacOS 15, ARM",
-             distro: "macos-15",
-             xcode: "16.4",
-             buildType: "Debug"
-          }
-          - {name: "MacOS 26, ARM",
-             distro: "macos-26",
-             xcode: "latest-stable",
-             buildType: "Debug"
-          }
-          - {name: "MacOS 26, Intel",
-             distro: "macos-26-intel",
-             xcode: "latest-stable",
-             buildType: "Debug"
-          }
+        config:
+          - {name: "Mac 14, ARM",    distro: "macos-14",       xcode: "15.4",          buildType: "Release"}
+          - {name: "Mac 26, ARM",    distro: "macos-26",       xcode: "latest-stable", buildType: "Release"}
+          - {name: "Mac 26, Intel",  distro: "macos-26-intel", xcode: "latest-stable", buildType: "Release"}
     uses: ./.github/workflows/test-mac.yml
     with:
       NR_JOBS: "4"
@@ -221,55 +132,6 @@ jobs:
       distro: ${{ matrix.config.distro }}
       xcode: ${{ matrix.config.xcode }}
       buildType: ${{ matrix.config.buildType }}
-      cache: ${{ github.ref != 'refs/heads/master' }}
-
-  deploy:
-    strategy:
-      matrix:
-        config:
-          - { buildType: "Debug",
-              dockerTag: "ci-debug",
-              baseImg: "storm-dependencies:latest",
-              Developer: "ON",
-              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - { buildType: "Release",
-              dockerTag: "ci",
-              baseImg: "storm-dependencies:latest",
-              Developer: "OFF",
-              cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-    uses: ./.github/workflows/test-deploy.yml
-    with:
-      NR_JOBS: "4"
-      buildType: ${{ matrix.config.buildType }}
-      dockerTag: ${{ matrix.config.dockerTag }}
-      baseImg: ${{ matrix.config.baseImg }}
-      Developer: ${{ matrix.config.Developer }}
-      cmakeArgs: ${{ matrix.config.cmakeArgs }}
-    secrets:
-      STORM_CI_DOCKER_USERNAME: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
-      STORM_CI_DOCKER_TOKEN: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
-
-  notify:
-    name: Email notification
-    runs-on: ubuntu-latest
-    needs: [indepthTests, compilerTests, linuxTests, macTests, deploy]
-    # Only run in main repo and even if previous step failed
-    if: github.repository_owner == 'stormchecker' && always()
-    steps:
-      - uses: technote-space/workflow-conclusion-action@v3
-      - uses: dawidd6/action-send-mail@v16
-        with:
-          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
-          server_port: 587
-          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
-          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
-          subject: "[You broke it] CI run failed for ${{ github.repository }}"
-          body:
-            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
-            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
-            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
-          from: Github Actions <you-broke-it@stormchecker.org>
-        if: env.WORKFLOW_CONCLUSION != 'success' # notify only if failure
+      restore_cache: true
+      save_cache: true
+      install: false
