@@ -1553,13 +1553,12 @@ template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::Rational
     Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
     storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
     storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, uint_fast64_t stepBound);
-template std::vector<storm::RationalNumber>
-SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeReachabilityRewards<storm::RationalInterval>(
-    Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
-    storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
-    storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions,
-    storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, bool lowerBoundOfIntervals,
-    storm::storage::BitVector const& targetStates, bool qualitative);
+template std::vector<storm::RationalNumber> SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeReachabilityRewards<
+    storm::RationalInterval>(Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
+                             storm::storage::SparseMatrix<storm::RationalInterval> const& transitionMatrix,
+                             storm::storage::SparseMatrix<storm::RationalInterval> const& backwardTransitions,
+                             storm::models::sparse::StandardRewardModel<storm::RationalInterval> const& rewardModel, bool lowerBoundOfIntervals,
+                             storm::storage::BitVector const& targetStates, bool qualitative);
 template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber>
 SparseMdpPrctlHelper<storm::RationalInterval, storm::RationalNumber>::computeTotalRewards(
     Environment const& env, storm::solver::SolveGoal<storm::RationalInterval, storm::RationalNumber>&& goal,
