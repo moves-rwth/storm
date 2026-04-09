@@ -201,7 +201,7 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::extractSchedu
         setUpViOperator();
     }
     if (viOperatorTriv) {
-        if constexpr (storm::IsIntervalType<ValueType> && storm::IsIntervalType<SolutionType>) {
+        if constexpr (storm::IsIntervalType<ValueType> && std::is_same_v<SolutionType, storm::IntervalBaseType<ValueType>>) {
             storm::solver::helper::SchedulerTrackingHelper<ValueType, SolutionType, true> schedHelper(viOperatorTriv);
             schedHelper.computeScheduler(x, b, dir, *this->schedulerChoices, uncertaintyResolutionMode, updateX ? &x : nullptr, this->robustSchedulerIndex);
         } else {

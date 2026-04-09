@@ -4,7 +4,6 @@
 #include <map>
 #include <optional>
 
-#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/JsonForward.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/models/sparse/StateLabeling.h"

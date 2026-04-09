@@ -71,7 +71,7 @@ std::vector<SolutionType> SparseNondeterministicStepBoundedHorizonHelper<ValueTy
 
             storm::utility::vector::setAllValues(b, transitionMatrix.getRowFilter(psiStates));
 
-            subresultSize = transitionMatrix.getRowCount();
+            subresultSize = transitionMatrix.getRowGroupCount();
         } else {
             // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
             submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false, makeZeroColumns);

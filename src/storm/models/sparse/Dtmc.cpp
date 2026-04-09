@@ -3,7 +3,6 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 namespace storm {

@@ -349,7 +349,7 @@ class ValueIterationOperator {
                 result += operand[*matrixColumnIt] * lower;
             }
             remainingValue -= lower;
-            SolutionType const diameter = static_cast<SolutionType>(-lower + matrixValueIt->upper());
+            SolutionType const diameter = matrixValueIt->upper() - lower;
             if (!storm::utility::isZero<SolutionType>(diameter)) {
                 applyCache.robustOrder.emplace_back(operand[*matrixColumnIt], std::make_pair(diameter, orderCounter));
             }
