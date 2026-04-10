@@ -7,6 +7,7 @@ on:
 
 jobs:
   buildTests:
+    if: ! contains(github.event.pull_request.labels.*.name, 'ready for review') 
     strategy:
       fail-fast: true
       matrix:
@@ -41,6 +42,7 @@ jobs:
       install: false
 
   compilerTests:
+    if: ! contains(github.event.pull_request.labels.*.name, 'ready for review') 
     strategy:
       fail-fast: true
       matrix:
@@ -63,6 +65,7 @@ jobs:
       install: false
 
   linuxTests:
+    if: ! contains(github.event.pull_request.labels.*.name, 'ready for review') 
     strategy:
       fail-fast: true
       matrix:
@@ -78,6 +81,7 @@ jobs:
       install: false
 
   macTests:
+    if: ! contains(github.event.pull_request.labels.*.name, 'ready for review') 
     strategy:
       fail-fast: true
       matrix:
