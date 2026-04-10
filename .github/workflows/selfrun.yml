@@ -16,69 +16,33 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {name: "Debug; All dependencies",
-             buildType: "Debug",
-             baseImg: "storm-dependencies:latest",
-             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
-             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
-             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
-             disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "ON", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - {name: "Release; All dependencies",
-             buildType: "Release",
-             baseImg: "storm-dependencies:latest",
-             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
-             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
-             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
-             disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          # TODO: Replace storm-basesystem:latest with the correct image for "required dependencies"
-          - {name: "Release; GMP; GMP; Required dependencies",
-             buildType: "Release",
-             baseImg: "storm-basesystem:latest",
-             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
-             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
-             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
-             disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF", AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
-          - {name: "Release; CLN; CLN; Required dependencies",
-             buildType: "Release",
-             baseImg: "storm-basesystem:latest",
-             disable_cudd: "OFF", disable_glpk: "OFF", disable_gmm: "OFF",
-             disable_gurobi: "OFF", disable_libarchive: "OFF", disable_mathsat: "OFF",
-             disable_soplex: "OFF", disable_spot: "OFF", disable_sylvan: "OFF",
-             disable_xerces: "OFF", disable_z3: "OFF",
-             Developer: "OFF", ClnExact: "ON", ClnRatfunc: "ON", AllSanitizers: "OFF",
-             cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
-          }
+          - {name: "Debug; All dependencies",              buildType: "Debug",   baseImg: "movesrwth/storm-dependencies:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Release; All dependencies",            buildType: "Release", baseImg: "movesrwth/storm-dependencies:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          # TODO: Replace movesrwth/storm-basesystem:latest with the correct image for "required dependencies"
+          - {name: "Release; GMP; GMP; Required dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:latest", disable_all: "OFF", ClnExact: "OFF", ClnRatfunc: "OFF"}
+          - {name: "Release; CLN; CLN; Required dependencies", buildType: "Release", baseImg: "movesrwth/storm-basesystem:latest", disable_all: "OFF", ClnExact: "ON",  ClnRatfunc: "ON"}
     uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"
       name: ${{ matrix.config.name }}
       baseImg: ${{ matrix.config.baseImg }}
       buildType: ${{ matrix.config.buildType }}
-      disable_cudd: ${{ matrix.config.disable_cudd }}
-      disable_glpk: ${{ matrix.config.disable_glpk }}
-      disable_gmm: ${{ matrix.config.disable_gmm }}
-      disable_gurobi: ${{ matrix.config.disable_gurobi }}
-      disable_libarchive: ${{ matrix.config.disable_libarchive }}
-      disable_mathsat: ${{ matrix.config.disable_mathsat }}
-      disable_soplex: ${{ matrix.config.disable_soplex }}
-      disable_spot: ${{ matrix.config.disable_spot }}
-      disable_sylvan: ${{ matrix.config.disable_sylvan }}
-      disable_xerces: ${{ matrix.config.disable_xerces }}
-      disable_z3: ${{ matrix.config.disable_z3 }}
-      Developer: ${{ matrix.config.Developer }}
+      disable_cudd: ${{ matrix.config.disable_all }}
+      disable_glpk: ${{ matrix.config.disable_all }}
+      disable_gmm: ${{ matrix.config.disable_all }}
+      disable_gurobi: ${{ matrix.config.disable_all }}
+      disable_libarchive: ${{ matrix.config.disable_all }}
+      disable_mathsat: ${{ matrix.config.disable_all }}
+      disable_soplex: ${{ matrix.config.disable_all }}
+      disable_spot: ${{ matrix.config.disable_all }}
+      disable_sylvan: ${{ matrix.config.disable_all }}
+      disable_xerces: ${{ matrix.config.disable_all }}
+      disable_z3: ${{ matrix.config.disable_all }}
+      Developer: ${{ matrix.config.buildType == 'Debug' && 'ON' || 'OFF' }}
       ClnExact: ${{ matrix.config.ClnExact }}
       ClnRatfunc: ${{ matrix.config.ClnRatfunc }}
-      AllSanitizers: ${{ matrix.config.AllSanitizers }}
-      cmakeArgs: ${{ matrix.config.cmakeArgs }}
+      AllSanitizers: "OFF"
+      cmakeArgs: "-DSTORM_WARNING_AS_ERROR=ON"
       restore_cache: ${{ github.event_name != 'push' }}
       save_cache: false
       install: true
@@ -89,26 +53,15 @@ jobs:
       fail-fast: true
       matrix:
         config:
-          - {name: "GCC",
-             buildType: "Debug",
-             Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",
-             packages: "",
-             dockerfile: ".github/workflows/Dockerfile.archlinux"
-          }
-          - {name: "Clang",
-             buildType: "Debug",
-             Developer: "ON",
-             cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON",
-             packages: "clang",
-             dockerfile: ".github/workflows/Dockerfile.archlinux"
-          }
+          - {name: "GCC",   cmakeArgs: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DSTORM_WARNING_AS_ERROR=ON",       packages: "",      dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
+          - {name: "Clang", cmakeArgs: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSTORM_WARNING_AS_ERROR=ON", packages: "clang", dockerfile: ".github/workflows/Dockerfile.archlinux", baseImg: "archlinux:latest"}
     uses: ./.github/workflows/test-build.yml
     with:
       NR_JOBS: "4"
       name: ${{ matrix.config.name }}
-      buildType: ${{ matrix.config.buildType }}
-      Developer: ${{ matrix.config.Developer }}
+      buildType: Debug
+      Developer: "ON"
+      baseImg: ${{ matrix.config.baseImg }}
       cmakeArgs: ${{ matrix.config.cmakeArgs }}
       packages: ${{ matrix.config.packages }}
       dockerfile: ${{ matrix.config.dockerfile }}
@@ -122,16 +75,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        config:
-          - {distro: "debian-12",     buildType: "Release"}
-          - {distro: "debian-13",     buildType: "Release"}
-          - {distro: "ubuntu-24.04",  buildType: "Release"}
-          - {distro: "ubuntu-latest", buildType: "Release"}
+        distro: ["debian-12", "debian-13", "ubuntu-24.04", "ubuntu-latest"]
     uses: ./.github/workflows/test-linux.yml
     with:
       NR_JOBS: "4"
-      distro: ${{ matrix.config.distro }}
-      buildType: ${{ matrix.config.buildType }}
+      distro: ${{ matrix.distro }}
+      buildType: Release
       runner: ubuntu-latest
       restore_cache: ${{ github.event_name != 'push' }}
       save_cache: false

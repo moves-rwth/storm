@@ -36,9 +36,9 @@ on:
         type: string
         default: "--help"
       baseImg:
-        description: "Base image name (e.g. storm-dependencies:latest)"
+        description: "Full base image name (e.g. movesrwth/storm-dependencies:latest or archlinux:latest)"
         type: string
-        default: "storm-dependencies:latest"
+        default: "movesrwth/storm-dependencies:latest"
       disable_cudd:
         type: string
         default: "OFF"
@@ -125,7 +125,7 @@ jobs:
         run: |
           mkdir -p .ci-ccache
           docker build -t movesrwth/storm:ci --file ${{ inputs.dockerfile }} . \
-            --build-arg BASE_IMAGE=movesrwth/${{ inputs.baseImg }} \
+            --build-arg BASE_IMAGE=${{ inputs.baseImg }} \
             --build-arg build_type="${{ inputs.buildType }}" \
             --build-arg carl_tag="${{ inputs.carl_tag }}" \
             --build-arg disable_cudd="${{ inputs.disable_cudd }}" \
