@@ -218,7 +218,8 @@ TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
 
 TEST(RobustDtmcModelCheckerTest, CrowdsQuotientIDTMC) {
     // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIMDP)
-    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/crowds-quotient-3-5.drn", "P=? [ F \"observe0Greater1\"];P=? [ F \"observe0Greater1\"]", 0.1383409, 0.1383409);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/crowds-quotient-3-5.drn",
+                                            "P=? [ F \"observe0Greater1\"];P=? [ F \"observe0Greater1\"]", 0.1383409, 0.1383409);
 }
 
 TEST(RobustDtmcModelCheckerTest, TinyO2Propositional) {

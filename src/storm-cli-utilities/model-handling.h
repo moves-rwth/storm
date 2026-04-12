@@ -1355,7 +1355,7 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
 
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
-            using SolutionType = std::conditional_t<!std::is_same_v<ValueType, storm::Interval>, ValueType, double>;
+            using SolutionType = storm::IntervalBaseType<ValueType>;
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<SolutionType>>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
             filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false));
