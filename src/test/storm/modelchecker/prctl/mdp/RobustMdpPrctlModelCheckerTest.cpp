@@ -192,6 +192,11 @@ TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
     expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
 }
 
+TEST(RobustMdpModelCheckerTest, CrowdsQuotientIMDP) {
+    // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIDTMC)
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/crowds-quotient-3-5.drn", "Pmax=? [ F \"observe0Greater1\"]; Pmin=? [ F \"observe0Greater1\"]", 0.1383409, 0.1383409, 0.1383409, 0.1383409, false);
+}
+
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";
