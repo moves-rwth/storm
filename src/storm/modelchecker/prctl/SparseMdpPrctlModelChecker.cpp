@@ -1,7 +1,6 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 #include "storm/adapters/IntervalAdapter.h"
-#include "storm/adapters/IntervalForward.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
