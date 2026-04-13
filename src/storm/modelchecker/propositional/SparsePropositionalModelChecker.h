@@ -1,6 +1,7 @@
 #ifndef STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
@@ -29,7 +30,7 @@ class SparsePropositionalModelChecker : public AbstractModelChecker<SparseModelT
    public:
     typedef typename SparseModelType::ValueType ValueType;
     typedef typename SparseModelType::RewardModelType RewardModelType;
-    using SolutionType = typename GetSolutionType<ValueType, void>::type;
+    using SolutionType = IntervalBaseType<ValueType>;
 
     explicit SparsePropositionalModelChecker(SparseModelType const& model);
 

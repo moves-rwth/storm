@@ -32,10 +32,10 @@ jobs:
       - name: Deploy doxygen
         uses: peaceiris/actions-gh-pages@v4
         with:
-          deploy_key: ${{ secrets.DOC_DEPLOY_KEY }}
+          personal_token: ${{ secrets.CI_DOC_DEPLOY_TOKEN }}
           publish_dir: ./html
           external_repository: stormchecker/storm-doc
-          publish_branch: master
+          publish_branch: main
           force_orphan: true
 
   notify:
