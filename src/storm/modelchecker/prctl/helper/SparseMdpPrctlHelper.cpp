@@ -1,7 +1,6 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "storm/adapters/IntervalAdapter.h"
-#include "storm/adapters/IntervalForward.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
