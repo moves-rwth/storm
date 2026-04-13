@@ -56,7 +56,7 @@ jobs:
         run: |
           docker exec ci bash -c "mkdir /opt/package; cp /opt/storm/build/*.deb /opt/package/"
           docker cp ci:/opt/package .
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: storm-deb-${{ matrix.distro.tag }}-${{ matrix.platform.name }}
           path: ./package/*.deb
