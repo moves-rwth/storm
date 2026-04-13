@@ -120,7 +120,6 @@ jobs:
           restore-keys: |
             buildtest-ccache-${{ inputs.name }}-${{ inputs.buildType }}-
             buildtest-ccache-${{ inputs.name }}-
-            buildtest-ccache-
       - name: Build storm from Dockerfile
         run: |
           mkdir -p .ci-ccache

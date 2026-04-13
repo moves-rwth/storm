@@ -69,6 +69,7 @@ jobs:
           restore-keys: |
             buildtest-ccache-macos-${{ inputs.distro }}-${{ inputs.buildType }}-
             buildtest-ccache-macos-${{ inputs.distro }}-
+            buildtest-ccache-macos-
       - name: Install dependencies
         # cmake and gmp are already installed
         run: |
