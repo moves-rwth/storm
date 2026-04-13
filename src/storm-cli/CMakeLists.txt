@@ -8,5 +8,8 @@ storm_target_precompile_headers(storm-cli PRIVATE ${STORM_PRECOMPILED_HEADERS})
 add_dependencies(binaries storm-cli)
 
 # installation
-install(TARGETS storm-cli EXPORT storm_Targets
-        RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
+install(TARGETS storm-cli
+        EXPORT storm_Targets
+        RUNTIME DESTINATION ${STORM_BIN_INSTALL_DIR}
+        OPTIONAL
+)
