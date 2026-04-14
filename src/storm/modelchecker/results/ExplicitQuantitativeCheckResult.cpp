@@ -109,6 +109,7 @@ void ExplicitQuantitativeCheckResult<ValueType>::filter(QualitativeCheckResult c
     STORM_LOG_THROW(filter.isExplicitQualitativeCheckResult(), storm::exceptions::InvalidOperationException,
                     "Cannot filter explicit check result with non-explicit filter.");
     STORM_LOG_THROW(filter.isResultForAllStates(), storm::exceptions::InvalidOperationException, "Cannot filter check result with non-complete filter.");
+    STORM_LOG_THROW(CheckResult::template hasValueType<ValueType>(), storm::exceptions::InvalidOperationException, "Unexpected value type in check result.");
     ExplicitQualitativeCheckResult<ValueType> const& explicitFilter = filter.template asExplicitQualitativeCheckResult<ValueType>();
     typename ExplicitQualitativeCheckResult<ValueType>::vector_type const& filterTruthValues = explicitFilter.getTruthValuesVector();
 
