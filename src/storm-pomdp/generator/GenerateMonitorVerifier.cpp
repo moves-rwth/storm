@@ -142,7 +142,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             observationMap[obsPair] = nextObservation++;
             observationUsedActions.push_back(std::set<std::string>());
         }
-        u_int32_t currentObservation = observationMap.at(obsPair);
+        uint32_t currentObservation = observationMap.at(obsPair);
         observations.push_back(currentObservation);
 
         // Set transitions for from and add new states to todo
@@ -309,7 +309,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     components.observabilityClasses = std::move(observations);
 
     // Add choice labeling
-    const std::vector<uint_fast64_t> rowMapping = rowsToKeep.getNumberOfSetBitsBeforeIndices();  // Vector which maps old row id to new row id
+    const std::vector<uint64_t> rowMapping = rowsToKeep.getNumberOfSetBitsBeforeIndices();  // Vector which maps old row id to new row id
     storm::models::sparse::ChoiceLabeling choiceLabeling(numberOfRows);
     for (const auto& [labelObsPair, bitvec] : rowActionObservationMap) {
         // Rebuild bitvec with restricted rows
@@ -335,7 +335,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         svBuilder.addVariable(monvar);
         svBuilder.addVariable(mcvar);
         std::set<expressions::Variable> variables;
-        for (uint_fast64_t i = 0; i < mc.getNumberOfStates(); i++) {
+        for (uint64_t i = 0; i < mc.getNumberOfStates(); i++) {
             const auto& valAssignment = mc.getStateValuations().at(i);
             for (auto val = valAssignment.begin(); val != valAssignment.end(); ++val) {
                 if (val.isVariableAssignment() && !variables.contains(val.getVariable())) {
@@ -345,8 +345,8 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             }
         }
 
-        for (uint_fast64_t i = 0; i < mc.getNumberOfStates(); i++) {
-            for (uint_fast64_t j = 0; j < monitor.getNumberOfStates(); j++) {
+        for (uint64_t i = 0; i < mc.getNumberOfStates(); i++) {
+            for (uint64_t j = 0; j < monitor.getNumberOfStates(); j++) {
                 product_state_type s(i, j);
                 if (!prodToIndexMap.contains(s))
                     continue;
