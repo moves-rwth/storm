@@ -94,9 +94,11 @@ storm::models::sparse::Mdp<double> buildSimpleMonitor() {
 // Helper: create the generator with common settings and produce the product.
 std::shared_ptr<storm::generator::MonitorVerifier<double>> makeProduct(storm::models::sparse::Dtmc<double> const& mc,
                                                                        storm::models::sparse::Mdp<double> const& monitor,
-                                                                       storm::generator::GenerateMonitorVerifier<double>::Options options) {
+                                                                       storm::generator::GenerateMonitorVerifier<double>::Options options,
+                                                                       std::vector<double> risk = {0.0, 1.0, 0.0}) {
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::generator::GenerateMonitorVerifier<double> gen(mc, monitor, exprManager, options);
+    gen.setRisk(risk);
     return gen.createProduct();
 }
 
@@ -105,8 +107,7 @@ TEST(MonitorVerifier, ProductHasExpectedLabels) {
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = false;
-    options.useRejectionSampling = false;
+    options.useRestartSemantics = false;
 
     auto mv = makeProduct(mc, monitor, options);
     const auto& product = mv->getProduct();
@@ -136,8 +137,7 @@ TEST(MonitorVerifier, ObservationMapEntries) {
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = false;
-    options.useRejectionSampling = false;
+    options.useRestartSemantics = false;
 
     auto mv = makeProduct(mc, monitor, options);
     const auto& obsMap = mv->getObservationMap();
@@ -160,8 +160,7 @@ TEST(MonitorVerifier, RejectionSamplingHasNoSink) {
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = false;
-    options.useRejectionSampling = true;
+    options.useRestartSemantics = true;
 
     auto mv = makeProduct(mc, monitor, options);
     const auto& labeling = mv->getProduct().getStateLabeling();
@@ -175,54 +174,12 @@ TEST(MonitorVerifier, RejectionSamplingHasNoSink) {
     EXPECT_TRUE(labeling.containsLabel("init"));
 }
 
-TEST(MonitorVerifier, GoodLabelRoutesToGoalOrStop) {
-    auto mc = buildSimpleMC();  // state 1 has "good", state 2 does not
-    auto monitor = buildSimpleMonitor();
-
-    storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = false;
-    options.useRejectionSampling = false;
-
-    auto mv = makeProduct(mc, monitor, options);
-    const auto& product = mv->getProduct();
-    const auto& labeling = product.getStateLabeling();
-    const auto& transMatrix = product.getTransitionMatrix();
-
-    uint64_t goalState = *labeling.getStates("goal").begin();
-    uint64_t stopState = *labeling.getStates("stop").begin();
-
-    // The observation assigned to (step=1, accepting=true).
-    uint32_t acceptingObs = mv->getObservationMap().at(std::make_pair(1u, true));
-
-    bool foundGoalTransition = false;
-    bool foundStopTransition = false;
-
-    for (uint64_t state = 0; state < product.getNumberOfStates(); ++state) {
-        if (product.getObservation(state) != acceptingObs)
-            continue;
-        for (uint64_t row = transMatrix.getRowGroupIndices()[state]; row < transMatrix.getRowGroupIndices()[state + 1]; ++row) {
-            if (product.getChoiceLabeling().getLabelsOfChoice(row).count("end") == 0)
-                continue;
-            for (const auto& entry : transMatrix.getRow(row)) {
-                if (entry.getColumn() == goalState)
-                    foundGoalTransition = true;
-                if (entry.getColumn() == stopState)
-                    foundStopTransition = true;
-            }
-        }
-    }
-
-    EXPECT_TRUE(foundGoalTransition) << "No 'end' transition to goal found among accepting product states";
-    EXPECT_TRUE(foundStopTransition) << "No 'end' transition to stop found among accepting product states";
-}
-
 TEST(MonitorVerifier, WithRiskAlmostOneGoesToGoal) {
     auto mc = buildSimpleMC();
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = true;
-    options.useRejectionSampling = false;
+    options.useRestartSemantics = false;
 
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::generator::GenerateMonitorVerifier<double> gen(mc, monitor, exprManager, options);
@@ -271,8 +228,7 @@ TEST(MonitorVerifier, WithRiskIntermediateSplitsGoalStop) {
     auto monitor = buildSimpleMonitor();
 
     storm::generator::GenerateMonitorVerifier<double>::Options options;
-    options.useRisk = true;
-    options.useRejectionSampling = false;
+    options.useRestartSemantics = false;
 
     auto exprManager = std::make_shared<storm::expressions::ExpressionManager>();
     storm::generator::GenerateMonitorVerifier<double> gen(mc, monitor, exprManager, options);

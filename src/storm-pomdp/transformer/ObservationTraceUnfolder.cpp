@@ -17,11 +17,6 @@ ObservationTraceUnfolder<ValueType>::ObservationTraceUnfolder(storm::models::spa
                                                               std::shared_ptr<storm::expressions::ExpressionManager>& exprManager,
                                                               ObservationTraceUnfolderOptions const& options)
     : model(model), risk(risk), exprManager(exprManager), options(options) {
-    // std::cout << "Starting observation trace unfolder with n obervations " << model.getNrObservations() << "\n";
-    // statesPerObservation = std::vector<storm::storage::BitVector>(model.getNrObservations() + 1, storm::storage::BitVector(model.getNumberOfStates()));
-    // for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
-    //     statesPerObservation[model.getObservation(state)].set(state, true);
-    // }
     svvar = exprManager->declareFreshIntegerVariable(false, "_s");
     tsvar = exprManager->declareFreshIntegerVariable(false, "_t");
 }
@@ -43,8 +38,6 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     }
     STORM_LOG_THROW(actualInitialStates.getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException,
                     "Must have unique initial state matching the observation");
-    // For this z* that only exists in the initial state, we now also define the states for this observation.
-    // statesPerObservation[model.getNrObservations()] = actualInitialStates;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build valution builder..\n";
@@ -76,7 +69,6 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     uint64_t const resetDestination = options.rejectionSampling ? initialState : violatedState;  // Should be initial state for the standard semantics.
     storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, true, true);
 
-    // TODO only add this state if it is actually reachable / rejection sampling
     if (!options.rejectionSampling) {
         // the violated state (only used when no rejection sampling) is a sink state
         transitionMatrixBuilder.newRowGroup(violatedState);

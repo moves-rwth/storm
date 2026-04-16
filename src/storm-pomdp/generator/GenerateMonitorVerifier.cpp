@@ -98,7 +98,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     std::vector<state_type> rejectToStates;
 
     state_type rejectionIndex;
-    if (!options.useRejectionSampling) {
+    if (!options.useRestartSemantics) {
         // Add sink state where all invalid transitions go
         rejectionIndex = nextStateId++;
         builder.newRowGroup(currentRow);
@@ -119,7 +119,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             state_type index = nextStateId++;
             prodToIndexMap[prod_s] = index;
             initialStates.push_back(index);
-            if (options.useRejectionSampling)
+            if (options.useRestartSemantics)
                 rejectToStates.push_back(index);
             todo.push_back(prod_s);
         }
@@ -239,23 +239,15 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         }
 
         if (monitor.getStateLabeling().getStateHasLabel(options.acceptingLabel, mon_from)) {
-            if (options.useRisk) {
-                STORM_LOG_THROW(risk[mc_from] >= -utility::convertNumber<ValueType>(1e-12) && risk[mc_from] <= utility::convertNumber<ValueType>(1.0 + 1e-12),
-                                exceptions::IllegalArgumentException, "Risk for state " + std::to_string(mc_from) + " is not in [0, 1]");
-                if (utility::isAlmostZero(risk[mc_from])) {
-                    builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>());
-                } else if (utility::isAlmostOne(risk[mc_from])) {
-                    builder.addNextValue(currentRow, goalIndex, utility::one<ValueType>());
-                } else {
-                    builder.addNextValue(currentRow, goalIndex, risk[mc_from]);
-                    builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>() - risk[mc_from]);
-                }
+            STORM_LOG_THROW(risk[mc_from] >= -utility::convertNumber<ValueType>(1e-12) && risk[mc_from] <= utility::convertNumber<ValueType>(1.0 + 1e-12),
+                            exceptions::IllegalArgumentException, "Risk for state " + std::to_string(mc_from) + " is not in [0, 1]");
+            if (utility::isAlmostZero(risk[mc_from])) {
+                builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>());
+            } else if (utility::isAlmostOne(risk[mc_from])) {
+                builder.addNextValue(currentRow, goalIndex, utility::one<ValueType>());
             } else {
-                if (mc.getStateLabeling().getStateHasLabel(options.goodLabel, mc_from)) {
-                    builder.addNextValue(currentRow, goalIndex, utility::one<ValueType>());
-                } else {
-                    builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>());
-                }
+                builder.addNextValue(currentRow, goalIndex, risk[mc_from]);
+                builder.addNextValue(currentRow, stopIndex, utility::one<ValueType>() - risk[mc_from]);
             }
             observationUsedActions[currentObservation].emplace("end");
             auto& rowBitVec = rowActionObservationMap[std::make_pair("end", currentObservation)];
@@ -308,7 +300,7 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     stateLabeling.addLabelToState("condition", goalIndex);
     stateLabeling.addLabelToState("condition", stopIndex);
 
-    if (!options.useRejectionSampling) {
+    if (!options.useRestartSemantics) {
         stateLabeling.addLabel("sink", storm::storage::BitVector(numberOfStates));
         stateLabeling.addLabelToState("sink", rejectionIndex);
     }
