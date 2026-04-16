@@ -98,7 +98,7 @@ class UnifPlusHelper {
             } else {
                 relevantMaybeStates = relevantStates.get() % maybeStates;
             }
-            relevantMarkovianMaybeStates = *relevantMaybeStates & markovianStatesModMaybeStates;
+            relevantMarkovianMaybeStates = relevantMaybeStates.get() & markovianStatesModMaybeStates;
         } else {
             relevantMarkovianMaybeStates = markovianStatesModMaybeStates;
         }
@@ -325,11 +325,11 @@ class UnifPlusHelper {
 
         if (abortedInnerIterations && iteration > 1 && relevantMaybeStates && relevantStates) {
             // We should take the stored solution instead of the current (probably more incorrect) lower/upper values
-            storm::utility::vector::setVectorValues(result, *relevantMaybeStates, bestKnownSolution);
+            storm::utility::vector::setVectorValues(result, relevantMaybeStates.get(), bestKnownSolution);
         } else {
             // Set the values for Markovian "maybe" states
             STORM_LOG_ASSERT(markovianMaybeStates.getNumberOfSetBits() == markovianStatesModMaybeStates.getNumberOfSetBits(),
-                             "unexpected number of Markovian maybe states");
+                             "Unexpected number of Markovian maybe states");
             auto subStateIt = markovianStatesModMaybeStates.begin();
             for (auto const markovianState : markovianMaybeStates) {
                 result[markovianState] = (maybeStatesValuesLower[*subStateIt] + maybeStatesValuesUpper[*subStateIt]) / two;
