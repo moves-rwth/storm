@@ -56,7 +56,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 
     uint64_t newStateIndex = 0;
     uint64_t const violatedState = newStateIndex;
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         // The violated state is only used if we do no use the rejection semantics.
         ++newStateIndex;
     }
@@ -66,10 +66,10 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 
     unfoldedToOldNextStep[initialState] = actualInitialStates.getNextSetIndex(0);
 
-    uint64_t const resetDestination = options.rejectionSampling ? initialState : violatedState;  // Should be initial state for the standard semantics.
+    uint64_t const resetDestination = options.useRestartSemantics ? initialState : violatedState;  // Should be initial state for the standard semantics.
     storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, true, true);
 
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         // the violated state (only used when no rejection sampling) is a sink state
         transitionMatrixBuilder.newRowGroup(violatedState);
         transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
@@ -197,7 +197,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     storm::models::sparse::StateLabeling labeling(components.transitionMatrix.getRowGroupCount());
     labeling.addLabel("_goal");
     labeling.addLabelToState("_goal", targetState);
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         labeling.addLabel("_violated");
         labeling.addLabelToState("_violated", violatedState);
     }
@@ -223,8 +223,8 @@ void ObservationTraceUnfolder<ValueType>::reset(uint32_t observation) {
 }
 
 template<typename ValueType>
-bool ObservationTraceUnfolder<ValueType>::isRejectionSamplingSet() const {
-    return options.rejectionSampling;
+bool ObservationTraceUnfolder<ValueType>::isRestartSemanticsSet() const {
+    return options.useRestartSemantics;
 }
 
 template class ObservationTraceUnfolder<double>;

@@ -155,7 +155,7 @@ TEST(MonitorVerifier, ObservationMapEntries) {
     EXPECT_EQ(obsMap.size(), obsValues.size());
 }
 
-TEST(MonitorVerifier, RejectionSamplingHasNoSink) {
+TEST(MonitorVerifier, RestartSemanticsHasNoSink) {
     auto mc = buildSimpleMC();
     auto monitor = buildSimpleMonitor();
 
