@@ -94,10 +94,11 @@ class SparseMdpPrctlHelper {
         storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, bool qualitative,
         bool produceScheduler, ModelCheckerHint const& hint = ModelCheckerHint());
 
+    template<typename IntervalRewardType>
     static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                                 storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                 storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
-                                                                storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel,
+                                                                storm::models::sparse::StandardRewardModel<IntervalRewardType> const& intervalRewardModel,
                                                                 bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative);
 
     static std::vector<SolutionType> computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,

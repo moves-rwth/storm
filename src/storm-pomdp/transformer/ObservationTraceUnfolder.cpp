@@ -17,11 +17,6 @@ ObservationTraceUnfolder<ValueType>::ObservationTraceUnfolder(storm::models::spa
                                                               std::shared_ptr<storm::expressions::ExpressionManager>& exprManager,
                                                               ObservationTraceUnfolderOptions const& options)
     : model(model), risk(risk), exprManager(exprManager), options(options) {
-    // std::cout << "Starting observation trace unfolder with n obervations " << model.getNrObservations() << "\n";
-    // statesPerObservation = std::vector<storm::storage::BitVector>(model.getNrObservations() + 1, storm::storage::BitVector(model.getNumberOfStates()));
-    // for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
-    //     statesPerObservation[model.getObservation(state)].set(state, true);
-    // }
     svvar = exprManager->declareFreshIntegerVariable(false, "_s");
     tsvar = exprManager->declareFreshIntegerVariable(false, "_t");
 }
@@ -43,8 +38,6 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     }
     STORM_LOG_THROW(actualInitialStates.getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException,
                     "Must have unique initial state matching the observation");
-    // For this z* that only exists in the initial state, we now also define the states for this observation.
-    // statesPerObservation[model.getNrObservations()] = actualInitialStates;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
     std::cout << "build valution builder..\n";
@@ -63,7 +56,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 
     uint64_t newStateIndex = 0;
     uint64_t const violatedState = newStateIndex;
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         // The violated state is only used if we do no use the rejection semantics.
         ++newStateIndex;
     }
@@ -73,11 +66,10 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
 
     unfoldedToOldNextStep[initialState] = actualInitialStates.getNextSetIndex(0);
 
-    uint64_t const resetDestination = options.rejectionSampling ? initialState : violatedState;  // Should be initial state for the standard semantics.
+    uint64_t const resetDestination = options.useRestartSemantics ? initialState : violatedState;  // Should be initial state for the standard semantics.
     storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, true, true);
 
-    // TODO only add this state if it is actually reachable / rejection sampling
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         // the violated state (only used when no rejection sampling) is a sink state
         transitionMatrixBuilder.newRowGroup(violatedState);
         transitionMatrixBuilder.addNextValue(violatedState, violatedState, storm::utility::one<ValueType>());
@@ -205,7 +197,7 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     storm::models::sparse::StateLabeling labeling(components.transitionMatrix.getRowGroupCount());
     labeling.addLabel("_goal");
     labeling.addLabelToState("_goal", targetState);
-    if (!options.rejectionSampling) {
+    if (!options.useRestartSemantics) {
         labeling.addLabel("_violated");
         labeling.addLabelToState("_violated", violatedState);
     }
@@ -231,8 +223,8 @@ void ObservationTraceUnfolder<ValueType>::reset(uint32_t observation) {
 }
 
 template<typename ValueType>
-bool ObservationTraceUnfolder<ValueType>::isRejectionSamplingSet() const {
-    return options.rejectionSampling;
+bool ObservationTraceUnfolder<ValueType>::isRestartSemanticsSet() const {
+    return options.useRestartSemantics;
 }
 
 template class ObservationTraceUnfolder<double>;

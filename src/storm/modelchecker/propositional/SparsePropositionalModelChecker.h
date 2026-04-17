@@ -1,6 +1,7 @@
 #ifndef STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 #define STORM_MODELCHECKER_SPARSEPROPOSITIONALMODELCHECKER_H_
 
+#include "storm/adapters/IntervalForward.h"
 #include "storm/modelchecker/AbstractModelChecker.h"
 
 namespace storm {
@@ -8,28 +9,10 @@ namespace modelchecker {
 
 template<typename SparseModelType>
 class SparsePropositionalModelChecker : public AbstractModelChecker<SparseModelType> {
-   private:
-    // Due to a GCC bug we have to add this dummy template type here
-    // https://stackoverflow.com/questions/49707184/explicit-specialization-in-non-namespace-scope-does-not-compile-in-gcc
-    template<typename T, typename Dummy>
-    struct GetSolutionType {
-        using type = T;
-    };
-
-    template<typename Dummy>
-    struct GetSolutionType<storm::Interval, Dummy> {
-        using type = double;
-    };
-
-    template<typename Dummy>
-    struct GetSolutionType<storm::RationalInterval, Dummy> {
-        using type = storm::RationalNumber;
-    };
-
    public:
     typedef typename SparseModelType::ValueType ValueType;
     typedef typename SparseModelType::RewardModelType RewardModelType;
-    using SolutionType = typename GetSolutionType<ValueType, void>::type;
+    using SolutionType = IntervalBaseType<ValueType>;
 
     explicit SparsePropositionalModelChecker(SparseModelType const& model);
 

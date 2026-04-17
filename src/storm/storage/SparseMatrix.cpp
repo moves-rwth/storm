@@ -675,11 +675,11 @@ typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getRowGrou
     if (!this->hasTrivialRowGrouping()) {
         index_type result = 0;
         for (auto row : this->getRowGroupIndices(group)) {
-            result += (this->rowIndications[row + 1] - this->rowIndications[row]);
+            result += getRowEntryCount(row);
         }
         return result;
     } else {
-        return (this->rowIndications[group + 1] - this->rowIndications[group]);
+        return getRowEntryCount(group);
     }
 }
 

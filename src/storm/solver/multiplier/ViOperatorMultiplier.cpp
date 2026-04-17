@@ -229,7 +229,7 @@ void ViOperatorMultiplier<ValueType, TrivialRowGrouping, SolutionType>::multiply
     auto applyRobustDirection = [&]<storm::OptimizationDirection Dir, typename BT, typename OffsetType>(BT& backend, OffsetType const& offset) {
         bool robustUncertainty = false;
         if constexpr (storm::IsIntervalType<ValueType>) {
-            robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, dir);
+            robustUncertainty = isUncertaintyResolvedRobust(uncertaintyResolutionMode, Dir);
         }
 
         if (robustUncertainty) {
