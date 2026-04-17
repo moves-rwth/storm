@@ -1301,15 +1301,18 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
             auto initialStateBitVector = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
             initialStateBitVector.set(initialState, true);
             auto const conditionReachResult = helper::SparseMdpPrctlHelper<ValueType, ValueType>::computeUntilProbabilities(
-                env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, initialStateBitVector), transitionMatrix, transitionMatrix.transpose(true), storm::storage::BitVector(conditionStates.size(), true), conditionStates, false, true);
-            scheduler = std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
+                env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, initialStateBitVector), transitionMatrix,
+                transitionMatrix.transpose(true), storm::storage::BitVector(conditionStates.size(), true), conditionStates, false, true);
+            scheduler =
+                std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
             auto stateId = 0;
             for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
                 scheduler->setChoice(conditionReachResult.scheduler->getChoice(stateId), state);
                 ++stateId;
             }
         } else {
-            scheduler = std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
+            scheduler =
+                std::unique_ptr<storm::storage::Scheduler<SolutionType>>(new storm::storage::Scheduler<SolutionType>(transitionMatrix.getRowGroupCount()));
         }
         STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
