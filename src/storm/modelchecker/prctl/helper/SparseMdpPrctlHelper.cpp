@@ -3,7 +3,6 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -1087,15 +1086,6 @@ std::vector<SolutionType> SparseMdpPrctlHelper<ValueType, SolutionType>::compute
                    })
             .values;
     }
-}
-
-template<>
-std::vector<double> SparseMdpPrctlHelper<double>::computeReachabilityRewards(Environment const& env, storm::solver::SolveGoal<double>&&,
-                                                                             storm::storage::SparseMatrix<double> const&,
-                                                                             storm::storage::SparseMatrix<double> const&,
-                                                                             storm::models::sparse::StandardRewardModel<storm::RationalInterval> const&, bool,
-                                                                             storm::storage::BitVector const&, bool) {
-    STORM_LOG_THROW(false, storm::exceptions::IllegalFunctionCallException, "Computing reachability rewards is unsupported for this data type.");
 }
 
 struct QualitativeStateSetsReachabilityRewards {
