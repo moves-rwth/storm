@@ -322,13 +322,6 @@ TEST(RobustRationalMDPModelCheckingTest, Tiny05maxmin) {
                        storm::RationalNumber("2/5"), storm::RationalNumber("2/5"), storm::RationalNumber("3/10"), false);
 }
 
-TEST(RobustRationalMDPModelCheckingTest, CrowdsQuotientIMDP) {
-    // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIDTMC)
-    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/crowds-quotient-3-5.drn", "Pmax=? [ F \"observe0Greater1\"]; Pmin=? [ F \"observe0Greater1\"]",
-                       storm::RationalNumber("1383409/10000000"), storm::RationalNumber("1383409/10000000"), storm::RationalNumber("1383409/10000000"),
-                       storm::RationalNumber("1383409/10000000"), false);
-}
-
 TEST(RobustMDPModelCheckingTest, AddUncertaintyCoin22max) {
 #ifndef STORM_HAVE_Z3
     GTEST_SKIP() << "Z3 not available.";

@@ -237,7 +237,6 @@ template<typename ValueType, typename BeliefState>
 bool NondeterministicBeliefTracker<ValueType, BeliefState>::reset(uint32_t observation) {
     beliefs = std::unordered_set<BeliefState>();
     bool hit = false;
-    beliefs.clear();
     for (auto state : pomdp.getInitialStates()) {
         if (observation == pomdp.getObservation(state)) {
             hit = true;
