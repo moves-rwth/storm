@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Assumption.h"
-#include "Order.h"
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/SparseMatrix.h"
+
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/storage/ParameterRegion.h"
 
 namespace storm {
 namespace analysis {

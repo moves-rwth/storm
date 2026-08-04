@@ -1,12 +1,6 @@
 #pragma once
 
 #include <map>
-#include "Assumption.h"
-#include "AssumptionMaker.h"
-#include "LocalMonotonicityResult.h"
-#include "MonotonicityResult.h"
-#include "Order.h"
-#include "OrderExtender.h"
 
 #include "storm/logic/Formula.h"
 
@@ -23,6 +17,12 @@
 #include "storm/utility/constants.h"
 
 #include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionMaker.h"
+#include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
 
 namespace storm {
 namespace analysis {

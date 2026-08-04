@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Assumption.h"
-#include "AssumptionChecker.h"
-#include "Order.h"
-
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
+
+#include "storm-pars/modelchecker/region/monotonicity/Assumption.h"
+#include "storm-pars/modelchecker/region/monotonicity/AssumptionChecker.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
 
 namespace storm {
 namespace analysis {
