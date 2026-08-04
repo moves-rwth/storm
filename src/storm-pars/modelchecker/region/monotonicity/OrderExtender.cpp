@@ -45,9 +45,9 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector 
 
 template<typename ValueType, typename ConstantType>
 std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::computeInitialOrder(storm::storage::BitVector const& topStates,
-                                                                                    storm::storage::BitVector const& bottomStates,
-                                                                                    storm::storage::SparseMatrix<ValueType> const& matrix,
-                                                                                    bool addStatesWithDirectBoundaryTransition) {
+                                                                                   storm::storage::BitVector const& bottomStates,
+                                                                                   storm::storage::SparseMatrix<ValueType> const& matrix,
+                                                                                   bool addStatesWithDirectBoundaryTransition) {
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
 
@@ -331,7 +331,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             STORM_LOG_ASSERT(result.second == numberOfStates, "Expected both entries of result to be the sentinel value.");
             STORM_LOG_ASSERT(order->sortStates(&successors).size() == successors.size(), "Expected all successors to be sortable at this point.");
             STORM_LOG_ASSERT(order->contains(currentState) && order->getNode(currentState) != nullptr,
-                              "The current state should have been placed in the order.");
+                             "The current state should have been placed in the order.");
 
             if (monRes != nullptr) {
                 for (auto& param : occuringVariablesAtState[currentState]) {
@@ -397,7 +397,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         return extendByForwardReasoning(order, currentState, successors, allowMerge);
     } else {
         STORM_LOG_ASSERT(order->isTrivial(currentState) || !order->contains(currentState),
-                          "A non-trivial (SCC) state that is already in the order should use forward reasoning, not backward reasoning.");
+                         "A non-trivial (SCC) state that is already in the order should use forward reasoning, not backward reasoning.");
         // Do backward reasoning, all successor states must be in the order
         return extendByBackwardReasoning(order, currentState, successors, allowMerge);
     }
@@ -493,8 +493,8 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         }
     }
     STORM_LOG_ASSERT(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
-                          order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
-                      "The current state should have ended up strictly between top and bottom in the order.");
+                         order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
+                     "The current state should have ended up strictly between top and bottom in the order.");
     return {numberOfStates, numberOfStates};
 }
 
@@ -573,25 +573,23 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
             order->addRelation(s1, statesSorted[0], allowMerge);
             // Fallback checks statesSorted[0]: that's the element the addRelation call just above
             // related (and, if allowMerge applies, may have merged) s1 with.
-            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::ABOVE) ||
-                                  (allowMerge && (order->compare(s1, statesSorted[0]) == Order::SAME)),
-                              "Expected s1 to end up above (or, if merged, equal to) statesSorted[0].");
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[0]) == Order::SAME)),
+                             "Expected s1 to end up above (or, if merged, equal to) statesSorted[0].");
             order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
             STORM_LOG_ASSERT((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) ||
-                                  (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
-                              "Expected s1 to end up above (or, if merged, equal to) the lowest sorted successor.");
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Expected s1 to end up above (or, if merged, equal to) the lowest sorted successor.");
             order->addStateToHandle(s1);
         } else if (statesSorted[statesSorted.size() - 1] == currentState) {
             order->addRelation(statesSorted[0], s1, allowMerge);
             // Fallback checks statesSorted[0]: that's the element the addRelation call just above
             // related (and, if allowMerge applies, may have merged) s1 with.
-            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::BELOW) ||
-                                  (allowMerge && (order->compare(s1, statesSorted[0]) == Order::SAME)),
-                              "Expected s1 to end up below (or, if merged, equal to) statesSorted[0].");
+            STORM_LOG_ASSERT((order->compare(s1, statesSorted[0]) == Order::BELOW) || (allowMerge && (order->compare(s1, statesSorted[0]) == Order::SAME)),
+                             "Expected s1 to end up below (or, if merged, equal to) statesSorted[0].");
             order->addRelation(statesSorted[statesSorted.size() - 1], s1, allowMerge);
             STORM_LOG_ASSERT((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::BELOW) ||
-                                  (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
-                              "Expected s1 to end up below (or, if merged, equal to) the highest sorted successor.");
+                                 (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)),
+                             "Expected s1 to end up below (or, if merged, equal to) the highest sorted successor.");
             order->addStateToHandle(s1);
         } else {
             bool continueSearch = true;
@@ -614,8 +612,8 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
         return {s1, s2};
     }
     STORM_LOG_ASSERT(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
-                          order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
-                      "The current state should have ended up strictly between top and bottom in the order.");
+                         order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW,
+                     "The current state should have ended up strictly between top and bottom in the order.");
     return {numberOfStates, numberOfStates};
 }
 
@@ -724,8 +722,8 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Ord
     auto& ctx = context(order);
     ctx.usePLA = true;
     if (ctx.unknownStates.first != numberOfStates) {
-        ctx.continueExtending =
-            minValues[ctx.unknownStates.first] >= maxValues[ctx.unknownStates.second] || minValues[ctx.unknownStates.second] >= maxValues[ctx.unknownStates.first];
+        ctx.continueExtending = minValues[ctx.unknownStates.first] >= maxValues[ctx.unknownStates.second] ||
+                                minValues[ctx.unknownStates.second] >= maxValues[ctx.unknownStates.first];
     } else {
         ctx.continueExtending = true;
     }
@@ -744,7 +742,7 @@ void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order>
         ctx.continueExtending = false;
     } else if (ctx.unknownStates.first != numberOfStates) {
         ctx.continueExtending = minValues[ctx.unknownStates.first] >= ctx.maxValues[ctx.unknownStates.second] ||
-                                 minValues[ctx.unknownStates.second] >= ctx.maxValues[ctx.unknownStates.first];
+                                minValues[ctx.unknownStates.second] >= ctx.maxValues[ctx.unknownStates.first];
     } else {
         ctx.continueExtending = true;
     }
@@ -760,7 +758,7 @@ void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order>
         ctx.continueExtending = false;
     } else if (ctx.unknownStates.first != numberOfStates) {
         ctx.continueExtending = ctx.minValues[ctx.unknownStates.first] >= maxValues[ctx.unknownStates.second] ||
-                                 ctx.minValues[ctx.unknownStates.second] >= maxValues[ctx.unknownStates.first];
+                                ctx.minValues[ctx.unknownStates.second] >= maxValues[ctx.unknownStates.first];
     } else {
         ctx.continueExtending = true;
     }

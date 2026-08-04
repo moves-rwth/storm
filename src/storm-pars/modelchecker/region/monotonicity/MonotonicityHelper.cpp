@@ -78,8 +78,8 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(Environment cons
 
 /*** Public methods ***/
 template<typename ValueType, typename ConstantType>
-std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>,
-                                           std::vector<Assumption>>>
+std::map<std::shared_ptr<Order>,
+         std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<Assumption>>>
 MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
     if (usePLA) {
         storm::utility::Stopwatch plaWatch(true);

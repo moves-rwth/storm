@@ -61,9 +61,8 @@ class AssumptionMaker {
 
    private:
     std::pair<Assumption, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, expressions::RelationType relationType,
-                                                                      std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
-                                                                      std::vector<ConstantType> const minValues,
-                                                                      std::vector<ConstantType> const maxValue) const;
+                                                                     std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
+                                                                     std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
     AssumptionChecker<ValueType, ConstantType> assumptionChecker;
 };

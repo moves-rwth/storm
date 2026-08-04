@@ -129,9 +129,9 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(Assu
 
 template<typename ValueType, typename ConstantType>
 AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(Assumption const& assumption, std::shared_ptr<Order> order,
-                                                                                          storage::ParameterRegion<ValueType> region,
-                                                                                          std::vector<ConstantType> const minValues,
-                                                                                          std::vector<ConstantType> const maxValues) const {
+                                                                                         storage::ParameterRegion<ValueType> region,
+                                                                                         std::vector<ConstantType> const minValues,
+                                                                                         std::vector<ConstantType> const maxValues) const {
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
     uint_fast64_t val1 = assumption.state1;

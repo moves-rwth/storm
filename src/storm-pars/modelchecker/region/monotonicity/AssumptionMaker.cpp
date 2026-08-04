@@ -29,10 +29,10 @@ std::vector<std::pair<Assumption, AssumptionStatus>> AssumptionMaker<ValueType, 
         result.push_back(assumption);
         if (assumption.second == AssumptionStatus::VALID) {
             STORM_LOG_ASSERT(createAndCheckAssumption(val2, val1, expressions::RelationType::Greater, order, region, minValues, maxValues).second !=
-                                      AssumptionStatus::VALID &&
-                                  createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
-                                      AssumptionStatus::VALID,
-                              "At most one of the three candidate assumptions may be valid.");
+                                     AssumptionStatus::VALID &&
+                                 createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
+                                     AssumptionStatus::VALID,
+                             "At most one of the three candidate assumptions may be valid.");
             STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
             return result;
         }
@@ -43,9 +43,9 @@ std::vector<std::pair<Assumption, AssumptionStatus>> AssumptionMaker<ValueType, 
         if (assumption.second == AssumptionStatus::VALID) {
             result.clear();
             result.push_back(assumption);
-            STORM_LOG_ASSERT(createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second !=
-                                  AssumptionStatus::VALID,
-                              "At most one of the three candidate assumptions may be valid.");
+            STORM_LOG_ASSERT(
+                createAndCheckAssumption(val1, val2, expressions::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID,
+                "At most one of the three candidate assumptions may be valid.");
             STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
             return result;
         }

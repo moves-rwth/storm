@@ -29,7 +29,7 @@ Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVect
     }
     STORM_LOG_ASSERT(numberOfAddedStates <= numberOfStates, "More states were added to the order than it has room for.");
     STORM_LOG_ASSERT(doneStates.getNumberOfSetBits() == (topStates.getNumberOfSetBits() + bottomStates.getNumberOfSetBits()),
-                      "Number of done states does not match the number of given top and bottom states.");
+                     "Number of done states does not match the number of given top and bottom states.");
     if (numberOfAddedStates == numberOfStates) {
         doneBuilding = doneStates.full();
     }
@@ -368,7 +368,7 @@ Order::Node* Order::getBottom() const {
 
 bool Order::getDoneBuilding() const {
     STORM_LOG_ASSERT(!doneStates.full() || numberOfAddedStates == numberOfStates,
-                      "All states are marked done, but not all states have been added to the order.");
+                     "All states are marked done, but not all states have been added to the order.");
     return doneStates.full();
 }
 
@@ -501,8 +501,8 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
         s2 = numberOfStates;
     }
     STORM_LOG_ASSERT(s1 == numberOfStates || (s1 != numberOfStates && s2 == numberOfStates && statesSorted.size() == states.size()) ||
-                          (s1 != numberOfStates && s2 != numberOfStates && statesSorted.size() < states.size()),
-                      "Inconsistent result: (s1, s2) and the number of sorted states must agree on how far sorting got.");
+                         (s1 != numberOfStates && s2 != numberOfStates && statesSorted.size() < states.size()),
+                     "Inconsistent result: (s1, s2) and the number of sorted states must agree on how far sorting got.");
 
     return {{s1, s2}, statesSorted};
 }
