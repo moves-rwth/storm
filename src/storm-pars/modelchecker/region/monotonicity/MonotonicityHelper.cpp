@@ -196,12 +196,10 @@ template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
                                                                              std::vector<Assumption> assumptions,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    // Explicit worklist instead of recursion: each unresolved (val1, val2) pair can spawn up to
-    // three independent branches (one per candidate assumption), and pathological pMCs can chain
-    // enough of these to overflow the C++ call stack if done recursively. The branches are pushed
-    // in reverse so popping (LIFO) visits them in the same left-to-right order the original
-    // recursion did; that's not required for correctness (branches share no mutable state) but
-    // keeps behavior close to before while validating this change.
+    // Algorithm 2 spawns up to three branches per unresolved (val1, val2) pair, one per candidate
+    // assumption. The worklist keeps this iterative so that pMCs chaining many such ambiguities
+    // cannot overflow the call stack. Branches are pushed in reverse so popping (LIFO) visits
+    // them depth-first, left to right.
     struct PendingBranch {
         std::shared_ptr<Order> order;
         uint_fast64_t val1;
@@ -251,11 +249,10 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
         }
         STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
 
-        // Prepare branches in forward order, exactly mirroring the original recursion's execution
-        // order: candidates 0..size-2 each get an independent copy of current.order/monRes (so
-        // extending one cannot affect another), while the last candidate reuses
-        // current.order/monRes in place. That in-place mutation must happen last, after every
-        // other candidate has already taken its copy from the still-pristine original.
+        // Candidates 0..size-2 each get an independent copy of current.order/monRes, so extending
+        // one cannot affect another; the last candidate reuses current.order/monRes in place.
+        // That in-place mutation must happen last, after every other candidate has already taken
+        // its copy from the still-pristine original.
         std::vector<PendingBranch> preparedBranches;
         preparedBranches.reserve(newAssumptions.size());
         for (size_t i = 0; i < newAssumptions.size(); ++i) {
@@ -274,8 +271,8 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
             preparedBranches.push_back(
                 {std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::move(branchAssumptions), branchMonRes});
         }
-        // Push in reverse so the first-prepared branch ends up on top of the stack and is explored
-        // first, matching the original left-to-right visitation order.
+        // Pushed in reverse so the first-prepared branch ends up on top of the stack and is
+        // explored first, i.e., depth-first, left to right.
         for (auto it = preparedBranches.rbegin(); it != preparedBranches.rend(); ++it) {
             worklist.push_back(std::move(*it));
         }

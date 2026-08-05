@@ -202,8 +202,6 @@ void Order::addBetween(uint_fast64_t state, Node* above, Node* below) {
 }
 
 void Order::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
-    // No compare(above, below) == ABOVE check here: addBetween(state, Node*, Node*) below checks
-    // that itself (and is also called directly by other sites, so it can't drop that check).
     STORM_LOG_ASSERT(getNode(below)->states.find(below) != getNode(below)->states.end(), "State " << below << " is not in its own node.");
     STORM_LOG_ASSERT(getNode(above)->states.find(above) != getNode(above)->states.end(), "State " << above << " is not in its own node.");
 
@@ -340,10 +338,9 @@ Order::NodeComparison Order::compare(Node* node1, Node* node2, NodeComparison hy
             return comp;
         }
         if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && above(node1, node2)) {
-            // Deliberately no assertion here that above(node2, node1) doesn't also hold: mergeNodes's
-            // own O(n^2) revalidation loop calls compare(i, j) and compare(j, i) on every pair
-            // specifically to detect and gracefully reject merges that would produce this kind of
-            // mutual-above inconsistency; that detection must be allowed to complete undisturbed.
+            // This does not require !above(node2, node1): mergeNodes calls compare() on every
+            // pair in both directions to detect exactly that antisymmetry violation and reject
+            // the merge, so this function must tolerate it transiently rather than fail here.
             return ABOVE;
         }
 

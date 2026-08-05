@@ -374,10 +374,6 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
                 }
             }
         }
-        // No postcondition check here: every path through the else-branch above either `continue`s
-        // or `return`s, so this point is only ever reached via the success branch, which already
-        // checked (at line ~332) that successors are sortable, with nothing since then that could
-        // have changed that.
     }
 
     STORM_LOG_ASSERT(order->getDoneBuilding(), "Expected the order to be fully built at this point.");

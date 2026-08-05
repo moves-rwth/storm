@@ -109,8 +109,8 @@ void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> or
 
     // Per-in-progress-order bookkeeping used while extending an order (PLA bounds, whether PLA is
     // usable/worth continuing, and the pair of states this order got stuck on, if any). Keyed by
-    // weak_ptr rather than shared_ptr so that this bookkeeping does not itself keep an order alive
-    // or inflate its use_count() while it is still being extended.
+    // weak_ptr so this bookkeeping neither keeps an order alive nor inflates its use_count()
+    // while the order is still being extended.
     struct Context {
         std::vector<ConstantType> minValues;
         std::vector<ConstantType> maxValues;
