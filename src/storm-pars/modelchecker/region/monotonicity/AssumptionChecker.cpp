@@ -115,6 +115,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
 template<typename ValueType, typename ConstantType>
 AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(Assumption const& assumption) const {
+    STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Greater || assumption.relation == expressions::RelationType::Equal,
+                      "Only Greater or Equal assumptions are supported.");
     auto result = AssumptionStatus::UNKNOWN;
     for (auto const& values : samples) {
         bool holds = assumption.relation == expressions::RelationType::Greater ? values[assumption.state1] > values[assumption.state2]
