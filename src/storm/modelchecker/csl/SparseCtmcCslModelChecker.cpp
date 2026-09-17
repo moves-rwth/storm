@@ -94,11 +94,12 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());
     ExplicitQualitativeCheckResult<ValueType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<ValueType>();
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeGloballyProbabilities(
-                                               env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), probabilisticTransitions,
-                                               probabilisticTransitions.transpose(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet())
-                                               .values;
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeGloballyProbabilities(
+        env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), probabilisticTransitions, probabilisticTransitions.transpose(),
+        subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
+    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(ret.values));
+    result->setBounds(std::move(ret.solutionBounds));
+    return result;
 }
 
 template<typename SparseCtmcModelType>
