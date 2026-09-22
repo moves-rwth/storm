@@ -30,7 +30,6 @@ struct DeterministicSparseModelCheckingHelperReturnType {
     // The values computed for the states.
     std::vector<ValueType> values;
 
-    // Sound bounds on the values, if the algorithm that computed them provided any.
     storm::solver::SolutionBounds<ValueType> solutionBounds;
 };
 

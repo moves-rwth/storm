@@ -65,8 +65,6 @@ std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(
 
     // If the time bounds are [0, inf], we rather call untimed reachability.
     if (storm::utility::isZero(lowerBound) && !upperBound) {
-        // Bounded until does not report bounds on its values, so only the values are taken here. Note that the
-        // remaining cases go through uniformization, which does not produce any.
         return computeUntilProbabilities(env, std::move(goal), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative).values;
     }
 
