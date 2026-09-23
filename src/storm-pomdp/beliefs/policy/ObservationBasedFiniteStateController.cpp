@@ -1,15 +1,64 @@
 #include "ObservationBasedFiniteStateController.h"
 
 #include <algorithm>
+#include <ostream>
+#include <unordered_set>
 #include <utility>
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/Distribution.h"
+#include "storm/storage/valuations/Valuations.h"
+#include "storm/storage/valuations/ValuationsStorage.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm::pomdp::policy {
+
+ObservationSignature ObservationSignature::fromValuations(storm::storage::sparse::Valuations const& observationValuations, uint64_t const observationId) {
+    ObservationSignature result;
+    observationValuations.getStorage().readCallback(observationId, [&result](auto, auto const& variable, auto&& rawValue) {
+        using RawValue = std::remove_cvref_t<decltype(rawValue)>;
+        if constexpr (std::is_same_v<RawValue, std::nullopt_t>) {
+            result.values.emplace(variable.getName(), std::monostate{});
+        } else if constexpr (std::is_same_v<RawValue, std::string_view>) {
+            result.values.emplace(variable.getName(), std::string(rawValue));
+        } else if constexpr (std::is_same_v<RawValue, storm::NumberTraits<storm::RationalNumber>::IntegerType>) {
+            result.values.emplace(variable.getName(), storm::RationalNumber(rawValue));
+        } else {
+            result.values.emplace(variable.getName(), std::forward<decltype(rawValue)>(rawValue));
+        }
+    });
+    return result;
+}
+
+static std::string escapeDotLabel(std::string const& label) {
+    std::string result;
+    result.reserve(label.size());
+    for (char character : label) {
+        switch (character) {
+            case '\\':
+                result += "\\\\";
+                break;
+            case '"':
+                result += "\\\"";
+                break;
+            case '\n':
+                result += "\\n";
+                break;
+            case '\r':
+                result += "\\r";
+                break;
+            case '\t':
+                result += "\\t";
+                break;
+            default:
+                result += character;
+                break;
+        }
+    }
+    return result;
+}
 
 template<typename ValueType>
 ObservationBasedFiniteStateController<ValueType>::ObservationBasedFiniteStateController(uint64_t const initialNode) : initialNodeId(initialNode) {
@@ -18,9 +67,9 @@ ObservationBasedFiniteStateController<ValueType>::ObservationBasedFiniteStateCon
 
 template<typename ValueType>
 ObservationBasedFiniteStateController<ValueType>::ObservationBasedFiniteStateController(
-    uint64_t const initialNode, std::optional<std::unordered_map<uint64_t, std::string>> idToObservationNameMap,
+    uint64_t const initialNode, std::optional<std::unordered_map<uint64_t, ObservationSignature>> idToObservationSignatureMap,
     std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>> idToActionNameMap)
-    : initialNodeId(initialNode), idToObservationName(std::move(idToObservationNameMap)), idToActionName(std::move(idToActionNameMap)) {
+    : initialNodeId(initialNode), idToObservationSignature(std::move(idToObservationSignatureMap)), idToActionName(std::move(idToActionNameMap)) {
     // Intentionally left empty
 }
 
@@ -85,8 +134,9 @@ storm::storage::Distribution<ValueType, uint64_t> ObservationBasedFiniteStateCon
 }
 
 template<typename ValueType>
-void ObservationBasedFiniteStateController<ValueType>::setIdToObservationNameMap(std::unordered_map<uint64_t, std::string> const& idToObservationNameMap) {
-    idToObservationName = idToObservationNameMap;
+void ObservationBasedFiniteStateController<ValueType>::setIdToObservationSignatureMap(
+    std::unordered_map<uint64_t, ObservationSignature> const& idToObservationSignatureMap) {
+    idToObservationSignature = idToObservationSignatureMap;
 }
 
 template<typename ValueType>
@@ -96,11 +146,11 @@ void ObservationBasedFiniteStateController<ValueType>::setIdToActionNameMap(
 }
 
 template<typename ValueType>
-std::string ObservationBasedFiniteStateController<ValueType>::getObservationName(uint64_t const observationId) const {
-    STORM_LOG_ASSERT(idToObservationName, "idToObservationName is not set.");
-    STORM_LOG_ASSERT(!idToObservationName->empty(), "idToObservationName is empty.");
-    STORM_LOG_ASSERT(idToObservationName->contains(observationId), "Observation ID " << observationId << " not found.");
-    return idToObservationName->at(observationId);
+ObservationSignature const& ObservationBasedFiniteStateController<ValueType>::getObservationSignature(uint64_t const observationId) const {
+    STORM_LOG_ASSERT(idToObservationSignature, "idToObservationSignature is not set.");
+    STORM_LOG_ASSERT(!idToObservationSignature->empty(), "idToObservationSignature is empty.");
+    STORM_LOG_ASSERT(idToObservationSignature->contains(observationId), "Observation ID " << observationId << " not found.");
+    return idToObservationSignature->at(observationId);
 }
 
 template<typename ValueType>
@@ -112,12 +162,12 @@ std::string ObservationBasedFiniteStateController<ValueType>::getActionName(uint
 }
 
 template<typename ValueType>
-std::optional<uint64_t> ObservationBasedFiniteStateController<ValueType>::getObservationIdByName(std::string const& observationName) const {
-    if (!idToObservationName) {
+std::optional<uint64_t> ObservationBasedFiniteStateController<ValueType>::getObservationIdBySignature(ObservationSignature const& observationSignature) const {
+    if (!idToObservationSignature) {
         return std::nullopt;
     }
-    for (auto const& [observationId, name] : *idToObservationName) {
-        if (name == observationName) {
+    for (auto const& [observationId, signature] : *idToObservationSignature) {
+        if (signature == observationSignature) {
             return observationId;
         }
     }
@@ -181,8 +231,8 @@ uint64_t ObservationBasedFiniteStateController<ValueType>::getInitialNodeId() co
 }
 
 template<typename ValueType>
-bool ObservationBasedFiniteStateController<ValueType>::hasIdToObservationNameMap() const {
-    return static_cast<bool>(idToObservationName);
+bool ObservationBasedFiniteStateController<ValueType>::hasIdToObservationSignatureMap() const {
+    return static_cast<bool>(idToObservationSignature);
 }
 
 template<typename ValueType>
@@ -197,8 +247,8 @@ std::string ObservationBasedFiniteStateController<ValueType>::toString() const {
     for (auto const& [originId, actionOutputMap] : transitions) {
         result += "Node " + std::to_string(originId) + ":\n";
         for (auto const& [observationId, outputUpdatePtr] : actionOutputMap) {
-            if (idToObservationName) {
-                result += "(" + std::to_string(observationId) + ")" + idToObservationName->at(observationId) + " -> ";
+            if (idToObservationSignature && idToObservationSignature->contains(observationId)) {
+                result += "(" + std::to_string(observationId) + ")" + observationSignatureToString(idToObservationSignature->at(observationId)) + " -> ";
             } else {
                 result += std::to_string(observationId) + " -> ";
             }
@@ -206,7 +256,7 @@ std::string ObservationBasedFiniteStateController<ValueType>::toString() const {
                 result += "({ ";
                 for (auto randomisedOutputUpdatePtr = std::static_pointer_cast<RandomisedActionUpdate<ValueType>>(outputUpdatePtr);
                      auto const& [actionId, prob] : randomisedOutputUpdatePtr->actionDistribution) {
-                    if (idToActionName) {
+                    if (idToActionName && idToActionName->contains(observationId) && idToActionName->at(observationId).contains(actionId)) {
                         result += "(" + std::to_string(actionId) + ") " + idToActionName->at(observationId).at(actionId) + " : " +
                                   storm::utility::to_string(prob) + ", ";
                     } else {
@@ -217,7 +267,8 @@ std::string ObservationBasedFiniteStateController<ValueType>::toString() const {
             } else {
                 auto deterministicOutputUpdatePtr = std::static_pointer_cast<DeterministicActionUpdate>(outputUpdatePtr);
                 result += "(";
-                if (idToActionName) {
+                if (idToActionName && idToActionName->contains(observationId) &&
+                    idToActionName->at(observationId).contains(deterministicOutputUpdatePtr->action)) {
                     result += "(" + std::to_string(deterministicOutputUpdatePtr->action) + ") " +
                               idToActionName->at(observationId).at(deterministicOutputUpdatePtr->action) + ", " +
                               std::to_string(outputUpdatePtr->nextMemoryNode) + ")\n";
@@ -245,8 +296,8 @@ void ObservationBasedFiniteStateController<ValueType>::writeDotToStream(std::ost
         for (auto const& [observationId, outputUpdatePtr] : actionOutputMap) {
             nodes.insert(outputUpdatePtr->nextMemoryNode);
             outStream << "\t" << originId << " -> " << outputUpdatePtr->nextMemoryNode << " [label=\"";
-            if (idToObservationName && idToObservationName->contains(observationId)) {
-                outStream << getObservationName(observationId);
+            if (idToObservationSignature && idToObservationSignature->contains(observationId)) {
+                outStream << escapeDotLabel(observationSignatureToString(getObservationSignature(observationId)));
             } else {
                 outStream << observationId;
             }
@@ -261,7 +312,7 @@ void ObservationBasedFiniteStateController<ValueType>::writeDotToStream(std::ost
                     }
                     first = false;
                     if (idToActionName && idToActionName->contains(observationId) && idToActionName->at(observationId).contains(actionId)) {
-                        outStream << idToActionName->at(observationId).at(actionId);
+                        outStream << escapeDotLabel(idToActionName->at(observationId).at(actionId));
                     } else {
                         outStream << actionId;
                     }
@@ -271,7 +322,7 @@ void ObservationBasedFiniteStateController<ValueType>::writeDotToStream(std::ost
             } else {
                 auto const& detActionUpdate = dynamic_cast<DeterministicActionUpdate const&>(*outputUpdatePtr);
                 if (idToActionName && idToActionName->contains(observationId) && idToActionName->at(observationId).contains(detActionUpdate.action)) {
-                    outStream << idToActionName->at(observationId).at(detActionUpdate.action);
+                    outStream << escapeDotLabel(idToActionName->at(observationId).at(detActionUpdate.action));
                 } else {
                     outStream << detActionUpdate.action;
                 }
@@ -321,8 +372,42 @@ void ObservationBasedFiniteStateController<ValueType>::writeJsonToStream(std::os
                 auto const& update = *transitions.at(nodeId).at(observationId);
                 storm::json<ValueType> transition;
                 transition["observation"]["id"] = observationId;
-                if (idToObservationName && idToObservationName->contains(observationId)) {
-                    transition["observation"]["name"] = idToObservationName->at(observationId);
+                if (idToObservationSignature && idToObservationSignature->contains(observationId)) {
+                    auto& signatureJson = transition["observation"]["signature"];
+                    signatureJson = storm::json<ValueType>::array();
+                    for (auto const& [observable, value] : idToObservationSignature->at(observationId).values) {
+                        storm::json<ValueType> observableJson;
+                        observableJson["name"] = observable;
+                        std::visit(
+                            [&observableJson](auto const& typedValue) {
+                                using TypedValue = std::decay_t<decltype(typedValue)>;
+                                if constexpr (std::is_same_v<TypedValue, std::monostate>) {
+                                    observableJson["type"] = "unset";
+                                    observableJson["value"] = nullptr;
+                                } else if constexpr (std::is_same_v<TypedValue, storm::RationalNumber>) {
+                                    observableJson["type"] = "rational";
+                                    observableJson["value"] = storm::utility::to_string(typedValue);
+                                } else if constexpr (std::is_same_v<TypedValue, bool>) {
+                                    observableJson["type"] = "boolean";
+                                    observableJson["value"] = typedValue;
+                                } else if constexpr (std::is_same_v<TypedValue, uint64_t>) {
+                                    observableJson["type"] = "unsigned-integer";
+                                    observableJson["value"] = typedValue;
+                                } else if constexpr (std::is_same_v<TypedValue, int64_t>) {
+                                    observableJson["type"] = "integer";
+                                    observableJson["value"] = typedValue;
+                                } else if constexpr (std::is_same_v<TypedValue, double>) {
+                                    observableJson["type"] = "double";
+                                    observableJson["value"] = typedValue;
+                                } else {
+                                    static_assert(std::is_same_v<TypedValue, std::string>);
+                                    observableJson["type"] = "string";
+                                    observableJson["value"] = typedValue;
+                                }
+                            },
+                            value);
+                        signatureJson.push_back(std::move(observableJson));
+                    }
                 }
                 transition["successor"] = update.nextMemoryNode;
                 transition["actions"] = storm::json<ValueType>::array();

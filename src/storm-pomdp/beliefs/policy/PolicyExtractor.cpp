@@ -32,24 +32,24 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
 ObservationBasedFiniteStateController<PolicyValueType>
 PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::exportPolicyAsFiniteStateController() const {
-    std::optional<std::unordered_map<uint64_t, std::string>> optionalIdToObservationName = std::nullopt;
+    std::optional<std::unordered_map<uint64_t, ObservationSignature>> optionalIdToObservationSignature = std::nullopt;
     std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>> optionalIdToActionNameMap = std::nullopt;
     if (pomdp.hasObservationValuations()) {
         auto const& obsValuations = pomdp.getObservationValuations();
-        std::unordered_map<uint64_t, std::string> idToObservationNameMap;
-        std::unordered_set<std::string> usedObservationNames;
-        bool observationNamesAreUnique = true;
+        std::unordered_map<uint64_t, ObservationSignature> idToObservationSignatureMap;
+        std::vector<ObservationSignature> usedObservationSignatures;
+        bool observationSignaturesAreUnique = true;
         for (uint64_t i = 0; i < pomdp.getNrObservations(); ++i) {
-            std::string obsName = obsValuations.toString(i, true);
-            std::ranges::replace(obsName, '\t', ' ');
-            if (obsName == "[]" || obsName.empty() || !usedObservationNames.insert(obsName).second) {
-                observationNamesAreUnique = false;
+            auto observationSignature = ObservationSignature::fromValuations(obsValuations, i);
+            if (observationSignature.values.empty() || std::ranges::find(usedObservationSignatures, observationSignature) != usedObservationSignatures.end()) {
+                observationSignaturesAreUnique = false;
                 break;
             }
-            idToObservationNameMap[i] = obsName;
+            usedObservationSignatures.push_back(observationSignature);
+            idToObservationSignatureMap[i] = std::move(observationSignature);
         }
-        if (observationNamesAreUnique) {
-            optionalIdToObservationName = idToObservationNameMap;
+        if (observationSignaturesAreUnique) {
+            optionalIdToObservationSignature = std::move(idToObservationSignatureMap);
         }
     }
     if (pomdp.hasChoiceLabeling()) {
@@ -76,7 +76,7 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
         }
         optionalIdToActionNameMap = idToActionNameMap;
     }
-    ObservationBasedFiniteStateController<PolicyValueType> fsc(0ul, optionalIdToObservationName, optionalIdToActionNameMap);
+    ObservationBasedFiniteStateController<PolicyValueType> fsc(0ul, optionalIdToObservationSignature, optionalIdToActionNameMap);
 
     std::unordered_map<uint64_t, uint64_t> beliefStateToFscNodeMap;
     std::unordered_map<uint64_t, uint64_t> cutoffPolicyToFscNodeMap;

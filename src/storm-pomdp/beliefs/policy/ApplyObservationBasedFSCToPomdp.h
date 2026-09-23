@@ -8,18 +8,17 @@
 namespace storm {
 namespace pomdp::policy {
 template<typename PomdpValueType>
-std::string getObservationName(storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, uint64_t const observationId) {
-    std::string observationName = pomdp.getObservationValuations().toString(observationId, true);
-    std::ranges::replace(observationName, '\t', ' ');
-    return observationName;
+ObservationSignature getObservationSignature(storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, uint64_t const observationId) {
+    return ObservationSignature::fromValuations(pomdp.getObservationValuations(), observationId);
 }
 
 /**
  * Applies an observation-based finite-state controller to a POMDP and constructs the induced DTMC.
  *
- * States of the resulting DTMC represent reachable pairs of a POMDP state and an FSC memory node. If the FSC provides observation or action names, they
- * are used to match its outputs to the POMDP; otherwise, the corresponding numeric IDs are assumed to agree. State and state-action rewards are preserved,
- * while transition rewards are ignored.
+ * States of the resulting DTMC represent reachable pairs of a POMDP state and an FSC memory node. If the FSC provides observation signatures or action
+ * names, they are used to match its outputs to the POMDP; otherwise, the corresponding numeric IDs are assumed to agree. Observation signatures match
+ * observable names and typed values, so the observable-storage order need not agree. State and state-action rewards are preserved, while transition
+ * rewards are ignored.
  *
  * @tparam PomdpValueType The type used for probabilities and rewards in the POMDP and resulting DTMC.
  * @tparam FscValueType The type used for probabilities in randomised FSC action outputs.
@@ -51,17 +50,18 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
 
     std::optional<std::unordered_map<uint64_t, uint64_t>> pomdpObservationIdToFscObservationId = std::nullopt;
     std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>>> fscActionIdToPomdpActionIdMap = std::nullopt;
-    // If the POMDP and FSC have naming information, use it to create mappings between actions and observations.
+    // If the POMDP and FSC have matching metadata, use it to create mappings between actions and observations.
     // Otherwise, we assume that IDs correspond directly.
-    if (fsc.hasIdToObservationNameMap()) {
+    if (fsc.hasIdToObservationSignatureMap()) {
         STORM_LOG_THROW(pomdp.hasObservationValuations(), storm::exceptions::UnexpectedException,
-                        "The FSC uses observation names, but the POMDP has no observation valuations. Cannot apply the FSC robustly.");
+                        "The FSC uses observation signatures, but the POMDP has no observation valuations. Cannot apply the FSC robustly.");
         std::unordered_map<uint64_t, uint64_t> observationMap;
         for (uint64_t pomdpObservationId = 0; pomdpObservationId < pomdp.getNrObservations(); ++pomdpObservationId) {
-            auto const observationName = getObservationName(pomdp, pomdpObservationId);
-            auto fscObservationId = fsc.getObservationIdByName(observationName);
+            auto const observationSignature = getObservationSignature(pomdp, pomdpObservationId);
+            auto fscObservationId = fsc.getObservationIdBySignature(observationSignature);
             STORM_LOG_THROW(fscObservationId.has_value(), storm::exceptions::UnexpectedException,
-                            "Could not map POMDP observation " << pomdpObservationId << " (" << observationName << ") to an FSC observation.");
+                            "Could not map POMDP observation " << pomdpObservationId << " (" << observationSignatureToString(observationSignature)
+                                                               << ") to an FSC observation.");
             observationMap[pomdpObservationId] = *fscObservationId;
         }
         pomdpObservationIdToFscObservationId = std::move(observationMap);

@@ -55,8 +55,9 @@ class PolicyExtractor {
     /**
      * Constructs an observation-based finite-state controller from the belief-MDP scheduler.
      *
-     * Available observation valuations and choice labels are included as names when they provide suitable mappings. Approximation schedulers are encoded
-     * as self-looping controller nodes for truncated belief states.
+     * Available observation valuations and choice labels are included as matching metadata when they provide suitable mappings. Observation valuations are
+     * exported as typed signatures, so they can be matched against an equivalent POMDP with a different observable-storage order. Approximation schedulers
+     * are encoded as self-looping controller nodes for truncated belief states.
      *
      * @return The extracted finite-state controller.
      */

@@ -1,12 +1,68 @@
 #pragma once
-#include "storm/utility/constants.h"
+
+#include <cstdint>
+#include <iosfwd>
+#include <map>
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <variant>
+
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/storage/Distribution.h"
 
 namespace storm {
-namespace storage {
-template<typename ValueType, typename StateType>
-class Distribution;
+namespace storage::sparse {
+class Valuations;
 }
 namespace pomdp::policy {
+
+/** A typed value assigned to an observable in an observation signature. */
+using ObservationValue = std::variant<std::monostate, bool, uint64_t, int64_t, double, storm::RationalNumber, std::string>;
+
+/**
+ * Identifies an observation by its observable names and typed values.
+ *
+ * std::monostate represents an unset optional observable. The ordered mapping makes signatures
+ * independent of the order in which a POMDP stores its observables.
+ */
+struct ObservationSignature {
+    std::map<std::string, ObservationValue> values;
+
+    /** Builds a signature from a POMDP observation valuation. */
+    static ObservationSignature fromValuations(storm::storage::sparse::Valuations const& observationValuations, uint64_t observationId);
+
+    bool operator==(ObservationSignature const&) const = default;
+};
+
+/** Creates a human-readable representation of an observation signature. */
+inline std::string observationSignatureToString(ObservationSignature const& signature) {
+    std::stringstream stream;
+    stream << "[";
+    bool first = true;
+    for (auto const& [observable, value] : signature.values) {
+        if (!first) {
+            stream << "\t& ";
+        }
+        first = false;
+        stream << observable << "=";
+        std::visit(
+            [&stream](auto const& typedValue) {
+                using TypedValue = std::decay_t<decltype(typedValue)>;
+                if constexpr (std::is_same_v<TypedValue, std::monostate>) {
+                    stream << "none";
+                } else {
+                    stream << typedValue;
+                }
+            },
+            value);
+    }
+    return stream.str() + "]";
+}
 
 /**
  * Describes the successor memory node selected by an FSC output update.
@@ -56,11 +112,14 @@ struct DeterministicActionUpdate final : FSCOutputUpdate {
 
 /**
  * A finite-state controller (FSC) for POMDPs that bases its decisions on observations.
- * Each node in the FSC corresponds to a memory state, and for each observation received in that node,
- * the FSC specifies an action to take and the successor node to transition to.
+ * Each node in the FSC corresponds to a memory state. For every node-observation pair for which the FSC
+ * defines an output, it specifies an action to take and the successor node to transition to. An FSC is generally
+ * partial: outputs need not be defined for every observation in every memory node. As the controller does
+ * not itself store the observation universe, it cannot determine whether it is complete for a particular
+ * POMDP. Use hasOutputForObservationInNode() to check a node-observation pair before retrieving its output.
  * Observation and action IDs do not need to be continuously numbered, e.g. if the FSC stems from a belief MDP where some observations and actions are not
- * used. Action IDs correspond to local action indices for the respective observation. Optional mappings from IDs to names allow the controller to be
- * applied to POMDPs whose numeric IDs differ.
+ * used. Action IDs correspond to local action indices for the respective observation. Optional observation signatures and action-name mappings allow the
+ * controller to be applied to POMDPs whose numeric IDs differ.
  *
  * @tparam ValueType The type used for probabilities in randomised action distributions.
  */
@@ -77,13 +136,13 @@ class ObservationBasedFiniteStateController {
     explicit ObservationBasedFiniteStateController(uint64_t initialNode);
 
     /**
-     * Constructs an empty controller with an initial memory node and optional names for observations and actions.
+     * Constructs an empty controller with an initial memory node and optional signatures for observations and names for actions.
      *
      * @param initialNode The ID of the initial memory node.
-     * @param idToObservationNameMap A mapping from observation IDs to names, or no mapping if observations are identified only by their IDs.
+     * @param idToObservationSignatureMap A mapping from observation IDs to signatures, or no mapping if observations are identified only by their IDs.
      * @param idToActionNameMap For each observation ID, a mapping from local action IDs to names, or no mapping if actions are identified only by their IDs.
      */
-    ObservationBasedFiniteStateController(uint64_t initialNode, std::optional<std::unordered_map<uint64_t, std::string>> idToObservationNameMap,
+    ObservationBasedFiniteStateController(uint64_t initialNode, std::optional<std::unordered_map<uint64_t, ObservationSignature>> idToObservationSignatureMap,
                                           std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>> idToActionNameMap);
 
     /**
@@ -141,6 +200,8 @@ class ObservationBasedFiniteStateController {
 
     /**
      * Checks whether an output is defined for an observation in a memory node.
+     * This allows callers to handle a partial FSC, whose unspecified node-observation pairs have no action
+     * or successor memory node.
      *
      * @param originId The ID of the memory node.
      * @param observationId The ID of the observation.
@@ -172,11 +233,11 @@ class ObservationBasedFiniteStateController {
                                        uint64_t targetId);
 
     /**
-     * Replaces the mapping from observation IDs to names.
+     * Replaces the mapping from observation IDs to signatures.
      *
-     * @param idToObservationNameMap The new observation-name mapping.
+     * @param idToObservationSignatureMap The new observation-signature mapping.
      */
-    void setIdToObservationNameMap(std::unordered_map<uint64_t, std::string> const& idToObservationNameMap);
+    void setIdToObservationSignatureMap(std::unordered_map<uint64_t, ObservationSignature> const& idToObservationSignatureMap);
 
     /**
      * Replaces the mappings from local action IDs to names for each observation.
@@ -186,13 +247,13 @@ class ObservationBasedFiniteStateController {
     void setIdToActionNameMap(std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>> const& idToActionNameMap);
 
     /**
-     * Retrieves the name associated with an observation ID.
+     * Retrieves the signature associated with an observation ID.
      *
      * @param observationId The ID of the observation.
-     * @return The observation name.
-     * @pre An observation-name mapping is set and contains @p observationId.
+     * @return The observation signature.
+     * @pre An observation-signature mapping is set and contains @p observationId.
      */
-    std::string getObservationName(uint64_t observationId) const;
+    ObservationSignature const& getObservationSignature(uint64_t observationId) const;
 
     /**
      * Retrieves the name associated with a local action ID for an observation.
@@ -205,12 +266,12 @@ class ObservationBasedFiniteStateController {
     std::string getActionName(uint64_t observationId, uint64_t actionId) const;
 
     /**
-     * Looks up an observation ID by name.
+     * Looks up an observation ID by signature.
      *
-     * @param observationName The observation name to find.
-     * @return The corresponding observation ID, or std::nullopt if no observation-name mapping is set or the name is not found.
+     * @param observationSignature The observation signature to find.
+     * @return The corresponding observation ID, or std::nullopt if no observation-signature mapping is set or the signature is not found.
      */
-    std::optional<uint64_t> getObservationIdByName(std::string const& observationName) const;
+    std::optional<uint64_t> getObservationIdBySignature(ObservationSignature const& observationSignature) const;
 
     /**
      * Looks up a local action ID by name for an observation.
@@ -244,9 +305,9 @@ class ObservationBasedFiniteStateController {
     uint64_t getInitialNodeId() const;
 
     /**
-     * @return True if an observation-name mapping is set, including an empty mapping.
+     * @return True if an observation-signature mapping is set, including an empty mapping.
      */
-    bool hasIdToObservationNameMap() const;
+    bool hasIdToObservationSignatureMap() const;
 
     /**
      * @return True if action-name mappings are set, including an empty mapping.
@@ -254,8 +315,8 @@ class ObservationBasedFiniteStateController {
     bool hasIdToActionNameMap() const;
 
     /**
-     * Creates a human-readable representation of the controller, listing its initial node and outputs grouped by memory node.
-     * Available observation and action names are included alongside their IDs.
+     * Creates a human-readable representation of the controller, listing its initial node and defined outputs grouped by memory node.
+     * Unspecified node-observation pairs are not listed. Available observation signatures and action names are included alongside their IDs.
      *
      * @return The human-readable representation.
      */
@@ -263,8 +324,8 @@ class ObservationBasedFiniteStateController {
 
     /**
      * Writes a Graphviz DOT representation of the controller.
-     * Edges represent output updates and are labeled with the observation followed by the deterministic action or action distribution. Available names are
-     * used in place of IDs.
+     * Edges represent defined output updates and are labeled with the observation followed by the deterministic action or action distribution.
+     * Unspecified node-observation pairs have no edge. Available observation signatures and action names are used in place of IDs.
      *
      * @param outStream The stream to write to.
      */
@@ -272,9 +333,9 @@ class ObservationBasedFiniteStateController {
 
     /**
      * Writes a JSON representation of the controller.
-     * The root object contains `initial-node`, `deterministic`, and `nodes`. Each node contains its `id` and `transitions`; each transition records an
-     * `observation`, `successor`, and an `actions` array whose entries contain an action `id` and `probability`. Available observation and action names are
-     * included as `name` fields.
+     * The root object contains `initial-node`, `deterministic`, and `nodes`. Each node contains its `id` and `transitions`; only defined outputs are
+     * represented as transitions. Each transition records an `observation`, `successor`, and an `actions` array whose entries contain an action `id` and
+     * `probability`. Available observation signatures are included as `signature` fields, and action names as `name` fields.
      *
      * @param outStream The stream to write to.
      */
@@ -286,7 +347,7 @@ class ObservationBasedFiniteStateController {
 
     uint64_t initialNodeId;
     std::unordered_map<uint64_t, ActionOutputUpdate> transitions;
-    std::optional<std::unordered_map<uint64_t, std::string>> idToObservationName = std::nullopt;
+    std::optional<std::unordered_map<uint64_t, ObservationSignature>> idToObservationSignature = std::nullopt;
     std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>> idToActionName = std::nullopt;
     uint64_t numberOfRandomisedOutputs = 0;
     bool isDeterministicPolicy = true;
