@@ -303,8 +303,8 @@ TEST(RobustMDPModelCheckingTest, ConstantSupportReachabilityReward) {
     storm::Environment env;
     env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
 
-    for (auto const& path : {STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward.drn",
-                            STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward-infinity.drn"}) {
+    for (auto const& path :
+         {STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward.drn", STORM_TEST_RESOURCES_DIR "/imdp/constant-support-reward-infinity.drn"}) {
         auto model = storm::parser::parseDirectEncodingModel<storm::Interval>(path)->as<storm::models::sparse::Mdp<storm::Interval>>();
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>> checker(*model);
         storm::modelchecker::CheckTask<storm::logic::Formula, double> task(*formulas.front());
