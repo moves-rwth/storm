@@ -105,7 +105,9 @@ std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAu
     std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(
         env, checkTask.getOptimizationDirection(), checkTask.getUncertaintyResolutionMode(), this->getModel().getTransitionMatrix(),
         subResult.getTruthValuesVector());
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+    auto result = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(numericResult));
+    result->setValuesExact();
+    return result;
 }
 
 template<typename SparseMarkovAutomatonModelType>
