@@ -591,8 +591,9 @@ void Order::setDoneState(uint_fast64_t stateNumber) {
 /*** Output ***/
 
 void Order::toDotOutput() const {
-    // Graphviz Output start
-    STORM_PRINT("Dot Output:\n" << "digraph model {\n");
+    // This emits a Graphviz DOT document to stdout for external consumption, not a log message.
+    std::cout << "Dot Output:\n"
+              << "digraph model {\n";
 
     // Vertices of the digraph
     storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);
@@ -606,7 +607,7 @@ void Order::toDotOutput() const {
             if (getNode(j) == getNode(i))
                 stateCoverage.set(j, false);
         }
-        STORM_PRINT("\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n");
+        std::cout << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
     }
 
     // Edges of the digraph
@@ -623,13 +624,13 @@ void Order::toDotOutput() const {
             if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                 seenNodes.insert(n);
                 if (!v[state]) {
-                    STORM_PRINT("\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";\n");
+                    std::cout << "\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";\n";
                 }
             }
         }
     }
     // Graphviz Output end
-    STORM_PRINT("}\n");
+    std::cout << "}\n";
 }
 
 void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
