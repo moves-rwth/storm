@@ -14,9 +14,9 @@
 #include "storm/transformer/bisimulation/Signatures.h"
 #include "storm/transformer/bisimulation/SplitterBasedRefinement.h"
 #include "storm/transformer/bisimulation/WeakBisimulationData.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/OptionalRef.h"
 #include "storm/utility/Stopwatch.h"
-#include "storm/utility/NumberTraits.h"
 #include "storm/utility/constants.h"
 
 namespace storm::bisimulation {
@@ -105,8 +105,7 @@ ReturnType<ValueType> performBisimulationMinimization(storm::models::sparse::Mod
     } else if (useSignatureRefinement && !storm::utility::isZero(tolerance)) {
         if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Bisimulation with positive tolerance " << tolerance << " (approximately "
-                                                                    << storm::utility::convertNumber<double>(tolerance)
+                            "Bisimulation with positive tolerance " << tolerance << " (approximately " << storm::utility::convertNumber<double>(tolerance)
                                                                     << ") is not supported for parametric models.");
         } else {
             storm::bisimulation::Signatures<ValueType, SignatureMode::Approximative> signatures(model, choiceClasses, partition,

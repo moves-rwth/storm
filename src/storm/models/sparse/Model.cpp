@@ -61,7 +61,7 @@ Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sp
       stateValuations(components.stateValuations),
       choiceOrigins(components.choiceOrigins) {
     stochasticTolerance = std::make_unique<ValueType>(
-        components.stochasticTolerance.value_or(isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-06)));
+        components.stochasticTolerance.value_or(isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-09)));
     assertValidityOfComponents(components);
 }
 
@@ -75,7 +75,7 @@ Model<ValueType, RewardModelType>::Model(ModelType modelType, storm::storage::sp
       stateValuations(std::move(components.stateValuations)),
       choiceOrigins(std::move(components.choiceOrigins)) {
     stochasticTolerance = std::make_unique<ValueType>(
-        components.stochasticTolerance.value_or(isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-06)));
+        components.stochasticTolerance.value_or(isExact() ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-09)));
     assertValidityOfComponents(components);
 }
 
