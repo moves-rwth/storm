@@ -722,7 +722,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
     }
     options.actionSensitive = bisimulationSettings.isActionSensitiveSet();
     STORM_LOG_INFO("Performing bisimulation minimization (type: "
-                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance
+                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance.value()
                    << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
     return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), options);
 }
