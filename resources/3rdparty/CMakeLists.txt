@@ -333,23 +333,13 @@ if(NOT STORM_DISABLE_CVC5)
         set(cvc5_ROOT "${CVC5_ROOT}")
     endif()
 
-    # Recent versions of CVC5 provide a config file, so try that first. Note that we cannot request a minimum
-    # version here: cvc5's own version file uses the SamePatchVersion strategy and reports compatibility only
-    # for an exact major.minor.patch match, so requesting 1.2 would reject an installed 1.4.0. We compare the
-    # version we find ourselves further below instead.
+    # We rely on the CMake config file that cvc5 installs (since version 1.2), so cvc5 has to be installed with its own
+    # "make install". Note that we cannot request a minimum version here: cvc5's own version file uses the
+    # SamePatchVersion strategy and reports compatibility only for an exact major.minor.patch match, so requesting 1.2
+    # would reject an installed 1.4.0. We compare the version we find ourselves further below instead.
     find_package(cvc5 QUIET NO_MODULE)
     if(TARGET cvc5::cvc5)
         set(cvc5_FOUND_VERSION "${cvc5_VERSION}")
-        set(cvc5_FOUND_WITH_CONFIG_FILE TRUE)
-        set(STORM_CVC5_CONFIG ON)
-    else()
-        # For installations without a config file, we use a FindCVC5.cmake script.
-        find_package(CVC5 QUIET)
-
-        if(CVC5_FOUND)
-            set(cvc5_FOUND_VERSION "${CVC5_VERSION}")
-            set(STORM_CVC5_CONFIG OFF)
-        endif()
     endif()
 
     if(NOT cvc5_FOUND_VERSION)
@@ -362,18 +352,7 @@ if(NOT STORM_DISABLE_CVC5)
         set(STORM_HAVE_CVC5 ON)
         message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
 
-        if(cvc5_FOUND_WITH_CONFIG_FILE)
-            list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
-        else()
-            add_library(cvc5 SHARED IMPORTED)
-            set_target_properties(
-                    cvc5
-                    PROPERTIES
-                    IMPORTED_LOCATION ${CVC5_LIBRARIES}
-                    INTERFACE_INCLUDE_DIRECTORIES ${CVC5_INCLUDE_DIRS}
-            )
-            list(APPEND STORM_DEP_IMP_TARGETS cvc5)
-        endif()
+        list(APPEND STORM_DEP_IMP_TARGETS cvc5::cvc5)
     endif()
 else()
     set(STORM_HAVE_CVC5 OFF)
