@@ -74,6 +74,12 @@ bool ConstraintCollector::addConstraint(ConstraintSet& constraintSet, Constraint
 
 void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
+        // A constant entry does not involve any parameter, so it does not restrict the parameter region. A constant
+        // that violates the bound, however, makes the well-formedness constraints unsatisfiable, which we express
+        // by a trivially false constraint.
+        if (value < storm::utility::zero<storm::RationalFunction>()) {
+            addConstraint(wellformedConstraintSet, wellformedConstraintIndex, expressionManager->boolean(false));
+        }
         return;
     }
 
@@ -102,7 +108,9 @@ void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFu
 
 void ConstraintCollector::wellformedRequiresAtMostOne(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
-        STORM_LOG_ASSERT(!(storm::utility::one<storm::RationalFunction>() < value), "A transition probability must not exceed one.");
+        if (storm::utility::one<storm::RationalFunction>() < value) {
+            addConstraint(wellformedConstraintSet, wellformedConstraintIndex, expressionManager->boolean(false));
+        }
         return;
     }
 
@@ -136,10 +144,10 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
             for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
                 auto const& value = transitionIt->getValue();
                 sum += value;
+                // Assert: 0 <= transition <= 1
+                wellformedRequiresNonNegativeEntries(value);
+                wellformedRequiresAtMostOne(value);
                 if (!storm::utility::isConstant(value)) {
-                    // Assert: 0 <= transition <= 1
-                    wellformedRequiresNonNegativeEntries(value);
-                    wellformedRequiresAtMostOne(value);
                     // Assert: transition > 0, so that the underlying graph does not change.
                     graphPreservingRequiresNonZero(value);
                 }
@@ -156,9 +164,9 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
         }
     } else {
         for (auto const& transition : model.getTransitionMatrix()) {
+            // Assert: 0 <= transition
+            wellformedRequiresNonNegativeEntries(transition.getValue());
             if (!storm::utility::isConstant(transition.getValue())) {
-                // Assert: 0 <= transition
-                wellformedRequiresNonNegativeEntries(transition.getValue());
                 // Assert: transition > 0, so that the underlying graph does not change.
                 graphPreservingRequiresNonZero(transition.getValue());
             }
@@ -190,9 +198,7 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
         }
         if (rewModelEntry.second.hasTransitionRewards()) {
             for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
-                if (!storm::utility::isConstant(entry.getValue())) {
-                    wellformedRequiresNonNegativeEntries(entry.getValue());
-                }
+                wellformedRequiresNonNegativeEntries(entry.getValue());
             }
         }
     }
