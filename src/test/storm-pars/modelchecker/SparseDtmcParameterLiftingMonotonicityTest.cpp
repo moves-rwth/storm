@@ -106,7 +106,7 @@ void checkBrpMonotonicity(storm::Environment const& env, storm::modelchecker::Re
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
     auto monRes = monHelper.checkMonotonicityInBuild(std::cout);
-    auto order = monRes.begin()->first;
+    auto order = monRes.front().order;
     ASSERT_EQ(order->getNumberOfAddedStates(), data.model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -133,7 +133,7 @@ void checkSimpleMonotonicity(storm::Environment const& env, storm::modelchecker:
         data.model->getTransitionMatrix().printAsMatlabMatrix(std::cout);
     }
     storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
-    auto order = monHelper.checkMonotonicityInBuild(std::cout).begin()->first;
+    auto order = monHelper.checkMonotonicityInBuild(std::cout).front().order;
     if (assertDoneBuilding) {
         ASSERT_TRUE(order->getDoneBuilding());
     }

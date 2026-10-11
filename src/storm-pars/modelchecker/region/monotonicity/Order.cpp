@@ -60,9 +60,7 @@ Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t nu
     }
 }
 
-Order::Order() {
-    this->invalid = false;
-}
+Order::Order() : invalid(false), doneBuilding(false), onlyBottomTopOrder(false), top(nullptr), bottom(nullptr), numberOfStates(0), numberOfAddedStates(0) {}
 
 Order::Order(Order const& other)
     : invalid(other.invalid),
@@ -604,8 +602,9 @@ void Order::toDotOutput() const {
     }
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
         for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
-            if (getNode(j) == getNode(i))
+            if (getNode(j) == getNode(i)) {
                 stateCoverage.set(j, false);
+            }
         }
         std::cout << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
     }
@@ -641,12 +640,13 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     // Vertices of the digraph
     storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
-        if (getNode(i) == NULL) {
+        if (getNode(i) == nullptr) {
             continue;
         }
         for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
-            if (getNode(j) == getNode(i))
+            if (getNode(j) == getNode(i)) {
                 stateCoverage.set(j, false);
+            }
         }
 
         dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
@@ -656,7 +656,7 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
         storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
         Node* currentNode = getNode(i);
-        if (currentNode == NULL) {
+        if (currentNode == nullptr) {
             continue;
         }
 
@@ -761,15 +761,18 @@ std::string Order::nodeName(Node n) const {
 }
 
 std::string Order::nodeLabel(Node n) const {
-    if (n.states == top->states)
+    if (n.states == top->states) {
         return "=)";
-    if (n.states == bottom->states)
+    }
+    if (n.states == bottom->states) {
         return "=(";
+    }
     auto itr = n.states.begin();
     std::string label = "s" + std::to_string(*itr);
     ++itr;
-    if (itr != n.states.end())
+    if (itr != n.states.end()) {
         label = "[" + label + "]";
+    }
     return label;
 }
 

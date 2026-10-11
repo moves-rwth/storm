@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/container/flat_set.hpp>
+#include <cstddef>
 #include <optional>
 #include "storm/logic/Formula.h"
 #include "storm/models/sparse/Model.h"
@@ -74,7 +75,7 @@ class OrderExtender {
     void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
     std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
-void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+    void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
     void initializeMinMaxValues(Environment const& env, storage::ParameterRegion<ValueType> region);
     void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                std::shared_ptr<MonotonicityResult<VariableType>> monResult);
@@ -116,11 +117,21 @@ void copyContext(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> or
         std::vector<ConstantType> maxValues;
         bool usePLA = false;
         bool continueExtending = true;
+        // The pair of states this order got stuck on, i.e., the first unordered pair (state1, state2)
+        // whose relation could not be resolved during extension. Initialized to (numberOfStates,
+        // numberOfStates) meaning "no unknown pair recorded". It is set externally via
+        // setUnknownStates() and read via getUnknownStates() when the region refinement loop decides
+        // whether a sub-region can resolve more of the order.
         std::pair<uint_fast64_t, uint_fast64_t> unknownStates;
     };
     Context& context(std::shared_ptr<Order> const& order);
     Context const& contextAt(std::shared_ptr<Order> const& order) const;
     std::map<std::weak_ptr<Order>, Context, std::owner_less<std::weak_ptr<Order>>> contexts;
+
+    // Weak keys do not keep orders alive, so entries for destroyed orders linger. Once the map grows
+    // past this size, expired entries are purged on the next insertion, keeping the scan cost
+    // amortized O(1) per inserted context.
+    std::size_t nextContextPruneSize = 64;
 
     boost::optional<std::vector<ConstantType>> minValuesInit;
     boost::optional<std::vector<ConstantType>> maxValuesInit;

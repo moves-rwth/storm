@@ -2,6 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -16,6 +17,9 @@ std::shared_ptr<storm::analysis::Order> extendOrder(storm::analysis::OrderExtend
                                                     std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
     auto [orderPtr, unknState1, unknState2] = orderExtender.extendOrder(order, region);
     order = orderPtr;
+    // An inconsistent order carries the same "done" sentinel as a successfully built one, so the
+    // sentinel alone must not be trusted. Refuse to derive monotonicity from a contradictory order.
+    STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::InvalidStateException, "Order-based monotonicity analysis produced an inconsistent order.");
     if (unknState1 != order->getNumberOfStates()) {
         orderExtender.setUnknownStates(order, unknState1, unknState2);
     }

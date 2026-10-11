@@ -1,4 +1,5 @@
 #include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
+#include <algorithm>
 #include <vector>
 
 #include "storm/exceptions/NotSupportedException.h"
@@ -155,6 +156,18 @@ typename OrderExtender<ValueType, ConstantType>::Context& OrderExtender<ValueTyp
     auto result = contexts.try_emplace(order);
     if (result.second) {
         result.first->second.unknownStates = {numberOfStates, numberOfStates};
+        // The map is keyed by weak_ptr, so entries whose orders have been destroyed are not removed
+        // automatically. Reclaim them once the map has grown enough for the scan to be worthwhile.
+        if (contexts.size() >= nextContextPruneSize) {
+            for (auto it = contexts.begin(); it != contexts.end();) {
+                if (it->first.expired()) {
+                    it = contexts.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            nextContextPruneSize = std::max<std::size_t>(64, contexts.size() * 2);
+        }
     }
     return result.first->second;
 }
@@ -182,7 +195,7 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
     Order::Node* n1 = order->getNode(val1);
     Order::Node* n2 = order->getNode(val2);
 
-    if (assumption.relation == expressions::RelationType::Equal) {
+    if (assumption.relation == AssumptionRelation::Equal) {
         if (n1 != nullptr && n2 != nullptr) {
             order->mergeNodes(n1, n2);
         } else if (n1 != nullptr) {
@@ -194,7 +207,6 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
             order->addToNode(val2, order->getNode(val1));
         }
     } else {
-        STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Greater, "Only Equal and Greater assumptions are supported.");
         if (n1 != nullptr && n2 != nullptr) {
             order->addRelationNodes(n1, n2);
         } else if (n1 != nullptr) {

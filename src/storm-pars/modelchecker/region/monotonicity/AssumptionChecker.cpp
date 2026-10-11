@@ -49,7 +49,7 @@ void AssumptionChecker<ValueType, ConstantType>::initializeCheckingOnSamples(Env
                 modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
             checkResult = checker.computeReachabilityProbabilities(env, checkTask);
         } else {
-            STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
+            STORM_LOG_THROW_UNCONDITIONALLY(exceptions::NotSupportedException, "Expecting until or eventually formula");
         }
         auto const& quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
         std::vector<ConstantType> values = quantitativeResult.getFiniteValueVector();
@@ -67,7 +67,7 @@ void AssumptionChecker<ValueType, ConstantType>::setSampleValues(std::vector<std
 template<typename ValueType, typename ConstantType>
 AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula,
                                                               std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
-    STORM_LOG_THROW(false, exceptions::NotSupportedException, "Assumption checking for mdps not yet implemented");
+    STORM_LOG_THROW_UNCONDITIONALLY(exceptions::NotSupportedException, "Assumption checking for mdps not yet implemented");
 }
 
 template<typename ValueType, typename ConstantType>
@@ -85,7 +85,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
     if (minValues.size() != 0) {
         auto const val1 = assumption.state1;
         auto const val2 = assumption.state2;
-        if (assumption.relation == expressions::RelationType::Greater) {
+        if (assumption.relation == AssumptionRelation::Greater) {
             if (minValues[val1] > maxValues[val2]) {
                 return AssumptionStatus::VALID;
             } else if (minValues[val1] == maxValues[val2] && minValues[val1] == maxValues[val1] && minValues[val2] == maxValues[val2]) {
@@ -106,8 +106,6 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
     if (result == AssumptionStatus::UNKNOWN) {
         // If result from sample checking was unknown, the assumption might hold
-        STORM_LOG_THROW(assumption.relation == expressions::RelationType::Greater || assumption.relation == expressions::RelationType::Equal,
-                        exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported");
         result = validateAssumptionSMTSolver(assumption, order, region, minValues, maxValues);
     }
     return result;
@@ -115,12 +113,10 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
 template<typename ValueType, typename ConstantType>
 AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(Assumption const& assumption) const {
-    STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Greater || assumption.relation == expressions::RelationType::Equal,
-                      "Only Greater or Equal assumptions are supported.");
     auto result = AssumptionStatus::UNKNOWN;
     for (auto const& values : samples) {
-        bool holds = assumption.relation == expressions::RelationType::Greater ? values[assumption.state1] > values[assumption.state2]
-                                                                               : values[assumption.state1] == values[assumption.state2];
+        bool holds = assumption.relation == AssumptionRelation::Greater ? values[assumption.state1] > values[assumption.state2]
+                                                                        : values[assumption.state1] == values[assumption.state2];
         if (!holds) {
             result = AssumptionStatus::INVALID;
             break;
@@ -236,10 +232,9 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         // It is the negation of actual assumption
 
         expressions::Expression exprToCheck;
-        if (assumption.relation == expressions::RelationType::Greater) {
+        if (assumption.relation == AssumptionRelation::Greater) {
             exprToCheck = expr1 <= expr2;
         } else {
-            STORM_LOG_ASSERT(assumption.relation == expressions::RelationType::Equal, "Only Greater and Equal assumptions are supported.");
             exprToCheck = expr1 != expr2;
         }
 

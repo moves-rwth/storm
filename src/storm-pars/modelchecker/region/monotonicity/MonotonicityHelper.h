@@ -36,6 +36,16 @@ class MonotonicityHelper {
     typedef typename storage::ParameterRegion<ValueType> Region;
 
     /*!
+     * The result of the order-based monotonicity analysis for one reachability order: the order
+     * itself, the monotonicity result computed from it, and the assumptions the order was built on.
+     */
+    struct ExpectedMonotonicityResult {
+        std::shared_ptr<Order> order;
+        std::shared_ptr<MonotonicityResult<VariableType>> monotonicityResult;
+        std::vector<Assumption> assumptions;
+    };
+
+    /*!
      * Constructor of MonotonicityHelper.
      *
      * @param env The environment used for checking the samples.
@@ -66,10 +76,9 @@ class MonotonicityHelper {
      *
      * @param outfile Outfile to which results are written.
      * @param dotOutfileName Name for the files of the dot outputs should they be generated
-     * @return Map which maps each order to its Reachability Order and used assumptions.
+     * @return The reachability orders built, together with the monotonicity result and the assumptions used for each.
      */
-    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> checkMonotonicityInBuild(
-        std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
+    std::vector<ExpectedMonotonicityResult> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
 
     /*!
      * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
