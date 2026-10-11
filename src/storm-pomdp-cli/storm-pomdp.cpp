@@ -449,6 +449,9 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
 
     if (pomdpSettings.isBeliefExplorationUnfoldSet()) {
         STORM_PRINT_AND_LOG("Computing an under-approximation via belief MDP unfolding...\n");
+        if (belExplSettings.getExplorationTimeLimit() != 0) {
+            revisedOptions.maxExplorationTime = belExplSettings.getExplorationTimeLimit();
+        }
         if (belExplSettings.getSizeThresholdInit() == 0) {
             revisedOptions.maxExplorationSize = preprocessedPomdpPtr->getNumberOfStates() * preprocessedPomdpPtr->getMaxNrStatesWithSameObservation();
             STORM_PRINT_AND_LOG("Heuristically selected an under-approximation MDP size threshold of " << revisedOptions.maxExplorationSize.value() << ".\n");
