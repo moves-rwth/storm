@@ -630,6 +630,8 @@ template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
     auto& ctx = context(order);
     STORM_LOG_ASSERT(order->compare(state1, state2) == Order::UNKNOWN, "Expected the given pair to indeed be unordered.");
+    STORM_LOG_ASSERT(!ctx.usePLA || (ctx.minValues.size() == numberOfStates && ctx.maxValues.size() == numberOfStates),
+                     "The PLA path requires both bound vectors to be available.");
     auto assumptions = ctx.usePLA ? assumptionMaker->createAndCheckAssumptions(state1, state2, order, region, ctx.minValues, ctx.maxValues)
                                   : assumptionMaker->createAndCheckAssumptions(state1, state2, order, region);
     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
@@ -744,9 +746,9 @@ template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>&& minValues) {
     STORM_LOG_ASSERT(minValues.size() == numberOfStates, "Expected one lower bound per state.");
     auto& ctx = context(order);
-    // usePLA becomes true unconditionally here (unlike setMaxValues, which checks whether the other
-    // bound is already known): accessing ctx.maxValues below always makes it "known", even if empty.
-    ctx.usePLA = true;
+    // Only take the PLA path once both bound vectors are available, as assumption checks index into
+    // ctx.maxValues (setMaxValues below mirrors this).
+    ctx.usePLA = !ctx.maxValues.empty();
     if (ctx.maxValues.size() == 0) {
         ctx.continueExtending = false;
     } else if (ctx.unknownStates.first != numberOfStates) {

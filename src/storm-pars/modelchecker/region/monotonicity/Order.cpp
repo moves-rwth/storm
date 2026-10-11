@@ -78,7 +78,7 @@ Order::Order(Order const& other)
     storm::storage::BitVector seenStates(numberOfStates, false);
     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
         Node* oldNode = other.nodes.at(state);
-        if (oldNode != nullptr && !seenStates[*(oldNode->states.begin())]) {
+        if (oldNode != nullptr && !oldNode->states.empty() && !seenStates[*oldNode->states.begin()]) {
             Node* newNode = allocateNode();
             if (oldNode == other.top) {
                 top = newNode;
@@ -92,6 +92,18 @@ Order::Order(Order const& other)
                 nodes[i] = newNode;
             }
         }
+    }
+    // A sentinel without states is not discovered through a state's node. Copy it explicitly so that
+    // the copy never ends up with a null top/bottom where the original had a sentinel.
+    if (top == nullptr && other.top != nullptr) {
+        top = allocateNode();
+        top->statesAbove = other.top->statesAbove;
+        top->states = other.top->states;
+    }
+    if (bottom == nullptr && other.bottom != nullptr) {
+        bottom = allocateNode();
+        bottom->statesAbove = other.bottom->statesAbove;
+        bottom->states = other.bottom->states;
     }
 }
 

@@ -82,7 +82,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
     }
     STORM_LOG_ASSERT(result != AssumptionStatus::VALID, "Sample-based checking should never conclude VALID by itself.");
 
-    if (minValues.size() != 0) {
+    if (minValues.size() != 0 && maxValues.size() == minValues.size()) {
         auto const val1 = assumption.state1;
         auto const val2 = assumption.state2;
         if (assumption.relation == AssumptionRelation::Greater) {
@@ -175,7 +175,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
                     }
                 }
                 auto comp = order->compare(itr1->getColumn(), itr2->getColumn());
-                if (minValues.size() > 0 && comp == Order::NodeComparison::UNKNOWN) {
+                if (minValues.size() > 0 && maxValues.size() == minValues.size() && comp == Order::NodeComparison::UNKNOWN) {
                     // Couldn't add relation between varname1 and varname2 but maybe we can based on min/max values;
                     if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
                         if (!order->contains(itr1->getColumn())) {
@@ -250,7 +250,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         for (auto var : variables) {
             if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                 // the var is a state
-                if (minValues.size() > 0) {
+                if (minValues.size() > 0 && maxValues.size() == minValues.size()) {
                     std::string test = var.getName();
                     auto val = std::stoi(test.substr(1, test.size() - 1));
                     exprBounds = exprBounds && manager->rational(minValues[val]) <= var && var <= manager->rational(maxValues[val]);
