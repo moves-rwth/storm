@@ -11,6 +11,7 @@
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
+#include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
@@ -85,8 +86,8 @@ void buildMonotonicityModel(std::string const& programFile, std::string const& f
         formulas[0] = simplifier.getSimplifiedFormula();
 
         // Apply bisimulation
-        model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, storm::storage::BisimulationType::Strong)
-                    ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+        model =
+            storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     }
 
     // Model parameters
@@ -103,7 +104,7 @@ template<typename ValueType>
 void checkBrpMonotonicity(storm::Environment const& env, storm::modelchecker::RegionCheckEngine regionEngine, MonotonicityTestData data,
                           std::vector<std::string> const& regionStrings) {
     // Reachability order, as it is already done building we don't need to recreate the order for each region
-    storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(data.model, data.formulas, {});
+    storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
     auto monRes = monHelper.checkMonotonicityInBuild(std::cout);
     auto order = monRes.begin()->first;
     ASSERT_EQ(order->getNumberOfAddedStates(), data.model->getTransitionMatrix().getColumnCount());
@@ -131,7 +132,7 @@ void checkSimpleMonotonicity(storm::Environment const& env, storm::modelchecker:
     if (printMatrix) {
         data.model->getTransitionMatrix().printAsMatlabMatrix(std::cout);
     }
-    storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(data.model, data.formulas, {});
+    storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType> monHelper(storm::Environment(), data.model, data.formulas, {});
     auto order = monHelper.checkMonotonicityInBuild(std::cout).begin()->first;
     if (assertDoneBuilding) {
         ASSERT_TRUE(order->getDoneBuilding());

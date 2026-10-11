@@ -162,7 +162,7 @@ MemlessSearchOptions fillMemlessSearchOptionsFromSettings() {
 }
 
 template<typename ValueType>
-void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& origpomdp,
+void performQualitativeAnalysis(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& origpomdp,
                                 storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
     auto const& qualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
     auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -264,8 +264,6 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
         storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<ValueType> janicreator(pomdp);
         janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
         bool initialOnly = !qualSettings.isWinningRegionSet();
-        storm::Environment env;
-        STORM_LOG_WARN("Using a default environment (and therefore default settings) for the symbolic analysis.");
         janicreator.verifySymbolic(env, initialOnly);
         STORM_PRINT_AND_LOG("Initial state is safe: " << janicreator.isInitialWinning() << "\n");
     }
@@ -273,13 +271,12 @@ void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<Val
 }
 
 template<typename ValueType, typename BeliefType, typename BeliefMDPType>
-bool performBeliefExploration(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp,
+bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp,
                               storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
     auto const& belExplSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
     STORM_LOG_THROW(!formulaInfo.isBounded() || !belExplSettings.isUseClippingSet(), storm::exceptions::NotSupportedException,
                     "Grid clipping is not supported for reward-bounded POMDP properties.");
-    storm::Environment env;
 
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMDPType> revisedOptions;
     // We hard-code this to FIFO for now to mimic the legacy behaviour
@@ -522,30 +519,30 @@ bool performBeliefExploration(std::shared_ptr<storm::models::sparse::Pomdp<Value
 }
 
 template<typename ValueType, typename BeliefType = ValueType>
-bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo,
-                     storm::logic::Formula const& formula) {
+bool performAnalysis(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp,
+                     storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
     auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
     bool analysisPerformed = false;
     if (pomdpSettings.isBeliefExplorationSet()) {
         auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
         if (beliefExplorationSettings.isBeliefMDPNumberTypeDouble()) {
-            performBeliefExploration<ValueType, BeliefType, double>(pomdp, formulaInfo, formula);
+            performBeliefExploration<ValueType, BeliefType, double>(env, pomdp, formulaInfo, formula);
         } else if (beliefExplorationSettings.isBeliefMDPNumberTypeRational()) {
-            performBeliefExploration<ValueType, BeliefType, storm::RationalNumber>(pomdp, formulaInfo, formula);
+            performBeliefExploration<ValueType, BeliefType, storm::RationalNumber>(env, pomdp, formulaInfo, formula);
         } else if (beliefExplorationSettings.isBeliefMDPNumberTypeMatch()) {
             STORM_LOG_ASSERT(beliefExplorationSettings.isBeliefMDPNumberTypeMatch(),
                              "Expected belief MDP number type to be set to match the POMDP, but it is not.");
-            performBeliefExploration<ValueType, BeliefType, ValueType>(pomdp, formulaInfo, formula);
+            performBeliefExploration<ValueType, BeliefType, ValueType>(env, pomdp, formulaInfo, formula);
         }
         analysisPerformed = true;
     }
     if (pomdpSettings.isQualitativeAnalysisSet()) {
-        performQualitativeAnalysis(pomdp, formulaInfo, formula);
+        performQualitativeAnalysis(env, pomdp, formulaInfo, formula);
         analysisPerformed = true;
     }
     if (pomdpSettings.isCheckFullyObservableSet()) {
         STORM_PRINT_AND_LOG("Analyzing the formula on the fully observable MDP ... ");
-        auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(pomdp->template as<storm::models::sparse::Mdp<ValueType>>(),
+        auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(env, pomdp->template as<storm::models::sparse::Mdp<ValueType>>(),
                                                                        storm::api::createTask<ValueType>(formula.asSharedPointer(), true));
         if (resultPtr) {
             auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
@@ -621,7 +618,7 @@ bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueTyp
         if (transformSettings.allowPostSimplifications()) {
             STORM_PRINT_AND_LOG("Simplifying pMC...");
             pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),
-                                                                                       {formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)
+                                                                                       {formula.asSharedPointer()})
                       ->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
             STORM_PRINT_AND_LOG(" done.\n");
             pmc->printModelInformationToStream(std::cout);
@@ -662,7 +659,8 @@ void processPomdp(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomd
 }
 
 template<typename ValueType>
-void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> formula) {
+void processFormula(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp,
+                    std::shared_ptr<storm::logic::Formula const> const& formula) {
     if (formula->asOperatorFormula().getSubformula().isBoundedUntilFormula()) {
         // TODO: allow for more general reward-bounded until properties than reachability
 
@@ -737,19 +735,20 @@ void processFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& p
     }
 
     sw.restart();
-    if (performAnalysis(pomdp, formulaInfo, *formula)) {
+    if (performAnalysis(env, pomdp, formulaInfo, *formula)) {
         sw.stop();
         STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << ".\n");
     }
 }
 
 template<typename ValueType>
-void processPomdpFormula(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
+void processPomdpFormula(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp,
+                         std::shared_ptr<storm::logic::Formula const> const& formula) {
     STORM_LOG_ASSERT(pomdp, "No POMDP given or input POMDP is of unexpected type.");
     processPomdp(pomdp);
 
     if (formula) {
-        processFormula(std::move(pomdp), formula);
+        processFormula(env, std::move(pomdp), formula);
     } else {
         STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
     }
@@ -780,9 +779,9 @@ void processOptions() {
     }
 
     if (model->isExact()) {
-        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>(), formula);
+        processPomdpFormula(mpi.env, model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>(), formula);
     } else {
-        processPomdpFormula(model->template as<storm::models::sparse::Pomdp<double>>(), formula);
+        processPomdpFormula(mpi.env, model->template as<storm::models::sparse::Pomdp<double>>(), formula);
     }
 }
 
