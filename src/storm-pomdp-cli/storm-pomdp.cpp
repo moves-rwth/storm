@@ -660,7 +660,7 @@ void processPomdp(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomd
 
 template<typename ValueType>
 void processFormula(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>&& pomdp,
-                    std::shared_ptr<storm::logic::Formula const> const& formula) {
+                    std::shared_ptr<storm::logic::Formula const> formula) {
     if (formula->asOperatorFormula().getSubformula().isBoundedUntilFormula()) {
         // TODO: allow for more general reward-bounded until properties than reachability
 
