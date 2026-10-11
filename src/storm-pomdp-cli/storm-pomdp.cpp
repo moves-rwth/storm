@@ -181,13 +181,13 @@ void performQualitativeAnalysis(storm::Environment const& env, std::shared_ptr<s
     bool computedSomething = false;
     if (qualSettings.isMemlessSearchSet()) {
         computedSomething = true;
-        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
         uint64_t lookahead = qualSettings.getLookahead();
         if (lookahead == 0) {
             lookahead = pomdp.getNumberOfStates();
         }
         if (qualSettings.getMemlessSearchMethod() == "one-shot") {
-            storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
+            storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(env, pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
             if (qualSettings.isWinningRegionSet()) {
                 STORM_LOG_ERROR("Computing winning regions is not supported by the one-shot method.");
             } else {
@@ -200,7 +200,7 @@ void performQualitativeAnalysis(storm::Environment const& env, std::shared_ptr<s
             }
         } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
             storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
-            storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
+            storm::pomdp::IterativePolicySearch<ValueType> search(env, pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
             if (qualSettings.isWinningRegionSet()) {
                 search.computeWinningRegion(lookahead);
             } else {
