@@ -157,14 +157,18 @@ boost::any SyntacticalEqualityCheckVisitor::visit(PredicateExpression const& exp
     if (otherBaseExpression.isPredicateExpression()) {
         PredicateExpression const& otherExpression = otherBaseExpression.asPredicateExpression();
 
-        bool result = expression.getPredicateType() == otherExpression.getPredicateType();
-        if (result) {
-            result = expression.getArity() == otherExpression.getArity();
+        if (expression.getPredicateType() != otherExpression.getPredicateType()) {
+            return false;
         }
-        for (uint_fast64_t i = 0; result && i < expression.getArity(); ++i) {
-            result = boost::any_cast<bool>(expression.getOperand(i)->accept(*this, std::ref(*otherExpression.getOperand(i))));
+        if (expression.getArity() != otherExpression.getArity()) {
+            return false;
         }
-        return result;
+        for (uint_fast64_t i = 0; i < expression.getArity(); ++i) {
+            if (!boost::any_cast<bool>(expression.getOperand(i)->accept(*this, std::ref(*otherExpression.getOperand(i))))) {
+                return false;
+            }
+        }
+        return true;
     } else {
         return false;
     }

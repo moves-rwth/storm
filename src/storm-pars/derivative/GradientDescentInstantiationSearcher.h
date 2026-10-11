@@ -1,9 +1,8 @@
 #pragma once
 
+#include <boost/variant.hpp>
 #include <map>
 #include <memory>
-
-#include <boost/variant.hpp>
 
 #include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"

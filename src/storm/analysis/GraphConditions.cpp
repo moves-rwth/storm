@@ -6,7 +6,6 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/HashVisitor.h"
 #include "storm/storage/expressions/PolynomialToExpression.h"
 #include "storm/utility/constants.h"
 
@@ -21,14 +20,6 @@ namespace {
 template<typename PolynomialType>
 storm::expressions::Expression toExpression(PolynomialType const& polynomial, std::shared_ptr<storm::expressions::ExpressionManager> const& manager) {
     return storm::expressions::polynomialToExpression(polynomial, manager);
-}
-
-/*!
- * Hashes the given expression by its structure instead of by the identity of its underlying node.
- */
-std::size_t structuralHash(storm::expressions::Expression const& expression) {
-    storm::expressions::HashVisitor visitor;
-    return visitor.hash(expression);
 }
 
 }  // namespace
@@ -70,7 +61,7 @@ storm::expressions::Expression ConstraintCollector::relateToZero(storm::RawPolyn
 }
 
 bool ConstraintCollector::addConstraint(ConstraintSet& constraintSet, ConstraintIndex& constraintIndex, storm::expressions::Expression const& constraint) {
-    auto& candidates = constraintIndex[structuralHash(constraint)];
+    auto& candidates = constraintIndex[hashVisitor.hash(constraint)];
     for (auto const& candidate : candidates) {
         if (candidate.isSyntacticallyEqual(constraint)) {
             return false;
@@ -111,6 +102,7 @@ void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFu
 
 void ConstraintCollector::wellformedRequiresAtMostOne(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
+        STORM_LOG_ASSERT(!(storm::utility::one<storm::RationalFunction>() < value), "A transition probability must not exceed one.");
         return;
     }
 

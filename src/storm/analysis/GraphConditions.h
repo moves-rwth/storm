@@ -10,6 +10,7 @@
 #include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/HashVisitor.h"
 
 namespace storm {
 namespace expressions {
@@ -46,6 +47,9 @@ class ConstraintCollector {
 
     // The expression manager owning the collected constraints.
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
+
+    // Hashes expressions by their structure, so that they can be deduplicated and looked up.
+    storm::expressions::HashVisitor hashVisitor;
 
     // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
     ConstraintSet wellformedConstraintSet;

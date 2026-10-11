@@ -68,7 +68,26 @@ std::shared_ptr<RawPolynomialCache> cacheOf(Polynomial const& polynomial) {
  * @return The corresponding rational function.
  */
 RationalFunction toRationalFunction(RawPolynomial const& numerator, Polynomial const& denominator, std::shared_ptr<RawPolynomialCache> const& cache) {
+    STORM_LOG_ASSERT(!denominator.pCache() || denominator.pCache() == cache, "Expected the denominator to share the cache of the numerator.");
     return RationalFunction(Polynomial(numerator, cache), denominator);
+}
+
+/*!
+ * Retrieves the polynomial cache shared by the polynomials of the given model.
+ *
+ * All polynomials of a parametric model share a single factorization cache, so it suffices to look at the first
+ * polynomial that carries one.
+ *
+ * @param model The model whose cache is to be retrieved.
+ * @return The cache shared by the model's polynomials, or a fresh cache if the model has no parameterized entries.
+ */
+std::shared_ptr<RawPolynomialCache> cacheOfModel(storm::models::sparse::Dtmc<RationalFunction> const& model) {
+    for (auto const& entry : model.getTransitionMatrix()) {
+        if (!entry.getValue().isConstant()) {
+            return cacheOf(entry.getValue().nominator());
+        }
+    }
+    return std::make_shared<RawPolynomialCache>();
 }
 
 }  // namespace
@@ -76,6 +95,9 @@ RationalFunction toRationalFunction(RawPolynomial const& numerator, Polynomial c
 typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transformTransitions(
     storm::models::sparse::Dtmc<RationalFunction> const& dtmc) const {
     auto const& matrix = dtmc.getTransitionMatrix();
+
+    // All polynomials of the model share a single factorization cache, which the polynomials created below reuse.
+    auto const cache = cacheOfModel(dtmc);
 
     // Initialize a FIFO Queue that stores the start and the end of each row
     std::queue<StateWithRow> queue;
@@ -123,16 +145,6 @@ typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transf
 
             RationalFunction sumOfLeftBranch;
             RationalFunction sumOfRightBranch;
-
-            // Every entry of this row depends on the parameter, so at least one of them is non-constant and thus
-            // carries the cache of the model, which the polynomials created below share.
-            std::shared_ptr<RawPolynomialCache> cache;
-            for (auto const& entry : stateWithRow.row) {
-                if (!entry.getValue().isConstant()) {
-                    cache = cacheOf(entry.getValue().nominator());
-                    break;
-                }
-            }
 
             for (auto const& entry : stateWithRow.row) {
                 if (entry.getValue().isConstant()) {
