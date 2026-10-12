@@ -12,9 +12,8 @@
 namespace storm::pars::scp {
 
 namespace {
-// Coefficient of the small p_{s_I} tie-breaking term in the objective (matches the reference
-// implementation's mu = 1e4, i.e. a term of weight 1/mu): dominated by the violation objective,
-// only nudging the search towards the threshold side when otherwise degenerate.
+// Weight of the initial-state term in the objective. It is dominated by the violation objective and
+// only breaks ties towards the threshold side.
 constexpr double InitialStateBiasCoefficient = 1e-4;
 }  // namespace
 
@@ -58,10 +57,8 @@ EncodedLp ScpLpEncoder::encode(storm::Environment const& env, std::map<storm::Ra
         result.parameterVariables.emplace(var, solver->addBoundedContinuousVariable("v_" + var.name(), lb, ub));
     }
 
-    // State variables: only for "maybe" states -- zeroStates/oneStates/infiniteStates are
-    // constants, not variables. A reward property's state variables are unbounded above (only a
-    // probability's natural [0,1] domain caps the upper bound); the trust region always caps them
-    // regardless.
+    // State variables exist only for states without a known value. Probability variables are capped
+    // by 1; the trust region bounds both kinds.
     for (uint64_t s = 0; s < numberOfStates; ++s) {
         if (zeroStates.get(s) || oneStates.get(s) || infiniteStates.get(s)) {
             continue;
@@ -95,12 +92,10 @@ EncodedLp ScpLpEncoder::encode(storm::Environment const& env, std::map<storm::Ra
 
     solver->update();
 
-    // The linearized contribution of one transition to a Bellman constraint's right-hand side:
-    // zeroStates successors are dropped (contribute 0), oneStates successors contribute their
-    // exact (already affine) value, and "maybe" successors contribute the first-order Taylor
-    // expansion of the bilinear product P(v) * p_succ around (valuation, stateValues).
-    // infiniteStates successors never legitimately reach this point: excludedRows (checked by the
-    // caller below, before this lambda is ever invoked for a given row) guarantees it.
+    // The linearized contribution of one transition to a Bellman right-hand side: zero successors
+    // contribute nothing, one successors their exact affine value, and other successors the
+    // first-order expansion of P(v) * p_succ around (valuation, stateValues). Rows with infinite
+    // successors are excluded before this is called.
     auto successorContribution = [&](UnpackedTransition const& ut) -> std::optional<storm::expressions::Expression> {
         if (zeroStates.get(ut.successor)) {
             return std::nullopt;
@@ -155,7 +150,6 @@ EncodedLp ScpLpEncoder::encode(storm::Environment const& env, std::map<storm::Ra
             // (Pmax; the max scheduler's best action survives the minimization).
             // AtLeast: "p_s <= rhs + tau_s" for every action, maximized -> the greatest subsolution
             // (Pmin; the min scheduler's worst action survives the maximization).
-            // See the class-level doc comment for the LP-duality derivation of this pairing.
             if (direction == ThresholdDirection::AtLeast) {
                 solver->addConstraint("", result.stateVariables[s].getExpression() <= rhs + tau[s].getExpression());
             } else {

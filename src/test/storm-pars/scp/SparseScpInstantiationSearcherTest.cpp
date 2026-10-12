@@ -310,9 +310,7 @@ TEST(SparseScpInstantiationSearcherTest, RejectsExplicitDirectionMismatch) {
     STORM_SILENT_EXPECT_THROW(searcher.run(storm::Environment(), task), storm::exceptions::NotSupportedException);
 }
 
-// The initial state directly satisfies the target label, so it's Prob1 regardless of any
-// parameter -- exercises the short-circuit that used to construct (and assert-crash) the encoder
-// unnecessarily.
+// The initial state satisfies the target label, so its value is 1 for every parameter value and no LP is built.
 TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb1_ReturnsFeasibleImmediately) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =

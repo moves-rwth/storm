@@ -16,40 +16,25 @@
 namespace storm::pars::scp {
 
 /*!
- * Which side of the threshold a witness valuation is being searched for, under the *robust*
- * (universally-quantified-over-schedulers) reading of the property -- matching storm's own
- * default for an unqualified bounded formula on a nondeterministic model
- * (CheckTask::updateOperatorInformation: Less/LessEqual -> Maximize scheduler, Greater/GreaterEqual
- * -> Minimize scheduler):
+ * Which side of the threshold a witness is searched for, read robustly over schedulers:
  *
- *   AtLeast (threshold is Greater/GreaterEqual) <-> minimal reachability probability (Pmin)
- *   AtMost  (threshold is Less/LessEqual)       <-> maximal reachability probability (Pmax)
+ *   AtLeast (threshold is Greater/GreaterEqual) <-> the minimal value (Pmin / Rmin)
+ *   AtMost  (threshold is Less/LessEqual)       <-> the maximal value (Pmax / Rmax)
  *
- * "AtLeast" means: even the worst-case (minimizing) scheduler clears the threshold. "AtMost" means:
- * even the worst-case (maximizing) scheduler stays under it. For a Dtmc there is no scheduler
- * choice, but the same pairing is still used (see the class-level doc comment on ScpLpEncoder for
- * why the LP needs *a* consistent choice regardless).
+ * A Dtmc has no scheduler choice, but the same pairing selects the LP direction.
  */
 enum class ThresholdDirection { AtLeast, AtMost };
 
 /*!
- * Which kind of property the LP is being built for: an unbounded reachability *probability*
- * (states have a natural [0,1] domain; a "known" successor value of exactly 1 is possible, see
- * ScpLpEncoder's oneStates parameter), or an unbounded reachability *reward* (states are
- * non-negative but otherwise domain-unbounded above; there is no "known value 1" case -- the
- * reward-model analog of a state whose value is known-but-not-zero is a state with *infinite*
- * expected reward, which is never a valid successor of any row the encoder is asked to build a
- * constraint for in the first place, see ScpLpEncoder's excludedRows parameter).
+ * The kind of property the LP is built for. Probability states take values in [0,1] and may have a
+ * known value 1; reward states are unbounded above, have no known-value-1 case, and may have
+ * infinite value (see ScpLpEncoder's excludedRows parameter).
  */
 enum class PropertyKind { Probability, Reward };
 
 /*!
- * The LP built for one SCP iteration, together with the handles needed to read a solution back
- * out of it once solver->optimize() has been called.
- *
- * stateVariables is indexed by state; entries for Prob0/Prob1 states are default-constructed
- * (never touched by the encoder) since those states are encoded as constants, not LP variables --
- * callers already know their value (0 or 1 respectively) without consulting the LP.
+ * The LP built for one SCP iteration, with the handles needed to read a solution back.
+ * stateVariables is indexed by state; entries of states with a known value are default-constructed.
  */
 struct EncodedLp {
     std::unique_ptr<storm::solver::LpSolver<double>> solver;
@@ -58,31 +43,22 @@ struct EncodedLp {
 };
 
 /*!
- * Builds the linearized-Bellman LP subproblem for one SCP iteration (paper Fig. 5 / Eq. 30-38;
- * see the implementation plan for the full derivation).
+ * Builds the linearized-Bellman LP of one SCP iteration (Cubuktepe et al., "Convex Optimization for
+ * Parameter Synthesis in MDPs"). Each bilinear term parameter * successor-value is replaced by its
+ * first-order expansion around the current linearization point, within a multiplicative trust region.
  *
- * Everything that does not change between iterations (the affine decomposition, the row-group
- * structure, Prob0/Prob1, the parameter bounds, the threshold) is fixed at construction; encode()
- * is a pure function of the current linearization point and trust region radius, rebuilding the
- * LP from scratch on every call (no incremental/warm-started LP for V1, see the plan).
+ * Everything that is fixed across iterations is given at construction; encode() depends only on the
+ * linearization point and the trust region radius, and builds a fresh LP on every call.
  *
- * IMPORTANT -- the Bellman inequality direction (and hence which Prob0/Prob1 qualitative pair the
- * caller must supply) depends on ThresholdDirection, by LP duality:
+ * The Bellman inequality direction follows the threshold direction:
  *
- *   AtMost:  "p_s >= rhs - tau_s" for every action, objective MINIMIZES p_{s_I}
- *            -> converges to the *least supersolution* = Pmax, tightly, as the accuracy-preserving
- *               choice for that extremal. Caller must supply the Pmax-qualitative pair
- *               (performProb01Max for an Mdp, performProb01 for a Dtmc).
- *   AtLeast: "p_s <= rhs + tau_s" for every action, objective MAXIMIZES p_{s_I}
- *            -> converges to the *greatest subsolution* = Pmin, tightly. Caller must supply the
- *               Pmin-qualitative pair (performProb01Min for an Mdp, performProb01 for a Dtmc).
+ *   AtMost:  "p_s >= rhs - tau_s" for every action, objective minimizes p_{s_I}; converges to the
+ *            least supersolution, i.e. Pmax. The caller supplies the Pmax qualitative sets.
+ *   AtLeast: "p_s <= rhs + tau_s" for every action, objective maximizes p_{s_I}; converges to the
+ *            greatest subsolution, i.e. Pmin. The caller supplies the Pmin qualitative sets.
  *
- * Getting this backwards (e.g. always using ">=" regardless of direction) does not just compute
- * the wrong extremal -- for the direction that then pairs a "maximize" objective with a
- * lower-bound-only constraint, p_{s_I} becomes free to inflate to its own trust-region ceiling
- * with zero cost, completely independent of what the parameters actually support: a
- * self-consistent-looking but meaningless LP solution. The pairing above is load-bearing, not an
- * arbitrary convention.
+ * Pairing a maximizing objective with lower-bound-only constraints would let p_{s_I} grow to its
+ * trust region ceiling independently of the parameters.
  */
 class ScpLpEncoder {
    public:

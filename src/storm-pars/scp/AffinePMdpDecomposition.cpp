@@ -1,7 +1,6 @@
 #include "storm-pars/scp/AffinePMdpDecomposition.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -88,39 +87,6 @@ UnpackedValue const& AffinePMdpDecomposition::getReward(uint64_t row) const {
 
 std::set<storm::RationalFunctionVariable> const& AffinePMdpDecomposition::getParameters() const {
     return parameters;
-}
-
-std::optional<bool> AffinePMdpDecomposition::isGraphPreserving(storm::storage::ParameterRegion<storm::RationalFunction> const& region,
-                                                               uint64_t maxVertices) const {
-    uint64_t const n = parameters.size();
-    // The shift below is UB for n >= 64; guard well before that, and before it could exceed maxVertices anyway.
-    if (n >= 63 || (uint64_t{1} << n) > maxVertices) {
-        return std::nullopt;
-    }
-
-    auto const vertices = region.getVerticesOfRegion(parameters);
-    constexpr double epsilon = 1e-9;
-
-    for (auto const& row : rows) {
-        for (auto const& transition : row) {
-            double minValue = std::numeric_limits<double>::infinity();
-            double maxValue = -std::numeric_limits<double>::infinity();
-            for (auto const& vertex : vertices) {
-                double value = transition.constant;
-                for (auto const& [var, coeff] : transition.parameterCoefficients) {
-                    value += coeff * storm::utility::convertNumber<double>(vertex.at(var));
-                }
-                minValue = std::min(minValue, value);
-                maxValue = std::max(maxValue, value);
-            }
-            bool const isConstantThroughoutRegion = (maxValue - minValue) <= epsilon;
-            bool const touchesBoundary = minValue <= epsilon || maxValue >= 1.0 - epsilon;
-            if (!isConstantThroughoutRegion && touchesBoundary) {
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 }  // namespace storm::pars::scp

@@ -1,11 +1,14 @@
 #include "storm-pars/scp/SparseScpInstantiationSearcher.h"
 
 #include <algorithm>
+#include <sstream>
 
+#include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/analysis/GraphConditions.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
@@ -28,8 +31,7 @@ SparseScpInstantiationSearcher<SparseModelType, ConstantType>::SparseScpInstanti
 template<typename SparseModelType, typename ConstantType>
 ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, ConstantType>::run(
     storm::Environment const& env, std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task) {
-    // Validated here (not just by ScpSettings' CLI argument validators) since ScpOptions can also
-    // be constructed directly by a library caller, bypassing the CLI entirely.
+    // Also validated here because ScpOptions can be constructed by library callers.
     STORM_LOG_THROW(options.trustRegionInitial > 1.0, storm::exceptions::NotSupportedException, "ScpOptions::trustRegionInitial must be > 1.");
     STORM_LOG_THROW(options.trustRegionFactor > 1.0, storm::exceptions::NotSupportedException, "ScpOptions::trustRegionFactor must be > 1.");
     STORM_LOG_THROW(options.trustRegionMax > 1.0, storm::exceptions::NotSupportedException, "ScpOptions::trustRegionMax must be > 1.");
@@ -47,10 +49,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     ThresholdDirection direction = bound.isLowerBound() ? ThresholdDirection::AtLeast : ThresholdDirection::AtMost;
     double threshold = bound.threshold.evaluateAsDouble();
 
-    // The robust reading of the property (see ThresholdDirection's doc comment): AtLeast pairs
-    // with Pmin (even the worst-case scheduler clears the threshold), AtMost with Pmax. This is
-    // the same default storm's own CheckTask::updateOperatorInformation uses for an unqualified
-    // bounded formula on a nondeterministic model.
+    // Robust reading: AtLeast is checked against Pmin/Rmin, AtMost against Pmax/Rmax.
     storm::solver::OptimizationDirection schedulerDirection =
         (direction == ThresholdDirection::AtLeast) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
 
@@ -62,12 +61,9 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         propositionalChecker.check(targetCheckTask)->template asExplicitQualitativeCheckResult<ParametricType>().getTruthValuesVector();
     storm::storage::BitVector allStates(model.getNumberOfStates(), true);
 
-    // For a probability property: zeroStates/oneStates are Prob0/Prob1. For a reward property:
-    // zeroStates are the target states themselves (Rew0 -- no more reward accrues once already at
-    // the target), oneStates has no meaning and stays empty, and infiniteStates are the states
-    // with infinite expected reward (RewInf). Both classifications must match schedulerDirection
-    // (see ScpLpEncoder's class-level doc comment for why the qualitative sets have to agree with
-    // the LP's constraint/objective pairing).
+    // Probability property: zeroStates/oneStates are Prob0/Prob1. Reward property: zeroStates are the
+    // target states, oneStates stays empty, and infiniteStates have infinite expected reward. All sets
+    // are computed for schedulerDirection.
     storm::storage::BitVector zeroStates, oneStates, infiniteStates;
     storm::storage::BitVector excludedRows(model.getTransitionMatrix().getRowCount(), false);
     if constexpr (std::is_same_v<SparseModelType, storm::models::sparse::Mdp<ParametricType>>) {
@@ -80,10 +76,8 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
                                  : storm::utility::graph::performProb1A(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(),
                                                                         model.getBackwardTransitions(), allStates, targetStates);
             infiniteStates.complement();
-            // A "maybe" MDP state can have both actions that stay finite and actions that lead
-            // straight into an infinite-value state; only the former can ever be part of an
-            // optimal scheduler for a state that is itself finite, so those rows are excluded
-            // individually rather than by excluding the whole state.
+            // A state with finite value can still have actions leading into an infinite-value state;
+            // those rows are excluded individually.
             storm::storage::BitVector maybeStates = ~(zeroStates | infiniteStates);
             excludedRows = ~model.getTransitionMatrix().getRowFilter(maybeStates, ~infiniteStates);
         } else {
@@ -101,9 +95,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             oneStates = storm::storage::BitVector(model.getNumberOfStates(), false);
             infiniteStates = storm::utility::graph::performProb1(model.getBackwardTransitions(), allStates, targetStates);
             infiniteStates.complement();
-            // A DTMC state has only one action; if it led into an infinite-value successor it
-            // would transitively be infinite itself already (i.e. already excluded above), so no
-            // row-level exclusion beyond the state level is ever needed here.
+            // A DTMC state with an infinite successor is itself infinite, so no row exclusion is needed.
         } else {
             auto probs = storm::utility::graph::performProb01(model, allStates, targetStates);
             zeroStates = std::move(probs.first);
@@ -128,11 +120,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
     AffinePMdpDecomposition decomposition(model, rewardModel);
 
-    // Always work with a real region object -- either the caller's, or a synthesized [0,1]^n --
-    // so region coverage and graph-preservation get checked uniformly in both cases. This matters:
-    // the *default* [0,1]^n box is, if anything, the case most likely to actually violate
-    // graph-preservation (e.g. a plain "1-p" transition hits 0 at p=1, which is inside the default
-    // box), so skipping the check just because no explicit region was given would be backwards.
+    // Use a real region in both cases (the caller's, or [0,1]^n) so that the checks below apply uniformly.
     storm::storage::ParameterRegion<ParametricType> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
@@ -149,25 +137,20 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         region = storm::storage::ParameterRegion<ParametricType>(std::move(lower), std::move(upper));
     }
 
-    std::optional<bool> graphPreserving = decomposition.isGraphPreserving(region);
-    if (graphPreserving.has_value() && !*graphPreserving) {
-        // Not a hard error: soundness never depends on this (a Feasible result is always gated by
-        // an exact model check of the specific candidate, never by the LP's Prob0/Prob1-informed
-        // linearization), and this situation is extremely common and often harmless -- e.g. the
-        // default [0,1]^n region always technically "touches" the boundary for a plain "1-p"-style
-        // transition. What it *can* cost is search effectiveness: the Prob0/Prob1 classification
-        // used to build the LP is precomputed once from the model's graph structure and may be
-        // wrong for the (measure-zero, in practice rarely-hit-exactly) subset of the region where a
-        // transition actually reaches 0 or 1, making the linearization a poor local model there.
-        STORM_LOG_WARN(
-            "The region is not graph-preserving: some transition probability reaches 0 or 1 somewhere inside it (other than as a "
-            "structural constant, e.g. a self-loop). This does not affect soundness (every accepted witness is still exactly "
-            "model-checked), but the search may be less effective near the affected parameter values.");
-    } else if (!graphPreserving.has_value()) {
-        STORM_LOG_WARN("The region has too many parameters ("
-                       << decomposition.getParameters().size()
-                       << ") to verify graph-preservation exhaustively (would require enumerating 2^n vertices); proceeding without checking it. "
-                          "As with an explicit violation, this cannot affect soundness, only search effectiveness.");
+    // A violation only affects search effectiveness, not soundness: every Feasible result is model-checked exactly.
+    {
+        storm::analysis::ConstraintCollector collector(model);
+        auto const check = storm::pars::analysis::RegionConstraintChecker(collector).checkGraphPreservation(region);
+        if (check.verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
+            std::stringstream witness;
+            for (auto const& [name, value] : *check.witness) {
+                witness << (witness.tellp() > 0 ? ", " : "") << name << "=" << value;
+            }
+            STORM_LOG_WARN("The region is not graph-preserving: the constraint '" << check.violatedConstraint << "' is violated at " << witness.str()
+                                                                                   << ". The search may be less effective near such parameter values.");
+        } else if (check.verdict == storm::pars::analysis::ConstraintVerdict::Undecided) {
+            STORM_LOG_WARN("Graph preservation could not be established for the region; the search may be less effective if it is violated.");
+        }
     }
 
     std::map<VariableType, std::pair<double, double>> parameterBounds;
@@ -182,11 +165,8 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     uint64_t initialState = model.getInitialStates().getNextSetIndex(0);
 
     if (zeroStates.get(initialState) || oneStates.get(initialState) || infiniteStates.get(initialState)) {
-        // The initial state's value is fixed (0, 1, or infinity) regardless of the parameter
-        // valuation, given the region's assumed graph-preservation -- known directly from the
-        // graph analysis above, no LP or exact model check needed (and none of the SCP-specific
-        // machinery below is set up to handle this degenerate case: ScpLpEncoder asserts its
-        // initial state is never a zero/one/infinite state).
+        // The initial state's value is fixed by the graph structure; ScpLpEncoder requires a state
+        // with an unknown value.
         ConstantType constantValue = oneStates.get(initialState)        ? storm::utility::one<ConstantType>()
                                      : infiniteStates.get(initialState) ? storm::utility::infinity<ConstantType>()
                                                                         : storm::utility::zero<ConstantType>();
@@ -202,12 +182,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
     if constexpr (std::is_same_v<SparseModelType, storm::models::sparse::Mdp<ParametricType>>) {
         if (checkTask.isOptimizationDirectionSet()) {
-            // The formula explicitly said Pmax=? or Pmin=?: it must agree with what the threshold
-            // direction implies (see ThresholdDirection's doc comment); the LP's own linearization
-            // is built for schedulerDirection specifically, and would be linearizing the wrong
-            // extremal otherwise -- not unsound (the exact check still gates every accept), but
-            // pointless, so V1 rejects the mismatch rather than silently ignoring the formula's
-            // explicit direction or the threshold's.
+            // An explicit Pmax/Pmin/Rmax/Rmin must agree with the direction implied by the threshold.
             STORM_LOG_THROW(checkTask.getOptimizationDirection() == schedulerDirection, storm::exceptions::NotSupportedException,
                             "SCP requires the formula's optimization direction (if explicitly given, e.g. Pmax=?/Pmin=?) to match the "
                             "robust reading implied by the threshold direction (AtLeast -> Pmin, AtMost -> Pmax); mismatched combinations "
@@ -234,11 +209,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
                                                                                                ScpLpEncoder const& encoder, storm::logic::Bound const& bound,
                                                                                                ThresholdDirection direction, uint64_t initialState,
                                                                                                Valuation const& initialValuation) const {
-    // Returns the model-checked value vector at ConstantType precision, never downcast to double --
-    // this is what makes the accept/reject and threshold-satisfaction decisions below exact when
-    // ConstantType is (e.g. storm::RationalNumber), not just "double, but computed by an exact
-    // checker and then rounded away". double is only introduced where it's unavoidable: the LP
-    // solver itself (see toDoubleVec/toDouble below) is inherently double-precision.
+    // Returns the model-checked value vector at ConstantType precision. Only the LP below uses double.
     auto exactCheck = [&](Valuation const& valuation) -> std::vector<ConstantType> {
         auto result = instantiationChecker.check(env, valuation);
         return result->template asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
@@ -279,13 +250,9 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
     uint64_t iteration = 0;
     for (; iteration < options.maxIterations; ++iteration) {
-        // Polls storm's global resource-limit mechanism (--timeout / Ctrl-C / other termination
-        // signals; storm::utility::resources::installSignalHandler is set up once for the whole
-        // process) rather than tracking a second, SCP-local wall clock.
+        // Stops on --timeout, Ctrl-C and other termination requests.
         if (storm::utility::resources::isTerminate()) {
-            // best.iterations is deliberately left as-is here (the iteration at which `best` was
-            // last established), not overwritten with the current iteration count -- see
-            // ScpResult's doc comment for why those are different things.
+            // best.iterations keeps the iteration at which `best` was established.
             best.status = ScpStatus::Timeout;
             return best;
         }
@@ -332,10 +299,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
 template class SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 template class SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
-// ConstantType = storm::RationalNumber: the model-checking soundness gate, the accept/reject and
-// threshold-satisfaction decisions, and the returned ScpResult::value all run/are reported at exact
-// rational precision (see ScpResult's doc comment). The LP relaxation itself is still double -- its
-// candidate is only ever a proposal, never trusted directly.
+// ConstantType = storm::RationalNumber: checks and the reported value are exact; only the LP is double.
 template class SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 template class SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
 

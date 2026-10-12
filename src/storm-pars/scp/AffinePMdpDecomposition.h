@@ -1,12 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "storm-pars/storage/ParameterRegion.h"
 #include "storm/adapters/RationalFunctionForward.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -39,25 +37,13 @@ struct UnpackedTransition {
 };
 
 /*!
- * One-time symbolic-to-numeric preprocessing of a pMDP's (or pDTMC's) transition matrix -- and,
- * for reward properties, one reward model's state-action reward vector -- as needed by the SCP
- * feasibility search.
+ * Decomposes the transition matrix of an affine pMDP (or pDTMC), and optionally one reward model's
+ * state-action rewards, into constant parts and (parameter, coefficient) pairs.
  *
- * This validates that the model is an *affine* pMDP: every transition-probability
- * storm::RationalFunction (and, if a reward model is given, every state-action reward) must have
- * total degree <= 1 in the parameters (no p*q or p^2 terms). That precondition is exactly what
- * makes the only nonlinearity in the Bellman inequality the bilinear product
- * P(s,alpha,s') * p_{s'}, which SCP linearizes -- a model violating it would make that
- * linearization meaningless, so it is rejected outright rather than silently mishandled. The
- * reward itself does not need to be affine-free of nonlinearity concerns beyond this, since it
- * enters the Bellman inequality additively (no product with a p_{s'} term).
- *
- * Given that, every transition value P(row, successor) -- and, if applicable, every row's reward
- * -- is decomposed into a constant part and a list of (parameter, coefficient) pairs. This class
- * does not know about the property being checked beyond which reward model (if any) is relevant
- * (e.g. it does not know which states are Prob0/Prob1 or Rew0/RewInf) -- that is the concern of
- * the LP encoder, which combines this purely structural decomposition with property-specific
- * information.
+ * Every transition probability and reward must be affine in the parameters (total degree <= 1);
+ * otherwise construction throws. This makes the product P(s,alpha,s') * p_{s'} the only nonlinearity
+ * in the Bellman inequalities. The decomposition is purely structural and independent of the
+ * property's qualitative state sets.
  */
 class AffinePMdpDecomposition {
    public:
@@ -92,30 +78,6 @@ class AffinePMdpDecomposition {
     /// All parameters occurring anywhere in the model's transition matrix, or (if a reward model
     /// was given to the constructor) that reward model's state-action reward vector.
     std::set<storm::RationalFunctionVariable> const& getParameters() const;
-
-    /*!
-     * Checks whether the given region is graph-preserving for this model: every transition either
-     * stays constant throughout the region (touching 0 or 1 is then fine -- that's a structural
-     * fact of the model, e.g. a self-loop with probability 1), or stays strictly within (0,1)
-     * throughout.
-     *
-     * This is sound and complete, not a heuristic proxy: since every transition is affine (this
-     * class's own validated precondition), its extrema over a box region are always attained at
-     * the region's vertices, so checking those 2^|getParameters()| points is both necessary and
-     * sufficient -- no need for interval arithmetic, sampling, or an SMT solve over the general
-     * polynomial case.
-     *
-     * @param region The region to check; must cover every parameter in getParameters() (not
-     * validated here -- callers are expected to have already checked this, e.g. because they
-     * needed it for a clear error message of their own).
-     * @param maxVertices Enumerating all vertices is only tractable for a modest parameter count;
-     * if the region has more parameters than this many vertices would require, the check is
-     * skipped (returning std::nullopt) rather than silently taking an intractably long time.
-     * @return true/false if the check ran to completion, std::nullopt if it was skipped because
-     * the region has too many parameters to enumerate exhaustively.
-     */
-    std::optional<bool> isGraphPreserving(storm::storage::ParameterRegion<storm::RationalFunction> const& region,
-                                          uint64_t maxVertices = uint64_t{1} << 20) const;
 
    private:
     /*!

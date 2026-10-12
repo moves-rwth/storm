@@ -259,12 +259,10 @@ template<typename ValueType>
 void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
                            std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                            boost::optional<std::set<RationalFunctionVariable>> omittedParameters, storm::api::MonotonicitySetting monotonicitySettings) {
-    // The formula-shape/bound checks are left to SparseScpInstantiationSearcher::run() itself (no
-    // point duplicating them here); this guard is kept because it's load-bearing for the dispatch
-    // just below, not just an early-exit nicety.
+    // Formula and bound checks are done by SparseScpInstantiationSearcher::run().
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp) || model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                     "SCP is only supported for MDPs and DTMCs.");
-    // TODO handle omittedParameters (mirrors PLA, which has the same gap).
+    // TODO handle omittedParameters.
 
     auto const& scpSettings = storm::settings::getModule<storm::settings::modules::ScpSettings>();
     storm::pars::scp::ScpOptions options;
