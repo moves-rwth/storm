@@ -1,3 +1,5 @@
+// Reference copy: these properties are embedded in cpp file directly.
+
 Pmax=? [ F (s = 3) ]; // existence of 'success', pick 'send'
 
 Pmax=? [ (s<=1) U (s=3) ]; // 'try' until 'success', pick 'send'

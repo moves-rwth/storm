@@ -1145,4 +1145,92 @@ TYPED_TEST(MdpPrctlModelCheckerTest, StepBoundedReachability) {
         EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     }
 }
+
+TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocol) {
+    // see simple_comm_protocol.props
+    std::string formulasString = "Pmax=? [ F (s = 3) ]; ";
+    formulasString += "Pmax=? [ (s<=1) U (s=3) ]; "; // DISABLED BELOW!
+    formulasString += "Pmin=? [ (s<=1) U (s=3) ]; ";
+    formulasString += "Pmax=? [ (s<=1) W (s=3) ]; ";
+    formulasString += "Pmin=? [ (s<=1) W (s=3) ]; ";
+    formulasString += "Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; ";
+    formulasString += "Pmax=? [ !(s=2) W ((s=3 & !(s=2))) ]; ";
+    formulasString += "Pmin=? [ !(s=2) W ((s=3 & !(s=2))) ]; ";
+    formulasString += "Pmax=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; ";
+    formulasString += "Pmin=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; ";
+    formulasString += "Pmax=? [ (s=2) R !(s=3) ]; ";
+    formulasString += "Pmin=? [ (s=2) R !(s=3) ]; ";
+
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/simple_comm_protocol.prism", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+
+    ASSERT_EQ(12ul, tasks.size());
+    this->execute(model, [&]() {
+        EXPECT_EQ(4ul, model->getNumberOfStates());
+        EXPECT_EQ(6ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        //result = checker->check(this->env(), tasks[1]);
+        //EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        if (checker->canHandle(tasks[3])) {
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[4]) && checker->canHandle(tasks[5])) {
+            result = checker->check(this->env(), tasks[4]);
+            auto const weakUntil = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("99/100"), weakUntil, this->precision());
+
+            result = checker->check(this->env(), tasks[5]);
+            auto const weakUntilDual = this->getQuantitativeResultAtInitialState(model, result);
+            EXPECT_NEAR(this->parseNumber("1/100"), weakUntilDual, this->precision());
+
+            EXPECT_NEAR(this->parseNumber("1"), weakUntil + weakUntilDual, this->precision());
+        }
+
+        if (checker->canHandle(tasks[6])) {
+            result = checker->check(this->env(), tasks[6]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[7])) {
+            result = checker->check(this->env(), tasks[7]);
+            EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[8])) {
+            result = checker->check(this->env(), tasks[8]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[9])) {
+            result = checker->check(this->env(), tasks[9]);
+            EXPECT_NEAR(this->parseNumber("999999/1000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[10])) {
+            result = checker->check(this->env(), tasks[10]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+        if (checker->canHandle(tasks[11])) {
+            result = checker->check(this->env(), tasks[11]);
+            EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+#endif
+    });
+}
+
 }  // namespace
