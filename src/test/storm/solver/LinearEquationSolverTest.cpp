@@ -7,6 +7,7 @@
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/TerminationCondition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 
@@ -441,5 +442,45 @@ TEST(EliminationLinearEquationSolver, AbsorbingSinkReachability) {
     auto one = storm::utility::one<storm::RationalNumber>();
     auto zero = storm::utility::zero<storm::RationalNumber>();
     testEliminationWithAbsorbingStates<storm::RationalNumber>({{{1, half}}, {{2, one}}, {{1, one}}}, {half, zero, zero}, {half, zero, zero});
+}
+
+TEST(NativeLinearEquationSolver, SoundMethodsTerminateEarly) {
+    // State 0 has value 1 but converges slowly due to its self-loop, state 1 has value 0.5.
+    // The thresholds are already met after the first iteration, so every sound method should stop far from convergence.
+    storm::storage::SparseMatrixBuilder<double> builder;
+    builder.addNextValue(0, 0, 0.99);
+    builder.addNextValue(1, 1, 0.5);
+    storm::storage::SparseMatrix<double> A = builder.build(2, 2);
+    std::vector<double> b = {0.01, 0.25};
+    storm::storage::BitVector filter(2, std::vector<uint64_t>{0});
+
+    for (auto method :
+         {storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration, storm::solver::NativeLinearEquationSolverMethod::IntervalIteration,
+          storm::solver::NativeLinearEquationSolverMethod::GuessingValueIteration}) {
+        for (bool useLowerBound : {true, false}) {
+            SCOPED_TRACE(storm::solver::toString(method) + (useLowerBound ? " with lower bound" : " with upper bound"));
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(method);
+            env.solver().native().setRelativeTerminationCriterion(false);
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-6"));
+
+            auto factory = storm::solver::GeneralLinearEquationSolverFactory<double>();
+            ASSERT_EQ(factory.getEquationProblemFormat(env), storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem);
+            auto solver = factory.create(env, A);
+            solver->setBounds(0.0, 10.0);
+            if (useLowerBound) {
+                solver->setTerminationCondition(
+                    std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(filter, false, 0.005, false));
+            } else {
+                solver->setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<double>>(filter, false, 9.95, true));
+            }
+            std::vector<double> x(2);
+            ASSERT_NO_THROW(solver->solveEquations(env, x, b));
+            // Without early termination, x[0] would be within the precision of 1.
+            EXPECT_GT(std::abs(x[0] - 1.0), 1e-3) << "x[0] = " << x[0];
+        }
+    }
 }
 }  // namespace
