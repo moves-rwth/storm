@@ -196,16 +196,16 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
 
     // Add state labeling
     storm::models::sparse::StateLabeling stateLabeling(nextStateId);
-    stateLabeling.addLabel("init");
+    // Eagerly add all labels to preserve labels that may be unreachable under the FSC, but relevant for a property
+    for (auto const& label : pomdp.getStateLabeling().getLabels()) {
+        stateLabeling.addLabel(label);
+    }
     stateLabeling.addLabelToState("init", initialStateId);
     for (uint64_t pomdpState = 0; pomdpState < pomdp.getNumberOfStates(); ++pomdpState) {
         if (pomdpStateAndFscNodeToNewStateId.contains(pomdpState)) {
             for (const auto& newStateId : pomdpStateAndFscNodeToNewStateId[pomdpState] | std::views::values) {
                 for (auto const& label : pomdp.getStateLabeling().getLabelsOfState(pomdpState)) {
                     if (label != "init") {
-                        if (!stateLabeling.containsLabel(label)) {
-                            stateLabeling.addLabel(label);
-                        }
                         stateLabeling.addLabelToState(label, newStateId);
                     }
                 }
