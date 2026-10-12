@@ -30,14 +30,21 @@ TargetType toCoefficient(SourceType const& source) {
 
 /*!
  * Adds the given value to the coefficient of the given variable. This avoids requiring the coefficient type
- * to be default-constructible.
+ * to be default-constructible. Coefficients that vanish are removed, so that a variable with coefficient zero
+ * (e.g. in `x - x`) is not mistaken for a variable that actually occurs in the form.
  */
 void addCoefficient(std::map<std::string, CoefficientType>& coefficients, std::string const& variable, CoefficientType const& value) {
+    if (storm::utility::isZero(value)) {
+        return;
+    }
     auto it = coefficients.find(variable);
     if (it == coefficients.end()) {
         coefficients.emplace(variable, value);
     } else {
         it->second = it->second + value;
+        if (storm::utility::isZero(it->second)) {
+            coefficients.erase(it);
+        }
     }
 }
 
@@ -366,8 +373,9 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
 
 /*!
  * Exactly evaluates a purely numerical expression at the given point. Returns `std::nullopt` if the
- * expression contains constructs that are not supported by this evaluator, in particular boolean operators
- * and if-then-else expressions.
+ * expression contains constructs that are not supported by this evaluator, in particular boolean operators,
+ * if-then-else expressions, and exponentiation. A constraint that cannot be evaluated at any probe point is
+ * reported as undecided rather than violated, which keeps the probing sound.
  */
 std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression, RegionWitness const& point) {
     if (expression.isIntegerLiteralExpression()) {
@@ -429,8 +437,7 @@ std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression,
  * Checks a non-affine constraint by probing a few points of the region. This is sound for detecting
  * violations but cannot prove that a constraint holds, so the verdict is Undecided if no probe fails.
  */
-SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression, BoundariesByName const& boundaries,
-                              std::vector<RegionWitness> const& probePoints) {
+SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression, std::vector<RegionWitness> const& probePoints) {
     RelationType const relation = relationExpression.getRelationType();
     BaseExpression const& lhs = *relationExpression.getFirstOperand();
     BaseExpression const& rhs = *relationExpression.getSecondOperand();
@@ -494,7 +501,20 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
         BaseExpression const& baseExpression = constraint.getBaseExpression();
 
         SingleVerdict singleVerdict;
-        if (baseExpression.isBinaryRelationExpression()) {
+        if (baseExpression.isBooleanLiteralExpression()) {
+            // A constant constraint holds on the whole region iff it is true. Boolean literals occur in the
+            // collected constraint set when the collector rejects a constant entry (e.g. a fixed probability
+            // outside [0, 1]), in which case the constraint is `false`.
+            if (baseExpression.asBooleanLiteralExpression().getValue()) {
+                singleVerdict = SingleVerdict{ConstraintVerdict::Satisfied, std::nullopt};
+            } else {
+                RegionWitness centerPoint;
+                for (auto const& [variable, boundary] : boundaries) {
+                    centerPoint.emplace(variable, (boundary.first + boundary.second) / 2);
+                }
+                singleVerdict = SingleVerdict{ConstraintVerdict::Violated, std::move(centerPoint)};
+            }
+        } else if (baseExpression.isBinaryRelationExpression()) {
             BinaryRelationExpression const& relationExpression = baseExpression.asBinaryRelationExpression();
             auto lhs = affineFormVisitor.getAffineForm(*relationExpression.getFirstOperand());
             auto rhs = affineFormVisitor.getAffineForm(*relationExpression.getSecondOperand());
@@ -515,7 +535,7 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
                 Extremes const extremes = computeExtremes(form, boundaries);
                 singleVerdict = checkAffineConstraint(relationExpression.getRelationType(), extremes);
             } else {
-                singleVerdict = probeConstraint(relationExpression, boundaries, probePoints);
+                singleVerdict = probeConstraint(relationExpression, probePoints);
             }
         }
 

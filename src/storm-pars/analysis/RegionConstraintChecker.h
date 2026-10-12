@@ -115,7 +115,7 @@ class RegionConstraintChecker {
     /*!
      * Checks an arbitrary constraint set over a region.
      *
-     * @param constraints The constraints to check, mapping a printed form to the constraint expression.
+     * @param constraints The constraints to check, each given as an expression that is compared to zero.
      * @param region The region to check the constraints over.
      * @param label A description used in exception messages.
      */

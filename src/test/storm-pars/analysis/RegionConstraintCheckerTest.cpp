@@ -175,6 +175,32 @@ TEST(RegionConstraintCheckerTest, EqualityRequiresIdenticallyZero) {
               Checker::checkConstraints(buildConstraintSet(x - x == manager->integer(0)), region, "test").verdict);
 }
 
+TEST(RegionConstraintCheckerTest, BooleanLiteralConstraintsAreDecided) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    Region region = buildRegion({{"x", {0.0, 1.0}}});
+
+    // A constantly false constraint is violated at every point of the region and carries a witness.
+    auto violated = Checker::checkConstraints(buildConstraintSet(manager->boolean(false)), region, "test");
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
+    EXPECT_EQ(1ul, violated.numViolated);
+    ASSERT_TRUE(violated.witness.has_value());
+    EXPECT_TRUE(violated.witness->count("x") > 0);
+
+    // A constantly true constraint holds throughout.
+    auto satisfied = Checker::checkConstraints(buildConstraintSet(manager->boolean(true)), region, "test");
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied, satisfied.verdict);
+    EXPECT_EQ(1ul, satisfied.numSatisfied);
+}
+
+TEST(RegionConstraintCheckerTest, CancellingCoefficientDoesNotRequireVariableInRegion) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto x = variable(manager, "x");
+
+    // x - x <= 0 is constantly zero: x cancels, so the region need not mention x.
+    auto result = Checker::checkConstraints(buildConstraintSet(x - x <= manager->integer(0)), buildRegion({{"y", {0.0, 1.0}}}), "test");
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied, result.verdict);
+}
+
 TEST(RegionConstraintCheckerTest, NonLinearConstraintIsProbed) {
     auto manager = std::make_shared<storm::expressions::ExpressionManager>();
     auto x = variable(manager, "x");
