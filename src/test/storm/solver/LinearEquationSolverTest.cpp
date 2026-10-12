@@ -396,6 +396,37 @@ TYPED_TEST(LinearEquationSolverTest, solveEquationSystem) {
     EXPECT_NEAR(x[2], this->parseNumber("875/18"), this->precision());
 }
 
+TEST(IntervalIterationJustPreciseEnough, Native) {
+    storm::storage::SparseMatrixBuilder<double> builder;
+    builder.addNextValue(0, 0, 0.9);
+    auto matrix = builder.build();
+    std::vector<double> b = {0.099};  // Fixed point 0.99.
+    double const precision = 1e-3;
+
+    for (bool relative : {false, true}) {
+        SCOPED_TRACE(::testing::Message() << "relative=" << relative);
+        auto env = NativeDoubleIntervalIterationEnvironment::createEnvironment();
+        env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+        env.solver().native().setRelativeTerminationCriterion(relative);
+        auto solver = storm::solver::GeneralLinearEquationSolverFactory<double>().create(env, matrix);
+        solver->setBounds(0.0, 1.0);
+        std::vector<double> x(1);
+        ASSERT_TRUE(solver->solveEquations(env, x, b));
+        ASSERT_TRUE(solver->hasSolutionLowerBounds());
+        ASSERT_TRUE(solver->hasSolutionUpperBounds());
+        double const lower = solver->getSolutionLowerBounds()[0];
+        double const upper = solver->getSolutionUpperBounds()[0];
+        double const tolerance = precision * (relative ? lower : 1.0);
+        EXPECT_LE(lower, 0.99);
+        EXPECT_GE(upper, 0.99);
+        EXPECT_DOUBLE_EQ(x[0], (lower + upper) / 2.0);
+        EXPECT_NEAR(x[0], 0.99, precision * (relative ? 0.99 : 1.0));
+        EXPECT_LE(upper - lower, 2.0 * tolerance);
+        // With this slow contraction, stopping at half this width takes unnecessary iterations.
+        EXPECT_GT(upper - lower, tolerance);
+    }
+}
+
 template<typename ValueType>
 void testEliminationWithAbsorbingStates(std::vector<std::vector<std::pair<uint64_t, ValueType>>> const& rows, std::vector<ValueType> const& b,
                                         std::vector<ValueType> const& expected) {

@@ -45,6 +45,19 @@ class SimpleValuation : public Valuation {
      */
     bool operator==(SimpleValuation const& other) const;
 
+    /*!
+     * Checks whether this valuation stores a value for the given variable.
+     *
+     * The contained variables are those the manager knew at the time this valuation was created. Variables
+     * that are declared in the manager afterwards are not contained, as valuations are invalidated by such
+     * declarations. Note that array and string variables are never contained, as they are not stored by
+     * valuations of this type.
+     *
+     * @param variable The variable to check.
+     * @return True iff this valuation stores a value for the given variable.
+     */
+    bool contains(Variable const& variable) const;
+
     // Override virtual functions of base class.
     virtual bool getBooleanValue(Variable const& booleanVariable) const override;
     virtual void setBooleanValue(Variable const& booleanVariable, bool value) override;

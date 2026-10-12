@@ -55,7 +55,9 @@ GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                                          .makeOptional()
                                          .build())
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false,
+                                                   "The internally used precision; for sound methods, this bounds the "
+                                                   "returned midpoint's relative (or absolute) error.")
                         .setShortName(precisionOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.")
                                          .setDefaultValueDouble(1e-06)

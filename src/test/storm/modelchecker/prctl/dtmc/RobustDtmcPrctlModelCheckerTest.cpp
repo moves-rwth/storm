@@ -345,6 +345,60 @@ TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
                                             std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 }
 
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewards) {
+    // Rewards are collected in the first k states of a path, starting at the initial state (which has reward 0).
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=0 ];R=? [ C<=0 ]", 0, 0);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=1 ];R=? [ C<=1 ]", 0, 0);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", 6.5, 8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=10 ];R=? [ C<=10 ]", 6.5, 8.5);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny04CumulativeRewards) {
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", 6.5, 8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=3 ];R=? [ C<=3 ]", 6.8, 9.2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=4 ];R=? [ C<=4 ]", 7.1, 9.9);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewardsNoUncertaintyResolutionMode) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewardsRobust) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Robust);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimes) {
+    // The self-loop probability p is in [0.2, 0.5], i.e., the expected time 1 / (1 - p) is in [1.25, 2].
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 1.25, 2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 2, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesAndRewardsTargetStateBeforeMaybeStates) {
+    // The target state has a smaller index than the other state. The values of target states must not be mixed up with the values of the remaining states.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-07.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 1.25, 2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-07.drn", "R=? [ F \"target\" ];R=? [ F \"target\" ]", 1.25, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, GraphPreservationRequired) {
+    // The self-loop interval [0, 1] allows to never reach the target, i.e., the graph of the model is not preserved.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "R=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "P=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+}
+
+TEST(RobustDtmcModelCheckerTest, GraphPreservationAfterTightening) {
+    // The self-loop interval [0, 0.5] is tightened to [0.5, 0.5] as the other transition has probability at most 0.5. The model is graph preserving.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-09.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 2, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesNoUncertaintyResolutionMode) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesRobust) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Robust);
+}
+
 TEST(RobustDtmcModelCheckerTest, CrowdsQuotientIDTMC) {
     // Ensuring equivalent behavior when checking identical model as IDTMC and IMDP (cf. CrowdsQuotientIMDP)
     checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/crowds-quotient-3-5.drn",
@@ -458,6 +512,28 @@ TEST(RobustRationalDtmcModelCheckerTest, Tiny04MaxMinRewards) {
     checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
                                                     storm::utility::positiveInfinity<storm::RationalNumber>(),
                                                     storm::utility::positiveInfinity<storm::RationalNumber>());
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03CumulativeRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=1 ];R=? [ C<=1 ]", storm::RationalNumber(0),
+                                                    storm::RationalNumber(0));
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", storm::RationalNumber("13/2"),
+                                                    storm::RationalNumber("17/2"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny04CumulativeRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=3 ];R=? [ C<=3 ]", storm::RationalNumber("34/5"),
+                                                    storm::RationalNumber("46/5"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03CumulativeRewardsNoUncertaintyResolutionMode) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, ReachabilityTimes) {
+    // Value iteration reaches the exact value after finitely many steps as the model is acyclic (apart from the target).
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]",
+                                                    storm::RationalNumber(2), storm::RationalNumber(2));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
