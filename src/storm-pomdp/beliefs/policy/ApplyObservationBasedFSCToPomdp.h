@@ -100,8 +100,10 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
             for (uint64_t localActionIndex = 0; localActionIndex < pomdpRowGroupSize; ++localActionIndex) {
                 auto const& labels = pomdp.getChoiceLabeling().getLabelsOfChoice(pomdpRowGroupIndex + localActionIndex);
                 if (labels.empty()) {
-                    // Numeric fallbacks must not replace a name-based match.
-                    actionMap[fscObservationId].try_emplace(localActionIndex, localActionIndex);
+                    // Numeric fallbacks are only valid for FSC actions without a name.
+                    if (!fsc.hasActionName(fscObservationId, localActionIndex)) {
+                        actionMap[fscObservationId].try_emplace(localActionIndex, localActionIndex);
+                    }
                     continue;
                 }
                 std::string const& actionName = *labels.begin();

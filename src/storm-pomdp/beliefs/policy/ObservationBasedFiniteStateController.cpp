@@ -162,6 +162,12 @@ std::string ObservationBasedFiniteStateController<ValueType>::getActionName(uint
 }
 
 template<typename ValueType>
+bool ObservationBasedFiniteStateController<ValueType>::hasActionName(uint64_t const observationId, uint64_t const actionId) const {
+    return idToActionName && idToActionName->contains(observationId) && idToActionName->at(observationId).contains(actionId) &&
+           !idToActionName->at(observationId).at(actionId).empty();
+}
+
+template<typename ValueType>
 std::optional<uint64_t> ObservationBasedFiniteStateController<ValueType>::getObservationIdBySignature(ObservationSignature const& observationSignature) const {
     if (!idToObservationSignature) {
         return std::nullopt;

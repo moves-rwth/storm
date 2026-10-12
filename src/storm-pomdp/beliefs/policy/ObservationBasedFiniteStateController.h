@@ -266,6 +266,15 @@ class ObservationBasedFiniteStateController {
     std::string getActionName(uint64_t observationId, uint64_t actionId) const;
 
     /**
+     * Checks whether a local action has a nonempty name for an observation.
+     *
+     * @param observationId The ID of the observation.
+     * @param actionId The local ID of the action.
+     * @return True if the action-name mapping contains a nonempty name for the action, and false if the name is empty or naming metadata is missing.
+     */
+    bool hasActionName(uint64_t observationId, uint64_t actionId) const;
+
+    /**
      * Looks up an observation ID by signature.
      *
      * @param observationSignature The observation signature to find.
