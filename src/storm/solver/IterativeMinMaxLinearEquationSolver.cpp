@@ -646,7 +646,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         this->createUpperBoundsVector(*upperX);
 
         this->startMeasureProgress();
-        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
+        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                                  storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
