@@ -2,8 +2,7 @@
 
 #include <set>
 
-#include <carl/core/Variable.h>
-
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -27,7 +26,7 @@ namespace expressions {
  */
 template<typename PolynomialType>
 Expression polynomialToExpression(PolynomialType const& polynomial, std::shared_ptr<ExpressionManager> const& manager) {
-    std::set<carl::Variable> polynomialVariables;
+    std::set<storm::RationalFunctionVariable> polynomialVariables;
     polynomial.gatherVariables(polynomialVariables);
     for (auto const& variable : polynomialVariables) {
         if (!manager->hasVariable(variable.name())) {
@@ -39,15 +38,15 @@ Expression polynomialToExpression(PolynomialType const& polynomial, std::shared_
     // depend on the order in which the polynomial happens to store them.
     polynomial.makeOrdered();
 
-    auto zero = storm::utility::convertNumber<storm::RationalNumber>(0);
-    auto one = storm::utility::convertNumber<storm::RationalNumber>(1);
+    auto zero = storm::utility::zero<storm::RationalNumber>();
+    auto one = storm::utility::one<storm::RationalNumber>();
 
     Expression result;
     bool isFirstTerm = true;
     for (auto const& term : polynomial) {
         // The constant term has no monomial, in which case this set stays empty and the monomial is never
         // dereferenced.
-        std::set<carl::Variable> termVariables;
+        std::set<storm::RationalFunctionVariable> termVariables;
         term.gatherVariables(termVariables);
 
         auto coefficient = storm::utility::convertNumber<storm::RationalNumber, typename PolynomialType::CoeffType>(term.coeff());

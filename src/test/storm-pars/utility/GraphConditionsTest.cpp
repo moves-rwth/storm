@@ -35,14 +35,23 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> buildParam
 }
 
 /*!
- * Collects the string representations of the given constraints, sorted. The collector returns the constraints in
- * the order in which it discovered them, so sorting here keeps the assertions independent of that order.
+ * Collects the string representations of the given constraints in the collector's discovery order.
  */
-std::vector<std::string> asStrings(storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
+std::vector<std::string> asStringsInDiscoveryOrder(storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
     std::vector<std::string> result;
     for (auto const& entry : constraints) {
         result.push_back(entry.toString());
     }
+    return result;
+}
+
+/*!
+ * Collects the string representations of the given constraints, sorted. Use this only for assertions that must not
+ * depend on the order, such as the set of collected constraints. Assertions about the order itself have to use
+ * asStringsInDiscoveryOrder, since sorting here would hide any deviation from that order.
+ */
+std::vector<std::string> asSortedStrings(storm::analysis::ConstraintCollector::ConstraintSet const& constraints) {
+    auto result = asStringsInDiscoveryOrder(constraints);
     std::sort(result.begin(), result.end());
     return result;
 }
@@ -81,11 +90,11 @@ TEST_F(GraphConditionsTest, PolynomialDenominators) {
     // phrased as a relation of the difference to zero. Consequently, the constraints derived from p and from
     // 1 - p coincide pairwise and are collected only once each.
     std::vector<std::string> expectedWellformed{"((-1 + p) <= 0)", "(-(p) <= 0)"};
-    EXPECT_EQ(expectedWellformed, asStrings(collector.getWellformedConstraints()));
+    EXPECT_EQ(expectedWellformed, asSortedStrings(collector.getWellformedConstraints()));
 
     // Both transitions must stay non-zero, which for p and 1 - p amounts to p != 0 and 1 - p != 0.
     std::vector<std::string> expectedGraphPreserving{"((1 - p) != 0)", "(p != 0)"};
-    EXPECT_EQ(expectedGraphPreserving, asStrings(collector.getGraphPreservingConstraints()));
+    EXPECT_EQ(expectedGraphPreserving, asSortedStrings(collector.getGraphPreservingConstraints()));
 }
 
 TEST_F(GraphConditionsTest, SymbolicDenominators) {
@@ -101,10 +110,10 @@ TEST_F(GraphConditionsTest, SymbolicDenominators) {
     // each nominator must follow the sign of the denominator.
     std::vector<std::string> expectedWellformed{"((((-1 + p) - q) < 0) ? ((-1 + p) <= 0) : ((1 - p) <= 0))", "((((-1 + p) - q) < 0) ? (-(q) <= 0) : (q <= 0))",
                                                 "(((1 - p) + q) != 0)"};
-    EXPECT_EQ(expectedWellformed, asStrings(collector.getWellformedConstraints()));
+    EXPECT_EQ(expectedWellformed, asSortedStrings(collector.getWellformedConstraints()));
 
     std::vector<std::string> expectedGraphPreserving{"((1 - p) != 0)", "(q != 0)"};
-    EXPECT_EQ(expectedGraphPreserving, asStrings(collector.getGraphPreservingConstraints()));
+    EXPECT_EQ(expectedGraphPreserving, asSortedStrings(collector.getGraphPreservingConstraints()));
 }
 
 TEST_F(GraphConditionsTest, ConstraintsAreDeduplicated) {
@@ -117,26 +126,36 @@ TEST_F(GraphConditionsTest, ConstraintsAreDeduplicated) {
     auto dtmcWithManyTransitions = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die_2.pm", "P=? [F s=7]");
     storm::analysis::ConstraintCollector dieCollector(*dtmcWithManyTransitions);
 
-    for (auto const& constraints : {asStrings(collector.getWellformedConstraints()), asStrings(collector.getGraphPreservingConstraints()),
-                                    asStrings(dieCollector.getWellformedConstraints()), asStrings(dieCollector.getGraphPreservingConstraints())}) {
+    for (auto const& constraints : {asSortedStrings(collector.getWellformedConstraints()), asSortedStrings(collector.getGraphPreservingConstraints()),
+                                    asSortedStrings(dieCollector.getWellformedConstraints()), asSortedStrings(dieCollector.getGraphPreservingConstraints())}) {
         std::set<std::string> distinct(constraints.begin(), constraints.end());
         EXPECT_EQ(constraints.size(), distinct.size());
     }
 }
 
 TEST_F(GraphConditionsTest, ConstraintsAreOrderedDeterministically) {
-    auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_rational_denominator.pm", "P=? [F s=2]");
+    auto dtmc = buildParametricDtmc(STORM_TEST_RESOURCES_DIR "/pdtmc/only_p.pm", "P=? [F s=1]");
 
     // Collecting the constraints repeatedly from equal models must yield the same order.
     storm::analysis::ConstraintCollector firstCollector(*dtmc);
     storm::analysis::ConstraintCollector secondCollector(*dtmc);
 
-    EXPECT_EQ(asStrings(firstCollector.getWellformedConstraints()), asStrings(secondCollector.getWellformedConstraints()));
-    EXPECT_EQ(asStrings(firstCollector.getGraphPreservingConstraints()), asStrings(secondCollector.getGraphPreservingConstraints()));
+    EXPECT_EQ(asStringsInDiscoveryOrder(firstCollector.getWellformedConstraints()), asStringsInDiscoveryOrder(secondCollector.getWellformedConstraints()));
+    EXPECT_EQ(asStringsInDiscoveryOrder(firstCollector.getGraphPreservingConstraints()),
+              asStringsInDiscoveryOrder(secondCollector.getGraphPreservingConstraints()));
 
-    // The constraints are ordered by their string representation.
-    auto wellformed = asStrings(firstCollector.getWellformedConstraints());
-    EXPECT_TRUE(std::is_sorted(wellformed.begin(), wellformed.end()));
+    // The constraints are collected in the order in which the model traversal discovers them, which is not their
+    // lexicographic order. Pinning the expected order keeps this test from passing vacuously.
+    std::vector<std::string> expectedWellformed{"(-(p) <= 0)", "((-1 + p) <= 0)"};
+    std::vector<std::string> expectedGraphPreserving{"(p != 0)", "((1 - p) != 0)"};
+
+    EXPECT_EQ(expectedWellformed, asStringsInDiscoveryOrder(firstCollector.getWellformedConstraints()));
+    EXPECT_EQ(expectedGraphPreserving, asStringsInDiscoveryOrder(firstCollector.getGraphPreservingConstraints()));
+
+    // Guard the guard: if the discovery order ever happened to coincide with the lexicographic one, the assertions
+    // above could no longer detect a collector that reorders or sorts its constraints.
+    auto sortedWellformed = asSortedStrings(firstCollector.getWellformedConstraints());
+    EXPECT_NE(expectedWellformed, sortedWellformed);
 }
 
 TEST_F(GraphConditionsTest, ExportToFile) {
@@ -185,7 +204,7 @@ TEST_F(GraphConditionsTest, ExportToFile) {
         }
     }
     std::sort(wellformedLines.begin(), wellformedLines.end());
-    EXPECT_EQ(asStrings(collector.getWellformedConstraints()), wellformedLines);
+    EXPECT_EQ(asSortedStrings(collector.getWellformedConstraints()), wellformedLines);
 
     std::remove(temporaryFile.c_str());
 }

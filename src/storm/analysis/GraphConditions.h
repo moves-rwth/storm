@@ -1,16 +1,21 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/models/sparse/Model.h"
+#include "storm/models/sparse/ModelForward.h"
 #include "storm/storage/expressions/BinaryRelationType.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/HashVisitor.h"
 
 namespace storm {
+namespace expressions {
+class ExpressionManager;
+}
 namespace analysis {
 
 /*!
@@ -19,10 +24,12 @@ namespace analysis {
  * The collected constraints are stored as expressions in a Storm expression manager. In particular, this avoids a
  * dependency on a dedicated logical formula representation.
  *
- * Structurally equal constraints are deduplicated with `Expression::isSyntacticallyEqual`. Note that Storm's
- * expressions hash and compare by identity of their underlying node, so a container keyed by expressions themselves
- * would not deduplicate them. The constraints are kept in the order in which they are discovered, which is
- * determined by the traversal of the model.
+ * Structurally equal constraints are deduplicated. Note that Storm's expressions hash and compare by identity of
+ * their underlying node, so a container keyed by expressions themselves would not deduplicate them. We therefore
+ * bucket the collected constraints by their structural hash (`storm::expressions::HashVisitor`) and compare the
+ * candidates in a bucket with `Expression::isSyntacticallyEqual`, which allows looking up an existing constraint
+ * without scanning all of the collected ones. The constraints themselves are kept in the order in which they are
+ * discovered, which is determined by the traversal of the model.
  */
 class ConstraintCollector {
    public:
@@ -32,21 +39,37 @@ class ConstraintCollector {
     using ConstraintSet = std::vector<storm::expressions::Expression>;
 
    private:
+    /*!
+     * An index over a set of constraints: it groups the constraints by their structural hash, so that duplicate
+     * detection only has to compare against the few constraints with the same hash instead of against all of them.
+     */
+    using ConstraintIndex = std::unordered_map<std::size_t, ConstraintSet>;
+
     // The expression manager owning the collected constraints.
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
+
+    // Hashes expressions by their structure, so that they can be deduplicated and looked up.
+    storm::expressions::HashVisitor hashVisitor;
 
     // A set of constraints that says that the DTMC actually has valid probability distributions in all states.
     ConstraintSet wellformedConstraintSet;
 
+    // An index over the wellformed constraints. It mirrors wellformedConstraintSet.
+    ConstraintIndex wellformedConstraintIndex;
+
     // A set of constraints that makes sure that the underlying graph of the model does not change depending
     // on the parameter values.
     ConstraintSet graphPreservingConstraintSet;
+
+    // An index over the graph preserving constraints. It mirrors graphPreservingConstraintSet.
+    ConstraintIndex graphPreservingConstraintIndex;
 
     // A set of variables
     std::set<storm::RationalFunctionVariable> variableSet;
 
     /*!
      * Builds the constraint that the given polynomial stands in the given relation to zero.
+     * The polynomial is on the left-hand side of the relation: polynomial relation 0.
      *
      * Relations in which the polynomial occurs on the greater side are normalized by negating the polynomial,
      * so that e.g. `a >= 0` is built as `-a <= 0`. Without this normalization the same constraint would be
@@ -63,20 +86,14 @@ class ConstraintCollector {
     storm::expressions::Expression relateToZero(storm::RawPolynomial const& polynomial, storm::expressions::RelationType relation) const;
 
     /*!
-     * Adds the given constraint to the set of well-formedness constraints, unless the set already contains a
-     * structurally equal constraint.
+     * Adds the given constraint to the given set, unless the set already contains a structurally equal constraint.
      *
+     * @param constraintSet The set of constraints to extend.
+     * @param constraintIndex The index over the set, into which the constraint is also inserted.
      * @param constraint The constraint to add.
+     * @return Whether the constraint was newly added.
      */
-    void addWellformedConstraint(storm::expressions::Expression const& constraint);
-
-    /*!
-     * Adds the given constraint to the set of graph-preserving constraints, unless the set already contains a
-     * structurally equal constraint.
-     *
-     * @param constraint The constraint to add.
-     */
-    void addGraphPreservingConstraint(storm::expressions::Expression const& constraint);
+    bool addConstraint(ConstraintSet& constraintSet, ConstraintIndex& constraintIndex, storm::expressions::Expression const& constraint);
 
     /*!
      * Adds the constraints asserting that the given value is non-negative.

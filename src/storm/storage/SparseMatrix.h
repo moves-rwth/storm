@@ -1043,6 +1043,17 @@ class SparseMatrix {
     bool hasOnlyPositiveEntries() const;
 
     /*!
+     * Checks whether the support graph of the matrix is preserved by every way of resolving the uncertainty, i.e., whether each present entry is
+     * strictly positive no matter how the (probabilistic) rows are instantiated.
+     * For non-interval matrices, this is equivalent to hasOnlyPositiveEntries().
+     * For interval matrices, the intervals are implicitly tightened first:
+     * As every row must sum to one, the lower bound of an entry is at least 1 minus the sum of the upper bounds of the other entries in the row.
+     * For example, the row [0, 0.5], [0.5, 0.5] is graph preserving, since the lower bound of the first entry is tightened to 0.5.
+     * Note that the matrix is expected to represent probabilistic rows.
+     */
+    bool isProbabilisticGraphPreserving() const;
+
+    /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
      * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
      *

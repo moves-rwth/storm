@@ -2233,6 +2233,30 @@ bool SparseMatrix<ValueType>::hasOnlyPositiveEntries() const {
 }
 
 template<typename ValueType>
+bool SparseMatrix<ValueType>::isProbabilisticGraphPreserving() const {
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        using BaseType = storm::IntervalBaseType<ValueType>;
+        for (index_type row = 0; row < this->getRowCount(); ++row) {
+            BaseType sumOfUpperBounds = storm::utility::zero<BaseType>();
+            for (auto const& entry : this->getRow(row)) {
+                sumOfUpperBounds += entry.getValue().upper();
+            }
+            for (auto const& entry : this->getRow(row)) {
+                // The lower bound after tightening is the maximum of the given lower bound and what is left if all other entries take their upper bound.
+                BaseType const tightenedLower =
+                    std::max<BaseType>(entry.getValue().lower(), storm::utility::one<BaseType>() - (sumOfUpperBounds - entry.getValue().upper()));
+                if (!storm::utility::isPositive(tightenedLower)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    } else {
+        return hasOnlyPositiveEntries();
+    }
+}
+
+template<typename ValueType>
 template<typename OtherValueType>
 bool SparseMatrix<ValueType>::isSubmatrixOf(SparseMatrix<OtherValueType> const& matrix) const {
     // Check for matching sizes.

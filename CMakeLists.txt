@@ -23,6 +23,7 @@ include(ExternalProject)
 include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
+include(CMakeDependentOption)
 include(ProcessorCount)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -43,6 +44,9 @@ option(STORM_USE_THIN_LTO "Sets whether thin link-time optimizations are enabled
 MARK_AS_ADVANCED(STORM_USE_THIN_LTO)
 option(STORM_PORTABLE "Sets whether a build needs to be portable." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE)
+cmake_dependent_option(STORM_WORKAROUND_LLVM_EXPRESSION_LESS_BUG "Work around an LLVM compiler bug in std::less<Expression>." ON
+	"CMAKE_CXX_COMPILER_ID STREQUAL AppleClang" OFF)
+MARK_AS_ADVANCED(STORM_WORKAROUND_LLVM_EXPRESSION_LESS_BUG)
 # Force POPCNT is helpful for portable code targetting platforms with SSE4.2 operation support.
 option(STORM_FORCE_POPCNT "Sets whether the popcnt instruction is forced to be used (advanced)." OFF)
 MARK_AS_ADVANCED(STORM_FORCE_POPCNT)
@@ -59,6 +63,8 @@ option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with Addres
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+option(STORM_STRIP_PARSER_BINARY "Strip symbols from storm-parsers after linking." ON)
+MARK_AS_ADVANCED(STORM_STRIP_PARSER_BINARY)
 option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
@@ -77,7 +83,16 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.36")
+set(STORM_CARL_GIT_TAG_DEFAULT "14.36")
+set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use")
+
+# Correct a non-STRING cache entry, while leaving a tag that was set deliberately untouched.
+get_property(STORM_CARL_GIT_TAG_TYPE CACHE STORM_CARL_GIT_TAG PROPERTY TYPE)
+if(STORM_CARL_GIT_TAG_TYPE STREQUAL "BOOL")
+    message(STATUS "Storm - Correcting the boolean cache entry of STORM_CARL_GIT_TAG.")
+    set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use" FORCE)
+endif()
+
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
@@ -160,12 +175,19 @@ if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
     endif()
+    # Enable debug builds for 3rdparty libraries
     set(STORM_DEBUG_CUDD ON)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
+    # Disable LTO
+    set(STORM_USE_LTO OFF)
+    set(STORM_USE_THIN_LTO OFF)
+    # More strict handling of compiler warnings
     set(STORM_WARNING_AS_ERROR ON)
+    # Enable developer tools
     set(STORM_ENABLE_CLANG_FORMAT ON)
     set(STORM_ENABLE_CLANG_TIDY ON)
+    set(STORM_STRIP_PARSER_BINARY OFF)  # Stripping would remove the debug symbols we are about to produce.
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)

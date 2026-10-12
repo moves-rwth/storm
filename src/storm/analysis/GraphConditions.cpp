@@ -1,11 +1,11 @@
 #include "storm/analysis/GraphConditions.h"
 
-#include <algorithm>
-
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/PolynomialToExpression.h"
 #include "storm/utility/constants.h"
 
@@ -42,7 +42,7 @@ std::set<storm::RationalFunctionVariable> const& ConstraintCollector::getVariabl
 }
 
 storm::expressions::Expression ConstraintCollector::relateToZero(storm::RawPolynomial const& polynomial, storm::expressions::RelationType relation) const {
-    auto zero = expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(0));
+    auto zero = expressionManager->rational(storm::utility::zero<storm::RationalNumber>());
     switch (relation) {
         case storm::expressions::RelationType::Less:
             return toExpression(polynomial, expressionManager) < zero;
@@ -60,22 +60,26 @@ storm::expressions::Expression ConstraintCollector::relateToZero(storm::RawPolyn
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled relation.");
 }
 
-void ConstraintCollector::addWellformedConstraint(storm::expressions::Expression const& constraint) {
-    if (std::none_of(this->wellformedConstraintSet.begin(), this->wellformedConstraintSet.end(),
-                     [&constraint](storm::expressions::Expression const& existing) { return existing.isSyntacticallyEqual(constraint); })) {
-        this->wellformedConstraintSet.push_back(constraint);
+bool ConstraintCollector::addConstraint(ConstraintSet& constraintSet, ConstraintIndex& constraintIndex, storm::expressions::Expression const& constraint) {
+    auto& candidates = constraintIndex[hashVisitor.hash(constraint)];
+    for (auto const& candidate : candidates) {
+        if (candidate.isSyntacticallyEqual(constraint)) {
+            return false;
+        }
     }
-}
-
-void ConstraintCollector::addGraphPreservingConstraint(storm::expressions::Expression const& constraint) {
-    if (std::none_of(this->graphPreservingConstraintSet.begin(), this->graphPreservingConstraintSet.end(),
-                     [&constraint](storm::expressions::Expression const& existing) { return existing.isSyntacticallyEqual(constraint); })) {
-        this->graphPreservingConstraintSet.push_back(constraint);
-    }
+    candidates.push_back(constraint);
+    constraintSet.push_back(constraint);
+    return true;
 }
 
 void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
+        // A constant entry does not involve any parameter, so it does not restrict the parameter region. A constant
+        // that violates the bound, however, makes the well-formedness constraints unsatisfiable, which we express
+        // by a trivially false constraint.
+        if (value < storm::utility::zero<storm::RationalFunction>()) {
+            addConstraint(wellformedConstraintSet, wellformedConstraintIndex, expressionManager->boolean(false));
+        }
         return;
     }
 
@@ -90,19 +94,23 @@ void ConstraintCollector::wellformedRequiresNonNegativeEntries(storm::RationalFu
         // the nominator.
         STORM_LOG_ASSERT(denominator.constantPart() != 0, "Denominator should not be zero.");
         auto relation = denominator.constantPart() > 0 ? storm::expressions::RelationType::GreaterOrEqual : storm::expressions::RelationType::LessOrEqual;
-        addWellformedConstraint(relateToZero(nominator, relation));
+        addConstraint(wellformedConstraintSet, wellformedConstraintIndex, relateToZero(nominator, relation));
     } else {
         // The denominator may change its sign, so we need to constrain that it never vanishes and that the sign of
         // the nominator follows the sign of the denominator.
-        addWellformedConstraint(relateToZero(denominator, storm::expressions::RelationType::NotEqual));
-        addWellformedConstraint(storm::expressions::ite(relateToZero(denominator, storm::expressions::RelationType::Greater),
-                                                        relateToZero(nominator, storm::expressions::RelationType::GreaterOrEqual),
-                                                        relateToZero(nominator, storm::expressions::RelationType::LessOrEqual)));
+        addConstraint(wellformedConstraintSet, wellformedConstraintIndex, relateToZero(denominator, storm::expressions::RelationType::NotEqual));
+        addConstraint(wellformedConstraintSet, wellformedConstraintIndex,
+                      storm::expressions::ite(relateToZero(denominator, storm::expressions::RelationType::Greater),
+                                              relateToZero(nominator, storm::expressions::RelationType::GreaterOrEqual),
+                                              relateToZero(nominator, storm::expressions::RelationType::LessOrEqual)));
     }
 }
 
 void ConstraintCollector::wellformedRequiresAtMostOne(storm::RationalFunction const& value) {
     if (storm::utility::isConstant(value)) {
+        if (storm::utility::one<storm::RationalFunction>() < value) {
+            addConstraint(wellformedConstraintSet, wellformedConstraintIndex, expressionManager->boolean(false));
+        }
         return;
     }
 
@@ -118,11 +126,12 @@ void ConstraintCollector::wellformedRequiresAtMostOne(storm::RationalFunction co
     // Express the bound as a relation of the difference to zero, so that it coincides with another constraint
     // whenever the two are equivalent.
     auto relation = denominator.constantPart() > 0 ? storm::expressions::RelationType::LessOrEqual : storm::expressions::RelationType::GreaterOrEqual;
-    addWellformedConstraint(relateToZero(nominator - denominator, relation));
+    addConstraint(wellformedConstraintSet, wellformedConstraintIndex, relateToZero(nominator - denominator, relation));
 }
 
 void ConstraintCollector::graphPreservingRequiresNonZero(storm::RationalFunction const& value) {
-    addGraphPreservingConstraint(relateToZero(value.nominator().polynomialWithCoefficient(), storm::expressions::RelationType::NotEqual));
+    addConstraint(graphPreservingConstraintSet, graphPreservingConstraintIndex,
+                  relateToZero(value.nominator().polynomialWithCoefficient(), storm::expressions::RelationType::NotEqual));
 }
 
 void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFunction> const& model) {
@@ -135,10 +144,10 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
             for (auto transitionIt = model.getTransitionMatrix().begin(action); transitionIt != model.getTransitionMatrix().end(action); ++transitionIt) {
                 auto const& value = transitionIt->getValue();
                 sum += value;
+                // Assert: 0 <= transition <= 1
+                wellformedRequiresNonNegativeEntries(value);
+                wellformedRequiresAtMostOne(value);
                 if (!storm::utility::isConstant(value)) {
-                    // Assert: 0 <= transition <= 1
-                    wellformedRequiresNonNegativeEntries(value);
-                    wellformedRequiresAtMostOne(value);
                     // Assert: transition > 0, so that the underlying graph does not change.
                     graphPreservingRequiresNonZero(value);
                 }
@@ -148,15 +157,16 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
                 auto sumVariables = sum.gatherVariables();
                 variableSet.insert(sumVariables.begin(), sumVariables.end());
                 // Assert: sum == 1
-                addWellformedConstraint(relateToZero(sum.nominator().polynomialWithCoefficient() - sum.denominator().polynomialWithCoefficient(),
-                                                     storm::expressions::RelationType::Equal));
+                addConstraint(wellformedConstraintSet, wellformedConstraintIndex,
+                              relateToZero(sum.nominator().polynomialWithCoefficient() - sum.denominator().polynomialWithCoefficient(),
+                                           storm::expressions::RelationType::Equal));
             }
         }
     } else {
         for (auto const& transition : model.getTransitionMatrix()) {
+            // Assert: 0 <= transition
+            wellformedRequiresNonNegativeEntries(transition.getValue());
             if (!storm::utility::isConstant(transition.getValue())) {
-                // Assert: 0 <= transition
-                wellformedRequiresNonNegativeEntries(transition.getValue());
                 // Assert: transition > 0, so that the underlying graph does not change.
                 graphPreservingRequiresNonZero(transition.getValue());
             }
@@ -188,9 +198,7 @@ void ConstraintCollector::process(storm::models::sparse::Model<storm::RationalFu
         }
         if (rewModelEntry.second.hasTransitionRewards()) {
             for (auto const& entry : rewModelEntry.second.getTransitionRewardMatrix()) {
-                if (!storm::utility::isConstant(entry.getValue())) {
-                    wellformedRequiresNonNegativeEntries(entry.getValue());
-                }
+                wellformedRequiresNonNegativeEntries(entry.getValue());
             }
         }
     }
