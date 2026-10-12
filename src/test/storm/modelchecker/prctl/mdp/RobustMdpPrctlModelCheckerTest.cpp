@@ -298,8 +298,96 @@ TEST(RobustMDPModelCheckingTest, Tiny05maxmin) {
     checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-05.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", 0.3, 0.4, 0.4, 0.3, false);
 }
 
-TEST(RobustMDPModelCheckingTest, Tiny04maxmin_rewards) {
-    expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\"]");
+TEST(RobustMDPModelCheckingTest, Tiny04MinRewards) {
+    // The reward of a state is collected every time the state is visited. Only the cycle 0 -> 2 -> 0 can be repeated without reaching infinite reward, and
+    // state 0 reaches the target with (fixed) probability 0.3. From state 1 (reached with probability 0.4) one has to move on to state 2 (reward 1).
+    // This yields V0 = 1 + 0.4 * (1 + V2) + 0.3 * V2 with V2 = 1 + V0, i.e., V0 = 7. Rmax is infinite as the sink state 4 is reachable.
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-04.drn", "Rmin=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 7, 7, 7, 7, false);
+}
+
+TEST(RobustMDPModelCheckingTest, RewardsTargetTransitionInterval) {
+    // The self-loop probability p is in [0.2, 0.5], the probability of moving to the target is in [0.5, 0.8]. The expected reward 1 / (1 - p) is thus in
+    // [1.25, 2]. This requires that the interval of the transition to the target state is respected when resolving the uncertainty.
+    // Arguments: Rmax robust, Rmax cooperative, Rmin robust, Rmin cooperative.
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-09.drn", "Rmax=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 1.25, 2, 2, 1.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, RewardsTargetStateBeforeMaybeStates) {
+    // Same as above, but the target state has a smaller index than the other state. The values of target states must not be mixed up with the values of
+    // the remaining states.
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-11.drn", "Rmax=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 1.25, 2, 2, 1.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, ReachabilityTimes) {
+    // Action 0 has self-loop probability p in [0.2, 0.5], i.e., expected time 1 / (1 - p) in [1.25, 2]. Action 1 has expected time 1 + 0.5 * 1 = 1.5.
+    // Arguments: Tmax robust, Tmax cooperative, Tmin robust, Tmin cooperative.
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-10.drn", "Tmax=? [ F \"target\" ];Tmin=? [ F \"target\" ]", 1.5, 2, 1.5, 1.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, ReachabilityTimesSingleAction) {
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-09.drn", "Tmax=? [ F \"target\" ];Tmin=? [ F \"target\" ]", 1.25, 2, 2, 1.25, false);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-11.drn", "Tmax=? [ F \"target\" ];Tmin=? [ F \"target\" ]", 1.25, 2, 2, 1.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, GraphPreservationRequired) {
+    // The self-loop interval [0, 1] allows to never reach the target, i.e., the graph of the model is not preserved.
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/tiny-12.drn");
+    auto mdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
+    EXPECT_FALSE(mdp->getTransitionMatrix().isProbabilisticGraphPreserving());
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
+    for (std::string const formulaString : {"Pmax=? [ F \"target\" ]", "Rmin=? [ F \"target\" ]", "Tmin=? [ F \"target\" ]"}) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+            storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+        auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+        task.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Cooperative);
+        STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::InvalidSettingsException);
+    }
+}
+
+TEST(RobustMDPModelCheckingTest, GraphPreservationAfterTightening) {
+    // The self-loop interval [0, 0.5] is tightened to [0.5, 0.5] as the other transition has probability at most 0.5. The model is graph preserving.
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/tiny-13.drn");
+    EXPECT_FALSE(modelPtr->getTransitionMatrix().hasOnlyPositiveEntries());
+    EXPECT_TRUE(modelPtr->getTransitionMatrix().isProbabilisticGraphPreserving());
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-13.drn", "Tmax=? [ F \"target\" ];Tmin=? [ F \"target\" ]", 2, 2, 2, 2, false);
+}
+
+TEST(RobustMDPModelCheckingTest, MinRewardsUniqueSolution) {
+    // There is no end component with zero reward among the states with finite reward, i.e., the solution of the equation system is unique and no upper
+    // reward bounds are required. Arguments: Rmin robust, Rmin cooperative, Rmin robust, Rmin cooperative.
+    // Choosing action 0 in state 0 yields 2 + 1 / (1 - p) with self-loop probability p in [0.2, 0.5], which is cheaper than action 1 (cost 6).
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-08.drn", "Rmin=? [ F \"target\" ];Rmin=? [ F \"target\" ]", 4, 3.25, 4, 3.25, false);
+}
+
+TEST(RobustMDPModelCheckingTest, MinRewardsNonUniqueSolution) {
+    // State 0 has a zero-reward self loop, i.e., there is an end component with zero reward. The solution is not unique and we cannot compute the required
+    // upper reward bounds for interval models.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/imdp/tiny-07.drn", "Rmin=? [ F \"target\" ]");
+}
+
+TEST(RobustMDPModelCheckingTest, CumulativeRewards) {
+    // Arguments: Rmax robust, Rmax cooperative, Rmin robust, Rmin cooperative
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=0 ];Rmin=? [ C<=0 ]", 0, 0, 0, 0, false);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=1 ];Rmin=? [ C<=1 ]", 7, 7, 1, 1, false);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=2 ];Rmin=? [ C<=2 ]", 9, 9.5, 9, 7.5, false);
+    checkModel(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=3 ];Rmin=? [ C<=3 ]", 11, 11.5, 11, 9.5, false);
+}
+
+TEST(RobustMDPModelCheckingTest, CumulativeRewardsNoUncertaintyResolutionMode) {
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::Interval>(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn");
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parseProperties("Rmax=? [ C<=2 ]"));
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    auto mdp = modelPtr->as<storm::models::sparse::Mdp<storm::Interval>>();
+    auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::Interval>>(*mdp);
+    STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::BaseException);
 }
 
 TEST(RobustMDPModelCheckingTest, CrowdsQuotientIMDP) {
@@ -309,6 +397,13 @@ TEST(RobustMDPModelCheckingTest, CrowdsQuotientIMDP) {
 }
 
 // ---- RationalInterval tests (exact arithmetic) ----
+
+TEST(RobustRationalMDPModelCheckingTest, CumulativeRewards) {
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=2 ];Rmin=? [ C<=2 ]", storm::RationalNumber(9), storm::RationalNumber("19/2"),
+                       storm::RationalNumber(9), storm::RationalNumber("15/2"), false);
+    checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-06.drn", "Rmax=? [ C<=3 ];Rmin=? [ C<=3 ]", storm::RationalNumber(11),
+                       storm::RationalNumber("23/2"), storm::RationalNumber(11), storm::RationalNumber("19/2"), false);
+}
 
 TEST(RobustRationalMDPModelCheckingTest, Tiny01maxmin) {
     checkModelRational(STORM_TEST_RESOURCES_DIR "/imdp/tiny-01.drn", "Pmax=? [ F \"target\"];Pmin=? [ F \"target\"]", storm::RationalNumber("2/5"),

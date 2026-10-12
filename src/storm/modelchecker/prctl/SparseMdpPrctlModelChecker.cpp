@@ -45,7 +45,8 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
         if (formula.isInFragment(storm::logic::reachability())) {
             return true;
         }
-        if (formula.isInFragment(storm::logic::prctlstar().setBoundedUntilFormulasAllowed(true))) {
+        if (formula.isInFragment(
+                storm::logic::prctlstar().setBoundedUntilFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true))) {
             return true;
         }
     } else {
@@ -175,6 +176,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
+                        "Computing until probabilities on uncertain model requires graph-preservation.");
+    }
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
     std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& leftResult = leftResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
@@ -298,29 +303,36 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
 template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) {
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Cumulative reward properties are not implemented for interval models.");
-    }
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
-        STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
-                        "Checking reward bounded cumulative reward formulas can only be done for the initial states of the model.");
-        STORM_LOG_THROW(!checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException,
-                        "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
-        STORM_LOG_WARN_COND(!checkTask.isQualitativeSet(), "Checking reward bounded until formulas is not optimized w.r.t. qualitative queries");
-        storm::logic::OperatorInformation opInfo(checkTask.getOptimizationDirection());
-        if (checkTask.isBoundSet()) {
-            opInfo.bound = checkTask.getBound();
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                            "We have not yet implemented multi-dimensional or reward-bounded cumulative rewards with intervals.");
+        } else {
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
+                            "Checking reward bounded cumulative reward formulas can only be done for the initial states of the model.");
+            STORM_LOG_THROW(!checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException,
+                            "Checking reward bounded cumulative reward formulas is not supported if reward accumulations are given.");
+            STORM_LOG_WARN_COND(!checkTask.isQualitativeSet(), "Checking reward bounded until formulas is not optimized w.r.t. qualitative queries");
+            storm::logic::OperatorInformation opInfo(checkTask.getOptimizationDirection());
+            if (checkTask.isBoundSet()) {
+                opInfo.bound = checkTask.getBound();
+            }
+            auto formula = std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asSharedPointer(), checkTask.getRewardModel(), opInfo);
+            helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
+            auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeRewardBoundedValues(
+                env, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates());
+            // The helper returns one value per initial state, in the order in which the bit vector selects them.
+            return std::unique_ptr<CheckResult>(
+                new ExplicitQuantitativeCheckResult<SolutionType>(this->getModel().getInitialStates(), std::move(numericResult)));
         }
-        auto formula = std::make_shared<storm::logic::RewardOperatorFormula>(checkTask.getFormula().asSharedPointer(), checkTask.getRewardModel(), opInfo);
-        helper::rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(this->getModel(), formula);
-        auto numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeRewardBoundedValues(
-            env, checkTask.getOptimizationDirection(), rewardUnfolding, this->getModel().getInitialStates());
-        // The helper returns one value per initial state, in the order in which the bit vector selects them.
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(this->getModel().getInitialStates(), std::move(numericResult)));
     } else {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                            "Uncertainty resolution mode must be set for uncertain (interval) models.");
+        }
         STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
         auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
         std::vector<SolutionType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeCumulativeRewards(
@@ -376,6 +388,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
+                        "Computing rewards on uncertain model requires graph-preservation.");
+    }
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
@@ -396,6 +412,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
+                        "Computing reachability times on uncertain model requires graph-preservation.");
+    }
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeReachabilityTimes(
@@ -414,6 +434,10 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::com
     Environment const& env, CheckTask<storm::logic::TotalRewardFormula, SolutionType> const& checkTask) {
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+    if constexpr (storm::IsIntervalType<ValueType>) {
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
+                        "Computing total rewards on uncertain model requires graph-preservation.");
+    }
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType, SolutionType>::computeTotalRewards(
         env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
