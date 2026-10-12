@@ -206,7 +206,7 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
     newLabeling.removeLabel("truncated");
 
     transMatrix.dropZeroEntries();
-    storm::storage::sparse::ModelComponents<BeliefMdpValueType> modelComponents(transMatrix, newLabeling);
+    storm::storage::sparse::ModelComponents<BeliefMdpValueType> modelComponents(transMatrix, newLabeling, beliefMdp.getRewardModels());
     if (beliefMdp.hasChoiceLabeling()) {
         // Add empty string as label of all choices without labels
         storm::models::sparse::ChoiceLabeling extendedChoiceLabeling(beliefMdp.getChoiceLabeling());
