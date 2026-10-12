@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "test/storm-pars/scp/LpSolverTestUtils.h"
 #include "test/storm_gtest.h"
 
 #include <algorithm>
@@ -33,6 +34,8 @@ std::vector<uint64_t> toU64(std::vector<uint_fast64_t> const& v) {
 
 }  // namespace
 
+class ScpLpEncoderTest : public storm::pars::scp::testutils::LpSolverTest {};
+
 // 3-state DTMC: 0 -[p]-> 1 (Prob1), 0 -[1-p]-> 2 (Prob0). Exercises a real LP optimization (not a
 // degenerate single-point trust region) together with Prob0/Prob1 handling, the threshold
 // constraint, and the max-violation objective mode.
@@ -43,7 +46,7 @@ std::vector<uint64_t> toU64(std::vector<uint_fast64_t> const& v) {
 // tau_0 = 0 is achievable (0.6 - 1.0 < 0) and p_0's bias term is maximal. Both are unique optima,
 // not just feasible points: any smaller v_p would cap p_0 below 1.0, which the bias strictly
 // disprefers.
-TEST(ScpLpEncoderTest, RealOptimization_AtLeast_MaxViolationObjective) {
+TEST_P(ScpLpEncoderTest, RealOptimization_AtLeast_MaxViolationObjective) {
     carl::VariablePool::getInstance().clear();
     auto cache = std::make_shared<storm::RawPolynomialCache>();
     carl::Variable varP = storm::createRFVariable("p");
@@ -74,7 +77,7 @@ TEST(ScpLpEncoderTest, RealOptimization_AtLeast_MaxViolationObjective) {
     std::map<carl::Variable, double> valuation{{varP, 0.5}};
     std::vector<double> stateValues{0.5, 0.0, 0.0};  // only index 0 (a free state) is ever read.
 
-    auto lp = encoder.encode(storm::Environment(), valuation, stateValues, /*trustRegionRadius=*/2.0);
+    auto lp = encoder.encode(env(), valuation, stateValues, /*trustRegionRadius=*/2.0);
     lp.solver->optimize();
     ASSERT_TRUE(lp.solver->isOptimal());
 
@@ -86,7 +89,7 @@ TEST(ScpLpEncoderTest, RealOptimization_AtLeast_MaxViolationObjective) {
 // Same model as above, but AtMost direction and the sum-of-violations objective mode. Hand
 // derivation gives a unique optimum at v_p = p_0 = 0.25 (both trust-region lower bounds), zero
 // violation, objective = 1e-4 * 0.25.
-TEST(ScpLpEncoderTest, RealOptimization_AtMost_SumViolationObjective) {
+TEST_P(ScpLpEncoderTest, RealOptimization_AtMost_SumViolationObjective) {
     carl::VariablePool::getInstance().clear();
     auto cache = std::make_shared<storm::RawPolynomialCache>();
     carl::Variable varP = storm::createRFVariable("p");
@@ -117,7 +120,7 @@ TEST(ScpLpEncoderTest, RealOptimization_AtMost_SumViolationObjective) {
     std::map<carl::Variable, double> valuation{{varP, 0.5}};
     std::vector<double> stateValues{0.5, 0.0, 0.0};
 
-    auto lp = encoder.encode(storm::Environment(), valuation, stateValues, /*trustRegionRadius=*/2.0);
+    auto lp = encoder.encode(env(), valuation, stateValues, /*trustRegionRadius=*/2.0);
     lp.solver->optimize();
     ASSERT_TRUE(lp.solver->isOptimal());
 
@@ -135,7 +138,7 @@ TEST(ScpLpEncoderTest, RealOptimization_AtMost_SumViolationObjective) {
 // Taylor-expansion formula (for the p*state1 term) and the exact/no-approximation handling of the
 // Prob1 successor (the q term) against arithmetic computed independently in the test, without
 // needing to solve a nontrivial LP by hand.
-TEST(ScpLpEncoderTest, DegenerateTrustRegion_ChecksLinearizationArithmetic) {
+TEST_P(ScpLpEncoderTest, DegenerateTrustRegion_ChecksLinearizationArithmetic) {
     carl::VariablePool::getInstance().clear();
     auto cache = std::make_shared<storm::RawPolynomialCache>();
     carl::Variable varP = storm::createRFVariable("p");
@@ -172,7 +175,7 @@ TEST(ScpLpEncoderTest, DegenerateTrustRegion_ChecksLinearizationArithmetic) {
     std::map<carl::Variable, double> valuation{{varP, pHat}, {varQ, qHat}};
     std::vector<double> stateValues{p0Hat, p1Hat, 0.0, 0.0};
 
-    auto lp = encoder.encode(storm::Environment(), valuation, stateValues, /*trustRegionRadius=*/1.0 + 1e-6);
+    auto lp = encoder.encode(env(), valuation, stateValues, /*trustRegionRadius=*/1.0 + 1e-6);
     lp.solver->optimize();
     ASSERT_TRUE(lp.solver->isOptimal());
 
@@ -200,7 +203,7 @@ TEST(ScpLpEncoderTest, DegenerateTrustRegion_ChecksLinearizationArithmetic) {
 // this only works at all if the unbounded-above domain for reward-mode state variables is wired up
 // correctly). Same near-degenerate trust region trick as the probability test above, to make the
 // expected LP values checkable by direct arithmetic instead of by solving a nontrivial LP by hand.
-TEST(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
+TEST_P(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
     carl::VariablePool::getInstance().clear();
     auto cache = std::make_shared<storm::RawPolynomialCache>();
     carl::Variable varP = storm::createRFVariable("p");
@@ -237,7 +240,7 @@ TEST(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
     std::map<carl::Variable, double> valuation{{varP, pHat}};
     std::vector<double> stateValues{p0Hat, p1Hat, 0.0};
 
-    auto lp = encoder.encode(storm::Environment(), valuation, stateValues, /*trustRegionRadius=*/1.0 + 1e-6);
+    auto lp = encoder.encode(env(), valuation, stateValues, /*trustRegionRadius=*/1.0 + 1e-6);
     lp.solver->optimize();
     ASSERT_TRUE(lp.solver->isOptimal());
 
@@ -257,3 +260,6 @@ TEST(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
 
     EXPECT_NEAR(expectedObjective, lp.solver->getObjectiveValue(), 1e-4);
 }
+
+INSTANTIATE_TEST_SUITE_P(LpSolvers, ScpLpEncoderTest, testing::ValuesIn(storm::pars::scp::testutils::lpSolversUnderTest()),
+                         storm::pars::scp::testutils::LpSolverTest::solverName);
