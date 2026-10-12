@@ -45,11 +45,11 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector 
     std::vector<uint64_t> firstStates;
 
     storm::storage::BitVector subStates(topStates.size(), true);
-    for (auto state : topStates) {
+    for (uint64_t state : topStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
-    for (auto state : bottomStates) {
+    for (uint64_t state : bottomStates) {
         firstStates.push_back(state);
         subStates.set(state, false);
     }
@@ -677,12 +677,11 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::ParameterRegion<ValueType> region) {
+void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(Environment const& env, storage::ParameterRegion<ValueType> region) {
     if (model != nullptr) {
         // Use parameter lifting modelchecker to get initial min/max values for order creation
         modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
         std::unique_ptr<modelchecker::CheckResult> checkResult;
-        auto env = Environment();
         boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;
         if (this->formula->hasQuantitativeResult()) {
             checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
@@ -701,8 +700,8 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
         modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
             plaModelChecker.check(env, annotatedRegion, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-        minValuesInit = minCheck.getValueVector();
-        maxValuesInit = maxCheck.getValueVector();
+        minValuesInit = minCheck.getFiniteValueVector();
+        maxValuesInit = maxCheck.getFiniteValueVector();
         STORM_LOG_ASSERT(minValuesInit->size() == numberOfStates, "MinValuesInit size mismatch.");
         STORM_LOG_ASSERT(maxValuesInit->size() == numberOfStates, "MaxValuesInit size mismatch.");
     }

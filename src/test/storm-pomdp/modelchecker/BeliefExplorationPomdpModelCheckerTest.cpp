@@ -277,10 +277,11 @@ class BeliefExplorationPomdpModelCheckerTest : public ::testing::Test {
         return TestType::precision();
     }
     ValueType modelcheckingPrecision() const {
-        if (TestType::isExactModelChecking)
+        if (TestType::isExactModelChecking) {
             return storm::utility::zero<ValueType>();
-        else
+        } else {
             return storm::utility::convertNumber<ValueType>(1e-6);
+        }
     }
     bool isExact() const {
         return TestType::isExactModelChecking;
@@ -305,8 +306,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -321,8 +322,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -336,8 +337,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("3/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -352,8 +353,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("3/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -367,8 +368,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -383,8 +384,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -402,11 +403,11 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin) {
         // This model's value can only be approximated arbitrarily close but never reached
         // Exact arithmetics will thus not reach the value with absoulute precision either.
         ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-5);
-        EXPECT_LE(result.lowerBound, expected + approxPrecision);
-        EXPECT_GE(result.upperBound, expected - approxPrecision);
+        EXPECT_LE(result.lowerBound, ValueType(expected + approxPrecision));
+        EXPECT_GE(result.upperBound, ValueType(expected - approxPrecision));
     } else {
-        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+        EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     }
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -426,11 +427,11 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin_SE) {
         // This model's value can only be approximated arbitrarily close but never reached
         // Exact arithmetics will thus not reach the value with absoulute precision either.
         ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-5);
-        EXPECT_LE(result.lowerBound, expected + approxPrecision);
-        EXPECT_GE(result.upperBound, expected - approxPrecision);
+        EXPECT_LE(result.lowerBound, ValueType(expected + approxPrecision));
+        EXPECT_GE(result.upperBound, ValueType(expected - approxPrecision));
     } else {
-        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+        EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     }
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -445,8 +446,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -461,8 +462,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -476,8 +477,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -492,8 +493,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -507,8 +508,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -523,8 +524,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -538,8 +539,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -554,8 +555,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -569,8 +570,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("74/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -586,8 +587,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("74/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -601,8 +602,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax_SE) {
@@ -613,8 +614,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax_SE) {
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin) {
@@ -625,8 +626,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("80/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -642,8 +643,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("80/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -657,8 +658,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax_SE) {
@@ -669,8 +670,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax_SE) {
                                                                                                                     this->optionsWithStateElimination());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax) {
@@ -681,8 +682,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("38/155");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -698,8 +699,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("38/155");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -714,8 +715,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("0");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -731,8 +732,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin_SE) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("0");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -747,8 +748,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmax_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -762,8 +763,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Pmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("3/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -777,8 +778,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmax_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("7/10");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -796,11 +797,11 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Pmin_Clip) {
         // This model's value can only be approximated arbitrarily close but never reached
         // Exact arithmetics will thus not reach the value with absoulute precision either.
         ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-4);
-        EXPECT_LE(result.lowerBound, expected + approxPrecision);
-        EXPECT_GE(result.upperBound, expected - approxPrecision);
+        EXPECT_LE(result.lowerBound, ValueType(expected + approxPrecision));
+        EXPECT_GE(result.upperBound, ValueType(expected - approxPrecision));
     } else {
-        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision() * 10);
-        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision() * 10);
+        EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision() * 10));
+        EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision() * 10));
     }
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -815,8 +816,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmax_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -830,8 +831,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_Rmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/50");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -845,8 +846,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmax_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("29/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -860,8 +861,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, simple_slippery_Rmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("19/30");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
         << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
@@ -875,8 +876,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("74/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -890,8 +891,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_Rmax_Clip) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin_Clip) {
@@ -902,8 +903,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("80/91");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -917,8 +918,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, maze2_slippery_Rmax_Clip) {
     storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
     auto result = checker.check(this->env(), *data.formula);
 
-    EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
-    EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.lowerBound);
+    EXPECT_EQ(storm::utility::positiveInfinity<ValueType>(), result.upperBound);
 }
 
 TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax_Clip) {
@@ -929,8 +930,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmax_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("38/155");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound
@@ -945,8 +946,8 @@ TYPED_TEST(BeliefExplorationPomdpModelCheckerTest, refuel_Pmin_Clip) {
     auto result = checker.check(this->env(), *data.formula);
 
     ValueType expected = this->parseNumber("0");
-    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-    EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+    EXPECT_LE(result.lowerBound, ValueType(expected + this->modelcheckingPrecision()));
+    EXPECT_GE(result.upperBound, ValueType(expected - this->modelcheckingPrecision()));
     // Use relative difference of bounds for this one
     EXPECT_LE(result.diff(), this->precision())
         << "Result [" << result.lowerBound << ", " << result.upperBound

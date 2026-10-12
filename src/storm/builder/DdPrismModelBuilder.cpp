@@ -4,6 +4,7 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -634,7 +635,7 @@ void DdPrismModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic
         if (!labelsToBuild) {
             labelsToBuild = std::set<std::string>();
         }
-        labelsToBuild.get().insert(formula.get()->getLabel());
+        labelsToBuild.get().insert(formula->getLabel());
     }
 }
 
@@ -1075,7 +1076,7 @@ typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismMode
 
         return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
+        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidStateException, "Illegal model type.");
     }
 }
 
@@ -1561,7 +1562,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                             storm::prism::Program const& program,
                                                                                                              Options const& options) {
     if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
         std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
@@ -1585,7 +1587,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
 
     STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
 
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;
     manager->execute([&program, &options, &manager, &result, this]() { result = this->buildInternal(program, options, manager); });
     return result;

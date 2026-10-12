@@ -1,5 +1,7 @@
 #include "storm/solver/MathsatSmtSolver.h"
 
+#include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -141,7 +143,7 @@ MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manage
     STORM_LOG_THROW(!MSAT_ERROR_ENV(env), storm::exceptions::UnexpectedException, "Unable to create Mathsat environment.");
     msat_destroy_config(config);
 
-    expressionAdapter = std::unique_ptr<storm::adapters::MathsatExpressionAdapter>(new storm::adapters::MathsatExpressionAdapter(manager, env));
+    expressionAdapter = std::make_unique<storm::adapters::MathsatExpressionAdapter>(manager, env);
 #else
     (void)options;
 #endif
@@ -227,7 +229,7 @@ SmtSolver::CheckResult MathsatSmtSolver::check() {
 #endif
 }
 
-SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(storm::expressions::ExpressionSet const& assumptions) {
 #ifdef STORM_HAVE_MATHSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;

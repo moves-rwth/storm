@@ -401,7 +401,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
     STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
     observationsWithPartialWinners &= potentialWinner;
-    for (auto const observation : observationsWithPartialWinners) {
+    for (uint64_t observation : observationsWithPartialWinners) {
         uint64_t nrStatesForObs = statesPerObservation[observation].size();
         storm::storage::BitVector update(nrStatesForObs);
         for (uint64_t i = 0; i < nrStatesForObs; ++i) {
@@ -419,7 +419,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
     }
 
 #ifndef NDEBUG
-    for (auto state : targetStates) {
+    for (uint64_t state : targetStates) {
         STORM_LOG_ASSERT(winningRegion.isWinning(pomdp.getObservation(state), getOffsetFromObservation(state, pomdp.getObservation(state))),
                          "Target state " << state << " , observation " << pomdp.getObservation(state) << " is not reflected as winning.");
     }
@@ -440,7 +440,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
         smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
     }
 
-    std::set<storm::expressions::Expression> allOfTheseAssumption;
+    storm::expressions::ExpressionSet allOfTheseAssumption;
     std::vector<storm::expressions::Expression> updateForObservationExpressions;
 
     for (uint64_t state : allOfTheseStates) {
@@ -463,7 +463,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 STORM_LOG_ASSERT(obs < schedulerForObs.size(), "Observation index out of range.");
                 ++(schedulerForObs[obs]);
                 auto constant = expressionManager->integer(schedulerForObs[obs]);
-                for (auto stateOffset : ~winningSet) {
+                for (uint64_t stateOffset : ~winningSet) {
                     uint64_t state = statesForObservation[stateOffset];
                     STORM_LOG_TRACE("State " << state << " with observation " << obs << " does not allow scheduler " << constant);
                     smtSolver->add(!(continuationVarExpressions[state] && (schedulerVariableExpressions[obs] == constant)));
@@ -594,7 +594,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 detail::printRelevantInfoFromModel(model, reachVars, continuationVars);
             }
             stats.encodeExtensionSolverTime.start();
-            for (auto obs : newObservations) {
+            for (uint64_t obs : newObservations) {
                 auto const& actionSelectionVarsForObs = actionSelectionVars[obs];
                 observations.set(obs);
                 for (uint64_t act = 0; act < actionSelectionVarsForObs.size(); ++act) {
@@ -617,7 +617,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                     smtSolver->add(!followVarExpressions[obs]);
                 }
             }
-            for (auto obs : newObservationsAfterSwitch) {
+            for (uint64_t obs : newObservationsAfterSwitch) {
                 observationsAfterSwitch.set(obs);
                 scheduler.schedulerRef[obs] = model->getIntegerValue(schedulerVariables[obs]);
                 smtSolver->add(schedulerVariableExpressions[obs] == expressionManager->integer(scheduler.schedulerRef[obs]));
@@ -637,12 +637,12 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
             }
 
             std::vector<storm::expressions::Expression> remainingExpressions;
-            for (auto index : ~coveredStates) {
+            for (uint64_t index : ~coveredStates) {
                 if (observationUpdated.get(pomdp.getObservation(index))) {
                     remainingExpressions.push_back(reachVarExpressions[index]);
                 }
             }
-            for (auto index : ~observationUpdated) {
+            for (uint64_t index : ~observationUpdated) {
                 remainingExpressions.push_back(observationUpdatedExpressions[index]);
             }
 
@@ -740,7 +740,7 @@ bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVe
                 }
                 STORM_LOG_DEBUG("Graph-based winning obs: " << stats.getGraphBasedwinningObservations());
                 observationsWithPartialWinners &= potentialWinner;
-                for (auto const observation : observationsWithPartialWinners) {
+                for (uint64_t observation : observationsWithPartialWinners) {
                     uint64_t nrStatesForObs = statesPerObservation[observation].size();
                     storm::storage::BitVector update(nrStatesForObs);
                     for (uint64_t i = 0; i < nrStatesForObs; ++i) {
@@ -882,7 +882,7 @@ typename IterativePolicySearch<ValueType>::Statistics const& IterativePolicySear
 }
 
 template<typename ValueType>
-bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions) {
+bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, storm::expressions::ExpressionSet const& assumptions) {
     if (options.isExportSATSet()) {
         STORM_LOG_DEBUG("Export SMT Solver Call (" << iteration << ")");
         std::string filepath = options.getExportSATCallsPath() + "call_" + std::to_string(iteration) + ".smt2";

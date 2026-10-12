@@ -300,7 +300,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::CumulativeRewardFormula const&
 boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
     opDecl["op"] = "U";
-    opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
+    opDecl["left"] = anyToJson(storm::logic::EventuallyFormula::getTrueFormula()->accept(*this, data));
     opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
     return opDecl;
 }
@@ -471,7 +471,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::QuantileFormula const&, boost:
 boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
     ExportJsonType opDecl;
     opDecl["op"] = "U";
-    opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
+    opDecl["left"] = anyToJson(storm::logic::NextFormula::getTrueFormula()->accept(*this, data));
     opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
     auto intervalExpressionManager = std::make_shared<storm::expressions::ExpressionManager>();
     opDecl["step-bounds"] = constructPropertyInterval(intervalExpressionManager->integer(1), false, intervalExpressionManager->integer(1), false);
@@ -649,6 +649,22 @@ boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::
     return opDecl;
 }
 
+boost::any FormulaToJaniJson::visit(storm::logic::WeakUntilFormula const& f, boost::any const& data) const {
+    ExportJsonType opDecl;
+    opDecl["op"] = "W";
+    opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
+    opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
+    return opDecl;
+}
+
+boost::any FormulaToJaniJson::visit(storm::logic::ReleaseFormula const& f, boost::any const& data) const {
+    ExportJsonType opDecl;
+    opDecl["op"] = "R";
+    opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
+    opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
+    return opDecl;
+}
+
 boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::any const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae.");
 }
@@ -816,8 +832,10 @@ boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression
 
     if (!storm::isJsonNumberExportAccurate(val)) {
         // Try if exact export is possible as fraction of two literals
-        auto [num, den] = storm::utility::asFraction(expression.getValue());
+        auto const& value = expression.getValue();
+        storm::RationalNumber den = storm::utility::convertNumber<storm::RationalNumber>(storm::utility::denominator(value));
         if (!storm::utility::isOne(den)) {
+            storm::RationalNumber num = storm::utility::convertNumber<storm::RationalNumber>(storm::utility::numerator(value));
             ExportJsonType numJson(num), denJson(den);
             if (isJsonNumberExportAccurate(numJson) && isJsonNumberExportAccurate(denJson)) {
                 val = ExportJsonType();
@@ -1068,11 +1086,11 @@ ExportJsonType buildLValue(storm::jani::LValue const& lValue, std::vector<storm:
         STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue " << lValue << ".");
         ExportJsonType result = lValue.getVariable().getName();
         for (auto const& indexExpr : lValue.getArrayIndexVector()) {
-            ExportJsonType subLValue = std::move(result);
-            result.clear();
-            result["op"] = "aa";
-            result["exp"] = std::move(subLValue);
-            result["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+            ExportJsonType newResult;
+            newResult["op"] = "aa";
+            newResult["exp"] = std::move(result);
+            newResult["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+            result = std::move(newResult);
         }
         return result;
     }

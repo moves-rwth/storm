@@ -9,13 +9,14 @@
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/Order.h"
 #include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -43,7 +44,7 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     model = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
@@ -71,7 +72,7 @@ TEST_F(AssumptionMakerTest, Brp_without_bisimulation) {
         EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
     }
 
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
@@ -94,7 +95,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -118,7 +119,7 @@ TEST_F(AssumptionMakerTest, Simple1) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
-    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    assumptionMaker.initializeCheckingOnSamples(storm::Environment(), formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());
 
@@ -147,7 +148,7 @@ TEST_F(AssumptionMakerTest, Casestudy1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     model = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();

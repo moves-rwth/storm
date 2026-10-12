@@ -47,7 +47,6 @@ using storm::gbar::abstraction::ExplicitQuantitativeResult;
 using storm::gbar::abstraction::ExplicitQuantitativeResultMinMax;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResult;
 using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
-using storm::storage::ExplicitGameStrategyPair;
 
 template<storm::dd::DdType Type, typename ModelType>
 GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
@@ -352,7 +351,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> checkForResultAfterQuantitativ
     // If the lower and upper bounds are close enough, we can return the result.
     if (comparator.isEqual(minValue, maxValue)) {
         result = std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>>(storm::storage::sparse::state_type(0),
-                                                                                                   (minValue + maxValue) / ValueType(2));
+                                                                                                   ValueType((minValue + maxValue) / ValueType(2)));
     }
 
     return result;
@@ -509,7 +508,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     uint64_t position = 0;
     uint64_t previousPlayer2States = 0;
     storm::storage::BitVector player2MaybeStates(transitionMatrix.getRowGroupCount());
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         subPlayer1Groups[position] = previousPlayer2States;
 
         [[maybe_unused]] bool hasMaybePlayer2Successor = false;
@@ -549,7 +548,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
         // If the starting strategy pair was provided, we need to extract the choices of the maybe states here.
         uint64_t maybeStatePosition = 0;
         previousPlayer2States = 0;
-        for (auto state : maybeStates) {
+        for (uint64_t state : maybeStates) {
             uint64_t chosenPlayer2State = startingStrategyPair->getPlayer1Strategy().getChoice(state);
 
             uint64_t previousPlayer2MaybeStatesForState = 0;
@@ -586,7 +585,7 @@ ExplicitQuantitativeResult<ValueType> computeQuantitativeResult(
     // Obtain strategies from solver and fuse them with the pre-existing strategy pair for the qualitative result.
     uint64_t previousPlayer1MaybeStates = 0;
     uint64_t previousPlayer2MaybeStates = 0;
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         uint64_t previousPlayer2MaybeStatesForState = 0;
         [[maybe_unused]] bool madePlayer1Choice = false;
         for (uint64_t player2State = player1Groups[state]; player2State < player1Groups[state + 1]; ++player2State) {
@@ -632,10 +631,10 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
     // Create the abstractor.
     storm::gbar::abstraction::MenuGameAbstractorOptions abstractorOptions(std::move(options.constraints));
     if (preprocessedModel.isPrismProgram()) {
-        abstractor = std::make_shared<storm::gbar::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asPrismProgram(),
+        abstractor = std::make_shared<storm::gbar::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(env, preprocessedModel.asPrismProgram(),
                                                                                                                  smtSolverFactory, abstractorOptions);
     } else {
-        abstractor = std::make_shared<storm::gbar::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(),
+        abstractor = std::make_shared<storm::gbar::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(env, preprocessedModel.asJaniModel(),
                                                                                                                smtSolverFactory, abstractorOptions);
     }
     std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -1090,7 +1089,7 @@ class ExplicitGameExporter {
         std::vector<EdgeData> edges;
 
         std::vector<uint64_t> stack;
-        for (auto state : initialStates) {
+        for (uint64_t state : initialStates) {
             stack.push_back(state);
         }
         storm::storage::BitVector reachablePlayer1(player1Groups.size() - 1);
@@ -1182,12 +1181,13 @@ class ExplicitGameExporter {
 };
 
 template<typename ValueType>
-void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection const& player1Direction, storage::ExplicitGameStrategyPair& minStrategyPair,
-                           storage::ExplicitGameStrategyPair& maxStrategyPair, std::vector<uint64_t> const& player1Groups,
-                           std::vector<uint64_t> const& player2Groups, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                           storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates,
-                           storm::storage::BitVector const& targetStates, ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult,
-                           bool redirectPlayer1, bool redirectPlayer2, bool sanityCheck) {
+void postProcessStrategies(Environment const& env, uint64_t iteration, storm::OptimizationDirection const& player1Direction,
+                           storage::ExplicitGameStrategyPair& minStrategyPair, storage::ExplicitGameStrategyPair& maxStrategyPair,
+                           std::vector<uint64_t> const& player1Groups, std::vector<uint64_t> const& player2Groups,
+                           storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates,
+                           storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates,
+                           ExplicitQuantitativeResultMinMax<ValueType> const& quantitativeResult, bool redirectPlayer1, bool redirectPlayer2,
+                           bool sanityCheck) {
     if (redirectPlayer1 || redirectPlayer2) {
         for (uint64_t state = 0; state < player1Groups.size() - 1; ++state) {
             STORM_LOG_ASSERT(targetStates.get(state) || minStrategyPair.getPlayer1Strategy().hasDefinedChoice(state),
@@ -1287,8 +1287,10 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
             }
         }
         auto dtmcMatrix = dtmcMatrixBuilder.build();
-        std::vector<ValueType> sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+        std::vector<ValueType> sanityValues =
+            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
+                env, storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false)
+                .values;
 
         ValueType maxDiff = storm::utility::zero<ValueType>();
         uint64_t maxState = 0;
@@ -1326,7 +1328,8 @@ void postProcessStrategies(uint64_t iteration, storm::OptimizationDirection cons
         }
         dtmcMatrix = dtmcMatrixBuilder.build();
         sanityValues = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            Environment(), storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false);
+                           env, storm::solver::SolveGoal<ValueType>(), dtmcMatrix, dtmcMatrix.transpose(), constraintStates, targetStates, false)
+                           .values;
 
         maxDiff = storm::utility::zero<ValueType>();
         maxState = 0;
@@ -1528,7 +1531,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
 
         // Post-process strategies for better refinements.
         storm::utility::Stopwatch strategyProcessingWatch(true);
-        postProcessStrategies(this->iteration, player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix,
+        postProcessStrategies(env, this->iteration, player1Direction, minStrategyPair, maxStrategyPair, player1Groups, player2RowGrouping, transitionMatrix,
                               initialStates, constraintStates, targetStates, quantitativeResult, this->fixPlayer1Strategy, this->fixPlayer2Strategy,
                               this->debug);
         strategyProcessingWatch.stop();

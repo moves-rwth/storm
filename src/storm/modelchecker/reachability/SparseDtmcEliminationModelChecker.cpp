@@ -248,7 +248,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // Now, we set the values of all states in BSCCs to that of the representative value (and clear the
     // transitions of the representative states while doing so).
     auto representativeIt = bsccRepresentatives.begin();
-    for (auto sccIndex : relevantBsccs) {
+    for (uint64_t sccIndex : relevantBsccs) {
         // We only need to set the values for all states of the BSCC if we are not computing the values for the
         // initial states only.
         ValueType bsccValue = stateValues[*representativeIt] / averageTimeInStates[*representativeIt];
@@ -286,7 +286,7 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(Env
     // Set the value initial value of all states not in a BSCC to zero, because a) any previous value would
     // incorrectly influence the result and b) the value have been erroneously changed for the predecessors of
     // BSCCs by the previous state elimination.
-    for (auto state : remainingStates) {
+    for (uint64_t state : remainingStates) {
         if (!bsccRepresentativesAsBitVector.get(state)) {
             stateValues[state] = storm::utility::zero<ValueType>();
         }
@@ -413,7 +413,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
             // each state to the initial states to determine whether we still need to consider the values for
             // these states. If not, we can null-out all their probabilities.
             if (checkTask.isOnlyInitialStatesRelevantSet()) {
-                for (auto state : relevantStates) {
+                for (uint64_t state : relevantStates) {
                     if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
                         for (auto& element : submatrix.getRow(state)) {
                             element.setValue(storm::utility::zero<ValueType>());
@@ -512,11 +512,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
         // result to only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (auto state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        std::vector<ValueType> relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
@@ -587,7 +585,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    std::vector<ValueType> result(maybeStates.size());
+    std::vector<storm::utility::ExtendedValueType<ValueType>> result(maybeStates.size());
     if (furtherComputationNeeded) {
         // If we compute the results for the initial states only, we can cut off all maybe state that are not
         // reachable from them.
@@ -612,24 +610,28 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         std::vector<ValueType> subresult =
             computeReachabilityValues(env, submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly,
                                       probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
-        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
+        storm::utility::vector::setVectorValues(result, maybeStates, subresult);
     }
 
     // Construct full result.
-    storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::utility::infinity<ValueType>());
-    storm::utility::vector::setVectorValues<ValueType>(result, targetStates, storm::utility::zero<ValueType>());
+    storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::positiveInfinity<ValueType>());
+    storm::utility::vector::setVectorValues(result, targetStates, storm::utility::zero<ValueType>());
     if (computeForInitialStatesOnly) {
         // If we computed the results for the initial (and inf) states only, we need to filter the result to
         // only communicate these results.
-        std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
-        for (auto state : ~maybeStates | initialStates) {
-            (*checkResult)[state] = result[state];
-        }
-        return std::move(checkResult);  // move() required by, e.g., clang 3.8
+        storm::storage::BitVector relevantStates = ~maybeStates | initialStates;
+        auto relevantValues = storm::utility::vector::filterVector(result, relevantStates);
+        return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::move(relevantStates), std::move(relevantValues));
     }
     return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
 }
 
+// GCC 15 raises a false positive -Wfree-nonheap-object when compiling SparseDtmcEliminationModelChecker
+// with GMP rational functions (STORM_USE_CLN_RF=OFF) in Release mode: the inlined std::vector destructor
+// for MatrixEntry<..., RationalFunction<..., GMP>> is incorrectly flagged. Not a real memory error.
+// See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108846
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfree-nonheap-object"
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(
     Environment const& env, CheckTask<storm::logic::ConditionalFormula, SolutionType> const& checkTask) {
@@ -848,7 +850,7 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
         }
     }
 
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
+    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, ValueType(numerator / denominator)));
 }
 
 template<typename SparseDtmcModelType>
@@ -867,6 +869,7 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedS
         }
     }
 }
+#pragma GCC diagnostic pop
 
 template<typename SparseDtmcModelType>
 void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(
@@ -989,7 +992,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
 
         // And then recursively treat the remaining sub-SCCs.
         STORM_LOG_TRACE("Eliminating " << remainingSccs.getNumberOfSetBits() << " remaining SCCs on level " << level << ".");
-        for (auto sccIndex : remainingSccs) {
+        for (uint64_t sccIndex : remainingSccs) {
             storm::storage::StronglyConnectedComponent const& newScc = decomposition.getBlock(sccIndex);
 
             // Rewrite SCC into bit vector and subtract it from the remaining states.
@@ -1028,7 +1031,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(
         STORM_LOG_TRACE("Eliminated/added entry states.");
     } else {
         STORM_LOG_TRACE("Finally, adding entry states to queue.");
-        for (auto state : entryStates) {
+        for (uint64_t state : entryStates) {
             entryStateQueue.push_back(state);
         }
     }

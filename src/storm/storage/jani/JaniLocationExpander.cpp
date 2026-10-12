@@ -121,8 +121,9 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
 
                 Location newLoc(newLocationName, newAssignments);
 
-                if (useTransientVariables)
+                if (useTransientVariables) {
                     newLoc.addTransientAssignment(Assignment(newVariablePointer, newIndices.variableDomain[i], 0));
+                }
 
                 uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
                 newIndices.locationVariableValueMap[origIndex][i] = newLocationIndex;
@@ -183,8 +184,7 @@ JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomat
                                // locationVariableValueMap[destination.getLocationIndex()]
                 }
 
-                if (!useTransientVariables)
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented.");
+                STORM_LOG_THROW(useTransientVariables, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented.");
                 // oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
 
                 TemplateEdgeDestination ted(oa);

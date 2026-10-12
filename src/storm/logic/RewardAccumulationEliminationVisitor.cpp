@@ -1,5 +1,6 @@
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 #include <boost/any.hpp>
+#include <optional>
 #include "storm/logic/Formulas.h"
 
 #include "storm/storage/jani/Model.h"
@@ -37,7 +38,7 @@ void RewardAccumulationEliminationVisitor::eliminateRewardAccumulations(storm::j
 }
 
 boost::any RewardAccumulationEliminationVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
-    std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<TimeBound>> lowerBounds, upperBounds;
     std::vector<TimeBoundReference> timeBoundReferences;
     for (uint64_t i = 0; i < f.getDimension(); ++i) {
         if (f.hasLowerBound(i)) {

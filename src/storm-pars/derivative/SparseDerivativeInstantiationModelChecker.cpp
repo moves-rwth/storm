@@ -37,10 +37,10 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
     boost::optional<std::vector<ConstantType>> const& valueVector) {
     std::vector<ConstantType> reachabilityProbabilities;
     if (!valueVector.is_initialized()) {
-        storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<FunctionType>, ConstantType> instantiationModelChecker(model);
+        storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<FunctionType>, ConstantType> instantiationModelChecker(env, model);
         instantiationModelChecker.specifyFormula(*currentCheckTask);
         std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker.check(env, valuation);
-        reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+        reachabilityProbabilities = result->asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
     } else {
         STORM_LOG_ASSERT(valueVector->size() == model.getNumberOfStates(), "Size of reachability probability vector must be equal to the size of the model.");
         reachabilityProbabilities = *valueVector;
@@ -187,8 +187,9 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     std::map<uint_fast64_t, uint_fast64_t> stateNumToEquationSystemRow;
     uint_fast64_t newRow = 0;
     for (uint_fast64_t row = 0; row < transitionMatrix.getRowCount(); ++row) {
-        if (!next.get(row))
+        if (!next.get(row)) {
             continue;
+        }
         stateNumToEquationSystemRow[row] = newRow;
         newRow++;
     }
@@ -256,8 +257,9 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::spec
     // }
 
     for (uint_fast64_t state = 0; state < transitionMatrix.getRowCount(); ++state) {
-        if (!stateNumToEquationSystemRow.count(state))
+        if (!stateNumToEquationSystemRow.count(state)) {
             continue;
+        }
         uint_fast64_t row = stateNumToEquationSystemRow[state];
         // PROBABILITY -> For every state, the one-step probability to reach the target goes into the output vector
         // REWARD -> For every state, the reward goes into the output vector

@@ -5,6 +5,7 @@
 
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -187,7 +188,7 @@ class ParameterCreator<Type, storm::RationalFunction> {
     void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
         for (auto const& constant : model.getConstants()) {
             if (!constant.isDefined()) {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                 parameters.insert(carlVariable);
                 auto rf = convertVariableToPolynomial(carlVariable);
                 rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -1642,7 +1643,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                     return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
+                STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
             }
         } else {
             return ActionDd(this->variables.manager->getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {},
@@ -2395,7 +2396,8 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::jani::Model const& model,
+std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build(storm::Environment const& env,
+                                                                                                            storm::jani::Model const& model,
                                                                                                             Options const& options) {
     // Prepare the model and do some sanity checks
     if (!std::is_same<ValueType, storm::RationalFunction>::value && model.hasUndefinedConstants()) {
@@ -2446,7 +2448,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
                     "The symbolic JANI model builder currently does not support transient edge destination assignments.");
 
     // Create the manager
-    auto manager = std::make_shared<storm::dd::DdManager<Type>>();
+    auto manager = std::make_shared<storm::dd::DdManager<Type>>(env);
 
     // Prepare a result
     std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> result;

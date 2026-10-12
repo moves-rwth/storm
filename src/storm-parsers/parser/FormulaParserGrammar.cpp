@@ -1,6 +1,7 @@
 #include "FormulaParserGrammar.h"
 
 #include <memory>
+#include <optional>
 
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -473,11 +474,23 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createEventua
                                            std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds,
     storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
     if (timeBounds && !timeBounds.get().empty()) {
-        std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+        // Conversion of boost::optional to std::optional
+        // This can be simplified if the input is changed to already use std::optional
+        std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
         std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
         for (auto const& timeBound : timeBounds.get()) {
-            lowerBounds.push_back(std::get<0>(timeBound));
-            upperBounds.push_back(std::get<1>(timeBound));
+            auto const& lowerBound = std::get<0>(timeBound);
+            auto const& upperBound = std::get<1>(timeBound);
+            if (lowerBound) {
+                lowerBounds.emplace_back(lowerBound.get());
+            } else {
+                lowerBounds.emplace_back();
+            }
+            if (upperBound) {
+                upperBounds.emplace_back(upperBound.get());
+            } else {
+                upperBounds.emplace_back();
+            }
             timeBoundReferences.emplace_back(*std::get<2>(timeBound));
         }
         return std::shared_ptr<storm::logic::Formula const>(
@@ -501,11 +514,23 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUntilFo
                                            std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds,
     std::shared_ptr<storm::logic::Formula const> const& rightSubformula) {
     if (timeBounds && !timeBounds.get().empty()) {
-        std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+        // Conversion of boost::optional to std::optional
+        // This can be simplified if the input is changed to already use std::optional
+        std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
         std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
         for (auto const& timeBound : timeBounds.get()) {
-            lowerBounds.push_back(std::get<0>(timeBound));
-            upperBounds.push_back(std::get<1>(timeBound));
+            auto const& lowerBound = std::get<0>(timeBound);
+            auto const& upperBound = std::get<1>(timeBound);
+            if (lowerBound) {
+                lowerBounds.emplace_back(lowerBound.get());
+            } else {
+                lowerBounds.emplace_back();
+            }
+            if (upperBound) {
+                upperBounds.emplace_back(upperBound.get());
+            } else {
+                upperBounds.emplace_back();
+            }
             timeBoundReferences.emplace_back(*std::get<2>(timeBound));
         }
         return std::shared_ptr<storm::logic::Formula const>(
@@ -656,7 +681,7 @@ bool FormulaParserGrammar::isValidMultiBoundedPathFormulaOperand(std::shared_ptr
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiBoundedPathFormula(
     std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
     std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
-    std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
     for (auto const& subformula : subformulas) {
         STORM_LOG_THROW(subformula->isBoundedUntilFormula(), storm::exceptions::WrongFormatException,

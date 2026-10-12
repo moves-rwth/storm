@@ -1043,6 +1043,17 @@ class SparseMatrix {
     bool hasOnlyPositiveEntries() const;
 
     /*!
+     * Checks whether the support graph of the matrix is preserved by every way of resolving the uncertainty, i.e., whether each present entry is
+     * strictly positive no matter how the (probabilistic) rows are instantiated.
+     * For non-interval matrices, this is equivalent to hasOnlyPositiveEntries().
+     * For interval matrices, the intervals are implicitly tightened first:
+     * As every row must sum to one, the lower bound of an entry is at least 1 minus the sum of the upper bounds of the other entries in the row.
+     * For example, the row [0, 0.5], [0.5, 0.5] is graph preserving, since the lower bound of the first entry is tightened to 0.5.
+     * Note that the matrix is expected to represent probabilistic rows.
+     */
+    bool isProbabilisticGraphPreserving() const;
+
+    /*!
      * Checks if the current matrix is a submatrix of the given matrix, where a matrix A is called a submatrix
      * of B if B has no entries in position where A has none. Additionally, the matrices must be of equal size.
      *
@@ -1223,22 +1234,6 @@ class SparseMatrix {
     }
 
    private:
-    /*!
-     * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
-     * and column constraint, respectively.
-     *
-     * @param rowGroupConstraint A bit vector indicating which row groups to keep.
-     * @param columnConstraint A bit vector indicating which columns to keep.
-     * @param rowGroupIndices A vector indicating which rows belong to a given row group.
-     * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
-     * each row in row group i. This can then be used for inserting other values later.
-     * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
-     * given by the row group constraint are kept and all others are dropped.
-     */
-    SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint,
-                              std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false,
-                              storm::storage::BitVector const& makeZeroColumns = storm::storage::BitVector()) const;
-
     // The number of rows of the matrix.
     index_type rowCount;
 

@@ -9,15 +9,19 @@
 #include <set>
 #include <vector>
 
+#include <boost/functional/hash.hpp>
+
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/Extremum.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -38,13 +42,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            bool useMonotonicity) {
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
-    for (auto oldColumn : selectedColumns) {
+    for (uint64_t oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndexColumns++;
     }
 
     oldToNewRowIndexMapping = std::vector<uint64_t>(selectedRows.size(), selectedRows.size());
     uint64_t newIndexRows = 0;
-    for (auto oldRow : selectedRows) {
+    for (uint64_t oldRow : selectedRows) {
         oldToNewRowIndexMapping[oldRow] = newIndexRows++;
     }
 
@@ -141,7 +145,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto nonConstVectorEntry : nonConstVectorEntries) {
+    for (uint64_t nonConstVectorEntry : nonConstVectorEntries) {
         for (uint64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;
@@ -279,7 +283,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
             continue;
         }
         CoefficientType coefficient = term.coeff();
-        STORM_LOG_ASSERT(term.tdeg() < 4, "Transitions are only allowed to have a maximum degree of four.");
         switch (term.tdeg()) {
             case 0:
                 d = coefficient;
@@ -292,6 +295,9 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
                 break;
             case 3:
                 a = coefficient;
+                break;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Transitions are only allowed to have have a maximum degree of four.");
                 break;
         }
     }
@@ -487,7 +493,7 @@ std::optional<Annotation> const& RobustParameterLifter<ParametricType, ConstantT
 template<typename ParametricType, typename ConstantType>
 std::size_t RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getHashValue() const {
     std::size_t seed = 0;
-    carl::hash_add(seed, transition);
+    boost::hash_combine(seed, transition);
     return seed;
 }
 
@@ -514,19 +520,16 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
             }
         }
 
-        double minValue = utility::infinity<double>();
-        double maxValue = -utility::infinity<double>();
+        utility::Minimum<double> minValue;
+        utility::Maximum<double> maxValue;
 
         for (auto const& potentialExtremum : potentialExtrema) {
             auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalFunctionCoefficient>(potentialExtremum)));
-            if (value > maxValue) {
-                maxValue = value;
-            }
-            if (value < minValue) {
-                minValue = value;
-            }
+            maxValue &= value;
+            minValue &= value;
         }
-        sumOfTerms += Interval(minValue, maxValue);
+        STORM_LOG_ASSERT(!minValue.empty(), "Expected at least one potential extremum.");
+        sumOfTerms += Interval(*minValue, *maxValue);
     }
     return sumOfTerms;
 }
@@ -537,8 +540,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
     std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
     for (auto& [abstrValuation, placeholder] : collectedValuations) {
         // Results of our computations go here, we use different methods
-        ConstantType lowerBound = utility::infinity<ConstantType>();
-        ConstantType upperBound = -utility::infinity<ConstantType>();
+        ConstantType lowerBound = utility::zero<ConstantType>();
+        ConstantType upperBound = utility::zero<ConstantType>();
 
         if (abstrValuation.getExtrema()) {
             // We know the extrema of this abstract valuation => we can get the exact bounds easily
@@ -562,16 +565,17 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                 }
 
+                utility::Minimum<ConstantType> minimum;
+                utility::Maximum<ConstantType> maximum;
                 for (auto const& potentialExtremum : potentialExtrema) {
                     // Possible optimization: evaluate all transitions together, keeping track of intermediate results
                     auto value = maybeAnnotation->evaluate(utility::convertNumber<double>(potentialExtremum));
-                    if (value > upperBound) {
-                        upperBound = value;
-                    }
-                    if (value < lowerBound) {
-                        lowerBound = value;
-                    }
+                    maximum &= value;
+                    minimum &= value;
                 }
+                STORM_LOG_ASSERT(!minimum.empty(), "Expected at least one potential extremum.");
+                lowerBound = *minimum;
+                upperBound = *maximum;
             } else {
                 // We may have multiple parameters, but the derivatives w.r.t. each parameter only contain that parameter
                 // We first figure out the positions of the lower and upper bounds per parameter
@@ -593,8 +597,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
                     CoefficientType minPosP;
                     CoefficientType maxPosP;
-                    CoefficientType minValue = utility::infinity<CoefficientType>();
-                    CoefficientType maxValue = -utility::infinity<CoefficientType>();
+                    utility::Minimum<CoefficientType> minValue;
+                    utility::Maximum<CoefficientType> maxValue;
 
                     auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
 
@@ -602,15 +606,14 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                         // We modify the instantiation to have value potentialExtremum at p, keeping other parameters the same
                         instantiation[p] = potentialExtremum;
                         auto value = abstrValuation.getTransition().evaluate(instantiation);
-                        if (value > maxValue) {
-                            maxValue = value;
+                        if (maxValue &= value) {
                             maxPosP = potentialExtremum;
                         }
-                        if (value < minValue) {
-                            minValue = value;
+                        if (minValue &= value) {
                             minPosP = potentialExtremum;
                         }
                     }
+                    STORM_LOG_ASSERT(!minValue.empty(), "Expected at least one potential extremum.");
 
                     lowerPositions[p] = minPosP;
                     upperPositions[p] = maxPosP;

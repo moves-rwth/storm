@@ -71,12 +71,13 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     // Independently re-verify with a fresh instantiation checker, not reusing anything internal to the searcher.
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
+        storm::Environment(), *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
-    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getValueVector()[initialState];
+    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
 
     EXPECT_NEAR(result.value, verifiedValue, 1e-6);
     EXPECT_GE(verifiedValue, 0.5);
@@ -127,12 +128,13 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     // of this comparison ever passes through double.
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> verifier(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> verifier(
+        storm::Environment(), *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
-    storm::RationalNumber verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getValueVector()[initialState];
+    storm::RationalNumber verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getFiniteValueVector()[initialState];
 
     EXPECT_EQ(result.value, verifiedValue);
     EXPECT_GE(verifiedValue, exactThreshold);
@@ -508,12 +510,13 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
 
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
+        storm::Environment(), *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
-    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getValueVector()[initialState];
+    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
 
     EXPECT_NEAR(result.value, verifiedValue, 1e-6);
     EXPECT_LE(verifiedValue, 1.5);
@@ -743,14 +746,15 @@ TEST(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
 
     // Independently re-verify with a fresh checker specifying "cost1" explicitly, confirming the
     // certified valuation genuinely satisfies *that* reward model's threshold.
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
+        storm::Environment(), *dtmc);
     std::shared_ptr<storm::logic::Formula> clone = formulaCost1->clone();
     clone->asOperatorFormula().removeBound();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
-    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getValueVector()[initialState];
+    double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
     EXPECT_NEAR(result.value, verifiedValue, 1e-6);
 }
 

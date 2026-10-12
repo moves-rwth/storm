@@ -843,6 +843,15 @@ std::vector<Label> const& Program::getLabels() const {
     return this->labels;
 }
 
+bool Program::hasFormula(std::string const& formulaName) const {
+    return this->formulaToIndexMap.find(formulaName) != this->formulaToIndexMap.end();
+}
+
+Formula const& Program::getFormula(std::string const& formulaName) const {
+    STORM_LOG_ASSERT(this->hasFormula(formulaName), "Formula with name '" << formulaName << "' does not exist.");
+    return formulas[this->formulaToIndexMap.at(formulaName)];
+}
+
 std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
     std::vector<storm::expressions::Expression> allGuards;
     for (auto const& module : modules) {
@@ -1791,8 +1800,9 @@ void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
             std::set<std::pair<std::string, std::string>> globalBVarsWrittenToByCommandInThisModule;
             std::set<std::pair<std::string, std::string>> globalIVarsWrittenToByCommandInThisModule;
             for (auto const& command : module.getCommands()) {
-                if (!command.isLabeled())
+                if (!command.isLabeled()) {
                     continue;
+                }
                 for (auto const& update : command.getUpdates()) {
                     for (auto const& assignment : update.getAssignments()) {
                         if (this->globalBooleanVariableExists(assignment.getVariable().getName())) {

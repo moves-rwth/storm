@@ -217,12 +217,12 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         } else {
             checkTask.setOptimizationDirection(schedulerDirection);
         }
-        storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType> instantiationChecker(model, /*produceScheduler=*/false);
+        storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType> instantiationChecker(env, model, /*produceScheduler=*/false);
         instantiationChecker.setInstantiationsAreGraphPreserving(true);
         instantiationChecker.specifyFormula(checkTask);
         return runLoop(env, instantiationChecker, encoder, bound, direction, initialState, initialValuation);
     } else {
-        storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType> instantiationChecker(model);
+        storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType> instantiationChecker(env, model);
         instantiationChecker.setInstantiationsAreGraphPreserving(true);
         instantiationChecker.specifyFormula(checkTask);
         return runLoop(env, instantiationChecker, encoder, bound, direction, initialState, initialValuation);
@@ -241,7 +241,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     // solver itself (see toDoubleVec/toDouble below) is inherently double-precision.
     auto exactCheck = [&](Valuation const& valuation) -> std::vector<ConstantType> {
         auto result = instantiationChecker.check(env, valuation);
-        return result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+        return result->template asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
     };
     auto toExact = [](std::map<VariableType, double> const& v) -> Valuation {
         Valuation exact;

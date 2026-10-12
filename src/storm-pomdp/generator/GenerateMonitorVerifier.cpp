@@ -122,8 +122,9 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
             state_type index = nextStateId++;
             prodToIndexMap[prod_s] = index;
             initialStates.push_back(index);
-            if (options.useRestartSemantics)
+            if (options.useRestartSemantics) {
                 rejectToStates.push_back(index);
+            }
             todo.push_back(prod_s);
         }
     }
@@ -189,10 +190,11 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                 // Direct probability not used towards the initial states
                 if (totalProbability < storm::utility::one<ValueType>()) {
                     for (state_type initState : rejectToStates) {
-                        if (newRow.contains(initState))
+                        if (newRow.contains(initState)) {
                             newRow[initState] = newRow[initState] + (1 - totalProbability) / rejectToStates.size();
-                        else
+                        } else {
                             newRow[initState] = (1 - totalProbability) / rejectToStates.size();
+                        }
                     }
                 }
 
@@ -209,10 +211,11 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
                                 todo.push_back(to_pair);
                                 prodToIndexMap[to_pair] = indexTo;
                             }
-                            if (newRow.contains(indexTo))
+                            if (newRow.contains(indexTo)) {
                                 newRow[indexTo] = newRow[indexTo] + mcEntry.getValue();
-                            else
+                            } else {
                                 newRow[indexTo] = mcEntry.getValue();
+                            }
                         }
                     }
 
@@ -278,12 +281,10 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         }
 
         for (auto const& action : actionsInObs) {
-            // std::cout << "Keeping action obs (" << action << ", " << currentObservation << ")" << std::endl;
             rowsToKeep |= rowActionObservationMap[std::make_pair(action, currentObservation)];
         }
         currentObservation++;
     }
-    // std::cout << "Kept " << rowsToKeep.getNumberOfSetBits() << " out of " << numberOfRows << " rows." << std::endl;
     // rowsToKeep.setMultiple(0, numberOfRows);
     numberOfRows = rowsToKeep.getNumberOfSetBits();
     storm::storage::SparseMatrix<ValueType> reducedTransitionMatrix = transMatrix.restrictRows(rowsToKeep);
@@ -317,9 +318,10 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
     for (const auto& [labelObsPair, bitvec] : rowActionObservationMap) {
         // Rebuild bitvec with restricted rows
         storm::storage::BitVector newBitVec(numberOfRows);
-        for (auto setbit : bitvec) {
-            if (rowsToKeep[setbit])
+        for (uint64_t setbit : bitvec) {
+            if (rowsToKeep[setbit]) {
                 newBitVec.set(rowMapping[setbit]);
+            }
         }
         // auto newBitVec = bitvec;
 
@@ -348,8 +350,9 @@ std::shared_ptr<MonitorVerifier<ValueType>> GenerateMonitorVerifier<ValueType>::
         for (uint64_t i = 0; i < mc.getNumberOfStates(); i++) {
             for (uint64_t j = 0; j < monitor.getNumberOfStates(); j++) {
                 product_state_type const s(i, j);
-                if (!prodToIndexMap.contains(s))
+                if (!prodToIndexMap.contains(s)) {
                     continue;
+                }
                 auto const productStateIndex = prodToIndexMap[s];
                 // Set the variable values for the product state.
                 // We copy the valuations from the original model and set the monvar and mcvar to the corresponding state indices.

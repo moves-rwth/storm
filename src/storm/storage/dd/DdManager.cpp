@@ -3,6 +3,8 @@
 #include <cmath>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/dd/DdEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -12,8 +14,14 @@
 namespace storm {
 namespace dd {
 template<DdType LibraryType>
-DdManager<LibraryType>::DdManager() : internalDdManager(), metaVariableMap(), manager(new storm::expressions::ExpressionManager()) {
+DdManager<LibraryType>::DdManager(storm::Environment const& env)
+    : internalDdManager(env.dd().get<LibraryType>()), metaVariableMap(), manager(new storm::expressions::ExpressionManager()) {
     // Intentionally left empty.
+}
+
+template<DdType LibraryType>
+std::shared_ptr<DdManager<LibraryType>> DdManager<LibraryType>::createWithDefaultEnvironment() {
+    return std::make_shared<DdManager<LibraryType>>(storm::Environment());
 }
 
 template<DdType LibraryType>
@@ -518,7 +526,6 @@ template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() c
 template Add<DdType::CUDD, storm::RationalNumber> DdManager<DdType::CUDD>::getAddOne() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
-template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getInfinity<uint_fast64_t>() const;
 
 template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
 template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
@@ -545,7 +552,6 @@ template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::g
 template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddOne() const;
 
 template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
-template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
 template Add<DdType::Sylvan, storm::RationalNumber> DdManager<DdType::Sylvan>::getInfinity<storm::RationalNumber>() const;
 template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getInfinity<storm::RationalFunction>() const;
 

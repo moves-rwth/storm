@@ -11,6 +11,7 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -755,7 +756,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::dropUnexploredStates() {
         MdpStateType newState = 0;
         STORM_LOG_ASSERT(exploredChoiceIndices[0] == 0u, "First explored choice index should be 0.");
         // Loop invariant: all indices up to exploredChoiceIndices[newState] consider the new row indices and all other entries are not touched.
-        for (auto const oldState : relevantMdpStates) {
+        for (uint64_t oldState : relevantMdpStates) {
             if (oldState != newState) {
                 STORM_LOG_ASSERT(oldState > newState, "Expected oldState > newState.");
                 uint64_t groupSize = getRowGroupSizeOfState(oldState);
@@ -786,7 +787,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::dropUnexploredStates() {
     {  // mdpStateToChoiceLabelsMap
         if (!mdpStateToChoiceLabelsMap.empty()) {
             auto temp = std::map<BeliefId, std::map<uint64_t, std::string>>();
-            for (auto const relevantState : relevantMdpStates) {
+            for (uint64_t relevantState : relevantMdpStates) {
                 temp[toRelevantStateIndexMap[relevantState]] = mdpStateToChoiceLabelsMap[relevantState];
             }
             mdpStateToChoiceLabelsMap = temp;
@@ -919,7 +920,7 @@ void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeValuesOfExploredMdp(s
 
     std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(env, exploredMdp, task));
     if (res) {
-        values = std::move(res->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+        values = std::move(res->asExplicitQuantitativeCheckResult<ValueType>().getSentinelValueVector());
         scheduler = std::make_shared<storm::storage::Scheduler<ValueType>>(res->asExplicitQuantitativeCheckResult<ValueType>().getScheduler());
         STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(lowerValueBounds, values, std::less_equal<ValueType>()),
                                   "Computed values are smaller than the lower bound.");
@@ -1083,7 +1084,7 @@ BeliefMdpExplorer<PomdpType, BeliefValueType>::createStandardCheckTask(std::shar
     //  Therefore, this method needs the property by reference (and not const reference)
     auto task = storm::api::createTask<ValueType>(property, false);
     auto hint = storm::modelchecker::ExplicitModelCheckerHint<ValueType>();
-    hint.setResultHint(values);
+    hint.setResultHint(storm::utility::fromSentinel(std::vector<ValueType>(values)));
     auto hintPtr = std::make_shared<storm::modelchecker::ExplicitModelCheckerHint<ValueType>>(hint);
     task.setHint(hintPtr);
     task.setProduceSchedulers();

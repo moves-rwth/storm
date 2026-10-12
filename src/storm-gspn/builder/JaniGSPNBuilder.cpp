@@ -1,6 +1,7 @@
 #include "JaniGSPNBuilder.h"
 
 #include <memory>
+#include <optional>
 
 #include "storm/logic/Formulas.h"
 
@@ -310,7 +311,7 @@ std::vector<storm::jani::Property> JaniGSPNBuilder::getStandardProperties(storm:
 
     auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
     auto reachTimeBoundFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-        std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, atomicFormula, boost::none, tb, tbr),
+        std::make_shared<storm::logic::BoundedUntilFormula>(trueFormula, atomicFormula, std::nullopt, tb, tbr),
         storm::logic::OperatorInformation(optimizationDirection));
     standardProperties.emplace_back(dirShort + "PrReach" + name + "TB", reachTimeBoundFormula, emptySet,
                                     "The " + dirLong + " probability to reach " + description + " within 'TIME_BOUND' steps.");

@@ -1,19 +1,37 @@
 # See https://clang.llvm.org/extra/clang-tidy/ for a list of available checks.
 # Disable everything first, then enable individual checks.
+# - portability-avoid-pragma-once is deliberately disabled since Storm uses #pragma once everywhere.
 Checks: >-
   -*,
-  readability-braces-around-statements
+  -portability-avoid-pragma-once,
+  boost-use-to-string,
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-empty-catch,
+  bugprone-implicit-widening-of-multiplication-result,
+  bugprone-inc-dec-in-conditions,
+  bugprone-infinite-loop,
+  bugprone-misplaced-widening-cast,
+  bugprone-move-forwarding-reference,
+  bugprone-redundant-expression,
+  bugprone-reserved-identifier,
+  bugprone-signed-char-misuse,
+  bugprone-switch-missing-default-case,
+  bugprone-unused-local-non-trivial-variable,
+  bugprone-unused-return-value,
+  bugprone-use-after-move,
+  bugprone-virtual-near-miss,
+  misc-unused-using-decls,
+  modernize-deprecated-headers,
+  modernize-make-unique,
+  modernize-use-bool-literals,
+  modernize-use-nullptr,
+  readability-braces-around-statements,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-static-accessed-through-instance
 # Candidate checks that are not (yet) enabled:
 # bugprone-branch-clone,
-# bugprone-copy-constructor-init,
-# bugprone-dangling-handle,
-# bugprone-infinite-loop,
-# bugprone-misplaced-widening-cast,
-# bugprone-redundant-expression,
-# bugprone-signed-char-misuse,
-# bugprone-unused-return-value,
-# bugprone-use-after-move,
-# bugprone-virtual-near-miss,
 # clang-analyzer-core.*,
 # clang-analyzer-cplusplus.*,
 # clang-analyzer-deadcode.*,
@@ -23,13 +41,9 @@ Checks: >-
 # misc-misplaced-const,
 # misc-static-assert,
 # misc-throw-by-value-catch-by-reference,
-# misc-unused-using-decls,
-# modernize-deprecated-headers,
 # modernize-make-shared,
-# modernize-make-unique,
 # modernize-return-braced-init-list,
 # modernize-use-default-member-init,
-# modernize-use-nullptr,
 # modernize-use-using,
 # performance-for-range-copy,
 # performance-implicit-conversion-in-loop,
@@ -40,10 +54,7 @@ Checks: >-
 # readability-else-after-return,
 # readability-non-const-parameter,
 # readability-redundant-member-init,
-# readability-redundant-smartptr-get,
-# readability-redundant-string-cstr,
 # readability-simplify-boolean-expr,
-# readability-static-accessed-through-instance
 
 # Only report diagnostics in src/ but not third-party or system headers.
 # The regex also matches storm-*

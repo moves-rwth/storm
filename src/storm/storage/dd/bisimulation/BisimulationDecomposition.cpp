@@ -5,8 +5,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/dd/bisimulation/NondeterministicModelPartitionRefiner.h"
 #include "storm/storage/dd/bisimulation/PartialQuotientExtractor.h"
 #include "storm/storage/dd/bisimulation/Partition.h"
@@ -33,7 +31,7 @@ std::unique_ptr<PartitionRefiner<DdType, ValueType>> createRefiner(storm::models
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(storm::models::symbolic::Model<DdType, ValueType> const& model,
-                                                                                         storm::storage::BisimulationType const& bisimulationType,
+                                                                                         storm::bisimulation::BisimulationType const& bisimulationType,
                                                                                          bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model),
@@ -44,7 +42,7 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecom
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
-    storm::models::symbolic::Model<DdType, ValueType> const& model, storm::storage::BisimulationType const& bisimulationType,
+    storm::models::symbolic::Model<DdType, ValueType> const& model, storm::bisimulation::BisimulationType const& bisimulationType,
     bisimulation::PreservationInformation<DdType, ValueType> const& preservationInformation, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(preservationInformation),
@@ -56,7 +54,7 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecom
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 BisimulationDecomposition<DdType, ValueType, ExportValueType>::BisimulationDecomposition(
     storm::models::symbolic::Model<DdType, ValueType> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-    storm::storage::BisimulationType const& bisimulationType, bisimulation::BisimulationOptions const& bisimulationOptions)
+    storm::bisimulation::BisimulationType const& bisimulationType, bisimulation::BisimulationOptions const& bisimulationOptions)
     : model(model),
       preservationInformation(model, formulas),
       bisimulationOptions(bisimulationOptions),
@@ -80,9 +78,8 @@ BisimulationDecomposition<DdType, ValueType, ExportValueType>::~BisimulationDeco
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
 void BisimulationDecomposition<DdType, ValueType, ExportValueType>::initialize() {
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    verboseProgress = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
+    verboseProgress = bisimulationOptions.verbose;
+    showProgressDelay = bisimulationOptions.showProgressDelay;
 
     auto start = std::chrono::high_resolution_clock::now();
     this->refineWrtRewardModels();

@@ -1,7 +1,7 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 
+#include "storm/environment/Environment.h"
 #include "storm/storage/BitVector.h"
-
 #include "storm/storage/dd/DdManager.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -14,15 +14,14 @@ namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType>
-AbstractionInformation<DdType>::AbstractionInformation(storm::expressions::ExpressionManager& expressionManager,
+AbstractionInformation<DdType>::AbstractionInformation(storm::Environment const& env, storm::expressions::ExpressionManager& expressionManager,
                                                        std::set<storm::expressions::Variable> const& abstractedVariables,
-                                                       std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, AbstractionInformationOptions const& options,
-                                                       std::shared_ptr<storm::dd::DdManager<DdType>> ddManager)
+                                                       std::unique_ptr<storm::solver::SmtSolver>&& smtSolver, AbstractionInformationOptions const& options)
     : expressionManager(expressionManager),
       equivalenceChecker(std::move(smtSolver)),
       abstractedVariables(abstractedVariables),
       constraints(options.constraints),
-      ddManager(ddManager),
+      ddManager(std::make_shared<storm::dd::DdManager<DdType>>(env)),
       allPredicateIdentities(ddManager->getBddOne()),
       allLocationIdentities(ddManager->getBddOne()),
       expressionToBddMap() {
@@ -345,7 +344,7 @@ std::size_t AbstractionInformation<DdType>::getAuxVariableCount() const {
 }
 
 template<storm::dd::DdType DdType>
-std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
+storm::expressions::ExpressionMap<storm::dd::Bdd<DdType>> const& AbstractionInformation<DdType>::getPredicateToBddMap() const {
     return expressionToBddMap;
 }
 

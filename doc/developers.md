@@ -13,8 +13,137 @@ The following contains some general guidelines for developers.
   In particular, it features the template argument `ValueType` representing the underlying number type.
   The most commonly used types are `double`, `storm::RationalNumber` and `storm::RationalFunction`.
 
+The key source directories are:
+
+| Directory | Output | Description |
+|-----------|--------|-------------|
+| `src/storm` | `libstorm` | Core model-checking library |
+| `src/storm-cli` | `storm` binary | Main command-line interface |
+| `src/storm-dft` | `libstorm-dft` | Dynamic Fault Trees |
+| `src/storm-pars` | `libstorm-pars` | Parametric models |
+| `src/storm-pomdp` | `libstorm-pomdp` | POMDPs |
+| `src/storm-gspn` | `libstorm-gspn` | Generalised Stochastic Petri Nets |
+| `src/storm-conv` | `libstorm-conv` | Model conversion |
+| `src/storm-parsers` | `libstorm-parsers` | PRISM and JANI parsers |
+| `src/storm-gamebased-ar` | | Game-based abstraction refinement |
+| `src/storm-permissive` | | Permissive schedulers |
+| `src/test` | | GTest test suite mirroring the library structure |
+
+Each library's public API lives in its `api/` subdirectory (e.g., `src/storm/api/`, `src/storm-pars/api/`).
+
+`libstorm-parsers` is compiled with hidden visibility, so only symbols that opt in are exported from it. Mark every
+non-inline, externally visible function or class of that library with `STORM_PARSERS_API`, which is defined in
+`src/storm-parsers/storm-parsers-api.h`:
+
+```cpp
+#include "storm-parsers/storm-parsers-api.h"
+
+STORM_PARSERS_API void storm::parser::SomeParser::doSomething();
+```
+
+Header-only functions need no annotation: they are instantiated in the consuming translation unit. Code that is generic over
+the numeric backends additionally needs `extern template` declarations (and one explicit instantiation in a `.cpp` file) so
+that consumers do not instantiate the template themselves and thereby duplicate its symbols.
+
+
+## Building
+
+Storm uses CMake out-of-source builds. All dependencies must be pre-installed (see [the website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html) for the exact set). The CI uses the pre-built Docker image `stormchecker/storm-dependencies:latest` which comes with most dependencies already installed.
+
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON
+make -j$(nproc)        # Build everything
+make storm             # Build only the core library
+make storm-pars        # Build a specific sub-library
+make test              # Run all tests via CTest
+make format            # Apply clang-format to all src/
+```
+
+Individual test binaries are placed in `build/bin/`. Run a specific test with:
+```bash
+./bin/test-storm --gtest_filter='TestSuite.TestName'
+```
+
+Important CMake options:
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `STORM_DEVELOPER` | OFF | Enable extra warnings and assertions |
+| `STORM_WARNING_AS_ERROR` | OFF | Treat warnings as errors (used in CI) |
+| `STORM_USE_CLN_EA` | OFF | Use CLN instead of GMP for exact arithmetic |
+| `STORM_USE_CLN_RF` | ON | Use CLN for rational functions |
+| `STORM_BUILD_TESTS` | ON | Build test binaries |
+| `STORM_DISABLE_<DEP>` | OFF | Disable optional dependencies (CUDD, GLPK, Z3, …) |
+
+## Third party resources
+Storm makes extensive use of third-party resources.
+An overview of the dependencies is available on the [website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html).
+The resources are defined in `resources/3rdparty/CMakeLists.txt` and shipped resources are located in `resources/3rdparty`.
+See the dedicated documentation on [third-party dependencies](3rdparty_dependencies.md).
+
 
 ## Coding conventions
+
+### Templates and `ValueType`
+New functionality should typically be templated on `ValueType`. Add explicit instantiations at the bottom of each `.cpp` file:
+```cpp
+template class MyClass<double>;
+template class MyClass<storm::RationalNumber>;
+template class MyClass<storm::RationalFunction>;
+```
+New numerical code must be tested under both CLN and GMP configurations (`STORM_USE_CLN_EA` on/off, `STORM_USE_CLN_RF` on/off) since their arithmetic differs in edge cases.
+
+### Infinity
+`storm::utility::infinity<ValueType>()` returns a true infinity only for `double`.
+For the exact types it returns the literal `100000000000`; it is deprecated and must not be used in new code.
+
+A value that can be infinite is held in `storm::utility::ExtendedValueType<ValueType>`.
+This is `ValueType` itself for types that bring their own infinity (`double`, reported by `NumberTraits<ValueType>::HasInfinity`) and `storm::utility::ExtendedNumber<ValueType>` for the rest.
+`storm::ExtendedRationalNumber` and `storm::ExtendedRationalFunction` are the aliases for `RationalNumber` and `RationalFunction`.
+
+Use it at the boundaries of a computation: check results, value vectors handed to a caller, bounds passed around as scalars.
+Do not use it in hot loops as the extra wrapper can cause unnecessary slowdowns. Often it is possible to filter out any value which would become or are infinte. To detect or set infinities use the following functions:
+```cpp
+using Extended = storm::utility::ExtendedValueType<ValueType>;
+Extended value = storm::utility::positiveInfinity<ValueType>();  // and negativeInfinity<ValueType>()
+storm::utility::isFinite(value);            // false
+storm::utility::isInfinity(value);          // true; +infinity only, as for double
+storm::utility::isNegativeInfinity(value);  // false
+storm::utility::getFinite(value);           // throws unless the value is finite
+```
+
+The arithmetic follows the extended reals.
+`infinity - infinity`, `0 * infinity` and `infinity / infinity` throw an `InvalidOperationException` instead of yielding a NaN, which the exact types have no representation for.
+A finite `ValueType` converts implicitly, so mixed expressions need no explicit wrapping.
+
+Converting between the plain and the extended type:
+```cpp
+storm::utility::widen(std::move(values));                             // vector<ValueType> -> vector<Extended>
+storm::utility::narrowFinite<ValueType>(std::move(values));           // throws on an infinite entry
+storm::utility::narrowFinite<ValueType>(std::move(values), fallback); // substitutes it instead
+storm::utility::narrow<ValueType>(value);                             // one value, throws if it is infinite
+```
+`storm::utility::convertNumber` takes and returns extended values, so an infinity survives a change of value type.
+
+`fromSentinel` and `toSentinel` bridge the parts of Storm that still produce the `100000000000` literal, mainly the DD leaves.
+They cannot tell that literal apart from a genuine value of the same magnitude, and they are removed together with the sentinel, so do not build on them.
+
+### Exception handling
+Use `STORM_LOG_THROW` rather than throwing exceptions directly:
+```cpp
+STORM_LOG_THROW(condition, storm::exceptions::InvalidArgumentException, "Descriptive message.");
+```
+This throws an `InvalidArgumentException` if `condition` is violated.
+Exception types live in `src/storm/exceptions/`.
+
+### Optional dependencies
+Code that requires optional dependencies (CUDD, GLPK, Z3, …) must be guarded with the corresponding preprocessor flag from `storm-config.h.in`:
+```cpp
+#ifdef STORM_HAVE_Z3
+  // z3-specific code
+#endif
+```
 
 ### Formatting
 - Code should be formatted according to the given rules set by clang-format.
@@ -31,6 +160,7 @@ The following contains some general guidelines for developers.
    * @return ... 
    */
   ```
+- Default values for environments are defined in the constructor of the environment (in the corresponding cpp file).
 
 ### Includes
 - Header files should start with
@@ -64,6 +194,21 @@ The following contains some general guidelines for developers.
   The use of `std::cout` should be avoided and instead, macros such as `STORM_LOG_DEBUG`, `STORM_LOG_INFO` or `STORM_PRINT_AND_LOG` should be used.
 - For line breaks, we use `'\n'` instead of `std::endl` to avoid unnecessary flushing.
   See [PR 178](https://github.com/stormchecker/storm/pull/178) for details.
+
+
+## CI / Continuous Integration
+
+Workflows are in `.github/workflows/`:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `buildtest.yml` | PR, daily, manual | Full build+test matrix (Debug/Release, GMP/CLN combos, with/without optional deps) |
+| `formatcheck.yml` | push, PR, manual | Checks `src/` with clang-format 20 |
+| `formatapply.yml` | manual | Auto-applies formatting and commits |
+| `doxygen.yml` | push to master | Publishes API docs |
+| `release.yml` | tag push | Publishes GitHub releases |
+
+`buildtest.yml` covers multiple configurations including GMP/CLN combinations and a sanitizer build. A CI failure is most commonly caused by a formatting error (fix with `make format`) or a missing template instantiation for one of the `ValueType` variants.
 
 
 ## Contributing

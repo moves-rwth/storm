@@ -21,7 +21,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/solver/OptimizationDirection.h"
-#include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 
@@ -35,16 +34,16 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const checkTask(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas, storm::storage::BisimulationType::Strong)
-               ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(dtmc, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::transformer::BigStep BigStep;
     auto timeTravelledDtmc = BigStep.bigStep(*dtmc, checkTask).first;
 
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(*dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelChecker(
+        storm::Environment(), *dtmc);
     modelChecker.specifyFormula(checkTask);
     storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> modelCheckerTT(
-        timeTravelledDtmc);
+        storm::Environment(), timeTravelledDtmc);
     modelCheckerTT.specifyFormula(checkTask);
 
     auto parameters = storm::models::sparse::getAllParameters(*dtmc);
@@ -74,8 +73,8 @@ void testModel(std::string programFile, std::string formulaAsString, std::string
         auto result = modelChecker.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
         auto resultTT = modelCheckerTT.check(env, instantiation)->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
 
-        storm::RationalNumber resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
-        storm::RationalNumber resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
+        auto const resA = result[*modelChecker.getOriginalModel().getInitialStates().begin()];
+        auto const resB = resultTT[*modelCheckerTT.getOriginalModel().getInitialStates().begin()];
         ASSERT_NEAR(resA, resB, storm::utility::convertNumber<storm::RationalNumber>(1e-6));
     }
 

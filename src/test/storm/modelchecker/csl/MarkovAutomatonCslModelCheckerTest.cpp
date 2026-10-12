@@ -181,7 +181,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         program = program.preprocess(constantDefinitionString);
         auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.second = storm::api::extractFormulasFromProperties(janiData.second);
-        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
         return result;
     }
 
@@ -233,8 +233,8 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         return result->asQualitativeCheckResult().forallTrue();
     }
 
-    ValueType getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
-                                                  std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    storm::utility::ExtendedValueType<ValueType> getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                                                                     std::unique_ptr<storm::modelchecker::CheckResult>& result) {
         auto filter = getInitialStateFilter(model);
         result->filter(*filter);
         return result->asQuantitativeCheckResult<ValueType>().getMin();

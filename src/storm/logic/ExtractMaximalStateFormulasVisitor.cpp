@@ -1,5 +1,6 @@
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 #include <boost/any.hpp>
+#include <optional>
 
 #include "storm/logic/Formulas.h"
 
@@ -54,7 +55,7 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(BoundedUntilFormula const& 
     }
 
     // Copy bound information
-    std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<TimeBound>> lowerBounds, upperBounds;
     std::vector<TimeBoundReference> timeBoundReferences;
     for (uint64_t i = 0; i < f.getDimension(); ++i) {
         if (f.hasLowerBound(i)) {
@@ -141,6 +142,42 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(UntilFormula const& f, boos
     }
 
     return std::static_pointer_cast<Formula>(std::make_shared<UntilFormula>(left, right));
+}
+
+boost::any ExtractMaximalStateFormulasVisitor::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    if (nestingLevel > 0) {
+        return CloneVisitor::visit(f, data);
+    }
+
+    std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+    if (left->hasQualitativeResult()) {
+        left = extract(left);
+    }
+
+    std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+    if (right->hasQualitativeResult()) {
+        right = extract(right);
+    }
+
+    return std::static_pointer_cast<Formula>(std::make_shared<WeakUntilFormula>(left, right));
+}
+
+boost::any ExtractMaximalStateFormulasVisitor::visit(ReleaseFormula const& f, boost::any const& data) const {
+    if (nestingLevel > 0) {
+        return CloneVisitor::visit(f, data);
+    }
+
+    std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+    if (left->hasQualitativeResult()) {
+        left = extract(left);
+    }
+
+    std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+    if (right->hasQualitativeResult()) {
+        right = extract(right);
+    }
+
+    return std::static_pointer_cast<Formula>(std::make_shared<ReleaseFormula>(left, right));
 }
 
 boost::any ExtractMaximalStateFormulasVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {

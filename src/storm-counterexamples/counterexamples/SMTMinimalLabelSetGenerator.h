@@ -320,8 +320,9 @@ class SMTMinimalLabelSetGenerator {
                     storm::expressions::Expression alternativeExpression = variableInformation.manager->boolean(true);
 
                     // If the current synchSet is the same as left-hand side of the implication, we can to skip it.
-                    if (synchSet == labelSet)
+                    if (synchSet == labelSet) {
                         continue;
+                    }
 
                     // Build labels that are missing for this synchronization option.
                     std::set<uint_fast64_t> unknownSynchSetLabels;
@@ -345,6 +346,57 @@ class SMTMinimalLabelSetGenerator {
     }
 
     /*!
+     * Asserts that the given automaton currently resides in the given location. As the location of an automaton is
+     * not part of the variable valuation, the symbolic reasoning in assertCuts has to make it explicit by means of
+     * the location variable of the automaton. Automata with a single location need no such constraint.
+     */
+    static storm::expressions::Expression getLocationExpression(storm::jani::Model const& janiModel, storm::jani::Automaton const& automaton,
+                                                                uint64_t locationIndex) {
+        if (automaton.getNumberOfLocations() <= 1) {
+            return janiModel.getManager().boolean(true);
+        }
+        return automaton.getLocationExpressionVariable() == janiModel.getManager().integer(locationIndex);
+    }
+
+    /*!
+     * Asserts the ranges of the location variables of all automata of the given model.
+     */
+    static void assertJaniLocationRanges(storm::jani::Model const& janiModel, storm::solver::SmtSolver& solver) {
+        for (auto const& automaton : janiModel.getAutomata()) {
+            if (automaton.getNumberOfLocations() <= 1) {
+                continue;
+            }
+            storm::expressions::Expression locationVariable = automaton.getLocationExpressionVariable().getExpression();
+            solver.add(locationVariable >= janiModel.getManager().integer(0) &&
+                       locationVariable < janiModel.getManager().integer(automaton.getNumberOfLocations()));
+        }
+    }
+
+    /*!
+     * Returns an expression characterizing the initial states of the given model, where for JANI models the initial
+     * locations of the automata are taken into account as well.
+     */
+    static storm::expressions::Expression getInitialStatesExpression(storm::storage::SymbolicModelDescription const& symbolicModel) {
+        if (symbolicModel.isPrismProgram()) {
+            return symbolicModel.asPrismProgram().getInitialStatesExpression();
+        }
+
+        storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
+        storm::expressions::Expression result = janiModel.getInitialStatesExpression();
+        for (auto const& automaton : janiModel.getAutomata()) {
+            if (automaton.getNumberOfLocations() <= 1) {
+                continue;
+            }
+            storm::expressions::Expression initialLocationExpression = janiModel.getManager().boolean(false);
+            for (auto const& locationIndex : automaton.getInitialLocationIndices()) {
+                initialLocationExpression = initialLocationExpression || getLocationExpression(janiModel, automaton, locationIndex);
+            }
+            result = result && initialLocationExpression;
+        }
+        return result;
+    }
+
+    /*!
      * Asserts cuts that are derived from the explicit representation of the model and rule out a lot of
      * suboptimal solutions.
      *
@@ -365,10 +417,18 @@ class SMTMinimalLabelSetGenerator {
         // * identify labels that can directly follow a given action
         auto assertCutsClock = std::chrono::high_resolution_clock::now();
 
-        //
-        if (addBackwardImplications) {
-            STORM_LOG_THROW(!symbolicModel.isJaniModel() || !symbolicModel.asJaniModel().usesAssignmentLevels(), storm::exceptions::NotSupportedException,
+        if (addBackwardImplications && symbolicModel.isJaniModel()) {
+            auto const& jani = symbolicModel.asJaniModel();
+            STORM_LOG_THROW(!jani.usesAssignmentLevels(), storm::exceptions::NotSupportedException,
                             "Counterexample generation with backward implications is not supported for indexed assignments.");
+            auto features = jani.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            features.remove(storm::jani::ModelFeature::MultiObjectiveProperties);
+            // Currently no arrays or functions
+            STORM_LOG_THROW(
+                features.empty(), storm::exceptions::NotSupportedException,
+                "Counterexample generation with backward implications is not supported: Unhandled Jani model feature " << features.toString() << ".");
         }
 
         storm::storage::FlatSet<uint_fast64_t> initialLabels;
@@ -405,8 +465,9 @@ class SMTMinimalLabelSetGenerator {
                 for (auto const& entry : transitionMatrix.getRow(currentChoice)) {
                     if (relevancyInformation.relevantStates.get(entry.getColumn())) {
                         for (auto relevantChoice : relevancyInformation.relevantChoicesForRelevantStates.at(entry.getColumn())) {
-                            if (labelSets[currentChoice] == labelSets[relevantChoice])
+                            if (labelSets[currentChoice] == labelSets[relevantChoice]) {
                                 continue;
+                            }
 
                             followingLabels[labelSets[currentChoice]].insert(labelSets[relevantChoice]);
                         }
@@ -480,15 +541,11 @@ class SMTMinimalLabelSetGenerator {
                         localSolver->add(integerVariable.getRangeExpression());
                     }
                 }
+                assertJaniLocationRanges(janiModel, *localSolver);
             }
 
             // Construct an expression that exactly characterizes the initial state.
-            storm::expressions::Expression initialStateExpression;
-            if (symbolicModel.isPrismProgram()) {
-                initialStateExpression = symbolicModel.asPrismProgram().getInitialStatesExpression();
-            } else {
-                initialStateExpression = symbolicModel.asJaniModel().getInitialStatesExpression();
-            }
+            storm::expressions::Expression initialStateExpression = getInitialStatesExpression(symbolicModel);
 
             // Now check for possible backward cuts.
             for (auto const& labelSetAndPrecedingLabelSetsPair : precedingLabels) {
@@ -524,11 +581,13 @@ class SMTMinimalLabelSetGenerator {
 
                         for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
                             // If the current edge is one of the edges we need to consider, add its guard.
-                            if (labelSetAndPrecedingLabelSetsPair.first.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
+                            if (labelSetAndPrecedingLabelSetsPair.first.find(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
                                 labelSetAndPrecedingLabelSetsPair.first.end()) {
                                 storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
 
-                                guardConjunction = guardConjunction && edge.getGuard();
+                                // An edge is only enabled if the automaton is in the source location of that edge.
+                                guardConjunction =
+                                    guardConjunction && getLocationExpression(janiModel, automaton, edge.getSourceLocationIndex()) && edge.getGuard();
                             }
                         }
                     }
@@ -558,8 +617,9 @@ class SMTMinimalLabelSetGenerator {
 
                     // Now check the possible preceding label sets for the essential ones.
                     for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
-                        if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet)
+                        if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet) {
                             continue;
+                        }
 
                         // std::cout << "push\n";
                         // Create a restore point so we can easily pop-off all weakest precondition expressions.
@@ -601,10 +661,14 @@ class SMTMinimalLabelSetGenerator {
 
                                 for (uint_fast64_t edgeIndex = 0; edgeIndex < automaton.getNumberOfEdges(); ++edgeIndex) {
                                     // If the current command is one of the commands we need to consider, store a reference to it in the container.
-                                    if (precedingLabelSet.find(janiModel.encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) != precedingLabelSet.end()) {
+                                    if (precedingLabelSet.find(storm::jani::Model::encodeAutomatonAndEdgeIndices(automatonIndex, edgeIndex)) !=
+                                        precedingLabelSet.end()) {
                                         storm::jani::Edge const& edge = automaton.getEdge(edgeIndex);
 
-                                        preceedingGuardConjunction = preceedingGuardConjunction && edge.getGuard();
+                                        // An edge is only enabled if the automaton is in the source location of that edge.
+                                        preceedingGuardConjunction = preceedingGuardConjunction &&
+                                                                     getLocationExpression(janiModel, automaton, edge.getSourceLocationIndex()) &&
+                                                                     edge.getGuard();
 
                                         currentPreceedingVariableUpdates.emplace_back();
 
@@ -613,6 +677,11 @@ class SMTMinimalLabelSetGenerator {
                                             boost::container::flat_map<storm::expressions::Variable, storm::expressions::Expression> variableUpdates;
                                             for (auto const& assignment : destination.getOrderedAssignments().getNonTransientAssignments()) {
                                                 variableUpdates.emplace(assignment.getVariable().getExpressionVariable(), assignment.getAssignedExpression());
+                                            }
+                                            // Taking the edge also moves the automaton to the target location of the destination.
+                                            if (automaton.getNumberOfLocations() > 1) {
+                                                variableUpdates.emplace(automaton.getLocationExpressionVariable(),
+                                                                        janiModel.getManager().integer(destination.getLocationIndex()));
                                             }
                                             currentPreceedingVariableUpdates.back().emplace_back(std::move(variableUpdates));
                                         }
@@ -791,10 +860,12 @@ class SMTMinimalLabelSetGenerator {
                 // Only build a constraint if the combination does not lead to a target state and
                 // no successor set is already known.
                 storm::expressions::Expression successorExpression;
-                if (targetCombinations.find(labelSet) == targetCombinations.end() && hasKnownSuccessor.find(labelSet) == hasKnownSuccessor.end()) {
+                auto followingLabelSetsIt = followingLabels.find(labelSet);
+                if (targetCombinations.find(labelSet) == targetCombinations.end() && hasKnownSuccessor.find(labelSet) == hasKnownSuccessor.end() &&
+                    followingLabelSetsIt != followingLabels.end()) {
                     successorExpression = variableInformation.manager->boolean(false);
 
-                    auto const& followingLabelSets = followingLabels.at(labelSet);
+                    auto const& followingLabelSets = followingLabelSetsIt->second;
 
                     for (auto const& followingSet : followingLabelSets) {
                         storm::storage::FlatSet<uint_fast64_t> tmpSet;
@@ -819,7 +890,9 @@ class SMTMinimalLabelSetGenerator {
                 // Only build a constraint if the combination is no initial combination and no
                 // predecessor set is already known.
                 storm::expressions::Expression predecessorExpression;
-                if (initialCombinations.find(labelSet) == initialCombinations.end() && hasKnownPredecessor.find(labelSet) == hasKnownPredecessor.end()) {
+                auto preceedingLabelSetsIt = backwardImplications.find(labelSet);
+                if (initialCombinations.find(labelSet) == initialCombinations.end() && hasKnownPredecessor.find(labelSet) == hasKnownPredecessor.end() &&
+                    preceedingLabelSetsIt != backwardImplications.end()) {
                     predecessorExpression = variableInformation.manager->boolean(false);
 
                     //                        std::cout << "labelSet\n";
@@ -828,7 +901,7 @@ class SMTMinimalLabelSetGenerator {
                     //                        }
                     //                        std::cout << '\n';
 
-                    auto const& preceedingLabelSets = backwardImplications.at(labelSet);
+                    auto const& preceedingLabelSets = preceedingLabelSetsIt->second;
 
                     for (auto const& preceedingSet : preceedingLabelSets) {
                         storm::storage::FlatSet<uint_fast64_t> tmpSet;
@@ -1665,7 +1738,8 @@ class SMTMinimalLabelSetGenerator {
             if (rewardName == boost::none) {
                 results.push_back(storm::utility::zero<T>());
                 allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(
-                    env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
+                                      env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false)
+                                      .values;
                 for (auto state : model.getInitialStates()) {
                     STORM_LOG_TRACE("Found probability " << allStatesResult[state]);
                     results.back() = std::max(results.back(), allStatesResult[state]);
@@ -1685,10 +1759,10 @@ class SMTMinimalLabelSetGenerator {
             if (rewardName == boost::none) {
                 results.push_back(storm::utility::zero<T>());
                 storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                allStatesResult = std::move(
+                allStatesResult =
                     modelCheckerHelper
                         .computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false, false)
-                        .values);
+                        .values;
                 for (auto state : model.getInitialStates()) {
                     results.back() = std::max(results.back(), allStatesResult[state]);
                 }
@@ -2032,7 +2106,7 @@ class SMTMinimalLabelSetGenerator {
         // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
         // to give them a strategy that avoids psi states.
         std::queue<uint_fast64_t> prob0EWorklist;
-        for (auto e : reachableProb0EStates) {
+        for (uint64_t e : reachableProb0EStates) {
             prob0EWorklist.push(e);
         }
 

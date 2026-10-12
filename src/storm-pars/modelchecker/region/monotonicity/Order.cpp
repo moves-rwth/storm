@@ -12,7 +12,7 @@ Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVect
     init(numberOfStates, decomposition);
     this->numberOfAddedStates = 0;
     this->onlyBottomTopOrder = true;
-    for (auto i : topStates) {
+    for (uint64_t i : topStates) {
         this->doneStates.set(i);
         this->bottom->statesAbove.set(i);
         this->top->states.insert(i);
@@ -21,7 +21,7 @@ Order::Order(storm::storage::BitVector const& topStates, storm::storage::BitVect
     }
     this->statesSorted = statesSorted;
 
-    for (auto i : bottomStates) {
+    for (uint64_t i : bottomStates) {
         this->doneStates.set(i);
         this->bottom->states.insert(i);
         this->nodes[i] = bottom;
@@ -474,7 +474,7 @@ std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) 
     uint_fast64_t numberOfStatesToSort = states->getNumberOfSetBits();
     std::vector<uint_fast64_t> result;
     // Go over all states
-    for (auto state : *states) {
+    for (uint64_t state : *states) {
         bool unknown = false;
         if (result.size() == 0) {
             result.push_back(state);
@@ -575,8 +575,9 @@ void Order::toDotOutput() const {
     }
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
         for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
-            if (getNode(j) == getNode(i))
+            if (getNode(j) == getNode(i)) {
                 stateCoverage.set(j, false);
+            }
         }
         std::cout << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
     }
@@ -612,12 +613,13 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     // Vertices of the digraph
     storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
-        if (getNode(i) == NULL) {
+        if (getNode(i) == nullptr) {
             continue;
         }
         for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
-            if (getNode(j) == getNode(i))
+            if (getNode(j) == getNode(i)) {
                 stateCoverage.set(j, false);
+            }
         }
 
         dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
@@ -627,7 +629,7 @@ void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
     for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i != numberOfStates; i = stateCoverage.getNextSetIndex(i + 1)) {
         storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
         Node* currentNode = getNode(i);
-        if (currentNode == NULL) {
+        if (currentNode == nullptr) {
             continue;
         }
 
@@ -697,7 +699,7 @@ bool Order::above(Node* node1, Node* node2) {
 
         storm::storage::BitVector statesSeen((node2->statesAbove));
         std::queue<uint_fast64_t> statesToHandle;
-        for (auto state : statesSeen) {
+        for (uint64_t state : statesSeen) {
             statesToHandle.push(state);
         }
         while (!above && !statesToHandle.empty()) {
@@ -709,7 +711,7 @@ bool Order::above(Node* node1, Node* node2) {
                 above = true;
                 continue;
             }
-            for (auto newState : node->statesAbove) {
+            for (uint64_t newState : node->statesAbove) {
                 if (!statesSeen[newState]) {
                     statesToHandle.push(newState);
                     statesSeen.set(newState);
@@ -732,15 +734,18 @@ std::string Order::nodeName(Node n) const {
 }
 
 std::string Order::nodeLabel(Node n) const {
-    if (n.states == top->states)
+    if (n.states == top->states) {
         return "=)";
-    if (n.states == bottom->states)
+    }
+    if (n.states == bottom->states) {
         return "=(";
+    }
     auto itr = n.states.begin();
     std::string label = "s" + std::to_string(*itr);
     ++itr;
-    if (itr != n.states.end())
+    if (itr != n.states.end()) {
         label = "[" + label + "]";
+    }
     return label;
 }
 

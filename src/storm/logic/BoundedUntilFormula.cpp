@@ -14,7 +14,7 @@
 namespace storm {
 namespace logic {
 BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                                         boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound,
+                                         std::optional<TimeBound> const& lowerBound, std::optional<TimeBound> const& upperBound,
                                          TimeBoundReference const& timeBoundReference)
     : PathFormula(),
       leftSubformula({leftSubformula}),
@@ -26,7 +26,7 @@ BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& l
 }
 
 BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                                         std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                                         std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                                          std::vector<TimeBoundReference> const& timeBoundReferences)
     : PathFormula(),
       leftSubformula({leftSubformula}),
@@ -40,7 +40,7 @@ BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& l
 
 BoundedUntilFormula::BoundedUntilFormula(std::vector<std::shared_ptr<Formula const>> const& leftSubformulas,
                                          std::vector<std::shared_ptr<Formula const>> const& rightSubformulas,
-                                         std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                                         std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                                          std::vector<TimeBoundReference> const& timeBoundReferences)
     : PathFormula(),
       leftSubformula(leftSubformulas),
@@ -199,7 +199,7 @@ bool BoundedUntilFormula::isLowerBoundStrict(unsigned i) const {
     if (!hasLowerBound(i)) {
         return false;
     }
-    return lowerBound.at(i).get().isStrict();
+    return lowerBound.at(i).value().isStrict();
 }
 
 bool BoundedUntilFormula::hasLowerBound() const {
@@ -219,11 +219,11 @@ bool BoundedUntilFormula::hasIntegerLowerBound(unsigned i) const {
     if (!hasLowerBound(i)) {
         return true;
     }
-    return lowerBound.at(i).get().getBound().hasIntegerType();
+    return lowerBound.at(i).value().getBound().hasIntegerType();
 }
 
 bool BoundedUntilFormula::isUpperBoundStrict(unsigned i) const {
-    return upperBound.at(i).get().isStrict();
+    return upperBound.at(i).value().isStrict();
 }
 
 bool BoundedUntilFormula::hasUpperBound() const {
@@ -240,15 +240,23 @@ bool BoundedUntilFormula::hasUpperBound(unsigned i) const {
 }
 
 bool BoundedUntilFormula::hasIntegerUpperBound(unsigned i) const {
-    return upperBound.at(i).get().getBound().hasIntegerType();
+    return upperBound.at(i).value().getBound().hasIntegerType();
 }
 
 storm::expressions::Expression const& BoundedUntilFormula::getLowerBound(unsigned i) const {
-    return lowerBound.at(i).get().getBound();
+    return lowerBound.at(i).value().getBound();
 }
 
 storm::expressions::Expression const& BoundedUntilFormula::getUpperBound(unsigned i) const {
-    return upperBound.at(i).get().getBound();
+    return upperBound.at(i).value().getBound();
+}
+
+std::optional<TimeBound> BoundedUntilFormula::getLowerBoundAsOptionalTimeBound(unsigned i) const {
+    return lowerBound.at(i);
+}
+
+std::optional<TimeBound> BoundedUntilFormula::getUpperBoundAsOptionalTimeBound(unsigned i) const {
+    return upperBound.at(i);
 }
 
 template<>

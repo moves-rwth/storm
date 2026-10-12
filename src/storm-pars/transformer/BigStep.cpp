@@ -34,7 +34,7 @@ using UniPoly = carl::UnivariatePolynomial<RationalFunctionCoefficient>;
 
 RationalFunction BigStep::uniPolyToRationalFunction(UniPoly uniPoly) {
     auto multivariatePol = storm::RawPolynomial(uniPoly);
-    auto multiNominator = carl::FactorizedPolynomial<storm::RawPolynomial>(multivariatePol, rawPolynomialCache);
+    auto multiNominator = storm::Polynomial(multivariatePol, rawPolynomialCache);
     return RationalFunction(multiNominator);
 }
 
@@ -60,7 +60,6 @@ uint64_t PolynomialCache::lookUpInCache(UniPoly const& f, RationalFunctionVariab
         return it->second;
     }
 
-    // std::cout << f << std::endl;
     uint64_t newIndex = container.second.size();
     container.first[f] = newIndex;
     container.second.push_back(f);
@@ -379,7 +378,7 @@ std::pair<std::map<uint64_t, std::set<uint64_t>>, std::set<uint64_t>> findSubgra
     return std::make_pair(subgraph, bottomStates);
 }
 
-std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>> BigStep::bigStep(
+std::pair<models::sparse::Dtmc<RationalFunction>, UniPolyAnnotationMap> BigStep::bigStep(
     models::sparse::Dtmc<RationalFunction> const& model, modelchecker::CheckTask<logic::Formula, RationalFunction> const& checkTask) {
     models::sparse::Dtmc<RationalFunction> dtmc(model);
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
@@ -467,7 +466,7 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
     storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, trueVector, falseVector);
 
     // We will return these stored annotations to help find the zeroes
-    std::map<UniPoly, Annotation> storedAnnotations;
+    UniPolyAnnotationMap storedAnnotations;
 
     std::map<RationalFunctionVariable, std::set<uint64_t>> bottomStatesSeen;
 
@@ -549,10 +548,6 @@ std::pair<models::sparse::Dtmc<RationalFunction>, std::map<UniPoly, Annotation>>
             if (!existsEliminableState) {
                 continue;
             }
-
-            // for (auto const& [state, annotation] : bottomAnnotations) {
-            //     std::cout << state << ": " << annotation << std::endl;
-            // }
 
             uint64_t oldMatrixSize = flexibleMatrix.getRowCount();
 
@@ -667,7 +662,7 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     uint64_t start, const RationalFunctionVariable& parameter, const storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
     const storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
     const std::map<RationalFunctionVariable, std::map<uint64_t, std::set<uint64_t>>>& treeStates,
-    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const std::map<UniPoly, Annotation>& storedAnnotations) {
+    const boost::optional<std::vector<RationalFunction>>& stateRewardVector, const UniPolyAnnotationMap& storedAnnotations) {
     // Find the subgraph we will work on using DFS, following the treeStates, stopping before cycles
     auto const [subtree, bottomStates] = findSubgraph(flexibleMatrix, start, treeStates, stateRewardVector, parameter);
 
@@ -728,20 +723,13 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
                 }
                 auto const transition = backwardsEntry.getValue();
 
-                // std::cout << backwardsEntry.getColumn() << "--" << backwardsEntry.getValue() << "->" << goToState << ": ";
-
                 // We add stuff to this annotation
                 auto& targetAnnotation = annotations.at(goToState);
 
-                // std::cout << targetAnnotation << " + ";
-                // std::cout << "(" << transition << " * (" << annotations.at(backwardsEntry.getColumn()) << "))";
-
                 // The core of this big-step algorithm: "value-iterating" on our annotation.
                 if (transition.isConstant()) {
-                    // std::cout << "(constant)";
                     targetAnnotation.addAnnotationTimesConstant(annotations.at(backwardsEntry.getColumn()), transition.constantPart());
                 } else {
-                    // std::cout << "(pol)";
                     // Read transition from DTMC, convert to univariate polynomial
                     STORM_LOG_ERROR_COND(transition.denominator().isConstant(), "Only transitions with constant denominator supported but this has "
                                                                                     << transition.denominator() << " in transition " << transition);
@@ -779,10 +767,6 @@ std::pair<std::map<uint64_t, Annotation>, std::pair<std::vector<uint64_t>, std::
     }
     // Delete annotations that are not bottom states
     for (auto const& [state, _successors] : subtree) {
-        // std::cout << "Subtree of " << state << ": ";
-        // for (auto const& entry : _successors) {
-        //     std::cout << entry << " ";
-        // }
         if (!bottomStates.count(state)) {
             annotations.erase(state);
         }
@@ -817,17 +801,6 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
 
     // State affected by big-step
     std::unordered_set<uint64_t> affectedStates;
-
-    // for (auto const& [factors, transitions] : parametricTransitions) {
-    //     std::cout << "Factors: ";
-    //     for (uint64_t i = 0; i < factors.size(); i++) {
-    //         std::cout << polynomialCache->at(parameter).second[i] << ": " << factors[i] << " ";
-    //     }
-    //     std::cout << std::endl;
-    //     for (auto const& [state, info] : transitions) {
-    //         std::cout << "State " << state << " with " << info << std::endl;
-    //     }
-    // }
 
     std::set<std::set<uint64_t>> targetSetStates;
 
@@ -910,12 +883,12 @@ std::vector<std::pair<uint64_t, Annotation>> BigStep::findBigStep(const std::map
     return insertTransitions;
 }
 
-std::map<UniPoly, Annotation> BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
-                                                                 storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
-                                                                 storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
-                                                                 storage::BitVector& reachableStates,
-                                                                 std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
-    std::map<UniPoly, Annotation> storedAnnotations;
+UniPolyAnnotationMap BigStep::replaceWithNewTransitions(uint64_t state, const std::vector<std::pair<uint64_t, Annotation>> transitions,
+                                                        storage::FlexibleSparseMatrix<RationalFunction>& flexibleMatrix,
+                                                        storage::FlexibleSparseMatrix<RationalFunction>& backwardsFlexibleMatrix,
+                                                        storage::BitVector& reachableStates,
+                                                        std::map<RationalFunctionVariable, std::set<uint64_t>>& treeStatesNeedUpdate) {
+    UniPolyAnnotationMap storedAnnotations;
 
     // STORM_LOG_ASSERT(flexibleMatrix.createSparseMatrix().transpose() == backwardsFlexibleMatrix.createSparseMatrix(), "");
     // Delete old transitions - backwards
