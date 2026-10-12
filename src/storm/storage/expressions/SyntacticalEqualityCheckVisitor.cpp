@@ -152,5 +152,27 @@ boost::any SyntacticalEqualityCheckVisitor::visit(RationalLiteralExpression cons
     }
 }
 
+boost::any SyntacticalEqualityCheckVisitor::visit(PredicateExpression const& expression, boost::any const& data) {
+    BaseExpression const& otherBaseExpression = boost::any_cast<std::reference_wrapper<BaseExpression const>>(data).get();
+    if (otherBaseExpression.isPredicateExpression()) {
+        PredicateExpression const& otherExpression = otherBaseExpression.asPredicateExpression();
+
+        if (expression.getPredicateType() != otherExpression.getPredicateType()) {
+            return false;
+        }
+        if (expression.getArity() != otherExpression.getArity()) {
+            return false;
+        }
+        for (uint_fast64_t i = 0; i < expression.getArity(); ++i) {
+            if (!boost::any_cast<bool>(expression.getOperand(i)->accept(*this, std::ref(*otherExpression.getOperand(i))))) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
 }  // namespace expressions
 }  // namespace storm
