@@ -2,6 +2,7 @@
 
 #include "storm-pomdp/beliefs/policy/ObservationBasedFiniteStateController.h"
 #include "storm/api/export.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Pomdp.h"
 
@@ -27,6 +28,7 @@ ObservationSignature getObservationSignature(storm::models::sparse::Pomdp<PomdpV
  * @param treatUnspecifiedChoiceAsDontCare If true, an unspecified FSC output selects local action zero and keeps the current FSC memory node. If false,
  * an unspecified output causes an exception.
  * @return The DTMC induced by the POMDP and the FSC.
+ * @throws storm::exceptions::NotSupportedException If the POMDP does not have exactly one initial state.
  * @throws storm::exceptions::UnexpectedException If required observation or action names cannot be matched, or if the FSC has an unspecified output and
  * @p treatUnspecifiedChoiceAsDontCare is false.
  */
@@ -34,6 +36,9 @@ template<typename PomdpValueType, typename FscValueType>
 storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::pomdp::policy::ObservationBasedFiniteStateController<FscValueType> const& fsc,
     bool treatUnspecifiedChoiceAsDontCare = false) {
+    STORM_LOG_THROW(
+        pomdp.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
+        "Applying an FSC requires exactly one initial state, but the POMDP contains " << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
     std::unordered_map<uint64_t, std::pair<uint64_t, uint64_t>> idToPomdpStateAndFscNode;
     std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pomdpStateAndFscNodeToNewStateId;
     // TODO change for vector?
