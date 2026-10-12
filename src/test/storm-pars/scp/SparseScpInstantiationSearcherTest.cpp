@@ -1,4 +1,5 @@
 #include "storm-config.h"
+#include "test/storm-pars/scp/LpSolverTestUtils.h"
 #include "test/storm_gtest.h"
 
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
@@ -40,7 +41,9 @@ std::shared_ptr<storm::logic::Formula const> parseSingleFormula(std::string cons
 
 }  // namespace
 
-TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
+class SparseScpInstantiationSearcherTest : public storm::pars::scp::testutils::LpSolverTest {};
+
+TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -62,7 +65,7 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     auto task = makeTask(formula);
 
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_GE(result.value, 0.5);
@@ -70,11 +73,10 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     // Independently re-verify with a fresh instantiation checker, not reusing anything internal to the searcher.
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
-                                                                                                                                    *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(env(), *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
-    auto verifyResult = verifier.check(storm::Environment(), result.valuation);
+    auto verifyResult = verifier.check(env(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
     double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
 
@@ -89,7 +91,7 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
 // independently-computed exact re-verification and against a hand-built exact rational threshold --
 // something the double-precision test above can only approximate (EXPECT_NEAR/EXPECT_GE against a
 // double-rounded 0.51).
-TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecision) {
+TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecision) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -111,7 +113,7 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     auto task = makeTask(formula);
 
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
     static_assert(std::is_same_v<decltype(result.value), storm::RationalNumber>,
                   "ScpResult<storm::RationalNumber>::value must actually be storm::RationalNumber, not double.");
 
@@ -126,11 +128,11 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     // of this comparison ever passes through double.
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> verifier(
-        storm::Environment(), *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> verifier(env(),
+                                                                                                                                                   *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
-    auto verifyResult = verifier.check(storm::Environment(), result.valuation);
+    auto verifyResult = verifier.check(env(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
     storm::RationalNumber verifiedValue =
         verifyResult->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getFiniteValueVector()[initialState];
@@ -139,7 +141,7 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     EXPECT_GE(verifiedValue, exactThreshold);
 }
 
-TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc) {
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Dtmc) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -161,13 +163,13 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 0.3);
 }
 
-TEST(SparseScpInstantiationSearcherTest, ReportsNonFeasible_WhenThresholdIsUnreachableInRegion) {
+TEST_P(SparseScpInstantiationSearcherTest, ReportsNonFeasible_WhenThresholdIsUnreachableInRegion) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -199,7 +201,7 @@ TEST(SparseScpInstantiationSearcherTest, ReportsNonFeasible_WhenThresholdIsUnrea
     ScpOptions options;
     options.maxIterations = 200;
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc, options);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     EXPECT_NE(ScpStatus::Feasible, result.status);
 }
@@ -239,7 +241,7 @@ std::string const TwoParameterMdpSource =
 // AtMost (P<=lambda) on an Mdp defaults to the robust reading Pmax<=lambda: even the worst-case
 // (maximizing) scheduler must stay under the threshold. Pmax = max(p, 0.1), so this requires a
 // real downward search on p (region center 0.5 does not satisfy Pmax<=0.3).
-TEST(SparseScpInstantiationSearcherTest, AtMost_Mdp_UnqualifiedDefaultsToPmax) {
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_UnqualifiedDefaultsToPmax) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoActionMdpSource, "SparseScpInstantiationSearcherTest_AtMostMdp");
     program = program.preprocess("");
@@ -250,7 +252,7 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Mdp_UnqualifiedDefaultsToPmax) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 0.3);
@@ -259,7 +261,7 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Mdp_UnqualifiedDefaultsToPmax) {
 // AtLeast (P>=lambda) on an Mdp defaults to the robust reading Pmin>=lambda: even the worst-case
 // (minimizing) scheduler must clear the threshold. With two independently parametrized actions,
 // Pmin = min(p, q), so satisfying >=0.7 genuinely requires pushing *both* parameters up.
-TEST(SparseScpInstantiationSearcherTest, AtLeast_Mdp_UnqualifiedDefaultsToPmin) {
+TEST_P(SparseScpInstantiationSearcherTest, AtLeast_Mdp_UnqualifiedDefaultsToPmin) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoParameterMdpSource, "SparseScpInstantiationSearcherTest_AtLeastMdp");
     program = program.preprocess("");
@@ -270,14 +272,14 @@ TEST(SparseScpInstantiationSearcherTest, AtLeast_Mdp_UnqualifiedDefaultsToPmin) 
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_GE(result.value, 0.7);
 }
 
 // An explicit Pmax=? formula, consistent with what AtMost would default to, must also work.
-TEST(SparseScpInstantiationSearcherTest, ExplicitPmax_Mdp_ConsistentWithAtMost) {
+TEST_P(SparseScpInstantiationSearcherTest, ExplicitPmax_Mdp_ConsistentWithAtMost) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoActionMdpSource, "SparseScpInstantiationSearcherTest_ExplicitPmax");
     program = program.preprocess("");
@@ -288,7 +290,7 @@ TEST(SparseScpInstantiationSearcherTest, ExplicitPmax_Mdp_ConsistentWithAtMost) 
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 0.3);
@@ -296,7 +298,7 @@ TEST(SparseScpInstantiationSearcherTest, ExplicitPmax_Mdp_ConsistentWithAtMost) 
 
 // An explicit direction that contradicts the threshold's robust-reading default (Pmax paired with
 // a ">=" threshold, which would default to Pmin) must be rejected, not silently mishandled.
-TEST(SparseScpInstantiationSearcherTest, RejectsExplicitDirectionMismatch) {
+TEST_P(SparseScpInstantiationSearcherTest, RejectsExplicitDirectionMismatch) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoActionMdpSource, "SparseScpInstantiationSearcherTest_Mismatch");
     program = program.preprocess("");
@@ -307,13 +309,13 @@ TEST(SparseScpInstantiationSearcherTest, RejectsExplicitDirectionMismatch) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    STORM_SILENT_EXPECT_THROW(searcher.run(storm::Environment(), task), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(searcher.run(env(), task), storm::exceptions::NotSupportedException);
 }
 
 // The initial state directly satisfies the target label, so it's Prob1 regardless of any
 // parameter -- exercises the short-circuit that used to construct (and assert-crash) the encoder
 // unnecessarily.
-TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb1_ReturnsFeasibleImmediately) {
+TEST_P(SparseScpInstantiationSearcherTest, InitialStateIsProb1_ReturnsFeasibleImmediately) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -332,7 +334,7 @@ TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb1_ReturnsFeasibleImme
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_DOUBLE_EQ(1.0, result.value);
@@ -340,7 +342,7 @@ TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb1_ReturnsFeasibleImme
 }
 
 // The initial state can never reach the target label, so it's Prob0 regardless of any parameter.
-TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb0_ReturnsNonFeasibleImmediately) {
+TEST_P(SparseScpInstantiationSearcherTest, InitialStateIsProb0_ReturnsNonFeasibleImmediately) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -359,7 +361,7 @@ TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb0_ReturnsNonFeasibleI
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_NE(ScpStatus::Feasible, result.status);
     EXPECT_DOUBLE_EQ(0.0, result.value);
@@ -368,7 +370,7 @@ TEST(SparseScpInstantiationSearcherTest, InitialStateIsProb0_ReturnsNonFeasibleI
 
 // A tiny iteration budget forces MaxIterationsReached specifically (as opposed to Infeasible via
 // trust-region collapse, which the default budget would eventually hit on the same instance).
-TEST(SparseScpInstantiationSearcherTest, ReportsMaxIterationsReached_WithTightIterationBudget) {
+TEST_P(SparseScpInstantiationSearcherTest, ReportsMaxIterationsReached_WithTightIterationBudget) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -398,7 +400,7 @@ TEST(SparseScpInstantiationSearcherTest, ReportsMaxIterationsReached_WithTightIt
     ScpOptions options;
     options.maxIterations = 2;  // trust-region collapse would take ~13 iterations at the defaults.
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc, options);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     EXPECT_EQ(ScpStatus::MaxIterationsReached, result.status);
 }
@@ -409,7 +411,7 @@ TEST(SparseScpInstantiationSearcherTest, ReportsMaxIterationsReached_WithTightIt
 // needs to actually route through it rather than special-casing non-strict comparisons somewhere.
 // The region center (0.5) exactly equals the threshold, so a naive ">=" implementation would
 // wrongly short-circuit as Feasible at iteration 0; a correct one must keep searching.
-TEST(SparseScpInstantiationSearcherTest, StrictThreshold_RequiresStrictlyExceedingValue) {
+TEST_P(SparseScpInstantiationSearcherTest, StrictThreshold_RequiresStrictlyExceedingValue) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
         "dtmc\n"
@@ -430,7 +432,7 @@ TEST(SparseScpInstantiationSearcherTest, StrictThreshold_RequiresStrictlyExceedi
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_GT(result.value, 0.5);
@@ -439,7 +441,7 @@ TEST(SparseScpInstantiationSearcherTest, StrictThreshold_RequiresStrictlyExceedi
 
 // A region that doesn't cover a parameter actually occurring in the model must fail cleanly, not
 // with an uncaught std::out_of_range from an internal map lookup.
-TEST(SparseScpInstantiationSearcherTest, RegionMissingAModelParameter_ThrowsCleanly) {
+TEST_P(SparseScpInstantiationSearcherTest, RegionMissingAModelParameter_ThrowsCleanly) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoParameterMdpSource, "SparseScpInstantiationSearcherTest_MissingParam");
     program = program.preprocess("");
@@ -462,7 +464,7 @@ TEST(SparseScpInstantiationSearcherTest, RegionMissingAModelParameter_ThrowsClea
 
     auto task = makeTask(formula, region);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    STORM_SILENT_EXPECT_THROW(searcher.run(storm::Environment(), task), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(searcher.run(env(), task), storm::exceptions::NotSupportedException);
 }
 
 namespace {
@@ -491,7 +493,7 @@ std::string const RetryUntilSuccessDtmcSource =
 // region center's 0.5 (reward 2) -- requires a real upward search on p, not just accepting the
 // center. Independently re-verified with a fresh instantiation checker, not reusing anything
 // internal to the searcher, mirroring FindsCertifiedWitness_Dtmc for the probability case.
-TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(RetryUntilSuccessDtmcSource, "SparseScpInstantiationSearcherTest_RewardAtMost");
     program = program.preprocess("");
@@ -502,18 +504,17 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 1.5);
 
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
-                                                                                                                                    *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(env(), *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
-    auto verifyResult = verifier.check(storm::Environment(), result.valuation);
+    auto verifyResult = verifier.check(env(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
     double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
 
@@ -523,7 +524,7 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
 
 // AtLeast (R>=lambda) on a Dtmc: reachability reward 1/p >= 5 needs p <= 0.2, below the region
 // center's 0.5 (reward 2) -- requires a real downward search.
-TEST(SparseScpInstantiationSearcherTest, AtLeast_Dtmc_Reward) {
+TEST_P(SparseScpInstantiationSearcherTest, AtLeast_Dtmc_Reward) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program =
         storm::parser::PrismParser::parseFromString(RetryUntilSuccessDtmcSource, "SparseScpInstantiationSearcherTest_RewardAtLeast");
@@ -535,7 +536,7 @@ TEST(SparseScpInstantiationSearcherTest, AtLeast_Dtmc_Reward) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_GE(result.value, 5.0);
@@ -567,7 +568,7 @@ std::string const RetryUntilSuccessWithParametricCostSource =
 // AffinePMdpDecompositionTest.RewardDecomposition_PicksUpRewardOnlyParameter); this test is the
 // end-to-end confirmation that the searcher's own region-coverage check actually benefits from
 // that, not just the decomposition in isolation.
-TEST(SparseScpInstantiationSearcherTest, RewardOnlyParameterMissingFromRegion_ThrowsCleanly) {
+TEST_P(SparseScpInstantiationSearcherTest, RewardOnlyParameterMissingFromRegion_ThrowsCleanly) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program =
         storm::parser::PrismParser::parseFromString(RetryUntilSuccessWithParametricCostSource, "SparseScpInstantiationSearcherTest_RewardOnlyParamMissing");
@@ -589,13 +590,13 @@ TEST(SparseScpInstantiationSearcherTest, RewardOnlyParameterMissingFromRegion_Th
 
     auto task = makeTask(formula, region);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    STORM_SILENT_EXPECT_THROW(searcher.run(storm::Environment(), task), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(searcher.run(env(), task), storm::exceptions::NotSupportedException);
 }
 
 // With both "p" and the reward-only "c" covered by the region, the search must actually be able to
 // move both to satisfy the threshold -- confirms the reward-only parameter isn't just *discovered*
 // (the test above) but is genuinely usable as an LP variable throughout the search.
-TEST(SparseScpInstantiationSearcherTest, RewardOnlyParameter_UsableInSearch) {
+TEST_P(SparseScpInstantiationSearcherTest, RewardOnlyParameter_UsableInSearch) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program =
         storm::parser::PrismParser::parseFromString(RetryUntilSuccessWithParametricCostSource, "SparseScpInstantiationSearcherTest_RewardOnlyParamUsable");
@@ -621,7 +622,7 @@ TEST(SparseScpInstantiationSearcherTest, RewardOnlyParameter_UsableInSearch) {
 
     auto task = makeTask(formula, region);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 2.0);
@@ -658,7 +659,7 @@ std::string const RetryOrGiveUpMdpSource =
 // constraint (it leads straight to an infinite-value successor) without dropping the whole state,
 // which is exactly what SparseScpInstantiationSearcher's excludedRows computation (via
 // SparseMatrix::getRowFilter) is for.
-TEST(SparseScpInstantiationSearcherTest, AtLeast_Mdp_Reward_RowLevelExclusion) {
+TEST_P(SparseScpInstantiationSearcherTest, AtLeast_Mdp_Reward_RowLevelExclusion) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(RetryOrGiveUpMdpSource, "SparseScpInstantiationSearcherTest_RewardMdpAtLeast");
     program = program.preprocess("");
@@ -669,7 +670,7 @@ TEST(SparseScpInstantiationSearcherTest, AtLeast_Mdp_Reward_RowLevelExclusion) {
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_GE(result.value, 5.0);
@@ -680,7 +681,7 @@ TEST(SparseScpInstantiationSearcherTest, AtLeast_Mdp_Reward_RowLevelExclusion) {
 // as a RewInf state regardless of p -- this must be reported as Infeasible immediately via the
 // initial-state short-circuit (see run()'s zeroStates/oneStates/infiniteStates check), not by
 // building an LP that can never converge.
-TEST(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_ReportsInfeasibleImmediately) {
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_ReportsInfeasibleImmediately) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(RetryOrGiveUpMdpSource, "SparseScpInstantiationSearcherTest_RewardMdpAtMost");
     program = program.preprocess("");
@@ -691,7 +692,7 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_
 
     auto task = makeTask(formula);
     SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double> searcher(*mdp);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_NE(ScpStatus::Feasible, result.status);
     EXPECT_EQ(0u, result.iterations);
@@ -722,7 +723,7 @@ std::string const TwoNamedRewardModelsDtmcSource =
 // (not, say, silently falling back to some other reward model) -- distinguishable here because
 // cost1's and cost2's per-attempt cost differ by a factor of 2, so using the wrong one would still
 // "succeed" but at a value inconsistent with the intended reward model.
-TEST(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
+TEST_P(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(TwoNamedRewardModelsDtmcSource, "SparseScpInstantiationSearcherTest_NamedRM");
     program = program.preprocess("");
@@ -736,20 +737,19 @@ TEST(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
     // cost1: reward 1/attempt, so R<=1.5 needs p>=2/3 (same threshold/model as AtMost_Dtmc_Reward).
     auto task = makeTask(formulaCost1);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    auto result = searcher.run(storm::Environment(), task);
+    auto result = searcher.run(env(), task);
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
     EXPECT_LE(result.value, 1.5);
 
     // Independently re-verify with a fresh checker specifying "cost1" explicitly, confirming the
     // certified valuation genuinely satisfies *that* reward model's threshold.
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
-                                                                                                                                    *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(env(), *dtmc);
     std::shared_ptr<storm::logic::Formula> clone = formulaCost1->clone();
     clone->asOperatorFormula().removeBound();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
-    auto verifyResult = verifier.check(storm::Environment(), result.valuation);
+    auto verifyResult = verifier.check(env(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
     double verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<double>().getFiniteValueVector()[initialState];
     EXPECT_NEAR(result.value, verifiedValue, 1e-6);
@@ -757,7 +757,7 @@ TEST(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
 
 // A reward formula that does not name a reward model, on a model with more than one, has no way
 // to pick one and must fail cleanly rather than silently guessing.
-TEST(SparseScpInstantiationSearcherTest, UnnamedRewardModel_WithoutUniqueRewardModel_ThrowsCleanly) {
+TEST_P(SparseScpInstantiationSearcherTest, UnnamedRewardModel_WithoutUniqueRewardModel_ThrowsCleanly) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program =
         storm::parser::PrismParser::parseFromString(TwoNamedRewardModelsDtmcSource, "SparseScpInstantiationSearcherTest_UnnamedNoUnique");
@@ -773,5 +773,8 @@ TEST(SparseScpInstantiationSearcherTest, UnnamedRewardModel_WithoutUniqueRewardM
     auto unnamedFormula = parseSingleFormula("R<=1.5 [F \"target\"]", program);
     auto task = makeTask(unnamedFormula);
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double> searcher(*dtmc);
-    STORM_SILENT_EXPECT_THROW(searcher.run(storm::Environment(), task), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(searcher.run(env(), task), storm::exceptions::NotSupportedException);
 }
+
+INSTANTIATE_TEST_SUITE_P(LpSolvers, SparseScpInstantiationSearcherTest, testing::ValuesIn(storm::pars::scp::testutils::lpSolversUnderTest()),
+                         storm::pars::scp::testutils::LpSolverTest::solverName);
