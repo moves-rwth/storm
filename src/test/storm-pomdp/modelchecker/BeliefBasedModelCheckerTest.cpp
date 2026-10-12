@@ -405,6 +405,16 @@ TYPED_TEST(BeliefBasedModelCheckerTest, cut_zero_gap) {
         options.buildChoiceLabeling = false;
         options.explorationQueueOrder = storm::pomdp::beliefs::ExplorationQueueOrder::FIFO;
         auto propertyInfo = *data.propertyInfo;
+        // Zero-gap cutoffs do not retain executable continuation policies, including when clipping is enabled.
+        options.cutZeroGap = true;
+        options.generatePolicy = true;
+        for (bool const useClipping : {false, true}) {
+            SCOPED_TRACE(useClipping);
+            options.useClipping = useClipping;
+            EXPECT_THROW(checker.checkUnfold(this->env(), propertyInfo, options, bounds), storm::exceptions::NotSupportedException);
+        }
+        options.generatePolicy = false;
+        options.useClipping = false;
         for (int const mode : {0, 1, 2}) {
             SCOPED_TRACE(mode);  // Unfolding, static discretization, dynamic discretization.
             auto run = [&]() {
@@ -440,6 +450,44 @@ TYPED_TEST(BeliefBasedModelCheckerTest, cut_zero_gap) {
     check("Pmin=? [F \"goal\" ]", "3/10");
     check("Rmax=? [F s>4 ]", "29/50");
     check("Rmin=? [F s>4 ]", "19/50");
+}
+
+TYPED_TEST(BeliefBasedModelCheckerTest, terminal_initial_policy) {
+    using POMDPValueType = typename TestFixture::POMDPValueType;
+    using BeliefValueType = typename TestFixture::BeliefValueType;
+    using BeliefMDPValueType = typename TestFixture::BeliefMDPValueType;
+    using POMDPType = storm::models::sparse::Pomdp<POMDPValueType>;
+
+    for (std::string const formula : {"Pmax=? [F s=0]", "Rmin=? [F s=0]"}) {
+        SCOPED_TRACE(formula);
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", formula, "slippery=0");
+        storm::pomdp::beliefs::BeliefBasedModelChecker<POMDPType, BeliefValueType, BeliefMDPValueType> checker(*data.model);
+        storm::pomdp::modelchecker::PreprocessingPomdpValueBoundsModelChecker<POMDPType> preprocessChecker(*data.model);
+        storm::pomdp::storage::BeliefExplorationBounds<POMDPValueType> bounds;
+        bounds.preprocessingBounds = preprocessChecker.getValueBounds(this->env(), *data.formula);
+        if (data.propertyInfo->kind == storm::pomdp::beliefs::PropertyInformation::Kind::ExpectedTotalReachabilityReward) {
+            bounds.extremeBounds = preprocessChecker.getExtremeValueBound(this->env(), *data.formula);
+        }
+
+        storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMDPValueType> options;
+        options.generatePolicy = true;
+        options.buildChoiceLabeling = false;
+        options.clippingResolutions = std::vector<uint64_t>(data.model->getNrObservations(), 2);
+        for (bool const useClipping : {false, true}) {
+            SCOPED_TRACE(useClipping);
+            options.useClipping = useClipping;
+            auto const result = checker.checkUnfold(this->env(), *data.propertyInfo, options, bounds);
+            EXPECT_EQ(result.value, this->template parseNumber<BeliefMDPValueType>(formula.front() == 'P' ? "1" : "0"));
+            EXPECT_TRUE(result.completedExploration);
+            EXPECT_EQ(result.statistics.exploredBeliefs, 0ul);
+            ASSERT_TRUE(result.policy.has_value());
+            auto const initialObservation = data.model->getObservation(data.model->getInitialStates().getNextSetIndex(0));
+            EXPECT_TRUE(result.policy->hasOutputForObservationInNode(result.policy->getInitialNodeId(), initialObservation));
+            std::stringstream policyJson;
+            EXPECT_NO_THROW(result.policy->writeJsonToStream(policyJson));
+            EXPECT_FALSE(policyJson.str().empty());
+        }
+    }
 }
 
 TYPED_TEST(BeliefBasedModelCheckerTest, simple_Pmax) {

@@ -3,10 +3,15 @@
 
 #include <sstream>
 
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm-pomdp/beliefs/policy/ApplyObservationBasedFSCToPomdp.h"
 #include "storm-pomdp/beliefs/policy/ObservationBasedFiniteStateController.h"
 #include "storm-pomdp/beliefs/policy/PolicyExtractor.h"
 #include "storm/adapters/JsonAdapter.h"
+#include "storm/environment/Environment.h"
+#include "storm/logic/Formulas.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
@@ -22,7 +27,7 @@
 
 namespace {
 
-storm::models::sparse::Pomdp<double> buildSingleStatePomdp(bool withRewards = false) {
+storm::models::sparse::Pomdp<double> buildSingleStatePomdp(bool withRewards = false, bool withChoiceLabels = false) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(0, 0, 0, false, true);
     matrixBuilder.newRowGroup(0);
     matrixBuilder.addNextValue(0, 0, 1.0);
@@ -34,6 +39,14 @@ storm::models::sparse::Pomdp<double> buildSingleStatePomdp(bool withRewards = fa
 
     storm::storage::sparse::ModelComponents<double> components(matrixBuilder.build(), std::move(stateLabeling));
     components.observabilityClasses = std::vector<uint32_t>{0};
+    if (withChoiceLabels) {
+        storm::models::sparse::ChoiceLabeling choiceLabeling(2);
+        choiceLabeling.addLabel("first");
+        choiceLabeling.addLabelToChoice("first", 0);
+        choiceLabeling.addLabel("second");
+        choiceLabeling.addLabelToChoice("second", 1);
+        components.choiceLabeling = std::move(choiceLabeling);
+    }
     if (withRewards) {
         components.rewardModels.emplace("rew", storm::models::sparse::StandardRewardModel<double>(std::optional<std::vector<double>>({3.0}),
                                                                                                   std::optional<std::vector<double>>({2.0, 6.0})));
@@ -192,6 +205,47 @@ TEST(ApplyObservationBasedFiniteStateController, PreservesRewardsForRandomisedAc
     EXPECT_DOUBLE_EQ(rewards.at(0), 8.0);
 }
 
+TEST(ApplyObservationBasedFiniteStateController, PreservesLabelsOfUnreachableStates) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(0, 0, 0, false, true);
+    matrixBuilder.newRowGroup(0);
+    matrixBuilder.addNextValue(0, 0, 1.0);
+    matrixBuilder.addNextValue(1, 1, 1.0);
+    matrixBuilder.newRowGroup(2);
+    matrixBuilder.addNextValue(2, 1, 1.0);
+
+    storm::models::sparse::StateLabeling stateLabeling(2);
+    stateLabeling.addLabel("init");
+    stateLabeling.addLabelToState("init", 0);
+    stateLabeling.addLabel("goal");
+    stateLabeling.addLabelToState("goal", 1);
+    stateLabeling.addLabel("safe");
+    stateLabeling.addLabelToState("safe", 0);
+    stateLabeling.addLabel("empty");
+
+    storm::storage::sparse::ModelComponents<double> components(matrixBuilder.build(), std::move(stateLabeling));
+    components.observabilityClasses = std::vector<uint32_t>{0, 1};
+    storm::models::sparse::Pomdp<double> pomdp(std::move(components), true);
+    storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0);
+    fsc.addDeterministicActionTransition(0, 0, 0, 0);
+
+    auto inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc);
+    ASSERT_EQ(inducedDtmc.getNumberOfStates(), 1);
+    auto const& labeling = inducedDtmc.getStateLabeling();
+    EXPECT_EQ(labeling.getLabels(), pomdp.getStateLabeling().getLabels());
+    ASSERT_TRUE(labeling.containsLabel("goal"));
+    EXPECT_TRUE(labeling.getStates("goal").empty());
+    EXPECT_TRUE(labeling.getStates("empty").empty());
+    EXPECT_TRUE(labeling.getStateHasLabel("safe", 0));
+    EXPECT_TRUE(labeling.getStateHasLabel("init", 0));
+
+    storm::Environment env;
+    storm::parser::FormulaParser formulaParser;
+    auto formula = formulaParser.parseSingleFormulaFromString("P=? [F \"goal\"]");
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(inducedDtmc);
+    auto result = checker.check(env, *formula);
+    EXPECT_DOUBLE_EQ(result->asExplicitQuantitativeCheckResult<double>()[0], 0.0);
+}
+
 TEST(ApplyObservationBasedFiniteStateController, MatchesObservationValuationsIndependentOfStorageOrder) {
     auto sourcePomdp = buildSingleStatePomdpWithObservationValuations(false);
     auto targetPomdp = buildSingleStatePomdpWithObservationValuations(true);
@@ -205,6 +259,41 @@ TEST(ApplyObservationBasedFiniteStateController, MatchesObservationValuationsInd
 
     auto inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(targetPomdp, fsc);
     EXPECT_EQ(inducedDtmc.getNumberOfStates(), 1);
+}
+
+TEST(ApplyObservationBasedFiniteStateController, UnspecifiedOutputUsesLocalActionZeroWithReorderedActionNames) {
+    auto pomdp = buildSingleStatePomdp(true, true);
+    std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, "second"}, {1, "first"}}}}};
+    storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(7, std::nullopt, actionNames);
+
+    EXPECT_THROW(storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc), storm::exceptions::UnexpectedException);
+    auto inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc, true);
+
+    EXPECT_EQ(inducedDtmc.getNumberOfStates(), 1);
+    EXPECT_DOUBLE_EQ(inducedDtmc.getRewardModel("rew").getStateRewardVector().at(0), 5.0);
+}
+
+TEST(ApplyObservationBasedFiniteStateController, UnspecifiedOutputUsesLocalActionZeroWithIncompleteActionNames) {
+    auto pomdp = buildSingleStatePomdp(true, true);
+    std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{1, "second"}}}}};
+    storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(7, std::nullopt, actionNames);
+
+    auto inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc, true);
+
+    EXPECT_EQ(inducedDtmc.getNumberOfStates(), 1);
+    EXPECT_DOUBLE_EQ(inducedDtmc.getRewardModel("rew").getStateRewardVector().at(0), 5.0);
+}
+
+TEST(ApplyObservationBasedFiniteStateController, SpecifiedOutputRemapsActionNamesWithDontCareEnabled) {
+    auto pomdp = buildSingleStatePomdp(true, true);
+    std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, "second"}, {1, "first"}}}}};
+    storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(7, std::nullopt, actionNames);
+    fsc.addDeterministicActionTransition(7, 0, 0, 7);
+
+    auto inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc, true);
+
+    EXPECT_EQ(inducedDtmc.getNumberOfStates(), 1);
+    EXPECT_DOUBLE_EQ(inducedDtmc.getRewardModel("rew").getStateRewardVector().at(0), 9.0);
 }
 
 TEST(PolicyExtractor, UsesCutoffSchedulerLabelInsteadOfLocalChoiceIndex) {
