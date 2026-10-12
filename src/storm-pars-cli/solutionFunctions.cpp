@@ -78,13 +78,13 @@ void computeSolutionFunctionsWithSparseEngine(storm::Environment const& env, std
                 auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*dtmc);
+                auto constraintCollector = storm::analysis::ConstraintCollector(*dtmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             } else if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Ctmc)) {
                 auto ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
                 std::optional<ValueType> rationalFunction =
                     asSolutionFunction<ValueType>(result->asExplicitQuantitativeCheckResult<ValueType>()[*model->getInitialStates().begin()]);
-                auto constraintCollector = storm::analysis::ConstraintCollector<ValueType>(*ctmc);
+                auto constraintCollector = storm::analysis::ConstraintCollector(*ctmc);
                 api::exportParametricResultToFile<ValueType>(rationalFunction, constraintCollector, parametricSettings.exportResultPath());
             }
         });

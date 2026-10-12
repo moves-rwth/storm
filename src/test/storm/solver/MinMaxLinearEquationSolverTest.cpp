@@ -188,4 +188,41 @@ TYPED_TEST(MinMaxLinearEquationSolverTest, SolveEquations) {
     ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Maximize, x, b));
     EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
 }
+TEST(IntervalIterationJustPreciseEnough, MinMax) {
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 0, 0.9);
+    builder.addNextValue(1, 0, 0.9);
+    auto matrix = builder.build();
+    std::vector<double> b = {0.099, 0.05};  // Fixed points 0.99 and 0.5.
+    double const precision = 1e-3;
+
+    for (bool relative : {false, true}) {
+        for (auto dir : {storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize}) {
+            SCOPED_TRACE(::testing::Message() << "relative=" << relative << ", maximize=" << storm::solver::maximize(dir));
+            auto env = DoubleIntervalIterationEnvironment::createEnvironment();
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+            env.solver().minMax().setRelativeTerminationCriterion(relative);
+            auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>().create(env, matrix);
+            solver->setHasUniqueSolution(true);
+            solver->setHasNoEndComponents(true);
+            solver->setBounds(0.0, 1.0);
+            std::vector<double> x(1);
+            ASSERT_TRUE(solver->solveEquations(env, dir, x, b));
+            ASSERT_TRUE(solver->hasSolutionLowerBounds());
+            ASSERT_TRUE(solver->hasSolutionUpperBounds());
+            double const lower = solver->getSolutionLowerBounds()[0];
+            double const upper = solver->getSolutionUpperBounds()[0];
+            double const exact = storm::solver::maximize(dir) ? 0.99 : 0.5;
+            double const tolerance = precision * (relative ? lower : 1.0);
+            EXPECT_LE(lower, exact);
+            EXPECT_GE(upper, exact);
+            EXPECT_DOUBLE_EQ(x[0], (lower + upper) / 2.0);
+            EXPECT_NEAR(x[0], exact, precision * (relative ? exact : 1.0));
+            EXPECT_LE(upper - lower, 2.0 * tolerance);
+            // With this slow contraction, stopping at half this width takes unnecessary iterations.
+            EXPECT_GT(upper - lower, tolerance);
+        }
+    }
+}
 }  // namespace
