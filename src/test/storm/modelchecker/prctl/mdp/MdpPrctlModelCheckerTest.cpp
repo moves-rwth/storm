@@ -1149,7 +1149,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, StepBoundedReachability) {
 TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocol) {
     // see simple_comm_protocol.props
     std::string formulasString = "Pmax=? [ F (s = 3) ]; ";
-    formulasString += "Pmax=? [ (s<=1) U (s=3) ]; "; // DISABLED BELOW!
+    formulasString += "Pmax=? [ (s<=1) U (s=3) ]; ";  // DISABLED BELOW!
     formulasString += "Pmin=? [ (s<=1) U (s=3) ]; ";
     formulasString += "Pmax=? [ (s<=1) W (s=3) ]; ";
     formulasString += "Pmin=? [ (s<=1) W (s=3) ]; ";
@@ -1176,8 +1176,8 @@ TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocol) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-        //result = checker->check(this->env(), tasks[1]);
-        //EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        // result = checker->check(this->env(), tasks[1]);
+        // EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         result = checker->check(this->env(), tasks[2]);
         EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
