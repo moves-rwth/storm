@@ -37,11 +37,11 @@ class OneShotPolicySearch {
     };
 
    public:
-    OneShotPolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& targetStates,
+    OneShotPolicySearch(storm::Environment const& env, storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& targetStates,
                         storm::storage::BitVector const& surelyReachSinkStates, std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory)
         : pomdp(pomdp), targetObservations(extractObservations(pomdp, targetStates)), targetStates(targetStates), surelyReachSinkStates(surelyReachSinkStates) {
         this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
-        smtSolver = smtSolverFactory->create(*expressionManager);
+        smtSolver = smtSolverFactory->create(env, *expressionManager);
     }
 
     void setSurelyReachSinkStates(storm::storage::BitVector const& surelyReachSink) {
