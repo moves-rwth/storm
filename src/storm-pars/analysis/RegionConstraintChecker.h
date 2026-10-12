@@ -1,17 +1,17 @@
 #pragma once
 
-#include <cstddef>
 #include <map>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/analysis/GraphConditions.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/Expression.h"
 
-namespace storm {
-namespace pars {
-namespace analysis {
+namespace storm::pars::analysis {
 
 /*! The type of region this checker operates on. */
 using RationalFunctionRegion = storm::storage::ParameterRegion<storm::RationalFunction>;
@@ -20,16 +20,13 @@ using RationalFunctionRegion = storm::storage::ParameterRegion<storm::RationalFu
 using CoefficientType = RationalFunctionRegion::CoefficientType;
 
 /*!
- * The outcome of checking a single constraint over an entire parameter region.
+ * The outcome of checking a constraint set over an entire parameter region.
+ *
+ * We reuse the tri-state check result of the SMT solvers: `Sat` means that the constraint holds on every point
+ * of the region, `Unsat` means that it is violated at some point of the region (a witness is available), and
+ * `Unknown` means that neither could be established cheaply, e.g. because a constraint is non-linear.
  */
-enum class ConstraintVerdict {
-    /*! The constraint was proven to hold for every point of the region. */
-    Satisfied,
-    /*! The constraint was proven not to hold for every point of the region. A witness is available. */
-    Violated,
-    /*! Neither could be established cheaply, e.g. because the constraint is non-linear. */
-    Undecided
-};
+using ConstraintVerdict = storm::solver::SmtSolver::CheckResult;
 
 /*!
  * A point of a parameter region, given as exact rational values. The map is keyed by variable name.
@@ -41,31 +38,22 @@ using RegionWitness = std::map<std::string, CoefficientType>;
  */
 struct RegionCheckResult {
     /*! The aggregated verdict over all checked constraints. */
-    ConstraintVerdict verdict = ConstraintVerdict::Undecided;
+    ConstraintVerdict verdict = ConstraintVerdict::Unknown;
 
-    /*! A point of the region at which a violated constraint fails. Only set if the verdict is Violated. */
+    /*! A point of the region at which a violated constraint fails. Only set if the verdict is Unsat. */
     std::optional<RegionWitness> witness;
 
-    /*! The printed form of a constraint that does not hold throughout the region. */
-    std::string violatedConstraint;
+    /*! A constraint that does not hold throughout the region. Only set if the verdict is Unsat. */
+    std::optional<storm::expressions::Expression> violatedConstraint;
 
-    /*! The printed forms of all constraints that could not be decided. */
-    std::vector<std::string> undecidedConstraints;
-
-    /*! The number of constraints proven to hold throughout the region. */
-    size_t numSatisfied = 0;
-
-    /*! The number of constraints proven not to hold throughout the region. */
-    size_t numViolated = 0;
-
-    /*! The number of constraints that could not be decided. */
-    size_t numUndecided = 0;
+    /*! All constraints that could not be decided. */
+    std::vector<storm::expressions::Expression> undecidedConstraints;
 
     /*!
      * Returns whether every checked constraint was proven to hold throughout the region.
      */
     bool holdsThroughout() const {
-        return this->verdict == ConstraintVerdict::Satisfied;
+        return this->verdict == ConstraintVerdict::Sat;
     }
 };
 
@@ -126,6 +114,4 @@ class RegionConstraintChecker {
     storm::analysis::ConstraintCollector const& collector;
 };
 
-}  // namespace analysis
-}  // namespace pars
-}  // namespace storm
+}  // namespace storm::pars::analysis

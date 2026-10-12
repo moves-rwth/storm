@@ -31,7 +31,8 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
                          CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                          std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
                          std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) override;
+                         storm::pars::analysis::GraphPreservationStatus graphPreservationStatus =
+                             storm::pars::analysis::GraphPreservationStatus::GraphPreserving) override;
 
     /*!
      * Analyzes the given region. Assumes that a property with a threshold was specified.

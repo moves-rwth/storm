@@ -8,9 +8,7 @@
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/constants.h"
 
-namespace storm {
-namespace pars {
-namespace analysis {
+namespace storm::pars::analysis {
 
 namespace {
 
@@ -288,7 +286,7 @@ bool applyRelation(RelationType relation, CoefficientType const& lhs, Coefficien
  * The outcome of checking a single constraint over a region.
  */
 struct SingleVerdict {
-    ConstraintVerdict verdict = ConstraintVerdict::Undecided;
+    ConstraintVerdict verdict = ConstraintVerdict::Unknown;
     std::optional<RegionWitness> witness;
 };
 
@@ -330,30 +328,30 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
     }
 
     if (satisfiedThroughout) {
-        return SingleVerdict{ConstraintVerdict::Satisfied, std::nullopt};
+        return SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
     }
 
     // The relation does not hold throughout the region. Construct an explicit witness.
     switch (relation) {
         case RelationType::Less:
         case RelationType::LessOrEqual:
-            return SingleVerdict{ConstraintVerdict::Violated, extremes.maximizingPoint};
+            return SingleVerdict{ConstraintVerdict::Unsat, extremes.maximizingPoint};
         case RelationType::Greater:
         case RelationType::GreaterOrEqual:
-            return SingleVerdict{ConstraintVerdict::Violated, extremes.minimizingPoint};
+            return SingleVerdict{ConstraintVerdict::Unsat, extremes.minimizingPoint};
         case RelationType::Equal:
             // The form is not identically zero, so one of the two extremizing points witnesses the violation.
             if (extremes.maximum != zero) {
-                return SingleVerdict{ConstraintVerdict::Violated, extremes.maximizingPoint};
+                return SingleVerdict{ConstraintVerdict::Unsat, extremes.maximizingPoint};
             }
-            return SingleVerdict{ConstraintVerdict::Violated, extremes.minimizingPoint};
+            return SingleVerdict{ConstraintVerdict::Unsat, extremes.minimizingPoint};
         case RelationType::NotEqual: {
             // We know that the form attains a zero somewhere in the region. Construct such a point exactly.
             if (extremes.minimum == zero) {
-                return SingleVerdict{ConstraintVerdict::Violated, extremes.minimizingPoint};
+                return SingleVerdict{ConstraintVerdict::Unsat, extremes.minimizingPoint};
             }
             if (extremes.maximum == zero) {
-                return SingleVerdict{ConstraintVerdict::Violated, extremes.maximizingPoint};
+                return SingleVerdict{ConstraintVerdict::Unsat, extremes.maximizingPoint};
             }
             // Here minimum < 0 < maximum. Along the segment between the two extremizing points the form
             // passes through zero. For t = minimum / (minimum - maximum) in (0, 1) the interpolated point
@@ -364,7 +362,7 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
                 CoefficientType const other = extremes.maximizingPoint.at(variable);
                 witness.emplace(variable, value + t * (other - value));
             }
-            return SingleVerdict{ConstraintVerdict::Violated, std::move(witness)};
+            return SingleVerdict{ConstraintVerdict::Unsat, std::move(witness)};
         }
         default:
             return SingleVerdict{};
@@ -435,7 +433,7 @@ std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression,
 
 /*!
  * Checks a non-affine constraint by probing a few points of the region. This is sound for detecting
- * violations but cannot prove that a constraint holds, so the verdict is Undecided if no probe fails.
+ * violations but cannot prove that a constraint holds, so the verdict is Unknown if no probe fails.
  */
 SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression, std::vector<RegionWitness> const& probePoints) {
     RelationType const relation = relationExpression.getRelationType();
@@ -446,7 +444,7 @@ SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression
         auto left = evaluateNumeric(lhs, probePoint);
         auto right = evaluateNumeric(rhs, probePoint);
         if (left.has_value() && right.has_value() && !applyRelation(relation, *left, *right)) {
-            return SingleVerdict{ConstraintVerdict::Violated, probePoint};
+            return SingleVerdict{ConstraintVerdict::Unsat, probePoint};
         }
     }
 
@@ -495,6 +493,8 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
     BoundariesByName const boundaries = getBoundariesByName(region);
     std::vector<RegionWitness> const probePoints = getProbePoints(boundaries);
     AffineFormVisitor affineFormVisitor;
+    bool violated = false;
+    bool undecided = false;
 
     for (storm::expressions::Expression const& constraint : constraints) {
         std::string const printedForm = constraint.toString();
@@ -506,13 +506,13 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
             // collected constraint set when the collector rejects a constant entry (e.g. a fixed probability
             // outside [0, 1]), in which case the constraint is `false`.
             if (baseExpression.asBooleanLiteralExpression().getValue()) {
-                singleVerdict = SingleVerdict{ConstraintVerdict::Satisfied, std::nullopt};
+                singleVerdict = SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
             } else {
                 RegionWitness centerPoint;
                 for (auto const& [variable, boundary] : boundaries) {
                     centerPoint.emplace(variable, (boundary.first + boundary.second) / 2);
                 }
-                singleVerdict = SingleVerdict{ConstraintVerdict::Violated, std::move(centerPoint)};
+                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, std::move(centerPoint)};
             }
         } else if (baseExpression.isBinaryRelationExpression()) {
             BinaryRelationExpression const& relationExpression = baseExpression.asBinaryRelationExpression();
@@ -540,35 +540,33 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
         }
 
         switch (singleVerdict.verdict) {
-            case ConstraintVerdict::Satisfied:
-                ++result.numSatisfied;
+            case ConstraintVerdict::Sat:
                 break;
-            case ConstraintVerdict::Violated:
-                ++result.numViolated;
-                if (!result.witness.has_value()) {
+            case ConstraintVerdict::Unsat:
+                violated = true;
+                if (!result.violatedConstraint.has_value()) {
                     result.witness = singleVerdict.witness;
-                    result.violatedConstraint = printedForm;
+                    result.violatedConstraint = constraint;
                 }
                 break;
-            case ConstraintVerdict::Undecided:
-                ++result.numUndecided;
-                result.undecidedConstraints.push_back(printedForm);
+            case ConstraintVerdict::Unknown:
+                undecided = true;
+                result.undecidedConstraints.push_back(constraint);
                 break;
         }
     }
 
-    // Aggregate the per-constraint verdicts: any violation makes the whole set fail.
-    if (result.numViolated > 0) {
-        result.verdict = ConstraintVerdict::Violated;
-    } else if (result.numUndecided > 0) {
-        result.verdict = ConstraintVerdict::Undecided;
+    // Aggregate the per-constraint verdicts: any violation makes the whole set fail, and an undecided
+    // constraint makes the whole set undecided.
+    if (violated) {
+        result.verdict = ConstraintVerdict::Unsat;
+    } else if (undecided) {
+        result.verdict = ConstraintVerdict::Unknown;
     } else {
-        result.verdict = ConstraintVerdict::Satisfied;
+        result.verdict = ConstraintVerdict::Sat;
     }
 
     return result;
 }
 
-}  // namespace analysis
-}  // namespace pars
-}  // namespace storm
+}  // namespace storm::pars::analysis

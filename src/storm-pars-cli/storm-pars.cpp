@@ -138,15 +138,16 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
             }
         }
 
-        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Satisfied) {
+        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Sat) {
             continue;
         }
 
         if (!assumeGraphPreserving) {
             // The user asked us to establish graph preservation, so we must not silently continue.
-            if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
+            if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Unsat) {
                 std::stringstream message;
-                message << "Region " << region << " is provably not graph-preserving: the constraint '" << result->violatedConstraint << "' is violated";
+                message << "Region " << region << " is provably not graph-preserving: the constraint '" << result->violatedConstraint->toString()
+                        << "' is violated";
                 if (result->witness) {
                     message << " at the point " << formatWitness(*result->witness);
                 }
@@ -168,9 +169,9 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
         }
 
         // We assume graph preservation and only inform the user about potential issues.
-        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
+        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Unsat) {
             STORM_LOG_WARN("Region " << region << " does not preserve the graph structure of the parametric model (the constraint '"
-                                     << result->violatedConstraint << "' is violated). Set --assume-graph-preserving false.");
+                                     << result->violatedConstraint->toString() << "' is violated). Set --assume-graph-preserving false.");
         } else {
             // The verdict is undecided or the exact check is unavailable: fall back to the coarse heuristic.
             warnIfRegionTouchesBoundary(region);
@@ -179,25 +180,28 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
 }
 
 /*!
- * Determines whether the given regions may be treated as graph-preserving by the region checking engine.
+ * Determines to what extent the given regions preserve the graph structure of the model.
  *
- * If graph preservation is assumed (the default), we only warn about regions that are provably not
- * graph-preserving and return true. If it is not assumed, we require a proof: the robust parameter lifting engine
- * handles non-graph-preserving regions by itself and needs no proof (returns false), whereas for all other engines
- * graph preservation must be established (returning true) or an exception is raised.
+ * If graph preservation is assumed, we only warn about regions that are provably not graph-preserving and
+ * report that the regions preserve the graph. If it is not assumed, we require a proof: the robust parameter
+ * lifting engine handles non-graph-preserving regions by itself and needs no proof (returning
+ * GraphPreservationStatus::None), whereas for all other engines graph preservation must be established
+ * (returning GraphPreservationStatus::GraphPreserving) or an exception is raised.
  */
 template<typename ValueType>
-bool establishGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& model, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
-                                storm::modelchecker::RegionCheckEngine engine) {
+storm::pars::analysis::GraphPreservationStatus establishGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& model,
+                                                                          std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
+                                                                          storm::modelchecker::RegionCheckEngine engine) {
+    using Status = storm::pars::analysis::GraphPreservationStatus;
     if (storm::settings::getModule<storm::settings::modules::RegionSettings>().isAssumeGraphPreservingSet()) {
         checkGraphPreservation<ValueType>(model, regions, true);
-        return true;
+        return Status::GraphPreserving;
     }
     if (engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting) {
-        return false;
+        return Status::None;
     }
     checkGraphPreservation<ValueType>(model, regions, false);
-    return true;
+    return Status::GraphPreserving;
 }
 
 template<typename ValueType>
@@ -459,7 +463,7 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    bool graphPreserving = establishGraphPreservation<ValueType>(model, regions, engine);
+    auto const graphPreservationStatus = establishGraphPreservation<ValueType>(model, regions, engine);
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -482,7 +486,7 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
 
@@ -529,7 +533,7 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    bool graphPreserving = establishGraphPreservation<ValueType>(model, regions, engine);
+    auto const graphPreservationStatus = establishGraphPreservation<ValueType>(model, regions, engine);
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
@@ -554,7 +558,7 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         monotonicitySettings,
         discreteVariables,
         true,  // allow model simplification
-        graphPreserving,
+        graphPreservationStatus,
         false  // preconditions not yet validated
     };
     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(
