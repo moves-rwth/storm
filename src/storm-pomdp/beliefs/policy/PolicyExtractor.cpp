@@ -9,6 +9,7 @@
 #include "storm/storage/sparse/ModelComponents.h"
 
 #include <charconv>
+#include <queue>
 #include <string_view>
 #include <unordered_set>
 
