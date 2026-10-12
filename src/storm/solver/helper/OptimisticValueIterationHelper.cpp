@@ -291,9 +291,6 @@ SolverStatus OptimisticValueIterationHelper<ValueType, TrivialRowGrouping>::OVI(
         }
     }
     if (status == SolverStatus::Converged) {
-        // Only once vu.second encloses the solution from above does the middle of the two beat vu.first as an
-        // answer. Averaging a guess that may have dropped below vu.first would move the result away from the
-        // solution, and below the lower bound reported alongside it.
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
             vu.first, vu.second, vu.first, [&two](ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
