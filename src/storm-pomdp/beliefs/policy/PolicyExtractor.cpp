@@ -83,13 +83,52 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
     using ObservationToActionMap = std::unordered_map<uint64_t, storm::storage::Distribution<PolicyValueType, uint64_t>>;
     std::unordered_map<uint64_t, ObservationToActionMap> cutoffPolicyToObservationMap;
     std::queue<uint64_t> statesToProcess;
-    // Add initial transition
+    uint64_t nextId = 1ul;
+    auto const addCutoffTransition = [&](uint64_t originNode, uint64_t cutoffBeliefState) {
+        // State has been cut off. Add transition to self-looping cut-off policy node.
+        auto const localCutoffChoice = beliefMdpScheduler.getChoice(cutoffBeliefState).getDeterministicChoice();
+        auto const globalCutoffChoice = beliefMdp.getTransitionMatrix().getRowGroupIndices()[cutoffBeliefState] + localCutoffChoice;
+        auto const& cutoffChoiceLabels = beliefMdp.getChoiceLabeling().getLabelsOfChoice(globalCutoffChoice);
+        STORM_LOG_THROW(cutoffChoiceLabels.size() == 1, storm::exceptions::UnexpectedException,
+                        "Expected the selected cutoff choice to have exactly one scheduler label.");
+        std::string const& cutoffChoiceLabel = *cutoffChoiceLabels.begin();
+        constexpr std::string_view schedulerLabelPrefix = "__sched_";
+        STORM_LOG_THROW(cutoffChoiceLabel.starts_with(schedulerLabelPrefix), storm::exceptions::UnexpectedException,
+                        "Expected cutoff scheduler label, but found '" << cutoffChoiceLabel << "'.");
+        uint64_t chosenCutoffPolicy = 0;
+        auto const schedulerIndex = std::string_view(cutoffChoiceLabel).substr(schedulerLabelPrefix.size());
+        auto const [parseEnd, parseError] = std::from_chars(schedulerIndex.begin(), schedulerIndex.end(), chosenCutoffPolicy);
+        STORM_LOG_THROW(parseError == std::errc() && parseEnd == schedulerIndex.end(), storm::exceptions::UnexpectedException,
+                        "Could not parse cutoff scheduler label '" << cutoffChoiceLabel << "'.");
+        STORM_LOG_THROW(pomdpApproximationSchedulers.has_value() && chosenCutoffPolicy < pomdpApproximationSchedulers->size(),
+                        storm::exceptions::UnexpectedException,
+                        "Cutoff scheduler label '" << cutoffChoiceLabel << "' does not refer to an available approximation scheduler.");
+        if (!cutoffPolicyToFscNodeMap.contains(chosenCutoffPolicy)) {
+            // TODO extend for fm-policies
+            cutoffPolicyToFscNodeMap[chosenCutoffPolicy] = nextId;
+            cutoffPolicyToObservationMap.emplace(chosenCutoffPolicy, pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(chosenCutoffPolicy)));
+            ++nextId;
+        }
+        auto const& dist = cutoffPolicyToObservationMap.at(chosenCutoffPolicy).at(beliefStateToObservationMap.at(cutoffBeliefState));
+        if (dist.size() == 1) {
+            fsc.addDeterministicActionTransition(originNode, beliefStateToObservationMap.at(cutoffBeliefState), dist.begin()->first,
+                                                 cutoffPolicyToFscNodeMap[chosenCutoffPolicy]);
+        } else {
+            fsc.addRandomisedActionTransition(originNode, beliefStateToObservationMap.at(cutoffBeliefState), dist,
+                                              cutoffPolicyToFscNodeMap[chosenCutoffPolicy]);
+        }
+    };
+
+    // Add initial transition, using a continuation scheduler if the initial belief was cut off.
     auto const initialBeliefState = beliefMdp.getInitialStates().getNextSetIndex(0);
-    auto const initialChoice = beliefMdpScheduler.getChoice(initialBeliefState).getDeterministicChoice();
-    fsc.addDeterministicActionTransition(0ul, beliefStateToObservationMap.at(initialBeliefState), initialChoice, 1ul);
-    beliefStateToFscNodeMap[initialBeliefState] = 1ul;
-    statesToProcess.push(initialBeliefState);
-    uint64_t nextId = 2ul;
+    if (beliefMdp.getStateLabeling().getStateHasLabel("truncated", initialBeliefState)) {
+        addCutoffTransition(0ul, initialBeliefState);
+    } else {
+        auto const initialChoice = beliefMdpScheduler.getChoice(initialBeliefState).getDeterministicChoice();
+        fsc.addDeterministicActionTransition(0ul, beliefStateToObservationMap.at(initialBeliefState), initialChoice, nextId);
+        beliefStateToFscNodeMap[initialBeliefState] = nextId++;
+        statesToProcess.push(initialBeliefState);
+    }
 
     while (!statesToProcess.empty()) {
         uint64_t currentState = statesToProcess.front();
@@ -98,39 +137,7 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
         for (auto const& entry : beliefMdp.getTransitionMatrix().getRow(currentState, currentChoice)) {
             auto successorBeliefStateId = entry.getColumn();
             if (beliefMdp.getStateLabeling().getStateHasLabel("truncated", successorBeliefStateId)) {
-                // State has been cut off. Add transition to self-looping cut-off policy node.
-                auto const localCutoffChoice = beliefMdpScheduler.getChoice(successorBeliefStateId).getDeterministicChoice();
-                auto const globalCutoffChoice = beliefMdp.getTransitionMatrix().getRowGroupIndices()[successorBeliefStateId] + localCutoffChoice;
-                auto const& cutoffChoiceLabels = beliefMdp.getChoiceLabeling().getLabelsOfChoice(globalCutoffChoice);
-                STORM_LOG_THROW(cutoffChoiceLabels.size() == 1, storm::exceptions::UnexpectedException,
-                                "Expected the selected cutoff choice to have exactly one scheduler label.");
-                std::string const& cutoffChoiceLabel = *cutoffChoiceLabels.begin();
-                constexpr std::string_view schedulerLabelPrefix = "__sched_";
-                STORM_LOG_THROW(cutoffChoiceLabel.starts_with(schedulerLabelPrefix), storm::exceptions::UnexpectedException,
-                                "Expected cutoff scheduler label, but found '" << cutoffChoiceLabel << "'.");
-                uint64_t chosenCutoffPolicy = 0;
-                auto const schedulerIndex = std::string_view(cutoffChoiceLabel).substr(schedulerLabelPrefix.size());
-                auto const [parseEnd, parseError] = std::from_chars(schedulerIndex.begin(), schedulerIndex.end(), chosenCutoffPolicy);
-                STORM_LOG_THROW(parseError == std::errc() && parseEnd == schedulerIndex.end(), storm::exceptions::UnexpectedException,
-                                "Could not parse cutoff scheduler label '" << cutoffChoiceLabel << "'.");
-                STORM_LOG_THROW(pomdpApproximationSchedulers.has_value() && chosenCutoffPolicy < pomdpApproximationSchedulers->size(),
-                                storm::exceptions::UnexpectedException,
-                                "Cutoff scheduler label '" << cutoffChoiceLabel << "' does not refer to an available approximation scheduler.");
-                if (!cutoffPolicyToFscNodeMap.contains(chosenCutoffPolicy)) {
-                    // TODO extend for fm-policies
-                    cutoffPolicyToFscNodeMap[chosenCutoffPolicy] = nextId;
-                    cutoffPolicyToObservationMap.emplace(chosenCutoffPolicy,
-                                                         pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(chosenCutoffPolicy)));
-                    ++nextId;
-                }
-                auto const& dist = cutoffPolicyToObservationMap.at(chosenCutoffPolicy).at(beliefStateToObservationMap.at(successorBeliefStateId));
-                if (dist.size() == 1) {
-                    fsc.addDeterministicActionTransition(beliefStateToFscNodeMap[currentState], beliefStateToObservationMap.at(successorBeliefStateId),
-                                                         dist.begin()->first, cutoffPolicyToFscNodeMap[chosenCutoffPolicy]);
-                } else {
-                    fsc.addRandomisedActionTransition(beliefStateToFscNodeMap[currentState], beliefStateToObservationMap.at(successorBeliefStateId), dist,
-                                                      cutoffPolicyToFscNodeMap[chosenCutoffPolicy]);
-                }
+                addCutoffTransition(beliefStateToFscNodeMap.at(currentState), successorBeliefStateId);
             } else {
                 if (!beliefStateToFscNodeMap.contains(successorBeliefStateId)) {
                     beliefStateToFscNodeMap[successorBeliefStateId] = nextId;
