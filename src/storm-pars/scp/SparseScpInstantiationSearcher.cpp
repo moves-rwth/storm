@@ -14,6 +14,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -187,9 +188,9 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         // graph analysis above, no LP or exact model check needed (and none of the SCP-specific
         // machinery below is set up to handle this degenerate case: ScpLpEncoder asserts its
         // initial state is never a zero/one/infinite state).
-        ConstantType constantValue = oneStates.get(initialState)        ? storm::utility::one<ConstantType>()
-                                     : infiniteStates.get(initialState) ? storm::utility::infinity<ConstantType>()
-                                                                        : storm::utility::zero<ConstantType>();
+        storm::utility::ExtendedValueType<ConstantType> constantValue = oneStates.get(initialState)        ? storm::utility::one<ConstantType>()
+                                                                        : infiniteStates.get(initialState) ? storm::utility::positiveInfinity<ConstantType>()
+                                                                                                           : storm::utility::zero<ConstantType>();
         return ScpResult<ConstantType>{bound.isSatisfied(constantValue) ? ScpStatus::Feasible : ScpStatus::Infeasible, initialValuation, constantValue, 0};
     }
 

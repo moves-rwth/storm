@@ -86,11 +86,11 @@ TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
 
 // Exercises ConstantType = storm::RationalNumber end-to-end (not just that it compiles, which the
 // explicit template instantiation in SparseScpInstantiationSearcher.cpp already guarantees, but that
-// it runs and actually returns an exact value): result.value is a storm::RationalNumber throughout,
-// never silently downcast to double, so it can be compared for *exact* equality against an
-// independently-computed exact re-verification and against a hand-built exact rational threshold --
-// something the double-precision test above can only approximate (EXPECT_NEAR/EXPECT_GE against a
-// double-rounded 0.51).
+// it runs and actually returns an exact value): result.value is a storm::ExtendedRationalNumber (an
+// exact rational extended with a genuine infinity) throughout, never silently downcast to double, so
+// it can be compared for *exact* equality against an independently-computed exact re-verification and
+// against a hand-built exact rational threshold -- something the double-precision test above can only
+// approximate (EXPECT_NEAR/EXPECT_GE against a double-rounded 0.51).
 TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecision) {
     carl::VariablePool::getInstance().clear();
     std::string prismSource =
@@ -114,8 +114,8 @@ TEST_P(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPreci
 
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> searcher(*dtmc);
     auto result = searcher.run(env(), task);
-    static_assert(std::is_same_v<decltype(result.value), storm::RationalNumber>,
-                  "ScpResult<storm::RationalNumber>::value must actually be storm::RationalNumber, not double.");
+    static_assert(std::is_same_v<decltype(result.value), storm::ExtendedRationalNumber>,
+                  "ScpResult<storm::RationalNumber>::value must be held in an exact, infinity-capable rational type, not double.");
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
 
@@ -697,6 +697,31 @@ TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewIn
     ASSERT_NE(ScpStatus::Feasible, result.status);
     EXPECT_EQ(0u, result.iterations);
     EXPECT_TRUE(storm::utility::isInfinity(result.value));
+}
+
+// The exact-precision counterpart of the test above: the result's value must be a genuine
+// +infinity, not the 100000000000 sentinel that storm::utility::infinity yields for a type that has
+// no infinity of its own -- i.e. ScpResult holds it in a storm::ExtendedRationalNumber.
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_ExactPrecision) {
+    carl::VariablePool::getInstance().clear();
+    storm::prism::Program program =
+        storm::parser::PrismParser::parseFromString(RetryOrGiveUpMdpSource, "SparseScpInstantiationSearcherTest_RewardMdpAtMostExact");
+    program = program.preprocess("");
+
+    auto formula = parseSingleFormula("R<=3 [F \"target\"]", program);
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, {formula})->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+
+    auto task = makeTask(formula);
+    SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber> searcher(*mdp);
+    auto result = searcher.run(env(), task);
+
+    static_assert(std::is_same_v<decltype(result.value), storm::ExtendedRationalNumber>,
+                  "ScpResult<storm::RationalNumber>::value must be held in an extended (infinity-capable) rational type.");
+    ASSERT_NE(ScpStatus::Feasible, result.status);
+    EXPECT_EQ(0u, result.iterations);
+    EXPECT_TRUE(storm::utility::isInfinity(result.value));
+    EXPECT_TRUE(result.value.isPositiveInfinity());
 }
 
 namespace {
