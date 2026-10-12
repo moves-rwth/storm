@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include <gtest/gtest.h>
 
@@ -39,9 +40,20 @@ inline std::vector<storm::solver::LpSolverType> lpSolversUnderTest() {
 // instantiation.
 class LpSolverTest : public testing::TestWithParam<storm::solver::LpSolverType> {
    public:
+    void SetUp() override {
+#ifdef STORM_HAVE_GUROBI
+        // Gurobi can be compiled in without a license being available (as in some CI configurations). The test
+        // harness probes for this at startup (see storm::test::initialize), so skip the Gurobi instantiation if
+        // the solver cannot actually be used here.
+        if (GetParam() == storm::solver::LpSolverType::Gurobi && storm::test::noGurobi) {
+            GTEST_SKIP() << "No Gurobi license available.";
+        }
+#endif
+    }
+
     storm::Environment env() const {
         storm::Environment environment;
-        environment.solver().setLpSolverType(this->GetParam());
+        environment.solver().setLpSolverType(GetParam());
         return environment;
     }
 
