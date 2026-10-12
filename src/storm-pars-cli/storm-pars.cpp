@@ -178,6 +178,28 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
     }
 }
 
+/*!
+ * Determines whether the given regions may be treated as graph-preserving by the region checking engine.
+ *
+ * If graph preservation is assumed (the default), we only warn about regions that are provably not
+ * graph-preserving and return true. If it is not assumed, we require a proof: the robust parameter lifting engine
+ * handles non-graph-preserving regions by itself and needs no proof (returns false), whereas for all other engines
+ * graph preservation must be established (returning true) or an exception is raised.
+ */
+template<typename ValueType>
+bool establishGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& model, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
+                                storm::modelchecker::RegionCheckEngine engine) {
+    if (storm::settings::getModule<storm::settings::modules::RegionSettings>().isAssumeGraphPreservingSet()) {
+        checkGraphPreservation<ValueType>(model, regions, true);
+        return true;
+    }
+    if (engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting) {
+        return false;
+    }
+    checkGraphPreservation<ValueType>(model, regions, false);
+    return true;
+}
+
 template<typename ValueType>
 std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared_ptr<storm::models::ModelBase> const& model) {
     std::vector<storm::storage::ParameterRegion<ValueType>> result;
@@ -187,18 +209,6 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
     }
-    bool assumeGraphPreserving = regionSettings.isAssumeGraphPreservingSet();
-    if (!assumeGraphPreserving) {
-        // Robust parameter lifting handles non-graph-preserving regions by itself and does not profit from knowing
-        // that the region is graph-preserving, so we skip the check when it is selected.
-        auto engine = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>().getRegionCheckEngine();
-        if (engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting) {
-            return result;
-        }
-    }
-    // If graph preservation is assumed, we only warn about regions that are provably not graph-preserving.
-    // Otherwise we require a proof and raise an error if graph preservation cannot be established.
-    checkGraphPreservation<ValueType>(model, result, assumeGraphPreserving);
     return result;
 }
 
@@ -449,9 +459,7 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    // If graph preservation is not assumed, parseRegions has proven it, unless the robust engine handles the
-    // (possibly non-graph-preserving) region itself, in which case the check is skipped there.
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet() || engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting;
+    bool graphPreserving = establishGraphPreservation<ValueType>(model, regions, engine);
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -521,9 +529,7 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    // If graph preservation is not assumed, parseRegions has proven it, unless the robust engine handles the
-    // (possibly non-graph-preserving) region itself, in which case the check is skipped there.
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet() || engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting;
+    bool graphPreserving = establishGraphPreservation<ValueType>(model, regions, engine);
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
