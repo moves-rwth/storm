@@ -356,6 +356,27 @@ TEST(MinMaxLinearEquationSolverTest, PolicyIterationWithInexactInnerSolveAddsNoB
     EXPECT_EQ(1.0, solver->getSolutionUpperBounds()[0]);
 }
 
+TEST(MinMaxLinearEquationSolverTest, OptimisticValueIterationStoppedEarlyStaysWithinItsBounds) {
+    auto A = buildTwoSccMatrix();
+    std::vector<double> b = {0.0, 0.0, 0.25, 0.0};
+
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::OptimisticValueIteration);
+    env.solver().minMax().setMaximalNumberOfIterations(2);
+
+    std::vector<double> x(4);
+    auto solver = createSolver(env, A);
+    solver->setBounds(0.0, 1.0);
+    EXPECT_FALSE(solver->solveEquations(env, storm::OptimizationDirection::Maximize, x, b));
+
+    // The guess the iteration keeps above the solution is only verified on convergence, so a solve that the
+    // iteration limit stopped must hand back the vector it iterated from below rather than the middle of the two.
+    ASSERT_TRUE(solver->hasSolutionLowerBounds());
+    EXPECT_FALSE(solver->hasSolutionUpperBounds());
+    EXPECT_EQ(x, solver->getSolutionLowerBounds());
+    EXPECT_TRUE(solver->getSolutionBounds().encloses(x));
+}
+
 TEST(MinMaxLinearEquationSolverTest, TopologicalWithUnsoundSccMethodReportsNoBounds) {
     auto A = buildTwoSccMatrix();
     std::vector<double> b = {0.0, 0.0, 0.25, 0.0};
