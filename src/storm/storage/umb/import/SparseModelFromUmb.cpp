@@ -3,6 +3,7 @@
 #include <ranges>
 #include <utility>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -33,11 +34,22 @@ auto csrRange(auto&& csr, uint64_t i) {
 }
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, std::ranges::input_range auto&& branchValues) {
+using AccumulationMode = typename storm::storage::SparseMatrixBuilder<ValueType>::AccumulationMode;
+
+/*!
+ * Creates a matrix with one row per choice and one column per state, where the entry at (choice, target) is given by the values of the branches.
+ * UMB allows multiple branches with the same source choice and target state, but Storm's SparseMatrix has at most one entry per row and column.
+ * The given accumulation mode specifies how the values of such branches are merged into a single entry.
+ */
+template<typename ValueType>
+storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, std::ranges::input_range auto&& branchValues,
+                                                           AccumulationMode<ValueType> accumulationMode) {
     auto const& tsIndex = umbModel.index.transitionSystem;
     bool const hasRowGroups = tsIndex.numPlayers >= 1;
-    storm::storage::SparseMatrixBuilder<ValueType> builder(tsIndex.numChoices, tsIndex.numStates, tsIndex.numBranches, true, hasRowGroups,
+    // We can not force the number of entries since branches with the same source and target are merged into one entry.
+    storm::storage::SparseMatrixBuilder<ValueType> builder(tsIndex.numChoices, tsIndex.numStates, tsIndex.numBranches, false, hasRowGroups,
                                                            hasRowGroups ? tsIndex.numStates : 0u);
+    builder.setAccumulationMode(accumulationMode);
     for (uint64_t stateIndex{0}; stateIndex < tsIndex.numStates; ++stateIndex) {
         auto choices = csrRange(umbModel.stateToChoices, stateIndex);
         if (hasRowGroups) {
@@ -52,21 +64,22 @@ storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel 
             }
         }
     }
-    return builder.build();
+    return builder.build(tsIndex.numChoices, tsIndex.numStates, hasRowGroups ? tsIndex.numStates : 0u);
 }
 
 template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, storm::umb::GenericVector const& branchValues,
-                                                           storm::umb::SizedType const& sourceType) {
-    return ValueEncoding::applyDecodedVector<ValueType>([&umbModel](auto&& input) { return createBranchMatrix<ValueType>(umbModel, input); }, branchValues,
-                                                        sourceType);
+                                                           storm::umb::SizedType const& sourceType, AccumulationMode<ValueType> accumulationMode) {
+    return ValueEncoding::applyDecodedVector<ValueType>(
+        [&umbModel, accumulationMode](auto&& input) { return createBranchMatrix<ValueType>(umbModel, input, accumulationMode); }, branchValues, sourceType);
 }
 
 template<typename ValueType>
-storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, ValueType const& defaultValue) {
+storm::storage::SparseMatrix<ValueType> createBranchMatrix(storm::umb::UmbModel const& umbModel, ValueType const& defaultValue,
+                                                           AccumulationMode<ValueType> accumulationMode) {
     auto const defaultView = std::ranges::iota_view(0ull, umbModel.index.transitionSystem.numBranches) |
                              std::ranges::views::transform([&defaultValue](auto) -> ValueType { return defaultValue; });
-    return createBranchMatrix<ValueType>(umbModel, defaultView);
+    return createBranchMatrix<ValueType>(umbModel, defaultView, accumulationMode);
 }
 
 storm::storage::BitVector createBitVector(storm::umb::VectorType<bool> const& umbBitVector, uint64_t size) {
@@ -184,7 +197,17 @@ auto constructRewardModels(storm::umb::UmbModel const& umbModel) {
                 stateActionRewards = ValueEncoding::createDecodedVector<ValueType>(rew.choices->values, rewIndex.type);
             }
             if (rewIndex.appliesToBranches() && rew.branches.has_value()) {
-                transitionRewards = createBranchMatrix<ValueType>(umbModel, rew.branches->values, rewIndex.type);
+                // Rewards of branches that are merged into one matrix entry (same source choice and target state) must coincide.
+                try {
+                    transitionRewards = createBranchMatrix<ValueType>(umbModel, rew.branches->values, rewIndex.type, AccumulationMode<ValueType>::ExpectSame);
+                } catch (storm::exceptions::InvalidArgumentException const& e) {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                    "Branch rewards of reward '"
+                                        << rewName
+                                        << "' can not be imported, possibly due to multiple branches with the same source choice and the same target "
+                                           "state but distinct rewards, which is not supported. ("
+                                        << e.what() << ")");
+                }
             }
             STORM_LOG_THROW(!rewIndex.appliesToObservations(), storm::exceptions::NotSupportedException,
                             "Observation rewards are not supported for reward '" << rewName << "'.");
@@ -200,7 +223,8 @@ template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::UmbModel const& umbModel) {
     if (umbModel.branchToProbability.hasValue()) {
         auto const probType = umbModel.index.transitionSystem.branchProbabilityType.value();
-        auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, probType);
+        // Probabilities of branches that are merged into one matrix entry (same source choice and target state) are summed up.
+        auto result = createBranchMatrix<ValueType>(umbModel, umbModel.branchToProbability, probType, AccumulationMode<ValueType>::Sum);
         if constexpr (storm::NumberTraits<ValueType>::IsExact) {
             if (umbModel.branchToProbability.isType<double>() || umbModel.branchToProbability.isType<storm::Interval>()) {
                 // If the branch probabilities are imprecise, we might need to adapt the matrix rows to ensure they sum up to 1.
@@ -242,7 +266,7 @@ storm::storage::SparseMatrix<ValueType> constructTransitionMatrix(storm::umb::Um
         }
         return result;
     } else {
-        return createBranchMatrix<ValueType>(umbModel, storm::utility::one<ValueType>());
+        return createBranchMatrix<ValueType>(umbModel, storm::utility::one<ValueType>(), AccumulationMode<ValueType>::Sum);
     }
 }
 
