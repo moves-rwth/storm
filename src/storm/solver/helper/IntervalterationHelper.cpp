@@ -134,9 +134,9 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(
     }
     SolverStatus status;
     if (!dir.has_value() || maximize(*dir)) {
-        status = II<OptimizationDirection::Maximize>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues);
+        status = II<OptimizationDirection::Maximize>(xy, offsets, numIterations, relative, doublePrec, iterationCallback, relevantValues);
     } else {
-        status = II<OptimizationDirection::Minimize>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues);
+        status = II<OptimizationDirection::Minimize>(xy, offsets, numIterations, relative, doublePrec, iterationCallback, relevantValues);
     }
     if (solutionBounds.has_value()) {
         // Interval iteration keeps xy.first below and xy.second above the solution in every iteration, so both
