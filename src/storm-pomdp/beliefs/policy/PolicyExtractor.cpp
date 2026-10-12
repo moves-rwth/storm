@@ -80,6 +80,8 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
 
     std::unordered_map<uint64_t, uint64_t> beliefStateToFscNodeMap;
     std::unordered_map<uint64_t, uint64_t> cutoffPolicyToFscNodeMap;
+    using ObservationToActionMap = std::unordered_map<uint64_t, storm::storage::Distribution<PolicyValueType, uint64_t>>;
+    std::unordered_map<uint64_t, ObservationToActionMap> cutoffPolicyToObservationMap;
     std::queue<uint64_t> statesToProcess;
     // Add initial transition
     auto const initialBeliefState = beliefMdp.getInitialStates().getNextSetIndex(0);
@@ -117,10 +119,11 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
                 if (!cutoffPolicyToFscNodeMap.contains(chosenCutoffPolicy)) {
                     // TODO extend for fm-policies
                     cutoffPolicyToFscNodeMap[chosenCutoffPolicy] = nextId;
+                    cutoffPolicyToObservationMap.emplace(chosenCutoffPolicy,
+                                                         pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(chosenCutoffPolicy)));
                     ++nextId;
                 }
-                auto dist = pomdpSchedulerToObservationBasedMap(
-                    pomdpApproximationSchedulers->at(chosenCutoffPolicy))[beliefStateToObservationMap.at(successorBeliefStateId)];
+                auto const& dist = cutoffPolicyToObservationMap.at(chosenCutoffPolicy).at(beliefStateToObservationMap.at(successorBeliefStateId));
                 if (dist.size() == 1) {
                     fsc.addDeterministicActionTransition(beliefStateToFscNodeMap[currentState], beliefStateToObservationMap.at(successorBeliefStateId),
                                                          dist.begin()->first, cutoffPolicyToFscNodeMap[chosenCutoffPolicy]);
@@ -147,8 +150,7 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
         for (uint64_t i = 0; i < pomdpApproximationSchedulers->size(); ++i) {
             // TODO extend for fm-policies
             if (cutoffPolicyToFscNodeMap.contains(i)) {
-                for (auto observationToActionMap = pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(i));
-                     auto const& [observationId, actionDist] : observationToActionMap) {
+                for (auto const& [observationId, actionDist] : cutoffPolicyToObservationMap.at(i)) {
                     if (actionDist.size() == 1) {
                         fsc.addDeterministicActionTransition(cutoffPolicyToFscNodeMap[i], observationId, actionDist.begin()->first,
                                                              cutoffPolicyToFscNodeMap[i]);
