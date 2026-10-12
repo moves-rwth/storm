@@ -55,11 +55,19 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
     if (pomdp.hasChoiceLabeling()) {
         auto const& choiceLabeling = pomdp.getChoiceLabeling();
         std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>> idToActionNameMap;
+        auto const nrStates = pomdp.getNumberOfStates();
+        std::vector<uint64_t> representativeStates(pomdp.getNrObservations(), nrStates);
+        for (uint64_t state = 0; state < nrStates; ++state) {
+            auto& representativeState = representativeStates[pomdp.getObservation(state)];
+            if (representativeState == nrStates) {
+                representativeState = state;
+            }
+        }
         for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
-            if (pomdp.getStatesWithObservation(obs).empty()) {
+            auto const representativeState = representativeStates[obs];
+            if (representativeState == nrStates) {
                 continue;
             }
-            uint64_t representativeState = *pomdp.getStatesWithObservation(obs).begin();
             auto const rowGroupIndex = pomdp.getTransitionMatrix().getRowGroupIndices()[representativeState];
             auto const rowGroupSize = pomdp.getTransitionMatrix().getRowGroupSize(representativeState);
             for (uint64_t localChoice = 0; localChoice < rowGroupSize; ++localChoice) {
