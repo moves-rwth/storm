@@ -65,7 +65,7 @@ storm::Environment EnvironmentBuilder::buildEnvironment() {
     storm::Environment env;
 
     applyIfRegistered<storm::settings::modules::GeneralSettings>(
-        [&](auto const& generalSettings) { applyIfSet(generalSettings.isPrecisionSet(), [&]() { env.setModelTolerance(generalSettings.getPrecision()); }); });
+        [&](auto const& generalSettings) { applyIfSet(generalSettings.isToleranceSet(), [&]() { env.setModelTolerance(generalSettings.getTolerance()); }); });
 
     setSolverEnvironment(env.solver());
     setModelcheckerEnvironment(env.modelchecker());
