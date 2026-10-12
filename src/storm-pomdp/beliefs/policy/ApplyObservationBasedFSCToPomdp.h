@@ -115,12 +115,13 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
         uint64_t const fscObservationId = pomdpObservationIdToFscObservationId && pomdpObservationIdToFscObservationId->contains(pomdpObservationId)
                                               ? pomdpObservationIdToFscObservationId->at(pomdpObservationId)
                                               : pomdpObservationId;
-        if (fsc.hasOutputForObservationInNode(currentFscNode, fscObservationId)) {
+        bool const hasFscOutput = fsc.hasOutputForObservationInNode(currentFscNode, fscObservationId);
+        if (hasFscOutput) {
             std::tie(actionDistribution, nextFSCNode) = fsc.getActionDistributionAndSuccessorForObservationInNode(currentFscNode, fscObservationId);
         } else {
             STORM_LOG_THROW(treatUnspecifiedChoiceAsDontCare, storm::exceptions::UnexpectedException,
                             "Expected FSC to have an output for observation " << fscObservationId << " in FSC node " << currentFscNode << ", but it does not.");
-            // If requested, treat unspecified choice as don't care: pick the first enabled action deterministically and stay in the same FSC node
+            // If requested, pick POMDP local action zero and stay in the same FSC node.
             nextFSCNode = currentFscNode;
             actionDistribution = storm::storage::Distribution<FscValueType, uint64_t>();
             actionDistribution.addProbability(0ul, storm::utility::one<FscValueType>());
@@ -138,7 +139,7 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
         for (auto const& actionEntry : actionDistribution) {
             auto const actionProbability = storm::utility::convertNumber<PomdpValueType>(actionEntry.second);
             uint64_t pomdpActionId = actionEntry.first;
-            if (fscActionIdToPomdpActionIdMap) {
+            if (hasFscOutput && fscActionIdToPomdpActionIdMap) {
                 STORM_LOG_THROW(fscActionIdToPomdpActionIdMap->contains(fscObservationId) &&
                                     fscActionIdToPomdpActionIdMap->at(fscObservationId).contains(actionEntry.first),
                                 storm::exceptions::UnexpectedException,
