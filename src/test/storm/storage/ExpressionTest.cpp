@@ -5,6 +5,7 @@
 #include <string>
 
 #include "storm-parsers/parser/ValueParser.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/Expression.h"
@@ -444,4 +445,114 @@ TEST(Expression, RationalFunctionToExpressionTest_no_params) {
     ASSERT_NO_THROW(result = visitor.toRationalFunction(expr));
     ASSERT_NO_THROW(result.simplify());
     EXPECT_EQ(rationalFunction.toString(), result.toString());
+}
+
+// The valuation checks the variables it is accessed with by assertions, which are disabled in release mode.
+#ifndef NDEBUG
+#define EXPECT_REJECTED(statement) EXPECT_DEATH_IF_SUPPORTED(statement, "")
+#else
+#define EXPECT_REJECTED(statement) (void)0
+#endif
+
+TEST(ExpressionDeathTest, SimpleValuationContainsOnlyItsSnapshotVariables) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::expressions::Variable x = manager->declareBooleanVariable("x");
+    storm::expressions::Variable y = manager->declareIntegerVariable("y");
+    storm::expressions::Variable z = manager->declareRationalVariable("z");
+
+    storm::expressions::SimpleValuation valuation(manager);
+    valuation.setBooleanValue(x, true);
+    valuation.setIntegerValue(y, 42);
+    valuation.setRationalValue(z, 1.5);
+
+    EXPECT_TRUE(valuation.contains(x));
+    EXPECT_TRUE(valuation.contains(y));
+    EXPECT_TRUE(valuation.contains(z));
+
+    // Declare further variables after the snapshot has been taken.
+    storm::expressions::Variable freshBoolean = manager->declareBooleanVariable("freshBoolean");
+    storm::expressions::Variable freshInteger = manager->declareIntegerVariable("freshInteger");
+    storm::expressions::Variable freshRational = manager->declareRationalVariable("freshRational");
+    storm::expressions::Variable freshBitVector = manager->declareBitVectorVariable("freshBitVector", 8);
+
+    EXPECT_FALSE(valuation.contains(freshBoolean));
+    EXPECT_FALSE(valuation.contains(freshInteger));
+    EXPECT_FALSE(valuation.contains(freshRational));
+    EXPECT_FALSE(valuation.contains(freshBitVector));
+
+    EXPECT_REJECTED(valuation.getBooleanValue(freshBoolean));
+    EXPECT_REJECTED(valuation.setBooleanValue(freshBoolean, false));
+    EXPECT_REJECTED(valuation.getIntegerValue(freshInteger));
+    EXPECT_REJECTED(valuation.setIntegerValue(freshInteger, 1));
+    EXPECT_REJECTED(valuation.getRationalValue(freshRational));
+    EXPECT_REJECTED(valuation.setRationalValue(freshRational, 2.5));
+    EXPECT_REJECTED(valuation.getBitVectorValue(freshBitVector));
+    EXPECT_REJECTED(valuation.setBitVectorValue(freshBitVector, 1));
+
+    // The variables the valuation was created for remain accessible.
+    EXPECT_TRUE(valuation.getBooleanValue(x));
+    EXPECT_EQ(42, valuation.getIntegerValue(y));
+    EXPECT_DOUBLE_EQ(1.5, valuation.getRationalValue(z));
+
+    // Printing must skip the variables that have no value in this snapshot.
+    std::string printed;
+    ASSERT_NO_THROW(printed = valuation.toString());
+    EXPECT_NE(std::string::npos, printed.find("x=true"));
+    EXPECT_EQ(std::string::npos, printed.find("freshBoolean"));
+    EXPECT_NO_THROW(printed = valuation.toString(false));
+
+    // Serialization must skip the variables that have no value in this snapshot.
+    auto const serialized = valuation.toJson();
+    EXPECT_TRUE(serialized.contains("x"));
+    EXPECT_TRUE(serialized.contains("y"));
+    EXPECT_TRUE(serialized.contains("z"));
+    EXPECT_FALSE(serialized.contains("freshBoolean"));
+    EXPECT_FALSE(serialized.contains("freshInteger"));
+    EXPECT_FALSE(serialized.contains("freshRational"));
+    EXPECT_FALSE(serialized.contains("freshBitVector"));
+}
+
+TEST(ExpressionDeathTest, SimpleValuationRejectsForeignVariables) {
+    std::shared_ptr<storm::expressions::ExpressionManager> managerA(new storm::expressions::ExpressionManager());
+    std::shared_ptr<storm::expressions::ExpressionManager> managerB(new storm::expressions::ExpressionManager());
+
+    storm::expressions::Variable own = managerA->declareBooleanVariable("flag");
+    storm::expressions::Variable foreign = managerB->declareBooleanVariable("flag");
+
+    storm::expressions::SimpleValuation valuation(managerA);
+    valuation.setBooleanValue(own, true);
+
+    // Both variables have offset zero, so only the manager distinguishes them.
+    ASSERT_EQ(own.getOffset(), foreign.getOffset());
+    EXPECT_FALSE(valuation.contains(foreign));
+    EXPECT_REJECTED(valuation.getBooleanValue(foreign));
+    EXPECT_REJECTED(valuation.setBooleanValue(foreign, false));
+    EXPECT_TRUE(valuation.getBooleanValue(own));
+}
+
+TEST(ExpressionDeathTest, SimpleValuationRejectsVariablesItDoesNotStore) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::expressions::Variable flag = manager->declareBooleanVariable("flag");
+    storm::expressions::Variable array = manager->declareArrayVariable("array", manager->getIntegerType());
+
+    storm::expressions::SimpleValuation valuation(manager);
+    valuation.setBooleanValue(flag, true);
+
+    EXPECT_FALSE(valuation.contains(array));
+    EXPECT_REJECTED(valuation.getBooleanValue(array));
+
+    // Array variables share the offset space of no stored type, but they are never contained.
+    ASSERT_NO_THROW(valuation.toString());
+}
+
+TEST(ExpressionDeathTest, SimpleValuationRejectsVariablesOfDefaultConstructedValuation) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::expressions::Variable x = manager->declareBooleanVariable("x");
+
+    storm::expressions::SimpleValuation valuation;
+    EXPECT_FALSE(valuation.contains(x));
+    EXPECT_REJECTED(valuation.getBooleanValue(x));
+    EXPECT_REJECTED(valuation.setBooleanValue(x, true));
 }

@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "storm-cli-utilities/AutomaticSettings.h"
+#include "storm-cli-utilities/Qvbs.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -18,11 +19,13 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/EnvironmentBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/CounterexampleGeneratorSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -30,13 +33,15 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/storage/Qvbs.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/transformer/bisimulation/Options.h"
 #include "storm/utility/Engine.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 
@@ -156,7 +161,8 @@ struct ModelProcessingInformation {
     // The Dd library to be used
     storm::dd::DdType ddType;
 
-    // The environment used during model checking
+    // The environment used during model checking.
+    // It is constructed explicitly in getModelProcessingInformation(), once the CLI settings are known to be finalized.
     storm::Environment env;
 
     // A flag which is set to true, if the settings were detected to be compatible.
@@ -202,6 +208,7 @@ inline void getModelProcessingInformationAutomatic(SymbolicInput const& input, M
 inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input,
                                                                 std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
     ModelProcessingInformation mpi;
+    mpi.env = storm::settings::EnvironmentBuilder::buildEnvironment();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
@@ -704,15 +711,20 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovA
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBisimulation(
     std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input,
-    storm::settings::modules::BisimulationSettings const& bisimulationSettings, bool graphPreserving = true) {
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (bisimulationSettings.isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
+    storm::settings::modules::BisimulationSettings const& bisimulationSettings) {
+    storm::bisimulation::Options options;
+    options.bisimulationType =
+        bisimulationSettings.isWeakBisimulationSet() ? storm::bisimulation::BisimulationType::Weak : storm::bisimulation::BisimulationType::Strong;
+    if (bisimulationSettings.isToleranceSet() || !storm::NumberTraits<ValueType>::IsExact) {
+        options.tolerance = storm::utility::convertNumber<storm::RationalNumber>(bisimulationSettings.getTolerance());
+    } else {
+        options.tolerance = storm::utility::zero<storm::RationalNumber>();
     }
-    std::optional<double> tolerance = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
-
-    STORM_LOG_INFO("Performing bisimulation minimization...");
-    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), bisimType, graphPreserving, tolerance);
+    options.actionSensitive = bisimulationSettings.isActionSensitiveSet();
+    STORM_LOG_INFO("Performing bisimulation minimization (type: "
+                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance
+                   << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
+    return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), options);
 }
 
 template<typename ValueType>
@@ -733,6 +745,29 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
         result.first = storm::api::permuteModelStates(result.first, order.value(), seed);
         result.second = true;
         STORM_PRINT_AND_LOG("Transition matrix hash after permuting: " << result.first->getTransitionMatrix().hash() << ".\n");
+    }
+
+    // Merging of states should be done before applying bisimulation as this order leads to the smallest quotient
+    if (transformationSettings.isMergeEquivalentStatesSet()) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Merging equivalent states not supported for interval models.");
+        } else {
+            auto formulas = createFormulasToRespect(input.properties);
+            if (formulas.size() == 1) {
+                auto mergedModel = storm::api::mergeEquivalentStatesForFormula<ValueType>(result.first, *formulas.front());
+                if (mergedModel) {
+                    STORM_LOG_INFO("Merged equivalent states for the considered property '" << *formulas.front() << "'.");
+                    result.first = mergedModel;
+                    result.second = true;
+                } else {
+                    STORM_LOG_WARN("Merging equivalent states is not supported for the considered " << result.first->getType() << " model and property '"
+                                                                                                    << *formulas.front() << "'.");
+                }
+            } else {
+                STORM_LOG_WARN("Skipping merging of equivalent states as it requires exactly one input property. " << formulas.size()
+                                                                                                                   << " properties given instead.");
+            }
+        }
     }
 
     if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
@@ -900,8 +935,8 @@ std::shared_ptr<storm::models::Model<ExportValueType>> preprocessDdModelBisimula
 
     STORM_LOG_INFO("Performing bisimulation minimization...");
     return storm::api::performBisimulationMinimization<DdType, ValueType, ExportValueType>(
-        model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat,
-        ddBisimulationOptions);
+        model, createFormulasToRespect(input.properties), storm::bisimulation::BisimulationType::Strong, bisimulationSettings.getSignatureMode(),
+        quotientFormat, ddBisimulationOptions);
 }
 
 template<typename ExportValueType, storm::dd::DdType DdType, typename ValueType>
