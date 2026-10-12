@@ -34,7 +34,8 @@ ObservationBasedFiniteStateController<PolicyValueType>
 PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::exportPolicyAsFiniteStateController() const {
     std::optional<std::unordered_map<uint64_t, ObservationSignature>> optionalIdToObservationSignature = std::nullopt;
     std::optional<std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>> optionalIdToActionNameMap = std::nullopt;
-    if (pomdp.hasObservationValuations()) {
+    // Target splitting can introduce observations without extending their valuations.
+    if (pomdp.hasObservationValuations() && pomdp.getObservationValuations().getNumberOfEntities() >= pomdp.getNrObservations()) {
         auto const& obsValuations = pomdp.getObservationValuations();
         std::unordered_map<uint64_t, ObservationSignature> idToObservationSignatureMap;
         std::vector<ObservationSignature> usedObservationSignatures;
@@ -51,6 +52,10 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
         if (observationSignaturesAreUnique) {
             optionalIdToObservationSignature = std::move(idToObservationSignatureMap);
         }
+    } else if (pomdp.hasObservationValuations()) {
+        STORM_LOG_WARN("Omitting observation signatures from the exported FSC because observation valuations cover only "
+                       << pomdp.getObservationValuations().getNumberOfEntities() << " of " << pomdp.getNrObservations()
+                       << " observations. Observation matching will use numeric IDs.");
     }
     if (pomdp.hasChoiceLabeling()) {
         auto const& choiceLabeling = pomdp.getChoiceLabeling();
