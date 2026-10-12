@@ -121,8 +121,9 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
                 if (sparseModel) {
                     collector = std::make_unique<storm::analysis::ConstraintCollector>(*sparseModel);
                 }
-            } catch (storm::exceptions::BaseException const&) {
+            } catch (storm::exceptions::BaseException const& exception) {
                 // The constraints could not be collected; treated as undecided below.
+                STORM_LOG_WARN("Could not collect the graph-preservation constraints; graph preservation will be treated as undecided: " << exception.what());
             }
         }
     }
@@ -133,8 +134,9 @@ void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& mod
             storm::pars::analysis::RegionConstraintChecker checker(*collector);
             try {
                 result = checker.checkGraphPreservation(region);
-            } catch (storm::exceptions::BaseException const&) {
+            } catch (storm::exceptions::BaseException const& exception) {
                 // E.g. the region does not cover all constrained variables; treated as undecided.
+                STORM_LOG_WARN("Could not decide graph preservation for region " << region << "; treating it as undecided: " << exception.what());
             }
         }
 

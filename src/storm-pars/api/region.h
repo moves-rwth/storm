@@ -240,8 +240,7 @@ std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRe
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
     bool allowModelSimplification = true,
     storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving,
-    bool preconditionsValidated = false,
-    MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
         monotoneParameters = std::nullopt) {
