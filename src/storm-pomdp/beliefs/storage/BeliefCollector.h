@@ -72,7 +72,8 @@ class BeliefCollector {
 
    private:
     std::vector<BeliefType> gatheredBeliefs;
-    std::vector<std::unordered_map<BeliefType, BeliefId, typename BeliefType::BeliefHash>> beliefToIdMap;
+    // Resolve hash collisions by comparing the beliefs in gatheredBeliefs.
+    std::vector<std::unordered_multimap<std::size_t, BeliefId>> beliefToIdMap;
 };
 
 }  // namespace storm::pomdp::beliefs

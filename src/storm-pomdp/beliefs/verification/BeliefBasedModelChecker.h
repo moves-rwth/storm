@@ -20,8 +20,11 @@ template<typename PomdpModelType, typename BeliefValueType = typename PomdpModel
  */
 class BeliefBasedModelChecker {
    public:
-    using PomdpValueType = PomdpModelType::ValueType;
-    /** Creates a checker for a canonic POMDP. The POMDP must outlive the checker. */
+    using PomdpValueType = typename PomdpModelType::ValueType;
+    /**
+     * Creates a checker for a canonic POMDP. The POMDP must outlive the checker.
+     * @throws storm::exceptions::IllegalArgumentException if the POMDP is not known to be canonic.
+     */
     explicit BeliefBasedModelChecker(PomdpModelType const& pomdp);
 
     /**
@@ -49,23 +52,26 @@ class BeliefBasedModelChecker {
     /**
      * Explores a reward-aware belief MDP, splitting beliefs before successor generation by their reward vectors.
      *
-     * @param relevantRewardModelNames Reward models whose accumulated rewards become part of the belief observation.
+     * @param relevantRewardModelNames Nonempty list of reward models whose accumulated rewards become part of the belief observation.
+     * The first entries must match the property's reward bounds in order; further models may be observed without being bounded.
      * @return the value, completion status, statistics, and optional policy produced by the checking run.
      */
     BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkRewardAwareUnfold(
         storm::Environment const& env, PropertyInformation const& propertyInformation,
         storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
-        storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames = {});
+        storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames);
 
     /**
      * Combines reward-aware exploration with Freudenthal triangulation discretization.
      *
+     * @param relevantRewardModelNames Nonempty list whose first entries match the property's reward bounds in order.
+     * Further models may be observed without being bounded.
      * @return the value, completion status, statistics, and optional policy produced by the checking run.
      */
     BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkRewardAwareDiscretize(
         storm::Environment const& env, PropertyInformation const& propertyInformation,
         storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options, uint64_t resolution, bool useDynamic,
-        storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames = {});
+        storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames);
 
    private:
     PomdpModelType const& inputPomdp;

@@ -28,7 +28,7 @@ struct BeliefBasedModelCheckerStatistics {
 template<typename BeliefMdpValueType, typename PolicyValueType = BeliefMdpValueType>
 struct BeliefBasedModelCheckerResult {
     storm::utility::ExtendedValueType<BeliefMdpValueType> value;
-    bool completedExploration;
+    bool completedExploration = false;
     BeliefBasedModelCheckerStatistics statistics;
     std::optional<storm::pomdp::policy::ObservationBasedFiniteStateController<PolicyValueType>> policy;
 };

@@ -10,7 +10,7 @@
 #include "storm/models/sparse/Pomdp.h"
 
 namespace storm::pomdp::transformer {
-
+// TODO this may be moved to storm/transformer
 template<typename ValueType>
 class RewardBoundUnfolder {
    public:
@@ -26,8 +26,8 @@ class RewardBoundUnfolder {
         /// The returned formula will then have a rewardBound in terms of the new level reward.
         /// Assume a dimension i. Let c=levelWidth[i]!=0 and let t be the reward bound threshold (i.e. either <=t or >t).
         /// A transition from epoch a=e[i] with reward b=r[i] leads to epoch (a-b) mod c and yields level reward ceil((b-a)/c).
-        /// The initial epoch is -t mod c (Note: in C++ this is (-t)%c+c because % is not the modulos for negative numerators).
-        /// The output formula will have reward bound threshold ceil(t/c), where t is the original threshold.
+        /// The initial epoch is t mod c, so the first level reward is earned when the accumulated reward exceeds t mod c.
+        /// The output formula will have reward bound threshold floor(t/c), where t is the original threshold.
         /// Note that if c=1, no unfolding will be performed.
         /// The case levelWidth[i]=0 is special: this means that the dimension is unfolded until past the threshold.
         /// No level reward is introduced in this case and the bound dimension is removed from the formula.
@@ -39,7 +39,8 @@ class RewardBoundUnfolder {
     };
 
     /**
-     * Unfolds reward-bounded dimensions into the model state space and returns an equivalent unbounded formula.
+     * Unfolds reward-bounded dimensions into the model state space and returns an equivalent formula.
+     * @see sections 4 and 5 of https://doi.org/10.18154/RWTH-2025-08686 for a formal definition of this transformation
      *
      * Zero level widths unfold a dimension completely and remove its bound. Positive level widths retain a compact
      * epoch representation and introduce a corresponding level reward model.

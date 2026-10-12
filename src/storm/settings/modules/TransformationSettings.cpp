@@ -82,8 +82,8 @@ storm::transformer::EliminationLabelBehavior TransformationSettings::getLabelBeh
     } else if (labelBehaviorAsString == "delete") {
         return storm::transformer::EliminationLabelBehavior::DeleteLabels;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
 }
 
 bool TransformationSettings::isToNondeterministicModelSet() const {

@@ -1643,7 +1643,7 @@ class CombinedEdgesSystemComposer : public SystemComposer<Type, ValueType> {
                     return combineEdgesToActionNondeterministic(edgeDds, localNondeterminismVariableOffset);
                 }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
+                STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::WrongFormatException, "Cannot translate model of type " << modelType << ".");
             }
         } else {
             return ActionDd(this->variables.manager->getBddZero(), this->variables.manager->template getAddZero<ValueType>(), {},

@@ -1,5 +1,6 @@
 #include "storm-pomdp/transformer/RewardBoundUnfolder.h"
 
+#include <limits>
 #include <queue>
 
 #include "storm/adapters/RationalNumberAdapter.h"
@@ -16,6 +17,7 @@
 #include "storm/utility/builder.h"
 #include "storm/utility/macros.h"
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -41,41 +43,77 @@ struct Dimension {
 };
 
 /*!
+ * Checks whether all individual and combined rewards fit into int64_t, assuming nonnegative integer rewards.
+ */
+template<typename ValueType>
+bool rewardsFitInt64(storm::models::sparse::Model<ValueType> const& model, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel) {
+    // Use an exclusive upper limit because INT64_MAX rounds up to 2^63 when converted to double.
+    ValueType const rewardLimit = -storm::utility::convertNumber<ValueType>(std::numeric_limits<int64_t>::min());
+    auto const rewardFitsInt64 = [&rewardLimit](ValueType const& reward) { return reward < rewardLimit; };
+    if (rewardModel.hasStateRewards() && !std::all_of(rewardModel.getStateRewardVector().begin(), rewardModel.getStateRewardVector().end(), rewardFitsInt64)) {
+        return false;
+    }
+    if (rewardModel.hasStateActionRewards() &&
+        !std::all_of(rewardModel.getStateActionRewardVector().begin(), rewardModel.getStateActionRewardVector().end(), rewardFitsInt64)) {
+        return false;
+    }
+    // Individual rewards may fit into int64_t even though their sum does not. Check all original choices, including unreachable ones.
+    if (rewardModel.hasStateRewards() && rewardModel.hasStateActionRewards()) {
+        for (StateIdType state = 0; state < model.getNumberOfStates(); ++state) {
+            for (auto const choice : model.getTransitionMatrix().getRowGroupIndices(state)) {
+                ValueType const reward = rewardModel.getStateReward(state) + rewardModel.getStateActionReward(choice);
+                if (!rewardFitsInt64(reward)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+/*!
  * Extracts the dimension information from the input formula.
  * Also performs various sanity/compatibility checks.
  */
 template<typename ValueType>
 std::vector<Dimension<ValueType>> extractDimensions(storm::models::sparse::Model<ValueType> const& model,
                                                     storm::logic::BoundedUntilFormula const& boundedUntilFormula, std::vector<uint64_t> const& levelWidths) {
+    STORM_LOG_THROW(!boundedUntilFormula.hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException,
+                    "Reward bound unfolding requires shared left and right state subformulas across all dimensions.");
     STORM_LOG_THROW(boundedUntilFormula.getRightSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException,
                     "Only propositional right subformulas are supported.");  // Temporal sub-formulas are potentially not preserved by the construction
     STORM_LOG_THROW(boundedUntilFormula.getLeftSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException,
                     "Only propositional left subformulas are supported.");  // Temporal sub-formulas are potentially not preserved by the construction
     std::vector<Dimension<ValueType>> dimensions;
     for (uint64_t formulaDim = 0; formulaDim < boundedUntilFormula.getDimension(); ++formulaDim) {
-        int64_t const levelWidth = formulaDim < levelWidths.size() ? levelWidths[formulaDim] : 0;
+        STORM_LOG_THROW(formulaDim >= levelWidths.size() || levelWidths[formulaDim] <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()),
+                        storm::exceptions::InvalidArgumentException, "Level width in dimension " << formulaDim << " exceeds INT64_MAX.");
+        int64_t const levelWidth = formulaDim < levelWidths.size() ? static_cast<int64_t>(levelWidths[formulaDim]) : 0;
         auto const& tbr = boundedUntilFormula.getTimeBoundReference(formulaDim);
-        STORM_LOG_THROW(tbr.hasRewardModelName(), storm::exceptions::NotSupportedException,
-                        "The reward model for bound reference " << formulaDim << " has no name.");
+        STORM_LOG_THROW(tbr.isRewardBound(), storm::exceptions::NotSupportedException, "The bounded formula is not a reward-bounded formula.");
         STORM_LOG_THROW(
             !tbr.hasRewardAccumulation(), storm::exceptions::NotSupportedException,
             "The reward model for bound reference " << formulaDim << " has non-trivial reward accumulation which is not supported in this context.");
-        auto const& rewardModel = model.getRewardModel(tbr.getRewardModelName());
+        // An unnamed reference selects the explicit default model, or the unique model when no explicit default exists.
+        std::string const rewardModelName = tbr.getOptionalRewardModelName().get_value_or("");
+        auto const& rewardModel = model.getRewardModel(rewardModelName);
         // Note: computation of successor epoch is slightly more involved with transition rewards which is why we do not support them for now
         STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException,
                         "The reward model for bound reference " << formulaDim << " uses transition rewards. These are currently unsupported.");
         // All assigned rewards need to be integer (might support rational via scaling, but its unclear how to scale levelWidth)
         STORM_LOG_THROW(!rewardModel.hasStateRewards() || std::all_of(rewardModel.getStateRewardVector().begin(), rewardModel.getStateRewardVector().end(),
                                                                       storm::utility::isInteger<ValueType>),
-                        storm::exceptions::NotSupportedException, "State rewards in reward model " << tbr.getRewardModelName() << " are not integers.");
+                        storm::exceptions::NotSupportedException, "State rewards in reward model " << rewardModelName << " are not integers.");
         STORM_LOG_THROW(
             !rewardModel.hasStateActionRewards() || std::all_of(rewardModel.getStateActionRewardVector().begin(),
                                                                 rewardModel.getStateActionRewardVector().end(), storm::utility::isInteger<ValueType>),
-            storm::exceptions::NotSupportedException, "State action rewards in reward model " << tbr.getRewardModelName() << " are not integers.");
+            storm::exceptions::NotSupportedException, "State action rewards in reward model " << rewardModelName << " are not integers.");
         // The finite epoch abstraction assumes that accumulated rewards never decrease. In particular, a negative-reward cycle would
         // increase an epoch indefinitely and therefore make the unfolding infinite.
         STORM_LOG_THROW(!rewardModel.hasNegativeRewards(), storm::exceptions::NotSupportedException,
-                        "Reward model " << tbr.getRewardModelName() << " contains negative rewards. These are currently unsupported.");
+                        "Reward model " << rewardModelName << " contains negative rewards. These are currently unsupported.");
+        STORM_LOG_ASSERT(rewardsFitInt64(model, rewardModel),
+                         "Rewards in reward model " << rewardModelName << " for bound reference " << formulaDim << " exceed INT64_MAX.");
 
         // Helper function to generate fresh identifiers (either for level reward or active label)
         auto getFreshIdentifier = [&]() {
@@ -90,22 +128,26 @@ std::vector<Dimension<ValueType>> extractDimensions(storm::models::sparse::Model
         if (boundedUntilFormula.hasUpperBound(formulaDim)) {
             STORM_LOG_THROW(boundedUntilFormula.hasIntegerUpperBound(formulaDim), storm::exceptions::NotSupportedException,
                             "Bound " << formulaDim << " is not an integer");  // might support rational via scaling (how to scale levelWidth?)
-            int64_t const threshold =
-                boundedUntilFormula.getUpperBound(formulaDim).evaluateAsInt() - (boundedUntilFormula.isUpperBoundStrict(formulaDim) ? 1ul : 0ul);
-            STORM_LOG_THROW(threshold >= 0, storm::exceptions::NotSupportedException,
+            int64_t const bound = boundedUntilFormula.getUpperBound(formulaDim).evaluateAsInt();
+            int64_t const adjustment = boundedUntilFormula.isUpperBoundStrict(formulaDim) ? int64_t{1} : int64_t{0};
+            STORM_LOG_THROW(bound >= adjustment, storm::exceptions::NotSupportedException,
                             "Upper reward bound in dimension " << formulaDim << " is not satisfiable.");
+            int64_t const threshold = bound - adjustment;
             dimensions.push_back(
                 Dimension<ValueType>{Dimension<ValueType>::Relation::lessEqual, threshold, levelWidth, getFreshIdentifier(), formulaDim, rewardModel});
         }
         if (boundedUntilFormula.hasLowerBound(formulaDim)) {
             STORM_LOG_THROW(boundedUntilFormula.hasIntegerLowerBound(formulaDim), storm::exceptions::NotSupportedException,
                             "Bound " << formulaDim << " is not an integer");  // might support rational via scaling (how to scale levelWidth?)
-            int64_t const threshold =
-                boundedUntilFormula.getLowerBound(formulaDim).evaluateAsInt() - (boundedUntilFormula.isLowerBoundStrict(formulaDim) ? 0ul : 1ul);
-            STORM_LOG_THROW(threshold >= 0, storm::exceptions::NotSupportedException,
-                            "Lower reward bound in dimension " << formulaDim << " is not satisfiable.");
-            dimensions.push_back(
-                Dimension<ValueType>{Dimension<ValueType>::Relation::greater, threshold, levelWidth, getFreshIdentifier(), formulaDim, rewardModel});
+            int64_t const bound = boundedUntilFormula.getLowerBound(formulaDim).evaluateAsInt();
+            int64_t const adjustment = boundedUntilFormula.isLowerBoundStrict(formulaDim) ? int64_t{0} : int64_t{1};
+            if (bound >= adjustment) {
+                int64_t const threshold = bound - adjustment;
+                dimensions.push_back(
+                    Dimension<ValueType>{Dimension<ValueType>::Relation::greater, threshold, levelWidth, getFreshIdentifier(), formulaDim, rewardModel});
+            } else {
+                STORM_LOG_WARN("Lower reward bound in dimension " << formulaDim << " is trivially satisfied and therefore dropped.");
+            }
         }
     }
     return dimensions;
@@ -116,7 +158,8 @@ std::vector<Dimension<ValueType>> extractDimensions(storm::models::sparse::Model
  * @note operator% is not the modulos for negative numerators. E.g. -1 % 3 = -1, but mod(-1, 3) = 2
  */
 int64_t mod(int64_t a, int64_t b) {
-    return (a % b + b) % b;
+    int64_t const remainder = a % b;
+    return remainder < 0 ? remainder + b : remainder;
 }
 
 template<typename ValueType>
@@ -141,7 +184,10 @@ EpochType computeSuccessorEpoch(StateIdType currentState, EpochType const& curre
         auto const& rew = dim.rewardModel;
         ValueType const reward = (rew.hasStateRewards() ? rew.getStateReward(currentState) : storm::utility::zero<ValueType>()) +
                                  (rew.hasStateActionRewards() ? rew.getStateActionReward(choice) : storm::utility::zero<ValueType>());
-        *eIt -= storm::utility::convertNumber<uint64_t>(reward);
+        int64_t const integerReward = storm::utility::convertNumber<int64_t>(reward);
+        // Initial epochs are nonnegative and abstracted epochs are at least -1. Combined rewards are assumed to be
+        // in [0, INT64_MAX] (asserted in extractDimensions), so subtraction cannot produce a value below INT64_MIN.
+        *eIt -= integerReward;
         ++eIt;
     }
     return successorEpoch;
@@ -152,7 +198,7 @@ void computeLevelReward(EpochType const& successorEpoch, std::vector<Dimension<V
     for (uint64_t dimIndex = 0; dimIndex < dimensions.size(); ++dimIndex) {
         auto const lvlWidth = dimensions[dimIndex].levelWidth;
         if (lvlWidth != 0) {
-            auto const reward = storm::utility::ceil<ValueType>(storm::utility::convertNumber<ValueType>(-successorEpoch[dimIndex]) /
+            auto const reward = storm::utility::ceil<ValueType>(-storm::utility::convertNumber<ValueType>(successorEpoch[dimIndex]) /
                                                                 storm::utility::convertNumber<ValueType>(lvlWidth));
             STORM_LOG_ASSERT(reward >= storm::utility::zero<ValueType>(), "Expected non-negative level reward, got "
                                                                               << reward << ". Succ epoch is " << successorEpoch[dimIndex] << " and lvlWidth is "
@@ -277,8 +323,11 @@ ExplorationResult<ValueType> exploreUnfolding(storm::models::sparse::Model<Value
             // Abstract the successor epoch. Ensures that we only reach a finite set of epochs.
             applyEpochAbstraction(successorEpoch, dimensions);
             for (auto const& entry : ogMatrix.getRow(choice)) {
-                auto successorInUnfolding = processNewStateEpoch(entry.getColumn(), successorEpoch);
+                if (storm::utility::isZero(entry.getValue())) {
+                    continue;
+                }
                 STORM_LOG_ASSERT(entry.getValue() > storm::utility::zero<ValueType>(), "Transition probabilities must be positive.");
+                auto successorInUnfolding = processNewStateEpoch(entry.getColumn(), successorEpoch);
                 matrixBuilder.addNextValue(numChoicesInUnfolding, successorInUnfolding, entry.getValue());
             }
             ++numChoicesInUnfolding;
@@ -297,6 +346,8 @@ storm::storage::sparse::ModelComponents<ValueType> constructComponents(storm::mo
                                                                        std::vector<Dimension<ValueType>> const& dimensions,
                                                                        std::set<std::string> const& preservedRewardModels,
                                                                        ExplorationResult<ValueType>&& explorationResult) {
+    STORM_LOG_WARN_COND(!originalModel.hasStateValuations(), "State valuations are not preserved in bound unfolding.");
+    STORM_LOG_WARN_COND(!originalModel.hasChoiceOrigins(), "Choice origins are not preserved in bound unfolding.");
     uint64_t const numStates = explorationResult.matrix.getColumnCount();
     uint64_t const numChoices = explorationResult.matrix.getRowCount();
 
@@ -358,7 +409,6 @@ storm::storage::sparse::ModelComponents<ValueType> constructComponents(storm::mo
             components.choiceLabeling->addLabel(label, std::move(newLabel));
         }
     }
-
     // Create the reward models
     for (auto const& [name, rewmodel] : originalModel.getRewardModels()) {
         if (!preservedRewardModels.contains(name)) {
@@ -403,8 +453,8 @@ storm::storage::sparse::ModelComponents<ValueType> constructComponents(storm::mo
         STORM_LOG_WARN_COND(!pomdp.hasObservationValuations(), "Observation valuations are dropped.");
 
     } else {
-        STORM_LOG_THROW(originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
-                        "Unfolding is only supported POMDP and MDP models right now.");  // DTMCs might work, too?
+        STORM_LOG_THROW(originalModel.isOfType(storm::models::ModelType::Mdp) || originalModel.isOfType(storm::models::ModelType::Dtmc),
+                        storm::exceptions::NotSupportedException, "Unfolding is only supported for POMDPs, MDPs and DTMCs.");
     }
     return components;
 }
@@ -415,6 +465,10 @@ std::shared_ptr<storm::logic::Formula> constructFormula(storm::logic::BoundedUnt
     // Construct a new (bounded or unbounded) until formula
     auto lhs = boundedUntilFormula.getLeftSubformula().clone();
     auto rhs = boundedUntilFormula.getRightSubformula().clone();
+    // At this point, we may have removed all bound dimensions as they were trivial. We return an unbounded until-formula.
+    if (dimensions.empty()) {
+        return std::make_shared<storm::logic::UntilFormula>(std::move(lhs), std::move(rhs));
+    }
     std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
     STORM_LOG_ASSERT(boundedUntilFormula.getDimension() > 0, "did not expect a 0-dimensional formula.");
@@ -460,6 +514,9 @@ std::shared_ptr<storm::logic::Formula> constructFormula(storm::logic::BoundedUnt
 template<typename ValueType>
 RewardBoundUnfolder<ValueType>::ReturnType RewardBoundUnfolder<ValueType>::transform(storm::models::sparse::Model<ValueType> const& model,
                                                                                      storm::logic::Formula const& formula, UnfoldingOptions const& options) {
+    STORM_LOG_THROW(model.getType() == storm::models::ModelType::Pomdp || model.getType() == storm::models::ModelType::Mdp ||
+                        model.getType() == storm::models::ModelType::Dtmc,
+                    storm::exceptions::NotSupportedException, "Reward bound unfolding is only supported for POMDPs, MDPs and DTMCs.");
     if (formula.isProbabilityOperatorFormula()) {
         // Recursive call with subformula
         auto const& opFormula = formula.asProbabilityOperatorFormula();

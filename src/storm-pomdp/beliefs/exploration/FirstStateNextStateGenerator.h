@@ -80,7 +80,10 @@ class FirstStateNextStateGenerator {
     bool hasRewardModel() const;
     void unsetRewardModel();
 
-    /** @return the initial belief induced by the POMDP's initial-state distribution. */
+    /**
+     * @return the belief assigning probability one to the POMDP's single initial state.
+     * @throws storm::exceptions::NotSupportedException if the POMDP does not have exactly one initial state.
+     */
     BeliefType computeInitialBelief() const;
 
     /** @return the number of observation-compatible actions in @p belief. */
@@ -169,8 +172,9 @@ struct NextStateGeneratorHandle {
             for (auto const& pomdpTransition : pomdp.getTransitionMatrix().getRow(state, localActionIndex)) {
                 if (!storm::utility::isZero(pomdpTransition.getValue())) {
                     auto const obs = (pomdp.getNrObservations() * actionObservation) + pomdp.getObservation(pomdpTransition.getColumn());
+                    STORM_LOG_ASSERT(obs < InvalidObservation, "Encoded belief observation " << obs << " exceeds the valid observation range.");
                     BeliefValueType const val = beliefValue * storm::utility::convertNumber<BeliefValueType>(pomdpTransition.getValue());
-                    if (auto [insertionIt, inserted] = successorObservations.emplace(obs, val); !inserted) {
+                    if (auto [insertionIt, inserted] = successorObservations.emplace(static_cast<BeliefObservationType>(obs), val); !inserted) {
                         insertionIt->second += val;
                     }
                 }
@@ -196,7 +200,8 @@ struct NextStateGeneratorHandle {
             builder.setObservation(successorObsValue.first);
             belief.forEach([&builder, &localActionIndex, &successorObsValue, this](BeliefStateType const& state, BeliefValueType const& beliefValue) {
                 for (auto const& pomdpTransition : pomdp.getTransitionMatrix().getRow(state, localActionIndex)) {
-                    if (pomdp.getObservation(pomdpTransition.getColumn()) == (successorObsValue.first % pomdp.getNrObservations())) {
+                    if (!storm::utility::isZero(pomdpTransition.getValue()) &&
+                        pomdp.getObservation(pomdpTransition.getColumn()) == (successorObsValue.first % pomdp.getNrObservations())) {
                         BeliefValueType const prob =
                             beliefValue * storm::utility::convertNumber<BeliefValueType>(pomdpTransition.getValue()) / successorObsValue.second;
                         STORM_LOG_ASSERT(prob > storm::utility::zero<BeliefValueType>(), "Invalid belief probability " << prob << ".");
@@ -204,6 +209,12 @@ struct NextStateGeneratorHandle {
                     }
                 }
             });
+            if constexpr (!storm::NumberTraits<BeliefValueType>::IsExact || !storm::NumberTraits<typename PomdpType::ValueType>::IsExact) {
+                if (successorObservations.size() == 1) {
+                    // The observation probability was forced to one, so normalize the successor belief separately.
+                    builder.normalize();
+                }
+            }
             applyPostAbstraction(builder.build(), static_cast<BeliefValueType>(successorObsValue.second * transitionProbability),
                                  std::forward<CallBackArgs const>(additionalCallbackArgs)...);
         }

@@ -432,8 +432,8 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
     uint64_t numIterations{0};
     auto iiCallback = [&](helper::IIData<ValueType> const& data) {
         this->showProgressIterative(numIterations);
-        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        bool terminateEarly = this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                                        this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
         return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     std::optional<storm::storage::BitVector> optionalRelevantValues;
@@ -441,8 +441,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
         optionalRelevantValues = this->getRelevantValues();
     }
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = iiHelper.II(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback, {},
-                              iiCallback, optionalRelevantValues);
+                              iiCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -525,7 +529,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
         guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
     }
     this->startMeasureProgress();
-    auto status = oviHelper.OVI(x, b, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound, oviCallback);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    auto status = oviHelper.OVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound,
+                                oviCallback, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -553,8 +562,8 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     uint64_t numIterations{0};
     auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
         this->showProgressIterative(numIterations);
-        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        bool terminateEarly = this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                                        this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
         return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
 

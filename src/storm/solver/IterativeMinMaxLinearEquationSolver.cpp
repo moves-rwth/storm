@@ -571,6 +571,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(x.size(), 0);
             }
+            this->setSolutionBoundsExact(x);
             return true;
         }
 
@@ -596,8 +597,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = oviHelper.OVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, dir, guessingFactor, lowerBound,
-                                    upperBound, oviCallback);
+                                    upperBound, oviCallback, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -632,8 +637,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
 
@@ -797,8 +803,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         uint64_t numIterations{0};
         auto iiCallback = [&](helper::IIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
         std::optional<storm::storage::BitVector> optionalRelevantValues;
@@ -806,8 +813,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             optionalRelevantValues = this->getRelevantValues();
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = iiHelper.II(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback,
-                                  dir, iiCallback, optionalRelevantValues);
+                                  dir, iiCallback, optionalRelevantValues, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.

@@ -13,7 +13,8 @@ class BeliefBuilder;
 /*!
  * Represents a belief of a Pomdp, i.e. a probability distribution over the states of a POMDP.
  * A belief also knows its observation.
- * @note A belief is immutable. Use the BeliefBuilder class to construct new beliefs.
+ * @note A belief cannot be modified or assigned after construction. Use the BeliefBuilder class to construct new beliefs.
+ * Moving a belief transfers its contents and leaves the source in a moved-from state.
  * @tparam ValueTypeArg the type of the values (probabilities) of the belief.
  */
 template<typename ValueTypeArg>
@@ -25,8 +26,8 @@ class Belief {
     Belief() = delete;
     Belief(Belief const& other) = default;
     Belief(Belief&& other) = default;
-    Belief<ValueType>& operator=(Belief const& other) = default;
-    Belief<ValueType>& operator=(Belief&& other) = default;
+    Belief<ValueType>& operator=(Belief const& other) = delete;
+    Belief<ValueType>& operator=(Belief&& other) = delete;
 
     /*!
      * @return the number of states in the support of this belief.
@@ -177,8 +178,8 @@ class Belief {
      */
     Belief(BeliefFlatMap<ValueType>&& data, BeliefObservationType&& obs);
 
-    BeliefFlatMap<ValueType> const data;
-    BeliefObservationType const obs;
+    BeliefFlatMap<ValueType> data;
+    BeliefObservationType obs;
 };
 
 }  // namespace storm::pomdp::beliefs

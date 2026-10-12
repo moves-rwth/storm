@@ -10,7 +10,7 @@ namespace storm::pomdp::beliefs {
 namespace detail {
 /*!
  * Used to decide whether two belief values are equal.
- * The interpretation is that two values x,y are equal if round(x*2^NumericPrecision)==round(y*2^NumericPrecision).
+ * Two values x,y are equal if round(x * NumericPrecisionFactor) == round(y * NumericPrecisionFactor), where the factor is 1e14.
  * Thus, a high value means that we are more precise.
  * This is only relevant if beliefs are represented using an inexact data type like double
  */
@@ -37,12 +37,12 @@ bool BeliefNumerics<ValueType>::equal(ValueType const& lhs, ValueType const& rhs
 
 template<typename ValueType>
 bool BeliefNumerics<ValueType>::isZero(const ValueType& val) {
-    return storm::utility::isZero(detail::reprValue(val));
+    return BeliefNumerics::equal(val, storm::utility::zero<ValueType>());
 }
 
 template<typename ValueType>
 bool BeliefNumerics<ValueType>::isOne(const ValueType& val) {
-    return storm::utility::isOne(detail::reprValue(val));
+    return BeliefNumerics::equal(val, storm::utility::one<ValueType>());
 }
 
 template<typename ValueType>

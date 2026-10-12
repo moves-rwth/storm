@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cstdint>
 #include <optional>
 #include <vector>
 
@@ -9,6 +8,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace pomdp {
@@ -82,20 +82,10 @@ struct PreprocessingPomdpValueBounds {
     PreprocessingPomdpValueBounds<OutputValueType> toValueType() {
         PreprocessingPomdpValueBounds<OutputValueType> convertedBounds;
         for (auto const& vec : lower) {
-            std::vector<OutputValueType> resultVector;
-            resultVector.reserve(vec.size());
-            for (auto const& oldValue : vec) {
-                resultVector.push_back(storm::utility::convertNumber<OutputValueType>(oldValue));
-            }
-            convertedBounds.lower.push_back(resultVector);
+            convertedBounds.lower.push_back(storm::utility::vector::convertNumericVector<OutputValueType>(vec));
         }
         for (auto const& vec : upper) {
-            std::vector<OutputValueType> resultVector;
-            resultVector.reserve(vec.size());
-            for (auto const& oldValue : vec) {
-                resultVector.push_back(storm::utility::convertNumber<OutputValueType>(oldValue));
-            }
-            convertedBounds.upper.push_back(resultVector);
+            convertedBounds.upper.push_back(storm::utility::vector::convertNumericVector<OutputValueType>(vec));
         }
         for (auto const& sched : lowerSchedulers) {
             convertedBounds.lowerSchedulers.push_back(sched.template toValueType<OutputValueType>());
@@ -125,29 +115,15 @@ struct ExtremePOMDPValueBound {
         STORM_LOG_ASSERT(!values.empty(), "requested an extreme bound but none were available");
         return storm::utility::convertNumber<OutputValueType>(values[state]);
     }
-
-    std::vector<POMDPValueType> copyValues() const {
-        std::vector<POMDPValueType> resultVector(values);
-        return resultVector;
-    }
-
     template<typename OutputValueType>
     std::vector<OutputValueType> copyValues() const {
-        std::vector<OutputValueType> resultVector;
-        resultVector.reserve(values.size());
-        for (auto const& oldValue : values) {
-            resultVector.push_back(storm::utility::convertNumber<OutputValueType>(oldValue));
-        }
-        return resultVector;
+        return storm::utility::vector::convertNumericVector<OutputValueType>(values);
     }
 
     template<typename OutputValueType>
     ExtremePOMDPValueBound<OutputValueType> toValueType() {
         ExtremePOMDPValueBound<OutputValueType> convertedBounds;
-        convertedBounds.values.reserve(values.size());
-        for (auto const& oldValue : values) {
-            convertedBounds.values.push_back(storm::utility::convertNumber<OutputValueType>(oldValue));
-        }
+        convertedBounds.values = copyValues<OutputValueType>();
         convertedBounds.min = min;
         convertedBounds.isInfinite = isInfinite;
         return convertedBounds;

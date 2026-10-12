@@ -18,7 +18,7 @@ namespace pomdp::modelchecker {
 template<typename PomdpType>
 class PreprocessingPomdpValueBoundsModelChecker {
    public:
-    using PomdpValueType = PomdpType::ValueType;
+    using PomdpValueType = typename PomdpType::ValueType;
     typedef pomdp::storage::PreprocessingPomdpValueBounds<PomdpValueType> ValueBounds;
     typedef pomdp::storage::ExtremePOMDPValueBound<PomdpValueType> ExtremeValueBound;
 

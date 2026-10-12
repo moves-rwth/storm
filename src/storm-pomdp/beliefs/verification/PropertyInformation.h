@@ -3,6 +3,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "storm-pomdp/beliefs/utility/types.h"
 #include "storm/logic/TimeBound.h"

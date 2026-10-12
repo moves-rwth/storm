@@ -133,6 +133,8 @@ class BeliefExploration {
                            storm::OptionalRef<AbstractionType> abstraction) {
         if (rewardModelName.has_value()) {
             firstStateNextStateGenerator.setRewardModel(rewardModelName.value());
+        } else {
+            firstStateNextStateGenerator.unsetRewardModel();
         }
         StandardDiscoverCallback<BeliefMdpValueType, PomdpType, BeliefType> discoverCallback(info);
         if (abstraction) {
@@ -145,12 +147,14 @@ class BeliefExploration {
 
     /**
      * Continues reward-aware exploration, splitting a belief by reward vector before generating successors.
+     * Reuse the same reward splitter across resumptions to preserve reward-vector observation indices.
      */
     template<typename AbstractionType>
     void resumeRewardAwareExploration(RewardAwareExplorationInformation<BeliefMdpValueType, BeliefType>& info,
                                       TerminalBeliefCallback const& terminalBeliefCallback, TerminationCallback const& terminationCallback,
-                                      RewardBoundedBeliefSplitter<BeliefMdpValueType, PomdpType, BeliefType> rewardSplitter,
+                                      RewardBoundedBeliefSplitter<BeliefMdpValueType, PomdpType, BeliefType>& rewardSplitter,
                                       storm::OptionalRef<AbstractionType> abstraction) {
+        firstStateNextStateGenerator.unsetRewardModel();
         RewardAwareDiscoverCallback<BeliefMdpValueType, PomdpType, BeliefType> discoverCallback(info);
         if (abstraction) {
             performExploration(info, firstStateNextStateGenerator.getPrePostAbstractionHandle(rewardSplitter, abstraction.value(), discoverCallback),
@@ -170,6 +174,8 @@ class BeliefExploration {
                                    storm::OptionalRef<AbstractionType> abstraction) {
         if (rewardModelName.has_value()) {
             firstStateNextStateGenerator.setRewardModel(rewardModelName.value());
+        } else {
+            firstStateNextStateGenerator.unsetRewardModel();
         }
         ClippingDiscoverCallback<BeliefMdpValueType, PomdpType, BeliefType> discoverCallback(info);
         if (abstraction) {

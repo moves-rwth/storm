@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -26,7 +27,7 @@ class RewardBoundedBeliefSplitter {
     RewardBoundedBeliefSplitter(PomdpType const& pomdp);
     /** Selects one reward model; an empty name selects Storm's default reward model. */
     void setRewardModel(std::string const& rewardModelName = "");
-    /** Selects the reward models used to form reward vectors. */
+    /** Selects a nonempty list of reward models used to form reward vectors. */
     void setRewardModels(std::vector<std::string> const& rewardModelNames);
     /** Clears the selected reward models and all generated reward-vector observation indices. */
     void unsetRewardModels();
@@ -50,6 +51,9 @@ class RewardBoundedBeliefSplitter {
         });
 
         for (auto& [rewardVector, builder] : splitBeliefs) {
+            // Index 0 shares the original POMDP observation encoding used by the initial belief.
+            // The initial occurrence has no incoming reward; generated successors carry their reward vector
+            // on the transition. Do not infer an initial reward from the observation value.
             BeliefActionObservationType const freshIndex = rewardVectorToIndex.size();
             auto const rewVectorIndex = rewardVectorToIndex.emplace(rewardVector, freshIndex).first->second;
             builder.setObservation(belief.observation());

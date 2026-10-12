@@ -2,6 +2,7 @@
 
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/macros.h"
@@ -18,6 +19,7 @@ void RewardBoundedBeliefSplitter<RewardValueType, PomdpType, BeliefType>::setRew
 
 template<typename RewardValueType, typename PomdpType, typename BeliefType>
 void RewardBoundedBeliefSplitter<RewardValueType, PomdpType, BeliefType>::setRewardModels(std::vector<std::string> const& rewardModelNames) {
+    STORM_LOG_THROW(!rewardModelNames.empty(), storm::exceptions::IllegalArgumentException, "At least one reward model must be selected.");
     actionRewardVectors.assign(pomdp.getNumberOfChoices(), {});
     for (auto const& rewardModelName : rewardModelNames) {
         auto const& rewardModel = pomdp.getRewardModel(rewardModelName);
@@ -38,6 +40,7 @@ void RewardBoundedBeliefSplitter<RewardValueType, PomdpType, BeliefType>::setRew
 template<typename RewardValueType, typename PomdpType, typename BeliefType>
 void RewardBoundedBeliefSplitter<RewardValueType, PomdpType, BeliefType>::unsetRewardModels() {
     actionRewardVectors.clear();
+    rewardVectorToIndex.clear();
 }
 
 template<typename RewardValueType, typename PomdpType, typename BeliefType>

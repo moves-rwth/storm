@@ -15,8 +15,10 @@ struct BeliefBasedModelCheckerOptions {
     bool buildChoiceLabeling = true;
     bool generatePolicy = false;
     bool useClipping = false;
+    /// Cut non-target beliefs only when their preprocessing lower and upper bounds have exactly zero gap.
+    bool cutZeroGap = false;
 
-    ExplorationQueueOrder explorationQueueOrder = ExplorationQueueOrder::Unordered;
+    ExplorationQueueOrder explorationQueueOrder = ExplorationQueueOrder::FIFO;
 
     // Clipping abstraction parameters
     std::optional<std::vector<uint64_t>> clippingResolutions;
@@ -24,7 +26,6 @@ struct BeliefBasedModelCheckerOptions {
     // Termination criteria
     std::optional<uint64_t> maxExplorationSize = std::nullopt;
     std::optional<uint64_t> maxExplorationTime = std::nullopt;
-    std::optional<ValueType> maxGapToCut = std::nullopt;
 
     /**
      * Get the termination criterion for the exploration

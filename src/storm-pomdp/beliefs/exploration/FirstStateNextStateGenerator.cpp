@@ -2,6 +2,7 @@
 #include "storm-pomdp/beliefs/storage/Belief.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/macros.h"
 
@@ -30,8 +31,9 @@ void FirstStateNextStateGenerator<PomdpType, BeliefType>::unsetRewardModel() {
 
 template<typename PomdpType, typename BeliefType>
 BeliefType FirstStateNextStateGenerator<PomdpType, BeliefType>::computeInitialBelief() const {
-    STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1, "Only a single initial state is supported, but the given POMDP contains "
-                                                                             << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
+    STORM_LOG_THROW(
+        pomdp.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
+        "Only a single initial state is supported, but the given POMDP contains " << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
     BeliefStateType const init = *pomdp.getInitialStates().begin();
     BeliefBuilder<BeliefType> builder;
     builder.addValue(init, storm::utility::one<typename BeliefType::ValueType>());

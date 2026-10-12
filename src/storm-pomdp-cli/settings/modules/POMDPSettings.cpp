@@ -1,5 +1,9 @@
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 
+#include <charconv>
+#include <limits>
+#include <ranges>
+
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
@@ -70,13 +74,12 @@ POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
     this->addOption(
         storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, isQualitativeOption, false, "Sets the option qualitative analysis").build());
-    this->addOption(storm::settings::OptionBuilder(
-                        moduleName, isBoundedToUnboundedReachabilityTransformationOption, false,
-                        "Sets the option that reward bounded reachability properties are transformed to an unbounded problem on an unfolded POMDP.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, isBoundedToUnboundedReachabilityTransformationOption, false,
+                                                   "Transforms reward-bounded reachability properties to an unbounded problem on an unfolded POMDP.")
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, isRewardObservableOption, false,
-                                                   "Sets the option that rewards are observable for bounded reachability properties.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("levelwidths", "comma separated list of width of reward levels.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, isRewardObservableOption, false, "Makes rewards observable for bounded reachability properties.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "levelwidths", "Comma-separated reward level widths (integers from 0 to INT64_MAX).")
                                          .setDefaultValueString("")
                                          .makeOptional()
                                          .build())
@@ -150,10 +153,17 @@ std::vector<uint64_t> POMDPSettings::getLevelWidthForBoundedReachability() const
     if (input.empty()) {
         return {};
     }
-    // split the string by comma
-    auto result = input | std::ranges::views::split(',') |
-                  std::ranges::views::transform([](auto&& r) -> uint64_t { return std::stoull(std::string(r.begin(), r.end())); });
-    return {result.begin(), result.end()};
+    std::vector<uint64_t> result;
+    for (auto&& range : input | std::ranges::views::split(',')) {
+        std::string const token(range.begin(), range.end());
+        uint64_t width = 0;
+        auto const [end, error] = std::from_chars(token.data(), token.data() + token.size(), width);
+        STORM_LOG_THROW(error == std::errc{} && end == token.data() + token.size() && width <= std::numeric_limits<int64_t>::max(),
+                        storm::exceptions::InvalidArgumentException,
+                        "Invalid reward level width '" << token << "'. Expected an unsigned integer fitting in int64_t.");
+        result.push_back(width);
+    }
+    return result;
 }
 
 uint64_t POMDPSettings::getMemoryBound() const {
@@ -177,7 +187,7 @@ storm::storage::PomdpMemoryPattern POMDPSettings::getMemoryPattern() const {
     } else if (pattern == "full") {
         return storm::storage::PomdpMemoryPattern::Full;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
 }
 
 void POMDPSettings::finalize() {}

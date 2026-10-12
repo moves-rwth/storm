@@ -6,6 +6,7 @@
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/TerminationCondition.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace {
@@ -187,5 +188,82 @@ TYPED_TEST(MinMaxLinearEquationSolverTest, SolveEquations) {
 
     ASSERT_NO_THROW(solver->solveEquations(this->env(), storm::OptimizationDirection::Maximize, x, b));
     EXPECT_NEAR(x[0], this->parseNumber("0.99"), this->precision());
+}
+
+TEST(MinMaxLinearEquationSolverTest, SoundMethodsTerminateEarly) {
+    // State 0 has value 1 but converges slowly due to its self-loop, state 1 has value 0.5.
+    // The thresholds are already met after the first iteration, so every sound method should stop far from convergence.
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 0, 0.99);
+    builder.newRowGroup(1);
+    builder.addNextValue(1, 1, 0.5);
+    storm::storage::SparseMatrix<double> A = builder.build(2, 2, 2);
+    std::vector<double> b = {0.01, 0.25};
+    storm::storage::BitVector filter(2, std::vector<uint64_t>{0});
+
+    for (auto method : {storm::solver::MinMaxMethod::SoundValueIteration, storm::solver::MinMaxMethod::IntervalIteration,
+                        storm::solver::MinMaxMethod::GuessingValueIteration}) {
+        for (bool useLowerBound : {true, false}) {
+            SCOPED_TRACE(storm::solver::toString(method) + (useLowerBound ? " with lower bound" : " with upper bound"));
+            storm::Environment env;
+            env.solver().minMax().setMethod(method);
+            env.solver().setForceSoundness(true);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+
+            auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>().create(env, A);
+            solver->setHasUniqueSolution(true);
+            solver->setHasNoEndComponents(true);
+            solver->setBounds(0.0, 10.0);
+            if (useLowerBound) {
+                solver->setTerminationCondition(
+                    std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(filter, false, 0.005, false));
+            } else {
+                solver->setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<double>>(filter, false, 9.95, true));
+            }
+            std::vector<double> x(2);
+            ASSERT_NO_THROW(solver->solveEquations(env, storm::OptimizationDirection::Minimize, x, b));
+            // Without early termination, x[0] would be within the precision of 1.
+            EXPECT_GT(std::abs(x[0] - 1.0), 1e-3) << "x[0] = " << x[0];
+        }
+    }
+}
+
+TEST(IntervalIterationJustPreciseEnough, MinMax) {
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 0, 0.9);
+    builder.addNextValue(1, 0, 0.9);
+    auto matrix = builder.build();
+    std::vector<double> b = {0.099, 0.05};  // Fixed points 0.99 and 0.5.
+    double const precision = 1e-3;
+
+    for (bool relative : {false, true}) {
+        for (auto dir : {storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize}) {
+            SCOPED_TRACE(::testing::Message() << "relative=" << relative << ", maximize=" << storm::solver::maximize(dir));
+            auto env = DoubleIntervalIterationEnvironment::createEnvironment();
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(precision));
+            env.solver().minMax().setRelativeTerminationCriterion(relative);
+            auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>().create(env, matrix);
+            solver->setHasUniqueSolution(true);
+            solver->setHasNoEndComponents(true);
+            solver->setBounds(0.0, 1.0);
+            std::vector<double> x(1);
+            ASSERT_TRUE(solver->solveEquations(env, dir, x, b));
+            ASSERT_TRUE(solver->hasSolutionLowerBounds());
+            ASSERT_TRUE(solver->hasSolutionUpperBounds());
+            double const lower = solver->getSolutionLowerBounds()[0];
+            double const upper = solver->getSolutionUpperBounds()[0];
+            double const exact = storm::solver::maximize(dir) ? 0.99 : 0.5;
+            double const tolerance = precision * (relative ? lower : 1.0);
+            EXPECT_LE(lower, exact);
+            EXPECT_GE(upper, exact);
+            EXPECT_DOUBLE_EQ(x[0], (lower + upper) / 2.0);
+            EXPECT_NEAR(x[0], exact, precision * (relative ? exact : 1.0));
+            EXPECT_LE(upper - lower, 2.0 * tolerance);
+            // With this slow contraction, stopping at half this width takes unnecessary iterations.
+            EXPECT_GT(upper - lower, tolerance);
+        }
+    }
 }
 }  // namespace

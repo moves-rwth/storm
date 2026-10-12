@@ -2,6 +2,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -154,12 +155,23 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
         constraintsStatesFormula = untilFormula.getLeftSubformula().asSharedPointer();
     } else if (subformula.isBoundedUntilFormula()) {
         storm::logic::BoundedUntilFormula const& boundedUntilFormula = subformula.asBoundedUntilFormula();
+        STORM_LOG_THROW(!boundedUntilFormula.hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException,
+                        "Reward-bounded POMDP properties with dimension-specific state subformulas are not supported.");
+        for (uint64_t i = 0; i < boundedUntilFormula.getDimension(); ++i) {
+            STORM_LOG_THROW(boundedUntilFormula.getLeftSubformula(i).isTrueFormula(), storm::exceptions::NotSupportedException,
+                            "Reward-bounded until properties for POMDPs currently require 'true' as the left-hand side, i.e., they must be reward-bounded "
+                            "reachability properties.");
+        }
         targetStatesFormula = boundedUntilFormula.getRightSubformula().asSharedPointer();
         constraintsStatesFormula = boundedUntilFormula.getLeftSubformula().asSharedPointer();
         bounded = true;
         for (uint64_t i = 0; i < boundedUntilFormula.getDimension(); ++i) {
-            STORM_LOG_ASSERT(boundedUntilFormula.getTimeBoundReference(i).isRewardBound(), "Expected a reward bound reference.");
-            rewardBoundReferences.push_back(boundedUntilFormula.getTimeBoundReference(i));
+            auto const& boundReference = boundedUntilFormula.getTimeBoundReference(i);
+            STORM_LOG_THROW(boundReference.isRewardBound() && !boundReference.hasRewardAccumulation(), storm::exceptions::NotSupportedException,
+                            "For POMDPs, only plain reward bounds are supported.");
+            STORM_LOG_THROW(boundReference.hasRewardModelName(), storm::exceptions::NotSupportedException,
+                            "For POMDPs, reward-bounded formulae must explicitly name a reward model for each bound.");
+            rewardBoundReferences.push_back(boundReference);
         }
     }
     if (targetStatesFormula && targetStatesFormula->isInFragment(storm::logic::propositional()) && constraintsStatesFormula &&
