@@ -40,7 +40,7 @@ UnpackedValue AffinePMdpDecomposition::decomposeAffine(storm::RationalFunction c
 }
 
 AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model,
-                                                  storm::models::sparse::StandardRewardModel<storm::RationalFunction> const* rewardModel) {
+                                                 storm::models::sparse::StandardRewardModel<storm::RationalFunction> const* rewardModel) {
     auto const& matrix = model.getTransitionMatrix();
     auto const& rowGroupIndices = matrix.getRowGroupIndices();
 
@@ -53,8 +53,8 @@ AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<st
         uint64_t state = std::upper_bound(rowGroupIndices.begin(), rowGroupIndices.end(), row) - rowGroupIndices.begin() - 1;
 
         for (auto const& entry : matrix.getRow(row)) {
-            UnpackedValue decomposed = decomposeAffine(entry.getValue(), "the transition from state " + std::to_string(state) + " (row " +
-                                                                              std::to_string(row) + ") to state " + std::to_string(entry.getColumn()));
+            UnpackedValue decomposed = decomposeAffine(entry.getValue(), "the transition from state " + std::to_string(state) + " (row " + std::to_string(row) +
+                                                                             ") to state " + std::to_string(entry.getColumn()));
             UnpackedTransition unpacked;
             unpacked.successor = entry.getColumn();
             unpacked.constant = decomposed.constant;
@@ -91,7 +91,7 @@ std::set<storm::RationalFunctionVariable> const& AffinePMdpDecomposition::getPar
 }
 
 std::optional<bool> AffinePMdpDecomposition::isGraphPreserving(storm::storage::ParameterRegion<storm::RationalFunction> const& region,
-                                                                uint64_t maxVertices) const {
+                                                               uint64_t maxVertices) const {
     uint64_t const n = parameters.size();
     // The shift below is UB for n >= 64; guard well before that, and before it could exceed maxVertices anyway.
     if (n >= 63 || (uint64_t{1} << n) > maxVertices) {

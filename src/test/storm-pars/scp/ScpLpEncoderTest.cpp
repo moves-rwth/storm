@@ -217,7 +217,7 @@ TEST(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
     storm::models::sparse::Dtmc<storm::RationalFunction> dtmc(matrix, trivialLabeling(3));
 
     std::vector<storm::RationalFunction> stateActionRewards{p + p + three, storm::utility::zero<storm::RationalFunction>(),
-                                                             storm::utility::zero<storm::RationalFunction>()};
+                                                            storm::utility::zero<storm::RationalFunction>()};
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> rewardModel(std::nullopt, stateActionRewards);
     AffinePMdpDecomposition decomposition(dtmc, &rewardModel);
 

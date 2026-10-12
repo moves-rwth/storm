@@ -191,7 +191,7 @@ TEST(AffinePMdpDecompositionTest, RewardDecomposition_PicksUpRewardOnlyParameter
     storm::models::sparse::Dtmc<storm::RationalFunction> dtmc(matrix, trivialLabeling(3));
 
     std::vector<storm::RationalFunction> stateActionRewards{two * c + one, storm::utility::zero<storm::RationalFunction>(),
-                                                             storm::utility::zero<storm::RationalFunction>()};
+                                                            storm::utility::zero<storm::RationalFunction>()};
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> rewardModel(std::nullopt, stateActionRewards);
 
     AffinePMdpDecomposition decomposition(dtmc, &rewardModel);
@@ -229,7 +229,7 @@ TEST(AffinePMdpDecompositionTest, NonAffineRewardThrows) {
     storm::models::sparse::Dtmc<storm::RationalFunction> dtmc(matrix, trivialLabeling(3));
 
     std::vector<storm::RationalFunction> stateActionRewards{p * p, storm::utility::zero<storm::RationalFunction>(),
-                                                             storm::utility::zero<storm::RationalFunction>()};
+                                                            storm::utility::zero<storm::RationalFunction>()};
     storm::models::sparse::StandardRewardModel<storm::RationalFunction> rewardModel(std::nullopt, stateActionRewards);
 
     STORM_SILENT_EXPECT_THROW(AffinePMdpDecomposition decomposition(dtmc, &rewardModel), storm::exceptions::NotSupportedException);
@@ -238,7 +238,7 @@ TEST(AffinePMdpDecompositionTest, NonAffineRewardThrows) {
 namespace {
 
 storm::models::sparse::Dtmc<storm::RationalFunction> buildSimpleParametricDtmc(carl::Variable const& varP,
-                                                                                std::shared_ptr<storm::RawPolynomialCache> const& cache) {
+                                                                               std::shared_ptr<storm::RawPolynomialCache> const& cache) {
     auto p = makeVarFunction(varP, cache);
     auto one = storm::RationalFunction(1);
     storm::storage::SparseMatrixBuilder<storm::RationalFunction> builder(3, 3, 4);
@@ -260,10 +260,8 @@ TEST(AffinePMdpDecompositionTest, IsGraphPreserving_TrueForAnInteriorRegion) {
     auto dtmc = buildSimpleParametricDtmc(varP, cache);
     AffinePMdpDecomposition decomposition(dtmc);
 
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)}};
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)}};
     storm::storage::ParameterRegion<storm::RationalFunction> region(lower, upper);
 
     auto result = decomposition.isGraphPreserving(region);
@@ -298,10 +296,8 @@ TEST(AffinePMdpDecompositionTest, IsGraphPreserving_SkippedWhenTooManyVertices) 
     auto dtmc = buildSimpleParametricDtmc(varP, cache);
     AffinePMdpDecomposition decomposition(dtmc);
 
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)}};
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)}};
     storm::storage::ParameterRegion<storm::RationalFunction> region(lower, upper);
 
     EXPECT_FALSE(decomposition.isGraphPreserving(region, /*maxVertices=*/1).has_value());

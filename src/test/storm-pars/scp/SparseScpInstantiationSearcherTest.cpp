@@ -34,8 +34,7 @@ std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> makeTask(
 }
 
 std::shared_ptr<storm::logic::Formula const> parseSingleFormula(std::string const& formulaString, storm::prism::Program const& program) {
-    auto formulas =
-        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
+    auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
     return formulas.at(0);
 }
 
@@ -71,8 +70,8 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc) {
     // Independently re-verify with a fresh instantiation checker, not reusing anything internal to the searcher.
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
-        storm::Environment(), *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
+                                                                                                                                    *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
@@ -114,13 +113,12 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber> searcher(*dtmc);
     auto result = searcher.run(storm::Environment(), task);
     static_assert(std::is_same_v<decltype(result.value), storm::RationalNumber>,
-                 "ScpResult<storm::RationalNumber>::value must actually be storm::RationalNumber, not double.");
+                  "ScpResult<storm::RationalNumber>::value must actually be storm::RationalNumber, not double.");
 
     ASSERT_EQ(ScpStatus::Feasible, result.status);
 
     // Exact, not approximate: 51/100 built from exact integer division, not a double literal.
-    storm::RationalNumber exactThreshold =
-        storm::utility::convertNumber<storm::RationalNumber>(51) / storm::utility::convertNumber<storm::RationalNumber>(100);
+    storm::RationalNumber exactThreshold = storm::utility::convertNumber<storm::RationalNumber>(51) / storm::utility::convertNumber<storm::RationalNumber>(100);
     EXPECT_GE(result.value, exactThreshold);
 
     // Independently re-verify with a fresh, RationalNumber-precision instantiation checker, not
@@ -134,7 +132,8 @@ TEST(SparseScpInstantiationSearcherTest, FindsCertifiedWitness_Dtmc_ExactPrecisi
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
     uint64_t initialState = dtmc->getInitialStates().getNextSetIndex(0);
-    storm::RationalNumber verifiedValue = verifyResult->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getFiniteValueVector()[initialState];
+    storm::RationalNumber verifiedValue =
+        verifyResult->template asExplicitQuantitativeCheckResult<storm::RationalNumber>().getFiniteValueVector()[initialState];
 
     EXPECT_EQ(result.value, verifiedValue);
     EXPECT_GE(verifiedValue, exactThreshold);
@@ -510,8 +509,8 @@ TEST(SparseScpInstantiationSearcherTest, AtMost_Dtmc_Reward) {
 
     std::shared_ptr<storm::logic::Formula> clone = formula->clone();
     clone->asOperatorFormula().removeBound();
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
-        storm::Environment(), *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
+                                                                                                                                    *dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);
     verifier.specifyFormula(verifyTask);
     auto verifyResult = verifier.check(storm::Environment(), result.valuation);
@@ -614,12 +613,10 @@ TEST(SparseScpInstantiationSearcherTest, RewardOnlyParameter_UsableInSearch) {
     carl::Variable varC = *rewVars.begin();
 
     // Region center: p=0.5, c=1.25 -> R = c/p = 2.5, which does not satisfy R<=2.
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)},
-        {varC, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)}};
-    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{
-        {varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)},
-        {varC, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(2.0)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lower{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.1)},
+                                                                              {varC, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)}};
+    storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upper{{varP, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.9)},
+                                                                              {varC, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(2.0)}};
     storm::storage::ParameterRegion<storm::RationalFunction> region(lower, upper);
 
     auto task = makeTask(formula, region);
@@ -746,8 +743,8 @@ TEST(SparseScpInstantiationSearcherTest, NamedRewardModel_ResolvesCorrectly) {
 
     // Independently re-verify with a fresh checker specifying "cost1" explicitly, confirming the
     // certified valuation genuinely satisfies *that* reward model's threshold.
-    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(
-        storm::Environment(), *dtmc);
+    storm::modelchecker::SparseDtmcInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> verifier(storm::Environment(),
+                                                                                                                                    *dtmc);
     std::shared_ptr<storm::logic::Formula> clone = formulaCost1->clone();
     clone->asOperatorFormula().removeBound();
     storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> verifyTask(*clone, false);

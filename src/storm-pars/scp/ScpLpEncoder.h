@@ -120,9 +120,9 @@ class ScpLpEncoder {
      * includes the row's affine reward, from decomposition.getReward()).
      */
     ScpLpEncoder(AffinePMdpDecomposition const& decomposition, std::vector<uint64_t> rowGroupIndices, storm::storage::BitVector zeroStates,
-                storm::storage::BitVector oneStates, storm::storage::BitVector infiniteStates, storm::storage::BitVector excludedRows,
-                uint64_t initialState, std::map<storm::RationalFunctionVariable, std::pair<double, double>> parameterBounds, double threshold,
-                ThresholdDirection direction, PropertyKind propertyKind, ScpOptions options);
+                 storm::storage::BitVector oneStates, storm::storage::BitVector infiniteStates, storm::storage::BitVector excludedRows, uint64_t initialState,
+                 std::map<storm::RationalFunctionVariable, std::pair<double, double>> parameterBounds, double threshold, ThresholdDirection direction,
+                 PropertyKind propertyKind, ScpOptions options);
 
     /*!
      * Builds the LP for one SCP iteration, linearized around (valuation, stateValues) with the
@@ -137,8 +137,8 @@ class ScpLpEncoder {
      * for "maybe" states (not zeroStates/oneStates/infiniteStates) are read.
      * @param trustRegionRadius The multiplicative trust region radius (>= 1); see ScpOptions.
      */
-    EncodedLp encode(storm::Environment const& env, std::map<storm::RationalFunctionVariable, double> const& valuation,
-                     std::vector<double> const& stateValues, double trustRegionRadius) const;
+    EncodedLp encode(storm::Environment const& env, std::map<storm::RationalFunctionVariable, double> const& valuation, std::vector<double> const& stateValues,
+                     double trustRegionRadius) const;
 
    private:
     AffinePMdpDecomposition const& decomposition;

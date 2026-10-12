@@ -36,8 +36,8 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     STORM_LOG_THROW(options.trustRegionMinExcess >= 0.0, storm::exceptions::NotSupportedException, "ScpOptions::trustRegionMinExcess must be >= 0.");
     STORM_LOG_THROW(options.maxIterations >= 1, storm::exceptions::NotSupportedException, "ScpOptions::maxIterations must be >= 1.");
 
-    STORM_LOG_THROW(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(),
-                    storm::exceptions::NotSupportedException, "SCP currently only supports probability- and reward operator formulas.");
+    STORM_LOG_THROW(task->getFormula().isProbabilityOperatorFormula() || task->getFormula().isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
+                    "SCP currently only supports probability- and reward operator formulas.");
     bool const isReward = task->getFormula().isRewardOperatorFormula();
     STORM_LOG_THROW(task->getFormula().asOperatorFormula().getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException,
                     "SCP currently only supports unbounded reachability (F) properties.");
@@ -58,9 +58,8 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     auto const& targetSubformula = task->getFormula().asOperatorFormula().getSubformula().asEventuallyFormula().getSubformula();
     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(model);
     storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> targetCheckTask(targetSubformula);
-    storm::storage::BitVector targetStates = propositionalChecker.check(targetCheckTask)
-                                                 ->template asExplicitQualitativeCheckResult<ParametricType>()
-                                                 .getTruthValuesVector();
+    storm::storage::BitVector targetStates =
+        propositionalChecker.check(targetCheckTask)->template asExplicitQualitativeCheckResult<ParametricType>().getTruthValuesVector();
     storm::storage::BitVector allStates(model.getNumberOfStates(), true);
 
     // For a probability property: zeroStates/oneStates are Prob0/Prob1. For a reward property:
@@ -89,7 +88,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             excludedRows = ~model.getTransitionMatrix().getRowFilter(maybeStates, ~infiniteStates);
         } else {
             auto probs = storm::solver::maximize(schedulerDirection) ? storm::utility::graph::performProb01Max(model, allStates, targetStates)
-                                                                      : storm::utility::graph::performProb01Min(model, allStates, targetStates);
+                                                                     : storm::utility::graph::performProb01Min(model, allStates, targetStates);
             zeroStates = std::move(probs.first);
             oneStates = std::move(probs.second);
             infiniteStates = storm::storage::BitVector(model.getNumberOfStates(), false);
@@ -188,17 +187,16 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         // graph analysis above, no LP or exact model check needed (and none of the SCP-specific
         // machinery below is set up to handle this degenerate case: ScpLpEncoder asserts its
         // initial state is never a zero/one/infinite state).
-        ConstantType constantValue = oneStates.get(initialState)      ? storm::utility::one<ConstantType>()
+        ConstantType constantValue = oneStates.get(initialState)        ? storm::utility::one<ConstantType>()
                                      : infiniteStates.get(initialState) ? storm::utility::infinity<ConstantType>()
                                                                         : storm::utility::zero<ConstantType>();
         return ScpResult<ConstantType>{bound.isSatisfied(constantValue) ? ScpStatus::Feasible : ScpStatus::Infeasible, initialValuation, constantValue, 0};
     }
 
-    std::vector<uint64_t> rowGroupIndices(model.getTransitionMatrix().getRowGroupIndices().begin(),
-                                          model.getTransitionMatrix().getRowGroupIndices().end());
+    std::vector<uint64_t> rowGroupIndices(model.getTransitionMatrix().getRowGroupIndices().begin(), model.getTransitionMatrix().getRowGroupIndices().end());
     PropertyKind propertyKind = isReward ? PropertyKind::Reward : PropertyKind::Probability;
     ScpLpEncoder encoder(decomposition, rowGroupIndices, zeroStates, oneStates, infiniteStates, excludedRows, initialState, parameterBounds, threshold,
-                        direction, propertyKind, options);
+                         direction, propertyKind, options);
 
     storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> checkTask(task->getFormula(), /*onlyInitialStatesRelevant=*/false);
 
@@ -231,9 +229,11 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
 template<typename SparseModelType, typename ConstantType>
 template<typename InstantiationChecker>
-ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, ConstantType>::runLoop(
-    storm::Environment const& env, InstantiationChecker& instantiationChecker, ScpLpEncoder const& encoder, storm::logic::Bound const& bound,
-    ThresholdDirection direction, uint64_t initialState, Valuation const& initialValuation) const {
+ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, ConstantType>::runLoop(storm::Environment const& env,
+                                                                                               InstantiationChecker& instantiationChecker,
+                                                                                               ScpLpEncoder const& encoder, storm::logic::Bound const& bound,
+                                                                                               ThresholdDirection direction, uint64_t initialState,
+                                                                                               Valuation const& initialValuation) const {
     // Returns the model-checked value vector at ConstantType precision, never downcast to double --
     // this is what makes the accept/reject and threshold-satisfaction decisions below exact when
     // ConstantType is (e.g. storm::RationalNumber), not just "double, but computed by an exact

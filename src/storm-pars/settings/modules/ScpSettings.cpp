@@ -26,14 +26,13 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
                                          .build())
                         .build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, trustRegionFactorOption, false, "The trust region growth/shrink factor (gamma)")
-            .setIsAdvanced()
-            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionFactorOption, "The factor")
-                             .setDefaultValueDouble(1.5)
-                             .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
-                             .build())
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionFactorOption, false, "The trust region growth/shrink factor (gamma)")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionFactorOption, "The factor")
+                                         .setDefaultValueDouble(1.5)
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
+                                         .build())
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionMaxOption, false, "The upper cap on the trust region radius")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionMaxOption, "The cap")
@@ -41,15 +40,14 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
                                          .build())
                         .build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, trustRegionMinExcessOption, false,
-                                       "The termination threshold on (trust region radius - 1); the radius asymptotically approaches 1, never 0")
-            .setIsAdvanced()
-            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionMinExcessOption, "The threshold")
-                             .setDefaultValueDouble(1e-4)
-                             .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
-                             .build())
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionMinExcessOption, false,
+                                                   "The termination threshold on (trust region radius - 1); the radius asymptotically approaches 1, never 0")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionMinExcessOption, "The threshold")
+                                         .setDefaultValueDouble(1e-4)
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .build())
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, maxIterationsOption, false, "The maximum number of SCP iterations")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument(maxIterationsOption, "The maximum number of iterations")

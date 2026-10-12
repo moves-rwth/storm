@@ -112,8 +112,7 @@ EncodedLp ScpLpEncoder::encode(storm::Environment const& env, std::map<storm::Ra
             }
             return expr;
         }
-        STORM_LOG_ASSERT(!infiniteStates.get(ut.successor),
-                         "A row with an infinite-value successor was not excluded before building its Bellman constraint.");
+        STORM_LOG_ASSERT(!infiniteStates.get(ut.successor), "A row with an infinite-value successor was not excluded before building its Bellman constraint.");
         double pHatSucc = stateValues.at(ut.successor);
         storm::expressions::Expression pSucc = result.stateVariables.at(ut.successor).getExpression();
         storm::expressions::Expression expr = pSucc * solver->getConstant(ut.constant);
