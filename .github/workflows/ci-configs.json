@@ -170,7 +170,6 @@
     {
       "name": "Mac 14 ARM",
       "scope": [
-        "normal",
         "extensive"
       ],
       "buildType": "Release",
@@ -204,13 +203,23 @@
     {
       "name": "Mac 26 Intel",
       "scope": [
-        "normal",
         "extensive"
       ],
       "buildType": "Release",
       "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
       "distro": "macos-26-intel",
       "xcode": "latest-stable"
+    },
+    {
+      "name": "XCode 27 ARM",
+      "scope": [
+        "normal",
+        "extensive"
+      ],
+      "buildType": "Release",
+      "cmakeArgs": "-DSTORM_WARNING_AS_ERROR=ON",
+      "distro": "xcode-27",
+      "xcode": "latest"
     }
   ]
 }

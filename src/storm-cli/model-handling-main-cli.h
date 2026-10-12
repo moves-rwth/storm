@@ -4,6 +4,7 @@
 #include <optional>
 #include <sstream>
 
+#include "storm-cli-utilities/SettingsUtils.h"
 #include "storm-cli-utilities/model-handling.h"
 
 #include "storm-counterexamples/api/counterexamples.h"
@@ -47,13 +48,13 @@ inline void printCounterexample(std::shared_ptr<storm::counterexamples::Countere
 
 template<typename ModelType>
     requires(!std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&) {
+inline void generateCounterexamples(std::shared_ptr<ModelType> const&, SymbolicInput const&, ModelProcessingInformation const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 
 template<typename ModelType>
     requires(std::derived_from<ModelType, storm::models::sparse::Model<double>>)
-inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input) {
+inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseModel, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     using ValueType = typename ModelType::ValueType;
 
     for (auto& rewModel : sparseModel->getRewardModels()) {
@@ -74,7 +75,7 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MILP is currently only supported for MDPs.");
                 counterexample = storm::api::computeHighLevelCounterexampleMilp(
-                    input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                    mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
             } else {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
                                 storm::exceptions::NotSupportedException,
@@ -82,10 +83,10 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
 
                 if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
                 } else {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
                 }
             }
             watch.stop();
@@ -124,10 +125,12 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 case storm::modelchecker::FilterType::ARGMIN:
                 case storm::modelchecker::FilterType::ARGMAX:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
+                    break;
                 case storm::modelchecker::FilterType::EXISTS:
                 case storm::modelchecker::FilterType::FORALL:
                 case storm::modelchecker::FilterType::COUNT:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for qualitative results.");
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
@@ -188,6 +191,7 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
             case storm::modelchecker::FilterType::ARGMIN:
             case storm::modelchecker::FilterType::ARGMAX:
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Outputting states is not supported.");
+                break;
             case storm::modelchecker::FilterType::SUM:
             case storm::modelchecker::FilterType::AVG:
             case storm::modelchecker::FilterType::MIN:
@@ -456,8 +460,9 @@ template<typename ValueType>
 void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& sparseModel, SymbolicInput const& input,
                  ModelProcessingInformation const& mpi) {
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto verificationCallback = [&sparseModel, &ioSettings, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
-                                                                  std::shared_ptr<storm::logic::Formula const> const& states) {
+    bool const preferEliminationChecker = storm::cli::preferEliminationChecker();
+    auto verificationCallback = [&sparseModel, &ioSettings, &mpi, preferEliminationChecker](std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                                            std::shared_ptr<storm::logic::Formula const> const& states) {
         auto createTask = [&ioSettings](auto const& f, bool onlyInitialStates) {
             if constexpr (storm::IsIntervalType<ValueType>) {
                 STORM_LOG_THROW(ioSettings.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
@@ -473,14 +478,15 @@ void verifyModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const&
         if (ioSettings.isExportSchedulerSet()) {
             task.setProduceSchedulers(true);
         }
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, task);
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, task, preferEliminationChecker);
 
         std::unique_ptr<storm::modelchecker::CheckResult> filter;
         if (filterForInitialStates) {
             using SolutionType = storm::IntervalBaseType<ValueType>;
             filter = std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<SolutionType>>(sparseModel->getInitialStates());
         } else if (!states->isTrueFormula()) {  // No need to apply filter if it is the formula 'true'
-            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false));
+            filter = storm::api::verifyWithSparseEngine<ValueType>(mpi.env, sparseModel, createTask(states, false), preferEliminationChecker);
         }
         if (result && filter) {
             result->filter(filter->asQualitativeCheckResult());
@@ -673,7 +679,7 @@ inline void processInput(SymbolicInput const& input, ModelProcessingInformation 
         std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModel(input, mpi);
         if (model) {
             if (counterexampleSettings.isCounterexampleSet()) {
-                castAndApply(model, [&input](auto const& m) { generateCounterexamples(m, input); });
+                castAndApply(model, [&input, &mpi](auto const& m) { generateCounterexamples(m, input, mpi); });
             } else {
                 castAndApply(model, [&input, &mpi](auto const& m) { verifyModel(m, input, mpi); });
             }

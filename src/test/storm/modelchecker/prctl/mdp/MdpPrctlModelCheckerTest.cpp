@@ -818,9 +818,6 @@ STORM_EXPENSIVE_TYPED_TEST(MdpPrctlModelCheckerTest, AsynchronousLeader) {
 TYPED_TEST(MdpPrctlModelCheckerTest, MaybeStateEndComponent) {
     // The best scheduler leaves x=0 and x=1 through their probabilistic choices, reaching the target with
     // probability 1/2 * 1/2.
-    if (!this->isSparseModel()) {
-        GTEST_SKIP() << "The sound methods of the symbolic engines answer 1/2 on this model.";
-    }
     auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/maybe_state_end_component.nm", "Pmax=? [F \"target\"]");
     auto model = std::move(modelFormulas.first);
     auto tasks = this->getTasks(modelFormulas.second);
