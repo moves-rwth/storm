@@ -519,7 +519,7 @@ std::string FormulaParserGrammar::toString(BinaryPathOperator op) {
         case BinaryPathOperator::Release:
             return "R";
     }
-    return "";
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentException, "Unknown BinaryPathOperator.");
 }
 
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createBinaryPathFormula(
