@@ -2,6 +2,7 @@
 
 #include "storm-pomdp/beliefs/policy/ObservationBasedFiniteStateController.h"
 #include "storm/api/export.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Pomdp.h"
@@ -23,11 +24,12 @@ ObservationSignature getObservationSignature(storm::models::sparse::Pomdp<PomdpV
  *
  * @tparam PomdpValueType The type used for probabilities and rewards in the POMDP and resulting DTMC.
  * @tparam FscValueType The type used for probabilities in randomised FSC action outputs.
- * @param pomdp The POMDP to which the controller is applied.
+ * @param pomdp The canonic POMDP to which the controller is applied.
  * @param fsc The finite-state controller to apply.
  * @param treatUnspecifiedChoiceAsDontCare If true, an unspecified FSC output selects local action zero and keeps the current FSC memory node. If false,
  * an unspecified output causes an exception.
  * @return The DTMC induced by the POMDP and the FSC.
+ * @throws storm::exceptions::IllegalArgumentException If the POMDP is not canonic.
  * @throws storm::exceptions::NotSupportedException If the POMDP does not have exactly one initial state.
  * @throws storm::exceptions::UnexpectedException If required observation or action names cannot be matched, or if the FSC has an unspecified output and
  * @p treatUnspecifiedChoiceAsDontCare is false.
@@ -36,6 +38,7 @@ template<typename PomdpValueType, typename FscValueType>
 storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::pomdp::policy::ObservationBasedFiniteStateController<FscValueType> const& fsc,
     bool treatUnspecifiedChoiceAsDontCare = false) {
+    STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "Applying an FSC requires a canonic POMDP.");
     STORM_LOG_THROW(
         pomdp.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
         "Applying an FSC requires exactly one initial state, but the POMDP contains " << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
