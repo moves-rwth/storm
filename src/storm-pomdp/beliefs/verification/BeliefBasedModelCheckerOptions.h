@@ -15,7 +15,7 @@ struct BeliefBasedModelCheckerOptions {
     bool buildChoiceLabeling = true;
     bool generatePolicy = false;
     bool useClipping = false;
-    /// Cut non-target beliefs only when their preprocessing lower and upper bounds have exactly zero gap.
+    /// Cut non-target beliefs only when their preprocessing lower and upper bounds have exactly zero gap. Incompatible with generatePolicy.
     bool cutZeroGap = false;
 
     ExplorationQueueOrder explorationQueueOrder = ExplorationQueueOrder::FIFO;

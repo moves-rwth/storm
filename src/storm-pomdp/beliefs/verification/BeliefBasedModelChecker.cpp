@@ -426,6 +426,8 @@ BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, Pol
     storm::Environment const& env, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
     storm::pomdp::storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds) {
+    STORM_LOG_THROW(!options.generatePolicy || !options.cutZeroGap, storm::exceptions::NotSupportedException,
+                    "Zero-gap cutting is not supported for policy generation because cut-off beliefs do not retain a continuation policy.");
     if (options.useClipping) {
         return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType, NoAbstractionType,
                                        ClippingExplorationInformation<BeliefMdpValueType, Belief<BeliefValueType>>>(env, inputPomdp, propertyInformation,
