@@ -372,6 +372,24 @@ TEST(ApplyObservationBasedFiniteStateController, NamedActionMappingsTakePreceden
     }
 }
 
+TEST(ApplyObservationBasedFiniteStateController, MatchesLabelledChoicesForUnnamedActions) {
+    auto pomdp = buildSingleStatePomdp(true, true);
+    for (std::string const& actionName : {"first", "second"}) {
+        SCOPED_TRACE(actionName);
+        std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, actionName}}}}};
+        storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0, std::nullopt, actionNames);
+        fsc.addDeterministicActionTransition(0, 0, 1, 0);
+
+        auto unnamedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc);
+        EXPECT_EQ(unnamedDtmc.getNumberOfStates(), 1);
+        EXPECT_DOUBLE_EQ(unnamedDtmc.getRewardModel("rew").getStateRewardVector().at(0), 9.0);
+
+        fsc.addDeterministicActionTransition(0, 0, 0, 0);
+        auto namedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc);
+        EXPECT_DOUBLE_EQ(namedDtmc.getRewardModel("rew").getStateRewardVector().at(0), actionName == "first" ? 5.0 : 9.0);
+    }
+}
+
 TEST(ApplyObservationBasedFiniteStateController, RejectsNamedActionMissingFromUnlabelledChoices) {
     auto pomdp = buildSingleStatePomdp(true);
     pomdp.getOptionalChoiceLabeling() = storm::models::sparse::ChoiceLabeling(2);
