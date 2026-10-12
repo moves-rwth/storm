@@ -8,7 +8,7 @@
 namespace storm {
 
 Environment::Environment() {
-    modelToleranceValue = 1e-09;
+    modelToleranceValue = DefaultModelTolerance;
 }
 
 Environment::~Environment() {
