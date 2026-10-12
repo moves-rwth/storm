@@ -1,4 +1,6 @@
 #include <memory>
+#include <optional>
+#include <sstream>
 #include <type_traits>
 
 #include "storm-cli-utilities/cli.h"
@@ -76,21 +78,41 @@ void warnIfRegionTouchesBoundary(storm::storage::ParameterRegion<ValueType> cons
 }
 
 /*!
- * Emits a warning for every region that does not (or may not) preserve the graph structure of the model.
+ * Formats a witness point of a region as a comma-separated list of assignments.
+ */
+inline std::string formatWitness(storm::pars::analysis::RegionWitness const& witness) {
+    std::stringstream stream;
+    bool first = true;
+    for (auto const& [variable, value] : witness) {
+        if (!first) {
+            stream << ", ";
+        }
+        stream << variable << " = " << value;
+        first = false;
+    }
+    return stream.str();
+}
+
+/*!
+ * Checks the graph preservation of the given regions.
  *
- * For parametric models the graph-preservation constraints collected from the model are decided exactly over
- * each region where this is possible, which detects non-graph-preserving regions that the boundary heuristic
- * below would miss. Regions for which the exact check is unavailable or undecided fall back to that heuristic.
+ * The graph-preservation constraints collected from the model are decided exactly over each region where this
+ * is possible, which detects non-graph-preserving regions that the boundary heuristic below would miss.
+ *
+ * If `assumeGraphPreserving` is set, the regions are assumed to preserve the graph, and we only warn about
+ * regions that are provably not graph-preserving. Otherwise we require a proof of graph preservation: regions
+ * that are provably not graph-preserving, and regions for which graph preservation cannot be established
+ * (e.g. because the model is not a sparse parametric model or a constraint is non-linear), cause an exception.
  */
 template<typename ValueType>
-void warnAboutNonGraphPreservingRegions(std::shared_ptr<storm::models::ModelBase> const& model,
-                                        std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+void checkGraphPreservation(std::shared_ptr<storm::models::ModelBase> const& model, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions,
+                            bool assumeGraphPreserving) {
     if (regions.empty()) {
         return;
     }
 
-    // The exact check is only available for parametric (rational-function) models. If the constraints cannot
-    // be collected, we fall back to the heuristic for all regions.
+    // The exact check is only available for parametric (rational-function) sparse models. If the constraints
+    // cannot be collected, graph preservation is treated as undecided below.
     std::unique_ptr<storm::analysis::ConstraintCollector> collector;
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         if (model && model->isSparseModel()) {
@@ -100,29 +122,59 @@ void warnAboutNonGraphPreservingRegions(std::shared_ptr<storm::models::ModelBase
                     collector = std::make_unique<storm::analysis::ConstraintCollector>(*sparseModel);
                 }
             } catch (storm::exceptions::BaseException const&) {
-                // The constraints could not be collected; use the heuristic below.
+                // The constraints could not be collected; treated as undecided below.
             }
         }
     }
 
     for (auto const& region : regions) {
+        std::optional<storm::pars::analysis::RegionCheckResult> result;
         if (collector) {
             storm::pars::analysis::RegionConstraintChecker checker(*collector);
             try {
-                auto const result = checker.checkGraphPreservation(region);
-                if (result.verdict == storm::pars::analysis::ConstraintVerdict::Satisfied) {
-                    continue;
-                }
-                if (result.verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
-                    STORM_LOG_WARN("Region " << region << " does not preserve the graph structure of the parametric model (the constraint '"
-                                             << result.violatedConstraint << "' is violated). Set --assume-graph-preserving false.");
-                    continue;
-                }
+                result = checker.checkGraphPreservation(region);
             } catch (storm::exceptions::BaseException const&) {
-                // E.g. the region does not cover all constrained variables; use the heuristic below.
+                // E.g. the region does not cover all constrained variables; treated as undecided.
             }
         }
-        warnIfRegionTouchesBoundary(region);
+
+        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Satisfied) {
+            continue;
+        }
+
+        if (!assumeGraphPreserving) {
+            // The user asked us to establish graph preservation, so we must not silently continue.
+            if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
+                std::stringstream message;
+                message << "Region " << region << " is provably not graph-preserving: the constraint '" << result->violatedConstraint << "' is violated";
+                if (result->witness) {
+                    message << " at the point " << formatWitness(*result->witness);
+                }
+                message << ". Pass --assume-graph-preserving true to proceed nevertheless.";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, message.str());
+            }
+            if (!collector) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                "Cannot prove that region "
+                                    << region
+                                    << " preserves the graph structure of the parametric model; graph preservation can only be established for "
+                                       "sparse parametric models. Pass --assume-graph-preserving true to skip this check.");
+            }
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Cannot prove that region "
+                                << region
+                                << " preserves the graph structure of the parametric model; the graph-preservation constraints could not be "
+                                   "decided (for example because they are non-linear). Pass --assume-graph-preserving true to skip this check.");
+        }
+
+        // We assume graph preservation and only inform the user about potential issues.
+        if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
+            STORM_LOG_WARN("Region " << region << " does not preserve the graph structure of the parametric model (the constraint '"
+                                     << result->violatedConstraint << "' is violated). Set --assume-graph-preserving false.");
+        } else {
+            // The verdict is undecided or the exact check is unavailable: fall back to the coarse heuristic.
+            warnIfRegionTouchesBoundary(region);
+        }
     }
 }
 
@@ -135,10 +187,18 @@ std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared
     } else if (regionSettings.isRegionBoundSet()) {
         result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
     }
-    if (regionSettings.isAssumeGraphPreservingSet()) {
-        // We want to warn the user in case the region is actually not graph preserving.
-        warnAboutNonGraphPreservingRegions<ValueType>(model, result);
+    bool assumeGraphPreserving = regionSettings.isAssumeGraphPreservingSet();
+    if (!assumeGraphPreserving) {
+        // Robust parameter lifting handles non-graph-preserving regions by itself and does not profit from knowing
+        // that the region is graph-preserving, so we skip the check when it is selected.
+        auto engine = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>().getRegionCheckEngine();
+        if (engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting) {
+            return result;
+        }
     }
+    // If graph preservation is assumed, we only warn about regions that are provably not graph-preserving.
+    // Otherwise we require a proof and raise an error if graph preservation cannot be established.
+    checkGraphPreservation<ValueType>(model, result, assumeGraphPreserving);
     return result;
 }
 
@@ -389,11 +449,9 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
-
-    STORM_LOG_THROW(graphPreserving || engine == storm::modelchecker::RegionCheckEngine::RobustParameterLifting, storm::exceptions::NotSupportedException,
-                    "Selected region verification engine (--regionverif:engine) requires the assumption that the region is graph-preserving "
-                    "(--assume-graph-preserving true).");
+    // If graph preservation is not assumed, parseRegions has proven it, unless the robust engine handles the
+    // (possibly non-graph-preserving) region itself, in which case the check is skipped there.
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet() || engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting;
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -463,7 +521,9 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet();
+    // If graph preservation is not assumed, parseRegions has proven it, unless the robust engine handles the
+    // (possibly non-graph-preserving) region itself, in which case the check is skipped there.
+    bool graphPreserving = regionSettings.isAssumeGraphPreservingSet() || engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting;
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());
