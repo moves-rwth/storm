@@ -79,11 +79,19 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
         STORM_LOG_THROW(pomdp.hasChoiceLabeling(), storm::exceptions::UnexpectedException,
                         "The FSC uses action names, but the POMDP has no choice labeling. Cannot apply the FSC robustly.");
         std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> actionMap;
+        auto const nrStates = pomdp.getNumberOfStates();
+        std::vector<uint64_t> representativeStates(pomdp.getNrObservations(), nrStates);
+        for (uint64_t state = 0; state < nrStates; ++state) {
+            auto& representativeState = representativeStates[pomdp.getObservation(state)];
+            if (representativeState == nrStates) {
+                representativeState = state;
+            }
+        }
         for (uint64_t pomdpObservationId = 0; pomdpObservationId < pomdp.getNrObservations(); ++pomdpObservationId) {
-            if (pomdp.getStatesWithObservation(pomdpObservationId).empty()) {
+            auto const representativeState = representativeStates[pomdpObservationId];
+            if (representativeState == nrStates) {
                 continue;
             }
-            uint64_t representativeState = *pomdp.getStatesWithObservation(pomdpObservationId).begin();
             uint64_t const pomdpRowGroupIndex = pomdp.getTransitionMatrix().getRowGroupIndices()[representativeState];
             uint64_t const pomdpRowGroupSize = pomdp.getTransitionMatrix().getRowGroupSize(representativeState);
             uint64_t const fscObservationId = pomdpObservationIdToFscObservationId && pomdpObservationIdToFscObservationId->contains(pomdpObservationId)
