@@ -350,8 +350,7 @@ TEST(UmbTest, DuplicateBranches) {
     // Different rewards for the same transition can not be represented in a sparse model
     {
         auto umb = createUmbWithDuplicateBranch(4.0);
-        STORM_SILENT_EXPECT_THROW(storm::umb::sparseModelFromUmb<double>(umb), storm::exceptions::NotSupportedException)
-            << "The UMB model contains multiple branches with the same source choice and target state but different branch rewards which are not supported.";
+        STORM_SILENT_EXPECT_THROW(storm::umb::sparseModelFromUmb<double>(umb), storm::exceptions::NotSupportedException);
     }
 }
 
