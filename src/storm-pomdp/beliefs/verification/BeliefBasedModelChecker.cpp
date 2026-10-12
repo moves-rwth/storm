@@ -155,7 +155,7 @@ typename BeliefExploration<BeliefMdpValueType, PomdpModelType, BeliefType>::Term
                 return storm::utility::one<BeliefMdpValueType>();
             } else {
                 return std::nullopt;
-            };
+            }
         };
     }
 }
@@ -378,7 +378,7 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType> checkRewardAwareUnfoldOrDiscre
                 storm::utility::graph::performProbGreater0A(processedMdp->getTransitionMatrix(), processedMdp->getTransitionMatrix().getRowGroupIndices(),
                                                             processedMdp->getBackwardTransitions(), allStates, targetStates);
         }
-        auto mergingResult = storm::transformer::GoalStateMerger(*processedMdp)
+        auto mergingResult = storm::transformer::GoalStateMerger<BeliefMdpValueType>(*processedMdp)
                                  .mergeTargetAndSinkStates(probGreaterZeroStates, ~probGreaterZeroStates, ~allStates, rewardModelNames);
         processedMdp = mergingResult.model->template as<storm::models::sparse::Mdp<BeliefMdpValueType>>();
         STORM_LOG_INFO("Merging of sink states resulted in a model with " << processedMdp->getNumberOfStates() << " states.");
