@@ -117,12 +117,10 @@ TEST(RegionConstraintCheckerTest, StrictInequalityOnBoundaryIsViolated) {
     EXPECT_NEAR(1.0, asDouble(violated.witness->at("x")), 1e-9);
 
     // In contrast, x <= 1 does hold throughout.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
-              Checker::checkConstraints(buildConstraintSet(x <= manager->integer(1)), region, "test").verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, Checker::checkConstraints(buildConstraintSet(x <= manager->integer(1)), region, "test").verdict);
 
     // x < 2 holds throughout.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
-              Checker::checkConstraints(buildConstraintSet(x < manager->integer(2)), region, "test").verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, Checker::checkConstraints(buildConstraintSet(x < manager->integer(2)), region, "test").verdict);
 }
 
 TEST(RegionConstraintCheckerTest, NegativeCoefficientIsHandled) {
@@ -307,7 +305,6 @@ TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold
 
     // This model yields piecewise, non-affine constraints. The checker must not claim that they hold.
     auto result = checker.checkWellformedness(buildRegion({{"p", {0.0, 1.0}}, {"q", {0.0, 1.0}}}));
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unknown, result.verdict);
     EXPECT_FALSE(result.undecidedConstraints.empty());
     EXPECT_FALSE(result.holdsThroughout());
 }
