@@ -426,7 +426,7 @@ storm::storage::sparse::ModelComponents<ValueType> constructComponents(storm::mo
         if (rewmodel.hasStateActionRewards()) {
             stateActionRewards.emplace();
             stateActionRewards->reserve(numChoices);
-            forEachChoice([&stateActionRewards, &rewmodel](auto _, StateIdType originalChoice) {
+            forEachChoice([&stateActionRewards, &rewmodel](uint64_t _, StateIdType originalChoice) {
                 stateActionRewards->push_back(rewmodel.getStateActionReward(originalChoice));
             });
         }

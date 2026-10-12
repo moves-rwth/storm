@@ -175,7 +175,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> ToStateBasedObservation
         if (rewmodel.hasStateActionRewards()) {
             stateActionRewards.emplace();
             stateActionRewards->reserve(numResultChoices);
-            forEachChoice([&stateActionRewards, &rewmodel](auto _, StateIdType originalChoice) {
+            forEachChoice([&stateActionRewards, &rewmodel](uint64_t _, StateIdType originalChoice) {
                 stateActionRewards->push_back(rewmodel.getStateActionReward(originalChoice));
             });
         }

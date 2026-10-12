@@ -76,7 +76,7 @@ class Belief {
             }
         });
         return sum;
-    };
+    }
 
     /*!
      * @param f a function that is called for each (state, value)-pair in the support of this belief.

@@ -384,7 +384,7 @@ storm::models::sparse::Mdp<double> createMdpWithChoiceLabeling(std::map<std::str
 
 std::vector<std::string> getChoiceActionStrings(storm::umb::UmbModel const& umb) {
     std::vector<std::string> result;
-    for (auto const& action : storm::umb::stringVectorView(umb.choiceActions->strings, umb.choiceActions->stringMapping)) {
+    for (std::string_view action : storm::umb::stringVectorView(umb.choiceActions->strings, umb.choiceActions->stringMapping)) {
         result.emplace_back(action);
     }
     return result;
