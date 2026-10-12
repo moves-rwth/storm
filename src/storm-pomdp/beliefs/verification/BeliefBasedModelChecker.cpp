@@ -47,7 +47,8 @@ void validateRewardModelSelection(PropertyInformation const& propertyInformation
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
-BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::BeliefBasedModelChecker(PomdpModelType const& pomdp) : inputPomdp(pomdp) {
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::BeliefBasedModelChecker(PomdpModelType const& pomdp)
+    : inputPomdp(pomdp) {
     STORM_LOG_THROW(inputPomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "Belief-based model checking requires a canonic POMDP.");
 }
 
@@ -433,8 +434,8 @@ BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, Pol
                                        ClippingExplorationInformation<BeliefMdpValueType, Belief<BeliefValueType>>>(env, inputPomdp, propertyInformation,
                                                                                                                     options, valueBounds);
     } else {
-        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType, NoAbstractionType>(env, inputPomdp, propertyInformation,
-                                                                                                                       options, valueBounds);
+        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType, NoAbstractionType>(
+            env, inputPomdp, propertyInformation, options, valueBounds);
     }
 }
 
@@ -449,8 +450,8 @@ BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, Pol
     STORM_LOG_THROW(!options.generatePolicy, storm::exceptions::NotSupportedException, "Policy generation is not supported for belief MDP discretization.");
     auto mode = useDynamic ? FreudenthalTriangulationMode::Dynamic : FreudenthalTriangulationMode::Static;
     FreudenthalTriangulationBeliefAbstraction<Belief<BeliefValueType>> abstraction(storm::utility::convertNumber<BeliefValueType>(resolution), mode);
-    return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(env, inputPomdp, propertyInformation, options, valueBounds,
-                                                                                                storm::OptionalRef(abstraction));
+    return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(env, inputPomdp, propertyInformation, options,
+                                                                                                                 valueBounds, storm::OptionalRef(abstraction));
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
@@ -463,8 +464,8 @@ BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, Pol
     STORM_LOG_THROW(!options.generatePolicy, storm::exceptions::NotSupportedException, "Policy generation is not supported for reward-aware exploration.");
     RewardBoundedBeliefSplitter<BeliefMdpValueType, PomdpModelType, Belief<BeliefValueType>> rewardBoundedBeliefSplitter(inputPomdp);
     rewardBoundedBeliefSplitter.setRewardModels(relevantRewardModelNames);
-    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(env, inputPomdp, propertyInformation, options,
-                                                                                                           valueBounds, rewardBoundedBeliefSplitter);
+    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(
+        env, inputPomdp, propertyInformation, options, valueBounds, rewardBoundedBeliefSplitter);
 }
 
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
