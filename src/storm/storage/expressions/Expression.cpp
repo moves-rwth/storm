@@ -537,6 +537,10 @@ Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
     return applyAssociative(expressions, [](Expression const& e1, Expression const& e2) { return e1 + e2; });
 }
 
+Expression product(std::vector<storm::expressions::Expression> const& expressions) {
+    return applyAssociative(expressions, [](Expression const& e1, Expression const& e2) { return e1 * e2; });
+}
+
 Expression modulo(Expression const& first, Expression const& second) {
     return first % second;
 }

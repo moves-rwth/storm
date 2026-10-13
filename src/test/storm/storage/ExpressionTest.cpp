@@ -6,6 +6,7 @@
 
 #include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
@@ -311,6 +312,42 @@ TEST(Expression, SubstitutionTest) {
     storm::expressions::Expression substitutedExpression;
     ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute(substution));
     EXPECT_TRUE(substitutedExpression.simplify().isTrue());
+}
+
+TEST(Expression, SumAndProductTest) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::expressions::Variable xVar = manager->declareIntegerVariable("x");
+    storm::expressions::Variable yVar = manager->declareIntegerVariable("y");
+    storm::expressions::Variable zVar = manager->declareRationalVariable("z");
+    storm::expressions::Expression x = xVar.getExpression();
+    storm::expressions::Expression y = yVar.getExpression();
+    storm::expressions::Expression z = zVar.getExpression();
+    storm::expressions::Expression four = manager->integer(4);
+
+    EXPECT_TRUE(storm::expressions::sum({x}).isVariable());
+    EXPECT_TRUE(storm::expressions::product({x}).isVariable());
+
+    storm::expressions::SimpleValuation valuation(manager);
+    valuation.setIntegerValue(xVar, 2);
+    valuation.setIntegerValue(yVar, 3);
+    valuation.setRationalValue(zVar, 0.5);
+
+    auto const intSum = storm::expressions::sum({x, y, four, x, y});
+    auto const intProduct = storm::expressions::product({x, y, four, x, y});
+    EXPECT_TRUE(intSum.hasIntegerType());
+    EXPECT_TRUE(intProduct.hasIntegerType());
+    EXPECT_EQ(14, intSum.evaluateAsInt(&valuation));
+    EXPECT_EQ(144, intProduct.evaluateAsInt(&valuation));
+
+    auto const mixedSum = storm::expressions::sum({x, y, four, z});
+    auto const mixedProduct = storm::expressions::product({x, y, four, z});
+    EXPECT_TRUE(mixedSum.hasRationalType());
+    EXPECT_TRUE(mixedProduct.hasRationalType());
+    EXPECT_NEAR(9.5, mixedSum.evaluateAsDouble(&valuation), 1e-12);
+    EXPECT_NEAR(12.0, mixedProduct.evaluateAsDouble(&valuation), 1e-12);
+
+    EXPECT_THROW(storm::expressions::sum({}), storm::exceptions::InvalidArgumentException);
+    EXPECT_THROW(storm::expressions::product({}), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(Expression, SimplificationTest) {

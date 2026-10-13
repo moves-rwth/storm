@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
@@ -33,18 +35,39 @@ namespace {
 storm::expressions::Expression translateNumericalConstant(storm::expressions::ExpressionManager& manager, std::string const& stringRepresentation,
                                                           bool isInteger) {
     // Tokenize the string representation, e.g., "(- (/ 3 4))" results in the tokens "(-", "(/", "3", "4", ")", ")".
-    std::vector<std::string> tokens;
-    std::string currentToken;
-    auto const flushToken = [&tokens, &currentToken]() {
-        if (!currentToken.empty()) {
-            tokens.push_back(currentToken);
-            currentToken.clear();
+    // The tokens are views into stringRepresentation, which outlives this function body.
+    std::vector<std::string_view> tokens;
+    std::string_view const input(stringRepresentation);
+    size_t tokenStart = 0;
+    bool inToken = false;
+    auto const flushToken = [&](size_t end) {
+        if (inToken) {
+            tokens.push_back(input.substr(tokenStart, end - tokenStart));
+            inToken = false;
         }
     };
-    for (size_t i = 0; i < stringRepresentation.size(); ++i) {
-        char const c = stringRepresentation[i];
+    for (size_t i = 0; i < input.size(); ++i) {
+        char const c = input[i];
         if (std::isspace(static_cast<unsigned char>(c))) {
-            flushToken();
+            flushToken(i);
+        } else if (c == '(') {
+            flushToken(i);
+            // The operators for negative numbers and fractions are two-character symbols, i.e., "(-" and "(/".
+            if (i + 1 < input.size() && (input[i + 1] == '-' || input[i + 1] == '/')) {
+                tokens.push_back(input.substr(i, 2));
+                ++i;
+            } else {
+                tokens.push_back(input.substr(i, 1));
+            }
+        } else if (c == ')') {
+            flushToken(i);
+            tokens.push_back(input.substr(i, 1));
+        } else if (!inToken) {
+            inToken = true;
+            tokenStart = i;
+        }
+    }
+    flushToken(input.size());
         } else if (c == '(') {
             flushToken();
             // The operators for negative numbers and fractions are two-character symbols, i.e., "(-" and "(/".
@@ -74,7 +97,7 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
         }
         STORM_LOG_THROW(position < tokens.size(), storm::exceptions::ExpressionEvaluationException,
                         "Failed to convert CVC5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
-        std::string const number = tokens[position];
+        std::string const number(tokens[position]);
         ++position;
         if (isNegative) {
             STORM_LOG_THROW(position < tokens.size() && tokens[position] == ")", storm::exceptions::ExpressionEvaluationException,
@@ -84,7 +107,8 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
         STORM_LOG_THROW(position == tokens.size(), storm::exceptions::ExpressionEvaluationException,
                         "Failed to convert CVC5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
 
-        // Note that we negate the string instead of the parsed value because the latter may not be representable.
+        // CVC5 integers are unbounded, so the value may not fit. We parse the signed string (rather than negating the parsed value)
+        // so that the lowest 64-bit integer is handled correctly.
         int64_t value = 0;
         try {
             value = std::stoll(isNegative ? "-" + number : number);
@@ -126,9 +150,9 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
         }
 
         // Everything else is a plain (decimal) number.
-        std::string const number = tokens[position];
+        std::string const number(tokens[position]);
         ++position;
-        storm::RationalNumber const result = storm::utility::convertNumber<storm::RationalNumber>(number);
+        storm::RationalNumber const result = storm::utility::convertNumber<storm::RationalNumber>(std::string(number));
         return isNegative ? -result : result;
     };
 
@@ -177,7 +201,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
     // Second, deal with constants, i.e., variables and numerical constants.
     if (term.getKind() == cvc5::Kind::CONSTANT) {
         STORM_LOG_THROW(term.hasSymbol(), storm::exceptions::ExpressionEvaluationException,
-                        "Failed to convert CVC5 expression. Encountered non-constant free constant.");
+                        "Failed to convert CVC5 expression. Encountered a constant without a symbol.");
         return this->getVariable(term).getExpression();
     } else if (term.getKind() == cvc5::Kind::CONST_INTEGER || term.getKind() == cvc5::Kind::CONST_RATIONAL) {
         return translateNumericalConstant(this->manager, term.toString(), term.getKind() == cvc5::Kind::CONST_INTEGER);
@@ -258,15 +282,14 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         case cvc5::Kind::GT:
             return this->translateExpression(term[0]) > this->translateExpression(term[1]);
         case cvc5::Kind::ADD: {
-            STORM_LOG_THROW(term.getNumChildren() != 0, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. 0-ary ADD is assumed to be an error.");
-            if (term.getNumChildren() == 1) {
-                return this->translateExpression(term[0]);
-            } else {
-                storm::expressions::Expression retVal = this->translateExpression(term[0]);
-                for (size_t i = 1; i < term.getNumChildren(); ++i) {
-                    retVal = retVal + this->translateExpression(term[i]);
-                }
+            // Collect the operands and build a balanced expression to avoid deep recursion on large sums.
+            std::vector<storm::expressions::Expression> operands;
+            operands.reserve(term.getNumChildren());
+            for (size_t i = 0; i < term.getNumChildren(); ++i) {
+                operands.push_back(this->translateExpression(term[i]));
+            }
+            return operands.empty() ? this->manager.integer(0) : storm::expressions::sum(operands);
+        }
                 return retVal;
             }
         }
@@ -275,20 +298,21 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         case cvc5::Kind::NEG:
             return -this->translateExpression(term[0]);
         case cvc5::Kind::MULT: {
-            STORM_LOG_THROW(term.getNumChildren() != 0, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. 0-ary MULT is assumed to be an error.");
-            if (term.getNumChildren() == 1) {
-                return this->translateExpression(term[0]);
-            } else {
-                storm::expressions::Expression retVal = this->translateExpression(term[0]);
-                for (size_t i = 1; i < term.getNumChildren(); ++i) {
-                    retVal = retVal * this->translateExpression(term[i]);
-                }
+            // Collect the operands and build a balanced expression to avoid deep recursion on large products.
+            std::vector<storm::expressions::Expression> operands;
+            operands.reserve(term.getNumChildren());
+            for (size_t i = 0; i < term.getNumChildren(); ++i) {
+                operands.push_back(this->translateExpression(term[i]));
+            }
+            return operands.empty() ? this->manager.integer(1) : storm::expressions::product(operands);
+        }
                 return retVal;
             }
         }
-        case cvc5::Kind::DIVISION:
         case cvc5::Kind::INTS_DIVISION:
+            // Storm has no integer division, and translating this to Storm's division would silently change the semantics.
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Failed to convert CVC5 expression. Integer division is not supported.");
+        case cvc5::Kind::DIVISION:
             return this->translateExpression(term[0]) / this->translateExpression(term[1]);
         case cvc5::Kind::POW:
             return storm::expressions::pow(this->translateExpression(term[0]), this->translateExpression(term[1]));
@@ -589,7 +613,7 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::VariableExpression c
 }
 
 cvc5::Term Cvc5ExpressionAdapter::createRational(storm::RationalNumber const& value) {
-    // CVC5 accepts rationals in the SMT-LIB format, which is exactly the format in which GMP prints them.
+    // Both GMP and CLN print a rational number as "numerator/denominator" (e.g., "-123/122"), which is accepted by mkReal.
     std::stringstream fractionStream;
     fractionStream << value;
     return this->termManager.mkReal(fractionStream.str());
@@ -602,12 +626,9 @@ cvc5::Term Cvc5ExpressionAdapter::createVariable(storm::expressions::Variable co
     } else if (variable.getType().isRationalType()) {
         sort = this->termManager.getRealSort();
     } else {
-        // Note that a bitvector type is an integer type in Storm. Since this backend does not implement
-        // bitvector semantics, we map such a variable onto an unbounded integer, which is also what the other
-        // backends do (see Z3ExpressionAdapter). Callers rely on this, for example IterativePolicySearch reads
-        // the value of a bitvector scheduler variable with the integer getter of a model.
-        STORM_LOG_ASSERT(variable.getType().isIntegerType(),
-                         "Encountered variable '" << variable.getName() << "' with unknown type while trying to create solver variables.");
+        // Bitvector variables are integer types in Storm and are modelled as unbounded integers (as in Z3ExpressionAdapter).
+        STORM_LOG_THROW(variable.getType().isIntegerType(), storm::exceptions::InvalidTypeException,
+                        "Encountered variable '" << variable.getName() << "' with unknown type while trying to create solver variables.");
         sort = this->termManager.getIntegerSort();
     }
     cvc5::Term cvc5Variable = this->termManager.mkConst(sort, variable.getName());

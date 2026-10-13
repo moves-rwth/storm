@@ -22,7 +22,7 @@ Cvc5SmtSolver::Cvc5ModelReference::Cvc5ModelReference(storm::expressions::Expres
     // Intentionally left empty.
 }
 
-void Cvc5SmtSolver::Cvc5ModelReference::checkVariable(storm::expressions::Variable const& variable) const {
+void Cvc5SmtSolver::Cvc5ModelReference::checkVariable([[maybe_unused]] storm::expressions::Variable const& variable) const {
     STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
 }
 
