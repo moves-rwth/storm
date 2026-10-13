@@ -18,19 +18,7 @@ using BinaryRelationExpression = storm::expressions::BinaryRelationExpression;
 using BinaryNumericalFunctionExpression = storm::expressions::BinaryNumericalFunctionExpression;
 using UnaryNumericalFunctionExpression = storm::expressions::UnaryNumericalFunctionExpression;
 
-/*!
- * Converts a numeric literal to the exact coefficient type used for the region bounds.
- */
-template<typename TargetType, typename SourceType>
-TargetType toCoefficient(SourceType const& source) {
-    return storm::utility::convertNumber<TargetType>(source);
-}
-
-/*!
- * Adds the given value to the coefficient of the given variable. This avoids requiring the coefficient type
- * to be default-constructible. Coefficients that vanish are removed, so that a variable with coefficient zero
- * (e.g. in `x - x`) is not mistaken for a variable that actually occurs in the form.
- */
+// Adds to a coefficient and drops it if it vanishes, so that e.g. `x - x` does not mention x.
 void addCoefficient(std::map<std::string, CoefficientType>& coefficients, std::string const& variable, CoefficientType const& value) {
     if (storm::utility::isZero(value)) {
         return;
@@ -46,9 +34,7 @@ void addCoefficient(std::map<std::string, CoefficientType>& coefficients, std::s
     }
 }
 
-/*!
- * An exact affine form `f(x) = constantPart + sum_i coefficient_i x_i`, keyed by variable name.
- */
+// An exact affine form `constantPart + sum_i coefficient_i x_i`, keyed by variable name.
 struct AffineForm {
     explicit AffineForm(CoefficientType const& constantPart = storm::utility::zero<CoefficientType>()) : constantPart(constantPart) {}
 
@@ -59,9 +45,6 @@ struct AffineForm {
         return this->coefficients.empty();
     }
 
-    /*!
-     * Replaces this form by `this + scale * other`.
-     */
     void addScaled(AffineForm const& other, CoefficientType const& scale) {
         this->constantPart = this->constantPart + scale * other.constantPart;
         for (auto const& [variable, coefficient] : other.coefficients) {
@@ -77,12 +60,7 @@ struct AffineForm {
     }
 };
 
-/*!
- * Computes the exact affine form of an expression, if the expression is affine. Returns `std::nullopt` for
- * non-affine or unsupported constructs, in particular for if-then-else expressions and boolean operators.
- *
- * In contrast to storm::expressions::LinearCoefficientVisitor, all arithmetic here is exact.
- */
+// Computes the exact affine form of an expression, or `std::nullopt` if it is not affine.
 class AffineFormVisitor : public storm::expressions::ExpressionVisitor {
    public:
     std::optional<AffineForm> getAffineForm(BaseExpression const& expression) {
@@ -119,11 +97,11 @@ class AffineFormVisitor : public storm::expressions::ExpressionVisitor {
     }
 
     boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
-        return std::optional<AffineForm>{AffineForm(toCoefficient<CoefficientType>(expression.getValue()))};
+        return std::optional<AffineForm>{AffineForm(storm::utility::convertNumber<CoefficientType>(expression.getValue()))};
     }
 
     boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
-        return std::optional<AffineForm>{AffineForm(toCoefficient<CoefficientType>(expression.getValue()))};
+        return std::optional<AffineForm>{AffineForm(storm::utility::convertNumber<CoefficientType>(expression.getValue()))};
     }
 
     boost::any visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
@@ -197,9 +175,7 @@ class AffineFormVisitor : public storm::expressions::ExpressionVisitor {
     }
 };
 
-/*!
- * The lower and upper boundary of every variable of a region, keyed by variable name.
- */
+// The (lower, upper) boundary of every variable of a region, keyed by variable name.
 using BoundariesByName = std::map<std::string, std::pair<CoefficientType, CoefficientType>>;
 
 BoundariesByName getBoundariesByName(RationalFunctionRegion const& region) {
@@ -210,10 +186,7 @@ BoundariesByName getBoundariesByName(RationalFunctionRegion const& region) {
     return boundaries;
 }
 
-/*!
- * The exact minimum and maximum of an affine form over a rectangular region, together with the points at
- * which they are attained.
- */
+// The exact extrema of an affine form over a region, with the points attaining them.
 struct Extremes {
     CoefficientType minimum;
     CoefficientType maximum;
@@ -221,10 +194,7 @@ struct Extremes {
     RegionWitness maximizingPoint;
 };
 
-/*!
- * Computes the extrema of the given affine form over the given region in linear time. Because the region is
- * rectangular, every variable can be optimized independently.
- */
+// Every variable can be optimized independently because the region is rectangular.
 Extremes computeExtremes(AffineForm const& form, BoundariesByName const& boundaries) {
     CoefficientType minimum = form.constantPart;
     CoefficientType maximum = form.constantPart;
@@ -260,9 +230,7 @@ Extremes computeExtremes(AffineForm const& form, BoundariesByName const& boundar
     return Extremes{minimum, maximum, std::move(minimizingPoint), std::move(maximizingPoint)};
 }
 
-/*!
- * Applies the given relation to two exactly known values.
- */
+// Applies the relation to two exact values.
 bool applyRelation(RelationType relation, CoefficientType const& lhs, CoefficientType const& rhs) {
     switch (relation) {
         case RelationType::Equal:
@@ -282,45 +250,34 @@ bool applyRelation(RelationType relation, CoefficientType const& lhs, Coefficien
     }
 }
 
-/*!
- * The outcome of checking a single constraint over a region.
- */
+// The outcome of checking a single constraint.
 struct SingleVerdict {
     ConstraintVerdict verdict = ConstraintVerdict::Unknown;
     std::optional<RegionWitness> witness;
 };
 
-/*!
- * Decides a constraint with an exactly known affine form over a rectangular region in linear time. Because
- * an affine function attains its extrema at the vertices of the box and is continuous on the (convex)
- * region, comparing those extrema against the right-hand side decides the constraint for the whole region.
- */
+// Decides `f <relation> 0` from the extrema of the affine form f; constructs a witness if it fails.
 SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extremes) {
     CoefficientType const zero = storm::utility::zero<CoefficientType>();
 
-    // Decide whether the relation holds throughout the region.
     bool satisfiedThroughout;
     switch (relation) {
         case RelationType::Less:
-            // f < 0 holds throughout iff the (attained) maximum is negative.
             satisfiedThroughout = extremes.maximum < zero;
             break;
         case RelationType::LessOrEqual:
             satisfiedThroughout = extremes.maximum <= zero;
             break;
         case RelationType::Greater:
-            // f > 0 holds throughout iff the (attained) minimum is positive.
             satisfiedThroughout = extremes.minimum > zero;
             break;
         case RelationType::GreaterOrEqual:
             satisfiedThroughout = extremes.minimum >= zero;
             break;
         case RelationType::Equal:
-            // f == 0 holds throughout iff f is identically zero.
             satisfiedThroughout = extremes.minimum >= zero && extremes.maximum <= zero;
             break;
         case RelationType::NotEqual:
-            // f != 0 holds throughout iff f has the same strict sign everywhere.
             satisfiedThroughout = extremes.maximum < zero || extremes.minimum > zero;
             break;
         default:
@@ -331,7 +288,6 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
         return SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
     }
 
-    // The relation does not hold throughout the region. Construct an explicit witness.
     switch (relation) {
         case RelationType::Less:
         case RelationType::LessOrEqual:
@@ -346,16 +302,13 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
             }
             return SingleVerdict{ConstraintVerdict::Unsat, extremes.minimizingPoint};
         case RelationType::NotEqual: {
-            // We know that the form attains a zero somewhere in the region. Construct such a point exactly.
             if (extremes.minimum == zero) {
                 return SingleVerdict{ConstraintVerdict::Unsat, extremes.minimizingPoint};
             }
             if (extremes.maximum == zero) {
                 return SingleVerdict{ConstraintVerdict::Unsat, extremes.maximizingPoint};
             }
-            // Here minimum < 0 < maximum. Along the segment between the two extremizing points the form
-            // passes through zero. For t = minimum / (minimum - maximum) in (0, 1) the interpolated point
-            // lies within the region and attains f = 0 exactly.
+            // minimum < 0 < maximum: f is zero at the interpolated point for t = minimum / (minimum - maximum).
             CoefficientType const t = extremes.minimum / (extremes.minimum - extremes.maximum);
             RegionWitness witness;
             for (auto const& [variable, value] : extremes.minimizingPoint) {
@@ -369,18 +322,13 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
     }
 }
 
-/*!
- * Exactly evaluates a purely numerical expression at the given point. Returns `std::nullopt` if the
- * expression contains constructs that are not supported by this evaluator, in particular boolean operators,
- * if-then-else expressions, and exponentiation. A constraint that cannot be evaluated at any probe point is
- * reported as undecided rather than violated, which keeps the probing sound.
- */
+// Exactly evaluates a numerical expression at a point; `std::nullopt` if it uses unsupported constructs.
 std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression, RegionWitness const& point) {
     if (expression.isIntegerLiteralExpression()) {
-        return toCoefficient<CoefficientType>(expression.asIntegerLiteralExpression().getValue());
+        return storm::utility::convertNumber<CoefficientType>(expression.asIntegerLiteralExpression().getValue());
     }
     if (expression.isRationalLiteralExpression()) {
-        return toCoefficient<CoefficientType>(expression.asRationalLiteralExpression().getValue());
+        return storm::utility::convertNumber<CoefficientType>(expression.asRationalLiteralExpression().getValue());
     }
     if (expression.isVariableExpression()) {
         auto const& variableExpression = expression.asVariableExpression();
@@ -431,10 +379,7 @@ std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression,
     return std::nullopt;
 }
 
-/*!
- * Checks a non-affine constraint by probing a few points of the region. This is sound for detecting
- * violations but cannot prove that a constraint holds, so the verdict is Unknown if no probe fails.
- */
+// Probing can only find violations, so the verdict is Unknown if no probe fails.
 SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression, std::vector<RegionWitness> const& probePoints) {
     RelationType const relation = relationExpression.getRelationType();
     BaseExpression const& lhs = *relationExpression.getFirstOperand();
@@ -451,10 +396,7 @@ SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression
     return SingleVerdict{};
 }
 
-/*!
- * Builds a few interesting points of the region: the corner with all variables at their lower bound, the
- * corner with all variables at their upper bound, and the center of the region.
- */
+// The lower corner, the upper corner, and the center of the region.
 std::vector<RegionWitness> getProbePoints(BoundariesByName const& boundaries) {
     RegionWitness lowerCorner;
     RegionWitness upperCorner;
@@ -468,6 +410,15 @@ std::vector<RegionWitness> getProbePoints(BoundariesByName const& boundaries) {
 }
 
 }  // namespace
+
+std::ostream& operator<<(std::ostream& out, RegionWitness const& witness) {
+    bool first = true;
+    for (auto const& [variable, value] : witness) {
+        out << (first ? "" : ", ") << variable << " = " << value;
+        first = false;
+    }
+    return out;
+}
 
 RegionConstraintChecker::RegionConstraintChecker(storm::analysis::ConstraintCollector const& collector) : collector(collector) {}
 
@@ -497,22 +448,15 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
     bool undecided = false;
 
     for (storm::expressions::Expression const& constraint : constraints) {
-        std::string const printedForm = constraint.toString();
         BaseExpression const& baseExpression = constraint.getBaseExpression();
 
         SingleVerdict singleVerdict;
         if (baseExpression.isBooleanLiteralExpression()) {
-            // A constant constraint holds on the whole region iff it is true. Boolean literals occur in the
-            // collected constraint set when the collector rejects a constant entry (e.g. a fixed probability
-            // outside [0, 1]), in which case the constraint is `false`.
+            // The collector emits `false` for rejected constant entries, e.g. a fixed probability outside [0, 1].
             if (baseExpression.asBooleanLiteralExpression().getValue()) {
                 singleVerdict = SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
             } else {
-                RegionWitness centerPoint;
-                for (auto const& [variable, boundary] : boundaries) {
-                    centerPoint.emplace(variable, (boundary.first + boundary.second) / 2);
-                }
-                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, std::move(centerPoint)};
+                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, probePoints.back()};
             }
         } else if (baseExpression.isBinaryRelationExpression()) {
             BinaryRelationExpression const& relationExpression = baseExpression.asBinaryRelationExpression();
@@ -527,7 +471,7 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
 
                 for (auto const& [variable, coefficient] : form.coefficients) {
                     STORM_LOG_THROW(boundaries.count(variable) != 0, storm::exceptions::InvalidArgumentException,
-                                    "Cannot check " << label << " constraint '" << printedForm
+                                    "Cannot check " << label << " constraint '" << constraint.toString()
                                                     << "' over the given region, because it constrains the variable '" << variable
                                                     << "', which is not part of the region. Please provide a region covering all constrained variables.");
                 }
@@ -556,8 +500,6 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
         }
     }
 
-    // Aggregate the per-constraint verdicts: any violation makes the whole set fail, and an undecided
-    // constraint makes the whole set undecided.
     if (violated) {
         result.verdict = ConstraintVerdict::Unsat;
     } else if (undecided) {

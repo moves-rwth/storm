@@ -9,6 +9,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 
+#include "storm-pars-cli/graphPreservation.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
@@ -154,20 +155,8 @@ void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::
     std::optional<storage::ParameterRegion<storm::RationalFunction>> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
-        // Check if the region includes bounds at 0 or 1
-        bool hasZeroBound = false;
-        for (auto const& var : region->getVariables()) {
-            auto lowerBound = region->getLowerBoundary(var);
-            auto upperBound = region->getUpperBoundary(var);
-            if (storm::utility::isZero(lowerBound) || storm::utility::isOne(upperBound)) {
-                hasZeroBound = true;
-                break;
-            }
-        }
-        if (hasZeroBound) {
-            STORM_LOG_WARN(
-                "The region includes bounds at 0 or 1, which is not supported by Gradient Descent. Continuing anyway, but results may be incorrect.");
-        }
+        // Gradient descent requires a graph-preserving region.
+        establishGraphPreservation<ValueType>(model, {*region}, true);
     }
 
     STORM_PRINT("Finding an extremum using Gradient Descent\n");
@@ -217,6 +206,8 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
     auto regionVerificationSettings = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto engine = regionVerificationSettings.getRegionCheckEngine();
 
+    auto const graphPreservationStatus = establishGraphPreservation<ValueType>(model, {task->getRegion()}, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+
     auto regionSplittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
     regionSplittingStrategy.heuristic = regionVerificationSettings.getRegionSplittingHeuristic();
@@ -228,7 +219,8 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                        engine, regionSplittingStrategy};
+                                                                        engine,
+                                                                        regionSplittingStrategy, storm::api::MonotonicitySetting(), {}, true, graphPreservationStatus};
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
@@ -241,7 +233,8 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
         auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
-                                                                        engine, regionSplittingStrategy};
+                                                                        engine,
+                                                                        regionSplittingStrategy, storm::api::MonotonicitySetting(), {}, true, graphPreservationStatus};
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), std::nullopt);
         watch.stop();
