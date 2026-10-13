@@ -1,33 +1,55 @@
 #include "storm/storage/expressions/LinearCoefficientVisitor.h"
 
+#include <iterator>
+
 #include "storm/storage/expressions/Expressions.h"
 
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace expressions {
-LinearCoefficientVisitor::VariableCoefficients::VariableCoefficients(double constantPart) : variableToCoefficientMapping(), constantPart(constantPart) {
+
+template<typename ValueType>
+LinearCoefficientVisitor<ValueType>::VariableCoefficients::VariableCoefficients(ValueType constantPart)
+    : variableToCoefficientMapping(), constantPart(std::move(constantPart)) {
     // Intentionally left empty.
 }
 
-LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator+=(VariableCoefficients&& other) {
+template<typename ValueType>
+void LinearCoefficientVisitor<ValueType>::VariableCoefficients::removeZeroCoefficients() {
+    for (auto it = variableToCoefficientMapping.begin(); it != variableToCoefficientMapping.end();) {
+        it = storm::utility::isZero(it->second) ? variableToCoefficientMapping.erase(it) : std::next(it);
+    }
+}
+
+template<typename ValueType>
+typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoefficientVisitor<ValueType>::VariableCoefficients::operator+=(
+    VariableCoefficients&& other) {
     for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
-        this->variableToCoefficientMapping[otherVariableCoefficientPair.first] += otherVariableCoefficientPair.second;
+        auto [it, inserted] = this->variableToCoefficientMapping.try_emplace(otherVariableCoefficientPair.first, otherVariableCoefficientPair.second);
+        if (!inserted) {
+            it->second += otherVariableCoefficientPair.second;
+        }
     }
     constantPart += other.constantPart;
+    removeZeroCoefficients();
     return *this;
 }
 
-LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator-=(VariableCoefficients&& other) {
-    for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
-        this->variableToCoefficientMapping[otherVariableCoefficientPair.first] -= otherVariableCoefficientPair.second;
-    }
-    constantPart -= other.constantPart;
-    return *this;
+template<typename ValueType>
+typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoefficientVisitor<ValueType>::VariableCoefficients::operator-=(
+    VariableCoefficients&& other) {
+    other.negate();
+    return *this += std::move(other);
 }
 
-LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator*=(VariableCoefficients&& other) {
+template<typename ValueType>
+typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoefficientVisitor<ValueType>::VariableCoefficients::operator*=(
+    VariableCoefficients&& other) {
     STORM_LOG_THROW(variableToCoefficientMapping.size() == 0 || other.variableToCoefficientMapping.size() == 0, storm::exceptions::InvalidArgumentException,
                     "Expression is non-linear.");
     if (other.variableToCoefficientMapping.size() > 0) {
@@ -38,11 +60,15 @@ LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::Variab
         variableCoefficientPair.second *= other.constantPart;
     }
     constantPart *= other.constantPart;
+    removeZeroCoefficients();
     return *this;
 }
 
-LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator/=(VariableCoefficients&& other) {
-    STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoefficientVisitor<ValueType>::VariableCoefficients::operator/=(
+    VariableCoefficients&& other) {
+    STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0 && !storm::utility::isZero(other.constantPart),
+                    storm::exceptions::InvalidArgumentException, "Expression is non-linear or divides by zero.");
     for (auto& variableCoefficientPair : this->variableToCoefficientMapping) {
         variableCoefficientPair.second /= other.constantPart;
     }
@@ -50,114 +76,167 @@ LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::Variab
     return *this;
 }
 
-void LinearCoefficientVisitor::VariableCoefficients::negate() {
+template<typename ValueType>
+void LinearCoefficientVisitor<ValueType>::VariableCoefficients::negate() {
     for (auto& variableCoefficientPair : variableToCoefficientMapping) {
         variableCoefficientPair.second = -variableCoefficientPair.second;
     }
     constantPart = -constantPart;
 }
 
-void LinearCoefficientVisitor::VariableCoefficients::setCoefficient(storm::expressions::Variable const& variable, double coefficient) {
-    variableToCoefficientMapping[variable] = coefficient;
+template<typename ValueType>
+void LinearCoefficientVisitor<ValueType>::VariableCoefficients::setCoefficient(storm::expressions::Variable const& variable, ValueType const& coefficient) {
+    variableToCoefficientMapping.insert_or_assign(variable, coefficient);
 }
 
-double LinearCoefficientVisitor::VariableCoefficients::getCoefficient(storm::expressions::Variable const& variable) {
-    return variableToCoefficientMapping[variable];
+template<typename ValueType>
+ValueType LinearCoefficientVisitor<ValueType>::VariableCoefficients::getCoefficient(storm::expressions::Variable const& variable) {
+    auto it = variableToCoefficientMapping.find(variable);
+    return it == variableToCoefficientMapping.end() ? storm::utility::zero<ValueType>() : it->second;
 }
 
-size_t LinearCoefficientVisitor::VariableCoefficients::size() const {
+template<typename ValueType>
+size_t LinearCoefficientVisitor<ValueType>::VariableCoefficients::size() const {
     return variableToCoefficientMapping.size();
 }
 
-double LinearCoefficientVisitor::VariableCoefficients::getConstantPart() const {
+template<typename ValueType>
+ValueType const& LinearCoefficientVisitor<ValueType>::VariableCoefficients::getConstantPart() const {
     return this->constantPart;
 }
 
-void LinearCoefficientVisitor::VariableCoefficients::separateVariablesFromConstantPart(VariableCoefficients& rhs) {
+template<typename ValueType>
+void LinearCoefficientVisitor<ValueType>::VariableCoefficients::separateVariablesFromConstantPart(VariableCoefficients& rhs) {
     for (auto const& rhsVariableCoefficientPair : rhs.variableToCoefficientMapping) {
-        this->variableToCoefficientMapping[rhsVariableCoefficientPair.first] -= rhsVariableCoefficientPair.second;
+        auto [it, inserted] = this->variableToCoefficientMapping.try_emplace(rhsVariableCoefficientPair.first, -rhsVariableCoefficientPair.second);
+        if (!inserted) {
+            it->second -= rhsVariableCoefficientPair.second;
+        }
     }
+    removeZeroCoefficients();
     rhs.variableToCoefficientMapping.clear();
     rhs.constantPart -= this->constantPart;
 }
 
-std::map<storm::expressions::Variable, double>::const_iterator LinearCoefficientVisitor::VariableCoefficients::begin() const {
+template<typename ValueType>
+typename std::map<storm::expressions::Variable, ValueType>::const_iterator LinearCoefficientVisitor<ValueType>::VariableCoefficients::begin() const {
     return this->variableToCoefficientMapping.begin();
 }
 
-std::map<storm::expressions::Variable, double>::const_iterator LinearCoefficientVisitor::VariableCoefficients::end() const {
+template<typename ValueType>
+typename std::map<storm::expressions::Variable, ValueType>::const_iterator LinearCoefficientVisitor<ValueType>::VariableCoefficients::end() const {
     return this->variableToCoefficientMapping.end();
 }
 
-LinearCoefficientVisitor::VariableCoefficients LinearCoefficientVisitor::getLinearCoefficients(Expression const& expression) {
-    return boost::any_cast<VariableCoefficients>(expression.getBaseExpression().accept(*this, boost::none));
+template<typename ValueType>
+std::optional<typename LinearCoefficientVisitor<ValueType>::VariableCoefficients> LinearCoefficientVisitor<ValueType>::tryGetLinearCoefficients(
+    Expression const& expression) {
+    return boost::any_cast<Result>(expression.getBaseExpression().accept(*this, boost::none));
 }
 
-boost::any LinearCoefficientVisitor::visit(IfThenElseExpression const&, boost::any const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+typename LinearCoefficientVisitor<ValueType>::VariableCoefficients LinearCoefficientVisitor<ValueType>::getLinearCoefficients(Expression const& expression) {
+    auto result = tryGetLinearCoefficients(expression);
+    STORM_LOG_THROW(result.has_value(), storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+    return std::move(result.value());
 }
 
-boost::any LinearCoefficientVisitor::visit(BinaryBooleanFunctionExpression const&, boost::any const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(IfThenElseExpression const&, boost::any const&) {
+    return Result{};
 }
 
-boost::any LinearCoefficientVisitor::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
-    VariableCoefficients leftResult = boost::any_cast<VariableCoefficients>(expression.getFirstOperand()->accept(*this, data));
-    VariableCoefficients rightResult = boost::any_cast<VariableCoefficients>(expression.getSecondOperand()->accept(*this, data));
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(BinaryBooleanFunctionExpression const&, boost::any const&) {
+    return Result{};
+}
 
-    if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Plus) {
-        leftResult += std::move(rightResult);
-    } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Minus) {
-        leftResult -= std::move(rightResult);
-    } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Times) {
-        leftResult *= std::move(rightResult);
-    } else if (expression.getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Divide) {
-        leftResult /= std::move(rightResult);
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
+    Result left = boost::any_cast<Result>(expression.getFirstOperand()->accept(*this, data));
+    if (!left) {
+        return Result{};
     }
-    return leftResult;
+    Result right = boost::any_cast<Result>(expression.getSecondOperand()->accept(*this, data));
+    if (!right) {
+        return Result{};
+    }
+
+    switch (expression.getOperatorType()) {
+        case BinaryNumericalFunctionExpression::OperatorType::Plus:
+            *left += std::move(*right);
+            break;
+        case BinaryNumericalFunctionExpression::OperatorType::Minus:
+            *left -= std::move(*right);
+            break;
+        case BinaryNumericalFunctionExpression::OperatorType::Times:
+            if (left->size() > 0 && right->size() > 0) {
+                return Result{};
+            }
+            *left *= std::move(*right);
+            break;
+        case BinaryNumericalFunctionExpression::OperatorType::Divide:
+            if (right->size() > 0 || storm::utility::isZero(right->getConstantPart())) {
+                return Result{};
+            }
+            *left /= std::move(*right);
+            break;
+        default:
+            return Result{};
+    }
+    return left;
 }
 
-boost::any LinearCoefficientVisitor::visit(BinaryRelationExpression const&, boost::any const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(BinaryRelationExpression const&, boost::any const&) {
+    return Result{};
 }
 
-boost::any LinearCoefficientVisitor::visit(VariableExpression const& expression, boost::any const&) {
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(VariableExpression const& expression, boost::any const&) {
+    if (!expression.getType().isNumericalType()) {
+        return Result{};
+    }
     VariableCoefficients coefficients;
-    if (expression.getType().isNumericalType()) {
-        coefficients.setCoefficient(expression.getVariable(), 1);
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+    coefficients.setCoefficient(expression.getVariable(), storm::utility::one<ValueType>());
+    return Result{std::move(coefficients)};
+}
+
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(UnaryBooleanFunctionExpression const&, boost::any const&) {
+    return Result{};
+}
+
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
+    Result child = boost::any_cast<Result>(expression.getOperand()->accept(*this, data));
+    if (!child || expression.getOperatorType() != UnaryNumericalFunctionExpression::OperatorType::Minus) {
+        return Result{};
     }
-    return coefficients;
+    child->negate();
+    return child;
 }
 
-boost::any LinearCoefficientVisitor::visit(UnaryBooleanFunctionExpression const&, boost::any const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(BooleanLiteralExpression const&, boost::any const&) {
+    return Result{};
 }
 
-boost::any LinearCoefficientVisitor::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
-    VariableCoefficients childResult = boost::any_cast<VariableCoefficients>(expression.getOperand()->accept(*this, data));
-
-    if (expression.getOperatorType() == UnaryNumericalFunctionExpression::OperatorType::Minus) {
-        childResult.negate();
-        return childResult;
-    } else {
-        STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
-    }
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(IntegerLiteralExpression const& expression, boost::any const&) {
+    return Result{VariableCoefficients(storm::utility::convertNumber<ValueType>(expression.getValue()))};
 }
 
-boost::any LinearCoefficientVisitor::visit(BooleanLiteralExpression const&, boost::any const&) {
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
+template<typename ValueType>
+boost::any LinearCoefficientVisitor<ValueType>::visit(RationalLiteralExpression const& expression, boost::any const&) {
+    return Result{VariableCoefficients(storm::utility::convertNumber<ValueType>(expression.getValue()))};
 }
 
-boost::any LinearCoefficientVisitor::visit(IntegerLiteralExpression const& expression, boost::any const&) {
-    return VariableCoefficients(static_cast<double>(expression.getValue()));
-}
-
-boost::any LinearCoefficientVisitor::visit(RationalLiteralExpression const& expression, boost::any const&) {
-    return VariableCoefficients(expression.getValueAsDouble());
-}
+template class LinearCoefficientVisitor<double>;
+template class LinearCoefficientVisitor<storm::RationalNumber>;
+// The coefficients of rational functions use a different type if exact arithmetic and rational functions use different libraries.
+#if (defined(STORM_USE_CLN_EA) && !defined(STORM_USE_CLN_RF)) || (!defined(STORM_USE_CLN_EA) && defined(STORM_USE_CLN_RF))
+template class LinearCoefficientVisitor<storm::RationalFunctionCoefficient>;
+#endif
 }  // namespace expressions
 }  // namespace storm
