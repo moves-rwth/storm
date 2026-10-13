@@ -200,22 +200,17 @@ TEST(RegionConstraintCheckerTest, CancellingCoefficientDoesNotRequireVariableInR
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, result.verdict);
 }
 
-TEST(RegionConstraintCheckerTest, NonLinearConstraintIsProbed) {
+TEST(RegionConstraintCheckerTest, NonLinearConstraintIsUndecided) {
     auto manager = std::make_shared<storm::expressions::ExpressionManager>();
     auto x = variable(manager, "x");
     auto y = variable(manager, "y");
     Region region = buildRegion({{"x", {0.0, 1.0}}, {"y", {0.0, 1.0}}});
 
-    // x * y <= 0.25 is violated at the corner (1, 1), which probing detects.
-    auto violated = Checker::checkConstraints(buildConstraintSet(x * y <= manager->rational(0.25)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
-    ASSERT_TRUE(violated.witness.has_value());
-
-    // x * y <= 4 is not proven to hold, but no probe fails either.
-    auto undecided = Checker::checkConstraints(buildConstraintSet(x * y <= manager->integer(4)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unknown, undecided.verdict);
-    EXPECT_FALSE(undecided.undecidedConstraints.empty());
-    EXPECT_FALSE(undecided.holdsThroughout());
+    // Non-linear constraints are not supported, even if they are violated (here at the corner (1, 1)).
+    auto result = Checker::checkConstraints(buildConstraintSet(x * y <= manager->rational(0.25)), region, "test");
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unknown, result.verdict);
+    EXPECT_FALSE(result.undecidedConstraints.empty());
+    EXPECT_FALSE(result.holdsThroughout());
 }
 
 TEST(RegionConstraintCheckerTest, IfThenElseIsUndecided) {

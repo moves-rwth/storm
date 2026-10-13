@@ -223,26 +223,6 @@ Extremes computeExtremes(AffineForm const& form, BoundariesByName const& boundar
     return Extremes{minimum, maximum, std::move(minimizingPoint), std::move(maximizingPoint)};
 }
 
-// Applies the relation to two exact values.
-bool applyRelation(RelationType relation, CoefficientType const& lhs, CoefficientType const& rhs) {
-    switch (relation) {
-        case RelationType::Equal:
-            return lhs == rhs;
-        case RelationType::NotEqual:
-            return lhs != rhs;
-        case RelationType::Less:
-            return lhs < rhs;
-        case RelationType::LessOrEqual:
-            return lhs <= rhs;
-        case RelationType::Greater:
-            return lhs > rhs;
-        case RelationType::GreaterOrEqual:
-            return lhs >= rhs;
-        default:
-            return false;
-    }
-}
-
 // The outcome of checking a single constraint.
 struct SingleVerdict {
     ConstraintVerdict verdict = ConstraintVerdict::Unknown;
@@ -315,91 +295,13 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
     }
 }
 
-// Exactly evaluates a numerical expression at a point; `std::nullopt` if it uses unsupported constructs.
-std::optional<CoefficientType> evaluateNumeric(BaseExpression const& expression, RegionWitness const& point) {
-    if (expression.isIntegerLiteralExpression()) {
-        return storm::utility::convertNumber<CoefficientType>(expression.asIntegerLiteralExpression().getValue());
-    }
-    if (expression.isRationalLiteralExpression()) {
-        return storm::utility::convertNumber<CoefficientType>(expression.asRationalLiteralExpression().getValue());
-    }
-    if (expression.isVariableExpression()) {
-        auto const& variableExpression = expression.asVariableExpression();
-        auto it = point.find(variableExpression.getVariableName());
-        if (it == point.end()) {
-            return std::nullopt;
-        }
-        return it->second;
-    }
-    if (expression.isUnaryNumericalFunctionExpression()) {
-        auto const& unaryExpression = expression.asUnaryNumericalFunctionExpression();
-        if (unaryExpression.getOperatorType() != UnaryNumericalFunctionExpression::OperatorType::Minus) {
-            return std::nullopt;
-        }
-        auto operand = evaluateNumeric(*unaryExpression.getOperand(), point);
-        if (!operand.has_value()) {
-            return std::nullopt;
-        }
-        return -*operand;
-    }
-    if (expression.isBinaryNumericalFunctionExpression()) {
-        auto const& binaryExpression = expression.asBinaryNumericalFunctionExpression();
-        auto left = evaluateNumeric(*binaryExpression.getFirstOperand(), point);
-        if (!left.has_value()) {
-            return std::nullopt;
-        }
-        auto right = evaluateNumeric(*binaryExpression.getSecondOperand(), point);
-        if (!right.has_value()) {
-            return std::nullopt;
-        }
-        using OperatorType = BinaryNumericalFunctionExpression::OperatorType;
-        switch (binaryExpression.getOperatorType()) {
-            case OperatorType::Plus:
-                return *left + *right;
-            case OperatorType::Minus:
-                return *left - *right;
-            case OperatorType::Times:
-                return *left * *right;
-            case OperatorType::Divide:
-                if (storm::utility::isZero(*right)) {
-                    return std::nullopt;
-                }
-                return *left / *right;
-            default:
-                return std::nullopt;
-        }
-    }
-    return std::nullopt;
-}
-
-// Probing can only find violations, so the verdict is Unknown if no probe fails.
-SingleVerdict probeConstraint(BinaryRelationExpression const& relationExpression, std::vector<RegionWitness> const& probePoints) {
-    RelationType const relation = relationExpression.getRelationType();
-    BaseExpression const& lhs = *relationExpression.getFirstOperand();
-    BaseExpression const& rhs = *relationExpression.getSecondOperand();
-
-    for (auto const& probePoint : probePoints) {
-        auto left = evaluateNumeric(lhs, probePoint);
-        auto right = evaluateNumeric(rhs, probePoint);
-        if (left.has_value() && right.has_value() && !applyRelation(relation, *left, *right)) {
-            return SingleVerdict{ConstraintVerdict::Unsat, probePoint};
-        }
-    }
-
-    return SingleVerdict{};
-}
-
-// The lower corner, the upper corner, and the center of the region.
-std::vector<RegionWitness> getProbePoints(BoundariesByName const& boundaries) {
-    RegionWitness lowerCorner;
-    RegionWitness upperCorner;
+// The center of the region.
+RegionWitness getCenter(BoundariesByName const& boundaries) {
     RegionWitness center;
     for (auto const& [variable, boundary] : boundaries) {
-        lowerCorner.emplace(variable, boundary.first);
-        upperCorner.emplace(variable, boundary.second);
         center.emplace(variable, (boundary.first + boundary.second) / 2);
     }
-    return {std::move(lowerCorner), std::move(upperCorner), std::move(center)};
+    return center;
 }
 
 }  // namespace
@@ -435,7 +337,6 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
                                                             RationalFunctionRegion const& region, std::string const& label) {
     RegionCheckResult result;
     BoundariesByName const boundaries = getBoundariesByName(region);
-    std::vector<RegionWitness> const probePoints = getProbePoints(boundaries);
     AffineFormVisitor affineFormVisitor;
     bool violated = false;
     bool undecided = false;
@@ -449,7 +350,7 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
             if (baseExpression.asBooleanLiteralExpression().getValue()) {
                 singleVerdict = SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
             } else {
-                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, probePoints.back()};
+                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, getCenter(boundaries)};
             }
         } else if (baseExpression.isBinaryRelationExpression()) {
             BinaryRelationExpression const& relationExpression = baseExpression.asBinaryRelationExpression();
@@ -471,8 +372,6 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
 
                 Extremes const extremes = computeExtremes(form, boundaries);
                 singleVerdict = checkAffineConstraint(relationExpression.getRelationType(), extremes);
-            } else {
-                singleVerdict = probeConstraint(relationExpression, probePoints);
             }
         }
 

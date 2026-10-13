@@ -55,8 +55,7 @@ struct RegionCheckResult {
  * Checks whether the constraints collected for a parametric model hold over an entire rectangular region.
  *
  * Affine constraints are decided exactly from the extrema of the affine form, which lie at the vertices of
- * the region. Non-affine constraints are probed at a few points: this can find violations but never proves
- * a constraint, so they are otherwise reported as undecided.
+ * the region. Non-affine constraints are not supported and are reported as undecided.
  */
 class RegionConstraintChecker {
    public:
