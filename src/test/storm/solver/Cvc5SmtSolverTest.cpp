@@ -352,6 +352,45 @@ TEST(Cvc5SmtSolver, AddNotCurrentModelWithUnconstrainedVariable) {
     EXPECT_NE(yValues[2], yValues[3]);
 }
 
+TEST(Cvc5SmtSolver, AddNotCurrentModelEnumeratesModelsIncrementally) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::solver::Cvc5SmtSolver s(*manager);
+
+    storm::expressions::Variable x = manager->declareIntegerVariable("x");
+    storm::expressions::Variable y = manager->declareIntegerVariable("y");
+    s.add(x >= manager->integer(0) && x <= manager->integer(3) && y >= manager->integer(0) && y <= manager->integer(2));
+
+    // Enumerate all models without resetting the solver.
+    uint64_t numberOfModels = 0;
+    while (s.check() == storm::solver::SmtSolver::CheckResult::Sat) {
+        ++numberOfModels;
+        ASSERT_LE(numberOfModels, 12ull);
+        s.addNotCurrentModel(false);
+    }
+    EXPECT_EQ(12ull, numberOfModels);
+}
+
+TEST(Cvc5SmtSolver, AddNotCurrentModelKeepsScopes) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::solver::Cvc5SmtSolver s(*manager);
+
+    storm::expressions::Variable x = manager->declareIntegerVariable("x");
+    s.add(x >= manager->integer(0) && x <= manager->integer(1));
+
+    s.push();
+    ASSERT_EQ(storm::solver::SmtSolver::CheckResult::Sat, s.check());
+    s.addNotCurrentModel();
+    ASSERT_EQ(storm::solver::SmtSolver::CheckResult::Sat, s.check());
+    s.addNotCurrentModel();
+    ASSERT_EQ(storm::solver::SmtSolver::CheckResult::Unsat, s.check());
+
+    // The blocking clauses belong to the scope, so popping it makes both models available again.
+    ASSERT_NO_THROW(s.pop());
+    EXPECT_EQ(storm::solver::SmtSolver::CheckResult::Sat, s.check());
+}
+
 TEST(Cvc5SmtSolver, AddNotCurrentModelWithOnlyBitVectorVariables) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
 

@@ -118,7 +118,7 @@ void Cvc5SmtSolver::add(storm::expressions::Expression const& assertion) {
 #endif
 }
 
-void Cvc5SmtSolver::addNotCurrentModel(bool performSolverReset) {
+void Cvc5SmtSolver::addNotCurrentModel([[maybe_unused]] bool performSolverReset) {
 #ifdef STORM_HAVE_CVC5
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
@@ -134,16 +134,8 @@ void Cvc5SmtSolver::addNotCurrentModel(bool performSolverReset) {
     cvc5::Term notThisModel = this->createModelExpression(variables);
     notThisModel = this->termManager->mkTerm(cvc5::Kind::NOT, {notThisModel});
 
-    // Similar to Z3, CVC5 does not necessarily search for a different model when new assertions are added
-    // in incremental mode. To circumvent this, we reset the solver and re-assert all assertions. Note that this
-    // discards the push/pop scopes (as it does for the Z3 backend): all assertions end up on the base level.
-    if (performSolverReset) {
-        auto const allAssertions = this->solver->getAssertions();
-        this->solver->resetAssertions();
-        for (auto const& assertion : allAssertions) {
-            this->solver->assertFormula(assertion);
-        }
-    }
+    // Unlike for Z3, no solver reset is needed to enumerate several models incrementally with CVC5, so performSolverReset is
+    // ignored. Resetting would also move all assertions to the base level and thereby discard the push/pop scopes.
     this->solver->assertFormula(notThisModel);
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
