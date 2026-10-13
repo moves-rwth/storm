@@ -68,23 +68,6 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
         }
     }
     flushToken(input.size());
-        } else if (c == '(') {
-            flushToken();
-            // The operators for negative numbers and fractions are two-character symbols, i.e., "(-" and "(/".
-            if (i + 1 < stringRepresentation.size() && (stringRepresentation[i + 1] == '-' || stringRepresentation[i + 1] == '/')) {
-                tokens.push_back(stringRepresentation.substr(i, 2));
-                ++i;
-            } else {
-                tokens.push_back("(");
-            }
-        } else if (c == ')') {
-            flushToken();
-            tokens.push_back(")");
-        } else {
-            currentToken.push_back(c);
-        }
-    }
-    flushToken();
     STORM_LOG_THROW(!tokens.empty(), storm::exceptions::ExpressionEvaluationException,
                     "Failed to convert CVC5 expression. Encountered empty numerical constant.");
 
@@ -290,9 +273,6 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
             }
             return operands.empty() ? this->manager.integer(0) : storm::expressions::sum(operands);
         }
-                return retVal;
-            }
-        }
         case cvc5::Kind::SUB:
             return this->translateExpression(term[0]) - this->translateExpression(term[1]);
         case cvc5::Kind::NEG:
@@ -305,9 +285,6 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
                 operands.push_back(this->translateExpression(term[i]));
             }
             return operands.empty() ? this->manager.integer(1) : storm::expressions::product(operands);
-        }
-                return retVal;
-            }
         }
         case cvc5::Kind::INTS_DIVISION:
             // Storm has no integer division, and translating this to Storm's division would silently change the semantics.
