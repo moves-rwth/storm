@@ -100,7 +100,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
         } else {
             returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
             allSccsExact = this->sccSolver->hasExactSolutionBounds();
-            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment);
+            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment, x);
         }
     } else {
         // Solve each SCC individually
@@ -139,9 +139,10 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::internalSol
                 for (auto const& state : scc) {
                     sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, dir, scc, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                bool sccMetPrecision = false;
+                returnValue = solveScc(sccSolverEnvironment, dir, scc, sccAsBitVector, x, b, newRelevantValues, sccMetPrecision) && returnValue;
                 allSccsExact = allSccsExact && this->sccSolver->hasExactSolutionBounds();
-                allSccsPrecise = allSccsPrecise && lastSccMetPrecision(sccSolverEnvironment);
+                allSccsPrecise = allSccsPrecise && sccMetPrecision;
                 // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
                 if (scc.size() * 64 < sccAsBitVector.size()) {
                     for (auto const& state : scc) {
@@ -187,9 +188,10 @@ void TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::trySetSolut
 }
 
 template<typename ValueType, typename SolutionType>
-bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::lastSccMetPrecision(Environment const& sccSolverEnvironment) const {
+bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::lastSccMetPrecision(Environment const& sccSolverEnvironment,
+                                                                                         std::vector<SolutionType> const& sccValues) const {
     return this->sccSolver->getSolutionBounds().isWithinPrecision(
-        storm::utility::convertNumber<SolutionType>(sccSolverEnvironment.solver().minMax().getPrecision()),
+        sccValues, storm::utility::convertNumber<SolutionType>(sccSolverEnvironment.solver().minMax().getPrecision()),
         sccSolverEnvironment.solver().minMax().getRelativeTerminationCriterion());
 }
 
@@ -340,7 +342,8 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
                                                                               storm::storage::StronglyConnectedComponent const& scc,
                                                                               storm::storage::BitVector const& sccAsBitVector,
                                                                               std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
-                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
+                                                                              std::optional<storm::storage::BitVector> const& globalRelevantValues,
+                                                                              bool& metPrecision) const {
     // Restricts a vector indexed by row groups to the states of the scc
     auto restrictToScc = [&scc](auto const& globalVector) {
         std::vector<std::decay_t<decltype(globalVector[0])>> result;
@@ -469,6 +472,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType, SolutionType>::solveScc(st
 
     // Invoke scc solver
     bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
+    metPrecision = lastSccMetPrecision(sccSolverEnvironment, sccX);
 
     // Set Scheduler choices and solution
     if (this->isTrackSchedulerSet()) {

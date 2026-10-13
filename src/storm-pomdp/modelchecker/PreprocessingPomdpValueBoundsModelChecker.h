@@ -24,12 +24,14 @@ class PreprocessingPomdpValueBoundsModelChecker {
 
     explicit PreprocessingPomdpValueBoundsModelChecker(PomdpType const& pomdp);
 
+    /** Computes quantitative bounds, ignoring operator thresholds and leaving the formula unchanged. */
     ValueBounds getValueBounds(storm::logic::Formula const& formula);
 
     ValueBounds getValueBounds(storm::Environment const& env, storm::logic::Formula const& formula);
 
     ValueBounds getValueBounds(storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info);
 
+    /** Computes a quantitative extreme bound, ignoring the operator threshold and leaving the formula unchanged. */
     ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula);
 
     ExtremeValueBound getExtremeValueBound(storm::Environment const& env, storm::logic::Formula const& formula);

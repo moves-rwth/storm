@@ -200,6 +200,13 @@ PreprocessingPomdpValueBoundsModelChecker<PomdpType>::ValueBounds PreprocessingP
     STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException,
                     "The property type is not supported for this analysis.");
 
+    // Bound computations need quantitative results, without changing the caller's property.
+    if (formula.asOperatorFormula().hasBound()) {
+        auto quantitativeFormula = formula.clone();
+        quantitativeFormula->asOperatorFormula().removeBound();
+        return getValueBounds(env, *quantitativeFormula, info);
+    }
+
     // Compute the values on the fully observable MDP
     // We need an actual MDP so that we can apply schedulers below.
     // Also, the api call in the next line will require a copy anyway.
@@ -352,6 +359,7 @@ PreprocessingPomdpValueBoundsModelChecker<PomdpType>::ExtremeValueBound Preproce
     // We need an actual MDP so that we can apply schedulers below.
     // Also, the api call in the next line will require a copy anyway.
     storm::logic::RewardOperatorFormula newFormula(formula.asRewardOperatorFormula());
+    newFormula.removeBound();
     if (formula.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize) {
         newFormula.setOptimalityType(storm::solver::OptimizationDirection::Minimize);
     } else {
