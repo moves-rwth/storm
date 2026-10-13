@@ -1,6 +1,9 @@
 #include "storm-pars/analysis/RegionConstraintChecker.h"
 
+#include <map>
 #include <optional>
+#include <set>
+#include <string>
 #include <utility>
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -15,19 +18,9 @@ namespace {
 using RelationType = storm::expressions::RelationType;
 using BaseExpression = storm::expressions::BaseExpression;
 using BinaryRelationExpression = storm::expressions::BinaryRelationExpression;
-using BinaryNumericalFunctionExpression = storm::expressions::BinaryNumericalFunctionExpression;
-using UnaryNumericalFunctionExpression = storm::expressions::UnaryNumericalFunctionExpression;
 
-// The (lower, upper) boundary of every variable of a region, keyed by variable name.
-using BoundariesByName = std::map<std::string, std::pair<CoefficientType, CoefficientType>>;
-
-BoundariesByName getBoundariesByName(RationalFunctionRegion const& region) {
-    BoundariesByName boundaries;
-    for (auto const& [variable, lowerBoundary] : region.getLowerBoundaries()) {
-        boundaries.emplace(variable.name(), std::make_pair(lowerBoundary, region.getUpperBoundary(variable)));
-    }
-    return boundaries;
-}
+using Form = storm::expressions::LinearCoefficientVisitor<CoefficientType>::VariableCoefficients;
+using VariablesByName = std::map<std::string, RationalFunctionRegion::VariableType>;
 
 // The exact extrema of an affine form over a region, with the points attaining them.
 struct Extremes {
@@ -37,41 +30,24 @@ struct Extremes {
     RegionWitness maximizingPoint;
 };
 
-// Every variable can be optimized independently because the region is rectangular.
-Extremes computeExtremes(CoefficientType const& constantPart, std::map<std::string, CoefficientType> const& coefficients,
-                         BoundariesByName const& boundaries) {
-    CoefficientType minimum = constantPart;
-    CoefficientType maximum = constantPart;
-    RegionWitness minimizingPoint;
-    RegionWitness maximizingPoint;
-
-    for (auto const& [variable, boundary] : boundaries) {
-        CoefficientType const& lower = boundary.first;
-        CoefficientType const& upper = boundary.second;
-        auto it = coefficients.find(variable);
-        if (it == coefficients.end()) {
-            // The variable does not influence the form, so it can be fixed arbitrarily.
-            minimizingPoint.emplace(variable, lower);
-            maximizingPoint.emplace(variable, lower);
-            continue;
-        }
-        CoefficientType const& coefficient = it->second;
-        CoefficientType const atLower = coefficient * lower;
-        CoefficientType const atUpper = coefficient * upper;
-        if (atLower <= atUpper) {
-            minimum += atLower;
-            maximum += atUpper;
-            minimizingPoint.emplace(variable, lower);
-            maximizingPoint.emplace(variable, upper);
-        } else {
-            minimum += atUpper;
-            maximum += atLower;
-            minimizingPoint.emplace(variable, upper);
-            maximizingPoint.emplace(variable, lower);
-        }
+// An affine form is monotone in each variable, so its extrema are attained where each variable is at the bound given by the sign of its coefficient.
+Extremes computeExtremes(Form const& form, VariablesByName const& variables, RationalFunctionRegion const& region) {
+    std::set<RationalFunctionRegion::VariableType> increasing;
+    std::set<RationalFunctionRegion::VariableType> decreasing;
+    for (auto const& [variable, coefficient] : form) {
+        (coefficient > storm::utility::zero<CoefficientType>() ? increasing : decreasing).insert(variables.at(variable.getName()));
     }
+    RegionWitness minimizingPoint(region.getPoint(storm::solver::OptimizationDirection::Minimize, increasing, decreasing));
+    RegionWitness maximizingPoint(region.getPoint(storm::solver::OptimizationDirection::Maximize, increasing, decreasing));
 
-    return Extremes{minimum, maximum, std::move(minimizingPoint), std::move(maximizingPoint)};
+    auto evaluate = [&form, &variables](RegionWitness const& point) {
+        CoefficientType value = form.getConstantPart();
+        for (auto const& [variable, coefficient] : form) {
+            value += coefficient * point.at(variables.at(variable.getName()));
+        }
+        return value;
+    };
+    return Extremes{evaluate(minimizingPoint), evaluate(maximizingPoint), std::move(minimizingPoint), std::move(maximizingPoint)};
 }
 
 // The outcome of checking a single constraint.
@@ -136,8 +112,7 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
             CoefficientType const t = extremes.minimum / (extremes.minimum - extremes.maximum);
             RegionWitness witness;
             for (auto const& [variable, value] : extremes.minimizingPoint) {
-                CoefficientType const other = extremes.maximizingPoint.at(variable);
-                witness.emplace(variable, value + t * (other - value));
+                witness.emplace(variable, value + t * (extremes.maximizingPoint.at(variable) - value));
             }
             return SingleVerdict{ConstraintVerdict::Unsat, std::move(witness)};
         }
@@ -146,21 +121,12 @@ SingleVerdict checkAffineConstraint(RelationType relation, Extremes const& extre
     }
 }
 
-// The center of the region.
-RegionWitness getCenter(BoundariesByName const& boundaries) {
-    RegionWitness center;
-    for (auto const& [variable, boundary] : boundaries) {
-        center.emplace(variable, (boundary.first + boundary.second) / 2);
-    }
-    return center;
-}
-
 }  // namespace
 
 std::ostream& operator<<(std::ostream& out, RegionWitness const& witness) {
     bool first = true;
     for (auto const& [variable, value] : witness) {
-        out << (first ? "" : ", ") << variable << " = " << value;
+        out << (first ? "" : ", ") << variable.name() << " = " << value;
         first = false;
     }
     return out;
@@ -187,7 +153,10 @@ bool RegionConstraintChecker::isGraphPreserving(RationalFunctionRegion const& re
 RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::ConstraintCollector::ConstraintSet const& constraints,
                                                             RationalFunctionRegion const& region, std::string const& label) {
     RegionCheckResult result;
-    BoundariesByName const boundaries = getBoundariesByName(region);
+    VariablesByName variables;
+    for (auto const& variable : region.getVariables()) {
+        variables.emplace(variable.name(), variable);
+    }
     storm::expressions::LinearCoefficientVisitor<CoefficientType> coefficientVisitor;
     bool violated = false;
     bool undecided = false;
@@ -201,7 +170,7 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
             if (baseExpression.asBooleanLiteralExpression().getValue()) {
                 singleVerdict = SingleVerdict{ConstraintVerdict::Sat, std::nullopt};
             } else {
-                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, getCenter(boundaries)};
+                singleVerdict = SingleVerdict{ConstraintVerdict::Unsat, RegionWitness(region.getCenterPoint())};
             }
         } else if (baseExpression.isBinaryRelationExpression()) {
             BinaryRelationExpression const& relationExpression = baseExpression.asBinaryRelationExpression();
@@ -212,16 +181,14 @@ RegionCheckResult RegionConstraintChecker::checkConstraints(storm::analysis::Con
                 // The relation is compared against zero for the form of `lhs - rhs`.
                 *form -= std::move(*rhs);
 
-                std::map<std::string, CoefficientType> coefficients;
                 for (auto const& [variable, coefficient] : *form) {
-                    STORM_LOG_THROW(boundaries.count(variable.getName()) != 0, storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(variables.count(variable.getName()) != 0, storm::exceptions::InvalidArgumentException,
                                     "Cannot check " << label << " constraint '" << constraint.toString()
                                                     << "' over the given region, because it constrains the variable '" << variable.getName()
                                                     << "', which is not part of the region. Please provide a region covering all constrained variables.");
-                    coefficients.emplace(variable.getName(), coefficient);
                 }
 
-                Extremes const extremes = computeExtremes(form->getConstantPart(), coefficients, boundaries);
+                Extremes const extremes = computeExtremes(*form, variables, region);
                 singleVerdict = checkAffineConstraint(relationExpression.getRelationType(), extremes);
             }
         }

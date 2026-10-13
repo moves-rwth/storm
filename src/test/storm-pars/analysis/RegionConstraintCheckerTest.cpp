@@ -101,8 +101,8 @@ TEST(RegionConstraintCheckerTest, AffineConstraintViolatedAtCorner) {
     EXPECT_FALSE(result.holdsThroughout());
     EXPECT_TRUE(result.violatedConstraint.has_value());
     ASSERT_TRUE(result.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(result.witness->at("x")), 1e-9);
-    EXPECT_NEAR(1.0, asDouble(result.witness->at("y")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(result.witness->at(variableByName("x"))), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(result.witness->at(variableByName("y"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, StrictInequalityOnBoundaryIsViolated) {
@@ -114,7 +114,7 @@ TEST(RegionConstraintCheckerTest, StrictInequalityOnBoundaryIsViolated) {
     auto violated = Checker::checkConstraints(buildConstraintSet(x < manager->integer(1)), region, "test");
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 
     // In contrast, x <= 1 does hold throughout.
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, Checker::checkConstraints(buildConstraintSet(x <= manager->integer(1)), region, "test").verdict);
@@ -140,7 +140,7 @@ TEST(RegionConstraintCheckerTest, NegativeCoefficientIsHandled) {
     auto violated = Checker::checkConstraints(buildConstraintSet(manager->integer(1) - x >= manager->integer(0)), buildRegion({{"x", {0.0, 2.0}}}), "test");
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(2.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(2.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, NotEqualOverPositiveRegion) {
@@ -155,7 +155,7 @@ TEST(RegionConstraintCheckerTest, NotEqualOverPositiveRegion) {
     auto violated = Checker::checkConstraints(buildConstraintSet(x != manager->integer(0)), buildRegion({{"x", {-1.0, 1.0}}}), "test");
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(0.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(0.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, EqualityRequiresIdenticallyZero) {
@@ -167,7 +167,7 @@ TEST(RegionConstraintCheckerTest, EqualityRequiresIdenticallyZero) {
     auto violated = Checker::checkConstraints(buildConstraintSet(x == manager->integer(0)), region, "test");
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 
     // The identically vanishing form holds everywhere.
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
@@ -183,7 +183,7 @@ TEST(RegionConstraintCheckerTest, BooleanLiteralConstraintsAreDecided) {
     EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     EXPECT_TRUE(violated.violatedConstraint.has_value());
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_TRUE(violated.witness->count("x") > 0);
+    EXPECT_TRUE(violated.witness->count(variableByName("x")) > 0);
 
     // A constantly true constraint holds throughout.
     auto satisfied = Checker::checkConstraints(buildConstraintSet(manager->boolean(true)), region, "test");

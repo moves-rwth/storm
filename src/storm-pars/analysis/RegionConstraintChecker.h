@@ -23,10 +23,11 @@ using CoefficientType = RationalFunctionRegion::CoefficientType;
 using ConstraintVerdict = storm::solver::SmtSolver::CheckResult;
 
 /*!
- * A point of a parameter region, mapping variable names to exact values.
+ * A point of a parameter region, mapping the variables to exact values.
  */
-struct RegionWitness : std::map<std::string, CoefficientType> {
-    using std::map<std::string, CoefficientType>::map;
+struct RegionWitness : RationalFunctionRegion::Valuation {
+    RegionWitness() = default;
+    explicit RegionWitness(RationalFunctionRegion::Valuation valuation) : RationalFunctionRegion::Valuation(std::move(valuation)) {}
 };
 
 /*!
