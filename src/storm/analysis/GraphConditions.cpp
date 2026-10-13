@@ -57,7 +57,7 @@ storm::expressions::Expression ConstraintCollector::relateToZero(storm::RawPolyn
         case storm::expressions::RelationType::NotEqual:
             return toExpression(polynomial, expressionManager) != zero;
     }
-    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled relation.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::UnexpectedException, "Unhandled relation.");
 }
 
 bool ConstraintCollector::addConstraint(ConstraintSet& constraintSet, ConstraintIndex& constraintIndex, storm::expressions::Expression const& constraint) {
