@@ -35,8 +35,8 @@ bool Cvc5SmtSolver::Cvc5ModelReference::getBooleanValue(storm::expressions::Vari
 
 int_fast64_t Cvc5SmtSolver::Cvc5ModelReference::getIntegerValue(storm::expressions::Variable const& variable) const {
     this->checkVariable(variable);
-    // Note that a bitvector variable is an integer type in Storm, and its value is stored among the integer
-    // values. We therefore accept it here just like SimpleValuation does.
+    // A bitvector variable is an integer type in Storm and is modelled as an unbounded integer by this backend, so its
+    // value is read with the integer getter.
     STORM_LOG_THROW(variable.getType().isIntegerType(), storm::exceptions::InvalidTypeException,
                     "Cannot retrieve the integer value of variable '" << variable.getName() << "' of non-integer type.");
     return this->variableValues.getIntegerValue(variable);
@@ -123,7 +123,7 @@ void Cvc5SmtSolver::addNotCurrentModel([[maybe_unused]] bool performSolverReset)
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
 
-    // Bitvector variables are part of the model just like the other ones. They are represented as integers in this
+    // Bitvector variables are part of the model just like the other ones. They are modelled as unbounded integers in this
     // backend, so createModelExpression describes them like any other variable. This also keeps the blocking clause
     // from degenerating to false when they are the only variables.
     std::vector<storm::expressions::Variable> variables;

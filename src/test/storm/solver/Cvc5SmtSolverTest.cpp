@@ -295,8 +295,8 @@ TEST(Cvc5SmtSolver, ModelReferenceReadsBitVectorVariableAsInteger) {
 
     storm::solver::Cvc5SmtSolver s(*manager);
 
-    // A bitvector is an integer type in Storm, and IterativePolicySearch reads the value of such a scheduler
-    // variable with the integer getter of a model.
+    // A bitvector variable is modelled as an unbounded integer, so its value is read with the integer getter, as
+    // IterativePolicySearch does for its scheduler variables.
     storm::expressions::Variable bv = manager->declareBitVectorVariable("bv", 8);
     s.add(bv == manager->integer(3));
     ASSERT_EQ(storm::solver::SmtSolver::CheckResult::Sat, s.check());

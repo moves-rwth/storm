@@ -603,7 +603,8 @@ cvc5::Term Cvc5ExpressionAdapter::createVariable(storm::expressions::Variable co
     } else if (variable.getType().isRationalType()) {
         sort = this->termManager.getRealSort();
     } else {
-        // Bitvector variables are integer types in Storm and are modelled as unbounded integers (as in Z3ExpressionAdapter).
+        // A bitvector variable is an integer type in Storm, and its width carries no semantics: expressions have no bitvector
+        // operators. It is therefore modelled as an unbounded integer, whose width is not enforced, as in the Z3 and MathSAT adapters.
         STORM_LOG_THROW(variable.getType().isIntegerType(), storm::exceptions::InvalidTypeException,
                         "Encountered variable '" << variable.getName() << "' with unknown type while trying to create solver variables.");
         sort = this->termManager.getIntegerSort();
