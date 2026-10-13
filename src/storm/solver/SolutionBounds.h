@@ -6,7 +6,9 @@
 #include <type_traits>
 #include <vector>
 
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 namespace storm::solver {
 
@@ -73,9 +75,11 @@ struct SolutionBounds {
      * Returns true if both bounds are set and neither is further from its value than the given precision allows.
      */
     bool isWithinPrecision(std::vector<ValueType> const& values, ValueType const& precision, bool relative) const {
-        if (!hasLower() || !hasUpper() || lower->size() != values.size() || upper->size() != values.size()) {
+        if (!hasLower() || !hasUpper()) {
             return false;
         }
+        STORM_LOG_THROW(lower->size() == values.size() && upper->size() == values.size(), storm::exceptions::InvalidArgumentException,
+                        "The given values do not match the size of the bounds.");
         ValueType const zero = storm::utility::zero<ValueType>();
         for (uint64_t i = 0; i < values.size(); ++i) {
             ValueType const& low = (*lower)[i];

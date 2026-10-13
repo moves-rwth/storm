@@ -10,10 +10,10 @@ TEST(SolutionBoundsTest, PrecisionNeedsBothSides) {
     EXPECT_FALSE(bounds.isWithinPrecision({0.5}, 1.0, true));
 }
 
-TEST(SolutionBoundsTest, PrecisionNeedsMatchingSizes) {
+TEST(SolutionBoundsTest, PrecisionRejectsMismatchingSizes) {
     storm::solver::SolutionBounds<double> bounds;
     bounds.setExact(std::vector<double>{0.5});
-    EXPECT_FALSE(bounds.isWithinPrecision({0.5, 0.5}, 1.0, false));
+    STORM_SILENT_EXPECT_THROW(bounds.isWithinPrecision({0.5, 0.5}, 1.0, false), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(SolutionBoundsTest, AbsolutePrecisionComparesTheDistanceToTheValue) {
