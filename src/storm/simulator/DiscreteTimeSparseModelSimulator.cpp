@@ -61,6 +61,9 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
                         if (rewEntry.getColumn() == successor) {
                             lastRewards[i] += rewEntry.getValue();
                             break;
+                        } else if (rewEntry.getColumn() > successor) {
+                            // Entries within a row are sorted by column.
+                            break;
                         }
                     }
                 }
