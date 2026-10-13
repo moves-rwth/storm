@@ -25,6 +25,9 @@ namespace {
 
 constexpr double highInfinity = std::numeric_limits<double>::infinity();
 
+// LP solvers cannot represent strict inequalities. As for GLPK and Gurobi, they are approximated by shifting the right-hand side by this margin.
+constexpr double strictInequalityMargin = 1e-06;
+
 struct HighsConstraintData {
     std::vector<HighsInt> variableIndices;
     std::vector<double> coefficients;
@@ -63,6 +66,13 @@ HighsConstraintData createConstraintData(typename HighsLpSolver<ValueType, RawMo
             result.variableIndices.push_back(static_cast<HighsInt>(variableIndexPair->second));
             result.coefficients.push_back(storm::utility::convertNumber<double>(variableCoefficientPair.second));
         }
+    }
+    if (result.relationType == storm::expressions::RelationType::Less) {
+        result.relationType = storm::expressions::RelationType::LessOrEqual;
+        result.rhs -= strictInequalityMargin;
+    } else if (result.relationType == storm::expressions::RelationType::Greater) {
+        result.relationType = storm::expressions::RelationType::GreaterOrEqual;
+        result.rhs += strictInequalityMargin;
     }
     return result;
 }
@@ -150,10 +160,6 @@ void HighsLpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constr
 
     double lower, upper;
     switch (constraintData.relationType) {
-        case storm::expressions::RelationType::Less:
-        case storm::expressions::RelationType::Greater:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Strict inequalities are not supported by HiGHS. Use an LP solver that supports them (e.g. via --lpsolver gurobi or --lpsolver glpk), or use nonstrict inequalities.");
-            break;
         case storm::expressions::RelationType::LessOrEqual:
             lower = -highInfinity;
             upper = constraintData.rhs;
@@ -184,9 +190,6 @@ void HighsLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const
         STORM_LOG_ASSERT(constraint.getManager() == this->getManager(), "Constraint was not built over the proper variables.");
 
         auto constraintData = createConstraintData<ValueType, RawMode>(constraint, this->variableToIndexMap);
-        if (constraintData.relationType == storm::expressions::RelationType::Less || constraintData.relationType == storm::expressions::RelationType::Greater) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Strict inequalities are not supported by HiGHS. Use an LP solver that supports them (e.g. via --lpsolver gurobi or --lpsolver glpk), or use nonstrict inequalities.");
-        }
 
         // HiGHS does not support indicator constraints natively. Instead, we apply a big-M reformulation that reuses the binary indicator variable.
         // To this end, we compute bounds on the activity of the constraint's linear expression over the box given by the variable bounds.

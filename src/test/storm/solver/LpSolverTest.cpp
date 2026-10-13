@@ -22,11 +22,11 @@ class DefaultEnvironment {
     typedef double ValueType;
     static const bool isExact = false;
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::FROMSETTINGS;
-// The default solver is HiGHS if available (no strict-relation support, but indicator support), otherwise GLPK or a fallback.
+// The default solver is HiGHS if available, otherwise GLPK or a fallback.
 #ifdef STORM_HAVE_HIGHS
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = false;
+    static const bool strictRelationSupport = true;
     static const bool IndicatorSupport = true;
 #elif defined STORM_HAVE_GLPK
     static const bool IntegerSupport = true;
@@ -141,7 +141,7 @@ class HighsEnvironment {
     static const storm::solver::LpSolverTypeSelection solverSelection = storm::solver::LpSolverTypeSelection::Highs;
     static const bool IntegerSupport = true;
     static const bool IncrementalSupport = true;
-    static const bool strictRelationSupport = false;
+    static const bool strictRelationSupport = true;
     static const bool IndicatorSupport = true;
 
     static bool skip() {
