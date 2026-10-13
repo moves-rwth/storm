@@ -50,8 +50,7 @@ storm::models::sparse::Pomdp<double> buildSingleStatePomdp(bool withRewards = fa
         components.choiceLabeling = std::move(choiceLabeling);
     }
     if (withRewards) {
-        components.rewardModels.emplace("rew", storm::models::sparse::StandardRewardModel<double>(std::optional<std::vector<double>>({3.0}),
-                                                                                                  std::optional<std::vector<double>>({2.0, 6.0})));
+        components.rewardModels.emplace("rew", storm::models::sparse::StandardRewardModel<double>(std::vector<double>{3.0}, std::vector<double>{2.0, 6.0}));
     }
     return storm::models::sparse::Pomdp<double>(std::move(components), true);
 }
@@ -354,8 +353,7 @@ TEST(ApplyObservationBasedFiniteStateController, NamedActionMappingsTakePreceden
         storm::storage::sparse::ModelComponents<double> components(matrixBuilder.build(), std::move(stateLabeling));
         components.observabilityClasses = std::vector<uint32_t>{0};
         components.choiceLabeling = std::move(choiceLabeling);
-        components.rewardModels.emplace("rew",
-                                        storm::models::sparse::StandardRewardModel<double>(std::nullopt, std::optional<std::vector<double>>({2.0, 6.0, 10.0})));
+        components.rewardModels.emplace("rew", storm::models::sparse::StandardRewardModel<double>(std::nullopt, std::vector<double>{2.0, 6.0, 10.0}));
         storm::models::sparse::Pomdp<double> pomdp(std::move(components), true);
 
         uint64_t const fscNamedActionId = 1 - namedActionIndex;
