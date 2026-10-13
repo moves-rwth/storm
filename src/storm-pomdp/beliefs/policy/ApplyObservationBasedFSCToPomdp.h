@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "storm-pomdp/beliefs/policy/ObservationBasedFiniteStateController.h"
 #include "storm/api/export.h"
 #include "storm/exceptions/IllegalArgumentException.h"
