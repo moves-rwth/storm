@@ -10,6 +10,8 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm/api/storm.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 
@@ -46,7 +48,7 @@ void oneshot_test(std::string const& path, std::string const& constants, std::st
     pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
     storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-    storm::pomdp::OneShotPolicySearch<double> memlessSearch(*pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
+    storm::pomdp::OneShotPolicySearch<double> memlessSearch(storm::Environment(), *pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
     memlessSearch.analyzeForInitialStates(lookahead);
 }
 
@@ -69,7 +71,7 @@ void iterativesearch_test(std::string const& path, std::string const& constants,
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
     storm::pomdp::MemlessSearchOptions options;
     uint64_t lookahead = pomdp->getNumberOfStates();
-    storm::pomdp::IterativePolicySearch<double> search(*pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
+    storm::pomdp::IterativePolicySearch<double> search(storm::Environment(), *pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
     if (wr) {
         search.computeWinningRegion(lookahead);
     } else {
@@ -107,6 +109,53 @@ class QualitativeAnalysis : public ::testing::Test {
 #endif
     }
 };
+
+namespace {
+
+class RecordingSmtSolverFactory : public storm::utility::solver::Z3SmtSolverFactory {
+   public:
+    std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const override {
+        ADD_FAILURE() << "Policy search must pass its environment to the SMT factory.";
+        return Z3SmtSolverFactory::create(manager);
+    }
+
+    std::unique_ptr<storm::solver::SmtSolver> create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const override {
+        environment = &env;
+        return Z3SmtSolverFactory::create(env, manager);
+    }
+
+    mutable storm::Environment const* environment = nullptr;
+};
+
+}  // namespace
+
+TEST_F(QualitativeAnalysis, PolicySearchUsesEnvironment) {
+    auto program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple_unit_rewards.prism").preprocess("slippery=0");
+    auto formula = storm::api::parsePropertiesForPrismProgram("Pmax=? [F \"goal\"]", program).front().getRawFormula();
+    auto pomdp = storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
+    pomdp = storm::transformer::MakePOMDPCanonic<double>(*pomdp).transform();
+    storm::analysis::QualitativeAnalysisOnGraphs<double> qualitativeAnalysis(*pomdp);
+    auto sinkStates = qualitativeAnalysis.analyseProbSmaller1(formula->asProbabilityOperatorFormula());
+    pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(sinkStates);
+    auto targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
+
+    storm::Environment env;
+    env.solver().setSmtSolverType(storm::solver::SmtSolverType::Mathsat);
+    // An explicit factory can still choose Z3, even when the supplied environment selects another backend.
+    for (bool iterative : {false, true}) {
+        SCOPED_TRACE(iterative ? "iterative" : "one-shot");
+        auto recordingFactory = std::make_shared<RecordingSmtSolverFactory>();
+        std::shared_ptr<storm::utility::solver::SmtSolverFactory> factory = recordingFactory;
+        if (iterative) {
+            storm::pomdp::IterativePolicySearch<double> search(env, *pomdp, targetStates, sinkStates, factory, storm::pomdp::MemlessSearchOptions());
+            EXPECT_FALSE(search.analyzeForInitialStates(pomdp->getNumberOfStates()));
+        } else {
+            storm::pomdp::OneShotPolicySearch<double> search(env, *pomdp, targetStates, sinkStates, factory);
+            EXPECT_FALSE(search.analyzeForInitialStates(pomdp->getNumberOfStates()));
+        }
+        EXPECT_EQ(recordingFactory->environment, &env);
+    }
+}
 
 TEST_F(QualitativeAnalysis, GraphAlgorithm_Simple) {
     graphalgorithm_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]");
