@@ -406,7 +406,7 @@ TEST(Cvc5SmtSolver, AddNotCurrentModelWithOnlyBitVectorVariables) {
         s.addNotCurrentModel();
     }
 
-    // Both models are found instead of the second check being unsatisfiable right away.
+    // Both values of the bitvector are models.
     ASSERT_EQ(2ull, values.size());
     EXPECT_NE(values[0], values[1]);
 }

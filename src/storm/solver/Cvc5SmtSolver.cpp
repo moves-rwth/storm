@@ -123,9 +123,9 @@ void Cvc5SmtSolver::addNotCurrentModel([[maybe_unused]] bool performSolverReset)
     STORM_LOG_THROW(this->lastResult == SmtSolver::CheckResult::Sat, storm::exceptions::InvalidStateException,
                     "Unable to create model for formula that was not determined to be satisfiable.");
 
-    // Note that bitvector variables are part of the model just like the other ones. They are represented as
-    // integers in this backend, so createModelExpression can describe them without further ado. Leaving them out
-    // would result in an empty conjunction, i.e., in a blocking clause that is simply false.
+    // Bitvector variables are part of the model just like the other ones. They are represented as integers in this
+    // backend, so createModelExpression describes them like any other variable. This also keeps the blocking clause
+    // from degenerating to false when they are the only variables.
     std::vector<storm::expressions::Variable> variables;
     for (auto const& variable : this->getManager().getVariables()) {
         variables.push_back(variable);
