@@ -266,4 +266,37 @@ TEST(IntervalIterationJustPreciseEnough, MinMax) {
         }
     }
 }
+
+TEST(GuessingValueIterationPrecision, MinMaxSmallValues) {
+    // Regression for #1137: the requested tolerance must scale with small probabilities in relative mode.
+    storm::storage::SparseMatrixBuilder<double> builder(0, 0, 0, false, true);
+    builder.newRowGroup(0);
+    builder.addNextValue(0, 0, 0.9);
+    builder.newRowGroup(2);
+    auto matrix = builder.build(3, 2);
+
+    for (bool relative : {false, true}) {
+        for (double scale : {1.0, 1e-8}) {
+            for (auto direction : {storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize}) {
+                SCOPED_TRACE(::testing::Message() << "relative=" << relative << ", scale=" << scale << ", direction=" << direction);
+                auto env = DoubleGuessingViEnvironment::createEnvironment();
+                env.solver().minMax().setRelativeTerminationCriterion(relative);
+                env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-3"));
+                env.solver().minMax().setMaximalNumberOfIterations(10000);
+                auto solver = storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>().create(env, matrix);
+                solver->setHasUniqueSolution(true);
+                solver->setHasNoEndComponents(true);
+                solver->setBounds(0.0, 1.0);
+
+                std::vector<double> x(2);
+                std::vector<double> b = {1e-5 * scale, 5e-5 * scale, 0.0};
+                ASSERT_TRUE(solver->solveEquations(env, direction, x, b));
+                double expected = (storm::solver::minimize(direction) ? 5e-5 : 1e-4) * scale;
+                double tolerance = relative ? 1e-3 * expected : 1e-3;
+                EXPECT_NEAR(x[0], expected, tolerance);
+                EXPECT_EQ(x[1], 0.0);
+            }
+        }
+    }
+}
 }  // namespace

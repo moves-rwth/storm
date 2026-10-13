@@ -427,6 +427,35 @@ TEST(IntervalIterationJustPreciseEnough, Native) {
     }
 }
 
+TEST(GuessingValueIterationPrecision, NativeSmallValues) {
+    // Also cover negative solutions and an exact zero when checking relative convergence.
+    storm::storage::SparseMatrixBuilder<double> builder(3, 3, 2);
+    builder.addNextValue(0, 0, 0.9);
+    builder.addNextValue(1, 1, 0.9);
+    auto matrix = builder.build();
+
+    for (bool relative : {false, true}) {
+        for (double scale : {1.0, 1e-8}) {
+            SCOPED_TRACE(::testing::Message() << "relative=" << relative << ", scale=" << scale);
+            auto env = NativeDoubleGuessingViEnvironment::createEnvironment();
+            env.solver().native().setRelativeTerminationCriterion(relative);
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber, std::string>("1e-3"));
+            env.solver().native().setMaximalNumberOfIterations(10000);
+            auto solver = storm::solver::GeneralLinearEquationSolverFactory<double>().create(env, matrix);
+            solver->setBounds(-1.0, 1.0);
+
+            std::vector<double> x(3);
+            std::vector<double> b = {1e-5 * scale, -1e-5 * scale, 0.0};
+            ASSERT_TRUE(solver->solveEquations(env, x, b));
+            double expected = 1e-4 * scale;
+            double tolerance = relative ? 1e-3 * expected : 1e-3;
+            EXPECT_NEAR(x[0], expected, tolerance);
+            EXPECT_NEAR(x[1], -expected, tolerance);
+            EXPECT_EQ(x[2], 0.0);
+        }
+    }
+}
+
 template<typename ValueType>
 void testEliminationWithAbsorbingStates(std::vector<std::vector<std::pair<uint64_t, ValueType>>> const& rows, std::vector<ValueType> const& b,
                                         std::vector<ValueType> const& expected) {
