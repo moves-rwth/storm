@@ -67,8 +67,8 @@ typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoeffi
 template<typename ValueType>
 typename LinearCoefficientVisitor<ValueType>::VariableCoefficients& LinearCoefficientVisitor<ValueType>::VariableCoefficients::operator/=(
     VariableCoefficients&& other) {
-    STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0 && !storm::utility::isZero(other.constantPart),
-                    storm::exceptions::InvalidArgumentException, "Expression is non-linear or divides by zero.");
+    STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0 && !storm::utility::isZero(other.constantPart), storm::exceptions::InvalidArgumentException,
+                    "Expression is non-linear or divides by zero.");
     for (auto& variableCoefficientPair : this->variableToCoefficientMapping) {
         variableCoefficientPair.second /= other.constantPart;
     }

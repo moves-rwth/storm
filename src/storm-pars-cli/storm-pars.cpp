@@ -318,7 +318,8 @@ void verifyRegionWithSparseEngine(storm::Environment const& env, std::shared_ptr
     auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
     auto engine = rvs.getRegionCheckEngine();
-    auto const graphPreservationStatus = storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto splittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -388,7 +389,8 @@ void parameterSpacePartitioningWithSparseEngine(storm::Environment const& env, s
         splittingStrategy.maxSplitDimensions = rvs.getSplittingThreshold();
     }
 
-    auto const graphPreservationStatus = storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+    auto const graphPreservationStatus =
+        storm::pars::establishGraphPreservation<ValueType>(model, regions, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto parsedDiscreteVars = storm::api::parseVariableList<ValueType>(regionSettings.getDiscreteVariablesString(), *model);
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> discreteVariables(parsedDiscreteVars.begin(), parsedDiscreteVars.end());

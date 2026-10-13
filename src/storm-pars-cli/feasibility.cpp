@@ -206,7 +206,8 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
     auto regionVerificationSettings = storm::settings::getModule<storm::settings::modules::RegionVerificationSettings>();
     auto engine = regionVerificationSettings.getRegionCheckEngine();
 
-    auto const graphPreservationStatus = establishGraphPreservation<ValueType>(model, {task->getRegion()}, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
+    auto const graphPreservationStatus =
+        establishGraphPreservation<ValueType>(model, {task->getRegion()}, engine != storm::modelchecker::RegionCheckEngine::RobustParameterLifting);
 
     auto regionSplittingStrategy = storm::modelchecker::RegionSplittingStrategy();
 
@@ -218,9 +219,14 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
 
     if (task->isBoundSet()) {
         storm::utility::Stopwatch watch(true);
-        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model,
+                                                                        storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine,
-                                                                        regionSplittingStrategy, storm::api::MonotonicitySetting(), {}, true, graphPreservationStatus};
+                                                                        regionSplittingStrategy,
+                                                                        storm::api::MonotonicitySetting(),
+                                                                        {},
+                                                                        true,
+                                                                        graphPreservationStatus};
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
@@ -232,9 +238,14 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
 
         ValueType precision = storm::utility::convertNumber<ValueType>(task->getMaximalAllowedGap().value());
         storm::utility::Stopwatch watch(true);
-        auto const& settings = storm::api::RefinementOptions<ValueType>{model, storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
+        auto const& settings = storm::api::RefinementOptions<ValueType>{model,
+                                                                        storm::api::createTask<ValueType>(task->getFormula().asSharedPointer(), true),
                                                                         engine,
-                                                                        regionSplittingStrategy, storm::api::MonotonicitySetting(), {}, true, graphPreservationStatus};
+                                                                        regionSplittingStrategy,
+                                                                        storm::api::MonotonicitySetting(),
+                                                                        {},
+                                                                        true,
+                                                                        graphPreservationStatus};
         auto valueValuation = storm::api::computeExtremalValue<ValueType>(env, settings, task->getRegion(), direction, storm::utility::zero<ValueType>(),
                                                                           !task->isMaxGapRelative(), std::nullopt);
         watch.stop();

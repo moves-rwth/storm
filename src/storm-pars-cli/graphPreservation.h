@@ -45,8 +45,7 @@ std::optional<storm::analysis::ConstraintCollector> collectConstraints(std::shar
  */
 template<typename ValueType>
 std::optional<storm::pars::analysis::RegionCheckResult> checkRegionConstraints(std::optional<storm::analysis::ConstraintCollector> const& collector,
-                                                                               storm::storage::ParameterRegion<ValueType> const& region,
-                                                                               bool wellformedness) {
+                                                                               storm::storage::ParameterRegion<ValueType> const& region, bool wellformedness) {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         if (collector) {
             storm::pars::analysis::RegionConstraintChecker checker(*collector);
@@ -88,7 +87,8 @@ storm::pars::analysis::GraphPreservationStatus establishGraphPreservation(std::s
     bool const needsGraphPreservation = assumed || graphPreservationRequired;
     auto const collector = collectConstraints<ValueType>(model);
 
-    storm::pars::analysis::GraphPreservationStatus status = needsGraphPreservation ? storm::pars::analysis::GraphPreservationStatus::GraphPreserving : storm::pars::analysis::GraphPreservationStatus::WellDefined;
+    storm::pars::analysis::GraphPreservationStatus status =
+        needsGraphPreservation ? storm::pars::analysis::GraphPreservationStatus::GraphPreserving : storm::pars::analysis::GraphPreservationStatus::WellDefined;
     for (auto const& region : regions) {
         auto const result = checkRegionConstraints<ValueType>(collector, region, !needsGraphPreservation);
         if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Sat) {
@@ -105,7 +105,7 @@ storm::pars::analysis::GraphPreservationStatus establishGraphPreservation(std::s
             }
         } else if (assumed) {
             STORM_LOG_WARN_COND(!violated, "Region " << region << " does not preserve the graph structure of the parametric model: "
-                                                      << describeViolation(*result) << ". Set --assume-graph-preserving false.");
+                                                     << describeViolation(*result) << ". Set --assume-graph-preserving false.");
         } else {
             STORM_LOG_THROW(!violated, storm::exceptions::InvalidSettingsException,
                             "Region " << region << " is provably not graph-preserving: " << describeViolation(*result)
