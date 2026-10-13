@@ -374,7 +374,7 @@ TEST(ApplyObservationBasedFiniteStateController, NamedActionMappingsTakePreceden
 
 TEST(ApplyObservationBasedFiniteStateController, MatchesLabelledChoicesForUnnamedActions) {
     auto pomdp = buildSingleStatePomdp(true, true);
-    for (std::string const& actionName : {"first", "second"}) {
+    for (std::string const actionName : {"first", "second"}) {
         SCOPED_TRACE(actionName);
         std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, actionName}}}}};
         storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0, std::nullopt, actionNames);
