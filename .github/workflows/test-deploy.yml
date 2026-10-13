@@ -110,8 +110,9 @@ jobs:
         # Only deploy if using master on original repo (and not for pull requests or forks)
         if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
         run: |
-          docker commit ci movesrwth/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}
-          docker push movesrwth/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}
+          # Tag with the commit so concurrent master runs cannot overwrite each other's images
+          docker commit ci movesrwth/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}-${{ github.sha }}
+          docker push movesrwth/storm:${{ inputs.dockerTag }}-${{ matrix.platform.suffix }}-${{ github.sha }}
 
   merge:
     name: Publish multi-arch image (${{ inputs.dockerTag }})
@@ -119,16 +120,33 @@ jobs:
     # Only publish if using master on original repo (and not for pull requests or forks)
     if: github.repository_owner == 'stormchecker' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    # Serialize promotion of the stable tag
+    concurrency:
+      group: storm-docker-promote-${{ inputs.dockerTag }}
+      cancel-in-progress: false
     steps:
+      - name: Check that this commit is still the head of master
+        id: head
+        run: |
+          latest=$(git ls-remote "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" refs/heads/master | cut -f1)
+          if [ "$latest" = "${{ github.sha }}" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "A newer commit exists on master, not updating ${{ inputs.dockerTag }}"
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Login into docker
+        if: steps.head.outputs.current == 'true'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.STORM_CI_DOCKER_USERNAME }}
           password: ${{ secrets.STORM_CI_DOCKER_TOKEN }}
       - name: Create multi-arch manifest and push
+        if: steps.head.outputs.current == 'true'
         run: |
           docker buildx imagetools create -t movesrwth/storm:${{ inputs.dockerTag }} \
-            movesrwth/storm:${{ inputs.dockerTag }}-amd64 \
-            movesrwth/storm:${{ inputs.dockerTag }}-arm64
+            movesrwth/storm:${{ inputs.dockerTag }}-amd64-${{ github.sha }} \
+            movesrwth/storm:${{ inputs.dockerTag }}-arm64-${{ github.sha }}
       - name: Inspect image
+        if: steps.head.outputs.current == 'true'
         run: docker buildx imagetools inspect movesrwth/storm:${{ inputs.dockerTag }}
