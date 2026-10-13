@@ -23,20 +23,20 @@
 namespace storm::pars {
 
 /*!
- * Collects the constraints of the model. Returns nullptr if the model is not a sparse parametric model.
+ * Collects the constraints of the model. Returns std::nullopt if the model is not a sparse parametric model.
  */
 template<typename ValueType>
-std::unique_ptr<storm::analysis::ConstraintCollector> collectConstraints(std::shared_ptr<storm::models::ModelBase> const& model) {
+std::optional<storm::analysis::ConstraintCollector> collectConstraints(std::shared_ptr<storm::models::ModelBase> const& model) {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         if (model && model->isSparseModel()) {
             try {
-                return std::make_unique<storm::analysis::ConstraintCollector>(*model->template as<storm::models::sparse::Model<ValueType>>());
+                return storm::analysis::ConstraintCollector(*model->template as<storm::models::sparse::Model<ValueType>>());
             } catch (storm::exceptions::BaseException const& exception) {
                 STORM_LOG_WARN("Could not collect the constraints of the model; they will be treated as undecided: " << exception.what());
             }
         }
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 /*!
@@ -44,7 +44,7 @@ std::unique_ptr<storm::analysis::ConstraintCollector> collectConstraints(std::sh
  * Returns std::nullopt if they cannot be checked, e.g. if the region does not cover all constrained variables.
  */
 template<typename ValueType>
-std::optional<storm::pars::analysis::RegionCheckResult> checkRegionConstraints(storm::analysis::ConstraintCollector const* collector,
+std::optional<storm::pars::analysis::RegionCheckResult> checkRegionConstraints(std::optional<storm::analysis::ConstraintCollector> const& collector,
                                                                                storm::storage::ParameterRegion<ValueType> const& region,
                                                                                bool wellformedness) {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
@@ -90,7 +90,7 @@ storm::pars::analysis::GraphPreservationStatus establishGraphPreservation(std::s
 
     storm::pars::analysis::GraphPreservationStatus status = needsGraphPreservation ? storm::pars::analysis::GraphPreservationStatus::GraphPreserving : storm::pars::analysis::GraphPreservationStatus::WellDefined;
     for (auto const& region : regions) {
-        auto const result = checkRegionConstraints<ValueType>(collector.get(), region, !needsGraphPreservation);
+        auto const result = checkRegionConstraints<ValueType>(collector, region, !needsGraphPreservation);
         if (result && result->verdict == storm::pars::analysis::ConstraintVerdict::Sat) {
             continue;
         }

@@ -136,20 +136,13 @@ class AffineFormVisitor : public storm::expressions::ExpressionVisitor {
             right->negate();
             left->addScaled(*right, one);
         } else if (operatorType == OperatorType::Times) {
-            AffineForm const* variableForm = nullptr;
-            CoefficientType scale = one;
-            if (left->isConstant()) {
-                scale = left->constantPart;
-                variableForm = &right.value();
-            } else if (right->isConstant()) {
-                scale = right->constantPart;
-                variableForm = &left.value();
-            }
-            if (variableForm == nullptr) {
+            if (!left->isConstant() && !right->isConstant()) {
                 return std::optional<AffineForm>{};
             }
+            bool const leftIsScale = left->isConstant();
+            AffineForm const& variableForm = leftIsScale ? *right : *left;
             AffineForm result;
-            result.addScaled(*variableForm, scale);
+            result.addScaled(variableForm, leftIsScale ? left->constantPart : right->constantPart);
             left = std::move(result);
         } else if (operatorType == OperatorType::Divide) {
             if (!right->isConstant() || storm::utility::isZero(right->constantPart)) {
