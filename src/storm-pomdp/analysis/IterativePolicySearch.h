@@ -158,10 +158,9 @@ class IterativePolicySearch {
         uint64_t graphBasedAnalysisWinOb = 0;
     };
 
-    IterativePolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& targetStates,
-                          storm::storage::BitVector const& surelyReachSinkStates,
-
-                          std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory, MemlessSearchOptions const& options);
+    IterativePolicySearch(storm::Environment const& env, storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& targetStates,
+                          storm::storage::BitVector const& surelyReachSinkStates, std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
+                          MemlessSearchOptions const& options);
 
     bool analyzeForInitialStates(uint64_t k) {
         stats.totalTimer.start();
@@ -203,7 +202,7 @@ class IterativePolicySearch {
 
     bool initialize(uint64_t k);
 
-    bool smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions = {});
+    bool smtCheck(uint64_t iteration, storm::expressions::ExpressionSet const& assumptions = {});
 
     std::unique_ptr<storm::solver::SmtSolver> smtSolver;
     storm::models::sparse::Pomdp<ValueType> const& pomdp;

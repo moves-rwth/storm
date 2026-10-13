@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "storm-cli-utilities/AutomaticSettings.h"
+#include "storm-cli-utilities/Qvbs.h"
 #include "storm-cli-utilities/print.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -18,6 +19,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/settings/EnvironmentBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -31,7 +33,6 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/SylvanSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "storm/storage/Qvbs.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/localeliminator/AutomaticAction.h"
@@ -160,7 +161,8 @@ struct ModelProcessingInformation {
     // The Dd library to be used
     storm::dd::DdType ddType;
 
-    // The environment used during model checking
+    // The environment used during model checking.
+    // It is constructed explicitly in getModelProcessingInformation(), once the CLI settings are known to be finalized.
     storm::Environment env;
 
     // A flag which is set to true, if the settings were detected to be compatible.
@@ -206,6 +208,7 @@ inline void getModelProcessingInformationAutomatic(SymbolicInput const& input, M
 inline ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input,
                                                                 std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
     ModelProcessingInformation mpi;
+    mpi.env = storm::settings::EnvironmentBuilder::buildEnvironment();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
     auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
@@ -556,7 +559,7 @@ inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(Symbo
     }
 
     auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    options.setStochasticTolerance(generalSettings.getPrecision());
+    options.setStochasticTolerance(generalSettings.getTolerance());
     options.setShowProgress(generalSettings.isVerboseSet());
     options.setShowProgressDelay(generalSettings.getShowProgressDelay());
 
@@ -719,8 +722,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseModelBi
     }
     options.actionSensitive = bisimulationSettings.isActionSensitiveSet();
     STORM_LOG_INFO("Performing bisimulation minimization (type: "
-                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong") << ", tolerance: " << options.tolerance
-                   << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
+                   << (options.bisimulationType == storm::bisimulation::BisimulationType::Weak ? "weak" : "strong")
+                   << ", tolerance: " << options.tolerance.value() << (options.actionSensitive ? ", action-sensitive" : "") << ")...");
     return storm::api::performBisimulationMinimization<ValueType>(model, createFormulasToRespect(input.properties), options);
 }
 

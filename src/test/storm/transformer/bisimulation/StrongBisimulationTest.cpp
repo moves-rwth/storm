@@ -7,6 +7,7 @@
 #include <set>
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/transformer/StatePermuter.h"
 
@@ -278,6 +279,10 @@ TEST(StrongBisimulationTest, FloatingPointRoundingNeedsTolerance) {
 
     EXPECT_EQ(5ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, strongOptions()).quotient->getNumberOfStates());
     EXPECT_EQ(4ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, approximateOptions()).quotient->getNumberOfStates());
+    // When no tolerance is set, the model's stochastic tolerance is used -- the default model tolerance (see
+    // storm::Environment::DefaultModelTolerance), which also identifies the two states.
+    EXPECT_EQ(storm::utility::convertNumber<ValueType>(storm::Environment::DefaultModelTolerance), model->getStochasticTolerance());
+    EXPECT_EQ(4ull, storm::bisimulation::performBisimulationMinimization<ValueType>(*model, {}, Options{}).quotient->getNumberOfStates());
 }
 
 // ------------------------------------------------------------

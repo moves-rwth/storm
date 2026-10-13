@@ -41,7 +41,8 @@ bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask
         if (formula.isInFragment(storm::logic::reachability().setReachabilityRewardFormulasAllowed(true).setRewardOperatorsAllowed(true))) {
             return true;
         }
-        if (formula.isInFragment(storm::logic::prctlstar().setBoundedUntilFormulasAllowed(true))) {
+        if (formula.isInFragment(
+                storm::logic::prctlstar().setBoundedUntilFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true))) {
             return true;
         }
     } else {
@@ -114,7 +115,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
             this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(),
             pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
 
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
+        result->setValuesExact();
+        return result;
     }
 }
 
@@ -130,7 +133,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         std::vector<SolutionType> numericResult =
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeNextProbabilities(
                 env, this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
+        result->setValuesExact();
+        return result;
     }
 }
 
@@ -145,7 +150,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                             checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
                         storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
-        STORM_LOG_THROW(this->getModel().getTransitionMatrix().hasOnlyPositiveEntries(), storm::exceptions::InvalidSettingsException,
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
                         "Computing until probabilities on uncertain model requires graph-preservation.");
     }
     std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
@@ -224,10 +229,11 @@ template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeCumulativeRewards(
     Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, SolutionType> const& checkTask) {
     storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
-    if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented cumulative rewards with intervals.");
-    } else {
-        if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
+    if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::NotImplementedException,
+                                            "We have not yet implemented multi-dimensional or reward-bounded cumulative rewards with intervals.");
+        } else {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException,
                             "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");
             STORM_LOG_THROW(!checkTask.getFormula().hasRewardAccumulation(), storm::exceptions::InvalidOperationException,
@@ -241,15 +247,25 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                 env, this->getModel(), formula);
             // The helper returns one value per initial state, in the order in which the bit vector selects them.
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(this->getModel().getInitialStates(), std::move(numericResult)));
-        } else {
-            STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
-            auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            std::vector<SolutionType> numericResult =
-                storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeCumulativeRewards(
-                    env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-                    rewardModel.get(), rewardPathFormula.getNonStrictBound<uint64_t>());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
         }
+    } else {
+        if constexpr (storm::IsIntervalType<ValueType>) {
+            STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                            "Uncertainty resolution mode must be set for uncertain (interval) models.");
+            STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
+                                checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
+                            storm::exceptions::InvalidSettingsException,
+                            "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
+        }
+        STORM_LOG_THROW(rewardPathFormula.hasIntegerBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have a discrete time bound.");
+        auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
+        std::vector<SolutionType> numericResult =
+            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeCumulativeRewards(
+                env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), rewardModel.get(),
+                rewardPathFormula.getNonStrictBound<uint64_t>());
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
+        result->setValuesExact();
+        return result;
     }
 }
 
@@ -272,7 +288,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
             storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeDiscountedCumulativeRewards(
                 env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), rewardModel.get(),
                 rewardPathFormula.getNonStrictBound<uint64_t>(), rewardPathFormula.getDiscountFactor<SolutionType>());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
+        result->setValuesExact();
+        return result;
     }
 }
 
@@ -289,7 +307,9 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                 env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
                 checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""),
                 rewardPathFormula.getBound<uint64_t>());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(numericResult));
+        result->setValuesExact();
+        return result;
     }
 }
 
@@ -304,34 +324,42 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
                             checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
                         storm::exceptions::InvalidSettingsException,
                         "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
-        STORM_LOG_THROW(this->getModel().getTransitionMatrix().hasOnlyPositiveEntries(), storm::exceptions::InvalidSettingsException,
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
                         "Computing rewards on uncertain model requires graph-preservation.");
     }
     std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
     ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-    std::vector<ExtendedSolutionType> numericResult =
-        storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityRewards(
-            env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-            this->getModel().getBackwardTransitions(), rewardModel.get(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.getHint());
-    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+    auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityRewards(
+        env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+        this->getModel().getBackwardTransitions(), rewardModel.get(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.getHint());
+    auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret.values));
+    result->setBounds(std::move(ret.solutionBounds));
+    return result;
 }
 
 template<typename SparseDtmcModelType>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeReachabilityTimes(
     Environment const& env, CheckTask<storm::logic::EventuallyFormula, SolutionType> const& checkTask) {
     if constexpr (storm::IsIntervalType<ValueType>) {
-        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented reachability times with intervals.");
-    } else {
-        storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
-        std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
-        ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
-        std::vector<ExtendedSolutionType> numericResult =
-            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityTimes(
-                env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-                this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.getHint());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        STORM_LOG_THROW(checkTask.isUncertaintyResolutionModeSet(), storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution mode must be set for uncertain (interval) models.");
+        STORM_LOG_THROW(checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Robust &&
+                            checkTask.getUncertaintyResolutionMode() != UncertaintyResolutionMode::Cooperative,
+                        storm::exceptions::InvalidSettingsException,
+                        "Uncertainty resolution modes robust or cooperative not allowed if optimization direction is not stated explicitly.");
+        STORM_LOG_THROW(this->getModel().getTransitionMatrix().isProbabilisticGraphPreserving(), storm::exceptions::InvalidSettingsException,
+                        "Computing reachability times on uncertain model requires graph-preservation.");
     }
+    storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+    std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
+    ExplicitQualitativeCheckResult<SolutionType> const& subResult = subResultPointer->template asExplicitQualitativeCheckResult<SolutionType>();
+    auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabilityTimes(
+        env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+        this->getModel().getBackwardTransitions(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), checkTask.getHint());
+    auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret.values));
+    result->setBounds(std::move(ret.solutionBounds));
+    return result;
 }
 
 template<typename SparseDtmcModelType>
@@ -341,11 +369,12 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We have not yet implemented total rewards with intervals.");
     } else {
         auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-        std::vector<ExtendedSolutionType> numericResult =
-            storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeTotalRewards(
-                env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
-                this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), checkTask.getHint());
-        return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<SolutionType>(std::move(numericResult)));
+        auto ret = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeTotalRewards(
+            env, storm::solver::SolveGoal<ValueType, SolutionType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(),
+            this->getModel().getBackwardTransitions(), rewardModel.get(), checkTask.isQualitativeSet(), checkTask.getHint());
+        auto result = std::make_unique<ExplicitQuantitativeCheckResult<SolutionType>>(std::move(ret.values));
+        result->setBounds(std::move(ret.solutionBounds));
+        return result;
     }
 }
 

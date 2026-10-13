@@ -66,35 +66,64 @@ bool SimpleValuation::operator==(SimpleValuation const& other) const {
            rationalValues == other.rationalValues;
 }
 
+bool SimpleValuation::contains(Variable const& variable) const {
+    // A variable belongs to this valuation only if it is managed by the same manager and if it was already
+    // known to that manager when this valuation was created. The latter is checked via the offset of the
+    // variable: offsets within a type group are assigned consecutively and are never reused, so an offset
+    // that is out of bounds belongs to a variable declared after the creation of this valuation.
+    std::shared_ptr<ExpressionManager const> const& manager = this->getManagerAsSharedPtr();
+    if (!manager || manager.get() != &variable.getManager()) {
+        return false;
+    }
+    if (variable.hasBooleanType()) {
+        return variable.getOffset() < booleanValues.size();
+    } else if (variable.hasIntegerType() || variable.hasBitVectorType()) {
+        // Integer and bit vector variables share the same storage and hence the same offset space.
+        return variable.getOffset() < integerValues.size();
+    } else if (variable.hasRationalType()) {
+        return variable.getOffset() < rationalValues.size();
+    }
+    // Arrays and strings are not stored by valuations of this type.
+    return false;
+}
+
 bool SimpleValuation::getBooleanValue(Variable const& booleanVariable) const {
+    STORM_LOG_ASSERT(contains(booleanVariable), "The valuation does not contain a value for variable '" << booleanVariable.getName() << "'.");
     return booleanValues[booleanVariable.getOffset()];
 }
 
 int_fast64_t SimpleValuation::getIntegerValue(Variable const& integerVariable) const {
+    STORM_LOG_ASSERT(contains(integerVariable), "The valuation does not contain a value for variable '" << integerVariable.getName() << "'.");
     return integerValues[integerVariable.getOffset()];
 }
 
 int_fast64_t SimpleValuation::getBitVectorValue(Variable const& bitVectorVariable) const {
+    STORM_LOG_ASSERT(contains(bitVectorVariable), "The valuation does not contain a value for variable '" << bitVectorVariable.getName() << "'.");
     return integerValues[bitVectorVariable.getOffset()];
 }
 
 double SimpleValuation::getRationalValue(Variable const& rationalVariable) const {
+    STORM_LOG_ASSERT(contains(rationalVariable), "The valuation does not contain a value for variable '" << rationalVariable.getName() << "'.");
     return rationalValues[rationalVariable.getOffset()];
 }
 
 void SimpleValuation::setBooleanValue(Variable const& booleanVariable, bool value) {
+    STORM_LOG_ASSERT(contains(booleanVariable), "The valuation does not contain a value for variable '" << booleanVariable.getName() << "'.");
     booleanValues[booleanVariable.getOffset()] = value;
 }
 
 void SimpleValuation::setIntegerValue(Variable const& integerVariable, int_fast64_t value) {
+    STORM_LOG_ASSERT(contains(integerVariable), "The valuation does not contain a value for variable '" << integerVariable.getName() << "'.");
     integerValues[integerVariable.getOffset()] = value;
 }
 
 void SimpleValuation::setBitVectorValue(Variable const& bitVectorVariable, int_fast64_t value) {
+    STORM_LOG_ASSERT(contains(bitVectorVariable), "The valuation does not contain a value for variable '" << bitVectorVariable.getName() << "'.");
     integerValues[bitVectorVariable.getOffset()] = value;
 }
 
 void SimpleValuation::setRationalValue(Variable const& rationalVariable, double value) {
+    STORM_LOG_ASSERT(contains(rationalVariable), "The valuation does not contain a value for variable '" << rationalVariable.getName() << "'.");
     rationalValues[rationalVariable.getOffset()] = value;
 }
 
@@ -121,7 +150,10 @@ std::string SimpleValuation::toString(bool pretty) const {
     if (pretty) {
         std::set<storm::expressions::Variable> allVariables;
         for (auto const& e : getManager()) {
-            allVariables.insert(e.first);
+            // Skip variables that were declared after this valuation was created, as there is no value for them.
+            if (contains(e.first)) {
+                allVariables.insert(e.first);
+            }
         }
         return toPrettyString(allVariables);
     } else {
@@ -154,6 +186,10 @@ std::string SimpleValuation::toString(bool pretty) const {
 storm::json<storm::RationalNumber> SimpleValuation::toJson() const {
     storm::json<storm::RationalNumber> result;
     for (auto const& variable : getManager()) {
+        // Skip variables that were declared after this valuation was created, as there is no value for them.
+        if (!contains(variable.first)) {
+            continue;
+        }
         if (variable.second.isBooleanType()) {
             result[variable.first.getName()] = this->getBooleanValue(variable.first);
         } else if (variable.second.isIntegerType()) {
