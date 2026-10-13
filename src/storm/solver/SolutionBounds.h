@@ -70,15 +70,14 @@ struct SolutionBounds {
     }
 
     /*!
-     * Returns true if both bounds are set and pin every value down to the given precision, i.e. if they are no
-     * further apart than that precision allows.
+     * Returns true if both bounds are set and neither is further from its value than the given precision allows.
      */
-    bool isWithinPrecision(ValueType const& precision, bool relative) const {
-        if (!hasLower() || !hasUpper()) {
+    bool isWithinPrecision(std::vector<ValueType> const& values, ValueType const& precision, bool relative) const {
+        if (!hasLower() || !hasUpper() || lower->size() != values.size() || upper->size() != values.size()) {
             return false;
         }
         ValueType const zero = storm::utility::zero<ValueType>();
-        for (uint64_t i = 0; i < lower->size(); ++i) {
+        for (uint64_t i = 0; i < values.size(); ++i) {
             ValueType const& low = (*lower)[i];
             ValueType const& up = (*upper)[i];
             ValueType allowed = precision;
@@ -87,8 +86,8 @@ struct SolutionBounds {
                 // straddle zero, where only coinciding bounds say anything.
                 allowed = (low <= zero && up >= zero) ? zero : precision * std::min(storm::utility::abs<ValueType>(low), storm::utility::abs<ValueType>(up));
             }
-            // Negated, so that a width that is not a number is rejected.
-            if (!(up - low <= allowed)) {
+            // Negated, so that a distance that is not a number is rejected.
+            if (!(values[i] - low <= allowed) || !(up - values[i] <= allowed)) {
                 return false;
             }
         }

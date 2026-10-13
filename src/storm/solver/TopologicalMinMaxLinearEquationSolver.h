@@ -43,9 +43,9 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
     // solved exactly, otherwise the precision they were solved with, if every SCC was solved that accurately.
     void trySetSolutionBounds(Environment const& env, std::vector<SolutionType> const& x, bool allSccsExact, bool allSccsPrecise) const;
 
-    // Retrieves whether the bounds the SCC solver reported for the SCC it just solved show that it achieved the
-    // precision the given environment asked of it. Adding up the errors of the SCCs relies on that.
-    bool lastSccMetPrecision(Environment const& sccSolverEnvironment) const;
+    // Retrieves whether the SCC solver met the precision the given environment asked of it for the given values it
+    // just produced. Adding up the errors of the SCCs relies on that.
+    bool lastSccMetPrecision(Environment const& sccSolverEnvironment, std::vector<SolutionType> const& sccValues) const;
 
     // Solves the SCC with the given index
     // ... for the case that the SCC is trivial
@@ -56,7 +56,7 @@ class TopologicalMinMaxLinearEquationSolver : public StandardMinMaxLinearEquatio
     // ... for the remaining cases (1 < scc.size() < x.size())
     bool solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection d, storm::storage::StronglyConnectedComponent const& scc,
                   storm::storage::BitVector const& sccAsBitVector, std::vector<SolutionType>& globalX, std::vector<ValueType> const& globalB,
-                  std::optional<storm::storage::BitVector> const& globalRelevantValues) const;
+                  std::optional<storm::storage::BitVector> const& globalRelevantValues, bool& metPrecision) const;
 
     // cached auxiliary data
     mutable std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> sortedSccDecomposition;

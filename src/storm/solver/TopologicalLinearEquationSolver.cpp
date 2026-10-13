@@ -103,7 +103,7 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         } else {
             returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
             allSccsExact = this->sccSolver->hasExactSolutionBounds();
-            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment);
+            allSccsPrecise = lastSccMetPrecision(sccSolverEnvironment, x);
         }
     } else {
         // Solve each SCC individually
@@ -134,9 +134,10 @@ bool TopologicalLinearEquationSolver<ValueType>::internalSolveEquations(Environm
                 for (auto const& state : scc) {
                     sccAsBitVector.set(state, true);
                 }
-                returnValue = solveScc(sccSolverEnvironment, scc, sccAsBitVector, x, b, newRelevantValues) && returnValue;
+                bool sccMetPrecision = false;
+                returnValue = solveScc(sccSolverEnvironment, scc, sccAsBitVector, x, b, newRelevantValues, sccMetPrecision) && returnValue;
                 allSccsExact = allSccsExact && this->sccSolver->hasExactSolutionBounds();
-                allSccsPrecise = allSccsPrecise && lastSccMetPrecision(sccSolverEnvironment);
+                allSccsPrecise = allSccsPrecise && sccMetPrecision;
                 // clear sccAsBitVector, either by clearing all bits or by clearing the bits of the current SCC (if its small)
                 if (scc.size() * 64 < sccAsBitVector.size()) {
                     for (auto const& state : scc) {
@@ -188,7 +189,7 @@ void TopologicalLinearEquationSolver<ValueType>::trySetSolutionBounds(Environmen
 }
 
 template<typename ValueType>
-bool TopologicalLinearEquationSolver<ValueType>::lastSccMetPrecision(Environment const& sccSolverEnvironment) const {
+bool TopologicalLinearEquationSolver<ValueType>::lastSccMetPrecision(Environment const& sccSolverEnvironment, std::vector<ValueType> const& sccValues) const {
     if constexpr (std::is_same_v<ValueType, storm::RationalFunction>) {
         return false;
     } else {
@@ -196,7 +197,7 @@ bool TopologicalLinearEquationSolver<ValueType>::lastSccMetPrecision(Environment
         if (!precision.first.is_initialized()) {
             return false;
         }
-        return this->sccSolver->getSolutionBounds().isWithinPrecision(storm::utility::convertNumber<ValueType>(precision.first.get()),
+        return this->sccSolver->getSolutionBounds().isWithinPrecision(sccValues, storm::utility::convertNumber<ValueType>(precision.first.get()),
                                                                       precision.second.is_initialized() && precision.second.get());
     }
 }
@@ -268,7 +269,7 @@ template<typename ValueType>
 bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, storm::storage::StronglyConnectedComponent const& scc,
                                                           storm::storage::BitVector const& sccAsBitVector, std::vector<ValueType>& globalX,
                                                           std::vector<ValueType> const& globalB,
-                                                          std::optional<storm::storage::BitVector> const& globalRelevantValues) const {
+                                                          std::optional<storm::storage::BitVector> const& globalRelevantValues, bool& metPrecision) const {
     // Restricts a vector indexed by states to the states of the scc
     auto restrictToScc = [&scc](std::vector<ValueType> const& globalVector) {
         std::vector<ValueType> result;
@@ -333,6 +334,7 @@ bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment con
     }
 
     bool returnvalue = this->sccSolver->solveEquations(sccSolverEnvironment, sccX, sccB);
+    metPrecision = lastSccMetPrecision(sccSolverEnvironment, sccX);
 
     // Set solution
     uint64_t sccState = 0;
