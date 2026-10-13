@@ -134,8 +134,8 @@ void Cvc5SmtSolver::addNotCurrentModel([[maybe_unused]] bool performSolverReset)
     cvc5::Term notThisModel = this->createModelExpression(variables);
     notThisModel = this->termManager->mkTerm(cvc5::Kind::NOT, {notThisModel});
 
-    // Unlike for Z3, no solver reset is needed to enumerate several models incrementally with CVC5, so performSolverReset is
-    // ignored. Resetting would also move all assertions to the base level and thereby discard the push/pop scopes.
+    // CVC5 enumerates models incrementally without resetting the solver, so performSolverReset is ignored. A reset would
+    // also move all assertions to the base level and thereby discard the push/pop scopes.
     this->solver->assertFormula(notThisModel);
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
