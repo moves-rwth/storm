@@ -2,6 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include <sstream>
+#include <string>
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-pomdp/beliefs/policy/ApplyObservationBasedFSCToPomdp.h"
@@ -150,7 +151,7 @@ TEST(ObservationBasedFiniteStateController, DeterminismTracksReplacedOutputs) {
 
 TEST(ObservationBasedFiniteStateController, FormatsPartialSignatureMaps) {
     storm::pomdp::policy::ObservationSignature observationSignature;
-    observationSignature.values.emplace("known-observable", "known-value");
+    observationSignature.values.emplace("known-observable", std::string{"known-value"});
     std::optional observationSignatures{std::unordered_map<uint64_t, storm::pomdp::policy::ObservationSignature>{{0, observationSignature}}};
     std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, "known-action"}}}}};
     storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0, observationSignatures, actionNames);
@@ -176,7 +177,7 @@ TEST(ObservationBasedFiniteStateController, FormatsPartialSignatureMaps) {
 
 TEST(ObservationBasedFiniteStateController, EscapesSignaturesAndActionNamesInDotOutput) {
     storm::pomdp::policy::ObservationSignature observationSignature;
-    observationSignature.values.emplace("observation", "value\"\\\n");
+    observationSignature.values.emplace("observation", std::string{"value\"\\\n"});
     std::optional observationSignatures{std::unordered_map<uint64_t, storm::pomdp::policy::ObservationSignature>{{0, observationSignature}}};
     std::optional actionNames{std::unordered_map<uint64_t, std::unordered_map<uint64_t, std::string>>{{0, {{0, "action\"\\\n"}}}}};
     storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0, observationSignatures, actionNames);
