@@ -151,12 +151,12 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -200,12 +200,12 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -247,13 +247,13 @@ TEST_F(MonotonicityHelperTest, zeroconf) {
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     // TODO @Jip we have 1 assumption instead of 0 here
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -294,12 +294,12 @@ TEST_F(MonotonicityHelperTest, Simple1) {
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -337,12 +337,12 @@ TEST_F(MonotonicityHelperTest, Casestudy1) {
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     ASSERT_EQ(1ul, result.size());
 
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();
@@ -381,7 +381,7 @@ TEST_F(MonotonicityHelperTest, CaseStudy2) {
     // Check if correct result size
     auto result = monotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
-    EXPECT_FALSE(result.begin()->first->getDoneBuilding());
+    EXPECT_FALSE(result.front().order->getDoneBuilding());
 }
 
 TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
@@ -412,13 +412,13 @@ TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1ul, result.size());
-    auto order = result.begin()->first;
+    auto order = result.front().order;
 
-    auto monotonicityResult = result.begin()->second.first;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();
@@ -455,13 +455,13 @@ TEST_F(MonotonicityHelperTest, Casestudy3_monotone) {
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1ul, result.size());
-    auto order = result.begin()->first;
+    auto order = result.front().order;
 
-    auto monotonicityResult = result.begin()->second.first;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();
