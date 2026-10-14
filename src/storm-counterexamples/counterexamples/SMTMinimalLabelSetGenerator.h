@@ -9,8 +9,11 @@
 #include <sstream>
 #include <utility>
 
+#include "storm-counterexamples/counterexamples/CounterexampleOptions.h"
 #include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
+#include "storm/environment/Environment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -24,9 +27,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CounterexampleGeneratorSettings.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"
@@ -36,11 +36,7 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
-
-class Environment;
-
-namespace counterexamples {
+namespace storm::counterexamples {
 
 /**
  * Helper to avoid case disticinot between prism and jani
@@ -1779,16 +1775,11 @@ class SMTMinimalLabelSetGenerator {
 
    public:
     struct Options {
-        Options(bool checkThresholdFeasible = false) : checkThresholdFeasible(checkThresholdFeasible) {
-            auto const& settings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-
-            encodeReachability = settings.isEncodeReachabilitySet();
-            useDynamicConstraints = settings.isUseDynamicConstraintsSet();
-        }
+        Options(bool checkThresholdFeasible = false) : checkThresholdFeasible(checkThresholdFeasible) {}
 
         bool checkThresholdFeasible;
-        bool encodeReachability;
-        bool useDynamicConstraints;
+        bool encodeReachability = CounterexampleOptions().encodeReachability;
+        bool useDynamicConstraints = CounterexampleOptions().useDynamicConstraints;
         bool silent = false;
         bool addBackwardImplicationCuts = true;
         uint64_t continueAfterFirstCounterexampleUntil = 0;
@@ -1936,7 +1927,7 @@ class SMTMinimalLabelSetGenerator {
         std::vector<double> maximalPropertyValue;
         uint_fast64_t zeroProbabilityCount = 0;
         size_t smallestCounterexampleSize = model.getNumberOfChoices();  // Definitive upper bound
-        uint64_t progressDelay = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getShowProgressDelay();
+        uint64_t progressDelay = env.solver().getShowProgressDelay();
         do {
             ++iterations;
 
@@ -2320,7 +2311,8 @@ class SMTMinimalLabelSetGenerator {
 
     static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Model<T> const& model,
-                                                                          std::shared_ptr<storm::logic::Formula const> const& formula) {
+                                                                          std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                          Options const& options = Options(true)) {
 #ifdef STORM_HAVE_Z3
         std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
         GeneratorStats stats;
@@ -2328,7 +2320,7 @@ class SMTMinimalLabelSetGenerator {
         if (prec.lowerBoundedFormula) {
             STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
         }
-        auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, prec);
+        auto labelSets = computeCounterexampleLabelSet(env, stats, symbolicModel, model, prec, storm::storage::FlatSet<uint_fast64_t>(), options);
 
         if (symbolicModel.isPrismProgram()) {
             storm::prism::Program program = symbolicModel.asPrismProgram().restrictCommands(labelSets[0]);
@@ -2348,5 +2340,4 @@ class SMTMinimalLabelSetGenerator {
     }
 };
 
-}  // namespace counterexamples
-}  // namespace storm
+}  // namespace storm::counterexamples
