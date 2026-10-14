@@ -138,9 +138,15 @@ storm::storage::BitVector getStates(storm::logic::Formula const& propositionalFo
 
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::ProbabilityOperatorFormula const& formula) {
+    if (formula.hasBound()) {
+        auto const threshold = formula.getThresholdAs<storm::RationalNumber>();
+        STORM_LOG_THROW(threshold == 0 || threshold == 1, storm::exceptions::InvalidPropertyException,
+                        "The probability threshold in '" << formula
+                                                         << "' is not supported by storm-pomdp. Only thresholds of exactly 0 or 1 are supported for "
+                                                            "qualitative analysis; use a Pmin=? or Pmax=? query for quantitative analysis.");
+    }
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
                     "The property does not specify an optimization direction (min/max).");
-    STORM_LOG_WARN_COND(!formula.hasBound(), "The probability threshold for the given property will be ignored.");
     auto const& subformula = formula.getSubformula();
     bool bounded = false;
     std::vector<storm::logic::TimeBoundReference> rewardBoundReferences;
@@ -190,9 +196,10 @@ FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::P
 
 template<typename PomdpType>
 FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::RewardOperatorFormula const& formula) {
+    STORM_LOG_THROW(!formula.hasBound(), storm::exceptions::InvalidPropertyException,
+                    "The reward threshold in '" << formula << "' is not supported by storm-pomdp. Use an Rmin=? or Rmax=? query instead.");
     STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException,
                     "The property does not specify an optimization direction (min/max).");
-    STORM_LOG_WARN_COND(!formula.hasBound(), "The reward threshold for the given property will be ignored.");
     std::string rewardModelName = "";
     if (formula.hasRewardModelName()) {
         rewardModelName = formula.getRewardModelName();

@@ -8,6 +8,7 @@
 #include "storm/storage/Scheduler.h"
 
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/utility/macros.h"
@@ -197,6 +198,9 @@ PreprocessingPomdpValueBoundsModelChecker<PomdpType>::computeValuesForRandomMemo
 template<typename PomdpType>
 PreprocessingPomdpValueBoundsModelChecker<PomdpType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<PomdpType>::getValueBounds(
     storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+    STORM_LOG_THROW(
+        !formula.isOperatorFormula() || !formula.asOperatorFormula().hasBound(), storm::exceptions::InvalidPropertyException,
+        "The threshold in '" << formula << "' is not supported by quantitative POMDP analysis. Use a Pmin=?/Pmax=? or Rmin=?/Rmax=? query instead.");
     STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException,
                     "The property type is not supported for this analysis.");
 
@@ -346,6 +350,8 @@ PreprocessingPomdpValueBoundsModelChecker<PomdpType>::ExtremeValueBound Preproce
 template<typename PomdpType>
 PreprocessingPomdpValueBoundsModelChecker<PomdpType>::ExtremeValueBound PreprocessingPomdpValueBoundsModelChecker<PomdpType>::getExtremeValueBound(
     storm::Environment const& env, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+    STORM_LOG_THROW(!formula.isOperatorFormula() || !formula.asOperatorFormula().hasBound(), storm::exceptions::InvalidPropertyException,
+                    "The threshold in '" << formula << "' is not supported by quantitative POMDP analysis. Use an Rmin=? or Rmax=? query instead.");
     STORM_LOG_THROW(info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
 
     // Compute the values for the opposite direction on the fully observable MDP
