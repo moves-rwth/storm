@@ -36,9 +36,7 @@
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
-
-namespace counterexamples {
+namespace storm::counterexamples {
 
 /**
  * Helper to avoid case disticinot between prism and jani
@@ -2342,5 +2340,4 @@ class SMTMinimalLabelSetGenerator {
     }
 };
 
-}  // namespace counterexamples
-}  // namespace storm
+}  // namespace storm::counterexamples
