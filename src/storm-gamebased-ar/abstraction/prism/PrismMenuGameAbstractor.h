@@ -13,8 +13,6 @@
 
 #include "storm/storage/expressions/Expression.h"
 
-#include "storm/settings/modules/AbstractionSettings.h"
-
 namespace storm {
 namespace utility {
 namespace solver {
@@ -53,7 +51,7 @@ class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
      */
     PrismMenuGameAbstractor(storm::Environment const& env, storm::prism::Program const& program,
                             std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                            MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
+                            AbstractionOptions const& options = AbstractionOptions());
 
     PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
     PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;

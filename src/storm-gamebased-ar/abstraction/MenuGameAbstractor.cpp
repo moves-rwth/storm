@@ -3,8 +3,6 @@
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/file.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
@@ -13,8 +11,7 @@ namespace storm::gbar {
 namespace abstraction {
 
 template<storm::dd::DdType DdType, typename ValueType>
-MenuGameAbstractor<DdType, ValueType>::MenuGameAbstractor()
-    : restrictToRelevantStates(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isRestrictToRelevantStatesSet()) {
+MenuGameAbstractor<DdType, ValueType>::MenuGameAbstractor(AbstractionOptions const& options) : restrictToRelevantStates(options.restrictToRelevantStates) {
     // Intentionally left empty.
 }
 
