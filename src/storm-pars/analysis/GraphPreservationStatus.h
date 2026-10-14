@@ -20,7 +20,8 @@ enum class GraphPreservationStatus {
      */
     WellDefined,
     /*!
-     * The regions are known (or assumed) to preserve the graph structure of the model.
+     * The regions are known (or assumed) to preserve the graph structure of the model. This implies that they are
+     * well-defined, as a model that is not well-formed cannot be graph-preserving.
      */
     GraphPreserving,
     /*!

@@ -40,7 +40,8 @@ std::optional<storm::analysis::ConstraintCollector> collectConstraints(std::shar
 }
 
 /*!
- * Checks the well-formedness or graph-preservation constraints over the region.
+ * Checks the well-formedness constraints or the graph-preservation constraints over the region.
+ * Graph preservation includes well-formedness.
  * Returns std::nullopt if they cannot be checked, e.g. if the region does not cover all constrained variables.
  */
 template<typename ValueType>
@@ -74,7 +75,8 @@ inline std::string describeViolation(storm::pars::analysis::RegionCheckResult co
 /*!
  * Determines to what extent the regions are known to be well-defined and graph-preserving.
  *
- * If graph preservation is assumed, we only warn about regions that are provably not graph-preserving.
+ * Graph preservation implies well-definedness. If graph preservation is assumed, we only warn about regions that
+ * are provably not graph-preserving (or not well-formed).
  * Otherwise, if `graphPreservationRequired` is set, a proof is required and an exception is raised if there is
  * none. If it is not set (e.g. for robust parameter lifting, which handles non-graph-preserving regions itself),
  * only well-definedness is determined.

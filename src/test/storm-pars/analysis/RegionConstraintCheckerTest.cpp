@@ -277,6 +277,16 @@ TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
     auto interior = buildRegion({{"p", {0.1, 0.9}}, {"q", {0.1, 0.9}}});
     EXPECT_TRUE(checker.isWellDefined(interior));
     EXPECT_TRUE(checker.isGraphPreserving(interior));
+
+    // A region outside [0, 1] satisfies p != 0, p != 1, q != 0 and q != 1, but is not well-formed. Hence it is not graph-preserving.
+    auto outside = buildRegion({{"p", {2.0, 3.0}}, {"q", {2.0, 3.0}}});
+    EXPECT_FALSE(checker.isWellDefined(outside));
+    EXPECT_TRUE(Checker::checkConstraints(collector.getGraphPreservingConstraints(), outside, "test").holdsThroughout());
+    auto outsideResult = checker.checkGraphPreservation(outside);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, outsideResult.verdict);
+    EXPECT_FALSE(checker.isGraphPreserving(outside));
+    EXPECT_TRUE(outsideResult.violatedConstraint.has_value());
+    EXPECT_TRUE(outsideResult.witness.has_value());
 }
 
 TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold) {

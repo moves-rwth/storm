@@ -63,12 +63,14 @@ class RegionConstraintChecker {
     explicit RegionConstraintChecker(storm::analysis::ConstraintCollector const& collector);
 
     RegionCheckResult checkWellformedness(RationalFunctionRegion const& region) const;
+
+    /*! Checks the graph-preserving constraints together with the well-formedness constraints, as a model that is not well-formed is not graph-preserving. */
     RegionCheckResult checkGraphPreservation(RationalFunctionRegion const& region) const;
 
     /*! Returns true iff all well-formedness constraints were proven to hold throughout the region. */
     bool isWellDefined(RationalFunctionRegion const& region) const;
 
-    /*! Returns true iff all graph-preserving constraints were proven to hold throughout the region. */
+    /*! Returns true iff all graph-preserving and well-formedness constraints were proven to hold throughout the region. */
     bool isGraphPreserving(RationalFunctionRegion const& region) const;
 
     /*!

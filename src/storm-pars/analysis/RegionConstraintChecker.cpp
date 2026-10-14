@@ -139,7 +139,19 @@ RegionCheckResult RegionConstraintChecker::checkWellformedness(RationalFunctionR
 }
 
 RegionCheckResult RegionConstraintChecker::checkGraphPreservation(RationalFunctionRegion const& region) const {
-    return checkConstraints(this->collector.getGraphPreservingConstraints(), region, "graph-preserving");
+    // By definition, a model that is not well-formed is not graph-preserving, so the well-formedness constraints are part of graph preservation.
+    RegionCheckResult result = checkWellformedness(region);
+    RegionCheckResult const graphPreservingResult = checkConstraints(this->collector.getGraphPreservingConstraints(), region, "graph-preserving");
+    if (result.verdict != ConstraintVerdict::Unsat && graphPreservingResult.verdict == ConstraintVerdict::Unsat) {
+        result.witness = graphPreservingResult.witness;
+        result.violatedConstraint = graphPreservingResult.violatedConstraint;
+    }
+    result.undecidedConstraints.insert(result.undecidedConstraints.end(), graphPreservingResult.undecidedConstraints.begin(),
+                                       graphPreservingResult.undecidedConstraints.end());
+    if (result.verdict == ConstraintVerdict::Sat || (result.verdict == ConstraintVerdict::Unknown && graphPreservingResult.verdict == ConstraintVerdict::Unsat)) {
+        result.verdict = graphPreservingResult.verdict;
+    }
+    return result;
 }
 
 bool RegionConstraintChecker::isWellDefined(RationalFunctionRegion const& region) const {
