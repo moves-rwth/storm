@@ -2,6 +2,7 @@
 #include "storm-conv/api/storm-conv.h"
 
 #include "storm-conv/settings/ConvSettings.h"
+#include "storm-conv/settings/JaniConversionOptionsBuilder.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
@@ -60,7 +61,7 @@ void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::ve
     storm::converter::PrismToJaniConverterOptions options;
     options.allVariablesGlobal = jani.isGlobalVarsSet();
     options.suffix = "";
-    options.janiOptions = storm::converter::JaniConversionOptions(jani);
+    options.janiOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
     options.janiOptions.substituteConstants = true;
 
     // Get the name of the output file
@@ -196,7 +197,7 @@ void processJaniInputJaniOutput(storm::jani::Model const& janiModel, std::vector
     auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
     auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
 
-    storm::converter::JaniConversionOptions options(jani);
+    auto options = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
 
     // Get the name of the output file
     std::string outputFilename = "";

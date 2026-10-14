@@ -4,6 +4,7 @@
 #include <string>
 
 #include "storm-cli-utilities/cli.h"
+#include "storm-conv/settings/JaniConversionOptionsBuilder.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/api/storm-gspn.h"
 #include "storm-gspn/builder/JaniGSPNBuilder.h"
@@ -112,7 +113,7 @@ void processOptions() {
         auto const& janiSettings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
         storm::api::GspnJaniExportOptions janiOptions;
         janiOptions.addDeadlockProperties = exportSettings.isAddJaniPropertiesSet();
-        janiOptions.janiConversionOptions = storm::converter::JaniConversionOptions(janiSettings);
+        janiOptions.janiConversionOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
         janiOptions.compactJson = janiSettings.isCompactJsonSet();
         janiOptions.smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
         storm::api::exportGspnToJani(*gspn, exportSettings.getWriteToJaniFilename(), janiOptions,
