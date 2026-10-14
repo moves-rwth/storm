@@ -1,19 +1,24 @@
 #pragma once
 
-#include <stack>
+#include <map>
+#include <optional>
 
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/Variable.h"
 
 namespace storm {
 namespace expressions {
+
+/*!
+ * Computes the coefficients of a linear expression. Instantiated for double and storm::RationalNumber.
+ */
+template<typename ValueType>
 class LinearCoefficientVisitor : public ExpressionVisitor {
    public:
     struct VariableCoefficients {
        public:
-        VariableCoefficients(double constantPart = 0);
+        VariableCoefficients(ValueType constantPart = ValueType(0));
 
         VariableCoefficients(VariableCoefficients const& other) = default;
         VariableCoefficients& operator=(VariableCoefficients const& other) = default;
@@ -26,9 +31,9 @@ class LinearCoefficientVisitor : public ExpressionVisitor {
         VariableCoefficients& operator/=(VariableCoefficients&& other);
 
         void negate();
-        void setCoefficient(storm::expressions::Variable const& variable, double coefficient);
-        double getCoefficient(storm::expressions::Variable const& variable);
-        double getConstantPart() const;
+        void setCoefficient(storm::expressions::Variable const& variable, ValueType const& coefficient);
+        ValueType getCoefficient(storm::expressions::Variable const& variable);
+        ValueType const& getConstantPart() const;
 
         /*!
          * Brings all variables of the right-hand side coefficients to the left-hand side by negating them and
@@ -41,29 +46,29 @@ class LinearCoefficientVisitor : public ExpressionVisitor {
         void separateVariablesFromConstantPart(VariableCoefficients& rhs);
 
         // Propagate the iterators to variable-coefficient pairs.
-        std::map<storm::expressions::Variable, double>::const_iterator begin() const;
-        std::map<storm::expressions::Variable, double>::const_iterator end() const;
+        typename std::map<storm::expressions::Variable, ValueType>::const_iterator begin() const;
+        typename std::map<storm::expressions::Variable, ValueType>::const_iterator end() const;
 
         size_t size() const;
 
        private:
-        std::map<storm::expressions::Variable, double> variableToCoefficientMapping;
-        double constantPart;
+        // Variables whose coefficient cancelled out are not stored.
+        void removeZeroCoefficients();
+
+        std::map<storm::expressions::Variable, ValueType> variableToCoefficientMapping;
+        ValueType constantPart;
     };
 
     /*!
-     * Creates a linear coefficient visitor.
-     */
-    LinearCoefficientVisitor() = default;
-
-    /*!
-     * Computes the (double) coefficients of all identifiers appearing in the expression if the expression
-     * was rewritten as a sum of atoms.. If the expression is not linear, an exception is thrown.
-     *
-     * @param expression The expression for which to compute the coefficients.
-     * @return A structure representing the coefficients of the variables and the constant part.
+     * Computes the coefficients of all identifiers appearing in the expression if the expression was rewritten
+     * as a sum of atoms. If the expression is not linear, an exception is thrown.
      */
     VariableCoefficients getLinearCoefficients(Expression const& expression);
+
+    /*!
+     * As getLinearCoefficients, but returns std::nullopt instead of throwing if the expression is not linear.
+     */
+    std::optional<VariableCoefficients> tryGetLinearCoefficients(Expression const& expression);
 
     virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
     virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
@@ -75,6 +80,10 @@ class LinearCoefficientVisitor : public ExpressionVisitor {
     virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
     virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
     virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+
+   private:
+    // The visit methods return a std::optional<VariableCoefficients>, which is empty if the expression is not linear.
+    using Result = std::optional<VariableCoefficients>;
 };
 }  // namespace expressions
 }  // namespace storm

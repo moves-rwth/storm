@@ -16,7 +16,6 @@
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/Expression.h"
@@ -703,10 +702,6 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
             } while (refine);
         }
 
-        // bool graphPreserving = true;
-        // // const ConstantType epsilon =
-        // //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-        // //                     : utility::zero<ConstantType>();
         const ConstantType epsilon = 0;
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);

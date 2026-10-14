@@ -1,7 +1,6 @@
 #include "storm-pars/scp/SparseScpInstantiationSearcher.h"
 
 #include <algorithm>
-#include <sstream>
 
 #include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
@@ -142,14 +141,10 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     {
         storm::analysis::ConstraintCollector collector(model);
         auto const check = storm::pars::analysis::RegionConstraintChecker(collector).checkGraphPreservation(region);
-        if (check.verdict == storm::pars::analysis::ConstraintVerdict::Violated) {
-            std::stringstream witness;
-            for (auto const& [name, value] : *check.witness) {
-                witness << (witness.tellp() > 0 ? ", " : "") << name << "=" << value;
-            }
-            STORM_LOG_WARN("The region is not graph-preserving: the constraint '" << check.violatedConstraint << "' is violated at " << witness.str()
-                                                                                   << ". The search may be less effective near such parameter values.");
-        } else if (check.verdict == storm::pars::analysis::ConstraintVerdict::Undecided) {
+        if (check.verdict == storm::pars::analysis::ConstraintVerdict::Unsat) {
+            STORM_LOG_WARN("The region is not graph-preserving: the constraint '" << *check.violatedConstraint << "' is violated at " << *check.witness
+                                                                                  << ". The search may be less effective near such parameter values.");
+        } else if (check.verdict == storm::pars::analysis::ConstraintVerdict::Unknown) {
             STORM_LOG_WARN("Graph preservation could not be established for the region; the search may be less effective if it is violated.");
         }
     }

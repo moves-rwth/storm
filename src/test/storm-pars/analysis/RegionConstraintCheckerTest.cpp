@@ -81,8 +81,9 @@ TEST(RegionConstraintCheckerTest, AffineConstraintHoldsThroughout) {
     auto result = Checker::checkConstraints(buildConstraintSet(x + y - manager->integer(3) <= manager->integer(0)),
                                             buildRegion({{"x", {0.0, 1.0}}, {"y", {0.0, 1.0}}}), "test");
 
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied, result.verdict);
-    EXPECT_EQ(1ul, result.numSatisfied);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, result.verdict);
+    EXPECT_FALSE(result.violatedConstraint.has_value());
+    EXPECT_TRUE(result.undecidedConstraints.empty());
     EXPECT_FALSE(result.witness.has_value());
     EXPECT_TRUE(result.holdsThroughout());
 }
@@ -96,12 +97,12 @@ TEST(RegionConstraintCheckerTest, AffineConstraintViolatedAtCorner) {
     auto result = Checker::checkConstraints(buildConstraintSet(x + y - manager->integer(1) <= manager->integer(0)),
                                             buildRegion({{"x", {0.0, 1.0}}, {"y", {0.0, 1.0}}}), "test");
 
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, result.verdict);
-    EXPECT_EQ(1ul, result.numViolated);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, result.verdict);
     EXPECT_FALSE(result.holdsThroughout());
+    EXPECT_TRUE(result.violatedConstraint.has_value());
     ASSERT_TRUE(result.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(result.witness->at("x")), 1e-9);
-    EXPECT_NEAR(1.0, asDouble(result.witness->at("y")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(result.witness->at(variableByName("x"))), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(result.witness->at(variableByName("y"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, StrictInequalityOnBoundaryIsViolated) {
@@ -111,17 +112,15 @@ TEST(RegionConstraintCheckerTest, StrictInequalityOnBoundaryIsViolated) {
 
     // x < 1 does not hold throughout [0, 1], because the maximum 1 is attained at the closed boundary.
     auto violated = Checker::checkConstraints(buildConstraintSet(x < manager->integer(1)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 
     // In contrast, x <= 1 does hold throughout.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied,
-              Checker::checkConstraints(buildConstraintSet(x <= manager->integer(1)), region, "test").verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, Checker::checkConstraints(buildConstraintSet(x <= manager->integer(1)), region, "test").verdict);
 
     // x < 2 holds throughout.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied,
-              Checker::checkConstraints(buildConstraintSet(x < manager->integer(2)), region, "test").verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, Checker::checkConstraints(buildConstraintSet(x < manager->integer(2)), region, "test").verdict);
 }
 
 TEST(RegionConstraintCheckerTest, NegativeCoefficientIsHandled) {
@@ -130,18 +129,18 @@ TEST(RegionConstraintCheckerTest, NegativeCoefficientIsHandled) {
     Region region = buildRegion({{"x", {0.0, 1.0}}});
 
     // 3 - 2 * x >= 0 holds on [0, 1], as the minimum of 3 - 2x is attained at x = 1 and equals 1.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied,
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
               Checker::checkConstraints(buildConstraintSet(manager->integer(3) - manager->integer(2) * x >= manager->integer(0)), region, "test").verdict);
 
     // In contrast, 1 - 2 * x >= 0 does not hold on [0, 1], because the form is -1 at x = 1.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated,
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat,
               Checker::checkConstraints(buildConstraintSet(manager->integer(1) - manager->integer(2) * x >= manager->integer(0)), region, "test").verdict);
 
     // 1 - x >= 0 does not hold on [0, 2].
     auto violated = Checker::checkConstraints(buildConstraintSet(manager->integer(1) - x >= manager->integer(0)), buildRegion({{"x", {0.0, 2.0}}}), "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(2.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(2.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, NotEqualOverPositiveRegion) {
@@ -149,14 +148,14 @@ TEST(RegionConstraintCheckerTest, NotEqualOverPositiveRegion) {
     auto x = variable(manager, "x");
 
     // x != 0 holds throughout a region that does not contain zero.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied,
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
               Checker::checkConstraints(buildConstraintSet(x != manager->integer(0)), buildRegion({{"x", {1.0, 2.0}}}), "test").verdict);
 
     // x != 0 does not hold on a region containing zero; the witness attains exactly zero.
     auto violated = Checker::checkConstraints(buildConstraintSet(x != manager->integer(0)), buildRegion({{"x", {-1.0, 1.0}}}), "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(0.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(0.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 }
 
 TEST(RegionConstraintCheckerTest, EqualityRequiresIdenticallyZero) {
@@ -166,12 +165,12 @@ TEST(RegionConstraintCheckerTest, EqualityRequiresIdenticallyZero) {
 
     // x == 0 does not hold throughout, although it holds at x = 0.
     auto violated = Checker::checkConstraints(buildConstraintSet(x == manager->integer(0)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_NEAR(1.0, asDouble(violated.witness->at("x")), 1e-9);
+    EXPECT_NEAR(1.0, asDouble(violated.witness->at(variableByName("x"))), 1e-9);
 
     // The identically vanishing form holds everywhere.
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied,
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat,
               Checker::checkConstraints(buildConstraintSet(x - x == manager->integer(0)), region, "test").verdict);
 }
 
@@ -181,15 +180,15 @@ TEST(RegionConstraintCheckerTest, BooleanLiteralConstraintsAreDecided) {
 
     // A constantly false constraint is violated at every point of the region and carries a witness.
     auto violated = Checker::checkConstraints(buildConstraintSet(manager->boolean(false)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
-    EXPECT_EQ(1ul, violated.numViolated);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, violated.verdict);
+    EXPECT_TRUE(violated.violatedConstraint.has_value());
     ASSERT_TRUE(violated.witness.has_value());
-    EXPECT_TRUE(violated.witness->count("x") > 0);
+    EXPECT_TRUE(violated.witness->count(variableByName("x")) > 0);
 
     // A constantly true constraint holds throughout.
     auto satisfied = Checker::checkConstraints(buildConstraintSet(manager->boolean(true)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied, satisfied.verdict);
-    EXPECT_EQ(1ul, satisfied.numSatisfied);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, satisfied.verdict);
+    EXPECT_FALSE(satisfied.violatedConstraint.has_value());
 }
 
 TEST(RegionConstraintCheckerTest, CancellingCoefficientDoesNotRequireVariableInRegion) {
@@ -198,25 +197,20 @@ TEST(RegionConstraintCheckerTest, CancellingCoefficientDoesNotRequireVariableInR
 
     // x - x <= 0 is constantly zero: x cancels, so the region need not mention x.
     auto result = Checker::checkConstraints(buildConstraintSet(x - x <= manager->integer(0)), buildRegion({{"y", {0.0, 1.0}}}), "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Satisfied, result.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, result.verdict);
 }
 
-TEST(RegionConstraintCheckerTest, NonLinearConstraintIsProbed) {
+TEST(RegionConstraintCheckerTest, NonLinearConstraintIsUndecided) {
     auto manager = std::make_shared<storm::expressions::ExpressionManager>();
     auto x = variable(manager, "x");
     auto y = variable(manager, "y");
     Region region = buildRegion({{"x", {0.0, 1.0}}, {"y", {0.0, 1.0}}});
 
-    // x * y <= 0.25 is violated at the corner (1, 1), which probing detects.
-    auto violated = Checker::checkConstraints(buildConstraintSet(x * y <= manager->rational(0.25)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Violated, violated.verdict);
-    ASSERT_TRUE(violated.witness.has_value());
-
-    // x * y <= 4 is not proven to hold, but no probe fails either.
-    auto undecided = Checker::checkConstraints(buildConstraintSet(x * y <= manager->integer(4)), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Undecided, undecided.verdict);
-    EXPECT_EQ(1ul, undecided.numUndecided);
-    EXPECT_FALSE(undecided.holdsThroughout());
+    // Non-linear constraints are not supported, even if they are violated (here at the corner (1, 1)).
+    auto result = Checker::checkConstraints(buildConstraintSet(x * y <= manager->rational(0.25)), region, "test");
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unknown, result.verdict);
+    EXPECT_FALSE(result.undecidedConstraints.empty());
+    EXPECT_FALSE(result.holdsThroughout());
 }
 
 TEST(RegionConstraintCheckerTest, IfThenElseIsUndecided) {
@@ -229,7 +223,7 @@ TEST(RegionConstraintCheckerTest, IfThenElseIsUndecided) {
 
     // An if-then-else constraint is piecewise and therefore not affine; we never claim that it holds.
     auto result = Checker::checkConstraints(buildConstraintSet(constraint), region, "test");
-    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Undecided, result.verdict);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unknown, result.verdict);
 }
 
 TEST(RegionConstraintCheckerTest, MissingVariableIsRejected) {
@@ -265,8 +259,8 @@ TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
     // square satisfies all of them. All constraints are linear, hence they are decided rather than undecided.
     auto unitSquare = buildRegion({{"p", {0.0, 1.0}}, {"q", {0.0, 1.0}}});
     auto wellformed = checker.checkWellformedness(unitSquare);
-    EXPECT_EQ(0ul, wellformed.numUndecided);
-    EXPECT_EQ(0ul, wellformed.numViolated);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Sat, wellformed.verdict);
+    EXPECT_TRUE(wellformed.undecidedConstraints.empty());
     EXPECT_TRUE(wellformed.holdsThroughout());
 
     // The graph-preserving constraints are p != 0, p != 1, q != 0 and q != 1. Because the region is closed and
@@ -274,15 +268,25 @@ TEST(RegionConstraintCheckerTest, RealModelConstraintsAreDecidedExactly) {
     // checker reports the violation and provides a witness, rather than pretending the model is graph
     // preserving.
     auto graphPreserving = checker.checkGraphPreservation(unitSquare);
-    EXPECT_EQ(0ul, graphPreserving.numUndecided);
-    EXPECT_EQ(4ul, graphPreserving.numViolated);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, graphPreserving.verdict);
     EXPECT_FALSE(graphPreserving.holdsThroughout());
+    EXPECT_TRUE(graphPreserving.violatedConstraint.has_value());
     EXPECT_TRUE(graphPreserving.witness.has_value());
 
     // On a strictly interior region, both properties hold.
     auto interior = buildRegion({{"p", {0.1, 0.9}}, {"q", {0.1, 0.9}}});
     EXPECT_TRUE(checker.isWellDefined(interior));
     EXPECT_TRUE(checker.isGraphPreserving(interior));
+
+    // A region outside [0, 1] satisfies p != 0, p != 1, q != 0 and q != 1, but is not well-formed. Hence it is not graph-preserving.
+    auto outside = buildRegion({{"p", {2.0, 3.0}}, {"q", {2.0, 3.0}}});
+    EXPECT_FALSE(checker.isWellDefined(outside));
+    EXPECT_TRUE(Checker::checkConstraints(collector.getGraphPreservingConstraints(), outside, "test").holdsThroughout());
+    auto outsideResult = checker.checkGraphPreservation(outside);
+    EXPECT_EQ(storm::pars::analysis::ConstraintVerdict::Unsat, outsideResult.verdict);
+    EXPECT_FALSE(checker.isGraphPreserving(outside));
+    EXPECT_TRUE(outsideResult.violatedConstraint.has_value());
+    EXPECT_TRUE(outsideResult.witness.has_value());
 }
 
 TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold) {
@@ -306,6 +310,6 @@ TEST(RegionConstraintCheckerTest, NonAffineModelConstraintsAreNeverClaimedToHold
 
     // This model yields piecewise, non-affine constraints. The checker must not claim that they hold.
     auto result = checker.checkWellformedness(buildRegion({{"p", {0.0, 1.0}}, {"q", {0.0, 1.0}}}));
-    EXPECT_GT(result.numUndecided, 0ul);
+    EXPECT_FALSE(result.undecidedConstraints.empty());
     EXPECT_FALSE(result.holdsThroughout());
 }

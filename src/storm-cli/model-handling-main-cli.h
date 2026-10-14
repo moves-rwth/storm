@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <sstream>
 
 #include "storm-cli-utilities/SettingsUtils.h"
@@ -66,6 +67,9 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
     auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
         bool useMilp = counterexampleSettings.isUseMilpBasedMinimalCommandSetGenerationSet();
+        storm::counterexamples::SMTMinimalLabelSetGenerator<double>::Options maxSmtOptions(true);
+        maxSmtOptions.encodeReachability = counterexampleSettings.isEncodeReachabilitySet();
+        maxSmtOptions.useDynamicConstraints = counterexampleSettings.isUseDynamicConstraintsSet();
         for (auto const& property : input.properties) {
             std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
             printComputingCounterexample(property);
@@ -73,19 +77,21 @@ inline void generateCounterexamples(std::shared_ptr<ModelType> const& sparseMode
             if (useMilp) {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MILP is currently only supported for MDPs.");
-                counterexample = storm::api::computeHighLevelCounterexampleMilp(
-                    mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                counterexample = storm::api::computeHighLevelCounterexampleMilp(mpi.env, input.model.get(),
+                                                                                sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                property.getRawFormula(), counterexampleSettings.isUseSchedulerCutsSet());
             } else {
                 STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
                                 storm::exceptions::NotSupportedException,
                                 "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
 
                 if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                    counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                    counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(mpi.env, input.model.get(),
+                                                                                      sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(),
+                                                                                      property.getRawFormula(), maxSmtOptions);
                 } else {
                     counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(
-                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        mpi.env, input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula(), maxSmtOptions);
                 }
             }
             watch.stop();
@@ -115,19 +121,11 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
         if (ft == storm::modelchecker::FilterType::VALUES) {
             STORM_PRINT(*result);
         } else {
-            storm::utility::ExtendedValueType<ValueType> resultValue;
             switch (ft) {
                 case storm::modelchecker::FilterType::SUM:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().sum();
-                    break;
                 case storm::modelchecker::FilterType::AVG:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().average();
-                    break;
                 case storm::modelchecker::FilterType::MIN:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMin();
-                    break;
                 case storm::modelchecker::FilterType::MAX:
-                    resultValue = result->asQuantitativeCheckResult<ValueType>().getMax();
                     break;
                 case storm::modelchecker::FilterType::ARGMIN:
                 case storm::modelchecker::FilterType::ARGMAX:
@@ -141,10 +139,44 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled filter type.");
             }
-            if (storm::NumberTraits<ValueType>::IsExact && storm::utility::isConstant(resultValue)) {
-                STORM_PRINT(resultValue << " (approx. " << storm::utility::convertNumber<double>(resultValue) << ")");
-            } else {
-                STORM_PRINT(resultValue);
+            auto const aggregate = result->asQuantitativeCheckResult<ValueType>().aggregate(ft);
+            auto const printSide = [](std::optional<storm::utility::ExtendedValueType<ValueType>> const& value, bool approximate) {
+                if (!value) {
+                    STORM_PRINT("?");
+                } else if (storm::utility::isInfinity(*value)) {
+                    STORM_PRINT("inf");
+                } else if (approximate) {
+                    STORM_PRINT(storm::utility::convertNumber<double>(*value));
+                } else {
+                    STORM_PRINT(*value);
+                }
+            };
+            // Only an exact value type has a decimal approximation to add, and a rational function has none to give.
+            bool const approximates =
+                storm::NumberTraits<ValueType>::IsExact && !storm::utility::isInfinity(aggregate.value) && storm::utility::isConstant(aggregate.value);
+            printSide(aggregate.value, false);
+            if (approximates) {
+                STORM_PRINT(" (approx. ");
+                printSide(aggregate.value, true);
+                STORM_PRINT(")");
+            }
+            // An aggregate of an enclosure encloses the aggregate, so report it in the same shape as the values do.
+            if (aggregate.hasLower() && aggregate.hasUpper() && *aggregate.lower == *aggregate.upper) {
+                STORM_PRINT(". Exact solution.");
+            } else if (aggregate.hasLower() || aggregate.hasUpper()) {
+                STORM_PRINT(". Solution bounds: [");
+                printSide(aggregate.lower, false);
+                STORM_PRINT(", ");
+                printSide(aggregate.upper, false);
+                STORM_PRINT("]");
+                if (approximates) {
+                    STORM_PRINT(" (approx. [");
+                    printSide(aggregate.lower, true);
+                    STORM_PRINT(", ");
+                    printSide(aggregate.upper, true);
+                    STORM_PRINT("])");
+                }
+                STORM_PRINT(".");
             }
         }
     } else {
@@ -401,13 +433,39 @@ inline std::vector<std::vector<storm::expressions::Expression>> parseInjectedRef
     return injectedRefinementPredicates;
 }
 
+inline storm::gbar::api::AbstractionRefinementOptions getAbstractionRefinementOptions(
+    storm::expressions::ExpressionManager const* expressionManager = nullptr) {
+    storm::settings::modules::AbstractionSettings const& settings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+    storm::gbar::api::AbstractionRefinementOptions options;
+    if (expressionManager != nullptr) {
+        options.constraints = parseConstraints(*expressionManager, settings.getConstraintString());
+        options.injectedRefinementPredicates = parseInjectedRefinementPredicates(*expressionManager, settings.getInjectedRefinementPredicates());
+    }
+    options.restrictToRelevantStates = settings.isRestrictToRelevantStatesSet();
+    options.restrictToValidBlocks = settings.getValidBlockMode() == storm::settings::modules::AbstractionSettings::ValidBlockMode::BlockEnumeration;
+    options.useDecomposition = settings.isUseDecompositionSet();
+    options.useInterpolation = settings.isUseInterpolationSet();
+    options.splitMode = settings.getSplitMode();
+    options.pivotSelectionHeuristic = settings.getPivotSelectionHeuristic();
+    options.rankRefinementPredicates = settings.isRankRefinementPredicatesSet();
+    options.useEagerRefinement = settings.isUseEagerRefinementSet();
+    options.addAllGuards = settings.isAddAllGuardsSet();
+    options.addAllInitialExpressions = settings.isAddAllInitialExpressionsSet();
+    options.precision = settings.getPrecision();
+    options.relativeTerminationCriterion = settings.getRelativeTerminationCriterion();
+    options.solveMode = settings.getSolveMode();
+    options.reuseMode = settings.getReuseMode();
+    options.maximalNumberOfAbstractions = settings.getMaximalAbstractionCount();
+    options.fixPlayer1Strategy = settings.isFixPlayer1StrategySet();
+    options.fixPlayer2Strategy = settings.isFixPlayer2StrategySet();
+    options.debug = settings.isDebugSet();
+    return options;
+}
+
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
     STORM_LOG_ASSERT(input.model, "Expected symbolic model description.");
-    storm::settings::modules::AbstractionSettings const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    storm::gbar::api::AbstractionRefinementOptions options(
-        parseConstraints(input.model->getManager(), abstractionSettings.getConstraintString()),
-        parseInjectedRefinementPredicates(input.model->getManager(), abstractionSettings.getInjectedRefinementPredicates()));
+    storm::gbar::api::AbstractionRefinementOptions options = getAbstractionRefinementOptions(&input.model->getManager());
 
     verifyProperties<ValueType>(input, [&input, &options, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                 std::shared_ptr<storm::logic::Formula const> const& states) {
@@ -610,12 +668,13 @@ void verifyWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, V
 template<storm::dd::DdType DdType, typename ValueType>
 void verifyWithAbstractionRefinementEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& symbolicModel, SymbolicInput const& input,
                                            ModelProcessingInformation const& mpi) {
-    verifyProperties<ValueType>(
-        input, [&symbolicModel, &mpi](std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
-            STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
-            return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
-                                                                                              storm::api::createTask<ValueType>(formula, true));
-        });
+    storm::gbar::api::AbstractionRefinementOptions options = getAbstractionRefinementOptions();
+    verifyProperties<ValueType>(input, [&symbolicModel, &mpi, &options](std::shared_ptr<storm::logic::Formula const> const& formula,
+                                                                        std::shared_ptr<storm::logic::Formula const> const& states) {
+        STORM_LOG_THROW(states->isInitialFormula(), storm::exceptions::NotSupportedException, "Abstraction-refinement can only filter initial states.");
+        return storm::gbar::api::verifyWithAbstractionRefinementEngine<DdType, ValueType>(mpi.env, symbolicModel,
+                                                                                          storm::api::createTask<ValueType>(formula, true), options);
+    });
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

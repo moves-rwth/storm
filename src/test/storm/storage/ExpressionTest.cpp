@@ -7,10 +7,12 @@
 #include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -555,4 +557,31 @@ TEST(ExpressionDeathTest, SimpleValuationRejectsVariablesOfDefaultConstructedVal
     EXPECT_FALSE(valuation.contains(x));
     EXPECT_REJECTED(valuation.getBooleanValue(x));
     EXPECT_REJECTED(valuation.setBooleanValue(x, true));
+}
+TEST(Expression, LinearCoefficientsTest) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto x = manager->declareRationalVariable("x");
+    auto y = manager->declareRationalVariable("y");
+
+    // 1/3 * x + (x - y) / 2 - 1 is linear with exact rational coefficients.
+    auto linear = manager->rational(storm::utility::convertNumber<storm::RationalNumber>(1) / storm::utility::convertNumber<storm::RationalNumber>(3)) *
+                      x.getExpression() +
+                  (x.getExpression() - y.getExpression()) / manager->integer(2) - manager->integer(1);
+    auto coefficients = storm::expressions::LinearCoefficientVisitor<storm::RationalNumber>().getLinearCoefficients(linear);
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(5) / storm::utility::convertNumber<storm::RationalNumber>(6),
+              coefficients.getCoefficient(x));
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(-1) / storm::utility::convertNumber<storm::RationalNumber>(2),
+              coefficients.getCoefficient(y));
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(-1), coefficients.getConstantPart());
+
+    // Variables that cancel out are not part of the coefficients.
+    auto cancelled = storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(x.getExpression() + y.getExpression() - x.getExpression());
+    EXPECT_EQ(1ul, cancelled.size());
+
+    // Non-linear expressions and divisions by zero are rejected.
+    storm::expressions::LinearCoefficientVisitor<storm::RationalNumber> visitor;
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() * y.getExpression()).has_value());
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() / manager->integer(0)).has_value());
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() <= y.getExpression()).has_value());
+    EXPECT_THROW(visitor.getLinearCoefficients(x.getExpression() * y.getExpression()), storm::exceptions::InvalidArgumentException);
 }

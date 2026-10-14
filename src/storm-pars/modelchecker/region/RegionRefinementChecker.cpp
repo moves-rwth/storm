@@ -39,11 +39,11 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
                                                       CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
                                                       RegionSplittingStrategy splittingStrategy, std::set<VariableType> const& discreteVariables,
                                                       std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend, bool allowModelSimplifications,
-                                                      bool graphPreserving) {
+                                                      storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     this->monotonicityBackend = monotonicityBackend ? monotonicityBackend : std::make_shared<MonotonicityBackend<ParametricType>>();
     this->regionSplittingStrategy = std::move(splittingStrategy);
     this->discreteVariables = std::move(discreteVariables);
-    this->graphPreserving = graphPreserving;
+    this->graphPreservationStatus = graphPreservationStatus;
     if (this->regionSplittingStrategy.heuristic == RegionSplittingStrategy::Heuristic::Default) {
         regionSplittingStrategy.heuristic = RegionSplittingStrategy::Heuristic::EstimateBased;
     }
@@ -62,7 +62,7 @@ void RegionRefinementChecker<ParametricType>::specify(Environment const& env, st
     }
 
     regionChecker->specify(env, parametricModel, checkTask, regionSplittingStrategy.estimateKind, monotonicityBackend, allowModelSimplifications,
-                           graphPreserving);
+                           graphPreservationStatus);
 }
 
 template<typename T>
@@ -170,7 +170,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>
             progress.addAllViolatedArea(currentRegion.region.area());
         } else if (currentRegion.result == RegionResult::AllIllDefined) {
             // ill defined region => not graph-preserving
-            STORM_LOG_THROW(!this->graphPreserving, storm::exceptions::NotImplementedException,
+            STORM_LOG_THROW(!storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus), storm::exceptions::NotImplementedException,
                             "The region is not graph-preserving, but the selected region verification engine requires this assumption. Please use "
                             "--assume-graph-preserving false.");
             progress.addAllIllDefinedArea(currentRegion.region.area());

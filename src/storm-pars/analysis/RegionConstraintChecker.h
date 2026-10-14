@@ -1,123 +1,80 @@
 #pragma once
 
-#include <cstddef>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/analysis/GraphConditions.h"
+#include "storm/solver/SmtSolver.h"
+#include "storm/storage/expressions/Expression.h"
 
-namespace storm {
-namespace pars {
-namespace analysis {
+namespace storm::pars::analysis {
 
-/*! The type of region this checker operates on. */
 using RationalFunctionRegion = storm::storage::ParameterRegion<storm::RationalFunction>;
-
-/*! The exact rational type used for the bounds of the regions checked by this checker. */
 using CoefficientType = RationalFunctionRegion::CoefficientType;
 
 /*!
- * The outcome of checking a single constraint over an entire parameter region.
+ * Tri-state outcome of a check: `Sat` means the constraint holds on the whole region, `Unsat` means it is
+ * violated somewhere (a witness is available), and `Unknown` means neither could be established.
  */
-enum class ConstraintVerdict {
-    /*! The constraint was proven to hold for every point of the region. */
-    Satisfied,
-    /*! The constraint was proven not to hold for every point of the region. A witness is available. */
-    Violated,
-    /*! Neither could be established cheaply, e.g. because the constraint is non-linear. */
-    Undecided
+using ConstraintVerdict = storm::solver::SmtSolver::CheckResult;
+
+/*!
+ * A point of a parameter region, mapping the variables to exact values.
+ */
+struct RegionWitness : RationalFunctionRegion::Valuation {
+    RegionWitness() = default;
+    explicit RegionWitness(RationalFunctionRegion::Valuation valuation) : RationalFunctionRegion::Valuation(std::move(valuation)) {}
 };
 
 /*!
- * A point of a parameter region, given as exact rational values. The map is keyed by variable name.
+ * Prints the witness as a comma-separated list of assignments, e.g. `x = 1/2, y = 1`.
  */
-using RegionWitness = std::map<std::string, CoefficientType>;
+std::ostream& operator<<(std::ostream& out, RegionWitness const& witness);
 
-/*!
- * The aggregated outcome of checking a whole constraint set over a parameter region.
- */
 struct RegionCheckResult {
-    /*! The aggregated verdict over all checked constraints. */
-    ConstraintVerdict verdict = ConstraintVerdict::Undecided;
+    ConstraintVerdict verdict = ConstraintVerdict::Unknown;
 
-    /*! A point of the region at which a violated constraint fails. Only set if the verdict is Violated. */
+    /*! A point at which a constraint is violated. Only set if the verdict is Unsat. */
     std::optional<RegionWitness> witness;
 
-    /*! The printed form of a constraint that does not hold throughout the region. */
-    std::string violatedConstraint;
+    /*! The constraint violated at the witness. Only set if the verdict is Unsat. */
+    std::optional<storm::expressions::Expression> violatedConstraint;
 
-    /*! The printed forms of all constraints that could not be decided. */
-    std::vector<std::string> undecidedConstraints;
+    /*! All constraints that could not be decided. */
+    std::vector<storm::expressions::Expression> undecidedConstraints;
 
-    /*! The number of constraints proven to hold throughout the region. */
-    size_t numSatisfied = 0;
-
-    /*! The number of constraints proven not to hold throughout the region. */
-    size_t numViolated = 0;
-
-    /*! The number of constraints that could not be decided. */
-    size_t numUndecided = 0;
-
-    /*!
-     * Returns whether every checked constraint was proven to hold throughout the region.
-     */
     bool holdsThroughout() const {
-        return this->verdict == ConstraintVerdict::Satisfied;
+        return verdict == ConstraintVerdict::Sat;
     }
 };
 
 /*!
- * Checks whether the constraints collected for a parametric model hold over an entire parameter region.
+ * Checks whether the constraints collected for a parametric model hold over an entire rectangular region.
  *
- * Constraints are given in the form `f(x) <relation> 0` and are decomposed into an exact affine form
- * `f(x) = c + sum_i a_i x_i`. For a rectangular region, the extrema of an affine function are attained at
- * the vertices of the box, so the exact minimum and maximum of `f` over the region are computed in
- * linear time. The relation can then be decided for the whole region in O(#variables) time without any
- * sampling, SMT solving, or explicit enumeration of the 2^(#variables) vertices.
- *
- * Non-linear constraints are never claimed to hold. They are probed at a few points of the region, which
- * is sound for detecting violations, and otherwise reported as undecided.
+ * Affine constraints are decided exactly from the extrema of the affine form, which lie at the vertices of
+ * the region. Non-affine constraints are not supported and are reported as undecided.
  */
 class RegionConstraintChecker {
    public:
-    /*!
-     * Creates a checker for the constraints collected by the given collector.
-     *
-     * @param collector The collector holding the well-formedness and graph-preserving constraints.
-     */
     explicit RegionConstraintChecker(storm::analysis::ConstraintCollector const& collector);
 
-    /*!
-     * Checks whether all well-formedness constraints hold throughout the given region.
-     */
     RegionCheckResult checkWellformedness(RationalFunctionRegion const& region) const;
 
-    /*!
-     * Checks whether all graph-preserving constraints hold throughout the given region.
-     */
+    /*! Checks the graph-preserving constraints together with the well-formedness constraints, as a model that is not well-formed is not graph-preserving. */
     RegionCheckResult checkGraphPreservation(RationalFunctionRegion const& region) const;
 
-    /*!
-     * Returns whether the model is well-defined on the whole region, that is, all well-formedness
-     * constraints were proven to hold. Returns false if any constraint is violated or undecided.
-     */
+    /*! Returns true iff all well-formedness constraints were proven to hold throughout the region. */
     bool isWellDefined(RationalFunctionRegion const& region) const;
 
-    /*!
-     * Returns whether the model preserves its graph on the whole region, that is, all graph-preserving
-     * constraints were proven to hold. Returns false if any constraint is violated or undecided.
-     */
+    /*! Returns true iff all graph-preserving and well-formedness constraints were proven to hold throughout the region. */
     bool isGraphPreserving(RationalFunctionRegion const& region) const;
 
     /*!
-     * Checks an arbitrary constraint set over a region.
-     *
-     * @param constraints The constraints to check, each given as an expression that is compared to zero.
-     * @param region The region to check the constraints over.
-     * @param label A description used in exception messages.
+     * Checks an arbitrary constraint set over a region. The label is used in exception messages.
      */
     static RegionCheckResult checkConstraints(storm::analysis::ConstraintCollector::ConstraintSet const& constraints, RationalFunctionRegion const& region,
                                               std::string const& label);
@@ -126,6 +83,4 @@ class RegionConstraintChecker {
     storm::analysis::ConstraintCollector const& collector;
 };
 
-}  // namespace analysis
-}  // namespace pars
-}  // namespace storm
+}  // namespace storm::pars::analysis
