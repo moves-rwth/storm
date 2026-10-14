@@ -62,7 +62,6 @@ void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::ve
     options.allVariablesGlobal = jani.isGlobalVarsSet();
     options.suffix = "";
     options.janiOptions = storm::settings::JaniConversionOptionsBuilder::buildJaniConversionOptions();
-    options.janiOptions.substituteConstants = true;
 
     // Get the name of the output file
     std::string outputFilename = "";
