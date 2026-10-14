@@ -1169,17 +1169,17 @@ TYPED_TEST(MdpPrctlModelCheckerTest, SimpleCommProtocol) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
         // guard against #1136
         if (!(TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch)) {
             result = checker->check(this->env(), tasks[1]);
             EXPECT_NEAR(this->parseNumber("99/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         }
-
-        result = checker->check(this->env(), tasks[2]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-
-        result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("1/100"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     });
 }
 
