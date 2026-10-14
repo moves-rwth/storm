@@ -3,8 +3,7 @@
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
-namespace settings {
+namespace storm::settings {
 
 storm::converter::JaniConversionOptions JaniConversionOptionsBuilder::buildJaniConversionOptions() {
     auto const& settings = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
@@ -29,5 +28,4 @@ storm::converter::JaniConversionOptions JaniConversionOptionsBuilder::buildJaniC
     return options;
 }
 
-}  // namespace settings
-}  // namespace storm
+}  // namespace storm::settings

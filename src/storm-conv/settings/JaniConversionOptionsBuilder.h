@@ -2,8 +2,7 @@
 
 #include "storm-conv/converter/options/JaniConversionOptions.h"
 
-namespace storm {
-namespace settings {
+namespace storm::settings {
 
 /*!
  * Builds storm::converter::JaniConversionOptions based on the currently registered JaniExportSettings.
@@ -18,5 +17,4 @@ class JaniConversionOptionsBuilder {
     static storm::converter::JaniConversionOptions buildJaniConversionOptions();
 };
 
-}  // namespace settings
-}  // namespace storm
+}  // namespace storm::settings
