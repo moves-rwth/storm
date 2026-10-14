@@ -112,11 +112,11 @@ void checkBrpMonotonicity(storm::Environment const& env, storm::modelchecker::Re
 
     // Modelcheckers
     auto regionCheckerMon = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(true));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(true));
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(false));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(false));
 
     // start testing
     for (auto const& regionString : regionStrings) {
@@ -140,11 +140,11 @@ void checkSimpleMonotonicity(storm::Environment const& env, storm::modelchecker:
 
     // Modelcheckers
     auto regionCheckerMon = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(true));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(true));
     auto regionChecker = storm::api::initializeRegionModelChecker<storm::RationalFunction>(
-        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true, true, false,
-        storm::api::MonotonicitySetting(false));
+        env, data.model, storm::api::createTask<storm::RationalFunction>(data.formulas[0], true), regionEngine, true,
+        storm::pars::analysis::GraphPreservationStatus::GraphPreserving, false, storm::api::MonotonicitySetting(false));
 
     // Start testing
     for (auto const& regionString : regionStrings) {
