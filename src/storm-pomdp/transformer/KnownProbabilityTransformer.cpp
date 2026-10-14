@@ -65,8 +65,6 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         ++newId;
     }
 
-    uint64_t newNrOfStates = pomdp.getNumberOfStates() - (prob1States.getNumberOfSetBits() + prob0States.getNumberOfSetBits());
-
     uint64_t currentRow = 0;
     uint64_t currentRowGroup = 0;
     storm::storage::SparseMatrixBuilder<ValueType> smb(0, 0, 0, false, true);
@@ -105,7 +103,8 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         newObservations.push_back(observationMap[pomdp.getObservation(iter)]);
     }
 
-    auto newTransitionMatrix = smb.build(currentRow, newNrOfStates, currentRowGroup);
+    // The new model has one state per row group (the sink states for probability 1 and 0 as well as all unknown states).
+    auto newTransitionMatrix = smb.build(currentRow, currentRowGroup, currentRowGroup);
     // STORM_PRINT(newTransitionMatrix)
     storm::storage::sparse::ModelComponents<ValueType> components(newTransitionMatrix, newLabeling);
     components.observabilityClasses = newObservations;

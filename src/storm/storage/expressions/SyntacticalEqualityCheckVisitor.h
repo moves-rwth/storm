@@ -21,6 +21,7 @@ class SyntacticalEqualityCheckVisitor : public ExpressionVisitor {
     virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
     virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
     virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+    virtual boost::any visit(PredicateExpression const& expression, boost::any const& data) override;
 };
 
 }  // namespace expressions
