@@ -145,8 +145,9 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder
         ctx.usePLA = true;
         ctx.minValues = std::move(minValuesInit.get());
         ctx.maxValues = std::move(maxValuesInit.get());
-    } else {
-        context(bottomTopOrder).usePLA = false;
+        // The bounds are moved out, so they have to be set again before the next installation.
+        minValuesInit = boost::none;
+        maxValuesInit = boost::none;
     }
     return bottomTopOrder;
 }
