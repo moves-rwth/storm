@@ -6,6 +6,7 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/beliefs/abstraction/RewardBoundedBeliefSplitter.h"
 #include "storm-pomdp/beliefs/exploration/BeliefExploration.h"
+#include "storm-pomdp/beliefs/policy/ApplyObservationBasedFSCToPomdp.h"
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm-pomdp/beliefs/verification/BeliefBasedModelChecker.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
@@ -16,6 +17,8 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/graph.h"
 
@@ -411,7 +414,7 @@ TYPED_TEST(BeliefBasedModelCheckerTest, cut_zero_gap) {
         for (bool const useClipping : {false, true}) {
             SCOPED_TRACE(useClipping);
             options.useClipping = useClipping;
-            EXPECT_THROW(checker.checkUnfold(this->env(), propertyInfo, options, bounds), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(checker.checkUnfold(this->env(), propertyInfo, options, bounds), storm::exceptions::NotSupportedException);
         }
         options.generatePolicy = false;
         options.useClipping = false;
@@ -495,6 +498,56 @@ TYPED_TEST(BeliefBasedModelCheckerTest, policy_requires_matching_cutoff_schedule
         options.generatePolicy = false;
         schedulers.clear();
         EXPECT_NO_THROW(checker.checkUnfold(this->env(), *data.propertyInfo, options, bounds));
+    }
+}
+
+TYPED_TEST(BeliefBasedModelCheckerTest, generated_policy_preserves_truncated_frontier_bound) {
+    using POMDPValueType = typename TestFixture::POMDPValueType;
+    using BeliefValueType = typename TestFixture::BeliefValueType;
+    using BeliefMDPValueType = typename TestFixture::BeliefMDPValueType;
+    using POMDPType = storm::models::sparse::Pomdp<POMDPValueType>;
+
+    for (std::string const formula : {"Pmax=? [F \"goal\"]", "Pmin=? [F \"goal\"]"}) {
+        SCOPED_TRACE(formula);
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", formula, "slippery=0");
+        storm::pomdp::beliefs::BeliefBasedModelChecker<POMDPType, BeliefValueType, BeliefMDPValueType> checker(*data.model);
+        storm::pomdp::modelchecker::PreprocessingPomdpValueBoundsModelChecker<POMDPType> preprocessChecker(*data.model);
+        storm::pomdp::storage::BeliefExplorationBounds<POMDPValueType> bounds;
+        bounds.preprocessingBounds = preprocessChecker.getValueBounds(this->env(), *data.formula);
+
+        storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMDPValueType> options;
+        options.generatePolicy = true;
+        options.buildChoiceLabeling = false;
+        options.explorationQueueOrder = storm::pomdp::beliefs::ExplorationQueueOrder::FIFO;
+        // Explore the initial belief and its successor, leaving the mixed belief over s=3 and s=4 as the frontier.
+        // Its continuation must choose between alpha and beta, whose probabilities of reaching the goal differ.
+        options.maxExplorationSize = 2;
+        auto const result = checker.checkUnfold(this->env(), *data.propertyInfo, options, bounds);
+        ASSERT_FALSE(result.completedExploration);
+        ASSERT_EQ(result.statistics.exploredBeliefs, 2ul);
+        ASSERT_GT(result.statistics.discoveredBeliefs, result.statistics.exploredBeliefs);
+        ASSERT_TRUE(result.policy.has_value());
+        ASSERT_TRUE(storm::utility::isFinite(result.value));
+        EXPECT_GT(result.value, storm::utility::zero<BeliefMDPValueType>());
+        EXPECT_LT(result.value, storm::utility::one<BeliefMDPValueType>());
+
+        // Apply the exported controller without filling in unspecified actions: the cut-off policy must provide its continuation.
+        auto const inducedDtmc = storm::pomdp::policy::applyObservationBasedFSCToPomdp(*data.model, *result.policy);
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<POMDPValueType>> dtmcChecker(inducedDtmc);
+        auto const dtmcResult = dtmcChecker.check(this->env(), *data.formula);
+        ASSERT_TRUE(dtmcResult);
+        ASSERT_TRUE(dtmcResult->isExplicitQuantitativeCheckResult());
+        auto const initialState = inducedDtmc.getInitialStates().getNextSetIndex(0);
+        auto const policyValue = dtmcResult->template asExplicitQuantitativeCheckResult<POMDPValueType>()[initialState];
+        auto const bound = storm::utility::convertNumber<POMDPValueType>(storm::utility::getFinite(result.value));
+        POMDPValueType const tolerance = 2 * this->template modelcheckingPrecision<POMDPValueType>();
+        if (storm::solver::maximize(data.propertyInfo->dir)) {
+            EXPECT_GE(policyValue + tolerance, bound);
+        } else {
+            EXPECT_LE(policyValue, bound + tolerance);
+        }
+        // Without clipping, the exported continuation should realize the belief-MDP value up to numerical solver error.
+        EXPECT_LE(storm::utility::abs(policyValue - bound), tolerance);
     }
 }
 
