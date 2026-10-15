@@ -7,6 +7,9 @@ namespace storm {
 
 /*!
  * The algorithms that can be used to compute the values underlying a certificate.
+ * The resulting certificate is not necessarily valid, e.g., due to floating point errors or conversions between value types.
+ * This is a deliberate tradeoff between speed and correctness.
+ * Invalid certificates are detected by Certificate::checkValidity.
  */
 enum class CertificateAlgorithm {
     FpII,        /// Interval iteration with floating point numbers

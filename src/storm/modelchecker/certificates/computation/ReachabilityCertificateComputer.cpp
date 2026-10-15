@@ -839,6 +839,7 @@ RewardCertificateData<ValueType> computeReachabilityRewardCertificateData(storm:
     }
     auto upperRanks =
         computeDistanceRanking<ValueType, Dir>(transitionProbabilityMatrix, backwardTransitionCache.get(), targetStates, storm::NullRef, inductiveChoices);
+    // The lower bound ranks consider all choices (not only the inductive ones), see Proposition 7 of https://doi.org/10.1007/978-3-031-90653-4_7.
     auto lowerRanks =
         computeModifiedDistanceRanking<ValueType, storm::solver::invert(Dir)>(transitionProbabilityMatrix, backwardTransitionCache.get(), infinityStates);
 

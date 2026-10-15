@@ -80,6 +80,8 @@ bool checkUpperBoundCertificate(storm::storage::SparseMatrix<ValueType> const& t
         }
 
         // Apply Bellman and Distance operator for non-target states
+        // Following Propositions 8 and 9 of https://doi.org/10.1007/978-3-031-90653-4_7 (see also the arXiv version), the rank only considers
+        // the x-decreasing (i.e. inductive) choices if we minimize and all choices if we maximize.
         auto stateValue = storm::solver::maximize(Dir) ? storm::utility::negativeInfinity<ValueType>() : storm::utility::positiveInfinity<ValueType>();
         storm::utility::Extremum<Dir, RankingType> stateRankMinusOne;
         for (auto choice : transitionProbabilityMatrix.getRowGroupIndices(state)) {
@@ -144,6 +146,9 @@ bool checkLowerBoundCertificate(storm::storage::SparseMatrix<ValueType> const& t
             return false;
         }
         // Apply ranking- and Bellman operators for non-target states
+        // Following Proposition 7 of https://doi.org/10.1007/978-3-031-90653-4_7 (see also the arXiv version), the (complementary distance) rank
+        // considers all choices, no matter whether we minimize or maximize. Unlike for lower bounds on maximal reachability probabilities, there is no
+        // restriction to inductive choices.
         auto stateValue = storm::solver::maximize(Dir) ? storm::utility::negativeInfinity<ValueType>() : storm::utility::positiveInfinity<ValueType>();
         storm::utility::Extremum<storm::solver::invert(Dir), RankingType> stateRank;
 

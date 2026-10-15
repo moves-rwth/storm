@@ -22,6 +22,8 @@ namespace modelchecker {
 /*!
  * Computes a certificate for reachability probabilities (or constrained reachability probabilities if constraint states are given).
  * The algorithm used for the computation is selected in the certificate environment of the given environment.
+ * Note that the computed certificate is not guaranteed to be valid: The algorithms trade speed for correctness (e.g. due to floating point errors or
+ * conversions between value types). Use Certificate::checkValidity to detect invalid certificates.
  * @param dir the optimization direction. Should be empty if the model is deterministic.
  * @see https://doi.org/10.1007/978-3-031-90653-4_7
  */
@@ -34,6 +36,8 @@ std::unique_ptr<ReachabilityProbabilityCertificate<ValueType>> computeReachabili
 /*!
  * Computes a certificate for expected rewards accumulated until reaching the target states.
  * The algorithm used for the computation is selected in the certificate environment of the given environment.
+ * Note that the computed certificate is not guaranteed to be valid: The algorithms trade speed for correctness (e.g. due to floating point errors or
+ * conversions between value types). Use Certificate::checkValidity to detect invalid certificates.
  * @param dir the optimization direction. Should be empty if the model is deterministic.
  * @param stateActionRewardVector the reward for each choice
  * @see https://doi.org/10.1007/978-3-031-90653-4_7
