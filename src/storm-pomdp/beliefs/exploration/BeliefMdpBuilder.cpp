@@ -143,7 +143,8 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
     uint64_t const targetState = numStates - numBottomTargetStates;
     uint64_t const bottomState = numStates - 1;
     std::optional<models::sparse::ChoiceLabeling> optionalChoiceLabeling;
-    // An exploration without rows still needs labels for its generated cut-off and sink choices when requested.
+    // Even if no belief actions were explored (the initial belief is terminal or exploration stopped before expanding it),
+    // generated cut-off actions and sink self-loops still need choice labels when requested.
     if (explorationInformation.generateChoiceLabeling || explorationInformation.matrix.hasChoiceLabels()) {
         optionalChoiceLabeling = models::sparse::ChoiceLabeling(numChoices);
     }
