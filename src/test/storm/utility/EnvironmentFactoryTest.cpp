@@ -35,6 +35,15 @@ storm::utility::ExtendedValueType<ValueType> checkInitialState(storm::Environmen
 
 }  // namespace
 
+class EnvironmentFactoryModelCheckingTest : public ::testing::Test {
+   protected:
+    void SetUp() override {
+#ifndef STORM_HAVE_Z3
+        GTEST_SKIP() << "Z3 not available.";
+#endif
+    }
+};
+
 TEST(EnvironmentFactoryTest, DefaultEnvironmentIsNotSound) {
     storm::Environment const env = storm::utility::environment::EnvironmentFactory().create();
     EXPECT_FALSE(env.solver().isForceSoundness());
@@ -76,7 +85,7 @@ TEST(EnvironmentFactoryTest, ClonedFactoryCreatesSoundEnvironment) {
     EXPECT_TRUE(factory->create().solver().isForceSoundness());
 }
 
-TEST(EnvironmentFactoryTest, MatchesSoundCommandLineOption) {
+TEST_F(EnvironmentFactoryModelCheckingTest, MatchesSoundCommandLineOption) {
     storm::settings::mutableManager().setFromExplodedString({"--sound"});
     storm::Environment const cliEnv = storm::settings::EnvironmentBuilder::buildEnvironment();
     storm::settings::mutableManager().getModule(storm::settings::modules::GeneralSettings::moduleName).restoreDefaults();
@@ -136,7 +145,7 @@ TEST(EnvironmentFactoryTest, ClonedFactoryCreatesExactEnvironment) {
     EXPECT_TRUE(factory->create().solver().isForceExact());
 }
 
-TEST(EnvironmentFactoryTest, MatchesExactCommandLineOption) {
+TEST_F(EnvironmentFactoryModelCheckingTest, MatchesExactCommandLineOption) {
     storm::settings::mutableManager().setFromExplodedString({"--exact"});
     storm::Environment const cliEnv = storm::settings::EnvironmentBuilder::buildEnvironment();
     storm::settings::mutableManager().getModule(storm::settings::modules::GeneralSettings::moduleName).restoreDefaults();
