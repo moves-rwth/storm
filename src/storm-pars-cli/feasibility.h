@@ -29,4 +29,10 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
                            std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
                            boost::optional<std::set<RationalFunctionVariable>> omittedParameters,
                            storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting());
+
+template<typename ValueType>
+void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> model,
+                           std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> const& task,
+                           boost::optional<std::set<RationalFunctionVariable>> omittedParameters,
+                           storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting());
 }  // namespace storm::pars

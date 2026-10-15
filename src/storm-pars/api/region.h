@@ -25,6 +25,7 @@
 #include "storm-pars/parser/MonotonicityParser.h"
 #include "storm-pars/parser/ParameterRegionParser.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/parameterlifting.h"
 
 #include "storm/environment/Environment.h"
@@ -327,13 +328,14 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
  * @param precision The precision to be used
  * @param absolutePrecision If true, the precision is interpreted as an absolute precision, otherwise as a relative precision
  * @param boundInvariant Bound invariant that should hold
- * @return A pair consisting of the extremal value and a parameter valuation achieving this value
+ * @return The extremal value and a parameter valuation achieving this value
  */
 template<typename ValueType>
-std::pair<storm::ExtendedRationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
-    Environment const& env, RefinementOptions<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region,
-    storm::solver::OptimizationDirection const& dir, std::optional<ValueType> const& precision, bool absolutePrecision,
-    std::optional<storm::logic::Bound> const& boundInvariant) {
+storm::pars::FeasibilityResult<storm::RationalNumber> computeExtremalValue(Environment const& env, RefinementOptions<ValueType> settings,
+                                                                           storm::storage::ParameterRegion<ValueType> const& region,
+                                                                           storm::solver::OptimizationDirection const& dir,
+                                                                           std::optional<ValueType> const& precision, bool absolutePrecision,
+                                                                           std::optional<storm::logic::Bound> const& boundInvariant) {
     auto refinementChecker = initializeRegionRefinementChecker(env, settings);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);
