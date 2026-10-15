@@ -30,6 +30,9 @@ class BeliefBasedModelChecker {
     /**
      * Explores the belief MDP by unfolding the belief space. Exploration may stop early and use cut-offs or clipping.
      *
+     * Policy generation requires one continuation scheduler per cut-off bound: upper bounds for minimization, lower bounds for maximization.
+     * @throws storm::exceptions::IllegalArgumentException if policy generation is requested with missing preprocessing bounds or a mismatched scheduler count.
+     *
      * @return the value, completion status, statistics, and optional policy produced by the checking run.
      */
     BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkUnfold(storm::Environment const& env,

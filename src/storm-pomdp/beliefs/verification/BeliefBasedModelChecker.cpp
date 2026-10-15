@@ -204,6 +204,18 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkUnfoldOr
                          propertyInformation.kind == PropertyInformation::Kind::ExpectedTotalReachabilityReward,
                      "Unexpected kind of property.");
 
+    if (options.generatePolicy) {
+        STORM_LOG_THROW(valueBounds.preprocessingBounds.has_value(), storm::exceptions::IllegalArgumentException,
+                        "Policy generation requires preprocessing bounds with continuation schedulers.");
+        auto const& bounds = *valueBounds.preprocessingBounds;
+        auto const& cutOffBounds = storm::solver::minimize(propertyInformation.dir) ? bounds.upper : bounds.lower;
+        auto const& cutOffSchedulers = storm::solver::minimize(propertyInformation.dir) ? bounds.upperSchedulers : bounds.lowerSchedulers;
+        STORM_LOG_THROW(cutOffSchedulers.size() == cutOffBounds.size(), storm::exceptions::IllegalArgumentException,
+                        "Policy generation requires one continuation scheduler per " << (storm::solver::minimize(propertyInformation.dir) ? "upper" : "lower")
+                                                                                     << " cut-off bound, but received " << cutOffSchedulers.size()
+                                                                                     << " schedulers for " << cutOffBounds.size() << " bounds.");
+    }
+
     STORM_LOG_INFO("Exploring the belief space.");
 
     // First, explore the beliefs and its successors
