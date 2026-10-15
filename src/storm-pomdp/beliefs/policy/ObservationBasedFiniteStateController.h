@@ -125,7 +125,7 @@ struct DeterministicActionUpdate final : FSCOutputUpdate {
  */
 template<typename ValueType>
 class ObservationBasedFiniteStateController {
-    using ActionOutputUpdate = std::unordered_map<uint64_t, std::shared_ptr<FSCOutputUpdate>>;
+    using ActionOutputUpdate = std::unordered_map<uint64_t, std::shared_ptr<FSCOutputUpdate const>>;
 
    public:
     /**

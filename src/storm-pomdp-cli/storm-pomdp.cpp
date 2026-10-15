@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <fstream>
 #include <optional>
 #include <type_traits>
 
@@ -305,9 +306,9 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
                     "Grid clipping is not supported for reward-bounded POMDP properties.");
 
     bool const policyExportRequested = pomdpSettings.isExportPolicySet();
-    STORM_LOG_THROW(!policyExportRequested || !belExplSettings.isCutZeroGapSet(), storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(!policyExportRequested || !belExplSettings.isCutZeroGapSet(), storm::exceptions::InvalidSettingsException,
                     "Policy export does not support zero-gap cutting because cut-off beliefs do not retain a continuation policy. Remove --cut-zero-gap to "
-                    "allow polic export.");
+                    "allow policy export.");
     std::optional<PolicyExportFormat> policyExportFormat;
     if (policyExportRequested) {
         policyExportFormat = getPolicyExportFormat(pomdpSettings.getExportPolicyFilename());

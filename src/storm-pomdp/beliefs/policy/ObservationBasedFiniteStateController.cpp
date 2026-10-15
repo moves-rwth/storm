@@ -260,7 +260,7 @@ std::string ObservationBasedFiniteStateController<ValueType>::toString() const {
             }
             if (outputUpdatePtr->randomisedActionOutput()) {
                 result += "({ ";
-                for (auto randomisedOutputUpdatePtr = std::static_pointer_cast<RandomisedActionUpdate<ValueType>>(outputUpdatePtr);
+                for (auto randomisedOutputUpdatePtr = std::static_pointer_cast<RandomisedActionUpdate<ValueType> const>(outputUpdatePtr);
                      auto const& [actionId, prob] : randomisedOutputUpdatePtr->actionDistribution) {
                     if (idToActionName && idToActionName->contains(observationId) && idToActionName->at(observationId).contains(actionId)) {
                         result += "(" + std::to_string(actionId) + ") " + idToActionName->at(observationId).at(actionId) + " : " +
@@ -271,7 +271,7 @@ std::string ObservationBasedFiniteStateController<ValueType>::toString() const {
                 }
                 result += "}, " + std::to_string(outputUpdatePtr->nextMemoryNode) + ")\n";
             } else {
-                auto deterministicOutputUpdatePtr = std::static_pointer_cast<DeterministicActionUpdate>(outputUpdatePtr);
+                auto deterministicOutputUpdatePtr = std::static_pointer_cast<DeterministicActionUpdate const>(outputUpdatePtr);
                 result += "(";
                 if (idToActionName && idToActionName->contains(observationId) &&
                     idToActionName->at(observationId).contains(deterministicOutputUpdatePtr->action)) {

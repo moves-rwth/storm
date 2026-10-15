@@ -11,6 +11,7 @@
 #include "storm/api/verification.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/transformer/GoalStateMerger.h"
@@ -308,8 +309,9 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkUnfoldOr
     auto const initState = beliefMdp->getInitialStates().getNextSetIndex(0);
     if (options.generatePolicy) {
         auto const& quantitativeResult = res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>();
-        STORM_LOG_ASSERT(beliefMdp->hasChoiceLabeling(), "Policy extraction requires choice labels in the belief MDP.");
-        STORM_LOG_ASSERT(quantitativeResult.hasScheduler(), "Model checking of the belief MDP did not produce a scheduler for policy extraction.");
+        STORM_LOG_THROW(beliefMdp->hasChoiceLabeling(), storm::exceptions::UnexpectedException, "Policy extraction requires choice labels in the belief MDP.");
+        STORM_LOG_THROW(quantitativeResult.hasScheduler(), storm::exceptions::UnexpectedException,
+                        "Model checking of the belief MDP did not produce a scheduler for policy extraction.");
         std::unordered_map<uint64_t, uint32_t> beliefStateToObservationMap;
         for (auto const& [state, beliefId] : stateToBeliefMap) {
             beliefStateToObservationMap.emplace(state, info.discoveredBeliefs.getBeliefFromId(beliefId).observation());
