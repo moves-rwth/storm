@@ -17,6 +17,7 @@
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 #include "storm-pars/settings/modules/ScpSettings.h"
+#include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -24,13 +25,11 @@
 
 namespace storm::pars {
 
-template<typename VT1>
-void printFeasibilityResult(bool success,
-                            std::pair<VT1, typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation> const& valueValuationPair,
-                            storm::utility::Stopwatch const& watch) {
+template<typename ConstantType>
+void printFeasibilityResult(bool success, storm::pars::FeasibilityResult<ConstantType> const& result, storm::utility::Stopwatch const& watch) {
     std::stringstream valuationStr;
     bool first = true;
-    for (auto const& v : valueValuationPair.second) {
+    for (auto const& v : result.valuation) {
         if (first) {
             first = false;
         } else {
@@ -39,9 +38,8 @@ void printFeasibilityResult(bool success,
         valuationStr << v.first << "=" << v.second;
     }
     if (success) {
-        STORM_PRINT_AND_LOG("Result at initial state: " << valueValuationPair.first << " ( approx. "
-                                                        << storm::utility::convertNumber<double>(valueValuationPair.first) << ") at [" << valuationStr.str()
-                                                        << "].\n");
+        STORM_PRINT_AND_LOG("Result at initial state: " << result.value << " ( approx. " << storm::utility::convertNumber<double>(result.value) << ") at ["
+                                                        << valuationStr.str() << "].\n");
     } else {
         STORM_PRINT_AND_LOG("No satisfying result found.\n");
     }
@@ -171,32 +169,27 @@ void runFeasibilityWithGD(storm::Environment const& env, std::shared_ptr<storm::
         derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, region, derSettings.isPrintJsonSet());
 
     gdsearch.setup(env, task);
-    auto instantiationAndValue = gdsearch.gradientDescent();
+    auto result = gdsearch.gradientDescent();
     // TODO check what happens if no feasible solution is found
     if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
         for (RationalFunctionVariable const& param : *omittedParameters) {
             if (startPoint) {
-                instantiationAndValue.first[param] = startPoint->at(param);
+                result.valuation[param] = startPoint->at(param);
             } else {
-                instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                result.valuation[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
             }
         }
     }
     derivativeWatch.stop();
-
-    // TODO refactor this such that the order is globally fixed.
-    std::pair<double, typename storm::storage::ParameterRegion<ValueType>::Valuation> valueValuationPair;
-    valueValuationPair.first = instantiationAndValue.second;
-    valueValuationPair.second = instantiationAndValue.first;
 
     if (derSettings.isPrintJsonSet()) {
         gdsearch.printRunAsJson();
     }
 
     if (task->isBoundSet()) {
-        printFeasibilityResult(task->getBound().isSatisfied(valueValuationPair.first), valueValuationPair, derivativeWatch);
+        printFeasibilityResult(task->getBound().isSatisfied(result.value), result, derivativeWatch);
     } else {
-        printFeasibilityResult(true, valueValuationPair, derivativeWatch);
+        printFeasibilityResult(true, result, derivativeWatch);
     }
 }
 
@@ -236,7 +229,7 @@ void runFeasibilityWithPLA(storm::Environment const& env, std::shared_ptr<storm:
                                                                           !task->isMaxGapRelative(), task->getBound().getInvertedBound());
         watch.stop();
 
-        printFeasibilityResult(task->getBound().isSatisfied(valueValuation.first), valueValuation, watch);
+        printFeasibilityResult(task->getBound().isSatisfied(valueValuation.value), valueValuation, watch);
     } else {
         STORM_LOG_THROW(task->getMaximalAllowedGap() != std::nullopt, storm::exceptions::NotSupportedException,
                         "Without a bound, PLA requires an explicit target in form of a guarantee.");
@@ -294,11 +287,7 @@ void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm:
     }
     watch.stop();
 
-    std::pair<double, typename storm::storage::ParameterRegion<ValueType>::Valuation> valueValuationPair;
-    valueValuationPair.first = result.value;
-    valueValuationPair.second = result.valuation;
-
-    printFeasibilityResult(result.status == storm::pars::scp::ScpStatus::Feasible, valueValuationPair, watch);
+    printFeasibilityResult(result.status == storm::pars::scp::ScpStatus::Feasible, result, watch);
 }
 
 template void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,

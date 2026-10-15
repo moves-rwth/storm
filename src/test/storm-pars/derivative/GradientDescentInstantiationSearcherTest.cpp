@@ -130,7 +130,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::shared_ptr<FeasibilitySynthesisTask const> feasibilityTask = std::make_shared<FeasibilitySynthesisTask const>(std::move(*t));
 
     checker.setup(this->env(), feasibilityTask);
-    typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent().second;
+    typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent().value;
     ASSERT_NEAR(doubleInstantiation * 4, 1, 1e-6);
 }
 
@@ -271,7 +271,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
         ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
     }
 
-    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.second), 0, 1e-6);
+    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.value), 0, 1e-6);
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(

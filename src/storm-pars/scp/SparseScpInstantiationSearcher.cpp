@@ -152,7 +152,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         storm::utility::ExtendedValueType<ConstantType> constantValue = oneStates.get(initialState)        ? storm::utility::one<ConstantType>()
                                                                         : infiniteStates.get(initialState) ? storm::utility::positiveInfinity<ConstantType>()
                                                                                                            : storm::utility::zero<ConstantType>();
-        return ScpResult<ConstantType>{bound.isSatisfied(constantValue) ? ScpStatus::Feasible : ScpStatus::Infeasible, initialValuation, constantValue, 0};
+        return ScpResult<ConstantType>{{constantValue, initialValuation}, bound.isSatisfied(constantValue) ? ScpStatus::Feasible : ScpStatus::Infeasible, 0};
     }
 
     std::vector<uint64_t> rowGroupIndices(model.getTransitionMatrix().getRowGroupIndices().begin(), model.getTransitionMatrix().getRowGroupIndices().end());
@@ -222,7 +222,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     std::vector<ConstantType> pHat = exactCheck(vHat);
     ConstantType betaStar = pHat.at(initialState);
 
-    ScpResult<ConstantType> best{ScpStatus::Infeasible, vHat, betaStar, 0};
+    ScpResult<ConstantType> best{{betaStar, vHat}, ScpStatus::Infeasible, 0};
     if (bound.isSatisfied(betaStar)) {
         best.status = ScpStatus::Feasible;
         return best;
@@ -260,7 +260,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         ConstantType beta = valueVector.at(initialState);
 
         if (bound.isSatisfied(beta)) {
-            return ScpResult<ConstantType>{ScpStatus::Feasible, candidate, beta, iteration + 1};
+            return ScpResult<ConstantType>{{beta, candidate}, ScpStatus::Feasible, iteration + 1};
         }
 
         bool improved = (direction == ThresholdDirection::AtLeast) ? (beta > betaStar) : (beta < betaStar);
@@ -268,7 +268,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             vHat = candidate;
             pHat = std::move(valueVector);
             betaStar = beta;
-            best = ScpResult<ConstantType>{ScpStatus::Infeasible, vHat, betaStar, iteration + 1};
+            best = ScpResult<ConstantType>{{betaStar, vHat}, ScpStatus::Infeasible, iteration + 1};
             delta = std::min(options.trustRegionMax, (delta - 1.0) * options.trustRegionFactor + 1.0);
         } else {
             delta = (delta - 1.0) / options.trustRegionFactor + 1.0;
