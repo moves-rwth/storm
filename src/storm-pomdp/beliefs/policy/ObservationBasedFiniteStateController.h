@@ -5,9 +5,7 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -40,29 +38,7 @@ struct ObservationSignature {
 };
 
 /** Creates a human-readable representation of an observation signature. */
-inline std::string observationSignatureToString(ObservationSignature const& signature) {
-    std::stringstream stream;
-    stream << "[";
-    bool first = true;
-    for (auto const& [observable, value] : signature.values) {
-        if (!first) {
-            stream << "\t& ";
-        }
-        first = false;
-        stream << observable << "=";
-        std::visit(
-            [&stream](auto const& typedValue) {
-                using TypedValue = std::decay_t<decltype(typedValue)>;
-                if constexpr (std::is_same_v<TypedValue, std::monostate>) {
-                    stream << "none";
-                } else {
-                    stream << typedValue;
-                }
-            },
-            value);
-    }
-    return stream.str() + "]";
-}
+std::string observationSignatureToString(ObservationSignature const& signature);
 
 /**
  * Describes the successor memory node selected by an FSC output update.
@@ -80,9 +56,7 @@ struct FSCOutputUpdate {
      *
      * @return True if the update contains an action distribution, and false if it contains a single action.
      */
-    virtual bool randomisedActionOutput() const {
-        return false;
-    }
+    virtual bool randomisedActionOutput() const;
 };
 
 /**
@@ -98,9 +72,7 @@ struct RandomisedActionUpdate final : FSCOutputUpdate {
     /**
      * @return True, as this update contains an action distribution.
      */
-    bool randomisedActionOutput() const override {
-        return true;
-    }
+    bool randomisedActionOutput() const override;
 };
 
 /** An FSC output update that deterministically chooses a single action. */

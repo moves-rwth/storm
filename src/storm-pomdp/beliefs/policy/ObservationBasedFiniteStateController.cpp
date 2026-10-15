@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <ostream>
+#include <sstream>
+#include <type_traits>
 #include <unordered_set>
 #include <utility>
 
@@ -30,6 +32,39 @@ ObservationSignature ObservationSignature::fromValuations(storm::storage::sparse
         }
     });
     return result;
+}
+
+std::string observationSignatureToString(ObservationSignature const& signature) {
+    std::stringstream stream;
+    stream << "[";
+    bool first = true;
+    for (auto const& [observable, value] : signature.values) {
+        if (!first) {
+            stream << "\t& ";
+        }
+        first = false;
+        stream << observable << "=";
+        std::visit(
+            [&stream](auto const& typedValue) {
+                using TypedValue = std::decay_t<decltype(typedValue)>;
+                if constexpr (std::is_same_v<TypedValue, std::monostate>) {
+                    stream << "none";
+                } else {
+                    stream << typedValue;
+                }
+            },
+            value);
+    }
+    return stream.str() + "]";
+}
+
+bool FSCOutputUpdate::randomisedActionOutput() const {
+    return false;
+}
+
+template<typename ValueType>
+bool RandomisedActionUpdate<ValueType>::randomisedActionOutput() const {
+    return true;
 }
 
 static std::string escapeDotLabel(std::string const& label) {
@@ -446,6 +481,9 @@ void ObservationBasedFiniteStateController<ValueType>::writeJsonToStream(std::os
     }
     outStream << storm::dumpJson(output) << '\n';
 }
+
+template struct RandomisedActionUpdate<double>;
+template struct RandomisedActionUpdate<storm::RationalNumber>;
 
 template class ObservationBasedFiniteStateController<double>;
 template class ObservationBasedFiniteStateController<storm::RationalNumber>;
