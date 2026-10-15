@@ -267,6 +267,9 @@ void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm:
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp) || model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                     "SCP is only supported for MDPs and DTMCs.");
     // TODO handle omittedParameters.
+    STORM_LOG_THROW(task->isRegionSet(), storm::exceptions::NotSupportedException, "SCP requires an explicitly given region.");
+    // SCP requires a graph-preserving region.
+    establishGraphPreservation<ValueType>(model, {task->getRegion()}, true);
 
     auto const& scpSettings = storm::settings::getModule<storm::settings::modules::ScpSettings>();
     storm::pars::scp::ScpOptions options;

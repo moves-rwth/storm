@@ -2,12 +2,10 @@
 
 #include <algorithm>
 
-#include "storm-pars/analysis/RegionConstraintChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/analysis/GraphConditions.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
@@ -120,7 +118,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
     AffinePMdpDecomposition decomposition(model, rewardModel);
 
-    // Use a real region in both cases (the caller's, or [0,1]^n) so that the checks below apply uniformly.
+    // Use a real region in both cases: the caller's, or [0,1]^n.
     storm::storage::ParameterRegion<ParametricType> region;
     if (task->isRegionSet()) {
         region = task->getRegion();
@@ -135,18 +133,6 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             upper[var] = storm::utility::one<CoefficientType>();
         }
         region = storm::storage::ParameterRegion<ParametricType>(std::move(lower), std::move(upper));
-    }
-
-    // A violation only affects search effectiveness, not soundness: every Feasible result is model-checked exactly.
-    {
-        storm::analysis::ConstraintCollector collector(model);
-        auto const check = storm::pars::analysis::RegionConstraintChecker(collector).checkGraphPreservation(region);
-        if (check.verdict == storm::pars::analysis::ConstraintVerdict::Unsat) {
-            STORM_LOG_WARN("The region is not graph-preserving: the constraint '" << *check.violatedConstraint << "' is violated at " << *check.witness
-                                                                                  << ". The search may be less effective near such parameter values.");
-        } else if (check.verdict == storm::pars::analysis::ConstraintVerdict::Unknown) {
-            STORM_LOG_WARN("Graph preservation could not be established for the region; the search may be less effective if it is violated.");
-        }
     }
 
     std::map<VariableType, std::pair<double, double>> parameterBounds;

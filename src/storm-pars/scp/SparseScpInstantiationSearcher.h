@@ -27,8 +27,8 @@ namespace storm::pars::scp {
  * agree with this. A reward property uses the reward model named by the formula, else the model's
  * unique reward model.
  *
- * The region (the task's, or [0,1]^n if none is given) is checked for graph preservation; a
- * violation only produces a warning since it can reduce search effectiveness but not soundness.
+ * The region (the task's, or [0,1]^n if none is given) must be graph-preserving; this is not checked here.
+ * Otherwise the exact checks, which reuse the qualitative analysis of the region's center, may be wrong.
  *
  * A Feasible result is always verified by exactly model-checking the returned valuation. Any other
  * status does not imply that no witness exists.
