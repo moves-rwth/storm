@@ -1,6 +1,5 @@
 #include "storm-pomdp/beliefs/policy/ApplyObservationBasedFSCToPomdp.h"
 
-#include <map>
 #include <optional>
 #include <queue>
 #include <ranges>
@@ -36,8 +35,7 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
         "Applying an FSC requires exactly one initial state, but the POMDP contains " << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
     std::unordered_map<uint64_t, std::pair<uint64_t, uint64_t>> idToPomdpStateAndFscNode;
     std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pomdpStateAndFscNodeToNewStateId;
-    // TODO change for vector?
-    std::map<uint64_t, std::unordered_map<uint64_t, PomdpValueType>> transitionProbabilities;
+    std::vector<std::unordered_map<uint64_t, PomdpValueType>> transitionProbabilities;
     std::unordered_map<std::string, std::vector<PomdpValueType>> stateRewards;
 
     uint64_t initialStateId = 0ul;
@@ -112,7 +110,6 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
             "The POMDP or the FSC is missing naming information for actions or observations. Assuming that IDs correspond directly (this might lead to "
             "unexpected results if they don't).");
     }
-
     std::queue<uint64_t> statesToExplore;
     statesToExplore.push(initialStateId);
     while (!statesToExplore.empty()) {
@@ -147,6 +144,7 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
                 STORM_LOG_WARN("Transition rewards are not supported when applying an FSC to a POMDP. They will be ignored.");
             }
         }
+        std::unordered_map<uint64_t, PomdpValueType> successorProbabilities;
         for (auto const& actionEntry : actionDistribution) {
             auto const actionProbability = storm::utility::convertNumber<PomdpValueType>(actionEntry.second);
             uint64_t pomdpActionId = actionEntry.first;
@@ -181,22 +179,23 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
                     ++nextStateId;
                     statesToExplore.push(successorNewStateId);
                 }
-                if (transitionProbabilities.contains(currentStateId) && transitionProbabilities[currentStateId].contains(successorNewStateId)) {
+                if (successorProbabilities.contains(successorNewStateId)) {
                     // Add transition from currentStateId to successorNewStateId with probability from POMDP
-                    transitionProbabilities[currentStateId][successorNewStateId] += transitionEntry.getValue() * actionProbability;
+                    successorProbabilities[successorNewStateId] += transitionEntry.getValue() * actionProbability;
                 } else {
-                    transitionProbabilities[currentStateId][successorNewStateId] = transitionEntry.getValue() * actionProbability;
-                    ++nrEntries;
+                    successorProbabilities[successorNewStateId] = transitionEntry.getValue() * actionProbability;
                 }
             }
         }
+        nrEntries += successorProbabilities.size();
+        STORM_LOG_ASSERT(transitionProbabilities.size() == currentStateId, "States must be explored in ID order.");
+        transitionProbabilities.emplace_back(std::move(successorProbabilities));
     }
 
     // Build transition matrix from collected transitions
     storm::storage::SparseMatrixBuilder<PomdpValueType> matrixBuilder(nextStateId, nextStateId, nrEntries);
-    for (auto const& fromEntry : transitionProbabilities) {
-        uint64_t fromStateId = fromEntry.first;
-        for (auto const& toEntry : fromEntry.second) {
+    for (uint64_t fromStateId = 0; fromStateId < transitionProbabilities.size(); ++fromStateId) {
+        for (auto const& toEntry : transitionProbabilities[fromStateId]) {
             uint64_t toStateId = toEntry.first;
             PomdpValueType prob = toEntry.second;
             matrixBuilder.addNextValue(fromStateId, toStateId, prob);
