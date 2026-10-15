@@ -30,6 +30,8 @@ struct ScpOptions {
     /// Maximum number of SCP iterations before giving up.
     uint64_t maxIterations = 1000;
 
+    /// Weight of the initial state's value in the LP objective. It is dominated by the violation objective and only breaks ties towards the threshold side.
+    double initialStateBias = 1e-4;
     /// If true, the LP objective minimizes the maximum per-state constraint violation; if false, the sum of violations.
     bool useMaxViolationObjective = true;
 };

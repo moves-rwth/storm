@@ -85,11 +85,12 @@ class AffinePMdpDecomposition {
      * coefficient) pairs, and folds its occurring parameters into `parameters`. Shared between the
      * transition-matrix loop and the (optional) reward-vector loop in the constructor.
      *
-     * @param errorContext Human-readable description of what `value` is (e.g. "the transition from
-     * state 3 (row 5) to state 7"), used only to build a precise error message on violation.
+     * @param errorContext Callable returning a description of what `value` is (e.g. "the transition
+     * from state 3 (row 5) to state 7"). It is only called to build the error message on violation.
      * @throws storm::exceptions::NotSupportedException if `value` is not affine in the parameters.
      */
-    UnpackedValue decomposeAffine(storm::RationalFunction const& value, std::string const& errorContext);
+    template<typename ErrorContext>
+    UnpackedValue decomposeAffine(storm::RationalFunction const& value, ErrorContext const& errorContext);
 
     std::vector<std::vector<UnpackedTransition>> rows;
     std::vector<UnpackedValue> rewardRows;

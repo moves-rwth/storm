@@ -20,6 +20,7 @@ const std::string trustRegionFactorOption = "trust-region-factor";
 const std::string trustRegionMaxOption = "trust-region-max";
 const std::string trustRegionMinExcessOption = "trust-region-min-excess";
 const std::string maxIterationsOption = "max-iterations";
+const std::string initialStateBiasOption = "initial-state-bias";
 const std::string sumViolationObjectiveOption = "sum-violation-objective";
 }  // namespace
 
@@ -60,6 +61,14 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
                                          .addValidatorInteger(storm::settings::ArgumentValidatorFactory::createIntegerGreaterEqualValidator(1))
                                          .build())
                         .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, initialStateBiasOption, false,
+                                                   "The weight of the initial state's value in the LP objective; it breaks ties towards the threshold side")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(initialStateBiasOption, "The weight")
+                                         .setDefaultValueDouble(defaultOptions.initialStateBias)
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .build())
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, sumViolationObjectiveOption, false,
                                                    "Minimize the sum of per-state constraint violations instead of the default maximum violation")
                         .setIsAdvanced()
@@ -84,6 +93,10 @@ double ScpSettings::getTrustRegionMinExcess() const {
 
 uint64_t ScpSettings::getMaxIterations() const {
     return this->getOption(maxIterationsOption).getArgumentByName(maxIterationsOption).getValueAsInteger();
+}
+
+double ScpSettings::getInitialStateBias() const {
+    return this->getOption(initialStateBiasOption).getArgumentByName(initialStateBiasOption).getValueAsDouble();
 }
 
 bool ScpSettings::isSumViolationObjectiveSet() const {

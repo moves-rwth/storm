@@ -278,6 +278,7 @@ void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm:
     options.trustRegionMax = scpSettings.getTrustRegionMax();
     options.trustRegionMinExcess = scpSettings.getTrustRegionMinExcess();
     options.maxIterations = scpSettings.getMaxIterations();
+    options.initialStateBias = scpSettings.getInitialStateBias();
     options.useMaxViolationObjective = !scpSettings.isSumViolationObjectiveSet();
 
     storm::utility::Stopwatch watch(true);

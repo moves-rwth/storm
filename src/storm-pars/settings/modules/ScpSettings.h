@@ -37,6 +37,11 @@ class ScpSettings : public ModuleSettings {
     uint64_t getMaxIterations() const;
 
     /*!
+     * Retrieves the weight of the initial state's value in the LP objective.
+     */
+    double getInitialStateBias() const;
+
+    /*!
      * Retrieves whether the LP objective should minimize the sum of per-state violations instead
      * of the default maximum violation.
      */

@@ -11,11 +11,12 @@
 
 namespace storm::pars::scp {
 
-UnpackedValue AffinePMdpDecomposition::decomposeAffine(storm::RationalFunction const& value, std::string const& errorContext) {
+template<typename ErrorContext>
+UnpackedValue AffinePMdpDecomposition::decomposeAffine(storm::RationalFunction const& value, ErrorContext const& errorContext) {
     STORM_LOG_THROW(storm::utility::parametric::isLinear(value), storm::exceptions::NotSupportedException,
                     "SCP requires an affine pMDP (every transition probability, and every state-action reward for reward properties, must have total "
                     "degree <= 1 in the parameters), but "
-                        << errorContext << " is '" << value << "', which is not affine.");
+                        << errorContext() << " is '" << value << "', which is not affine.");
 
     std::set<storm::RationalFunctionVariable> occurring;
     storm::utility::parametric::gatherOccurringVariables(value, occurring);
@@ -42,18 +43,18 @@ AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<st
                                                  storm::models::sparse::StandardRewardModel<storm::RationalFunction> const* rewardModel) {
     auto const& matrix = model.getTransitionMatrix();
     auto const& rowGroupIndices = matrix.getRowGroupIndices();
+    auto stateOfRow = [&](uint64_t row) { return std::upper_bound(rowGroupIndices.begin(), rowGroupIndices.end(), row) - rowGroupIndices.begin() - 1; };
 
     rows.reserve(matrix.getRowCount());
     for (uint64_t row = 0; row < matrix.getRowCount(); ++row) {
         std::vector<UnpackedTransition> unpackedRow;
         unpackedRow.reserve(matrix.getRow(row).getNumberOfEntries());
 
-        // Only used to produce a precise error message; cheap relative to the rest of this loop.
-        uint64_t state = std::upper_bound(rowGroupIndices.begin(), rowGroupIndices.end(), row) - rowGroupIndices.begin() - 1;
-
         for (auto const& entry : matrix.getRow(row)) {
-            UnpackedValue decomposed = decomposeAffine(entry.getValue(), "the transition from state " + std::to_string(state) + " (row " + std::to_string(row) +
-                                                                             ") to state " + std::to_string(entry.getColumn()));
+            UnpackedValue decomposed = decomposeAffine(entry.getValue(), [&] {
+                return "the transition from state " + std::to_string(stateOfRow(row)) + " (row " + std::to_string(row) + ") to state " +
+                       std::to_string(entry.getColumn());
+            });
             UnpackedTransition unpacked;
             unpacked.successor = entry.getColumn();
             unpacked.constant = decomposed.constant;
@@ -67,8 +68,8 @@ AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<st
         std::vector<storm::RationalFunction> rewardVector = rewardModel->getTotalRewardVector(matrix);
         rewardRows.reserve(rewardVector.size());
         for (uint64_t row = 0; row < rewardVector.size(); ++row) {
-            uint64_t state = std::upper_bound(rowGroupIndices.begin(), rowGroupIndices.end(), row) - rowGroupIndices.begin() - 1;
-            rewardRows.push_back(decomposeAffine(rewardVector[row], "the reward of state " + std::to_string(state) + " (row " + std::to_string(row) + ")"));
+            rewardRows.push_back(decomposeAffine(
+                rewardVector[row], [&] { return "the reward of state " + std::to_string(stateOfRow(row)) + " (row " + std::to_string(row) + ")"; }));
         }
     }
 }

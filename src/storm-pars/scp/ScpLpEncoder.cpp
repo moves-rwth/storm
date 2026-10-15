@@ -11,12 +11,6 @@
 
 namespace storm::pars::scp {
 
-namespace {
-// Weight of the initial-state term in the objective. It is dominated by the violation objective and
-// only breaks ties towards the threshold side.
-constexpr double InitialStateBiasCoefficient = 1e-4;
-}  // namespace
-
 ScpLpEncoder::ScpLpEncoder(AffinePMdpDecomposition const& decomposition, std::vector<uint64_t> rowGroupIndices, storm::storage::BitVector zeroStates,
                            storm::storage::BitVector oneStates, storm::storage::BitVector infiniteStates, storm::storage::BitVector excludedRows,
                            uint64_t initialState, std::map<storm::RationalFunctionVariable, std::pair<double, double>> parameterBounds, double threshold,
@@ -71,7 +65,7 @@ EncodedLp ScpLpEncoder::encode(storm::Environment const& env, std::map<storm::Ra
         }
         double objectiveCoefficient = 0.0;
         if (s == initialState) {
-            objectiveCoefficient = (direction == ThresholdDirection::AtLeast) ? -InitialStateBiasCoefficient : InitialStateBiasCoefficient;
+            objectiveCoefficient = (direction == ThresholdDirection::AtLeast) ? -options.initialStateBias : options.initialStateBias;
         }
         result.stateVariables[s] = solver->addBoundedContinuousVariable("p_" + std::to_string(s), lb, ub, objectiveCoefficient);
     }
