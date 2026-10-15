@@ -208,13 +208,13 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
         }
         if (newLabeling.getStateHasLabel("truncated", i)) {
             uint64_t localChosenActionIndex = beliefMdpScheduler.getChoice(i).getDeterministicChoice();
-            auto rowIndex = beliefMdp.getTransitionMatrix().getRowGroupIndices()[i];
-            if (beliefMdp.getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
-                if (auto label = *(beliefMdp.getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin()); label.rfind("clip", 0) == 0) {
+            auto const chosenRowIndex = transMatrix.getRowGroupIndices()[i] + localChosenActionIndex;
+            if (beliefMdp.getChoiceLabeling().getLabelsOfChoice(chosenRowIndex).size() > 0) {
+                if (auto label = *(beliefMdp.getChoiceLabeling().getLabelsOfChoice(chosenRowIndex).begin()); label.rfind("clip", 0) == 0) {
                     newLabeling.addLabelToState("clipping", i);
-                    auto chosenRow = transMatrix.getRow(i, 0);
+                    auto chosenRow = transMatrix.getRow(chosenRowIndex);
                     auto candidateIndex = (chosenRow.end() - 1)->getColumn();
-                    transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                    transMatrix.makeRowDirac(chosenRowIndex, candidateIndex);
                 } else if (label.rfind("__mem_node", 0) == 0) {
                     newLabeling.addLabelToState("finite_mem", i);
                     newLabeling.addLabelToState("cutoff", i);

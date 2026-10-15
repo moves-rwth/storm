@@ -569,6 +569,63 @@ TEST(PolicyExtractor, UsesContinuationSchedulerForTruncatedInitialBelief) {
     }
 }
 
+TEST(PolicyExtractor, InducedMarkovChainClipsSelectedChoice) {
+    auto pomdp = buildSingleStatePomdp();
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(0, 0, 0, false, true);
+    matrixBuilder.newRowGroup(0);
+    matrixBuilder.addNextValue(0, 1, 1.0);
+    matrixBuilder.addNextValue(1, 1, 1.0);
+    matrixBuilder.newRowGroup(2);
+    matrixBuilder.addNextValue(2, 0, 0.25);
+    matrixBuilder.addNextValue(2, 2, 0.75);
+    matrixBuilder.addNextValue(3, 0, 0.4);
+    matrixBuilder.addNextValue(3, 3, 0.6);
+    matrixBuilder.newRowGroup(4);
+    matrixBuilder.addNextValue(4, 2, 1.0);
+    matrixBuilder.newRowGroup(5);
+    matrixBuilder.addNextValue(5, 3, 1.0);
+
+    storm::models::sparse::StateLabeling stateLabeling(4);
+    stateLabeling.addLabel("init");
+    stateLabeling.addLabelToState("init", 0);
+    stateLabeling.addLabel("truncated");
+    stateLabeling.addLabelToState("truncated", 1);
+    storm::models::sparse::ChoiceLabeling choiceLabeling(6);
+    for (uint64_t choice = 0; choice < 2; ++choice) {
+        auto const candidateLabel = "candidate_" + std::to_string(choice);
+        stateLabeling.addLabel(candidateLabel);
+        stateLabeling.addLabelToState(candidateLabel, 2 + choice);
+        auto const clipLabel = "clip_" + std::to_string(choice);
+        choiceLabeling.addLabel(clipLabel);
+        choiceLabeling.addLabelToChoice(clipLabel, 2 + choice);
+    }
+    storm::storage::sparse::ModelComponents<double> components(matrixBuilder.build(), std::move(stateLabeling));
+    components.choiceLabeling = std::move(choiceLabeling);
+    storm::models::sparse::Mdp<double> beliefMdp(std::move(components));
+    std::unordered_map<uint64_t, uint32_t> beliefStateToObservation{{0, 0}, {1, 0}};
+
+    for (uint64_t chosenAction = 0; chosenAction < 2; ++chosenAction) {
+        SCOPED_TRACE(chosenAction);
+        storm::storage::Scheduler<double> beliefScheduler(4);
+        beliefScheduler.setChoice(1, 0);
+        beliefScheduler.setChoice(chosenAction, 1);
+        beliefScheduler.setChoice(0, 2);
+        beliefScheduler.setChoice(0, 3);
+        storm::pomdp::policy::PolicyExtractor<storm::models::sparse::Pomdp<double>, double, double> extractor(pomdp, beliefMdp, beliefStateToObservation,
+                                                                                                              beliefScheduler);
+        auto inducedModel = extractor.exportPolicyAsInducedMarkovChain();
+
+        EXPECT_EQ(inducedModel->getNumberOfStates(), 3);
+        auto const& labeling = inducedModel->getStateLabeling();
+        auto const& clippingStates = labeling.getStates("clipping");
+        ASSERT_EQ(clippingStates.getNumberOfSetBits(), 1);
+        auto row = inducedModel->getTransitionMatrix().getRow(clippingStates.getNextSetIndex(0));
+        ASSERT_EQ(row.getNumberOfEntries(), 1);
+        EXPECT_DOUBLE_EQ(row.begin()->getValue(), 1.0);
+        EXPECT_TRUE(labeling.getStateHasLabel("candidate_" + std::to_string(chosenAction), row.begin()->getColumn()));
+    }
+}
+
 TEST(PolicyExtractor, AddsEmptyLabelToSelectedUnlabelledChoice) {
     auto pomdp = buildSingleStatePomdp();
     auto beliefMdp = buildSingleStateBeliefMdpWithUnlabelledSecondChoice();
