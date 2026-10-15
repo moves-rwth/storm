@@ -263,3 +263,5 @@ TEST_P(ScpLpEncoderTest, Reward_ChecksRewardTermAndUnboundedDomain) {
 
 INSTANTIATE_TEST_SUITE_P(LpSolvers, ScpLpEncoderTest, testing::ValuesIn(storm::pars::scp::testutils::lpSolversUnderTest()),
                          storm::pars::scp::testutils::LpSolverTest::solverName);
+// The suite is empty if no LP solver was compiled in.
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(ScpLpEncoderTest);
