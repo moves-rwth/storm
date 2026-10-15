@@ -19,8 +19,9 @@ namespace storm::pars::scp {
  * (Cubuktepe et al., "Convex Optimization for Parameter Synthesis in MDPs").
  *
  * SparseModelType is Mdp<RationalFunction> or Dtmc<RationalFunction>. ConstantType is the precision
- * of the exact model checks and of ScpResult::value (double or storm::RationalNumber); only the LP
- * relaxation is always solved in double.
+ * of the model checks of candidate valuations and of ScpResult::value. With double, these are floating-point
+ * model checks and are only as accurate as the numerical solvers; with storm::RationalNumber, they are exact.
+ * Only the LP is always solved in double.
  *
  * For an Mdp the property is read robustly: AtLeast thresholds are checked against the minimal and
  * AtMost thresholds against the maximal value. An explicit Pmax/Pmin/Rmax/Rmin on the formula must
@@ -28,10 +29,10 @@ namespace storm::pars::scp {
  * unique reward model.
  *
  * The region (the task's, or [0,1]^n if none is given) must be graph-preserving; this is not checked here.
- * Otherwise the exact checks, which reuse the qualitative analysis of the region's center, may be wrong.
+ * Otherwise the model checks, which reuse the qualitative analysis of the region's center, may be wrong.
  *
- * A Feasible result is always verified by exactly model-checking the returned valuation. Any other
- * status does not imply that no witness exists.
+ * A Feasible result is always verified by model-checking the returned valuation at ConstantType precision.
+ * Any other status does not imply that no witness exists.
  */
 template<typename SparseModelType, typename ConstantType>
 class SparseScpInstantiationSearcher {

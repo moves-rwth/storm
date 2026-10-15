@@ -274,20 +274,24 @@ void runFeasibilityWithSCP(storm::Environment const& env, std::shared_ptr<storm:
     options.initialStateBias = scpSettings.getInitialStateBias();
     options.useMaxViolationObjective = !scpSettings.isSumViolationObjectiveSet();
 
-    storm::utility::Stopwatch watch(true);
-    storm::pars::scp::ScpResult<double> result;
-    if (model->isOfType(storm::models::ModelType::Mdp)) {
-        auto mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
-        storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Mdp<ValueType>, double> searcher(*mdp, options);
-        result = searcher.run(env, task);
+    auto run = [&]<typename ConstantType>() {
+        storm::utility::Stopwatch watch(true);
+        storm::pars::scp::ScpResult<ConstantType> result;
+        if (model->isOfType(storm::models::ModelType::Mdp)) {
+            auto mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
+            result = storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Mdp<ValueType>, ConstantType>(*mdp, options).run(env, task);
+        } else {
+            auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+            result = storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<ValueType>, ConstantType>(*dtmc, options).run(env, task);
+        }
+        watch.stop();
+        printFeasibilityResult(result.status == storm::pars::scp::ScpStatus::Feasible, result, watch);
+    };
+    if (scpSettings.isExactSet()) {
+        run.template operator()<storm::RationalNumber>();
     } else {
-        auto dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-        storm::pars::scp::SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<ValueType>, double> searcher(*dtmc, options);
-        result = searcher.run(env, task);
+        run.template operator()<double>();
     }
-    watch.stop();
-
-    printFeasibilityResult(result.status == storm::pars::scp::ScpStatus::Feasible, result, watch);
 }
 
 template void performFeasibility(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,

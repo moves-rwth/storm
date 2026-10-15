@@ -42,6 +42,12 @@ class ScpSettings : public ModuleSettings {
     double getInitialStateBias() const;
 
     /*!
+     * Retrieves whether candidate valuations are model-checked with exact (rational) arithmetic
+     * instead of floating-point arithmetic.
+     */
+    bool isExactSet() const;
+
+    /*!
      * Retrieves whether the LP objective should minimize the sum of per-state violations instead
      * of the default maximum violation.
      */

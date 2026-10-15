@@ -192,7 +192,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
                                                                                                ThresholdDirection direction, uint64_t initialState,
                                                                                                Valuation const& initialValuation) const {
     // Returns the model-checked value vector at ConstantType precision. Only the LP below uses double.
-    auto exactCheck = [&](Valuation const& valuation) -> std::vector<ConstantType> {
+    auto modelCheck = [&](Valuation const& valuation) -> std::vector<ConstantType> {
         auto result = instantiationChecker.check(env, valuation);
         return result->template asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
     };
@@ -212,7 +212,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
     };
 
     Valuation vHat = initialValuation;
-    std::vector<ConstantType> pHat = exactCheck(vHat);
+    std::vector<ConstantType> pHat = modelCheck(vHat);
     ConstantType betaStar = pHat.at(initialState);
 
     ScpResult<ConstantType> best{{betaStar, vHat}, ScpStatus::NotFound, 0};
@@ -248,7 +248,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             candidate[var] = storm::utility::convertNumber<CoefficientType>(lp.solver->getContinuousValue(lpVar));
         }
 
-        std::vector<ConstantType> valueVector = exactCheck(candidate);
+        std::vector<ConstantType> valueVector = modelCheck(candidate);
         ConstantType beta = valueVector.at(initialState);
 
         if (bound.isSatisfied(beta)) {
@@ -273,7 +273,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
 
 template class SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 template class SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
-// ConstantType = storm::RationalNumber: checks and the reported value are exact; only the LP is double.
+// ConstantType = storm::RationalNumber: the checks and the reported value are exact; only the LP is double.
 template class SparseScpInstantiationSearcher<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
 template class SparseScpInstantiationSearcher<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
 

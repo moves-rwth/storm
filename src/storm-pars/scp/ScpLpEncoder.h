@@ -105,7 +105,7 @@ class ScpLpEncoder {
      * given trust region radius. Does not call solver->optimize() -- that is the caller's job.
      *
      * @param env The environment to build the LP solver with (e.g. solver-type selection); the
-     * same one the caller uses for the exact-check model checker, so a caller's customized LP
+     * same one the caller uses for the instantiation model checker, so a caller's customized LP
      * solver choice is actually respected rather than silently falling back to a default.
      * @param valuation The current parameter linearization point; must contain every parameter
      * occurring in the model.

@@ -21,6 +21,7 @@ const std::string trustRegionMaxOption = "trust-region-max";
 const std::string trustRegionMinExcessOption = "trust-region-min-excess";
 const std::string maxIterationsOption = "max-iterations";
 const std::string initialStateBiasOption = "initial-state-bias";
+const std::string exactOption = "exact";
 const std::string sumViolationObjectiveOption = "sum-violation-objective";
 }  // namespace
 
@@ -69,6 +70,8 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .build())
                         .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exactOption, false, "Sets whether candidate valuations are model-checked using exact arithmetic.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, sumViolationObjectiveOption, false,
                                                    "Minimize the sum of per-state constraint violations instead of the default maximum violation")
                         .setIsAdvanced()
@@ -97,6 +100,10 @@ uint64_t ScpSettings::getMaxIterations() const {
 
 double ScpSettings::getInitialStateBias() const {
     return this->getOption(initialStateBiasOption).getArgumentByName(initialStateBiasOption).getValueAsDouble();
+}
+
+bool ScpSettings::isExactSet() const {
+    return this->getOption(exactOption).getHasOptionBeenSet();
 }
 
 bool ScpSettings::isSumViolationObjectiveSet() const {
