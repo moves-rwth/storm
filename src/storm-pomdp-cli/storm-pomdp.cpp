@@ -761,6 +761,25 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
+    if (!symbolicInput.properties.empty()) {
+        auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+        bool const qualitativeOnly =
+            pomdpSettings.isQualitativeAnalysisSet() && !pomdpSettings.isBeliefExplorationSet() && !pomdpSettings.isCheckFullyObservableSet();
+        auto const& formula = *symbolicInput.properties.front().getRawFormula();
+        if (formula.isProbabilityOperatorFormula() || formula.isRewardOperatorFormula()) {
+            auto const& operatorFormula = formula.asOperatorFormula();
+            if (operatorFormula.hasBound()) {
+                STORM_LOG_THROW(
+                    qualitativeOnly && formula.isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException,
+                    "The threshold in '" << formula << "' is not supported by this POMDP analysis. Use a Pmin=?/Pmax=? or Rmin=?/Rmax=? query instead.");
+                auto const threshold = operatorFormula.getThresholdAs<storm::RationalNumber>();
+                STORM_LOG_THROW(threshold == 0 || threshold == 1, storm::exceptions::InvalidPropertyException,
+                                "The probability threshold in '" << formula
+                                                                 << "' is not supported by storm-pomdp. Only thresholds of exactly 0 or 1 are supported for "
+                                                                    "qualitative analysis; use a Pmin=? or Pmax=? query for quantitative analysis.");
+            }
+        }
+    }
     STORM_LOG_THROW(mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::FinitePrecision ||
                         mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::Exact,
                     storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");
