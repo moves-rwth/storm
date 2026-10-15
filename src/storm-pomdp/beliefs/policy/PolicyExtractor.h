@@ -21,7 +21,8 @@ namespace pomdp::policy {
  * Extracts concrete policy representations from a scheduler for a belief MDP.
  *
  * The extractor can construct an observation-based finite-state controller for the original POMDP or the Markov chain induced by the belief-MDP
- * scheduler. Approximation schedulers, if provided, determine the behavior at truncated belief states.
+ * scheduler. Approximation schedulers, if provided, determine the behavior at truncated belief states. With clipping, FSC export is approximate; see
+ * exportPolicyAsFiniteStateController().
  *
  * @tparam PomdpModelType The type of the original POMDP.
  * @tparam BeliefValueType The type used to represent probabilities in beliefs.
@@ -58,6 +59,10 @@ class PolicyExtractor {
      * Available observation valuations and choice labels are included as matching metadata when they provide suitable mappings. Observation valuations are
      * exported as typed signatures, so they can be matched against an equivalent POMDP with a different observable-storage order. Approximation schedulers
      * are encoded as self-looping controller nodes for truncated belief states.
+     *
+     * Clipping is only approximated: probability mass redirected to target or bottom states has no continuation policy. No continuation is reconstructed
+     * for this mass, so the FSC may leave actions unspecified for the corresponding outcomes in the original POMDP. Its value on the original POMDP may
+     * therefore differ from the reported belief MDP value.
      *
      * @return The extracted finite-state controller.
      */
