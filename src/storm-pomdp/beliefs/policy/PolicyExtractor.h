@@ -45,14 +45,12 @@ class PolicyExtractor {
      * @param beliefMdpScheduler The scheduler describing the policy on the belief MDP.
      * @param pomdpApproximationSchedulers Optional observation-based POMDP schedulers used for truncated belief states. Within each scheduler memory
      * state, all POMDP states sharing an observation must have identical distributions over local action indices.
-     * @param preprocessedPomdp An optional preprocessed POMDP associated with the belief MDP.
-     * @note The POMDP, belief MDP, scheduler, observation map, and optional preprocessed POMDP must outlive the extractor.
+     * @note The POMDP, belief MDP, scheduler, and observation map must outlive the extractor.
      */
     PolicyExtractor(
         PomdpModelType const& pomdp, BeliefMdpType const& beliefMdp, std::unordered_map<uint64_t, uint32_t> const& beliefStateToObservationMap,
         storm::storage::Scheduler<BeliefMdpValueType> const& beliefMdpScheduler,
-        std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> const& pomdpApproximationSchedulers = std::nullopt,
-        PomdpModelType const* preprocessedPomdp = nullptr);
+        std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> const& pomdpApproximationSchedulers = std::nullopt);
 
     /**
      * Constructs an observation-based finite-state controller from the belief-MDP scheduler.
@@ -91,7 +89,6 @@ class PolicyExtractor {
     storm::storage::Scheduler<BeliefMdpValueType> const& beliefMdpScheduler;
     std::unordered_map<uint64_t, uint32_t> const& beliefStateToObservationMap;
     std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> const pomdpApproximationSchedulers;
-    PomdpModelType const* preprocessedPomdp;
 };
 }  // namespace pomdp::policy
 }  // namespace storm

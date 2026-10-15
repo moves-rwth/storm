@@ -21,14 +21,12 @@ template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpVa
 PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::PolicyExtractor(
     PomdpModelType const& pomdp, BeliefMdpType const& beliefMdp, std::unordered_map<uint64_t, uint32_t> const& beliefStateToObservationMap,
     storm::storage::Scheduler<BeliefMdpValueType> const& beliefMdpScheduler,
-    std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> const& pomdpApproximationSchedulers,
-    PomdpModelType const* preprocessedPomdp)
+    std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> const& pomdpApproximationSchedulers)
     : pomdp(pomdp),
       beliefMdp(beliefMdp),
       beliefMdpScheduler(beliefMdpScheduler),
       beliefStateToObservationMap(beliefStateToObservationMap),
-      pomdpApproximationSchedulers(pomdpApproximationSchedulers),
-      preprocessedPomdp(preprocessedPomdp) {
+      pomdpApproximationSchedulers(pomdpApproximationSchedulers) {
     // Intentionally left empty
 }
 
