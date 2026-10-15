@@ -1,5 +1,4 @@
 #include <filesystem>
-#include <fstream>
 #include <optional>
 #include <type_traits>
 
@@ -18,6 +17,7 @@
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
+#include "storm-pomdp/api/export.h"
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm-pomdp/beliefs/verification/BeliefBasedModelChecker.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
@@ -37,7 +37,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/io/file.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/transformer/SparseRationalModelToDoubleTransformer.h"
@@ -145,20 +144,6 @@ PolicyExportFormat getPolicyExportFormat(std::string const& filename) {
     STORM_LOG_THROW(extension.empty() || extension == ".json" || extension == ".dot", storm::exceptions::InvalidSettingsException,
                     "Unsupported policy export extension '" << extension << "'. Use '.json', '.dot', or no extension for JSON output.");
     return extension == ".dot" ? PolicyExportFormat::Dot : PolicyExportFormat::Json;
-}
-
-template<typename ValueType>
-void exportPolicy(storm::pomdp::policy::ObservationBasedFiniteStateController<ValueType> const& policy, std::string const& filename,
-                  PolicyExportFormat format) {
-    std::ofstream stream;
-    storm::io::openFile(filename, stream);
-    if (format == PolicyExportFormat::Dot) {
-        policy.writeDotToStream(stream);
-    } else {
-        policy.writeJsonToStream(stream);
-    }
-    storm::io::closeFile(stream);
-    STORM_PRINT_AND_LOG("Exported policy to '" << filename << "'.\n");
 }
 
 MemlessSearchOptions fillMemlessSearchOptionsFromSettings() {
@@ -518,7 +503,13 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
         if (policyExportRequested) {
             STORM_LOG_THROW(checkResult.policy.has_value(), storm::exceptions::UnexpectedException,
                             "Policy generation was requested, but belief-space unfolding did not produce a policy.");
-            exportPolicy(*checkResult.policy, pomdpSettings.getExportPolicyFilename(), *policyExportFormat);
+            auto const& filename = pomdpSettings.getExportPolicyFilename();
+            if (*policyExportFormat == PolicyExportFormat::Dot) {
+                storm::pomdp::api::exportPolicyAsDot(*checkResult.policy, filename);
+            } else {
+                storm::pomdp::api::exportPolicyAsJson(*checkResult.policy, filename);
+            }
+            STORM_PRINT_AND_LOG("Exported policy to '" << filename << "'.\n");
             if (belExplSettings.isUseClippingSet()) {
                 STORM_LOG_WARN(
                     "The reported result includes the clipping approximation and may differ from the value achieved by the exported policy "
