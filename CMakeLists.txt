@@ -83,7 +83,7 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-set(STORM_CARL_GIT_TAG_DEFAULT "14.36")
+set(STORM_CARL_GIT_TAG_DEFAULT "14.37")
 set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use")
 
 # Correct a non-STRING cache entry, while leaving a tag that was set deliberately untouched.
