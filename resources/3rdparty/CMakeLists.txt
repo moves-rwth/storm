@@ -115,7 +115,7 @@ set(STORM_EIGEN_GIT_TAG "bc3b39870ecb690a623a3f49149a358b95c5781d")
 message(STATUS "Storm - Including Eigen commit ${STORM_EIGEN_GIT_TAG} (Version 5.0.1).")
 FetchContent_Declare(
         eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_REPOSITORY https://github.com/eigen-mirror/eigen.git
         GIT_TAG ${STORM_EIGEN_GIT_TAG}
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/StormEigen/StormEigen
         # Eigen ships its own CMakeLists.txt, which we do not want to  process.

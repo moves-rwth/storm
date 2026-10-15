@@ -69,12 +69,15 @@ In Eigen, we have adapted `SparseLU` to work with scalar types that do not defau
 To update the Eigen version, just change the corresponding commit hash in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen501.patch` can be applied without issues (in particular check for changes in `Eigen/src/SparseLU/`).
 
+Eigen is fetched from the GitHub mirror `https://github.com/eigen-mirror/eigen.git` rather than from the upstream GitLab repository, because the mirror is more reliably available (in particular in CI).
+The mirror contains the same commits, so the pinned commit hash is identical for both.
+
 The commit hash is forwarded to carl-storm via the `CARL_EIGEN_GIT_TAG` variable to ensure that carl-storm and Storm check out the same Eigen version.
 It might be reasonable to update the default value of `CARL_EIGEN_GIT_TAG` in carl-storm as well.
 
 In case a new patch needs to be created follow these steps:
 
-1. Clone `https://gitlab.com/libeigen/eigen.git` somewhere and checkout the previously shipped version
+1. Clone `https://github.com/eigen-mirror/eigen.git` somewhere and checkout the previously shipped version
 2. Checkout a new branch e.g., `git branch storm-patch; git checkout storm-patch`
 3. Apply the old patch via `git apply $STORM_DIR/resources/3rdparty/patches/eigen501.patch`. At this point, `git diff` shows you all the changes we apply to Eigen
 4. Make a commit, e.g., `git commit -a -m "Storm patch"`
