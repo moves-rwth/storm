@@ -366,7 +366,7 @@ TEST_P(SparseScpInstantiationSearcherTest, InitialStateIsProb0_ReturnsNonFeasibl
     EXPECT_EQ(0u, result.iterations);
 }
 
-// A tiny iteration budget forces MaxIterationsReached specifically (as opposed to Infeasible via
+// A tiny iteration budget forces MaxIterationsReached specifically (as opposed to NotFound via
 // trust-region collapse, which the default budget would eventually hit on the same instance).
 TEST_P(SparseScpInstantiationSearcherTest, ReportsMaxIterationsReached_WithTightIterationBudget) {
     carl::VariablePool::getInstance().clear();
@@ -676,10 +676,10 @@ TEST_P(SparseScpInstantiationSearcherTest, AtLeast_Mdp_Reward_RowLevelExclusion)
 
 // AtMost (R<=lambda) on the same Mdp defaults to the robust reading Rmax<=lambda. Rmax(s0) is
 // infinity (a maximizing scheduler always has the give-up action available), so s0 is classified
-// as a RewInf state regardless of p -- this must be reported as Infeasible immediately via the
+// as a RewInf state regardless of p -- this must be reported as NotFound immediately via the
 // initial-state short-circuit (see run()'s zeroStates/oneStates/infiniteStates check), not by
 // building an LP that can never converge.
-TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_ReportsInfeasibleImmediately) {
+TEST_P(SparseScpInstantiationSearcherTest, AtMost_Mdp_Reward_InitialStateIsRewInf_ReportsNotFoundImmediately) {
     carl::VariablePool::getInstance().clear();
     storm::prism::Program program = storm::parser::PrismParser::parseFromString(RetryOrGiveUpMdpSource, "SparseScpInstantiationSearcherTest_RewardMdpAtMost");
     program = program.preprocess("");

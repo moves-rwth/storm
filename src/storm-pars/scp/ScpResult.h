@@ -6,7 +6,8 @@
 
 namespace storm::pars::scp {
 
-enum class ScpStatus { Feasible, Infeasible, MaxIterationsReached, Timeout };
+/// How a search ended. SCP is incomplete, so a search that finds no witness (NotFound) does not imply that none exists.
+enum class ScpStatus { Feasible, NotFound, MaxIterationsReached, Timeout };
 
 /*!
  * The outcome of an SCP search at ConstantType precision (double or storm::RationalNumber): the best point found
