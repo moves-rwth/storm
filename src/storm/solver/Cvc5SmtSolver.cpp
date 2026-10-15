@@ -12,10 +12,9 @@
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
-namespace solver {
+namespace storm::solver {
 // Deliberately not guarded by STORM_HAVE_CVC5: the header declares this constructor unconditionally, and it only
-// touches Storm's valuation types. Guarding it would leave the definition out in a build without CVC5, so any
+// touches Storm's valuation types. Guarding it would leave the definition out in a build without cvc5, so any
 // client constructing a Cvc5ModelReference there would compile but fail to link.
 Cvc5SmtSolver::Cvc5ModelReference::Cvc5ModelReference(storm::expressions::ExpressionManager const& manager, storm::expressions::SimpleValuation variableValues)
     : ModelReference(manager), variableValues(std::move(variableValues)) {
@@ -82,7 +81,7 @@ void Cvc5SmtSolver::push() {
 #ifdef STORM_HAVE_CVC5
     this->solver->push();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -90,7 +89,7 @@ void Cvc5SmtSolver::pop() {
 #ifdef STORM_HAVE_CVC5
     this->solver->pop();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -98,7 +97,7 @@ void Cvc5SmtSolver::pop(uint_fast64_t n) {
 #ifdef STORM_HAVE_CVC5
     this->solver->pop(static_cast<uint32_t>(n));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -106,7 +105,7 @@ void Cvc5SmtSolver::reset() {
 #ifdef STORM_HAVE_CVC5
     this->solver->resetAssertions();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -114,7 +113,7 @@ void Cvc5SmtSolver::add(storm::expressions::Expression const& assertion) {
 #ifdef STORM_HAVE_CVC5
     this->solver->assertFormula(this->expressionAdapter->translateExpression(assertion));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -134,11 +133,11 @@ void Cvc5SmtSolver::addNotCurrentModel([[maybe_unused]] bool performSolverReset)
     cvc5::Term notThisModel = this->createModelExpression(variables);
     notThisModel = this->termManager->mkTerm(cvc5::Kind::NOT, {notThisModel});
 
-    // CVC5 enumerates models incrementally without resetting the solver, so performSolverReset is ignored. A reset would
+    // cvc5 enumerates models incrementally without resetting the solver, so performSolverReset is ignored. A reset would
     // also move all assertions to the base level and thereby discard the push/pop scopes.
     this->solver->assertFormula(notThisModel);
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -148,7 +147,7 @@ SmtSolver::CheckResult Cvc5SmtSolver::check() {
     this->lastResult = this->translateResult(this->solver->checkSat());
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -162,7 +161,7 @@ SmtSolver::CheckResult Cvc5SmtSolver::checkWithAssumptions(storm::expressions::E
     this->lastResult = this->translateResult(this->solver->checkSatAssuming(cvc5Assumptions));
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -176,7 +175,7 @@ SmtSolver::CheckResult Cvc5SmtSolver::checkWithAssumptions(std::initializer_list
     this->lastResult = this->translateResult(this->solver->checkSatAssuming(cvc5Assumptions));
     return this->lastResult;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -194,7 +193,7 @@ storm::expressions::SimpleValuation Cvc5SmtSolver::collectModelAsValuation() con
             STORM_LOG_ASSERT(integerLiteral != nullptr, "Variable interpretation in model is not an integer.");
             stormModel.setIntegerValue(variable, integerLiteral->getValue());
         } else if (variable.getType().isRationalType()) {
-            // CVC5 reports a value that is not a rational number, such as the positive root of x^2 = 2, as a real
+            // cvc5 reports a value that is not a rational number, such as the positive root of x^2 = 2, as a real
             // algebraic number. Since a SimpleValuation holds a double, we approximate such a value by its lower
             // bound, just like the Z3 backend does.
             cvc5::Term approximableValue = value;
@@ -223,7 +222,7 @@ storm::expressions::SimpleValuation Cvc5SmtSolver::getModelAsValuation() {
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return this->collectModelAsValuation();
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -233,7 +232,7 @@ std::shared_ptr<SmtSolver::ModelReference> Cvc5SmtSolver::getModel() {
                     "Unable to create model for formula that was not determined to be satisfiable.");
     return std::shared_ptr<SmtSolver::ModelReference>(new Cvc5ModelReference(this->getManager(), this->collectModelAsValuation()));
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -247,7 +246,7 @@ std::vector<storm::expressions::SimpleValuation> Cvc5SmtSolver::allSat(std::vect
                                 }));
     return valuations;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -287,7 +286,7 @@ uint_fast64_t Cvc5SmtSolver::allSat(std::vector<storm::expressions::Variable> co
     this->pop();
     return numberOfModels;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -321,7 +320,7 @@ uint_fast64_t Cvc5SmtSolver::allSat(std::vector<storm::expressions::Variable> co
     this->pop();
     return numberOfModels;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -339,7 +338,7 @@ std::vector<storm::expressions::Expression> Cvc5SmtSolver::getUnsatAssumptions()
 
     return unsatAssumptions;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -348,7 +347,7 @@ bool Cvc5SmtSolver::setTimeout(uint_fast64_t milliseconds) {
     this->solver->setOption("tlimit-per", std::to_string(milliseconds));
     return true;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -357,7 +356,7 @@ bool Cvc5SmtSolver::unsetTimeout() {
     this->solver->setOption("tlimit-per", "0");
     return true;
 #else
-    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without CVC5 support.");
+    STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without cvc5 support.");
 #endif
 }
 
@@ -379,7 +378,7 @@ std::unordered_map<storm::expressions::Variable, cvc5::Term> Cvc5SmtSolver::coll
             try {
                 value = this->solver->getValue(this->expressionAdapter->translateExpression(variable));
             } catch (std::exception const&) {
-                // If CVC5 cannot provide a value for the variable, we simply do not add it to the model.
+                // If cvc5 cannot provide a value for the variable, we simply do not add it to the model.
                 continue;
             }
             variableValues.insert({variable, value});
@@ -390,7 +389,7 @@ std::unordered_map<storm::expressions::Variable, cvc5::Term> Cvc5SmtSolver::coll
 
 cvc5::Term Cvc5SmtSolver::createModelExpression(std::vector<storm::expressions::Variable> const& variables) const {
     // The model covers all variables of the manager. A variable that never occurred in an assertion gets the default
-    // value CVC5 reports for it, so ruling out a model also rules out that value (as in a complete enumeration over
+    // value cvc5 reports for it, so ruling out a model also rules out that value (as in a complete enumeration over
     // the declared variables).
     auto const modelValues = this->collectVariableValues();
 
@@ -398,7 +397,7 @@ cvc5::Term Cvc5SmtSolver::createModelExpression(std::vector<storm::expressions::
     for (auto const& variable : variables) {
         auto const& modelValue = modelValues.find(variable);
         if (modelValue == modelValues.end()) {
-            // CVC5 could not provide a value for this variable, so it is not part of the model expression.
+            // cvc5 could not provide a value for this variable, so it is not part of the model expression.
             continue;
         }
         cvc5::Term variableTerm = this->expressionAdapter->translateExpression(variable);
@@ -409,5 +408,4 @@ cvc5::Term Cvc5SmtSolver::createModelExpression(std::vector<storm::expressions::
 }
 #endif
 
-}  // namespace solver
-}  // namespace storm
+}  // namespace storm::solver

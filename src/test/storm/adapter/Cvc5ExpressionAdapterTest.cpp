@@ -17,7 +17,7 @@ namespace {
 void assertEquivalent(storm::expressions::Expression const& expression, cvc5::Term const& term, cvc5::TermManager& termManager, cvc5::Solver& solver,
                       storm::adapters::Cvc5ExpressionAdapter& adapter) {
     // Note that the variables occurring in the term have to be the ones that the adapter uses. Two constants with the
-    // same name are distinct variables for CVC5.
+    // same name are distinct variables for cvc5.
     cvc5::Term equivalence = termManager.mkTerm(cvc5::Kind::EQUAL, {adapter.translateExpression(expression), term});
     solver.assertFormula(termManager.mkTerm(cvc5::Kind::NOT, {equivalence}));
     ASSERT_TRUE(solver.checkSat().isUnsat()) << "Not equivalent: " << expression << " (" << adapter.translateExpression(expression) << ") vs " << term;
@@ -120,8 +120,8 @@ TEST(Cvc5ExpressionAdapter, StormToCvc5MixedNumericalTypes) {
     assertEquivalent(intVar / intVar2, termManager.mkTerm(cvc5::Kind::DIVISION, {cvc5ToReal, termManager.mkTerm(cvc5::Kind::TO_REAL, {cvc5IntVar2})}),
                      termManager, solver, adapter);
 
-    // Storm types the quotient of two integers as an integer, whereas CVC5 divides over the rational numbers.
-    // Surrounding integer terms must therefore still be translated into a term CVC5 accepts.
+    // Storm types the quotient of two integers as an integer, whereas cvc5 divides over the rational numbers.
+    // Surrounding integer terms must therefore still be translated into a term cvc5 accepts.
     storm::expressions::Variable intVar3 = manager->declareIntegerVariable("intVar3");
     cvc5::Term cvc5IntVar3 = adapter.translateExpression(intVar3);
     assertEquivalent(intVar / intVar2 + intVar3 == manager->integer(0),
@@ -133,7 +133,7 @@ TEST(Cvc5ExpressionAdapter, StormToCvc5MixedNumericalTypes) {
                                          termManager.mkReal(0)}),
                      termManager, solver, adapter);
 
-    // The same holds for the built-in min and max, which CVC5 expresses as an ITE.
+    // The same holds for the built-in min and max, which cvc5 expresses as an ITE.
     assertEquivalent(
         storm::expressions::minimum(intVar / intVar2, intVar3),
         termManager.mkTerm(
@@ -166,7 +166,7 @@ TEST(Cvc5ExpressionAdapter, StormToCvc5FloorAndCeil) {
     solver.assertFormula(termManager.mkTerm(cvc5::Kind::EQUAL, {cvc5Ceil, termManager.mkInteger(3)}));
     ASSERT_TRUE(solver.checkSat().isSat());
 
-    // Storm's floor is CVC5's to_int, whereas the ceiling is the negation of the floor of the negation.
+    // Storm's floor is cvc5's to_int, whereas the ceiling is the negation of the floor of the negation.
     assertEquivalent(storm::expressions::floor(x), termManager.mkTerm(cvc5::Kind::TO_INTEGER, {cvc5X}), termManager, solver, adapter);
     assertEquivalent(storm::expressions::ceil(x),
                      termManager.mkTerm(cvc5::Kind::NEG, {termManager.mkTerm(cvc5::Kind::TO_INTEGER, {termManager.mkTerm(cvc5::Kind::NEG, {cvc5X})})}),
@@ -197,7 +197,7 @@ TEST(Cvc5ExpressionAdapter, StormToCvc5IfThenElse) {
     assertEquivalent(storm::expressions::ite(x, y, z), termManager.mkTerm(cvc5::Kind::ITE, {cvc5X, cvc5Y, cvc5Z}), termManager, solver, adapter);
 
     // Storm admits an ITE that selects between an integer and a rational number, so the integer branch has to be
-    // converted before the term can be handed to CVC5.
+    // converted before the term can be handed to cvc5.
     storm::expressions::Variable r = manager->declareRationalVariable("r");
     cvc5::Term cvc5R = adapter.translateExpression(r);
     assertEquivalent(storm::expressions::ite(x, y, r), termManager.mkTerm(cvc5::Kind::ITE, {cvc5X, termManager.mkTerm(cvc5::Kind::TO_REAL, {cvc5Y}), cvc5R}),
@@ -216,7 +216,7 @@ TEST(Cvc5ExpressionAdapter, Cvc5ToStorm) {
     ASSERT_TRUE(translatedTrue.isTrue());
     ASSERT_TRUE(adapter.translateExpression(termManager.mkBoolean(false)).isFalse());
 
-    // CVC5 prints negative integers in the SMT-LIB notation, i.e., as "(- 42)".
+    // cvc5 prints negative integers in the SMT-LIB notation, i.e., as "(- 42)".
     auto const assertIntegerLiteral = [&adapter, &termManager](int64_t value) {
         storm::expressions::Expression translated = adapter.translateExpression(termManager.mkInteger(value));
         auto const* integerLiteral = dynamic_cast<storm::expressions::IntegerLiteralExpression const*>(&translated.getBaseExpression());
@@ -229,7 +229,7 @@ TEST(Cvc5ExpressionAdapter, Cvc5ToStorm) {
     assertIntegerLiteral(0);
     assertIntegerLiteral(42);
 
-    // CVC5 prints non-integral rationals in the SMT-LIB notation, e.g., 1/2 is printed as "(/ 1 2)" and -3/4 as
+    // cvc5 prints non-integral rationals in the SMT-LIB notation, e.g., 1/2 is printed as "(/ 1 2)" and -3/4 as
     // "(/ (- 3) 4)", whereas integral rationals are printed in decimal notation.
     auto const assertRationalLiteral = [&adapter, &termManager](int numerator, int denominator) {
         storm::expressions::Expression translated = adapter.translateExpression(termManager.mkReal(numerator, denominator));
@@ -267,7 +267,7 @@ TEST(Cvc5ExpressionAdapter, Cvc5ToStorm) {
     ASSERT_TRUE(zeroLiteral != nullptr);
     ASSERT_EQ(0, zeroLiteral->getValue());
 
-    // CVC5 admits sums and products with more than two operands, so all of them have to be taken into account.
+    // cvc5 admits sums and products with more than two operands, so all of them have to be taken into account.
     cvc5::Term cvc5ThreeWaySum = termManager.mkTerm(cvc5::Kind::ADD, {cvc5X, cvc5Y, adapter.translateExpression(manager->integer(3))});
     storm::expressions::Expression translatedThreeWaySum = adapter.translateExpression(cvc5ThreeWaySum);
     ASSERT_EQ(storm::expressions::OperatorType::Plus, translatedThreeWaySum.getOperator());
@@ -278,7 +278,7 @@ TEST(Cvc5ExpressionAdapter, Cvc5ToStorm) {
     ASSERT_EQ(storm::expressions::OperatorType::Times, translatedThreeWayProduct.getOperator());
     EXPECT_EQ((translatedSum.getOperand(0) * translatedSum.getOperand(1) * manager->integer(3)).toString(), translatedThreeWayProduct.toString());
 
-    // CVC5 also uses EQUAL for boolean equivalence. Translating such a term back has to yield an iff, because storm's
+    // cvc5 also uses EQUAL for boolean equivalence. Translating such a term back has to yield an iff, because storm's
     // operator== only accepts numerical operands and throws otherwise. This matters for getUnsatAssumptions(), which
     // translates every assumption of the returned core back.
     storm::expressions::Variable aVar = manager->declareBooleanVariable("a");

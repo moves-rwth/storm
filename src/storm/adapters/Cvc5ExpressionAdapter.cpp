@@ -14,17 +14,16 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
-namespace adapters {
+namespace storm::adapters {
 
 #ifdef STORM_HAVE_CVC5
 
 namespace {
 
 /*!
- * Translates a numerical constant of CVC5 (given in its string representation) back to a Storm literal.
+ * Translates a numerical constant of cvc5 (given in its string representation) back to a Storm literal.
  *
- * CVC5 prints numerical constants as "42", "2.0", "(- 42)", "(/ 7 3)", or "(/ (- 3) 4)", i.e., the SMT-LIB notation
+ * cvc5 prints numerical constants as "42", "2.0", "(- 42)", "(/ 7 3)", or "(/ (- 3) 4)", i.e., the SMT-LIB notation
  * where negative numbers and fractions are wrapped in parentheses.
  *
  * @param manager The Storm expression manager that is used to build the literal.
@@ -69,9 +68,9 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
     }
     flushToken(input.size());
     STORM_LOG_THROW(!tokens.empty(), storm::exceptions::ExpressionEvaluationException,
-                    "Failed to convert CVC5 expression. Encountered empty numerical constant.");
+                    "Failed to convert cvc5 expression. Encountered empty numerical constant.");
 
-    // CVC5 prints integer constants as a (possibly negated) plain number, e.g., "42" or "(- 42)".
+    // cvc5 prints integer constants as a (possibly negated) plain number, e.g., "42" or "(- 42)".
     if (isInteger) {
         size_t position = 0;
         bool isNegative = tokens[position] == "(-";
@@ -79,44 +78,44 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
             ++position;
         }
         STORM_LOG_THROW(position < tokens.size(), storm::exceptions::ExpressionEvaluationException,
-                        "Failed to convert CVC5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
+                        "Failed to convert cvc5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
         std::string const number(tokens[position]);
         ++position;
         if (isNegative) {
             STORM_LOG_THROW(position < tokens.size() && tokens[position] == ")", storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
+                            "Failed to convert cvc5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
             ++position;
         }
         STORM_LOG_THROW(position == tokens.size(), storm::exceptions::ExpressionEvaluationException,
-                        "Failed to convert CVC5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
+                        "Failed to convert cvc5 expression. Encountered malformed integer constant " << stringRepresentation << ".");
 
-        // CVC5 integers are unbounded, so the value may not fit. We parse the signed string (rather than negating the parsed value)
+        // cvc5 integers are unbounded, so the value may not fit. We parse the signed string (rather than negating the parsed value)
         // so that the lowest 64-bit integer is handled correctly.
         int64_t value = 0;
         try {
             value = std::stoll(isNegative ? "-" + number : number);
         } catch (std::logic_error const&) {
             STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Integer constant " << stringRepresentation << " does not fit into a 64-bit integer.");
+                            "Failed to convert cvc5 expression. Integer constant " << stringRepresentation << " does not fit into a 64-bit integer.");
         }
         return manager.integer(value);
     }
 
-    // CVC5 prints rational constants in the SMT-LIB notation, e.g., "2.0", "(- 1.5)", "(/ 7 3)", or "(/ (- 3) 4)".
+    // cvc5 prints rational constants in the SMT-LIB notation, e.g., "2.0", "(- 1.5)", "(/ 7 3)", or "(/ (- 3) 4)".
     size_t position = 0;
     std::function<storm::RationalNumber(bool)> parse;
     parse = [&tokens, &position, &parse, &stringRepresentation](bool isNegative) -> storm::RationalNumber {
         STORM_LOG_THROW(position < tokens.size(), storm::exceptions::ExpressionEvaluationException,
-                        "Failed to convert CVC5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
+                        "Failed to convert cvc5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
 
         // A negative number is printed as "(- x)".
         if (tokens[position] == "(-") {
             STORM_LOG_THROW(!isNegative, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Encountered doubly negated rational constant " << stringRepresentation << ".");
+                            "Failed to convert cvc5 expression. Encountered doubly negated rational constant " << stringRepresentation << ".");
             ++position;
             storm::RationalNumber result = parse(true);
             STORM_LOG_THROW(position < tokens.size() && tokens[position] == ")", storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
+                            "Failed to convert cvc5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
             ++position;
             return result;
         }
@@ -127,7 +126,7 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
             storm::RationalNumber numerator = parse(isNegative);
             storm::RationalNumber denominator = parse(false);
             STORM_LOG_THROW(position < tokens.size() && tokens[position] == ")", storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Encountered malformed fraction " << stringRepresentation << ".");
+                            "Failed to convert cvc5 expression. Encountered malformed fraction " << stringRepresentation << ".");
             ++position;
             return numerator / denominator;
         }
@@ -141,7 +140,7 @@ storm::expressions::Expression translateNumericalConstant(storm::expressions::Ex
 
     storm::RationalNumber const value = parse(false);
     STORM_LOG_THROW(position == tokens.size(), storm::exceptions::ExpressionEvaluationException,
-                    "Failed to convert CVC5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
+                    "Failed to convert cvc5 expression. Encountered malformed rational constant " << stringRepresentation << ".");
     return manager.rational(value);
 }
 
@@ -184,7 +183,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
     // Second, deal with constants, i.e., variables and numerical constants.
     if (term.getKind() == cvc5::Kind::CONSTANT) {
         STORM_LOG_THROW(term.hasSymbol(), storm::exceptions::ExpressionEvaluationException,
-                        "Failed to convert CVC5 expression. Encountered a constant without a symbol.");
+                        "Failed to convert cvc5 expression. Encountered a constant without a symbol.");
         return this->getVariable(term).getExpression();
     } else if (term.getKind() == cvc5::Kind::CONST_INTEGER || term.getKind() == cvc5::Kind::CONST_RATIONAL) {
         return translateNumericalConstant(this->manager, term.toString(), term.getKind() == cvc5::Kind::CONST_INTEGER);
@@ -194,7 +193,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         case cvc5::Kind::CONST_BOOLEAN:
             return term == this->termManager.mkBoolean(true) ? this->manager.boolean(true) : this->manager.boolean(false);
         case cvc5::Kind::EQUAL: {
-            // Storm's operator== only accepts numerical operands, while CVC5's EQUAL is also how it represents
+            // Storm's operator== only accepts numerical operands, while cvc5's EQUAL is also how it represents
             // boolean equivalence. Use iff for boolean operands so that translating back an unsatisfiable core
             // that contains an equivalence does not throw.
             storm::expressions::Expression const first = this->translateExpression(term[0]);
@@ -206,7 +205,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         }
         case cvc5::Kind::DISTINCT: {
             STORM_LOG_THROW(term.getNumChildren() != 0, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. DISTINCT (mutual !=) operator with 0-arity is assumed to be an error.");
+                            "Failed to convert cvc5 expression. DISTINCT (mutual !=) operator with 0-arity is assumed to be an error.");
             if (term.getNumChildren() == 1) {
                 return this->manager.boolean(true);
             } else {
@@ -226,7 +225,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
             return storm::expressions::ite(this->translateExpression(term[0]), this->translateExpression(term[1]), this->translateExpression(term[2]));
         case cvc5::Kind::AND: {
             STORM_LOG_THROW(term.getNumChildren() != 0, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. 0-ary AND is assumed to be an error.");
+                            "Failed to convert cvc5 expression. 0-ary AND is assumed to be an error.");
             if (term.getNumChildren() == 1) {
                 return this->translateExpression(term[0]);
             } else {
@@ -239,7 +238,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         }
         case cvc5::Kind::OR: {
             STORM_LOG_THROW(term.getNumChildren() != 0, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. 0-ary OR is assumed to be an error.");
+                            "Failed to convert cvc5 expression. 0-ary OR is assumed to be an error.");
             if (term.getNumChildren() == 1) {
                 return this->translateExpression(term[0]);
             } else {
@@ -271,6 +270,7 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
             for (size_t i = 0; i < term.getNumChildren(); ++i) {
                 operands.push_back(this->translateExpression(term[i]));
             }
+            // A 0-ary sum is equal to 0.
             return operands.empty() ? this->manager.integer(0) : storm::expressions::sum(operands);
         }
         case cvc5::Kind::SUB:
@@ -284,11 +284,12 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
             for (size_t i = 0; i < term.getNumChildren(); ++i) {
                 operands.push_back(this->translateExpression(term[i]));
             }
+            // A 0-ary product is equal to 1.
             return operands.empty() ? this->manager.integer(1) : storm::expressions::product(operands);
         }
         case cvc5::Kind::INTS_DIVISION:
             // Storm has no integer division, and translating this to Storm's division would silently change the semantics.
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Failed to convert CVC5 expression. Integer division is not supported.");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Failed to convert cvc5 expression. Integer division is not supported.");
         case cvc5::Kind::DIVISION:
             return this->translateExpression(term[0]) / this->translateExpression(term[1]);
         case cvc5::Kind::POW:
@@ -296,16 +297,16 @@ storm::expressions::Expression Cvc5ExpressionAdapter::translateExpression(cvc5::
         case cvc5::Kind::TO_REAL:
             return this->translateExpression(term[0]);
         case cvc5::Kind::TO_INTEGER:
-            // CVC5's to_int operation applies the floor function.
+            // cvc5's to_int operation applies the floor function.
             return storm::expressions::floor(this->translateExpression(term[0]));
         case cvc5::Kind::ABS:
             return storm::expressions::abs(this->translateExpression(term[0]));
         default:
             STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
-                            "Failed to convert CVC5 expression. Encountered unhandled kind " << term.getKind() << ".");
+                            "Failed to convert cvc5 expression. Encountered unhandled kind " << term.getKind() << ".");
             break;
     }
-    STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert CVC5 expression.");
+    STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert cvc5 expression.");
 }
 
 storm::expressions::Variable const& Cvc5ExpressionAdapter::getVariable(cvc5::Term const& constant) {
@@ -339,7 +340,7 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::BinaryBooleanFunctio
             kind = cvc5::Kind::IMPLIES;
             break;
         case storm::expressions::BinaryBooleanFunctionExpression::OperatorType::Iff:
-            kind = cvc5::Kind::EQUAL;
+            kind = cvc5::Kind::EQUAL;  // EQUAL on booleans is an iff in cvc5.
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException,
@@ -377,16 +378,16 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::BinaryNumericalFunct
     cvc5::Term leftResult = boost::any_cast<cvc5::Term>(expression.getFirstOperand()->accept(*this, data));
     cvc5::Term rightResult = boost::any_cast<cvc5::Term>(expression.getSecondOperand()->accept(*this, data));
 
-    // CVC5 requires the operands of an arithmetic operation to be of the same type. Where Storm admits a
+    // cvc5 requires the operands of an arithmetic operation to be of the same type. Where Storm admits a
     // mixed expression because the result is a real number, we convert the integer operand accordingly.
     bool const isRealExpected = expression.getType().isRationalType();
     leftResult = this->convertToRealIfExpected(leftResult, isRealExpected);
     rightResult = this->convertToRealIfExpected(rightResult, isRealExpected);
 
     // Storm assigns the type of the operands to the quotient, so the division of two integers is an integer in
-    // Storm. CVC5, in contrast, always divides over the rational numbers. We therefore convert the operands of a
+    // Storm. cvc5, in contrast, always divides over the rational numbers. We therefore convert the operands of a
     // division to real numbers explicitly. Otherwise, the resulting real term would be combined with the
-    // surrounding integer terms of a parent expression, which CVC5 rejects in comparisons and ITEs.
+    // surrounding integer terms of a parent expression, which cvc5 rejects in comparisons and ITEs.
     if (expression.getOperatorType() == storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Divide) {
         leftResult = this->convertToRealIfExpected(leftResult, true);
         rightResult = this->convertToRealIfExpected(rightResult, true);
@@ -438,7 +439,7 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::BinaryRelationExpres
     cvc5::Term leftResult = boost::any_cast<cvc5::Term>(expression.getFirstOperand()->accept(*this, data));
     cvc5::Term rightResult = boost::any_cast<cvc5::Term>(expression.getSecondOperand()->accept(*this, data));
 
-    // CVC5 requires the operands of a comparison to be of the same type, so a real number may be compared with an
+    // cvc5 requires the operands of a comparison to be of the same type, so a real number may be compared with an
     // integer by converting the latter to a real number.
     this->unifyNumericalTypes(leftResult, rightResult);
 
@@ -545,7 +546,7 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::UnaryNumericalFuncti
             result = this->termManager.mkTerm(cvc5::Kind::NEG, {result});
             break;
         case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Floor: {
-            // CVC5's to_int operation converts a real number to an integer using the floor function.
+            // cvc5's to_int operation converts a real number to an integer using the floor function.
             result = this->termManager.mkTerm(cvc5::Kind::TO_INTEGER, {result});
             break;
         }
@@ -575,7 +576,7 @@ boost::any Cvc5ExpressionAdapter::visit(storm::expressions::IfThenElseExpression
     cvc5::Term thenResult = boost::any_cast<cvc5::Term>(expression.getThenExpression()->accept(*this, data));
     cvc5::Term elseResult = boost::any_cast<cvc5::Term>(expression.getElseExpression()->accept(*this, data));
 
-    // CVC5 requires both branches of an ITE to be of the same type. Storm, in contrast, admits an expression that
+    // cvc5 requires both branches of an ITE to be of the same type. Storm, in contrast, admits an expression that
     // selects between an integer and a rational number, so we convert the integer branch if necessary.
     this->unifyNumericalTypes(thenResult, elseResult);
 
@@ -616,5 +617,4 @@ cvc5::Term Cvc5ExpressionAdapter::createVariable(storm::expressions::Variable co
 }
 
 #endif
-}  // namespace adapters
-}  // namespace storm
+}  // namespace storm::adapters

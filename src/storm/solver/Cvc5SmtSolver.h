@@ -8,8 +8,7 @@
 #include <cvc5/cvc5.h>
 #endif
 
-namespace storm {
-namespace solver {
+namespace storm::solver {
 class Cvc5SmtSolver : public SmtSolver {
    public:
     class Cvc5ModelReference : public SmtSolver::ModelReference {
@@ -115,7 +114,7 @@ class Cvc5SmtSolver : public SmtSolver {
     // The actual solver object.
     std::unique_ptr<cvc5::Solver> solver;
 
-    // An expression adapter that is used for translating the expression into CVC5's format.
+    // An expression adapter that is used for translating the expression into cvc5's format.
     std::unique_ptr<storm::adapters::Cvc5ExpressionAdapter> expressionAdapter;
 
     // A flag storing whether the last call to a check method provided assumptions.
@@ -125,5 +124,4 @@ class Cvc5SmtSolver : public SmtSolver {
     CheckResult lastResult;
 #endif
 };
-}  // namespace solver
-}  // namespace storm
+}  // namespace storm::solver

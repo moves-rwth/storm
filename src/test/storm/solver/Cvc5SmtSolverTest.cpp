@@ -456,7 +456,7 @@ TEST(Cvc5SmtSolver, UnsatAssumptionsWithBooleanEquivalence) {
     storm::expressions::Expression exprA = a;
     storm::expressions::Expression exprNotB = !b;
 
-    // a <=> b together with a and !b is contradictory. CVC5 encodes the equivalence as EQUAL, so translating the core
+    // a <=> b together with a and !b is contradictory. cvc5 encodes the equivalence as EQUAL, so translating the core
     // back has to produce iff; storm's == only accepts numerical operands and would throw on boolean operands.
     ASSERT_NO_THROW(result = s.checkWithAssumptions({equivalence, exprA, exprNotB}));
     ASSERT_EQ(storm::solver::SmtSolver::CheckResult::Unsat, result);

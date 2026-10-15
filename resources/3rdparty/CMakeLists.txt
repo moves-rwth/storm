@@ -319,7 +319,7 @@ endif()
 
 #############################################################
 ##
-##	CVC5 (optional)
+##	cvc5 (optional)
 ##
 #############################################################
 
@@ -327,7 +327,7 @@ endif()
 set(STORM_CVC5_MIN_VERSION "1.2")
 
 if(NOT STORM_DISABLE_CVC5)
-    # CVC5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
+    # cvc5's own config file looks for the (lower case) cvc5_ROOT variable, whereas Storm uses upper case
     # variable names for the roots of the different solvers.
     if(CVC5_ROOT)
         set(cvc5_ROOT "${CVC5_ROOT}")
@@ -344,17 +344,17 @@ if(NOT STORM_DISABLE_CVC5)
 
     if(NOT cvc5_FOUND_VERSION)
         message(WARNING "Storm - cvc5 not found, or its version could not be determined."
-                " CVC5 will not be available as an SMT solver backend.")
+                " cvc5 will not be available as an SMT solver backend.")
     elseif(cvc5_FOUND_VERSION VERSION_LESS STORM_CVC5_MIN_VERSION)
         message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but ${STORM_CVC5_MIN_VERSION} or newer is required."
-                " CVC5 will not be available as an SMT solver backend.")
+                " cvc5 will not be available as an SMT solver backend.")
     elseif(CVC5_SAFE_BUILD OR CVC5_STABLE_BUILD)
         # cvc5 records its build type in the config file (since 1.3; older versions have no restricted modes). Safe and
         # stable builds reject terms that Storm creates, e.g., the power operator, so we require an unrestricted build.
         # Note that the unrestricted build sets both variables to IGNORE, which CMake considers to be false.
         message(WARNING "Storm - Found cvc5 ${cvc5_FOUND_VERSION}, but it was built in safe or stable mode, which does not support all"
                 " features that Storm requires. Build cvc5 with './configure.sh unrestricted'."
-                " CVC5 will not be available as an SMT solver backend.")
+                " cvc5 will not be available as an SMT solver backend.")
     else()
         set(STORM_HAVE_CVC5 ON)
         message(STATUS "Storm - Linking with cvc5 (version ${cvc5_FOUND_VERSION}).")
