@@ -11,13 +11,13 @@
 
 namespace storm::pars::scp {
 
-template<typename ErrorContext>
-UnpackedValue AffinePMdpDecomposition::decomposeAffine(storm::RationalFunction const& value, ErrorContext const& errorContext) {
-    STORM_LOG_THROW(storm::utility::parametric::isLinear(value), storm::exceptions::NotSupportedException,
-                    "SCP requires an affine pMDP (every transition probability, and every state-action reward for reward properties, must have total "
-                    "degree <= 1 in the parameters), but "
-                        << errorContext() << " is '" << value << "', which is not affine.");
+namespace {
+constexpr char const* NotAffine =
+    "SCP requires an affine pMDP (every transition probability, and every state-action reward for reward properties, must have total degree <= 1 in the "
+    "parameters), but ";
+}  // namespace
 
+UnpackedValue AffinePMdpDecomposition::decomposeAffine(storm::RationalFunction const& value) {
     std::set<storm::RationalFunctionVariable> occurring;
     storm::utility::parametric::gatherOccurringVariables(value, occurring);
 
@@ -51,10 +51,10 @@ AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<st
         unpackedRow.reserve(matrix.getRow(row).getNumberOfEntries());
 
         for (auto const& entry : matrix.getRow(row)) {
-            UnpackedValue decomposed = decomposeAffine(entry.getValue(), [&] {
-                return "the transition from state " + std::to_string(stateOfRow(row)) + " (row " + std::to_string(row) + ") to state " +
-                       std::to_string(entry.getColumn());
-            });
+            STORM_LOG_THROW(storm::utility::parametric::isLinear(entry.getValue()), storm::exceptions::NotSupportedException,
+                            NotAffine << "the transition from state " << stateOfRow(row) << " (row " << row << ") to state " << entry.getColumn() << " is '"
+                                      << entry.getValue() << "', which is not affine.");
+            UnpackedValue decomposed = decomposeAffine(entry.getValue());
             UnpackedTransition unpacked;
             unpacked.successor = entry.getColumn();
             unpacked.constant = decomposed.constant;
@@ -68,8 +68,10 @@ AffinePMdpDecomposition::AffinePMdpDecomposition(storm::models::sparse::Model<st
         std::vector<storm::RationalFunction> rewardVector = rewardModel->getTotalRewardVector(matrix);
         rewardRows.reserve(rewardVector.size());
         for (uint64_t row = 0; row < rewardVector.size(); ++row) {
-            rewardRows.push_back(decomposeAffine(
-                rewardVector[row], [&] { return "the reward of state " + std::to_string(stateOfRow(row)) + " (row " + std::to_string(row) + ")"; }));
+            STORM_LOG_THROW(
+                storm::utility::parametric::isLinear(rewardVector[row]), storm::exceptions::NotSupportedException,
+                NotAffine << "the reward of state " << stateOfRow(row) << " (row " << row << ") is '" << rewardVector[row] << "', which is not affine.");
+            rewardRows.push_back(decomposeAffine(rewardVector[row]));
         }
     }
 }

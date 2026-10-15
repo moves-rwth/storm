@@ -196,13 +196,6 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
         auto result = instantiationChecker.check(env, valuation);
         return result->template asExplicitQuantitativeCheckResult<ConstantType>().getFiniteValueVector();
     };
-    auto toExact = [](std::map<VariableType, double> const& v) -> Valuation {
-        Valuation exact;
-        for (auto const& [var, val] : v) {
-            exact[var] = storm::utility::convertNumber<CoefficientType>(val);
-        }
-        return exact;
-    };
     auto toDouble = [](Valuation const& v) -> std::map<VariableType, double> {
         std::map<VariableType, double> result;
         for (auto const& [var, val] : v) {
@@ -250,11 +243,10 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             continue;
         }
 
-        std::map<VariableType, double> candidateDouble;
+        Valuation candidate;
         for (auto const& [var, lpVar] : lp.parameterVariables) {
-            candidateDouble[var] = lp.solver->getContinuousValue(lpVar);
+            candidate[var] = storm::utility::convertNumber<CoefficientType>(lp.solver->getContinuousValue(lpVar));
         }
-        Valuation candidate = toExact(candidateDouble);
 
         std::vector<ConstantType> valueVector = exactCheck(candidate);
         ConstantType beta = valueVector.at(initialState);
