@@ -188,6 +188,13 @@ Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<M
             }
             case storm::pars::FeasibilityMethod::SCP: {
                 validateInput(model, formula);
+                auto const& op = formula->asOperatorFormula();
+                if (model->isOfType(storm::models::ModelType::Mdp) && op.hasOptimalityType()) {
+                    auto schedulerDirection =
+                        op.getBound().isLowerBound() ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                    STORM_LOG_THROW(op.getOptimalityType() == schedulerDirection, storm::exceptions::NotSupportedException,
+                                    "SCP requires universal scheduler quantification on MDPs: lower bounds use min and upper bounds use max.");
+                }
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
                 auto task = createFeasibilityTask(*model, *formula, consideredRegion);
                 storm::pars::scp::ScpResult<double> result;

@@ -302,8 +302,9 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
                     ++it;
                 }
             }
-            STORM_LOG_THROW(!splittingVariables.empty(), storm::exceptions::NotSupportedException,
-                            "Region refinement is inconclusive and no varying parameter can be split.");
+            STORM_LOG_THROW(
+                !splittingVariables.empty(), storm::exceptions::NotSupportedException,
+                "getSplittingVariables returned no parameter with non-zero width for region " << currentRegion.region << "; refinement cannot proceed.");
             STORM_LOG_INFO("Splitting on variables " << splittingVariables);
             currentRegion.splitLeafNodeAtCenter(splittingVariables, this->discreteVariables, true);
             for (auto& child : currentRegion.subRegions) {

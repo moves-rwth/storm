@@ -272,6 +272,28 @@ TEST_F(SynthesisApiTest, MdpSchedulerQuantificationIsPreserved) {
     EXPECT_THROW(storm::api::checkFeasibility(environment, model, existential, box, std::nullopt, Method::GD), storm::exceptions::NotSupportedException);
 }
 
+TEST_F(SynthesisApiTest, ScpRequiresUniversalMdpSchedulerQuantification) {
+    program = storm::parser::PrismParser::parseFromString(
+        "mdp\nconst double p;\nmodule choices\ns : [0..2] init 0;\n"
+        "[] s=0 -> p : (s'=1) + (1-p) : (s'=2);\n"
+        "[] s=0 -> (s'=1);\n[] s=0 -> (s'=2);\n"
+        "[] s=1 -> (s'=1);\n[] s=2 -> (s'=2);\nendmodule\nlabel \"target\" = s=1;\n",
+        "SynthesisApiTestScpMdp");
+    program = program.preprocess("");
+    model = storm::api::buildSparseModel<storm::RationalFunction>(program, {formula("Pmax=? [F \"target\"]")});
+    auto box = region("0.2<=p<=0.8");
+    // Pmin is always zero and Pmax is always one. Unsupported quantifiers must be rejected even when
+    // SCP's qualitative analysis can return a constant value before setting up the numerical search.
+    for (auto const& text : {"Pmax>=0.8 [F \"target\"]", "Pmin<=0.2 [F \"target\"]"}) {
+        EXPECT_THROW(storm::api::checkFeasibility(environment, model, formula(text), box, std::nullopt, Method::SCP), storm::exceptions::NotSupportedException);
+    }
+    for (auto const& text : {"Pmin>=0 [F \"target\"]", "Pmax<=1 [F \"target\"]", "P>=0 [F \"target\"]", "P<=1 [F \"target\"]"}) {
+        auto result = storm::api::checkFeasibility(environment, model, formula(text), box, std::nullopt, Method::SCP);
+        EXPECT_EQ(Status::ExistsSat, result.status);
+        EXPECT_TRUE(result.witness);
+    }
+}
+
 TEST_F(SynthesisApiTest, RewardThresholdsAndFixedDimensions) {
     build("p", "const double p; const double r;", "rewards \"cost\"\n s=0 : r;\nendrewards\n");
     auto box = region("0.5<=p<=0.5,2<=r<=4");

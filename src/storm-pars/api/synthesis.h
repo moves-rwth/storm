@@ -48,9 +48,10 @@ bool verify(storm::Environment const& env, std::shared_ptr<storm::models::sparse
 /*!
  * Searches for a well-defined parameter valuation in the region satisfying the bounded probability or reward formula.
  * Region arguments and validation follow verify(). For MDPs, scheduler quantification follows the formula:
- * - Pmax>=0.8 [F "target"] asks for a valuation and a scheduler reaching "target" with probability at least 0.8.
+ * - Pmax>=0.8 [F "target"] (PLA only) asks for a valuation and a scheduler reaching "target" with probability at least 0.8.
  * - Pmin>=0.8 [F "target"] asks for a valuation under which every scheduler reaches "target" with probability at least 0.8.
  * Without explicit min/max, the scheduler requirement is universal: P>= uses Pmin, and P<= uses Pmax.
+ * SCP supports only universal scheduler requirements on MDPs: Pmin/Rmin lower bounds and Pmax/Rmax upper bounds.
  *
  * Returns ExistsSat with a witness, AllViolated when the absence of a satisfying valuation is established,
  * or Unknown when no decision is obtained. Unsupported input throws.
