@@ -21,7 +21,7 @@ const std::string trustRegionMaxOption = "trust-region-max";
 const std::string trustRegionMinExcessOption = "trust-region-min-excess";
 const std::string maxIterationsOption = "max-iterations";
 const std::string initialStateBiasOption = "initial-state-bias";
-const std::string exactOption = "exact";
+const std::string exactOption = "exact-checks";
 const std::string sumViolationObjectiveOption = "sum-violation-objective";
 }  // namespace
 
