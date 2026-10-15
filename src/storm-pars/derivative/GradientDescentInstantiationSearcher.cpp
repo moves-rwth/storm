@@ -280,7 +280,9 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGrad
         // Are we at a stochastic (in bounds) position?
         bool stochasticPosition = true;
         for (auto const& parameter : parameters) {
-            if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
+            auto const lower = region ? region->getLowerBoundary(parameter) : precision;
+            auto const upper = region ? region->getUpperBoundary(parameter) : utility::one<CoefficientType<FunctionType>>() - precision;
+            if (nesterovPredictedPosition[parameter] < lower || nesterovPredictedPosition[parameter] > upper) {
                 stochasticPosition = false;
                 break;
             }
@@ -410,7 +412,8 @@ storm::pars::FeasibilityResult<ConstantType> GradientDescentInstantiationSearche
                 // Do nothing
             } else {
                 logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
-                point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
+                auto const sample = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
+                point[param] = region ? region->getLowerBoundary(param) + sample * region->getDifference(param) : sample;
             }
         }
         initialGuess = false;

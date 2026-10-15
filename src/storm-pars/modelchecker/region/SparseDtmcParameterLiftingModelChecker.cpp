@@ -369,7 +369,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerSAT->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
+        instantiationCheckerSAT->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationCheckerSAT;
 }
@@ -382,7 +382,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationCheckerVIO->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                              : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
+        instantiationCheckerVIO->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationCheckerVIO;
 }
@@ -395,7 +395,7 @@ SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType, Robust>::g
             std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                           : this->currentCheckTask->template convertValueType<ParametricType>());
-        instantiationChecker->setInstantiationsAreGraphPreserving(true);
+        instantiationChecker->setInstantiationsAreGraphPreserving(storm::pars::analysis::isGraphPreserving(this->graphPreservationStatus));
     }
     return *instantiationChecker;
 }

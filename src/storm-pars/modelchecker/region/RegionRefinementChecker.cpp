@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/RegionRefinementChecker.h"
 
+#include <algorithm>
 #include <functional>
 #include <iterator>
 #include <queue>
@@ -242,6 +243,11 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
         return valueValuation;
     }
 
+    if (std::all_of(region.getVariables().begin(), region.getVariables().end(),
+                    [&](auto const& variable) { return storm::utility::isZero(region.getDifference(variable)); })) {
+        return valueValuation;
+    }
+
     // Helper functions to check if a given result is better than the currently known result
     auto isBetterThanValue = [&value, &dir](auto const& newValue) { return storm::solver::minimize(dir) ? newValue < value : newValue > value; };
     // acceptGlobalBound is the opposite of this
@@ -289,6 +295,15 @@ RegionRefinementChecker<ParametricType>::computeExtremalValueHelper(
         if (!acceptGlobalBound(value, currentBound)) {
             monotonicityBackend->updateMonotonicityBeforeSplitting(env, currentRegion);
             auto splittingVariables = getSplittingVariables(currentRegion, Context::ExtremalValue);
+            for (auto it = splittingVariables.begin(); it != splittingVariables.end();) {
+                if (storm::utility::isZero(currentRegion.region.getDifference(*it))) {
+                    it = splittingVariables.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            STORM_LOG_THROW(!splittingVariables.empty(), storm::exceptions::NotSupportedException,
+                            "Region refinement is inconclusive and no varying parameter can be split.");
             STORM_LOG_INFO("Splitting on variables " << splittingVariables);
             currentRegion.splitLeafNodeAtCenter(splittingVariables, this->discreteVariables, true);
             for (auto& child : currentRegion.subRegions) {
@@ -331,7 +346,6 @@ template<typename ParametricType>
 bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environment& env, const storm::storage::ParameterRegion<ParametricType>& region,
                                                            const storm::logic::Bound& bound) {
     // Use the bound from the formula.
-    CoefficientType valueToCheck = storm::utility::convertNumber<CoefficientType>(bound.threshold.evaluateAsRational());
     // We will try to violate the bound.
     storm::solver::OptimizationDirection dir =
         isLowerBound(bound.comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
@@ -342,7 +356,7 @@ bool RegionRefinementChecker<ParametricType>::verifyRegion(const storm::Environm
 
     auto res = computeExtremalValueHelper(env, region, dir, acceptGlobalBound, rejectInstance).first;
     STORM_LOG_INFO("Extremal value: " << res);
-    return storm::solver::minimize(dir) ? res >= valueToCheck : res <= valueToCheck;
+    return bound.isSatisfied(res);
 }
 
 template<typename ParametricType>
