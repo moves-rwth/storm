@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/FeasibilitySynthesisTask.h"
@@ -12,12 +13,14 @@
 
 namespace storm::pars {
 
-enum class FeasibilityStatus { Feasible, Infeasible, Unknown };
-
+/*!
+ * Adds a synthesis decision to the existing FeasibilityResult witness (valuation and value).
+ * The status is ExistsSat, AllViolated, or Unknown. Only ExistsSat results have a witness.
+ */
 template<typename ConstantType>
 struct FeasibilitySynthesisResult {
-    FeasibilityStatus status = FeasibilityStatus::Unknown;
-    /// Present exactly when status is Feasible. The witness is checked at ConstantType precision.
+    storm::modelchecker::RegionResult status = storm::modelchecker::RegionResult::Unknown;
+    /// Present exactly when status is ExistsSat. The witness is checked at ConstantType precision.
     std::optional<FeasibilityResult<ConstantType>> witness;
 };
 
@@ -44,9 +47,12 @@ bool verify(storm::Environment const& env, std::shared_ptr<storm::models::sparse
 
 /*!
  * Searches for a well-defined parameter valuation in the region satisfying the bounded probability or reward formula.
- * Region arguments and validation follow verify(). MDP scheduler quantification follows the formula.
+ * Region arguments and validation follow verify(). For MDPs, scheduler quantification follows the formula:
+ * - Pmax>=0.8 [F "target"] asks for a valuation and a scheduler reaching "target" with probability at least 0.8.
+ * - Pmin>=0.8 [F "target"] asks for a valuation under which every scheduler reaches "target" with probability at least 0.8.
+ * Without explicit min/max, the scheduler requirement is universal: P>= uses Pmin, and P<= uses Pmax.
  *
- * Returns Feasible with a witness, Infeasible when the absence of a satisfying valuation is established,
+ * Returns ExistsSat with a witness, AllViolated when the absence of a satisfying valuation is established,
  * or Unknown when no decision is obtained. Unsupported input throws.
  * Witness values are checked and returned as doubles.
  */

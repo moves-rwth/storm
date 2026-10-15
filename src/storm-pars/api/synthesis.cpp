@@ -26,12 +26,13 @@ using Mdp = storm::models::sparse::Mdp<storm::RationalFunction>;
 using Region = storm::storage::ParameterRegion<storm::RationalFunction>;
 using Coefficient = Region::CoefficientType;
 using Engine = storm::modelchecker::RegionCheckEngine;
-using Status = storm::pars::FeasibilityStatus;
+using Status = storm::modelchecker::RegionResult;
 template<typename ConstantType>
 using Result = storm::pars::FeasibilitySynthesisResult<ConstantType>;
 using GraphStatus = storm::pars::analysis::GraphPreservationStatus;
 
-void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+                   std::optional<Engine> const& regionEngine = std::nullopt) {
     STORM_LOG_THROW(model && formula, storm::exceptions::InvalidArgumentException, "A model and formula are required.");
     STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
                     "Parameter synthesis supports sparse DTMCs and MDPs only.");
@@ -39,19 +40,9 @@ void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::l
                     "Parameter synthesis requires exactly one initial state.");
     STORM_LOG_THROW((formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula()) && formula->asOperatorFormula().hasBound(),
                     storm::exceptions::NotSupportedException, "Parameter synthesis requires a bounded probability or reward operator formula.");
-}
-
-void validateEngine(Model const& model, Engine engine) {
-    switch (engine) {
-        case Engine::ParameterLifting:
-        case Engine::ExactParameterLifting:
-        case Engine::ValidatingParameterLifting:
-            return;
-        case Engine::RobustParameterLifting:
-            STORM_LOG_THROW(model.isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Robust PLA supports DTMCs only.");
-            return;
+    if (regionEngine == Engine::RobustParameterLifting) {
+        STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Robust PLA supports DTMCs only.");
     }
-    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown region-checking engine.");
 }
 
 std::pair<Region, GraphStatus> resolveRegion(Model const& model, std::optional<Region> const& region, std::optional<Coefficient> const& regionBound,
@@ -143,15 +134,14 @@ Result<ConstantType> validateWitness(storm::Environment const& env, Model const&
     if (!formula.asOperatorFormula().getBound().isSatisfied(value)) {
         return {};
     }
-    return {Status::Feasible, storm::pars::FeasibilityResult<ConstantType>{std::move(value), std::move(valuation)}};
+    return {Status::ExistsSat, storm::pars::FeasibilityResult<ConstantType>{std::move(value), std::move(valuation)}};
 }
 
 }  // namespace
 
 bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
             std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, Engine engine) {
-    validateInput(model, formula);
-    validateEngine(*model, engine);
+    validateInput(model, formula, engine);
     auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, engine != Engine::RobustParameterLifting);
     auto normalized = normalizedFormula(*model, *formula);
     std::set<Region::VariableType> discreteVariables;
@@ -163,11 +153,10 @@ bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, 
 Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
                                 std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, storm::pars::FeasibilityMethod method,
                                 Engine regionEngine) {
-    validateInput(model, formula);
     try {
         switch (method) {
             case storm::pars::FeasibilityMethod::PLA: {
-                validateEngine(*model, regionEngine);
+                validateInput(model, formula, regionEngine);
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, regionEngine != Engine::RobustParameterLifting);
                 auto normalized = normalizedFormula(*model, *formula);
                 std::set<Region::VariableType> discreteVariables;
@@ -182,9 +171,10 @@ Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<M
                 if (bound.isSatisfied(result.first)) {
                     return validateWitness<double>(env, *model, *formula, consideredRegion, std::move(result.second));
                 }
-                return {Status::Infeasible, std::nullopt};
+                return {Status::AllViolated, std::nullopt};
             }
             case storm::pars::FeasibilityMethod::GD: {
+                validateInput(model, formula);
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                                 "Gradient descent supports DTMCs only.");
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
@@ -197,12 +187,14 @@ Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<M
                 return validateWitness<double>(env, *model, *formula, consideredRegion, std::move(result.valuation));
             }
             case storm::pars::FeasibilityMethod::SCP: {
+                validateInput(model, formula);
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
                 auto task = createFeasibilityTask(*model, *formula, consideredRegion);
                 storm::pars::scp::ScpResult<double> result;
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     result = storm::pars::scp::SparseScpInstantiationSearcher<Dtmc, double>(*model->as<Dtmc>()).run(env, task);
                 } else {
+                    STORM_LOG_ASSERT(model->isOfType(storm::models::ModelType::Mdp), "Expected an MDP.");
                     result = storm::pars::scp::SparseScpInstantiationSearcher<Mdp, double>(*model->as<Mdp>()).run(env, task);
                 }
                 if (result.status != storm::pars::scp::ScpStatus::Feasible) {

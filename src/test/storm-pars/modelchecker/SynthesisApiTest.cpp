@@ -17,7 +17,7 @@ namespace {
 
 using Engine = storm::modelchecker::RegionCheckEngine;
 using Method = storm::pars::FeasibilityMethod;
-using Status = storm::pars::FeasibilityStatus;
+using Status = storm::modelchecker::RegionResult;
 using Region = storm::storage::ParameterRegion<storm::RationalFunction>;
 
 class SynthesisApiTest : public ::testing::Test {
@@ -73,17 +73,17 @@ TEST_F(SynthesisApiTest, PlaFeasibilityAndInfeasibility) {
     for (auto engine : {Engine::ParameterLifting, Engine::ExactParameterLifting, Engine::ValidatingParameterLifting, Engine::RobustParameterLifting}) {
         auto result =
             storm::api::checkFeasibility(environment, model, formula("P>=0.6 [F \"target\"]"), region("0.2<=p<=0.8"), std::nullopt, Method::PLA, engine);
-        ASSERT_EQ(Status::Feasible, result.status);
+        ASSERT_EQ(Status::ExistsSat, result.status);
         ASSERT_TRUE(result.witness);
         EXPECT_TRUE(region("0.2<=p<=0.8").contains(result.witness->valuation));
         EXPECT_TRUE(formula("P>=0.6 [F \"target\"]")->asOperatorFormula().getBound().isSatisfied(result.witness->value));
 
         result = storm::api::checkFeasibility(environment, model, formula("P>=0.9 [F \"target\"]"), region("0.2<=p<=0.8"), std::nullopt, Method::PLA, engine);
-        EXPECT_EQ(Status::Infeasible, result.status);
+        EXPECT_EQ(Status::AllViolated, result.status);
         EXPECT_FALSE(result.witness);
 
         result = storm::api::checkFeasibility(environment, model, formula("P<=0.4 [F \"target\"]"), region("0.2<=p<=0.8"), std::nullopt, Method::PLA, engine);
-        EXPECT_EQ(Status::Feasible, result.status);
+        EXPECT_EQ(Status::ExistsSat, result.status);
     }
 }
 
@@ -108,7 +108,7 @@ TEST_F(SynthesisApiTest, RegionBoundAppliesToEveryParameterWithoutInferringDomai
     auto bound = storm::utility::one<Region::CoefficientType>() / 5;
     auto property = formula("P>=0.6 [F \"target\"]");
     auto result = storm::api::checkFeasibility(environment, model, property, std::nullopt, bound, Method::PLA, Engine::ParameterLifting);
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_EQ(2u, result.witness->valuation.size());
     EXPECT_TRUE(region("0.2<=p<=0.8,0.2<=r<=0.8").contains(result.witness->valuation));
@@ -118,7 +118,7 @@ TEST_F(SynthesisApiTest, RegionBoundAppliesToEveryParameterWithoutInferringDomai
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P<=0.4 [F \"target\"]"), std::nullopt, bound, Engine::ExactParameterLifting));
     result =
         storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"), std::nullopt, bound, Method::PLA, Engine::ExactParameterLifting);
-    EXPECT_EQ(Status::Infeasible, result.status);
+    EXPECT_EQ(Status::AllViolated, result.status);
     EXPECT_FALSE(result.witness);
 }
 
@@ -129,11 +129,11 @@ TEST_F(SynthesisApiTest, RegionBoundIncludesClosedEndpointsAndAllowsSingletons) 
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P<=1 [F \"target\"]"), std::nullopt, zero, Engine::RobustParameterLifting));
     auto fullRegion =
         storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"), std::nullopt, zero, Method::PLA, Engine::RobustParameterLifting);
-    EXPECT_EQ(Status::Feasible, fullRegion.status);
+    EXPECT_EQ(Status::ExistsSat, fullRegion.status);
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P>=0.5 [F \"target\"]"), std::nullopt, half, Engine::ParameterLifting));
     auto singleton =
         storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"), std::nullopt, half, Method::PLA, Engine::ParameterLifting);
-    ASSERT_EQ(Status::Feasible, singleton.status);
+    ASSERT_EQ(Status::ExistsSat, singleton.status);
     ASSERT_TRUE(singleton.witness);
     EXPECT_EQ(half, singleton.witness->valuation.begin()->second);
 }
@@ -179,7 +179,7 @@ TEST_F(SynthesisApiTest, RobustPlaDoesNotRequireAnAffineWellformednessProof) {
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P<=1 [F \"target\"]"), box, std::nullopt, Engine::RobustParameterLifting));
     auto result =
         storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"), box, std::nullopt, Method::PLA, Engine::RobustParameterLifting);
-    EXPECT_EQ(Status::Feasible, result.status);
+    EXPECT_EQ(Status::ExistsSat, result.status);
     EXPECT_THROW(storm::api::verify(environment, model, formula("P<=1 [F \"target\"]"), box, std::nullopt, Engine::ParameterLifting),
                  storm::exceptions::NotSupportedException);
 }
@@ -187,7 +187,7 @@ TEST_F(SynthesisApiTest, RobustPlaDoesNotRequireAnAffineWellformednessProof) {
 TEST_F(SynthesisApiTest, GradientDescentRespectsExplicitRegionOutsideUnitInterval) {
     build("p/2");
     auto result = storm::api::checkFeasibility(environment, model, formula("P>=0.85 [F \"target\"]"), region("1.1<=p<=1.9"), std::nullopt, Method::GD);
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_TRUE(region("1.1<=p<=1.9").contains(result.witness->valuation));
     EXPECT_TRUE(formula("P>=0.85 [F \"target\"]")->asOperatorFormula().getBound().isSatisfied(result.witness->value));
@@ -205,7 +205,7 @@ TEST_F(SynthesisApiTest, ScpReturnsUnknownRatherThanInfeasible) {
 #endif
     build();
     auto result = storm::api::checkFeasibility(environment, model, formula("P>=0.51 [F \"target\"]"), region("0.2<=p<=0.8"), std::nullopt, Method::SCP);
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_TRUE(region("0.2<=p<=0.8").contains(result.witness->valuation));
 
@@ -220,12 +220,12 @@ TEST_F(SynthesisApiTest, SingletonAndParameterFreeModels) {
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P>=0.5 [F \"target\"]"), point));
     EXPECT_FALSE(storm::api::verify(environment, model, formula("P>0.5 [F \"target\"]"), point));
     auto result = storm::api::checkFeasibility(environment, model, formula("P>0.5 [F \"target\"]"), point);
-    EXPECT_EQ(Status::Infeasible, result.status);
+    EXPECT_EQ(Status::AllViolated, result.status);
 
     build("1/2", "");
     EXPECT_TRUE(storm::api::verify(environment, model, formula("P<=0.5 [F \"target\"]")));
     result = storm::api::checkFeasibility(environment, model, formula("P>=0.5 [F \"target\"]"));
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_TRUE(result.witness->valuation.empty());
 }
@@ -254,15 +254,19 @@ TEST_F(SynthesisApiTest, MdpSchedulerQuantificationIsPreserved) {
     // Pmax can meet the bound via the parametric choice; Pmin cannot because of the fixed 1/4 choice.
     auto existential = formula("Pmax>=0.6 [F \"target\"]");
     auto universal = formula("Pmin>=0.6 [F \"target\"]");
-    EXPECT_EQ(Status::Feasible,
-              storm::api::checkFeasibility(environment, model, existential, box, std::nullopt, Method::PLA, Engine::ExactParameterLifting).status);
-    EXPECT_EQ(Status::Infeasible,
-              storm::api::checkFeasibility(environment, model, universal, box, std::nullopt, Method::PLA, Engine::ExactParameterLifting).status);
-    EXPECT_FALSE(storm::api::verify(environment, model, universal, box, std::nullopt, Engine::ExactParameterLifting));
-    EXPECT_TRUE(storm::api::verify(environment, model, formula("Pmax>=0.3 [F \"target\"]"), box, std::nullopt, Engine::ExactParameterLifting));
-    EXPECT_EQ(Status::Infeasible,
-              storm::api::checkFeasibility(environment, model, formula("P>=0.6 [F \"target\"]"), box, std::nullopt, Method::PLA, Engine::ExactParameterLifting)
-                  .status);
+    for (auto engine : {Engine::ParameterLifting, Engine::ExactParameterLifting, Engine::ValidatingParameterLifting}) {
+        EXPECT_EQ(Status::ExistsSat, storm::api::checkFeasibility(environment, model, existential, box, std::nullopt, Method::PLA, engine).status);
+        EXPECT_EQ(Status::AllViolated, storm::api::checkFeasibility(environment, model, universal, box, std::nullopt, Method::PLA, engine).status);
+        EXPECT_FALSE(storm::api::verify(environment, model, universal, box, std::nullopt, engine));
+        EXPECT_TRUE(storm::api::verify(environment, model, formula("Pmax>=0.3 [F \"target\"]"), box, std::nullopt, engine));
+        EXPECT_EQ(Status::AllViolated,
+                  storm::api::checkFeasibility(environment, model, formula("P>=0.6 [F \"target\"]"), box, std::nullopt, Method::PLA, engine).status);
+        // An upper bound without min/max also quantifies universally over schedulers, so it uses Pmax.
+        EXPECT_EQ(Status::ExistsSat,
+                  storm::api::checkFeasibility(environment, model, formula("Pmin<=0.3 [F \"target\"]"), box, std::nullopt, Method::PLA, engine).status);
+        EXPECT_EQ(Status::AllViolated,
+                  storm::api::checkFeasibility(environment, model, formula("P<=0.3 [F \"target\"]"), box, std::nullopt, Method::PLA, engine).status);
+    }
     EXPECT_THROW(storm::api::verify(environment, model, existential, box, std::nullopt, Engine::RobustParameterLifting),
                  storm::exceptions::NotSupportedException);
     EXPECT_THROW(storm::api::checkFeasibility(environment, model, existential, box, std::nullopt, Method::GD), storm::exceptions::NotSupportedException);
@@ -273,7 +277,7 @@ TEST_F(SynthesisApiTest, RewardThresholdsAndFixedDimensions) {
     auto box = region("0.5<=p<=0.5,2<=r<=4");
     auto reward = formula("R{\"cost\"}>=3 [F !\"init\"]");
     auto result = storm::api::checkFeasibility(environment, model, reward, box, std::nullopt, Method::PLA, Engine::ExactParameterLifting);
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_TRUE(box.contains(result.witness->valuation));
     EXPECT_TRUE(reward->asOperatorFormula().getBound().isSatisfied(result.witness->value));
@@ -306,12 +310,12 @@ TEST_F(SynthesisApiTest, InteriorWitnessAndCounterexample) {
     // Reachability is p(1-p): both endpoints have value 0.09, while the center has value 0.25.
     auto result =
         storm::api::checkFeasibility(environment, model, formula("P>=0.2 [F \"target\"]"), box, std::nullopt, Method::PLA, Engine::ExactParameterLifting);
-    ASSERT_EQ(Status::Feasible, result.status);
+    ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
     EXPECT_TRUE(formula("P>=0.2 [F \"target\"]")->asOperatorFormula().getBound().isSatisfied(result.witness->value));
     EXPECT_FALSE(storm::api::verify(environment, model, formula("P<=0.2 [F \"target\"]"), box, std::nullopt, Engine::ExactParameterLifting));
     result = storm::api::checkFeasibility(environment, model, formula("P>=0.3 [F \"target\"]"), box, std::nullopt, Method::PLA, Engine::ExactParameterLifting);
-    EXPECT_EQ(Status::Infeasible, result.status);
+    EXPECT_EQ(Status::AllViolated, result.status);
 }
 
 TEST_F(SynthesisApiTest, WitnessValuesAreDoubleForEveryMethod) {
@@ -334,7 +338,7 @@ TEST_F(SynthesisApiTest, WitnessValuesAreDoubleForEveryMethod) {
         auto numerical = storm::api::checkFeasibility(environment, model, property, std::nullopt, bound, method, Engine::ParameterLifting);
         static_assert(std::is_same_v<decltype(numerical), storm::pars::FeasibilitySynthesisResult<double>>);
         static_assert(std::is_same_v<decltype(numerical.witness->value), double>);
-        ASSERT_EQ(Status::Feasible, numerical.status);
+        ASSERT_EQ(Status::ExistsSat, numerical.status);
         ASSERT_TRUE(numerical.witness);
         EXPECT_TRUE(box.contains(numerical.witness->valuation));
         EXPECT_TRUE(property->asOperatorFormula().getBound().isSatisfied(numerical.witness->value));
