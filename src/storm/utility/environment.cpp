@@ -1,6 +1,7 @@
 #include "environment.h"
 
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 
@@ -28,6 +29,8 @@ storm::Environment SoundEnvironmentFactory::create() const {
     solver.game().setMethod(storm::solver::GameMethod::PolicyIteration, true);
     solver.lra().setDetLraMethod(storm::solver::LraMethod::ValueIteration, true);
     solver.lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration, true);
+    // Corresponds to the choice for the automatic steady state distribution algorithm
+    env.modelchecker().setSteadyStateDistributionAlgorithm(storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes);
     return env;
 }
 
@@ -53,6 +56,8 @@ storm::Environment ExactEnvironmentFactory::create() const {
     solver.game().setMethod(storm::solver::GameMethod::PolicyIteration, true);
     solver.lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations, true);
     solver.lra().setNondetLraMethod(storm::solver::LraMethod::LinearProgramming, true);
+    // Exact LP solving
+    solver.setLpSolverType(storm::solver::LpSolverType::Z3, true);
     return env;
 }
 

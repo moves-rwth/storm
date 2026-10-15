@@ -8,6 +8,7 @@
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/AllSolverEnvironments.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -67,6 +68,7 @@ TEST(EnvironmentFactoryTest, SoundEnvironmentSelectsSoundMethods) {
     EXPECT_EQ(storm::solver::GameMethod::PolicyIteration, solver.game().getMethod());
     EXPECT_EQ(storm::solver::LraMethod::ValueIteration, solver.lra().getDetLraMethod());
     EXPECT_EQ(storm::solver::LraMethod::ValueIteration, solver.lra().getNondetLraMethod());
+    EXPECT_EQ(storm::SteadyStateDistributionAlgorithm::ExpectedVisitingTimes, env.modelchecker().getSteadyStateDistributionAlgorithm());
 
     // The choices count as defaults, such that e.g. exact mode can still override them
     EXPECT_TRUE(solver.isLinearEquationSolverTypeSetFromDefaultValue());
@@ -128,6 +130,7 @@ TEST(EnvironmentFactoryTest, ExactEnvironmentSelectsExactMethods) {
     EXPECT_EQ(storm::solver::GameMethod::PolicyIteration, solver.game().getMethod());
     EXPECT_EQ(storm::solver::LraMethod::GainBiasEquations, solver.lra().getDetLraMethod());
     EXPECT_EQ(storm::solver::LraMethod::LinearProgramming, solver.lra().getNondetLraMethod());
+    EXPECT_EQ(storm::solver::LpSolverType::Z3, solver.getLpSolverType());
 
     EXPECT_TRUE(solver.isLinearEquationSolverTypeSetFromDefaultValue());
     EXPECT_TRUE(solver.topological().isUnderlyingEquationSolverTypeSetFromDefault());
@@ -138,6 +141,7 @@ TEST(EnvironmentFactoryTest, ExactEnvironmentSelectsExactMethods) {
     EXPECT_TRUE(solver.game().isMethodSetFromDefault());
     EXPECT_TRUE(solver.lra().isDetLraMethodSetFromDefault());
     EXPECT_TRUE(solver.lra().isNondetLraMethodSetFromDefault());
+    EXPECT_TRUE(solver.isLpSolverTypeSetFromDefaultValue());
 }
 
 TEST(EnvironmentFactoryTest, ClonedFactoryCreatesExactEnvironment) {
