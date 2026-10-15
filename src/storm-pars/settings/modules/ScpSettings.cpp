@@ -1,5 +1,7 @@
 #include "storm-pars/settings/modules/ScpSettings.h"
 
+#include "storm-pars/scp/ScpOptions.h"
+
 #include "storm/settings/Argument.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/ArgumentValidators.h"
@@ -10,6 +12,9 @@ namespace storm::settings::modules {
 
 const std::string ScpSettings::moduleName = "scp";
 namespace {
+// The defaults of the options are taken from the library's default-constructed options.
+storm::pars::scp::ScpOptions const defaultOptions;
+
 const std::string trustRegionInitialOption = "trust-region-initial";
 const std::string trustRegionFactorOption = "trust-region-factor";
 const std::string trustRegionMaxOption = "trust-region-max";
@@ -22,21 +27,21 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionInitialOption, false, "The initial trust region radius (delta_0)")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionInitialOption, "The initial radius")
-                                         .setDefaultValueDouble(3.0)
+                                         .setDefaultValueDouble(defaultOptions.trustRegionInitial)
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
                                          .build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionFactorOption, false, "The trust region growth/shrink factor (gamma)")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionFactorOption, "The factor")
-                                         .setDefaultValueDouble(1.5)
+                                         .setDefaultValueDouble(defaultOptions.trustRegionFactor)
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
                                          .build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, trustRegionMaxOption, false, "The upper cap on the trust region radius")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionMaxOption, "The cap")
-                                         .setDefaultValueDouble(10.0)
+                                         .setDefaultValueDouble(defaultOptions.trustRegionMax)
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1.0))
                                          .build())
                         .build());
@@ -44,14 +49,14 @@ ScpSettings::ScpSettings() : ModuleSettings(moduleName) {
                                                    "The termination threshold on (trust region radius - 1); the radius asymptotically approaches 1, never 0")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(trustRegionMinExcessOption, "The threshold")
-                                         .setDefaultValueDouble(1e-4)
+                                         .setDefaultValueDouble(defaultOptions.trustRegionMinExcess)
                                          .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, maxIterationsOption, false, "The maximum number of SCP iterations")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument(maxIterationsOption, "The maximum number of iterations")
-                                         .setDefaultValueInteger(1000)
+                                         .setDefaultValueInteger(defaultOptions.maxIterations)
                                          .addValidatorInteger(storm::settings::ArgumentValidatorFactory::createIntegerGreaterEqualValidator(1))
                                          .build())
                         .build());
