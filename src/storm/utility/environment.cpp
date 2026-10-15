@@ -39,4 +39,29 @@ storm::Environment getSoundEnvironment() {
     return SoundEnvironmentFactory().create();
 }
 
+storm::Environment ExactEnvironmentFactory::create() const {
+    storm::Environment env = EnvironmentFactory::create();
+    storm::SolverEnvironment& solver = env.solver();
+    solver.setForceExact(true);  // The same as --exact from the CLI
+
+    // The linear equation solver type and the min-max method default to topological, which supports exact computations and is thus kept.
+    // Instead, the solvers underlying the topological solver are set.
+    solver.topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen, true);
+    solver.topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration, true);
+    solver.native().setMethod(storm::solver::NativeLinearEquationSolverMethod::RationalSearch, true);
+    solver.eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU, true);
+    solver.game().setMethod(storm::solver::GameMethod::PolicyIteration, true);
+    solver.lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations, true);
+    solver.lra().setNondetLraMethod(storm::solver::LraMethod::LinearProgramming, true);
+    return env;
+}
+
+std::unique_ptr<EnvironmentFactory> ExactEnvironmentFactory::clone() const {
+    return std::make_unique<ExactEnvironmentFactory>(*this);
+}
+
+storm::Environment getExactEnvironment() {
+    return ExactEnvironmentFactory().create();
+}
+
 }  // namespace storm::utility::environment
