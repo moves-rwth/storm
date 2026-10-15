@@ -18,17 +18,19 @@
 namespace storm::pomdp::api {
 namespace {
 
+/** Preprocessed POMDP, formula, and property metadata used by belief-based verification. */
 template<typename PomdpValueType>
-struct PreparedBeliefVerification {
+struct BeliefVerificationInput {
     std::shared_ptr<storm::models::sparse::Pomdp<PomdpValueType>> pomdp;
+    std::shared_ptr<storm::logic::Formula const> formula;
     analysis::FormulaInformation formulaInformation;
     beliefs::PropertyInformation propertyInformation;
 };
 
 template<typename PomdpValueType, typename BeliefMdpValueType>
-PreparedBeliefVerification<PomdpValueType> prepareBeliefVerification(storm::models::sparse::Pomdp<PomdpValueType> const& input,
-                                                                     storm::logic::Formula const& formula,
-                                                                     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType>& options) {
+BeliefVerificationInput<PomdpValueType> prepareBeliefVerification(storm::models::sparse::Pomdp<PomdpValueType> const& input,
+                                                                  storm::logic::Formula const& formula,
+                                                                  beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType>& options) {
     auto fragment = storm::logic::reachability();
     fragment.setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setQualitativeOperatorResultsAllowed(false);
     STORM_LOG_THROW(formula.isInFragment(fragment), storm::exceptions::NotSupportedException,
@@ -76,27 +78,26 @@ PreparedBeliefVerification<PomdpValueType> prepareBeliefVerification(storm::mode
     }
     // Preprocessing must see the refined observations and the absorbing failure states.
     formulaInformation = analysis::getFormulaInformation(*pomdp, formula);
-    return {std::move(pomdp), std::move(formulaInformation), std::move(propertyInformation)};
+    return {std::move(pomdp), formula.asSharedPointer(), std::move(formulaInformation), std::move(propertyInformation)};
 }
 
 template<typename PomdpValueType>
-storage::BeliefExplorationBounds<PomdpValueType> computeBeliefBounds(storm::Environment const& env, PreparedBeliefVerification<PomdpValueType> const& prepared,
-                                                                     storm::logic::Formula const& formula, bool useClipping) {
+storage::BeliefExplorationBounds<PomdpValueType> computeBeliefBounds(storm::Environment const& env, BeliefVerificationInput<PomdpValueType> const& prepared,
+                                                                     bool useClipping) {
     modelchecker::PreprocessingPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<PomdpValueType>> checker(*prepared.pomdp);
     storage::BeliefExplorationBounds<PomdpValueType> bounds;
-    bounds.preprocessingBounds = checker.getValueBounds(env, formula, prepared.formulaInformation);
+    bounds.preprocessingBounds = checker.getValueBounds(env, *prepared.formula, prepared.formulaInformation);
     if (useClipping && prepared.propertyInformation.kind == beliefs::PropertyInformation::Kind::ExpectedTotalReachabilityReward) {
-        bounds.extremeBounds = checker.getExtremeValueBound(env, formula, prepared.formulaInformation);
+        bounds.extremeBounds = checker.getExtremeValueBound(env, *prepared.formula, prepared.formulaInformation);
     }
     return bounds;
 }
 
 template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
 beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> unfoldPrepared(storm::Environment const& env,
-                                                                          PreparedBeliefVerification<PomdpValueType> const& prepared,
-                                                                          storm::logic::Formula const& formula,
+                                                                          BeliefVerificationInput<PomdpValueType> const& prepared,
                                                                           beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
-    auto bounds = computeBeliefBounds(env, prepared, formula, options.useClipping);
+    auto bounds = computeBeliefBounds(env, prepared, options.useClipping);
     beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType> checker(*prepared.pomdp);
     return checker.checkUnfold(env, prepared.propertyInformation, options, bounds);
 }
@@ -109,7 +110,7 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfol
     beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
     auto effectiveOptions = options;
     auto prepared = prepareBeliefVerification(pomdp, formula, effectiveOptions);
-    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, formula, effectiveOptions);
+    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, effectiveOptions);
 }
 
 template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
@@ -134,7 +135,7 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithHeuristicBe
     STORM_LOG_THROW(maxHiddenStates > 0 && states <= std::numeric_limits<uint64_t>::max() / maxHiddenStates, storm::exceptions::IllegalArgumentException,
                     "The heuristic unfolding budget exceeds the supported size range.");
     effectiveOptions.maxExplorationSize = states * maxHiddenStates;
-    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, formula, effectiveOptions);
+    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, effectiveOptions);
 }
 
 template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
@@ -147,7 +148,7 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscr
     STORM_LOG_THROW(!options.useClipping, storm::exceptions::NotSupportedException, "Belief discretization does not support clipping.");
     auto effectiveOptions = options;
     auto prepared = prepareBeliefVerification(pomdp, formula, effectiveOptions);
-    auto bounds = computeBeliefBounds(env, prepared, formula, false);
+    auto bounds = computeBeliefBounds(env, prepared, false);
     beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<PomdpValueType>, BeliefValueType, BeliefMdpValueType> checker(*prepared.pomdp);
     return checker.checkDiscretize(env, prepared.propertyInformation, effectiveOptions, resolution, useDynamic, bounds);
 }
