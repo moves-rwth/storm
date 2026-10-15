@@ -216,6 +216,8 @@ class CertificateTest : public ::testing::Test {
      */
     void checkCertificate(storm::modelchecker::CheckResult& result, storm::models::sparse::Model<ValueType> const& model, double expectedValue) const {
         ASSERT_TRUE(result.isExplicitCertificateCheckResult());
+        EXPECT_TRUE(result.isExplicit());
+        EXPECT_TRUE(result.isResultForAllStates());
         auto& certificateResult = result.template asExplicitCertificateCheckResult<ValueType>();
         EXPECT_TRUE(certificateResult.checkValidity(model));
         auto const bounds = getBoundsFromSummary(certificateResult.getCertificate(), model.getNumberOfStates(), 0);

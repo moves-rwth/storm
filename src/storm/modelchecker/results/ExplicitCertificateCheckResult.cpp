@@ -17,8 +17,18 @@ ExplicitCertificateCheckResult<ValueType>::ExplicitCertificateCheckResult(std::u
 }
 
 template<typename ValueType>
+bool ExplicitCertificateCheckResult<ValueType>::isExplicit() const {
+    return true;
+}
+
+template<typename ValueType>
 bool ExplicitCertificateCheckResult<ValueType>::isExplicitCertificateCheckResult() const {
     return true;
+}
+
+template<typename ValueType>
+bool ExplicitCertificateCheckResult<ValueType>::isResultForAllStates() const {
+    return relevantStates.full();
 }
 
 template<typename ValueType>

@@ -24,6 +24,7 @@ TotalRewardSpecification<ValueType> ReachabilityRewardTransformer<ValueType>::tr
                                                                                         std::vector<ValueType> const& actionRewards) {
     STORM_LOG_ASSERT(transitionMatrix.hasTrivialRowGrouping(), "Transition matrix has non-trivial row grouping but no optimization direction is given.");
 
+    // As usual for reachability rewards, the reward is infinite if the target is not reached with probability one (even if all rewards are zero).
     StateSet allStates(transitionMatrix.getRowGroupCount(), true);
     auto infStates = storm::utility::graph::performProb1(backwardTransitionCache.get(), allStates, targetStates);
     infStates.complement();
@@ -40,6 +41,8 @@ TotalRewardSpecification<ValueType> ReachabilityRewardTransformer<ValueType>::tr
     if (!dir.has_value()) {
         return transform(targetStates, actionRewards);
     }
+    // As usual for reachability rewards, the reward is infinite if the target is not reached with probability one (even if all rewards are zero).
+    // For minimizing (maximizing), this considers whether there is a scheduler (whether all schedulers) that reach the target with probability one.
     StateSet allStates(transitionMatrix.getRowGroupCount(), true);
     auto infStates = storm::solver::minimize(*dir) ? storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(),
                                                                                           backwardTransitionCache.get(), allStates, targetStates)
