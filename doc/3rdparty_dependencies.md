@@ -69,7 +69,8 @@ In Eigen, we have adapted `SparseLU` to work with scalar types that do not defau
 To update the Eigen version, just change the corresponding commit hash in `$STORM_DIR/resources/3rdparty/CMakeLists.txt`.
 Check whether the patch located at `$STORM_DIR/resources/3rdparty/patches/eigen501.patch` can be applied without issues (in particular check for changes in `Eigen/src/SparseLU/`).
 
-The commit hash is forwarded to carl-storm via the `CARL_EIGEN_GIT_TAG` variable to ensure that carl-storm and Storm check out the same Eigen version.
+Storm passes its Eigen checkout to carl-storm via the `CARL_EIGEN_SOURCE_DIR` variable, so carl-storm uses the same (patched) Eigen and does not download its own.
+The commit hash is additionally forwarded via `CARL_EIGEN_GIT_TAG`, which carl-storm only uses when `CARL_EIGEN_SOURCE_DIR` is not set.
 It might be reasonable to update the default value of `CARL_EIGEN_GIT_TAG` in carl-storm as well.
 
 In case a new patch needs to be created follow these steps:
