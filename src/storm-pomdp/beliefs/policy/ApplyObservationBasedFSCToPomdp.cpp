@@ -33,6 +33,10 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
     STORM_LOG_THROW(
         pomdp.getInitialStates().hasUniqueSetBit(), storm::exceptions::NotSupportedException,
         "Applying an FSC requires exactly one initial state, but the POMDP contains " << pomdp.getInitialStates().getNumberOfSetBits() << " initial states.");
+    for (auto const& [rewardModelName, rewardModel] : pomdp.getRewardModels()) {
+        STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException,
+                        "Applying an FSC does not support transition rewards, but reward model \"" << rewardModelName << "\" contains them.");
+    }
     std::unordered_map<uint64_t, std::pair<uint64_t, uint64_t>> idToPomdpStateAndFscNode;
     std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pomdpStateAndFscNodeToNewStateId;
     std::vector<std::unordered_map<uint64_t, PomdpValueType>> transitionProbabilities;
@@ -139,9 +143,6 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
             rewards.resize(currentStateId + 1, storm::utility::zero<PomdpValueType>());
             if (rewardModel.hasStateRewards()) {
                 rewards[currentStateId] += rewardModel.getStateRewardVector()[currentPomdpState];
-            }
-            if (rewardModel.hasTransitionRewards()) {
-                STORM_LOG_WARN("Transition rewards are not supported when applying an FSC to a POMDP. They will be ignored.");
             }
         }
         std::unordered_map<uint64_t, PomdpValueType> successorProbabilities;

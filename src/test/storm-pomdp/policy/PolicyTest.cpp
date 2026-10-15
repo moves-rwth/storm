@@ -12,6 +12,7 @@
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -278,6 +279,35 @@ TEST(ApplyObservationBasedFiniteStateController, PreservesRewardsForRandomisedAc
     auto const& rewards = inducedDtmc.getRewardModel("rew").getStateRewardVector();
     ASSERT_EQ(rewards.size(), inducedDtmc.getNumberOfStates());
     EXPECT_DOUBLE_EQ(rewards.at(0), 8.0);
+}
+
+TEST(ApplyObservationBasedFiniteStateController, RejectsTransitionRewards) {
+    for (bool withStateAndActionRewards : {false, true}) {
+        SCOPED_TRACE(withStateAndActionRewards);
+        for (bool emptyTransitionRewards : {false, true}) {
+            SCOPED_TRACE(emptyTransitionRewards);
+            auto pomdp = buildSingleStatePomdp(true);
+            storm::storage::SparseMatrixBuilder<double> rewardBuilder(2, 1);
+            if (!emptyTransitionRewards) {
+                // Reject transition rewards even when they only occur on an action the FSC never chooses.
+                rewardBuilder.addNextValue(1, 0, 7.0);
+            }
+            std::optional<std::vector<double>> stateRewards;
+            std::optional<std::vector<double>> actionRewards;
+            if (withStateAndActionRewards) {
+                stateRewards = std::vector<double>{3.0};
+                actionRewards = std::vector<double>{2.0, 6.0};
+            }
+            pomdp.getRewardModels().emplace(
+                "transition", storm::models::sparse::StandardRewardModel<double>(std::move(stateRewards), std::move(actionRewards), rewardBuilder.build()));
+            storm::pomdp::policy::ObservationBasedFiniteStateController<double> fsc(0);
+            fsc.addDeterministicActionTransition(0, 0, 0, 0);
+            for (bool dontCare : {false, true}) {
+                SCOPED_TRACE(dontCare);
+                EXPECT_THROW(storm::pomdp::policy::applyObservationBasedFSCToPomdp(pomdp, fsc, dontCare), storm::exceptions::NotSupportedException);
+            }
+        }
+    }
 }
 
 TEST(ApplyObservationBasedFiniteStateController, PreservesLabelsOfUnreachableStates) {
