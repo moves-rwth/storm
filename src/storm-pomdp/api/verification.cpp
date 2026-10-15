@@ -10,6 +10,8 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/logic/Formula.h"
+#include "storm/logic/FragmentSpecification.h"
 #include "storm/transformer/MakePOMDPCanonic.h"
 #include "storm/utility/macros.h"
 
@@ -27,11 +29,13 @@ template<typename PomdpValueType, typename BeliefMdpValueType>
 PreparedBeliefVerification<PomdpValueType> prepareBeliefVerification(storm::models::sparse::Pomdp<PomdpValueType> const& input,
                                                                      storm::logic::Formula const& formula,
                                                                      beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType>& options) {
+    auto fragment = storm::logic::reachability();
+    fragment.setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setQualitativeOperatorResultsAllowed(false);
+    STORM_LOG_THROW(formula.isInFragment(fragment), storm::exceptions::NotSupportedException,
+                    "The one-shot belief API supports only non-nested, unbounded reachability probabilities and expected reachability rewards without "
+                    "thresholds. Got '"
+                        << formula << "'.");
     auto formulaInformation = analysis::getFormulaInformation(input, formula);
-    STORM_LOG_THROW(
-        !formulaInformation.isBounded() && (formulaInformation.isNonNestedReachabilityProbability() || formulaInformation.isNonNestedExpectedRewardFormula()),
-        storm::exceptions::NotSupportedException,
-        "The one-shot belief API supports only unbounded reachability probabilities and expected reachability rewards. Got '" << formula << "'.");
     STORM_LOG_THROW(input.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException,
                     "One-shot belief verification requires exactly one initial state.");
     if (options.useClipping) {
