@@ -1,8 +1,10 @@
 #include "storm/settings/modules/CertificationSettings.h"
 
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
+#include "storm/utility/macros.h"
 
 namespace storm::settings::modules {
 
@@ -58,6 +60,14 @@ double CertificationSettings::getDelta() const {
 }
 
 bool CertificationSettings::check() const {
+    if (this->getOption(methodOptionName).getHasOptionBeenSet()) {
+        auto const algorithm = getAlgorithm();
+        if (algorithm == storm::CertificateAlgorithm::FpSmoothII || algorithm == storm::CertificateAlgorithm::FpRoundII) {
+            // For gamma = 1, the bounds are never updated, so the iteration would not terminate.
+            STORM_LOG_THROW(getGamma() < 1.0, storm::exceptions::InvalidSettingsException,
+                            "The parameter gamma for smooth and rounding interval iteration must be smaller than 1.");
+        }
+    }
     return true;
 }
 

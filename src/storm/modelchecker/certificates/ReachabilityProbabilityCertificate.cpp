@@ -15,6 +15,7 @@
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/modelchecker/certificates/utility/CertificateJsonUtility.h"
 
 namespace storm::modelchecker {
 
@@ -34,8 +35,7 @@ ReachabilityProbabilityCertificate<ValueType>::ReachabilityProbabilityCertificat
       targetLabel(targetLabel),
       constraintLabel(std::move(constraintLabel)),
       dir(dir) {
-    STORM_LOG_ASSERT(!this->constraintStates.empty(), "Constraint set given but empty.");
-    STORM_LOG_ASSERT(this->constraintStates.size() == this->targetStates.size(), "Constraint set and target set consider a different state count.");
+    STORM_LOG_ASSERT(this->constraintStates->size() == this->targetStates.size(), "Constraint set and target set consider a different state count.");
 }
 
 template<typename ValueType>
@@ -70,13 +70,13 @@ bool checkUpperBoundCertificate(storm::storage::SparseMatrix<ValueType> const& t
             }
             continue;
         }
+        // Probabilities are non-negative, so are upper bounds on probabilities
+        if (values[state] < storm::utility::zero<ValueType>()) {
+            STORM_LOG_WARN("Certificate invalid because state " << state << " has upper bound " << values[state] << " < 0.");
+            return false;
+        }
         // Handle states that are not in the constraint set
         if (constraintStates && !constraintStates->get(state)) {
-            if (values[state] < storm::utility::zero<ValueType>()) {
-                STORM_LOG_WARN("Certificate invalid because state " << state << " is not in the constraint set but has upper bound " << values[state]
-                                                                    << " < 0.");
-                return false;
-            }
             continue;
         }
         // Apply Bellman operator for non-target state
@@ -196,7 +196,7 @@ template<storm::OptimizationDirection Dir>
 bool ReachabilityProbabilityCertificate<ValueType>::checkValidityInternal(storm::storage::SparseMatrix<ValueType> const& transitionProbabilityMatrix) const {
     storm::OptionalRef<storm::storage::BitVector const> constraintStatesRef;
     if (hasConstraintStates()) {
-        constraintStatesRef.reset(constraintStates);
+        constraintStatesRef.reset(*constraintStates);
     }
     if (hasUpperBoundsCertificate() &&
         !checkUpperBoundCertificate<ValueType, Dir>(transitionProbabilityMatrix, targetStates, constraintStatesRef, upperBoundsCertificate.values)) {
@@ -213,11 +213,23 @@ bool ReachabilityProbabilityCertificate<ValueType>::checkValidityInternal(storm:
 
 template<typename ValueType>
 storm::json<ValueType> ReachabilityProbabilityCertificate<ValueType>::toJson() const {
-    assert(false);
-    // TODO Convert the certificate to JSON format
-    storm::json<ValueType> json;
-    // Fill the json object based on your project requirements
-    return json;
+    storm::json<ValueType> result;
+    result["kind"] = "reachability-probability";
+    if (dir.has_value()) {
+        result["direction"] = storm::solver::minimize(*dir) ? "min" : "max";
+    }
+    result["target"] = detail::stateSetToJson<ValueType>(targetLabel, targetStates);
+    if (hasConstraintStates()) {
+        result["constraint"] = detail::stateSetToJson<ValueType>(constraintLabel, *constraintStates);
+    }
+    if (hasLowerBoundsCertificate()) {
+        result["lower"]["values"] = detail::valuesToJson<ValueType, ValueType>(lowerBoundsCertificate.values);
+        result["lower"]["ranks"] = detail::ranksToJson<ValueType>(lowerBoundsCertificate.ranks);
+    }
+    if (hasUpperBoundsCertificate()) {
+        result["upper"]["values"] = detail::valuesToJson<ValueType, ValueType>(upperBoundsCertificate.values);
+    }
+    return result;
 }
 
 template<typename ValueType>
@@ -269,7 +281,7 @@ std::string ReachabilityProbabilityCertificate<ValueType>::summaryString(storm::
 template<typename ValueType>
 std::unique_ptr<Certificate<ValueType>> ReachabilityProbabilityCertificate<ValueType>::clone() const {
     auto cloned = hasConstraintStates()
-                      ? std::make_unique<ReachabilityProbabilityCertificate<ValueType>>(dir, targetStates, constraintStates, targetLabel, constraintLabel)
+                      ? std::make_unique<ReachabilityProbabilityCertificate<ValueType>>(dir, targetStates, *constraintStates, targetLabel, constraintLabel)
                       : std::make_unique<ReachabilityProbabilityCertificate<ValueType>>(dir, targetStates, targetLabel);
     if (hasLowerBoundsCertificate()) {
         auto v = lowerBoundsCertificate.values;
@@ -309,7 +321,7 @@ bool ReachabilityProbabilityCertificate<ValueType>::hasUpperBoundsCertificate() 
 
 template<typename ValueType>
 bool ReachabilityProbabilityCertificate<ValueType>::hasConstraintStates() const {
-    return !constraintStates.empty();
+    return constraintStates.has_value();
 }
 
 template class ReachabilityProbabilityCertificate<double>;

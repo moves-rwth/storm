@@ -18,6 +18,7 @@
 #include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/modelchecker/certificates/utility/CertificateJsonUtility.h"
 
 namespace storm::modelchecker {
 
@@ -228,11 +229,23 @@ bool ReachabilityRewardCertificate<ValueType>::checkValidityInternal(storm::stor
 
 template<typename ValueType>
 storm::json<ValueType> ReachabilityRewardCertificate<ValueType>::toJson() const {
-    assert(false);
-    // TODO Convert the certificate to JSON format
-    storm::json<ValueType> json;
-    // Fill the json object based on your project requirements
-    return json;
+    storm::json<ValueType> result;
+    result["kind"] = "reachability-reward";
+    if (dir.has_value()) {
+        result["direction"] = storm::solver::minimize(*dir) ? "min" : "max";
+    }
+    result["reward-model"] = rewardModelName;
+    result["target"] = detail::stateSetToJson<ValueType>(targetLabel, targetStates);
+    result["choice-rewards"] = detail::valuesToJson<ValueType, ValueType>(stateActionRewardVector);
+    if (hasLowerBoundsCertificate()) {
+        result["lower"]["values"] = detail::valuesToJson<ValueType, ExtendedValueType>(lowerBoundsCertificate.values);
+        result["lower"]["ranks"] = detail::ranksToJson<ValueType>(lowerBoundsCertificate.ranks);
+    }
+    if (hasUpperBoundsCertificate()) {
+        result["upper"]["values"] = detail::valuesToJson<ValueType, ExtendedValueType>(upperBoundsCertificate.values);
+        result["upper"]["ranks"] = detail::ranksToJson<ValueType>(upperBoundsCertificate.ranks);
+    }
+    return result;
 }
 
 template<typename ValueType>

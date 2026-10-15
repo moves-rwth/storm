@@ -10,6 +10,8 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/modelchecker/certificates/RankingType.h"
 #include "storm/modelchecker/certificates/ReachabilityProbabilityCertificate.h"
@@ -59,6 +61,11 @@ class LowerUpperValueCertificateComputer {
         : certificateEnv(certificateEnv), transitionProbabilityMatrix(transitionProbabilityMatrix), totalRewardSpecification(totalRewardSpecification) {}
 
     Algorithm getAlgorithm() const {
+        if (certificateEnv.getAlgorithm() == AlgorithmType::FpSmoothII || certificateEnv.getAlgorithm() == AlgorithmType::FpRoundII) {
+            // For gamma = 1, the bounds are never updated, so the iteration would not terminate.
+            STORM_LOG_THROW(certificateEnv.getGamma() < 1.0, storm::exceptions::InvalidEnvironmentException,
+                            "The parameter gamma for smooth and rounding interval iteration must be smaller than 1.");
+        }
         return {certificateEnv.getAlgorithm(), storm::utility::convertNumber<ValueType>(certificateEnv.getGamma()),
                 storm::utility::convertNumber<ValueType>(certificateEnv.getDelta())};
     }
@@ -109,10 +116,10 @@ class LowerUpperValueCertificateComputer {
             }
         }
         // We assume that 0 is a valid lower bound for all states.
-        STORM_LOG_ASSERT(!totalRewardSpecification.actionRewards.has_value() ||
-                             std::all_of(totalRewardSpecification.actionRewards->begin(), totalRewardSpecification.actionRewards->end(),
-                                         [](auto const& v) { return v >= storm::utility::zero<ValueType>(); }),
-                         "Negative rewards are not supported.");
+        STORM_LOG_THROW(!totalRewardSpecification.actionRewards.has_value() ||
+                            std::all_of(totalRewardSpecification.actionRewards->begin(), totalRewardSpecification.actionRewards->end(),
+                                        [](auto const& v) { return v >= storm::utility::zero<ValueType>(); }),
+                        storm::exceptions::NotSupportedException, "Certificates for negative rewards are not supported.");
 
         // Initialize second vector for upper bounds (if needed by the selected algorithm)
         if (alg.type == AlgorithmType::FpII || alg.type == AlgorithmType::FpSmoothII || alg.type == AlgorithmType::FpRoundII) {
@@ -275,7 +282,8 @@ class LowerUpperValueCertificateComputer {
         auto possibleECChoices = ~original.exitChoices;
         if (totalRewardSpecification.actionRewards) {
             // Do not consider choices with rewards
-            for (uint64_t choice = *possibleECChoices.begin(); choice < possibleECChoices.size(); choice = possibleECChoices.getNextSetIndex(choice + 1)) {
+            auto const candidateChoices = possibleECChoices;
+            for (auto const choice : candidateChoices) {
                 if constexpr (SingleValue) {
                     if (!storm::utility::isZero(original.offsets[choice])) {
                         possibleECChoices.set(choice, false);

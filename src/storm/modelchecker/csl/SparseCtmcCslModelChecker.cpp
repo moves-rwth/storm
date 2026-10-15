@@ -1,5 +1,7 @@
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 
+#include <algorithm>
+
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -220,6 +222,8 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
             STORM_LOG_INFO("Computing reachability rewards with certificate ...");
             auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
             auto weights = this->getModel().getExitRateVector();
+            STORM_LOG_ASSERT(std::all_of(weights.begin(), weights.end(), [](auto const& rate) { return rate > storm::utility::zero<ValueType>(); }),
+                             "Exit rates of a CTMC must be positive.");
             std::transform(weights.begin(), weights.end(), weights.begin(), [](auto const& rate) { return storm::utility::one<ValueType>() / rate; });
             auto rewardVector = rewardModel.get().getTotalActionRewardVector(probabilisticTransitions, weights);
             auto certificate = storm::modelchecker::computeReachabilityRewardCertificate(
@@ -285,6 +289,8 @@ std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::com
             STORM_LOG_INFO("Computing reachability times with certificate ...");
             auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
             auto weights = this->getModel().getExitRateVector();
+            STORM_LOG_ASSERT(std::all_of(weights.begin(), weights.end(), [](auto const& rate) { return rate > storm::utility::zero<ValueType>(); }),
+                             "Exit rates of a CTMC must be positive.");
             std::transform(weights.begin(), weights.end(), weights.begin(),
                            [](auto const& rate) -> ValueType { return storm::utility::one<ValueType>() / rate; });
             auto certificate = storm::modelchecker::computeReachabilityRewardCertificate(env, std::nullopt, std::move(probabilisticTransitions),

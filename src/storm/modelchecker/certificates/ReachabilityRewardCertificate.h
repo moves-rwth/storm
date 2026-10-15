@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <string>
 #include <vector>
 #include "storm/modelchecker/certificates/Certificate.h"
 #include "storm/modelchecker/certificates/RankingType.h"

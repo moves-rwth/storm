@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "storm-parsers/api/properties.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
@@ -17,18 +19,24 @@
 #include "storm/environment/modelchecker/CertificateModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/certificates/CertificateAlgorithm.h"
 #include "storm/modelchecker/certificates/ReachabilityProbabilityCertificate.h"
+#include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitCertificateCheckResult.h"
+#include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
@@ -37,13 +45,18 @@ std::string const dtmcWithSink = R"(
 dtmc
 
 module main
-    s : [0..4] init 0;
+    s : [0..4];
     [] s=0 -> 0.5 : (s'=1) + 0.5 : (s'=2);
     [] s=1 -> 0.3 : (s'=0) + 0.7 : (s'=3);
     [] s=2 -> 0.5 : (s'=3) + 0.5 : (s'=4);
     [] s=3 -> 1 : (s'=3);
     [] s=4 -> 1 : (s'=4);
 endmodule
+
+// All states are initial State ids then correspond to the values of s.
+init
+    true
+endinit
 
 label "target" = s=3;
 )";
@@ -53,12 +66,17 @@ std::string const dtmcWithoutSink = R"(
 dtmc
 
 module main
-    s : [0..3] init 0;
+    s : [0..3];
     [] s=0 -> 0.5 : (s'=1) + 0.5 : (s'=2);
     [] s=1 -> 0.3 : (s'=0) + 0.7 : (s'=3);
     [] s=2 -> 1 : (s'=3);
     [] s=3 -> 1 : (s'=3);
 endmodule
+
+// All states are initial State ids then correspond to the values of s.
+init
+    true
+endinit
 
 label "target" = s=3;
 
@@ -73,7 +91,7 @@ std::string const mdp = R"(
 mdp
 
 module main
-    s : [0..4] init 0;
+    s : [0..4];
     [a] s=0 -> 0.5 : (s'=1) + 0.5 : (s'=0);
     [b] s=0 -> 0.2 : (s'=2) + 0.8 : (s'=4);
     [a] s=1 -> 1 : (s'=3);
@@ -82,6 +100,11 @@ module main
     [] s=3 -> 1 : (s'=3);
     [] s=4 -> 1 : (s'=4);
 endmodule
+
+// All states are initial State ids then correspond to the values of s.
+init
+    true
+endinit
 
 label "target" = s=3;
 
@@ -177,25 +200,25 @@ class CertificateTest : public ::testing::Test {
 
     template<typename ModelType, typename ModelCheckerType>
     std::unique_ptr<storm::modelchecker::CheckResult> checkWithCertificate(std::string const& modelDescription, std::string const& formulaString,
-                                                                           std::shared_ptr<ModelType>& model) const {
+                                                                           std::shared_ptr<ModelType>& model,
+                                                                           storm::Environment const* customEnvironment = nullptr) const {
         storm::prism::Program program = storm::parser::PrismParser::parseFromString(modelDescription, "testfile");
         auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaString, program));
         model = storm::api::buildSparseModel<ValueType>(program, formulas)->template as<ModelType>();
         ModelCheckerType checker(*model);
         storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formulas[0], true);
         task.setProduceCertificate(true);
-        return checker.check(env(), task);
+        return checker.check(customEnvironment ? *customEnvironment : env(), task);
     }
 
     /*!
-     * Checks that the result is a valid certificate whose bounds for the initial state enclose the expected value.
+     * Checks that the result is a valid certificate whose bounds for state 0 enclose the expected value.
      */
     void checkCertificate(storm::modelchecker::CheckResult& result, storm::models::sparse::Model<ValueType> const& model, double expectedValue) const {
         ASSERT_TRUE(result.isExplicitCertificateCheckResult());
         auto& certificateResult = result.template asExplicitCertificateCheckResult<ValueType>();
         EXPECT_TRUE(certificateResult.checkValidity(model));
-        ASSERT_EQ(1ull, model.getInitialStates().getNumberOfSetBits());
-        auto const bounds = getBoundsFromSummary(certificateResult.getCertificate(), model.getNumberOfStates(), *model.getInitialStates().begin());
+        auto const bounds = getBoundsFromSummary(certificateResult.getCertificate(), model.getNumberOfStates(), 0);
         // The summary shows a limited number of digits.
         double const tolerance = 1e-5;
         if (std::isinf(expectedValue)) {
@@ -260,6 +283,199 @@ TYPED_TEST(CertificateTest, DtmcReachabilityTime) {
     auto result = this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(dtmcWithoutSink,
                                                                                                                               "T=? [F \"target\"]", model);
     this->checkCertificate(*result, *model, 40.0 / 17.0);
+}
+
+TYPED_TEST(CertificateTest, DtmcEmptyConstraintReachabilityProbability) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    // No state satisfies s>4, so the target can only be reached from within the target. This is different from not having a constraint.
+    auto result =
+        this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(dtmcWithSink, "P=? [s>4 U s=3]", model);
+    this->checkCertificate(*result, *model, 0.0);
+}
+
+TYPED_TEST(CertificateTest, DtmcNegativeRewardsAreRejected) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    std::string const negativeRewards = dtmcWithoutSink + "\nrewards \"negative\"\n    s<3 : -1;\nendrewards\n";
+    STORM_SILENT_EXPECT_THROW((this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(
+                                  negativeRewards, "R{\"negative\"}=? [F \"target\"]", model)),
+                              storm::exceptions::NotSupportedException);
+}
+
+TYPED_TEST(CertificateTest, SmoothIterationWithGammaOneIsRejected) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    for (auto const algorithm : {storm::CertificateAlgorithm::FpSmoothII, storm::CertificateAlgorithm::FpRoundII}) {
+        storm::Environment env = this->env();
+        env.modelchecker().certificate().setAlgorithm(algorithm);
+        env.modelchecker().certificate().setGamma(1.0);
+        STORM_SILENT_EXPECT_THROW((this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(
+                                      dtmcWithSink, "P=? [F \"target\"]", model, &env)),
+                                  storm::exceptions::InvalidEnvironmentException);
+    }
+}
+
+TYPED_TEST(CertificateTest, CtmcReachability) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+    storm::storage::SparseMatrixBuilder<ValueType> builder(3, 3, 3);
+    builder.addNextValue(0, 1, storm::utility::convertNumber<ValueType>(2.0));
+    builder.addNextValue(1, 2, storm::utility::convertNumber<ValueType>(4.0));
+    builder.addNextValue(2, 2, storm::utility::convertNumber<ValueType>(1.0));  // The target is absorbing
+    storm::models::sparse::StateLabeling labeling(3);
+    labeling.addLabel("init");
+    labeling.addLabelToState("init", 0);
+    labeling.addLabel("target");
+    labeling.addLabelToState("target", 2);
+    ModelType model(builder.build(3, 3), std::move(labeling));
+
+    storm::parser::FormulaParser formulaParser(std::make_shared<storm::expressions::ExpressionManager>());
+    storm::modelchecker::SparseCtmcCslModelChecker<ModelType> checker(model);
+    for (auto const& [formulaString, expectedValue] : std::vector<std::pair<std::string, double>>{{"P=? [F \"target\"]", 1.0}, {"T=? [F \"target\"]", 0.75}}) {
+        auto const formula = formulaParser.parseSingleFormulaFromString(formulaString);
+        storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> task(*formula, true);
+        task.setProduceCertificate(true);
+        auto result = checker.check(this->env(), task);
+        this->checkCertificate(*result, model, expectedValue);
+    }
+}
+
+// Json export
+
+template<typename ValueType>
+double jsonToDouble(storm::json<ValueType> const& j) {
+    if (j.is_string()) {
+        return parseNumber(j.template get<std::string>());
+    }
+    if constexpr (std::is_same_v<ValueType, double>) {
+        return j.template get<double>();
+    }
+    ADD_FAILURE() << "Unexpected json value " << j.dump();
+    return 0.0;
+}
+
+TYPED_TEST(CertificateTest, JsonExportProbability) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    auto result =
+        this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(dtmcWithSink, "P=? [F \"target\"]", model);
+    ASSERT_TRUE(result->isExplicitCertificateCheckResult());
+    storm::json<ValueType> const j = result->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+
+    EXPECT_EQ("reachability-probability", j.at("kind").template get<std::string>());
+    EXPECT_FALSE(j.contains("direction"));
+    EXPECT_FALSE(j.contains("constraint"));
+    ASSERT_EQ(1ull, j.at("target").at("states").size());
+    EXPECT_EQ(3ull, j.at("target").at("states").at(0).template get<uint64_t>());
+    EXPECT_NE(std::string::npos, j.at("target").at("label").template get<std::string>().find("target"));
+
+    auto const& lowerValues = j.at("lower").at("values");
+    auto const& upperValues = j.at("upper").at("values");
+    ASSERT_EQ(5ull, lowerValues.size());
+    ASSERT_EQ(5ull, upperValues.size());
+    EXPECT_LE(jsonToDouble<ValueType>(lowerValues.at(0)), 12.0 / 17.0 + 1e-6);
+    EXPECT_GE(jsonToDouble<ValueType>(upperValues.at(0)), 12.0 / 17.0 - 1e-6);
+    EXPECT_NEAR(12.0 / 17.0, jsonToDouble<ValueType>(lowerValues.at(0)), 1e-6);
+    EXPECT_EQ(1.0, jsonToDouble<ValueType>(lowerValues.at(3)));
+    EXPECT_EQ(0.0, jsonToDouble<ValueType>(upperValues.at(4)));
+    if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        // Exact values are exported as fractions
+        EXPECT_EQ("12/17", lowerValues.at(0).template get<std::string>());
+        EXPECT_EQ("31/34", lowerValues.at(1).template get<std::string>());
+        EXPECT_EQ("1/2", upperValues.at(2).template get<std::string>());
+        EXPECT_EQ("1", upperValues.at(3).template get<std::string>());
+    }
+
+    auto const& ranks = j.at("lower").at("ranks");
+    ASSERT_EQ(5ull, ranks.size());
+    EXPECT_EQ(2ull, ranks.at(0).template get<uint64_t>());
+    EXPECT_EQ(1ull, ranks.at(1).template get<uint64_t>());
+    EXPECT_EQ(1ull, ranks.at(2).template get<uint64_t>());
+    EXPECT_EQ(0ull, ranks.at(3).template get<uint64_t>());
+    EXPECT_EQ("inf", ranks.at(4).template get<std::string>());
+    EXPECT_FALSE(j.at("upper").contains("ranks"));
+}
+
+TYPED_TEST(CertificateTest, JsonExportConstrainedProbability) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    auto result =
+        this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(dtmcWithSink, "P=? [s<2 U s=3]", model);
+    storm::json<ValueType> const j = result->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+    ASSERT_TRUE(j.contains("constraint"));
+    ASSERT_EQ(2ull, j.at("constraint").at("states").size());
+    EXPECT_EQ(0ull, j.at("constraint").at("states").at(0).template get<uint64_t>());
+    EXPECT_EQ(1ull, j.at("constraint").at("states").at(1).template get<uint64_t>());
+    EXPECT_TRUE(j.at("constraint").contains("label"));
+}
+
+TYPED_TEST(CertificateTest, JsonExportReward) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
+    std::shared_ptr<ModelType> model;
+    auto result = this->template checkWithCertificate<ModelType, storm::modelchecker::SparseDtmcPrctlModelChecker<ModelType>>(
+        dtmcWithoutSink, "R{\"steps\"}=? [F \"target\"]", model);
+    ASSERT_TRUE(result->isExplicitCertificateCheckResult());
+    storm::json<ValueType> const j = result->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+
+    EXPECT_EQ("reachability-reward", j.at("kind").template get<std::string>());
+    EXPECT_FALSE(j.contains("direction"));
+    EXPECT_EQ("steps", j.at("reward-model").template get<std::string>());
+    ASSERT_EQ(4ull, j.at("choice-rewards").size());
+    for (uint64_t choice = 0; choice < 3; ++choice) {
+        EXPECT_EQ(1.0, jsonToDouble<ValueType>(j.at("choice-rewards").at(choice)));
+    }
+    EXPECT_EQ(0.0, jsonToDouble<ValueType>(j.at("choice-rewards").at(3)));
+    ASSERT_EQ(1ull, j.at("target").at("states").size());
+
+    ASSERT_EQ(4ull, j.at("lower").at("values").size());
+    ASSERT_EQ(4ull, j.at("upper").at("values").size());
+    EXPECT_NEAR(40.0 / 17.0, jsonToDouble<ValueType>(j.at("lower").at("values").at(0)), 1e-6);
+    EXPECT_NEAR(40.0 / 17.0, jsonToDouble<ValueType>(j.at("upper").at("values").at(0)), 1e-6);
+    if constexpr (std::is_same_v<ValueType, storm::RationalNumber>) {
+        EXPECT_EQ("40/17", j.at("upper").at("values").at(0).template get<std::string>());
+        EXPECT_EQ("29/17", j.at("upper").at("values").at(1).template get<std::string>());
+    }
+    // There are no states with infinite value, so the lower bound ranks are all infinite
+    for (auto const& rank : j.at("lower").at("ranks")) {
+        EXPECT_EQ("inf", rank.template get<std::string>());
+    }
+    auto const& upperRanks = j.at("upper").at("ranks");
+    ASSERT_EQ(4ull, upperRanks.size());
+    EXPECT_EQ(2ull, upperRanks.at(0).template get<uint64_t>());
+    EXPECT_EQ(1ull, upperRanks.at(1).template get<uint64_t>());
+    EXPECT_EQ(1ull, upperRanks.at(2).template get<uint64_t>());
+    EXPECT_EQ(0ull, upperRanks.at(3).template get<uint64_t>());
+}
+
+TYPED_TEST(CertificateTest, JsonExportMdpDirectionAndInfinity) {
+    typedef typename TestFixture::ValueType ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    {
+        std::shared_ptr<ModelType> model;
+        auto result =
+            this->template checkWithCertificate<ModelType, storm::modelchecker::SparseMdpPrctlModelChecker<ModelType>>(mdp, "Pmin=? [F \"target\"]", model);
+        storm::json<ValueType> const j = result->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+        EXPECT_EQ("min", j.at("direction").template get<std::string>());
+    }
+    {
+        // The maximal expected reward is infinite in state 0
+        std::shared_ptr<ModelType> model;
+        auto result = this->template checkWithCertificate<ModelType, storm::modelchecker::SparseMdpPrctlModelChecker<ModelType>>(
+            mdp, "R{\"steps\"}max=? [F \"target\"]", model);
+        storm::json<ValueType> const j = result->template asExplicitCertificateCheckResult<ValueType>().getCertificate().toJson();
+        EXPECT_EQ("max", j.at("direction").template get<std::string>());
+        EXPECT_EQ("inf", j.at("lower").at("values").at(0).template get<std::string>());
+        EXPECT_EQ("inf", j.at("upper").at("values").at(0).template get<std::string>());
+        // The rewards are given for each choice, not each state
+        EXPECT_EQ(model->getNumberOfChoices(), j.at("choice-rewards").size());
+    }
 }
 
 TYPED_TEST(CertificateTest, MdpReachabilityProbability) {
@@ -331,6 +547,17 @@ TEST_F(HandMadeCertificateTest, UpperBound) {
     storm::modelchecker::ReachabilityProbabilityCertificate<ValueType> notInductive(std::nullopt, targetStates);
     notInductive.setUpperBoundsCertificate(rationals({{1, 1}, {1, 1}, {2, 5}, {1, 1}, {0, 1}}));
     EXPECT_FALSE(notInductive.checkValidity(*model));
+
+    // Probabilities are non-negative, so upper bounds on them are as well (even if the value is inductive).
+    storm::modelchecker::ReachabilityProbabilityCertificate<ValueType> negative(std::nullopt, targetStates);
+    negative.setUpperBoundsCertificate(rationals({{1, 1}, {1, 1}, {1, 1}, {1, 1}, {-1, 1}}));
+    EXPECT_FALSE(negative.checkValidity(*model));
+
+    // An empty constraint set is a valid constraint (and not the same as having no constraint): The target can only be reached from within the target.
+    storm::modelchecker::ReachabilityProbabilityCertificate<ValueType> emptyConstraint(std::nullopt, targetStates,
+                                                                                       storm::storage::BitVector(model->getNumberOfStates(), false));
+    emptyConstraint.setUpperBoundsCertificate(rationals({{0, 1}, {0, 1}, {0, 1}, {1, 1}, {0, 1}}));
+    EXPECT_TRUE(emptyConstraint.checkValidity(*model));
 
     // The upper bound for target states must be at least one.
     storm::modelchecker::ReachabilityProbabilityCertificate<ValueType> targetTooSmall(std::nullopt, targetStates);

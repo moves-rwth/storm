@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <string>
 #include <vector>
 #include "storm/modelchecker/certificates/Certificate.h"
 #include "storm/modelchecker/certificates/RankingType.h"
@@ -45,7 +47,8 @@ class ReachabilityProbabilityCertificate : public Certificate<ValueType> {
     template<storm::OptimizationDirection Dir>
     bool checkValidityInternal(storm::storage::SparseMatrix<ValueType> const& transitionProbabilityMatrix) const;
 
-    storm::storage::BitVector const targetStates, constraintStates;
+    storm::storage::BitVector const targetStates;
+    std::optional<storm::storage::BitVector> const constraintStates;  // If empty, there is no constraint (which is different from an empty set)
     std::string const targetLabel, constraintLabel;
     std::optional<storm::OptimizationDirection> const dir;
 
