@@ -11,6 +11,7 @@
 #include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/environment/Environment.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -566,6 +567,64 @@ TEST(PolicyExtractor, UsesContinuationSchedulerForTruncatedInitialBelief) {
         for (auto const reward : rewards) {
             EXPECT_DOUBLE_EQ(reward, randomised ? 8.0 : 9.0);
         }
+    }
+}
+
+TEST(PolicyExtractor, RequiresObservationBasedCutoffSchedulers) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(0, 0, 0, false, true);
+    matrixBuilder.newRowGroup(0);
+    matrixBuilder.addNextValue(0, 0, 1.0);
+    matrixBuilder.addNextValue(1, 0, 1.0);
+    matrixBuilder.newRowGroup(2);
+    matrixBuilder.addNextValue(2, 1, 1.0);
+    matrixBuilder.addNextValue(3, 1, 1.0);
+    storm::models::sparse::StateLabeling labeling(2);
+    labeling.addLabel("init");
+    labeling.addLabelToState("init", 0);
+    storm::storage::sparse::ModelComponents<double> components(matrixBuilder.build(), std::move(labeling));
+    components.observabilityClasses = std::vector<uint32_t>{0, 0};
+    storm::models::sparse::Pomdp<double> pomdp(std::move(components), true);
+
+    auto beliefMdp = buildBeliefMdpWithReorderedCutoffChoices(true);
+    storm::storage::Scheduler<double> beliefScheduler(3);
+    beliefScheduler.setChoice(0, 0);
+    beliefScheduler.setChoice(1, 1);  // Select __sched_0 at the truncated initial belief.
+    beliefScheduler.setChoice(0, 2);
+    std::unordered_map<uint64_t, uint32_t> beliefStateToObservation{{1, 0}};
+
+    for (bool randomised : {false, true}) {
+        SCOPED_TRACE(randomised);
+        storm::storage::Scheduler<double> scheduler(2);
+        if (randomised) {
+            storm::storage::Distribution<double, uint_fast64_t> firstDistribution;
+            firstDistribution.addProbability(0, 0.25);
+            firstDistribution.addProbability(1, 0.75);
+            scheduler.setChoice(firstDistribution, 0);
+            storm::storage::Distribution<double, uint_fast64_t> secondDistribution;
+            secondDistribution.addProbability(0, 0.75);
+            secondDistribution.addProbability(1, 0.25);
+            scheduler.setChoice(secondDistribution, 1);
+        } else {
+            scheduler.setChoice(0, 0);
+            scheduler.setChoice(1, 1);
+        }
+        auto extractPolicy = [&]() {
+            std::optional<std::vector<storm::storage::Scheduler<double>>> approximationSchedulers({scheduler});
+            storm::pomdp::policy::PolicyExtractor<storm::models::sparse::Pomdp<double>, double, double> extractor(pomdp, beliefMdp, beliefStateToObservation,
+                                                                                                                  beliefScheduler, approximationSchedulers);
+            return extractor.exportPolicyAsFiniteStateController();
+        };
+        STORM_SILENT_EXPECT_THROW(extractPolicy(), storm::exceptions::IllegalArgumentException);
+
+        scheduler.setChoice(scheduler.getChoice(0), 1);
+        auto const fsc = extractPolicy();
+        auto const [distribution, continuationNode] = fsc.getActionDistributionAndSuccessorForObservationInNode(0, 0);
+        EXPECT_EQ(fsc.isDeterministic(), !randomised);
+        ASSERT_EQ(distribution.size(), randomised ? 2 : 1);
+        for (auto const& [action, probability] : scheduler.getChoice(0).getChoiceAsDistribution()) {
+            EXPECT_DOUBLE_EQ(distribution.getProbability(action), probability);
+        }
+        EXPECT_TRUE(fsc.hasOutputForObservationInNode(continuationNode, 0));
     }
 }
 

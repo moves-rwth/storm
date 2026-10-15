@@ -1,6 +1,7 @@
 #include "PolicyExtractor.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Model.h"
@@ -8,6 +9,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
+#include <algorithm>
 #include <charconv>
 #include <queue>
 #include <string_view>
@@ -118,9 +120,10 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
                         storm::exceptions::UnexpectedException,
                         "Cutoff scheduler label '" << cutoffChoiceLabel << "' does not refer to an available approximation scheduler.");
         if (!cutoffPolicyToFscNodeMap.contains(chosenCutoffPolicy)) {
-            // TODO extend for fm-policies
+            // TODO For finite-memory policies, create a node per scheduler memory state and preserve its memory updates.
             cutoffPolicyToFscNodeMap[chosenCutoffPolicy] = nextId;
-            cutoffPolicyToObservationMap.emplace(chosenCutoffPolicy, pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(chosenCutoffPolicy)));
+            cutoffPolicyToObservationMap.emplace(chosenCutoffPolicy,
+                                                 pomdpSchedulerToObservationBasedMap(pomdpApproximationSchedulers->at(chosenCutoffPolicy), 0));
             ++nextId;
         }
         auto const& dist = cutoffPolicyToObservationMap.at(chosenCutoffPolicy).at(beliefStateToObservationMap.at(cutoffBeliefState));
@@ -249,22 +252,31 @@ PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValue
 template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
 std::unordered_map<uint64_t, storm::storage::Distribution<PolicyValueType, uint64_t>>
 PolicyExtractor<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::pomdpSchedulerToObservationBasedMap(
-    storm::storage::Scheduler<typename PomdpModelType::ValueType> const& scheduler) const {
+    storm::storage::Scheduler<typename PomdpModelType::ValueType> const& scheduler, uint64_t memoryState) const {
     std::unordered_map<uint64_t, storm::storage::Distribution<PolicyValueType, uint64_t>> result;
 
     // Iterate all POMDP states and group by observation id.
     const uint64_t numStates = pomdp.getNumberOfStates();
+    std::vector<uint64_t> representativeStates(pomdp.getNrObservations(), numStates);
     for (uint64_t state = 0; state < numStates; ++state) {
         // Get the observation id for this state.
         uint64_t obs = pomdp.getObservation(state);
 
-        // If we've already built the distribution for this observation, skip.
-        if (result.contains(obs)) {
+        // Within a fixed scheduler memory state, a single FSC output must represent all states of this observation.
+        auto& representativeState = representativeStates[obs];
+        if (representativeState != numStates) {
+            STORM_LOG_THROW(std::ranges::equal(scheduler.getChoice(state, memoryState).getChoiceAsDistribution(),
+                                               scheduler.getChoice(representativeState, memoryState).getChoiceAsDistribution()),
+                            storm::exceptions::IllegalArgumentException,
+                            "Cut-off approximation schedulers must be observation-based, but states "
+                                << representativeState << " and " << state << " have different action distributions for observation " << obs
+                                << " in memory state " << memoryState << ".");
             continue;
         }
+        representativeState = state;
 
         // Build distribution from the scheduler choice for this state.
-        auto choice = scheduler.getChoice(state).template toValueType<PolicyValueType>();
+        auto choice = scheduler.getChoice(state, memoryState).template toValueType<PolicyValueType>();
         storm::storage::Distribution<PolicyValueType, uint64_t> dist = choice.getChoiceAsDistribution();
 
         result.emplace(obs, std::move(dist));
