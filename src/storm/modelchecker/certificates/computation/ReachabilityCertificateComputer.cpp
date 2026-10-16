@@ -39,6 +39,26 @@
 
 namespace storm::modelchecker {
 
+namespace {
+/*!
+ * Sets the rounding mode of the floating point environment and restores the previous one when going out of scope (also if an exception is thrown).
+ */
+class ScopedRoundingMode {
+   public:
+    explicit ScopedRoundingMode(int mode) : previousMode(std::fegetround()) {
+        std::fesetround(mode);
+    }
+    ~ScopedRoundingMode() {
+        std::fesetround(previousMode);
+    }
+    ScopedRoundingMode(ScopedRoundingMode const&) = delete;
+    ScopedRoundingMode& operator=(ScopedRoundingMode const&) = delete;
+
+   private:
+    int const previousMode;
+};
+}  // namespace
+
 template<typename ValueType>
 struct LowerUpperValueCertificateComputerReturnType {
     std::vector<ValueType> lowerValues;  /// Lower values for each state
@@ -466,12 +486,10 @@ class LowerUpperValueCertificateComputer {
             iiHelper.II(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),
                         optionalDir);  // TODO: relevant values?
         } else if (alg.type == AlgorithmType::FpRoundII) {
-            auto const oldRound = std::fegetround();
-            std::fesetround(FE_UPWARD);
+            ScopedRoundingMode const roundUpwards(FE_UPWARD);
             iiHelper.roundII(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),
                              storm::utility::convertNumber<VT>(alg.gamma), storm::utility::convertNumber<VT>(alg.delta),
                              optionalDir);  // TODO: relevant values?
-            std::fesetround(oldRound);
         } else {
             STORM_LOG_ASSERT(alg.type == AlgorithmType::FpSmoothII, "Unsupported algorithm.");
             iiHelper.smoothII(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),

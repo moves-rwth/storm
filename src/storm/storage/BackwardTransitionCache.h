@@ -10,7 +10,7 @@ class SparseMatrix;
 /*!
  * This class caches the backward transitions of a given forward transition matrix.
  * The forward transition matrix reference needs to remain valid throughout the lifetime of this cache.
- * The cache can be copied and moved, but the actual backward transitions are shared.
+ * The cache can be copied and moved (but not assigned), and the actual backward transitions are shared.
  * This means that if the matrix is computed in one of the copies, it is available at the other copies as well.
  * @tparam ValueType
  */
@@ -24,8 +24,9 @@ class BackwardTransitionCache {
     BackwardTransitionCache() = delete;
     BackwardTransitionCache(BackwardTransitionCache const&) = default;
     BackwardTransitionCache(BackwardTransitionCache&&) = default;
-    BackwardTransitionCache& operator=(BackwardTransitionCache const&) = default;
-    BackwardTransitionCache& operator=(BackwardTransitionCache&&) = default;
+    // The cache references the forward transition matrix and is thus not assignable.
+    BackwardTransitionCache& operator=(BackwardTransitionCache const&) = delete;
+    BackwardTransitionCache& operator=(BackwardTransitionCache&&) = delete;
 
     SparseMatrix<ValueType> const& get() const;
 
