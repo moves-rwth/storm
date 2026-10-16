@@ -65,7 +65,10 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> veri
  *
  * @param resolution Positive integer grid resolution (default 2).
  * @param useDynamic Select per-belief resolutions using dynamic triangulation (default false).
- * @param options Exploration settings. Size/time limits and clipping are not supported by discretization.
+ * @param options Exploration settings. Size/time limits, useClipping, and generatePolicy are rejected. cutZeroGap,
+ * buildChoiceLabeling, and explorationQueueOrder are forwarded to the belief model checker and honored as in unfolding.
+ * clippingResolutions is ignored because clipping is disabled.
+ * @return The bound, exploration completion status, and statistics; result.policy is unset.
  *
  * @code
  * auto result = storm::pomdp::api::verifyWithBeliefDiscretization(env, pomdp, formula, 10, true);
