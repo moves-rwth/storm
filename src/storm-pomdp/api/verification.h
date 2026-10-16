@@ -14,13 +14,13 @@ namespace storm::pomdp::api {
 /**
  * Approximates an unbounded reachability probability or expected reachability reward by unfolding the belief MDP.
  *
- * The model, formula, and options are left unchanged. Preparation canonicalizes the POMDP if needed (requiring choice labels),
+ * Preparation canonicalizes the POMDP if needed (requiring choice labels),
  * refines observations to identify targets, makes until-failure states absorbing, and computes frontier value bounds.
  * Exactly one initial state and an explicit min/max optimization direction are required. Only non-nested formulae without
  * thresholds are supported; the result is quantitative. Solver precision and arithmetic follow the supplied environment
  * and numeric types.
  *
- * The value is a lower bound for maximization and an upper bound for minimization. Without clipping, complete exploration
+ * The returned value is a lower bound for maximization and an upper bound for minimization. Without clipping, complete exploration
  * gives the unabstracted belief MDP value, subject to numerical model checking. Completion with clipping does not imply exactness.
  *
  * @param options All unfolding settings. Unset size/time limits mean unlimited exploration; no heuristic budget is selected.
