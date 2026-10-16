@@ -22,6 +22,8 @@ class POMDPSettings : public ModuleSettings {
 
     bool isExportToParametricSet() const;
     std::string getExportToParametricFilename() const;
+    bool isExportPolicySet() const;
+    std::string getExportPolicyFilename() const;
 
     bool isQualitativeReductionSet() const;
 

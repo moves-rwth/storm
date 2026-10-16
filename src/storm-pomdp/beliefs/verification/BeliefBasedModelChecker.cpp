@@ -5,11 +5,13 @@
 #include "storm-pomdp/beliefs/abstraction/RewardBoundedBeliefSplitter.h"
 #include "storm-pomdp/beliefs/exploration/BeliefExploration.h"
 #include "storm-pomdp/beliefs/exploration/BeliefMdpBuilder.h"
+#include "storm-pomdp/beliefs/policy/PolicyExtractor.h"
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm-pomdp/beliefs/verification/BeliefBasedModelCheckerOptions.h"
 #include "storm/api/verification.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/transformer/GoalStateMerger.h"
@@ -45,8 +47,9 @@ void validateRewardModelSelection(PropertyInformation const& propertyInformation
     }
 }
 
-template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType>
-BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType>::BeliefBasedModelChecker(PomdpModelType const& pomdp) : inputPomdp(pomdp) {
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::BeliefBasedModelChecker(PomdpModelType const& pomdp)
+    : inputPomdp(pomdp) {
     STORM_LOG_THROW(inputPomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "Belief-based model checking requires a canonic POMDP.");
 }
 
@@ -190,16 +193,29 @@ std::pair<std::shared_ptr<models::sparse::Mdp<BeliefMdpValueType>>, std::unorder
     return buildBeliefMdp(info, propertyInformation, computeCutOffValueMap);
 }
 
-template<typename PomdpModelType, typename BeliefType, typename BeliefMdpValueType, typename AbstractionType,
+template<typename PomdpModelType, typename BeliefType, typename BeliefMdpValueType, typename PolicyValueType, typename AbstractionType,
          typename InfoType = StandardExplorationInformation<BeliefMdpValueType, BeliefType>>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> checkUnfoldOrDiscretize(
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkUnfoldOrDiscretize(
     storm::Environment const& env, PomdpModelType const& pomdp, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
     storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, storm::OptionalRef<AbstractionType> abstraction = {}) {
     BeliefBasedModelCheckerStatistics statistics;
+    std::optional<storm::pomdp::policy::ObservationBasedFiniteStateController<PolicyValueType>> generatedPolicy;
     STORM_LOG_ASSERT(propertyInformation.kind == PropertyInformation::Kind::ReachabilityProbability ||
                          propertyInformation.kind == PropertyInformation::Kind::ExpectedTotalReachabilityReward,
                      "Unexpected kind of property.");
+
+    if (options.generatePolicy) {
+        STORM_LOG_THROW(valueBounds.preprocessingBounds.has_value(), storm::exceptions::IllegalArgumentException,
+                        "Policy generation requires preprocessing bounds with continuation schedulers.");
+        auto const& bounds = *valueBounds.preprocessingBounds;
+        auto const& cutOffBounds = storm::solver::minimize(propertyInformation.dir) ? bounds.upper : bounds.lower;
+        auto const& cutOffSchedulers = storm::solver::minimize(propertyInformation.dir) ? bounds.upperSchedulers : bounds.lowerSchedulers;
+        STORM_LOG_THROW(cutOffSchedulers.size() == cutOffBounds.size(), storm::exceptions::IllegalArgumentException,
+                        "Policy generation requires one continuation scheduler per " << (storm::solver::minimize(propertyInformation.dir) ? "upper" : "lower")
+                                                                                     << " cut-off bound, but received " << cutOffSchedulers.size()
+                                                                                     << " schedulers for " << cutOffBounds.size() << " bounds.");
+    }
 
     STORM_LOG_INFO("Exploring the belief space.");
 
@@ -209,7 +225,7 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType> checkUnfoldOrDiscretize(
     BeliefExplorationType exploration(pomdp);
 
     auto info = exploration.template initializeExploration<InfoType>(pomdp.getNrObservations(), options.explorationQueueOrder);
-    info.generateChoiceLabeling = options.buildChoiceLabeling;
+    info.generateChoiceLabeling = options.buildChoiceLabeling || options.generatePolicy;
 
     // Determine terminationCallback based on options
     typename BeliefExplorationType::TerminationCallback terminationCallback =
@@ -279,7 +295,8 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType> checkUnfoldOrDiscretize(
     // Finally, perform model checking on the belief MDP.
     storm::utility::Stopwatch swCheck(true);
     auto formula = createFormulaForBeliefMdp(propertyInformation);
-    storm::modelchecker::CheckTask<storm::logic::Formula, BeliefMdpValueType> task(*formula, true);
+    storm::modelchecker::CheckTask<storm::logic::Formula, BeliefMdpValueType> task(*formula, !options.generatePolicy);
+    task.setProduceSchedulers(options.generatePolicy);
     std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<BeliefMdpValueType>(env, beliefMdp, task));
     swCheck.stop();
     statistics.beliefMdpAnalysisTimeMilliseconds = swCheck.getTimeInMilliseconds();
@@ -290,11 +307,27 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType> checkUnfoldOrDiscretize(
     STORM_LOG_ASSERT(res->isExplicitQuantitativeCheckResult(), "Model checking of belief MDP did not return result of expected type.");
     STORM_LOG_ASSERT(beliefMdp->getInitialStates().getNumberOfSetBits() == 1, "Unexpected number of initial states for belief Mdp.");
     auto const initState = beliefMdp->getInitialStates().getNextSetIndex(0);
-    return {res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>()[initState], !earlyExplorationStop, std::move(statistics)};
+    if (options.generatePolicy) {
+        auto const& quantitativeResult = res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>();
+        STORM_LOG_THROW(beliefMdp->hasChoiceLabeling(), storm::exceptions::UnexpectedException, "Policy extraction requires choice labels in the belief MDP.");
+        STORM_LOG_THROW(quantitativeResult.hasScheduler(), storm::exceptions::UnexpectedException,
+                        "Model checking of the belief MDP did not produce a scheduler for policy extraction.");
+        std::unordered_map<uint64_t, uint32_t> beliefStateToObservationMap;
+        for (auto const& [state, beliefId] : stateToBeliefMap) {
+            beliefStateToObservationMap.emplace(state, info.discoveredBeliefs.getBeliefFromId(beliefId).observation());
+        }
+        std::optional<std::vector<storm::storage::Scheduler<typename PomdpModelType::ValueType>>> approximationSchedulers =
+            propertyInformation.dir == storm::OptimizationDirection::Minimize ? valueBounds.preprocessingBounds->upperSchedulers
+                                                                              : valueBounds.preprocessingBounds->lowerSchedulers;
+        policy::PolicyExtractor<PomdpModelType, typename BeliefType::ValueType, BeliefMdpValueType, PolicyValueType> extractor(
+            pomdp, *beliefMdp, beliefStateToObservationMap, quantitativeResult.getScheduler(), approximationSchedulers);
+        generatedPolicy = extractor.exportPolicyAsFiniteStateController();
+    }
+    return {res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>()[initState], !earlyExplorationStop, std::move(statistics), std::move(generatedPolicy)};
 }
 
-template<typename PomdpModelType, typename BeliefType, typename BeliefMdpValueType>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> checkRewardAwareUnfoldOrDiscretize(
+template<typename PomdpModelType, typename BeliefType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType> checkRewardAwareUnfoldOrDiscretize(
     storm::Environment const& env, PomdpModelType const& pomdp, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
     storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds,
@@ -399,62 +432,71 @@ BeliefBasedModelCheckerResult<BeliefMdpValueType> checkRewardAwareUnfoldOrDiscre
     STORM_LOG_ASSERT(res->isExplicitQuantitativeCheckResult(), "Model checking of belief MDP did not return result of expected type.");
     STORM_LOG_ASSERT(processedMdp->getInitialStates().getNumberOfSetBits() == 1, "Unexpected number of initial states for (processed) belief Mdp.");
     auto const initState = processedMdp->getInitialStates().getNextSetIndex(0);
-    return {res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>()[initState], !earlyExplorationStop, std::move(statistics)};
+    return {res->asExplicitQuantitativeCheckResult<BeliefMdpValueType>()[initState], !earlyExplorationStop, std::move(statistics), std::nullopt};
 }
 
-template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType>::checkUnfold(
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType>
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::checkUnfold(
     storm::Environment const& env, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
     storm::pomdp::storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds) {
+    STORM_LOG_THROW(!options.generatePolicy || !options.cutZeroGap, storm::exceptions::NotSupportedException,
+                    "Zero-gap cutting is not supported for policy generation because cut-off beliefs do not retain a continuation policy.");
     if (options.useClipping) {
-        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, NoAbstractionType,
+        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType, NoAbstractionType,
                                        ClippingExplorationInformation<BeliefMdpValueType, Belief<BeliefValueType>>>(env, inputPomdp, propertyInformation,
                                                                                                                     options, valueBounds);
     } else {
-        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, NoAbstractionType>(env, inputPomdp, propertyInformation,
-                                                                                                                       options, valueBounds);
+        return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType, NoAbstractionType>(
+            env, inputPomdp, propertyInformation, options, valueBounds);
     }
 }
 
-template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType>::checkDiscretize(
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType>
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::checkDiscretize(
     storm::Environment const& env, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options, uint64_t resolution, bool useDynamic,
     storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds) {
     STORM_LOG_THROW(options.getTerminationCriterion() == NONE, storm::exceptions::NotSupportedException,
                     "Belief discretization does not support exploration size or time limits.");
+    STORM_LOG_THROW(!options.generatePolicy, storm::exceptions::NotSupportedException, "Policy generation is not supported for belief MDP discretization.");
     auto mode = useDynamic ? FreudenthalTriangulationMode::Dynamic : FreudenthalTriangulationMode::Static;
     FreudenthalTriangulationBeliefAbstraction<Belief<BeliefValueType>> abstraction(storm::utility::convertNumber<BeliefValueType>(resolution), mode);
-    return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType>(env, inputPomdp, propertyInformation, options, valueBounds,
-                                                                                                storm::OptionalRef(abstraction));
+    return checkUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(env, inputPomdp, propertyInformation, options,
+                                                                                                                 valueBounds, storm::OptionalRef(abstraction));
 }
 
-template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType>::checkRewardAwareUnfold(
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType>
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::checkRewardAwareUnfold(
     storm::Environment const& env, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options,
     storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames) {
     validateRewardModelSelection(propertyInformation, relevantRewardModelNames);
+    STORM_LOG_THROW(!options.generatePolicy, storm::exceptions::NotSupportedException, "Policy generation is not supported for reward-aware exploration.");
     RewardBoundedBeliefSplitter<BeliefMdpValueType, PomdpModelType, Belief<BeliefValueType>> rewardBoundedBeliefSplitter(inputPomdp);
     rewardBoundedBeliefSplitter.setRewardModels(relevantRewardModelNames);
-    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType>(env, inputPomdp, propertyInformation, options,
-                                                                                                           valueBounds, rewardBoundedBeliefSplitter);
+    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(
+        env, inputPomdp, propertyInformation, options, valueBounds, rewardBoundedBeliefSplitter);
 }
 
-template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType>
-BeliefBasedModelCheckerResult<BeliefMdpValueType> BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType>::checkRewardAwareDiscretize(
+template<typename PomdpModelType, typename BeliefValueType, typename BeliefMdpValueType, typename PolicyValueType>
+BeliefBasedModelCheckerResult<BeliefMdpValueType, PolicyValueType>
+BeliefBasedModelChecker<PomdpModelType, BeliefValueType, BeliefMdpValueType, PolicyValueType>::checkRewardAwareDiscretize(
     storm::Environment const& env, PropertyInformation const& propertyInformation,
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options, uint64_t resolution, bool useDynamic,
     storage::BeliefExplorationBounds<typename PomdpModelType::ValueType> const& valueBounds, std::vector<std::string> const& relevantRewardModelNames) {
     STORM_LOG_THROW(options.getTerminationCriterion() == NONE, storm::exceptions::NotSupportedException,
                     "Belief discretization does not support exploration size or time limits.");
+    STORM_LOG_THROW(!options.generatePolicy, storm::exceptions::NotSupportedException, "Policy generation is not supported for reward-aware exploration.");
     validateRewardModelSelection(propertyInformation, relevantRewardModelNames);
     auto mode = useDynamic ? FreudenthalTriangulationMode::Dynamic : FreudenthalTriangulationMode::Static;
     FreudenthalTriangulationBeliefAbstraction<Belief<BeliefValueType>> abstraction(storm::utility::convertNumber<BeliefValueType>(resolution), mode);
     RewardBoundedBeliefSplitter<BeliefMdpValueType, PomdpModelType, Belief<BeliefValueType>> rewardBoundedBeliefSplitter(inputPomdp);
     rewardBoundedBeliefSplitter.setRewardModels(relevantRewardModelNames);
-    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType>(
+    return checkRewardAwareUnfoldOrDiscretize<PomdpModelType, Belief<BeliefValueType>, BeliefMdpValueType, PolicyValueType>(
         env, inputPomdp, propertyInformation, options, valueBounds, rewardBoundedBeliefSplitter, abstraction);
 }
 
@@ -463,6 +505,7 @@ template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<double>, sto
 template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>, storm::RationalNumber, storm::RationalNumber>;
 template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>, storm::RationalNumber, double>;
 template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<double>, double, storm::RationalNumber>;
+template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<double>, double, double, storm::RationalNumber>;
 // Currently we don't consider this combination as having rational numbers in models, but floats in beliefs does not really help us
 //  template class BeliefBasedModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>, double, storm::RationalNumber>;
 }  // namespace storm::pomdp::beliefs
