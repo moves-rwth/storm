@@ -40,6 +40,10 @@ void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::l
                     "Parameter synthesis requires exactly one initial state.");
     STORM_LOG_THROW((formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula()) && formula->asOperatorFormula().hasBound(),
                     storm::exceptions::NotSupportedException, "Parameter synthesis requires a bounded probability or reward operator formula.");
+    if (regionEngine && *regionEngine != Engine::RobustParameterLifting) {
+        STORM_LOG_THROW(storm::utility::parameterlifting::validateParameterLiftingSound(*model, *formula, *regionEngine),
+                        storm::exceptions::NotSupportedException, "Could not establish that parameter lifting is sound for this model and formula.");
+    }
     if (regionEngine == Engine::RobustParameterLifting) {
         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Robust PLA supports DTMCs only.");
     }
