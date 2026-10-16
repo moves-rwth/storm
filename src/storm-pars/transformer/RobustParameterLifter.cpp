@@ -202,7 +202,8 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
         exprBounds = exprBounds && expressionManager->rational(0) <= var && var <= expressionManager->rational(1);
     }
 
-    STORM_LOG_WARN_COND(smtSolver->setTimeout(50), "The SMT solver does not support timeouts, checking the region may take long.");
+    bool const timeoutSet = smtSolver->setTimeout(50);
+    STORM_LOG_WARN_COND(timeoutSet, "The SMT solver does not support timeouts, checking the region may take long.");
 
     smtSolver->add(exprBounds);
     smtSolver->add(expression);
