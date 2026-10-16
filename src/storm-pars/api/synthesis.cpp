@@ -64,12 +64,13 @@ void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::l
 
 std::pair<Region, GraphStatus> resolveRegion(Model const& model, std::optional<Region> const& region, std::optional<Coefficient> const& regionBound,
                                              bool requireGraphPreservation) {
-    STORM_LOG_THROW(!region || !regionBound, storm::exceptions::InvalidArgumentException, "Provide either a region or a region bound, not both.");
+    STORM_LOG_THROW(region.has_value() != regionBound.has_value(), storm::exceptions::InvalidArgumentException,
+                    "Provide exactly one of region or region bound.");
     auto const parameters = getModelParameters<storm::RationalFunction>(model);
     Region resolved;
     if (region) {
         resolved = *region;
-    } else if (regionBound) {
+    } else {
         Coefficient const one = storm::utility::one<Coefficient>();
         STORM_LOG_THROW(*regionBound >= storm::utility::zero<Coefficient>() && *regionBound <= one / 2, storm::exceptions::InvalidArgumentException,
                         "The region bound must be between 0 and 1/2, inclusive.");
@@ -79,8 +80,6 @@ std::pair<Region, GraphStatus> resolveRegion(Model const& model, std::optional<R
             upper.emplace(parameter, one - *regionBound);
         }
         resolved = Region(std::move(lower), std::move(upper));
-    } else {
-        STORM_LOG_THROW(parameters.empty(), storm::exceptions::InvalidArgumentException, "Provide a region or a region bound for a model with parameters.");
     }
     for (auto const& variable : parameters) {
         STORM_LOG_THROW(resolved.getVariables().count(variable), storm::exceptions::InvalidArgumentException,
@@ -154,10 +153,8 @@ Result<ConstantType> validateWitness(storm::Environment const& env, Model const&
     return {Status::ExistsSat, storm::pars::FeasibilityResult<ConstantType>{std::move(value), std::move(valuation)}};
 }
 
-}  // namespace
-
-bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
-            std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, Engine engine) {
+bool verifyImpl(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+                std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, Engine engine) {
     validateInput(model, formula, engine);
     auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, engine != Engine::RobustParameterLifting);
     auto normalized = normalizedFormula(*model, *formula);
@@ -167,9 +164,9 @@ bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, 
     return verifyRegion(env, settings, consideredRegion);
 }
 
-Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
-                                std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, storm::pars::FeasibilityMethod method,
-                                Engine regionEngine) {
+Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_ptr<Model> const& model,
+                                    std::shared_ptr<storm::logic::Formula const> const& formula, std::optional<Region> const& region,
+                                    std::optional<Coefficient> const& regionBound, storm::pars::FeasibilityMethod method, Engine regionEngine) {
     try {
         switch (method) {
             case storm::pars::FeasibilityMethod::PLA: {
@@ -239,6 +236,28 @@ Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<M
     } catch (storm::exceptions::AbortException const&) {
         return {};
     }
+}
+
+}  // namespace
+
+bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+            Region const& region, Engine engine) {
+    return verifyImpl(env, model, formula, region, std::nullopt, engine);
+}
+
+bool verify(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+            Coefficient const& regionBound, Engine engine) {
+    return verifyImpl(env, model, formula, std::nullopt, regionBound, engine);
+}
+
+Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+                                Region const& region, storm::pars::FeasibilityMethod method, Engine regionEngine) {
+    return checkFeasibilityImpl(env, model, formula, region, std::nullopt, method, regionEngine);
+}
+
+Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
+                                Coefficient const& regionBound, storm::pars::FeasibilityMethod method, Engine regionEngine) {
+    return checkFeasibilityImpl(env, model, formula, std::nullopt, regionBound, method, regionEngine);
 }
 
 }  // namespace storm::api

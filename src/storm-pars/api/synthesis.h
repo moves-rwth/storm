@@ -14,13 +14,12 @@
 namespace storm::pars {
 
 /*!
- * Adds a synthesis decision to the existing FeasibilityResult witness (valuation and value).
- * The status is ExistsSat, AllViolated, or Unknown. Only ExistsSat results have a witness.
+ * Feasibility decision: ExistsSat (witness found), AllViolated (no satisfying valuation), or Unknown.
  */
 template<typename ConstantType>
 struct FeasibilitySynthesisResult {
     storm::modelchecker::RegionResult status = storm::modelchecker::RegionResult::Unknown;
-    /// Present exactly when status is ExistsSat. The witness is checked at ConstantType precision.
+    /// Valuation and value, present only for ExistsSat.
     std::optional<FeasibilityResult<ConstantType>> witness;
 };
 
@@ -29,39 +28,56 @@ struct FeasibilitySynthesisResult {
 namespace storm::api {
 
 /*!
- * Checks whether every well-defined parameter valuation in the region satisfies the bounded probability or reward formula.
- * Models must be sparse pDTMCs or pMDPs with exactly one initial state.
- *
- * Provide either region or regionBound. A regionBound b constructs the closed interval [b, 1-b] for every model
- * parameter, including reward parameters; b must be in [0, 1/2]. No model-specific bounds are inferred.
- * Both inputs together are rejected. Both may be omitted only for models without parameters.
- * The region must cover all model parameters and meet the selected engine's preconditions.
- * Checking arithmetic is selected by the engine.
- * Unsupported input throws.
+ * Checks a bounded probability or reward formula for all well-defined valuations in the region.
+ * Requires a sparse DTMC or MDP with one initial state.
+ * The region must cover all model parameters and satisfy the engine's requirements.
+ * Throws for unsupported input.
  */
 bool verify(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
-            std::shared_ptr<storm::logic::Formula const> const& formula,
-            std::optional<storm::storage::ParameterRegion<storm::RationalFunction>> const& region = std::nullopt,
-            std::optional<storm::RationalFunctionCoefficient> const& regionBound = std::nullopt,
+            std::shared_ptr<storm::logic::Formula const> const& formula, storm::storage::ParameterRegion<storm::RationalFunction> const& region,
             storm::modelchecker::RegionCheckEngine engine = storm::modelchecker::RegionCheckEngine::ParameterLifting);
 
 /*!
- * Searches for a well-defined parameter valuation in the region satisfying the bounded probability or reward formula.
- * Region arguments and validation follow verify(). For MDPs, scheduler quantification follows the formula:
- * - Pmax>=0.8 [F "target"] (PLA only) asks for a valuation and a scheduler reaching "target" with probability at least 0.8.
- * - Pmin>=0.8 [F "target"] asks for a valuation under which every scheduler reaches "target" with probability at least 0.8.
- * Without explicit min/max, the scheduler requirement is universal: P>= uses Pmin, and P<= uses Pmax.
- * SCP supports only universal scheduler requirements on MDPs: Pmin/Rmin lower bounds and Pmax/Rmax upper bounds.
- *
- * Returns ExistsSat with a witness, AllViolated when the absence of a satisfying valuation is established,
- * or Unknown when no decision is obtained. Unsupported input throws.
- * Witness values are checked and returned as doubles.
+ * Checks a bounded probability or reward formula for all well-defined valuations in the region.
+ * Requires a sparse DTMC or MDP with one initial state.
+ * Uses [regionBound, 1-regionBound] for every parameter. regionBound must be in [0, 1/2].
+ * The region must satisfy the engine's requirements.
+ * Throws for unsupported input.
+ */
+bool verify(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+            std::shared_ptr<storm::logic::Formula const> const& formula, storm::RationalFunctionCoefficient const& regionBound,
+            storm::modelchecker::RegionCheckEngine engine = storm::modelchecker::RegionCheckEngine::ParameterLifting);
+
+/*!
+ * Finds a well-defined valuation in the region satisfying a bounded probability or reward formula.
+ * Requires a sparse DTMC or MDP with one initial state.
+ * The region must cover all model parameters and satisfy the method's and engine's requirements.
+ * regionEngine applies only to PLA.
+ * On MDPs, Pmax>=0.8 [F "target"] asks for some scheduler to reach "target" with probability at least 0.8 (PLA only).
+ * Pmin>=0.8 [F "target"] requires this of every scheduler.
+ * Without min/max, bounds apply to every scheduler. SCP requires this interpretation.
+ * Throws for unsupported input.
  */
 storm::pars::FeasibilitySynthesisResult<double> checkFeasibility(
     storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
-    std::shared_ptr<storm::logic::Formula const> const& formula,
-    std::optional<storm::storage::ParameterRegion<storm::RationalFunction>> const& region = std::nullopt,
-    std::optional<storm::RationalFunctionCoefficient> const& regionBound = std::nullopt,
+    std::shared_ptr<storm::logic::Formula const> const& formula, storm::storage::ParameterRegion<storm::RationalFunction> const& region,
+    storm::pars::FeasibilityMethod method = storm::pars::FeasibilityMethod::PLA,
+    storm::modelchecker::RegionCheckEngine regionEngine = storm::modelchecker::RegionCheckEngine::ParameterLifting);
+
+/*!
+ * Finds a well-defined valuation in the region satisfying a bounded probability or reward formula.
+ * Requires a sparse DTMC or MDP with one initial state.
+ * Uses [regionBound, 1-regionBound] for every parameter. regionBound must be in [0, 1/2].
+ * The region must satisfy the method's and engine's requirements.
+ * regionEngine applies only to PLA.
+ * On MDPs, Pmax>=0.8 [F "target"] asks for some scheduler to reach "target" with probability at least 0.8 (PLA only).
+ * Pmin>=0.8 [F "target"] requires this of every scheduler.
+ * Without min/max, bounds apply to every scheduler. SCP requires this interpretation.
+ * Throws for unsupported input.
+ */
+storm::pars::FeasibilitySynthesisResult<double> checkFeasibility(
+    storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const& model,
+    std::shared_ptr<storm::logic::Formula const> const& formula, storm::RationalFunctionCoefficient const& regionBound,
     storm::pars::FeasibilityMethod method = storm::pars::FeasibilityMethod::PLA,
     storm::modelchecker::RegionCheckEngine regionEngine = storm::modelchecker::RegionCheckEngine::ParameterLifting);
 
