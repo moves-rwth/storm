@@ -21,9 +21,9 @@ IntervalIterationHelper<ValueType, TrivialRowGrouping>::IntervalIterationHelper(
 template<typename ValueType, OptimizationDirection Dir, bool Smooth, bool RoundingTowardsInf>
 class IIBackend {
    public:
-    IIBackend(ValueType const& gamma, ValueType const& delta) : gamma(gamma), delta(delta) {}
-    IIBackend() : gamma(0.0), delta(0.0) {
-        STORM_LOG_ASSERT(!Smooth, "Gamma and delta must be set for smooth interval iteration.");
+    IIBackend(ValueType const& gamma) : gamma(gamma) {}
+    IIBackend() : gamma(0.0) {
+        STORM_LOG_ASSERT(!Smooth, "Gamma must be set for smooth interval iteration.");
     }
 
     void startNewIteration() {}
@@ -90,7 +90,7 @@ class IIBackend {
    private:
     storm::utility::Extremum<RoundingTowardsInf ? storm::solver::invert(Dir) : Dir, ValueType> xBest;
     storm::utility::Extremum<Dir, ValueType> yBest;
-    ValueType const gamma, delta;
+    ValueType const gamma;
 };
 
 template<typename ValueType, bool RoundingTowardsInf>
@@ -131,10 +131,10 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::II(std::pai
                                                                         OffsetType const& offsets, uint64_t& numIterations, bool relative,
                                                                         ValueType const& precision,
                                                                         std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback,
-                                                                        std::optional<storm::storage::BitVector> const& relevantValues, ValueType const& gamma,
-                                                                        ValueType const& delta) const {
+                                                                        std::optional<storm::storage::BitVector> const& relevantValues,
+                                                                        ValueType const& gamma) const {
     SolverStatus status{SolverStatus::InProgress};
-    IIBackend<ValueType, Dir, Smooth, RoundingTowardsInf> backend(gamma, delta);
+    IIBackend<ValueType, Dir, Smooth, RoundingTowardsInf> backend(gamma);
     uint64_t convergenceCheckState = 0;
     std::function<void()> getNextConvergenceCheckState;
     if (relevantValues) {
@@ -175,7 +175,7 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::roundII(std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy,
                                                                              std::pair<std::vector<ValueType>, std::vector<ValueType>> const& offsets,
                                                                              uint64_t& numIterations, bool relative, ValueType const& precision,
-                                                                             ValueType const& gamma, ValueType const& delta,
+                                                                             ValueType const& gamma, [[maybe_unused]] ValueType const& delta,
                                                                              std::optional<storm::OptimizationDirection> const& dir,
                                                                              std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback,
                                                                              std::optional<storm::storage::BitVector> const& relevantValues) const {
@@ -190,10 +190,10 @@ SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::roundII(std
     } else {
         if (!dir.has_value() || maximize(*dir)) {
             return II<OptimizationDirection::Maximize, decltype(offsets), true, true>(xy, offsets, numIterations, relative, precision, iterationCallback,
-                                                                                      relevantValues, gamma, delta);
+                                                                                      relevantValues, gamma);
         } else {
             return II<OptimizationDirection::Minimize, decltype(offsets), true, true>(xy, offsets, numIterations, relative, precision, iterationCallback,
-                                                                                      relevantValues, gamma, delta);
+                                                                                      relevantValues, gamma);
         }
     }
 }
@@ -202,16 +202,16 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus IntervalIterationHelper<ValueType, TrivialRowGrouping>::smoothII(std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy,
                                                                               std::pair<std::vector<ValueType>, std::vector<ValueType>> const& offsets,
                                                                               uint64_t& numIterations, bool relative, ValueType const& precision,
-                                                                              ValueType const& gamma, ValueType const& delta,
+                                                                              ValueType const& gamma, [[maybe_unused]] ValueType const& delta,
                                                                               std::optional<storm::OptimizationDirection> const& dir,
                                                                               std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback,
                                                                               std::optional<storm::storage::BitVector> const& relevantValues) const {
     if (!dir.has_value() || maximize(*dir)) {
         return II<OptimizationDirection::Maximize, decltype(offsets), true>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues,
-                                                                            gamma, delta);
+                                                                            gamma);
     } else {
         return II<OptimizationDirection::Minimize, decltype(offsets), true>(xy, offsets, numIterations, relative, precision, iterationCallback, relevantValues,
-                                                                            gamma, delta);
+                                                                            gamma);
     }
 }
 

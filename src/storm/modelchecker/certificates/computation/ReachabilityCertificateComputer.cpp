@@ -467,15 +467,6 @@ class LowerUpperValueCertificateComputer {
             };
             invertVector(subsystemData.operands.first);
             invertVector(subsystemData.offsets.first);
-            //            auto increaseVector = [](auto& vector) {
-            //                for (auto& value : vector) {
-            //                    value = std::nextafter(value, +storm::utility::infinity<VT>());
-            //                }
-            //            };
-            //            increaseVector(subsystemData.operands.first);
-            //            increaseVector(subsystemData.operands.second);
-            //            increaseVector(subsystemData.offsets.first);
-            //            increaseVector(subsystemData.offsets.second);
         }
 
         auto viOp = std::make_shared<storm::solver::helper::ValueIterationOperator<VT, !Nondeterministic>>();
@@ -483,18 +474,15 @@ class LowerUpperValueCertificateComputer {
         storm::solver::helper::IntervalIterationHelper<VT, !Nondeterministic> iiHelper(viOp);
         uint64_t numIterations = 0;
         if (alg.type == AlgorithmType::FpII) {
-            iiHelper.II(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),
-                        optionalDir);  // TODO: relevant values?
+            iiHelper.II(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision), optionalDir);
         } else if (alg.type == AlgorithmType::FpRoundII) {
             ScopedRoundingMode const roundUpwards(FE_UPWARD);
             iiHelper.roundII(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),
-                             storm::utility::convertNumber<VT>(alg.gamma), storm::utility::convertNumber<VT>(alg.delta),
-                             optionalDir);  // TODO: relevant values?
+                             storm::utility::convertNumber<VT>(alg.gamma), storm::utility::convertNumber<VT>(alg.delta), optionalDir);
         } else {
             STORM_LOG_ASSERT(alg.type == AlgorithmType::FpSmoothII, "Unsupported algorithm.");
             iiHelper.smoothII(subsystemData.operands, subsystemData.offsets, numIterations, relative, storm::utility::convertNumber<VT>(precision),
-                              storm::utility::convertNumber<VT>(alg.gamma), storm::utility::convertNumber<VT>(alg.delta),
-                              optionalDir);  // TODO: relevant values?
+                              storm::utility::convertNumber<VT>(alg.gamma), storm::utility::convertNumber<VT>(alg.delta), optionalDir);
         }
         setGlobalValuesFromSubsystem<VT>(subsystemStates, subsystemData, alg.type == AlgorithmType::FpRoundII);
     }
@@ -543,7 +531,6 @@ class LowerUpperValueCertificateComputer {
                 solver->setInitialScheduler(std::move(initSched));
             }
             solver->setRequirementsChecked(true);
-            // TODO: relevant values?
             solver->solveEquations(env, Dir, subsystemData.operands, subsystemData.offsets);
         } else {
             auto solverFactory = storm::solver::GeneralLinearEquationSolverFactory<VT>();
@@ -555,7 +542,6 @@ class LowerUpperValueCertificateComputer {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException,
                             "Unmet requirements for linear equation solver: " << req.getEnabledRequirementsAsString() << ".");
             auto solver = solverFactory.create(env, std::move(subsystemData.transitions));
-            // TODO: relevant values?
             solver->solveEquations(env, subsystemData.operands, subsystemData.offsets);
         }
         setGlobalValuesFromSubsystem<VT>(subsystemStates, subsystemData, false);
