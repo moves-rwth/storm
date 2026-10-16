@@ -1,7 +1,6 @@
 #include "storm-pomdp/api/verification.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/beliefs/verification/BeliefBasedModelChecker.h"
@@ -114,31 +113,6 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfol
 }
 
 template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(storm::Environment const& env,
-                                                                                     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp,
-                                                                                     storm::logic::Formula const& formula, uint64_t maxExplorationSize) {
-    beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> effectiveOptions;
-    effectiveOptions.maxExplorationSize = maxExplorationSize;
-    return verifyWithBeliefUnfolding<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, pomdp, formula, effectiveOptions);
-}
-
-template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithHeuristicBeliefUnfolding(
-    storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
-    beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
-    STORM_LOG_THROW(!options.maxExplorationSize.has_value(), storm::exceptions::IllegalArgumentException,
-                    "The heuristic unfolding wrapper requires options.maxExplorationSize to be unset. Use verifyWithBeliefUnfolding for an explicit budget.");
-    auto effectiveOptions = options;
-    auto prepared = prepareBeliefVerification(pomdp, formula, effectiveOptions);
-    auto const states = prepared.pomdp->getNumberOfStates();
-    auto const maxHiddenStates = prepared.pomdp->getMaxNrStatesWithSameObservation();
-    STORM_LOG_THROW(maxHiddenStates > 0 && states <= std::numeric_limits<uint64_t>::max() / maxHiddenStates, storm::exceptions::IllegalArgumentException,
-                    "The heuristic unfolding budget exceeds the supported size range.");
-    effectiveOptions.maxExplorationSize = states * maxHiddenStates;
-    return unfoldPrepared<PomdpValueType, BeliefValueType, BeliefMdpValueType>(env, prepared, effectiveOptions);
-}
-
-template<typename PomdpValueType, typename BeliefValueType, typename BeliefMdpValueType>
 beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscretization(
     storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula, uint64_t resolution,
     bool useDynamic, beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options) {
@@ -156,22 +130,11 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefDiscr
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<double, double, double>(
     storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
     beliefs::BeliefBasedModelCheckerOptions<double> const&);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<double, double, double>(storm::Environment const&,
-                                                                                                          storm::models::sparse::Pomdp<double> const&,
-                                                                                                          storm::logic::Formula const&, uint64_t);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithHeuristicBeliefUnfolding<double, double, double>(
-    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
-    beliefs::BeliefBasedModelCheckerOptions<double> const&);
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefDiscretization<double, double, double>(
     storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&, uint64_t, bool,
     beliefs::BeliefBasedModelCheckerOptions<double> const&);
 
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<double, storm::RationalNumber, double>(
-    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
-    beliefs::BeliefBasedModelCheckerOptions<double> const&);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<double, storm::RationalNumber, double>(
-    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&, uint64_t);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithHeuristicBeliefUnfolding<double, storm::RationalNumber, double>(
     storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
     beliefs::BeliefBasedModelCheckerOptions<double> const&);
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefDiscretization<double, storm::RationalNumber, double>(
@@ -183,14 +146,6 @@ verifyWithBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, storm::R
     storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&,
     beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
 template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber>
-verifyWithBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, storm::RationalNumber>(storm::Environment const&,
-                                                                                               storm::models::sparse::Pomdp<storm::RationalNumber> const&,
-                                                                                               storm::logic::Formula const&, uint64_t);
-template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber>
-verifyWithHeuristicBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, storm::RationalNumber>(
-    storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&,
-    beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
-template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber>
 verifyWithBeliefDiscretization<storm::RationalNumber, storm::RationalNumber, storm::RationalNumber>(
     storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&, uint64_t, bool,
     beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
@@ -198,21 +153,11 @@ verifyWithBeliefDiscretization<storm::RationalNumber, storm::RationalNumber, sto
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, double>(
     storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&,
     beliefs::BeliefBasedModelCheckerOptions<double> const&);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, double>(
-    storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&, uint64_t);
-template beliefs::BeliefBasedModelCheckerResult<double> verifyWithHeuristicBeliefUnfolding<storm::RationalNumber, storm::RationalNumber, double>(
-    storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&,
-    beliefs::BeliefBasedModelCheckerOptions<double> const&);
 template beliefs::BeliefBasedModelCheckerResult<double> verifyWithBeliefDiscretization<storm::RationalNumber, storm::RationalNumber, double>(
     storm::Environment const&, storm::models::sparse::Pomdp<storm::RationalNumber> const&, storm::logic::Formula const&, uint64_t, bool,
     beliefs::BeliefBasedModelCheckerOptions<double> const&);
 
 template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWithBeliefUnfolding<double, double, storm::RationalNumber>(
-    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
-    beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
-template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWithBeliefUnfolding<double, double, storm::RationalNumber>(
-    storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&, uint64_t);
-template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWithHeuristicBeliefUnfolding<double, double, storm::RationalNumber>(
     storm::Environment const&, storm::models::sparse::Pomdp<double> const&, storm::logic::Formula const&,
     beliefs::BeliefBasedModelCheckerOptions<storm::RationalNumber> const&);
 template beliefs::BeliefBasedModelCheckerResult<storm::RationalNumber> verifyWithBeliefDiscretization<double, double, storm::RationalNumber>(

@@ -56,59 +56,6 @@ beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfol
 }
 
 /**
- * Runs unfolding with default options and the supplied discovered-belief budget.
- *
- * Uses FIFO exploration and builds choice labels. Clipping and zero-gap cuts are disabled, and there is no exploration
- * time limit. Preparation, budget interpretation, result interpretation, and numeric support match the options overload.
- *
- * @code
- * auto result = storm::pomdp::api::verifyWithBeliefUnfolding(env, pomdp, formula, 1000);
- * @endcode
- */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(storm::Environment const& env,
-                                                                                     storm::models::sparse::Pomdp<PomdpValueType> const& pomdp,
-                                                                                     storm::logic::Formula const& formula, uint64_t maxExplorationSize);
-
-/** Uses a default Environment; otherwise identical to the environment-taking overload. */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithBeliefUnfolding(storm::models::sparse::Pomdp<PomdpValueType> const& pomdp,
-                                                                                     storm::logic::Formula const& formula, uint64_t maxExplorationSize) {
-    return verifyWithBeliefUnfolding<PomdpValueType, BeliefValueType, BeliefMdpValueType>(storm::Environment(), pomdp, formula, maxExplorationSize);
-}
-
-/**
- * Runs unfolding with the CLI size heuristic: prepared POMDP states times maximum states sharing an observation.
- *
- * Preparation, result interpretation, and numeric support match verifyWithBeliefUnfolding. options.maxExplorationSize
- * must be unset; use the explicit-budget function to select a size. Other options, including a time limit, are honored.
- * Completion with clipping does not imply exactness.
- *
- * @param options Additional exploration settings. Building choice labels requires input choice labels, even for an already
- * canonical POMDP; otherwise disable buildChoiceLabeling. When clipping is enabled, clippingResolutions must contain one
- * positive entry per input observation; observations introduced by target refinement inherit their original observation's resolution.
- *
- * @code
- * auto result = storm::pomdp::api::verifyWithHeuristicBeliefUnfolding(pomdp, formula);
- * storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<double> options;
- * options.maxExplorationTime = 10; // seconds; applies to exploration, not preprocessing or MDP verification
- * auto limited = storm::pomdp::api::verifyWithHeuristicBeliefUnfolding(env, pomdp, formula, options);
- * @endcode
- */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithHeuristicBeliefUnfolding(
-    storm::Environment const& env, storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
-    beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options = {});
-
-/** Uses a default Environment; otherwise identical to the environment-taking overload. */
-template<typename PomdpValueType, typename BeliefValueType = PomdpValueType, typename BeliefMdpValueType = PomdpValueType>
-beliefs::BeliefBasedModelCheckerResult<BeliefMdpValueType> verifyWithHeuristicBeliefUnfolding(
-    storm::models::sparse::Pomdp<PomdpValueType> const& pomdp, storm::logic::Formula const& formula,
-    beliefs::BeliefBasedModelCheckerOptions<BeliefMdpValueType> const& options = {}) {
-    return verifyWithHeuristicBeliefUnfolding<PomdpValueType, BeliefValueType, BeliefMdpValueType>(storm::Environment(), pomdp, formula, options);
-}
-
-/**
  * Approximates an unbounded reachability probability or expected reachability reward by Freudenthal discretization.
  *
  * Preparation and numeric support match verifyWithBeliefUnfolding. The value is an upper bound for maximization and a
