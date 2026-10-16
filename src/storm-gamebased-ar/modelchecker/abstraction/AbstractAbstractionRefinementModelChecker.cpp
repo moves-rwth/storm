@@ -21,8 +21,6 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/solver/SymbolicGameSolver.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -35,14 +33,10 @@ namespace storm::gbar {
 namespace modelchecker {
 
 template<typename ModelType>
-AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker()
-    : storm::modelchecker::AbstractModelChecker<ModelType>(), checkTask(nullptr) {
-    storm::settings::modules::AbstractionSettings::ReuseMode reuseMode =
-        storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getReuseMode();
-    reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                              reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Qualitative;
-    reuseQuantitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                               reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Quantitative;
+AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker(abstraction::AbstractionOptions const& options)
+    : storm::modelchecker::AbstractModelChecker<ModelType>(), checkTask(nullptr), precision(options.precision) {
+    reuseQualitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Qualitative;
+    reuseQuantitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Quantitative;
 }
 
 template<typename ModelType>
@@ -979,8 +973,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::boundsAreSufficiently
     storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds =
         bounds.second->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
 
-    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(),
-                                                             storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision(), false);
+    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(), this->precision, false);
 }
 
 template<typename ModelType>

@@ -375,9 +375,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGrad
 }
 
 template<typename FunctionType, typename ConstantType>
-std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>,
-          typename GradientDescentInstantiationSearcher<FunctionType, ConstantType>::ExtendedConstantType>
-GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
+storm::pars::FeasibilityResult<ConstantType> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent() {
     STORM_LOG_ASSERT(this->synthesisTask, "Call setup before calling gradientDescent.");
 
     resetDynamicValues();
@@ -469,7 +467,7 @@ GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescen
     }
 
     STORM_LOG_ASSERT(bestValue.has_value(), "Expected at least one evaluated instantiation.");
-    return std::make_pair(bestInstantiation, *bestValue);
+    return {*bestValue, bestInstantiation};
 }
 
 template<typename FunctionType, typename ConstantType>

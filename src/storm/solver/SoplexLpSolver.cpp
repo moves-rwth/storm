@@ -127,10 +127,10 @@ void SoplexLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, 
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
 
         // FIXME: We're potentially losing precision as the coefficients and the rhs are converted to double. The LinearCoefficientVisitor needs a ValueType!
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients leftCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients leftCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(0));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients rightCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(1));
         leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
         rhs = rightCoefficients.getConstantPart();
         relationType = constraint.getBaseExpression().asBinaryRelationExpression().getRelationType();

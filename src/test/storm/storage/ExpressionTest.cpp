@@ -7,10 +7,12 @@
 #include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/LinearCoefficientVisitor.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -314,6 +316,42 @@ TEST(Expression, SubstitutionTest) {
     EXPECT_TRUE(substitutedExpression.simplify().isTrue());
 }
 
+TEST(Expression, SumAndProductTest) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    storm::expressions::Variable xVar = manager->declareIntegerVariable("x");
+    storm::expressions::Variable yVar = manager->declareIntegerVariable("y");
+    storm::expressions::Variable zVar = manager->declareRationalVariable("z");
+    storm::expressions::Expression x = xVar.getExpression();
+    storm::expressions::Expression y = yVar.getExpression();
+    storm::expressions::Expression z = zVar.getExpression();
+    storm::expressions::Expression four = manager->integer(4);
+
+    EXPECT_TRUE(storm::expressions::sum({x}).isVariable());
+    EXPECT_TRUE(storm::expressions::product({x}).isVariable());
+
+    storm::expressions::SimpleValuation valuation(manager);
+    valuation.setIntegerValue(xVar, 2);
+    valuation.setIntegerValue(yVar, 3);
+    valuation.setRationalValue(zVar, 0.5);
+
+    auto const intSum = storm::expressions::sum({x, y, four, x, y});
+    auto const intProduct = storm::expressions::product({x, y, four, x, y});
+    EXPECT_TRUE(intSum.hasIntegerType());
+    EXPECT_TRUE(intProduct.hasIntegerType());
+    EXPECT_EQ(14, intSum.evaluateAsInt(&valuation));
+    EXPECT_EQ(144, intProduct.evaluateAsInt(&valuation));
+
+    auto const mixedSum = storm::expressions::sum({x, y, four, z});
+    auto const mixedProduct = storm::expressions::product({x, y, four, z});
+    EXPECT_TRUE(mixedSum.hasRationalType());
+    EXPECT_TRUE(mixedProduct.hasRationalType());
+    EXPECT_NEAR(9.5, mixedSum.evaluateAsDouble(&valuation), 1e-12);
+    EXPECT_NEAR(12.0, mixedProduct.evaluateAsDouble(&valuation), 1e-12);
+
+    EXPECT_THROW(storm::expressions::sum({}), storm::exceptions::InvalidArgumentException);
+    EXPECT_THROW(storm::expressions::product({}), storm::exceptions::InvalidArgumentException);
+}
+
 TEST(Expression, SimplificationTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
 
@@ -555,4 +593,31 @@ TEST(ExpressionDeathTest, SimpleValuationRejectsVariablesOfDefaultConstructedVal
     EXPECT_FALSE(valuation.contains(x));
     EXPECT_REJECTED(valuation.getBooleanValue(x));
     EXPECT_REJECTED(valuation.setBooleanValue(x, true));
+}
+TEST(Expression, LinearCoefficientsTest) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto x = manager->declareRationalVariable("x");
+    auto y = manager->declareRationalVariable("y");
+
+    // 1/3 * x + (x - y) / 2 - 1 is linear with exact rational coefficients.
+    auto linear = manager->rational(storm::utility::convertNumber<storm::RationalNumber>(1) / storm::utility::convertNumber<storm::RationalNumber>(3)) *
+                      x.getExpression() +
+                  (x.getExpression() - y.getExpression()) / manager->integer(2) - manager->integer(1);
+    auto coefficients = storm::expressions::LinearCoefficientVisitor<storm::RationalNumber>().getLinearCoefficients(linear);
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(5) / storm::utility::convertNumber<storm::RationalNumber>(6),
+              coefficients.getCoefficient(x));
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(-1) / storm::utility::convertNumber<storm::RationalNumber>(2),
+              coefficients.getCoefficient(y));
+    EXPECT_EQ(storm::utility::convertNumber<storm::RationalNumber>(-1), coefficients.getConstantPart());
+
+    // Variables that cancel out are not part of the coefficients.
+    auto cancelled = storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(x.getExpression() + y.getExpression() - x.getExpression());
+    EXPECT_EQ(1ul, cancelled.size());
+
+    // Non-linear expressions and divisions by zero are rejected.
+    storm::expressions::LinearCoefficientVisitor<storm::RationalNumber> visitor;
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() * y.getExpression()).has_value());
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() / manager->integer(0)).has_value());
+    EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() <= y.getExpression()).has_value());
+    EXPECT_THROW(visitor.getLinearCoefficients(x.getExpression() * y.getExpression()), storm::exceptions::InvalidArgumentException);
 }

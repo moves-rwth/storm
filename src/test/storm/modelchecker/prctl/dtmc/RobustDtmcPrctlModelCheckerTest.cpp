@@ -379,6 +379,32 @@ TEST(RobustDtmcModelCheckerTest, ReachabilityTimesAndRewardsTargetStateBeforeMay
     checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-07.drn", "R=? [ F \"target\" ];R=? [ F \"target\" ]", 1.25, 2);
 }
 
+TEST(RobustDtmcModelCheckerTest, SolutionBoundsTargetStateBeforeSeveralMaybeStates) {
+    // The bounds of the maybe states must not be mixed up, otherwise state 2 would get the larger bound of state 1.
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::Interval>(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-10.drn");
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    env.solver().setForceSoundness(true);
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>(*dtmc);
+    std::vector<std::pair<storm::UncertaintyResolutionMode, double>> const modesAndExpectedValues = {{storm::UncertaintyResolutionMode::Maximize, 3},
+                                                                                                     {storm::UncertaintyResolutionMode::Minimize, 2.25}};
+    for (std::string const formulaString : {"R=? [ F \"target\" ]", "T=? [ F \"target\" ]"}) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+            storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+        for (auto const& [mode, expected] : modesAndExpectedValues) {
+            auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+            task.setUncertaintyResolutionMode(mode);
+            auto result = checker.check(env, task);
+            auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+            ASSERT_TRUE(explicitResult.hasLowerBounds() || explicitResult.hasUpperBounds()) << "No bound on the solution was reported.";
+            EXPECT_TRUE(explicitResult.getSolutionBounds().encloses(explicitResult.getValueVector())) << "The bounds do not enclose the values of all states.";
+            EXPECT_NEAR(expected, getQuantitativeResultAtInitialState(dtmc, result), 0.0001);
+        }
+    }
+}
+
 TEST(RobustDtmcModelCheckerTest, GraphPreservationRequired) {
     // The self-loop interval [0, 1] allows to never reach the target, i.e., the graph of the model is not preserved.
     expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);

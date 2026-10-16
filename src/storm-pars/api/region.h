@@ -8,6 +8,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionCheckEngine.h"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
@@ -24,6 +25,7 @@
 #include "storm-pars/parser/MonotonicityParser.h"
 #include "storm-pars/parser/ParameterRegionParser.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm-pars/utility/FeasibilityResult.h"
 #include "storm-pars/utility/parameterlifting.h"
 
 #include "storm/environment/Environment.h"
@@ -237,8 +239,9 @@ template<typename ValueType, typename ImpreciseType = double, typename PreciseTy
 std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(
     Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine,
-    bool allowModelSimplification = true, bool graphPreserving = true, bool preconditionsValidated = false,
-    MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
+    bool allowModelSimplification = true,
+    storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving,
+    bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(),
     std::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>,
                             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>
         monotoneParameters = std::nullopt) {
@@ -250,7 +253,7 @@ std::unique_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRe
         allowModelSimplification = monotonicityBackend->recommendModelSimplifications();
         STORM_LOG_WARN_COND(allowModelSimplification, "Model simplification is disabled because the monotonicity algorithm does not recommend it.");
     }
-    regionChecker->specify(env, consideredModel, task, std::nullopt, std::move(monotonicityBackend), allowModelSimplification, graphPreserving);
+    regionChecker->specify(env, consideredModel, task, std::nullopt, std::move(monotonicityBackend), allowModelSimplification, graphPreservationStatus);
     return regionChecker;
 }
 
@@ -292,7 +295,7 @@ std::unique_ptr<storm::modelchecker::RegionRefinementChecker<ValueType>> initial
     settings.allowModelSimplification = settings.allowModelSimplification && monotonicityBackend->recommendModelSimplifications();
     auto refinementChecker = std::make_unique<storm::modelchecker::RegionRefinementChecker<ValueType>>(std::move(regionChecker));
     refinementChecker->specify(env, consideredModel, settings.task, std::move(settings.regionSplittingStrategy), std::move(settings.discreteVariables),
-                               std::move(monotonicityBackend), settings.allowModelSimplification, settings.graphPreserving);
+                               std::move(monotonicityBackend), settings.allowModelSimplification, settings.graphPreservationStatus);
     return refinementChecker;
 }
 
@@ -325,13 +328,14 @@ std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> che
  * @param precision The precision to be used
  * @param absolutePrecision If true, the precision is interpreted as an absolute precision, otherwise as a relative precision
  * @param boundInvariant Bound invariant that should hold
- * @return A pair consisting of the extremal value and a parameter valuation achieving this value
+ * @return The extremal value and a parameter valuation achieving this value
  */
 template<typename ValueType>
-std::pair<storm::ExtendedRationalNumber, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(
-    Environment const& env, RefinementOptions<ValueType> settings, storm::storage::ParameterRegion<ValueType> const& region,
-    storm::solver::OptimizationDirection const& dir, std::optional<ValueType> const& precision, bool absolutePrecision,
-    std::optional<storm::logic::Bound> const& boundInvariant) {
+storm::pars::FeasibilityResult<storm::RationalNumber> computeExtremalValue(Environment const& env, RefinementOptions<ValueType> settings,
+                                                                           storm::storage::ParameterRegion<ValueType> const& region,
+                                                                           storm::solver::OptimizationDirection const& dir,
+                                                                           std::optional<ValueType> const& precision, bool absolutePrecision,
+                                                                           std::optional<storm::logic::Bound> const& boundInvariant) {
     auto refinementChecker = initializeRegionRefinementChecker(env, settings);
     auto res =
         refinementChecker->computeExtremalValue(env, region, dir, precision.value_or(storm::utility::zero<ValueType>()), absolutePrecision, boundInvariant);

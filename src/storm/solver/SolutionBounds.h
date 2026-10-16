@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -88,7 +89,7 @@ struct SolutionBounds {
             if (relative) {
                 // The enclosed value is at least as far from zero as the bound closer to it, unless the two
                 // straddle zero, where only coinciding bounds say anything.
-                allowed = (low <= zero && up >= zero) ? zero : precision * std::min(storm::utility::abs<ValueType>(low), storm::utility::abs<ValueType>(up));
+                allowed = (low <= zero && up >= zero) ? zero : precision * std::min(storm::utility::abs(low), storm::utility::abs(up));
             }
             // Negated, so that a distance that is not a number is rejected.
             if (!(values[i] - low <= allowed) || !(up - values[i] <= allowed)) {

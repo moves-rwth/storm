@@ -1,5 +1,7 @@
 #include "KnownProbabilityTransformer.h"
 
+#include "storm/models/sparse/ChoiceLabeling.h"
+
 namespace storm {
 namespace pomdp {
 namespace transformer {
@@ -105,9 +107,25 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
 
     // The new model has one state per row group (the sink states for probability 1 and 0 as well as all unknown states).
     auto newTransitionMatrix = smb.build(currentRow, currentRowGroup, currentRowGroup);
-    // STORM_PRINT(newTransitionMatrix)
     storm::storage::sparse::ModelComponents<ValueType> components(newTransitionMatrix, newLabeling);
     components.observabilityClasses = newObservations;
+    if (pomdp.hasChoiceLabeling()) {
+        auto const &originalChoiceLabeling = pomdp.getChoiceLabeling();
+        components.choiceLabeling.emplace(newTransitionMatrix.getRowCount());
+        for (auto const &label : originalChoiceLabeling.getLabels()) {
+            components.choiceLabeling->addLabel(label);
+        }
+        // Retained states keep their local action order. The new absorbing states have synthetic, unlabeled self-loops.
+        for (uint64_t state : unknownStates) {
+            uint64_t const originalRow = transitionMatrix.getRowGroupIndices()[state];
+            uint64_t const newRow = newTransitionMatrix.getRowGroupIndices()[stateMap.at(state)];
+            for (uint64_t localAction = 0; localAction < transitionMatrix.getRowGroupSize(state); ++localAction) {
+                for (auto const &label : originalChoiceLabeling.getLabelsOfChoice(originalRow + localAction)) {
+                    components.choiceLabeling->addLabelToChoice(label, newRow + localAction);
+                }
+            }
+        }
+    }
 
     return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
 }

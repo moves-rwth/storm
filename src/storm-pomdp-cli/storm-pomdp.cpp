@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <optional>
 #include <type_traits>
 
@@ -16,6 +17,7 @@
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
+#include "storm-pomdp/api/export.h"
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm-pomdp/beliefs/verification/BeliefBasedModelChecker.h"
 #include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
@@ -31,6 +33,7 @@
 #include "storm/analysis/GraphConditions.h"
 #include "storm/api/storm.h"
 #include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -132,6 +135,15 @@ void printBeliefExplorationStatistics(Statistics const& statistics) {
     STORM_PRINT_AND_LOG("Time for exploring beliefs: " << statistics.explorationTimeMilliseconds << "ms.\n");
     STORM_PRINT_AND_LOG("Time for building the belief MDP: " << statistics.beliefMdpBuildTimeMilliseconds << "ms.\n");
     STORM_PRINT_AND_LOG("Time for analyzing the belief MDP: " << statistics.beliefMdpAnalysisTimeMilliseconds << "ms.\n");
+}
+
+enum class PolicyExportFormat { Json, Dot };
+
+PolicyExportFormat getPolicyExportFormat(std::string const& filename) {
+    auto const extension = std::filesystem::path(filename).extension().string();
+    STORM_LOG_THROW(extension.empty() || extension == ".json" || extension == ".dot", storm::exceptions::InvalidSettingsException,
+                    "Unsupported policy export extension '" << extension << "'. Use '.json', '.dot', or no extension for JSON output.");
+    return extension == ".dot" ? PolicyExportFormat::Dot : PolicyExportFormat::Json;
 }
 
 MemlessSearchOptions fillMemlessSearchOptionsFromSettings() {
@@ -278,6 +290,15 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
     STORM_LOG_THROW(!formulaInfo.isBounded() || !belExplSettings.isUseClippingSet(), storm::exceptions::NotSupportedException,
                     "Grid clipping is not supported for reward-bounded POMDP properties.");
 
+    bool const policyExportRequested = pomdpSettings.isExportPolicySet();
+    STORM_LOG_THROW(!policyExportRequested || !belExplSettings.isCutZeroGapSet(), storm::exceptions::InvalidSettingsException,
+                    "Policy export does not support zero-gap cutting because cut-off beliefs do not retain a continuation policy. Remove --cut-zero-gap to "
+                    "allow policy export.");
+    std::optional<PolicyExportFormat> policyExportFormat;
+    if (policyExportRequested) {
+        policyExportFormat = getPolicyExportFormat(pomdpSettings.getExportPolicyFilename());
+    }
+
     storm::pomdp::beliefs::BeliefBasedModelCheckerOptions<BeliefMDPType> revisedOptions;
     // We hard-code this to FIFO for now to mimic the legacy behaviour
     revisedOptions.explorationQueueOrder = beliefs::ExplorationQueueOrder::FIFO;
@@ -412,6 +433,8 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
     }
     propertyInfo.dir = formulaInfo.getOptimizationDirection();
     propertyInfo.targetObservations = targetObservations;
+    STORM_LOG_THROW(!policyExportRequested || propertyInfo.kind != beliefs::PropertyInformation::Kind::RewardBoundedReachabilityProbability,
+                    storm::exceptions::InvalidSettingsException, "Policy export is not supported for reward-aware belief exploration.");
 
     storm::pomdp::beliefs::BeliefBasedModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType, BeliefMDPType> checker(*preprocessedPomdpPtr);
     ExtendedBeliefMDPType overResultValue;
@@ -449,6 +472,7 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
 
     if (pomdpSettings.isBeliefExplorationUnfoldSet()) {
         STORM_PRINT_AND_LOG("Computing an under-approximation via belief MDP unfolding...\n");
+        revisedOptions.generatePolicy = policyExportRequested;
         if (belExplSettings.getExplorationTimeLimit() != 0) {
             revisedOptions.maxExplorationTime = belExplSettings.getExplorationTimeLimit();
         }
@@ -476,6 +500,22 @@ bool performBeliefExploration(storm::Environment const& env, std::shared_ptr<sto
         underResultValue = checkResult.value;
         completedExploration = checkResult.completedExploration;
         printBeliefExplorationStatistics(checkResult.statistics);
+        if (policyExportRequested) {
+            STORM_LOG_THROW(checkResult.policy.has_value(), storm::exceptions::UnexpectedException,
+                            "Policy generation was requested, but belief-space unfolding did not produce a policy.");
+            auto const& filename = pomdpSettings.getExportPolicyFilename();
+            if (*policyExportFormat == PolicyExportFormat::Dot) {
+                storm::pomdp::api::exportPolicyAsDot(*checkResult.policy, filename);
+            } else {
+                storm::pomdp::api::exportPolicyAsJson(*checkResult.policy, filename);
+            }
+            STORM_PRINT_AND_LOG("Exported policy to '" << filename << "'.\n");
+            if (belExplSettings.isUseClippingSet()) {
+                STORM_LOG_WARN(
+                    "The reported result includes the clipping approximation and may differ from the value achieved by the exported policy "
+                    "on the original POMDP.");
+            }
+        }
         isOverApproximation = (completedExploration && !belExplSettings.isUseClippingSet()) || isOverApproximation;
     }
 
@@ -761,6 +801,25 @@ void processOptions() {
     auto symbolicInput = storm::cli::parseSymbolicInput();
     storm::cli::ModelProcessingInformation mpi;
     std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
+    if (!symbolicInput.properties.empty()) {
+        auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+        bool const qualitativeOnly =
+            pomdpSettings.isQualitativeAnalysisSet() && !pomdpSettings.isBeliefExplorationSet() && !pomdpSettings.isCheckFullyObservableSet();
+        auto const& formula = *symbolicInput.properties.front().getRawFormula();
+        if (formula.isProbabilityOperatorFormula() || formula.isRewardOperatorFormula()) {
+            auto const& operatorFormula = formula.asOperatorFormula();
+            if (operatorFormula.hasBound()) {
+                STORM_LOG_THROW(
+                    qualitativeOnly && formula.isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException,
+                    "The threshold in '" << formula << "' is not supported by this POMDP analysis. Use a Pmin=?/Pmax=? or Rmin=?/Rmax=? query instead.");
+                auto const threshold = operatorFormula.getThresholdAs<storm::RationalNumber>();
+                STORM_LOG_THROW(threshold == 0 || threshold == 1, storm::exceptions::InvalidPropertyException,
+                                "The probability threshold in '" << formula
+                                                                 << "' is not supported by storm-pomdp. Only thresholds of exactly 0 or 1 are supported for "
+                                                                    "qualitative analysis; use a Pmin=? or Pmax=? query for quantitative analysis.");
+            }
+        }
+    }
     STORM_LOG_THROW(mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::FinitePrecision ||
                         mpi.buildValueType == storm::cli::ModelProcessingInformation::ValueType::Exact,
                     storm::exceptions::UnexpectedException, "Unexpected ValueType for model building.");

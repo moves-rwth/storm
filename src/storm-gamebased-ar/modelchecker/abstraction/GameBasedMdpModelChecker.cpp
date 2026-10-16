@@ -20,8 +20,6 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/solver/StandardGameSolver.h"
 #include "storm/solver/SymbolicGameSolver.h"
 #include "storm/storage/ExplicitGameStrategyPair.h"
@@ -50,16 +48,15 @@ using storm::gbar::abstraction::SymbolicQuantitativeGameResultMinMax;
 
 template<storm::dd::DdType Type, typename ModelType>
 GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model,
-                                                                    GameBasedMdpModelCheckerOptions const& options,
+                                                                    abstraction::AbstractionOptions const& options,
                                                                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory)
     : options(options),
       smtSolverFactory(smtSolverFactory),
-      comparator(storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()),
-                 storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()),
+      comparator(storm::utility::convertNumber<ValueType>(options.precision), options.relativeTerminationCriterion),
       reuseQualitativeResults(false),
       reuseQuantitativeResults(false),
-      solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()),
-      debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
+      solveMode(options.solveMode),
+      debug(options.debug) {
     if (model.hasUndefinedConstants()) {
         auto undefinedConstants = model.getUndefinedConstants();
         std::vector<std::string> undefinedConstantNames;
@@ -100,15 +97,11 @@ GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::stora
         preprocessedModel = model.asJaniModel().flattenComposition();
     }
 
-    auto const& abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
-    storm::settings::modules::AbstractionSettings::ReuseMode reuseMode = abstractionSettings.getReuseMode();
-    reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                              reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Qualitative;
-    reuseQuantitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                               reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Quantitative;
-    maximalNumberOfAbstractions = abstractionSettings.getMaximalAbstractionCount();
-    fixPlayer1Strategy = abstractionSettings.isFixPlayer1StrategySet();
-    fixPlayer2Strategy = abstractionSettings.isFixPlayer2StrategySet();
+    reuseQualitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Qualitative;
+    reuseQuantitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Quantitative;
+    maximalNumberOfAbstractions = options.maximalNumberOfAbstractions;
+    fixPlayer1Strategy = options.fixPlayer1Strategy;
+    fixPlayer2Strategy = options.fixPlayer2Strategy;
 }
 
 template<storm::dd::DdType Type, typename ModelType>
@@ -629,13 +622,12 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
     storm::OptimizationDirection player1Direction = getPlayer1Direction(checkTask);
 
     // Create the abstractor.
-    storm::gbar::abstraction::MenuGameAbstractorOptions abstractorOptions(std::move(options.constraints));
     if (preprocessedModel.isPrismProgram()) {
         abstractor = std::make_shared<storm::gbar::abstraction::prism::PrismMenuGameAbstractor<Type, ValueType>>(env, preprocessedModel.asPrismProgram(),
-                                                                                                                 smtSolverFactory, abstractorOptions);
+                                                                                                                 smtSolverFactory, options);
     } else {
         abstractor = std::make_shared<storm::gbar::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(env, preprocessedModel.asJaniModel(),
-                                                                                                               smtSolverFactory, abstractorOptions);
+                                                                                                               smtSolverFactory, options);
     }
     std::unique_ptr<storm::modelchecker::CheckResult> result;
     abstractor->getDdManager().execute([&]() {
@@ -646,9 +638,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
         abstractor->setTargetStates(targetStateExpression);
 
         // Create a refiner that can be used to refine the abstraction when needed.
-        storm::gbar::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
-        storm::gbar::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()),
-                                                                           refinerOptions);
+        storm::gbar::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()), options);
         refiner.refine(initialPredicates, false);
 
         storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
@@ -700,7 +690,7 @@ std::unique_ptr<storm::modelchecker::CheckResult> GameBasedMdpModelChecker<Type,
             //                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iteration) + ".dot");
             // #endif
 
-            if (solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Dd) {
+            if (solveMode == abstraction::SolveMode::Dd) {
                 result = performSymbolicAbstractionSolutionStep(env, checkTask, game, player1Direction, initialStates, constraintStates, targetStates, refiner,
                                                                 previousSymbolicQualitativeResult, previousSymbolicMinQuantitativeResult);
             } else {
@@ -1772,7 +1762,7 @@ void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::gbar::abs
     oss << "Time breakdown:\n";
     oss << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime) / totalTimeMillis << "%)\n";
     oss << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis) / totalTimeMillis << "%)\n";
-    if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
+    if (this->solveMode == abstraction::SolveMode::Sparse) {
         oss << "    * translation: " << totalTranslationTimeMillis << "ms (" << 100 * static_cast<double>(totalTranslationTimeMillis) / totalTimeMillis
             << "%)\n";
         if (fixPlayer1Strategy || fixPlayer2Strategy) {

@@ -465,6 +465,7 @@ Expression exactlyOneOf(std::vector<storm::expressions::Expression> const& expre
 Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
 Expression conjunction(std::vector<storm::expressions::Expression> const& expressions);
 Expression sum(std::vector<storm::expressions::Expression> const& expressions);
+Expression product(std::vector<storm::expressions::Expression> const& expressions);
 Expression apply(std::vector<storm::expressions::Expression> const& expressions,
                  std::function<Expression(Expression const&, Expression const&)> const& function);
 Expression applyAssociative(std::vector<storm::expressions::Expression> const& expressions,
