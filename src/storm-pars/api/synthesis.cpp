@@ -1,5 +1,6 @@
 #include "storm-pars/api/synthesis.h"
 
+#include <algorithm>
 #include <set>
 #include <utility>
 
@@ -42,6 +43,18 @@ void validateInput(std::shared_ptr<Model> const& model, std::shared_ptr<storm::l
                     storm::exceptions::NotSupportedException, "Parameter synthesis requires a bounded probability or reward operator formula.");
     if (regionEngine == Engine::RobustParameterLifting) {
         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Robust PLA supports DTMCs only.");
+        auto const& subformula = formula->asOperatorFormula().getSubformula();
+        STORM_LOG_THROW(!subformula.isBoundedUntilFormula() && !subformula.isCumulativeRewardFormula(), storm::exceptions::NotSupportedException,
+                        "Robust PLA does not support step-bounded probability or cumulative reward formulas.");
+        if (formula->isRewardOperatorFormula()) {
+            auto const& rewardFormula = formula->asRewardOperatorFormula();
+            auto const& rewardModel =
+                rewardFormula.hasRewardModelName() ? model->getRewardModel(rewardFormula.getRewardModelName()) : model->getUniqueRewardModel();
+            for (auto const& reward : rewardModel.getTotalRewardVector(model->getTransitionMatrix())) {
+                STORM_LOG_THROW(storm::utility::isConstant(reward), storm::exceptions::NotSupportedException,
+                                "Robust PLA does not support nonconstant total rewards.");
+            }
+        }
     }
 }
 
@@ -178,6 +191,14 @@ Result<double> checkFeasibility(storm::Environment const& env, std::shared_ptr<M
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException,
                                 "Gradient descent supports DTMCs only.");
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
+                if (std::all_of(consideredRegion.getVariables().begin(), consideredRegion.getVariables().end(),
+                                [&](auto const& variable) { return storm::utility::isZero(consideredRegion.getDifference(variable)); })) {
+                    auto result = validateWitness<double>(env, *model, *formula, consideredRegion, consideredRegion.getCenterPoint());
+                    if (!result.witness) {
+                        result.status = Status::AllViolated;
+                    }
+                    return result;
+                }
                 auto task = createFeasibilityTask(*model, *formula, consideredRegion);
                 storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> searcher(
                     env, *model->as<Dtmc>(), storm::derivative::GradientDescentMethod::ADAM, 0.1, 0.9, 0.999, 32, 1e-6, consideredRegion.getCenterPoint(),

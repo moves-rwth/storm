@@ -392,7 +392,13 @@ storm::pars::FeasibilityResult<ConstantType> GradientDescentInstantiationSearche
     std::default_random_engine engine(device());
     std::uniform_real_distribution<> dist(0, 1);
     bool initialGuess = true;
-    std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
+    auto point = startPoint.value_or(region ? region->getCenterPoint() : std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>{});
+    // Instantiation also evaluates reward models that do not occur in the queried property.
+    for (auto const& parameter : storm::models::sparse::getRewardParameters(model)) {
+        auto const initialValue = region && region->getVariables().count(parameter) ? region->getCenter(parameter)
+                                                                                    : utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
+        point.emplace(parameter, initialValue);
+    }
     while (true) {
         STORM_LOG_PROGRESS("Trying out a new starting point\n");
         if (initialGuess) {

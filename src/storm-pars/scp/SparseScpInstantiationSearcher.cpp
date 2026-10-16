@@ -243,7 +243,7 @@ ScpResult<ConstantType> SparseScpInstantiationSearcher<SparseModelType, Constant
             continue;
         }
 
-        Valuation candidate;
+        Valuation candidate = initialValuation;
         for (auto const& [var, lpVar] : lp.parameterVariables) {
             candidate[var] = storm::utility::convertNumber<CoefficientType>(lp.solver->getContinuousValue(lpVar));
         }

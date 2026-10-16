@@ -29,8 +29,9 @@ class SynthesisApiTest : public ::testing::Test {
 #endif
     }
 
-    void build(std::string const& probability = "p", std::string const& declarations = "const double p;", std::string const& rewards = "") {
-        program = storm::parser::PrismParser::parseFromString("dtmc\n" + declarations +
+    void build(std::string const& probability = "p", std::string const& declarations = "const double p;", std::string const& rewards = "",
+               std::string const& modelType = "dtmc") {
+        program = storm::parser::PrismParser::parseFromString(modelType + "\n" + declarations +
                                                                   "\nmodule simple\n s : [0..2] init 0;\n"
                                                                   " [] s=0 -> " +
                                                                   probability + " : (s'=1) + (1-(" + probability +
@@ -182,6 +183,100 @@ TEST_F(SynthesisApiTest, RobustPlaDoesNotRequireAnAffineWellformednessProof) {
     EXPECT_EQ(Status::ExistsSat, result.status);
     EXPECT_THROW(storm::api::verify(environment, model, formula("P<=1 [F \"target\"]"), box, std::nullopt, Engine::ParameterLifting),
                  storm::exceptions::NotSupportedException);
+}
+
+TEST_F(SynthesisApiTest, RobustPlaRejectsStepBoundedQueries) {
+    build("p", "const double p;", "rewards \"cost\"\n s=0 : 1;\nendrewards\n");
+    auto box = region("0.2<=p<=0.8");
+    for (auto const& text : {"P<=0.9 [F<=2 \"target\"]", "R{\"cost\"}<=2 [C<=2]"}) {
+        auto property = formula(text);
+        EXPECT_THROW(storm::api::verify(environment, model, property, box, std::nullopt, Engine::RobustParameterLifting),
+                     storm::exceptions::NotSupportedException);
+        EXPECT_THROW(storm::api::checkFeasibility(environment, model, property, box, std::nullopt, Method::PLA, Engine::RobustParameterLifting),
+                     storm::exceptions::NotSupportedException);
+    }
+}
+
+TEST_F(SynthesisApiTest, RobustPlaRejectsNonconstantTotalRewards) {
+    build("1", "const double r;", "rewards \"cost\"\n s=0 : r;\nendrewards\n");
+    auto box = region("0.5<=r<=1.5");
+    EXPECT_THROW(storm::api::verify(environment, model, formula("R{\"cost\"}<=1.25 [F \"target\"]"), box, std::nullopt, Engine::RobustParameterLifting),
+                 storm::exceptions::NotSupportedException);
+    EXPECT_THROW(storm::api::checkFeasibility(environment, model, formula("R{\"cost\"}>=1.25 [F \"target\"]"), box, std::nullopt, Method::PLA,
+                                              Engine::RobustParameterLifting),
+                 storm::exceptions::NotSupportedException);
+
+    // Only the queried reward model matters; a constant total reward above one remains supported.
+    build("1", "const double r;", "rewards \"cost\"\n s=0 : 2;\nendrewards\nrewards \"unused\"\n s=0 : r;\nendrewards\n");
+    box = region("0.5<=r<=1.5");
+    EXPECT_TRUE(storm::api::verify(environment, model, formula("R{\"cost\"}<=2 [F \"target\"]"), box, std::nullopt, Engine::RobustParameterLifting));
+    EXPECT_EQ(Status::ExistsSat, storm::api::checkFeasibility(environment, model, formula("R{\"cost\"}>=2 [F \"target\"]"), box, std::nullopt, Method::PLA,
+                                                              Engine::RobustParameterLifting)
+                                     .status);
+}
+
+TEST_F(SynthesisApiTest, GradientDescentHandlesSingletonRegions) {
+    build();
+    auto point = region("0.5<=p<=0.5");
+    auto result = storm::api::checkFeasibility(environment, model, formula("P>=0.4 [F \"target\"]"), point, std::nullopt, Method::GD);
+    ASSERT_EQ(Status::ExistsSat, result.status);
+    ASSERT_TRUE(result.witness);
+    EXPECT_EQ(0.5, result.witness->value);
+    result = storm::api::checkFeasibility(environment, model, formula("P>=0.9 [F \"target\"]"), point, std::nullopt, Method::GD);
+    EXPECT_EQ(Status::AllViolated, result.status);
+    EXPECT_FALSE(result.witness);
+
+    build("1/2", "");
+    result = storm::api::checkFeasibility(environment, model, formula("P>=0.4 [F \"target\"]"), std::nullopt, std::nullopt, Method::GD);
+    ASSERT_EQ(Status::ExistsSat, result.status);
+    ASSERT_TRUE(result.witness);
+    EXPECT_TRUE(result.witness->valuation.empty());
+    result = storm::api::checkFeasibility(environment, model, formula("P>=0.9 [F \"target\"]"), std::nullopt, std::nullopt, Method::GD);
+    EXPECT_EQ(Status::AllViolated, result.status);
+    EXPECT_FALSE(result.witness);
+}
+
+TEST_F(SynthesisApiTest, GradientDescentPreservesUnrelatedRewardParameters) {
+    build("p", "const double p; const double r;", "rewards \"cost\"\n s=0 : r;\nendrewards\n");
+    auto box = region("0.2<=p<=0.8,2<=r<=4");
+    auto property = formula("P>=0.7 [F \"target\"]");
+    auto result = storm::api::checkFeasibility(environment, model, property, box, std::nullopt, Method::GD);
+    ASSERT_EQ(Status::ExistsSat, result.status);
+    ASSERT_TRUE(result.witness);
+    EXPECT_TRUE(box.contains(result.witness->valuation));
+    for (auto const& variable : box.getVariables()) {
+        if (variable.name() == "r") {
+            EXPECT_EQ(box.getCenter(variable), result.witness->valuation.at(variable));
+        }
+    }
+    EXPECT_TRUE(property->asOperatorFormula().getBound().isSatisfied(result.witness->value));
+}
+
+TEST_F(SynthesisApiTest, ScpPreservesUnrelatedRewardParameters) {
+#if defined STORM_HAVE_GLPK
+    environment.solver().setLpSolverType(storm::solver::LpSolverType::Glpk);
+#elif defined STORM_HAVE_HIGHS
+    environment.solver().setLpSolverType(storm::solver::LpSolverType::Highs);
+#elif defined STORM_HAVE_SOPLEX
+    environment.solver().setLpSolverType(storm::solver::LpSolverType::Soplex);
+#else
+    GTEST_SKIP() << "No LP solver available for SCP.";
+#endif
+    for (auto const& type : {"dtmc", "mdp"}) {
+        build("p", "const double p; const double r;", "rewards \"cost\"\n s=0 : r;\nendrewards\n", type);
+        auto box = region("0.2<=p<=0.8,2<=r<=4");
+        auto property = formula("P>=0.7 [F \"target\"]");
+        auto result = storm::api::checkFeasibility(environment, model, property, box, std::nullopt, Method::SCP);
+        ASSERT_EQ(Status::ExistsSat, result.status);
+        ASSERT_TRUE(result.witness);
+        EXPECT_TRUE(box.contains(result.witness->valuation));
+        for (auto const& variable : box.getVariables()) {
+            if (variable.name() == "r") {
+                EXPECT_EQ(box.getCenter(variable), result.witness->valuation.at(variable));
+            }
+        }
+        EXPECT_TRUE(property->asOperatorFormula().getBound().isSatisfied(result.witness->value));
+    }
 }
 
 TEST_F(SynthesisApiTest, GradientDescentRespectsExplicitRegionOutsideUnitInterval) {
