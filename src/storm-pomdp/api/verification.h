@@ -33,6 +33,21 @@ namespace storm::pomdp::api {
  *
  * The supported (POMDP, belief, belief MDP) value types are (double, double, double), (double, RationalNumber, double),
  * (RationalNumber, RationalNumber, RationalNumber), (RationalNumber, RationalNumber, double), and (double, double, RationalNumber).
+ * PolicyValueType defaults to BeliefMdpValueType for these combinations. Additionally, (double, double, double, RationalNumber)
+ * is supported when specifying all four value types.
+ *
+ * Setting options.generatePolicy returns a finite-state controller in result.policy. Policy generation requires
+ * options.buildChoiceLabeling and is incompatible with options.cutZeroGap. PolicyValueType determines the type of policy
+ * probabilities independently of BeliefMdpValueType.
+ *
+ * The returned policy refers to the prepared POMDP: its local action indices follow canonicalization, its observation IDs
+ * include target refinement, and until-failure states are absorbing. The API returns neither the prepared model nor a
+ * mapping back to the input model. Callers must account for these transformations before applying the policy to the input.
+ * With clipping, redirected probability mass has no reconstructed continuation policy, so the controller may be partial
+ * and its value on the input POMDP may differ from result.value.
+ *
+ * @return The bound, exploration completion status, statistics, and optional policy. result.policy is unset unless
+ * options.generatePolicy is enabled.
  *
  * Example:
  * @code
