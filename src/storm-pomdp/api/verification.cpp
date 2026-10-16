@@ -61,6 +61,9 @@ BeliefVerificationInput<PomdpValueType> prepareBeliefVerification(storm::models:
             options.clippingResolutions->at(pomdp->getObservation(state)) = originalResolutions.at(input.getObservation(state));
         }
     }
+    // FormulaInformation defines sinks only for probability until formulas. For expected reachability rewards,
+    // preprocessing and belief-MDP verification use reachability-reward model checking, which assigns infinity
+    // to states unable to reach the target, even with zero rewards. No additional sink transformation is needed.
     if (formulaInformation.isNonNestedReachabilityProbability() && !formulaInformation.getSinkStates().empty()) {
         // Keep the row groups and action identities intact, including when sink states share an observation with other states.
         pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(formulaInformation.getSinkStates().states, true);
