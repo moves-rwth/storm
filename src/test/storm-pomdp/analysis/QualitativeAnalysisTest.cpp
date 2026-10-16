@@ -47,7 +47,7 @@ void oneshot_test(std::string const& path, std::string const& constants, std::st
     storm::storage::BitVector surelyNotAlmostSurelyReachTarget = qualitativeAnalysis.analyseProbSmaller1(formula->asProbabilityOperatorFormula());
     pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
     storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
-    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
     storm::pomdp::OneShotPolicySearch<double> memlessSearch(storm::Environment(), *pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
     memlessSearch.analyzeForInitialStates(lookahead);
 }
@@ -68,7 +68,7 @@ void iterativesearch_test(std::string const& path, std::string const& constants,
     pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
     storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
 
-    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
     storm::pomdp::MemlessSearchOptions options;
     uint64_t lookahead = pomdp->getNumberOfStates();
     storm::pomdp::IterativePolicySearch<double> search(storm::Environment(), *pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
@@ -104,8 +104,8 @@ void symbolicbelsup_test(std::string const& path, std::string const& constants, 
 class QualitativeAnalysis : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -130,6 +130,9 @@ class RecordingSmtSolverFactory : public storm::utility::solver::Z3SmtSolverFact
 }  // namespace
 
 TEST_F(QualitativeAnalysis, PolicySearchUsesEnvironment) {
+#ifndef STORM_HAVE_Z3
+    GTEST_SKIP() << "Z3 not available.";
+#endif
     auto program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple_unit_rewards.prism").preprocess("slippery=0");
     auto formula = storm::api::parsePropertiesForPrismProgram("Pmax=? [F \"goal\"]", program).front().getRawFormula();
     auto pomdp = storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();

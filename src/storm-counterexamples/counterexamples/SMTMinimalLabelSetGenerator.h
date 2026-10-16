@@ -27,7 +27,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Model.h"
-#include "storm/solver/Z3SmtSolver.h"
+#include "storm/solver/SmtSolver.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/prism/Program.h"
@@ -35,6 +35,7 @@
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/solver.h"
 
 namespace storm::counterexamples {
 
@@ -57,7 +58,7 @@ inline size_t nrCommands(storm::storage::SymbolicModelDescription const& descr) 
  */
 template<class T>
 class SMTMinimalLabelSetGenerator {
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
    private:
     struct RelevancyInformation {
         // The set of relevant states in the model.
@@ -508,7 +509,7 @@ class SMTMinimalLabelSetGenerator {
             std::unique_ptr<storm::solver::SmtSolver> localSolver;
             if (symbolicModel.isPrismProgram()) {
                 storm::prism::Program const& program = symbolicModel.asPrismProgram();
-                localSolver = std::make_unique<storm::solver::Z3SmtSolver>(program.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(program.getManager());
 
                 // Then add the constraints for bounds of the integer variables.
                 for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
@@ -521,7 +522,7 @@ class SMTMinimalLabelSetGenerator {
                 }
             } else {
                 storm::jani::Model const& janiModel = symbolicModel.asJaniModel();
-                localSolver = std::make_unique<storm::solver::Z3SmtSolver>(janiModel.getManager());
+                localSolver = storm::utility::solver::getSmtSolver(janiModel.getManager());
 
                 for (auto const& integerVariable : janiModel.getGlobalVariables().getBoundedIntegerVariables()) {
                     if (integerVariable.isTransient()) {
@@ -1814,7 +1815,7 @@ class SMTMinimalLabelSetGenerator {
         storm::models::sparse::Model<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
         std::vector<double> propertyThreshold, boost::optional<std::vector<std::string>> const& rewardName, bool strictBound,
         storm::storage::FlatSet<uint_fast64_t> const& dontCareLabels = storm::storage::FlatSet<uint_fast64_t>(), Options const& options = Options()) {
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
         STORM_LOG_THROW(propertyThreshold.size() > 0, storm::exceptions::InvalidArgumentException, "At least one threshold has to be specified.");
         STORM_LOG_THROW(propertyThreshold.size() == 1 || (rewardName && rewardName.get().size() == propertyThreshold.size()),
                         storm::exceptions::InvalidArgumentException, "Multiple thresholds is only supported for multiple reward structures.");
@@ -1878,7 +1879,7 @@ class SMTMinimalLabelSetGenerator {
 
         // (3) Create a solver.
         std::shared_ptr<storm::expressions::ExpressionManager> manager = std::make_shared<storm::expressions::ExpressionManager>();
-        std::unique_ptr<storm::solver::SmtSolver> solver = std::make_unique<storm::solver::Z3SmtSolver>(*manager);
+        std::unique_ptr<storm::solver::SmtSolver> solver = storm::utility::solver::getSmtSolver(*manager);
 
         // (4) Create the variables for the relevant commands.
         VariableInformation variableInformation = createVariables(manager, model, psiStates, relevancyInformation, options.encodeReachability);
@@ -2081,7 +2082,7 @@ class SMTMinimalLabelSetGenerator {
         return result;
 #else
         STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                        "This functionality is unavailable since storm has been compiled without support for Z3.");
+                        "This functionality is unavailable since storm has been compiled without support for an SMT solver.");
 #endif
     }
 
@@ -2313,7 +2314,7 @@ class SMTMinimalLabelSetGenerator {
                                                                           storm::models::sparse::Model<T> const& model,
                                                                           std::shared_ptr<storm::logic::Formula const> const& formula,
                                                                           Options const& options = Options(true)) {
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
         std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
         GeneratorStats stats;
         CexInput prec = precompute(env, symbolicModel, model, formula);
@@ -2334,7 +2335,7 @@ class SMTMinimalLabelSetGenerator {
         }
 #else
         STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
-                        "This functionality is unavailable since storm has been compiled without support for Z3.");
+                        "This functionality is unavailable since storm has been compiled without support for an SMT solver.");
         return nullptr;
 #endif
     }

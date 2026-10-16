@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#ifdef STORM_HAVE_Z3
+#ifdef STORM_HAVE_SMT_SOLVER
 
 #include "storm-counterexamples/api/counterexamples.h"
 #include "storm-parsers/api/model_descriptions.h"
