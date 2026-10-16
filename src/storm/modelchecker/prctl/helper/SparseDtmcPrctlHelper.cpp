@@ -673,7 +673,10 @@ SparseDtmcPrctlHelper<ValueType, RewardModelType, SolutionType>::computeReachabi
                 // The copy of result supplies the exact values outside the maybe states.
                 auto embedBound = [&result, &maybeStates](std::vector<SolutionType> const& boundForMaybeStates) {
                     std::vector<ExtendedSolutionType> bound(result);
-                    storm::utility::vector::setVectorValues(bound, maybeStates, boundForMaybeStates);
+                    STORM_LOG_ASSERT(boundForMaybeStates.size() == bound.size(), "Dimensions do not match.");
+                    for (auto const state : maybeStates) {
+                        bound[state] = boundForMaybeStates[state];
+                    }
                     return bound;
                 };
                 solutionBounds = boundsForMaybeStates.transform(embedBound);
