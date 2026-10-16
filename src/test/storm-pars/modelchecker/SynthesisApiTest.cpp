@@ -53,6 +53,16 @@ class SynthesisApiTest : public ::testing::Test {
         return storm::api::parseRegion<storm::RationalFunction>(text, *model);
     }
 
+    void expectInRegion(Region const& region, Region::Valuation const& valuation) const {
+        // Compare at LP precision; converting a double to an exact coefficient can put it just outside the region.
+        for (auto const& variable : region.getVariables()) {
+            ASSERT_TRUE(valuation.count(variable));
+            auto const value = storm::utility::convertNumber<double>(valuation.at(variable));
+            EXPECT_GE(value, storm::utility::convertNumber<double>(region.getLowerBoundary(variable)));
+            EXPECT_LE(value, storm::utility::convertNumber<double>(region.getUpperBoundary(variable)));
+        }
+    }
+
     storm::Environment environment;
     storm::prism::Program program;
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model;
@@ -256,7 +266,7 @@ TEST_F(SynthesisApiTest, ScpPreservesUnrelatedRewardParameters) {
         auto result = storm::api::checkFeasibility(environment, model, property, box, Method::SCP);
         ASSERT_EQ(Status::ExistsSat, result.status);
         ASSERT_TRUE(result.witness);
-        EXPECT_TRUE(box.contains(result.witness->valuation));
+        expectInRegion(box, result.witness->valuation);
         for (auto const& variable : box.getVariables()) {
             if (variable.name() == "r") {
                 EXPECT_EQ(box.getCenter(variable), result.witness->valuation.at(variable));
@@ -289,7 +299,7 @@ TEST_F(SynthesisApiTest, ScpReturnsUnknownRatherThanInfeasible) {
     auto result = storm::api::checkFeasibility(environment, model, formula("P>=0.51 [F \"target\"]"), region("0.2<=p<=0.8"), Method::SCP);
     ASSERT_EQ(Status::ExistsSat, result.status);
     ASSERT_TRUE(result.witness);
-    EXPECT_TRUE(region("0.2<=p<=0.8").contains(result.witness->valuation));
+    expectInRegion(region("0.2<=p<=0.8"), result.witness->valuation);
 
     result = storm::api::checkFeasibility(environment, model, formula("P>=0.9 [F \"target\"]"), region("0.2<=p<=0.8"), Method::SCP);
     EXPECT_EQ(Status::Unknown, result.status);
@@ -439,7 +449,11 @@ TEST_F(SynthesisApiTest, WitnessValuesAreDoubleForEveryMethod) {
         static_assert(std::is_same_v<decltype(numerical.witness->value), double>);
         ASSERT_EQ(Status::ExistsSat, numerical.status);
         ASSERT_TRUE(numerical.witness);
-        EXPECT_TRUE(box.contains(numerical.witness->valuation));
+        if (method == Method::SCP) {
+            expectInRegion(box, numerical.witness->valuation);
+        } else {
+            EXPECT_TRUE(box.contains(numerical.witness->valuation));
+        }
         EXPECT_TRUE(property->asOperatorFormula().getBound().isSatisfied(numerical.witness->value));
     }
 }

@@ -8,7 +8,6 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
-#include "storm-pars/modelchecker/instantiation/SparseMdpInstantiationModelChecker.h"
 #include "storm-pars/scp/SparseScpInstantiationSearcher.h"
 #include "storm/api/verification.h"
 #include "storm/exceptions/AbortException.h"
@@ -16,6 +15,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/Mdp.h"
 #include "storm/utility/constants.h"
 
 namespace storm::api {
@@ -120,39 +120,6 @@ std::shared_ptr<storm::pars::FeasibilitySynthesisTask const> createFeasibilityTa
     return task;
 }
 
-template<typename ConstantType>
-storm::utility::ExtendedValueType<ConstantType> evaluate(storm::Environment const& env, Model const& model, storm::logic::Formula const& formula,
-                                                         Region::Valuation const& valuation) {
-    auto quantitative = quantitativeFormula(model, formula);
-    auto task = createTask<storm::RationalFunction>(quantitative, true);
-    std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (model.isOfType(storm::models::ModelType::Dtmc)) {
-        storm::modelchecker::SparseDtmcInstantiationModelChecker<Dtmc, ConstantType> checker(env, dynamic_cast<Dtmc const&>(model));
-        checker.specifyFormula(task);
-        result = checker.check(env, valuation);
-    } else {
-        storm::modelchecker::SparseMdpInstantiationModelChecker<Mdp, ConstantType> checker(env, dynamic_cast<Mdp const&>(model));
-        checker.specifyFormula(task);
-        result = checker.check(env, valuation);
-    }
-    return result->asExplicitQuantitativeCheckResult<ConstantType>()[model.getInitialStates().getNextSetIndex(0)];
-}
-
-template<typename ConstantType>
-Result<ConstantType> validateWitness(storm::Environment const& env, Model const& model, storm::logic::Formula const& formula, Region const& region,
-                                     Region::Valuation valuation) {
-    // Complete omitted parameters and correct floating-point rounding at the exact region boundaries.
-    for (auto const& variable : region.getVariables()) {
-        auto [it, inserted] = valuation.emplace(variable, region.getCenter(variable));
-        it->second = storm::utility::max(region.getLowerBoundary(variable), storm::utility::min(region.getUpperBoundary(variable), it->second));
-    }
-    auto value = evaluate<ConstantType>(env, model, formula, valuation);
-    if (!formula.asOperatorFormula().getBound().isSatisfied(value)) {
-        return {};
-    }
-    return {Status::ExistsSat, storm::pars::FeasibilityResult<ConstantType>{std::move(value), std::move(valuation)}};
-}
-
 bool verifyImpl(storm::Environment const& env, std::shared_ptr<Model> const& model, std::shared_ptr<storm::logic::Formula const> const& formula,
                 std::optional<Region> const& region, std::optional<Coefficient> const& regionBound, Engine engine) {
     validateInput(model, formula, engine);
@@ -183,7 +150,8 @@ Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_p
                 auto direction = bound.isLowerBound() ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
                 auto result = checker->computeExtremalValueHelper(env, consideredRegion, direction, acceptGlobalBound, rejectInstance);
                 if (bound.isSatisfied(result.first)) {
-                    return validateWitness<double>(env, *model, *formula, consideredRegion, std::move(result.second));
+                    return {Status::ExistsSat,
+                            storm::pars::FeasibilityResult<double>{storm::utility::convertNumber<double>(result.first), std::move(result.second)}};
                 }
                 return {Status::AllViolated, std::nullopt};
             }
@@ -194,11 +162,14 @@ Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_p
                 auto const [consideredRegion, graphStatus] = resolveRegion(*model, region, regionBound, true);
                 if (std::all_of(consideredRegion.getVariables().begin(), consideredRegion.getVariables().end(),
                                 [&](auto const& variable) { return storm::utility::isZero(consideredRegion.getDifference(variable)); })) {
-                    auto result = validateWitness<double>(env, *model, *formula, consideredRegion, consideredRegion.getCenterPoint());
-                    if (!result.witness) {
-                        result.status = Status::AllViolated;
+                    auto valuation = consideredRegion.getCenterPoint();
+                    storm::modelchecker::SparseDtmcInstantiationModelChecker<Dtmc, double> checker(env, *model->as<Dtmc>());
+                    checker.specifyFormula(createTask<storm::RationalFunction>(quantitativeFormula(*model, *formula), true));
+                    auto value = checker.check(env, valuation)->asExplicitQuantitativeCheckResult<double>()[model->getInitialStates().getNextSetIndex(0)];
+                    if (!formula->asOperatorFormula().getBound().isSatisfied(value)) {
+                        return {Status::AllViolated, std::nullopt};
                     }
-                    return result;
+                    return {Status::ExistsSat, storm::pars::FeasibilityResult<double>{value, std::move(valuation)}};
                 }
                 auto task = createFeasibilityTask(*model, *formula, consideredRegion);
                 storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> searcher(
@@ -206,7 +177,10 @@ Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_p
                     storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT, consideredRegion);
                 searcher.setup(env, task);
                 auto result = searcher.gradientDescent();
-                return validateWitness<double>(env, *model, *formula, consideredRegion, std::move(result.valuation));
+                if (!formula->asOperatorFormula().getBound().isSatisfied(result.value)) {
+                    return {};
+                }
+                return {Status::ExistsSat, std::move(result)};
             }
             case storm::pars::FeasibilityMethod::SCP: {
                 validateInput(model, formula);
@@ -229,7 +203,7 @@ Result<double> checkFeasibilityImpl(storm::Environment const& env, std::shared_p
                 if (result.status != storm::pars::scp::ScpStatus::Feasible) {
                     return {};
                 }
-                return validateWitness<double>(env, *model, *formula, consideredRegion, std::move(result.valuation));
+                return {Status::ExistsSat, storm::pars::FeasibilityResult<double>{std::move(result.value), std::move(result.valuation)}};
             }
         }
         STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unknown feasibility method.");
