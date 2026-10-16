@@ -39,12 +39,11 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
     }
     std::unordered_map<uint64_t, std::pair<uint64_t, uint64_t>> idToPomdpStateAndFscNode;
     std::unordered_map<uint64_t, std::unordered_map<uint64_t, uint64_t>> pomdpStateAndFscNodeToNewStateId;
-    std::vector<std::unordered_map<uint64_t, PomdpValueType>> transitionProbabilities;
+    storm::storage::SparseMatrixBuilder<PomdpValueType> matrixBuilder;
     std::unordered_map<std::string, std::vector<PomdpValueType>> stateRewards;
 
     uint64_t initialStateId = 0ul;
     uint64_t nextStateId = 1ul;
-    uint64_t nrEntries = 0ul;
     uint64_t initialPomdpState = pomdp.getInitialStates().getNextSetIndex(0ul);
     idToPomdpStateAndFscNode[initialStateId] = {initialPomdpState, fsc.getInitialNodeId()};
     pomdpStateAndFscNodeToNewStateId[initialPomdpState][fsc.getInitialNodeId()] = initialStateId;
@@ -145,6 +144,8 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
                 rewards[currentStateId] += rewardModel.getStateRewardVector()[currentPomdpState];
             }
         }
+        // Accumulate contributions from different actions to the same successor before inserting the row into the matrix.
+        // This avoids repeated matrix lookups and insertions while the builder keeps the row sorted.
         std::unordered_map<uint64_t, PomdpValueType> successorProbabilities;
         for (auto const& actionEntry : actionDistribution) {
             auto const actionProbability = storm::utility::convertNumber<PomdpValueType>(actionEntry.second);
@@ -188,23 +189,12 @@ storm::models::sparse::Dtmc<PomdpValueType> applyObservationBasedFSCToPomdp(
                 }
             }
         }
-        nrEntries += successorProbabilities.size();
-        STORM_LOG_ASSERT(transitionProbabilities.size() == currentStateId, "States must be explored in ID order.");
-        transitionProbabilities.emplace_back(std::move(successorProbabilities));
-    }
-
-    // Build transition matrix from collected transitions
-    storm::storage::SparseMatrixBuilder<PomdpValueType> matrixBuilder(nextStateId, nextStateId, nrEntries);
-    for (uint64_t fromStateId = 0; fromStateId < transitionProbabilities.size(); ++fromStateId) {
-        for (auto const& toEntry : transitionProbabilities[fromStateId]) {
-            uint64_t toStateId = toEntry.first;
-            PomdpValueType prob = toEntry.second;
-            matrixBuilder.addNextValue(fromStateId, toStateId, prob);
+        for (auto const& [successorStateId, probability] : successorProbabilities) {
+            matrixBuilder.addNextValue(currentStateId, successorStateId, probability);
         }
     }
-    auto transitionMatrix = matrixBuilder.build();
     storm::storage::sparse::ModelComponents<PomdpValueType> modelComponents;
-    modelComponents.transitionMatrix = transitionMatrix;
+    modelComponents.transitionMatrix = matrixBuilder.build(nextStateId, nextStateId);
 
     // Add state labeling
     storm::models::sparse::StateLabeling stateLabeling(nextStateId);
