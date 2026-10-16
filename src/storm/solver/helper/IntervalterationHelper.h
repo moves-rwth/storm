@@ -11,6 +11,7 @@
 #include "storm/solver/helper/ValueIterationOperatorForward.h"
 #include "storm/storage/BitVector.h"
 #include "storm/utility/OptionalRef.h"
+#include "storm/utility/constants.h"
 
 namespace storm::solver::helper {
 
@@ -33,7 +34,7 @@ class IntervalIterationHelper {
     template<OptimizationDirection Dir, typename OffsetType, bool Smooth = false, bool InvertedXDir = false>
     SolverStatus II(std::pair<std::vector<ValueType>, std::vector<ValueType>>& xy, OffsetType const& offsets, uint64_t& numIterations, bool relative,
                     ValueType const& precision, std::function<SolverStatus(IIData<ValueType> const&)> const& iterationCallback = {},
-                    std::optional<storm::storage::BitVector> const& relevantValues = {}, ValueType const& gamma = 0.0) const;
+                    std::optional<storm::storage::BitVector> const& relevantValues = {}, ValueType const& gamma = storm::utility::zero<ValueType>()) const;
 
     /*!
      * Smooth variant of interval iteration: Instead of taking over the bounds computed by the Bellman operator right away, the bounds only move

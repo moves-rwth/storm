@@ -22,7 +22,7 @@ template<typename ValueType, OptimizationDirection Dir, bool Smooth, bool Roundi
 class IIBackend {
    public:
     IIBackend(ValueType const& gamma) : gamma(gamma) {}
-    IIBackend() : gamma(0.0) {
+    IIBackend() : gamma(storm::utility::zero<ValueType>()) {
         STORM_LOG_ASSERT(!Smooth, "Gamma must be set for smooth interval iteration.");
     }
 
